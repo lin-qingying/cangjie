@@ -1,0 +1,10 @@
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="/META-INF/analysis-api/cangjie-analysis-api-impl-base.xml"/>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <projectService
+        serviceInterface="org.cangjie.analysis.api.session.CaSessionProvider"
+        serviceImplementation="org.cangjie.analysis.api.cfir.session.CaCfirSessionProvider"
+    />
+  </extensions>
+</idea-plugin>
