@@ -1,0 +1,2 @@
+FILE: whileMissingCondition.cj
+    func whileMissingCondition(): R|Unit|

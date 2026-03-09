@@ -1,0 +1,2 @@
+FILE: ifMissingCondition.cj
+    func ifMissingCondition(): R|Int64|

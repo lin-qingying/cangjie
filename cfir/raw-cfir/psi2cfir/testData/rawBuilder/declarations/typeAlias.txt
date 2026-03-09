@@ -1,0 +1,3 @@
+FILE: typeAlias.cj
+    typealias IntAlias = R|Int64|
+    typealias StringList = R|Array<R|String|>|

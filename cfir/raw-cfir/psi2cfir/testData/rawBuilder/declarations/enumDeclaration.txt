@@ -1,0 +1,5 @@
+FILE: enumDeclaration.cj
+    enum Color {
+    }
+    enum Option<T> {
+    }

@@ -1,0 +1,11 @@
+FILE: extendDeclaration.cj
+    extend R|Int64| {
+        func isPositive(): R|Bool| {
+            RETURN {
+                COMPARISON(GT) {
+                    QUALIFIED_ACCESS(<this>)
+                    STRING("0")
+                }
+            }
+        }
+    }

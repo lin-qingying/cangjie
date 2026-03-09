@@ -1,0 +1,3 @@
+func throwMissingExpression(): Unit {
+    throw
+}

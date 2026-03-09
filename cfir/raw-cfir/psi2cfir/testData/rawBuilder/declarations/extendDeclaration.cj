@@ -1,0 +1,5 @@
+extend Int64 {
+    func isPositive(): Bool {
+        return this > 0
+    }
+}
