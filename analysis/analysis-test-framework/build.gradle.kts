@@ -1,0 +1,25 @@
+plugins {
+    id("java-test-fixtures")
+}
+
+sourceSets {
+    "main" { none() }
+    "test" { none() }
+    "testFixtures" { projectDefault() }
+}
+
+dependencies {
+    testFixturesApi(project(":analysis:analysis-api"))
+    testFixturesApi(project(":analysis:analysis-api-impl-base"))
+    testFixturesApi(project(":analysis:analysis-api-cfir"))
+    testFixturesApi(project(":psi"))
+    testFixturesApi(project(":cfir:cfir-tree"))
+
+    testFixturesApi(testFixtures(project(":tests:test-infrastructure")))
+    testFixturesApi(project(":compiler:cli"))
+    testFixturesApi(intellijCore())
+
+
+    testFixturesApi(libs.junit.jupiter)
+    testFixturesRuntimeOnly(libs.junit.platform.launcher)
+}
