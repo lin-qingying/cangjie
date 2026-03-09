@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__cangjie-docs__get_document_overview",
+      "WebSearch",
+      "mcp__cangjie-docs__list_documents",
+      "mcp__cangjie-docs__search_documents",
+      "WebFetch(domain:github.com)",
+      "mcp__cangjie-docs__get_document_content",
+      "Bash(wc:*)",
+      "Bash(xargs grep:*)",
+      "Bash(./gradlew:*)",
+      "Bash(ls:*)",
+      "Bash(find cfir:*)",
+      "Bash(do echo:*)",
+      "Bash(xargs head:*)",
+      "Bash(find:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(do:*)",
+      "Bash(grep:*)",
+      "Bash(xargs:*)"
+    ]
+  }
+}

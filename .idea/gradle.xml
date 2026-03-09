@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
+  <component name="GradleSettings">
+    <option name="linkedExternalProjectsSettings">
+      <GradleProjectSettings>
+        <compositeConfiguration>
+          <compositeBuild compositeDefinitionSource="SCRIPT">
+            <builds>
+              <build path="$PROJECT_DIR$/buildSrc" name="buildSrc">
+                <projects>
+                  <project path="$PROJECT_DIR$/buildSrc" />
+                </projects>
+              </build>
+            </builds>
+          </compositeBuild>
+        </compositeConfiguration>
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="gradleHome" value="" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/analysis" />
+            <option value="$PROJECT_DIR$/analysis/analysis-api" />
+            <option value="$PROJECT_DIR$/analysis/analysis-api-cfir" />
+            <option value="$PROJECT_DIR$/analysis/analysis-api-impl-base" />
+            <option value="$PROJECT_DIR$/analysis/analysis-test-framework" />
+            <option value="$PROJECT_DIR$/buildSrc" />
+            <option value="$PROJECT_DIR$/cfir" />
+            <option value="$PROJECT_DIR$/cfir/cfir-common" />
+            <option value="$PROJECT_DIR$/cfir/cfir-cones" />
+            <option value="$PROJECT_DIR$/cfir/cfir-tree" />
+            <option value="$PROJECT_DIR$/cfir/raw-cfir" />
+            <option value="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir" />
+            <option value="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir" />
+            <option value="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common" />
+            <option value="$PROJECT_DIR$/common" />
+            <option value="$PROJECT_DIR$/compiler" />
+            <option value="$PROJECT_DIR$/compiler/cli" />
+            <option value="$PROJECT_DIR$/dependencies" />
+            <option value="$PROJECT_DIR$/dependencies/intellij-core" />
+            <option value="$PROJECT_DIR$/psi" />
+            <option value="$PROJECT_DIR$/tests" />
+            <option value="$PROJECT_DIR$/tests/test-infrastructure" />
+            <option value="$PROJECT_DIR$/util" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+    </option>
+  </component>
+</project>

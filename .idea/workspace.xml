@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="">
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithMembers.lazyBodies.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithMembers.lazyBodies.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithMembers.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithMembers.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithTypeParameters.lazyBodies.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithTypeParameters.lazyBodies.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithTypeParameters.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithTypeParameters.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/structDeclaration.lazyBodies.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/structDeclaration.lazyBodies.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/structDeclaration.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/structDeclaration.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderLazyBodiesByAstTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderLazyBodiesByAstTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderLazyBodiesByStubTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderLazyBodiesByStubTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderTestCaseGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderTestCaseGenerated.kt" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CopilotPersistence">
+    <persistenceIdMap>
+      <entry key="_D:/code/intellij/cangjie" value="3AbcvUVBWnpR76PlkOJlbcffRI3" />
+    </persistenceIdMap>
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <task path="$PROJECT_DIR$">
+          <activation />
+        </task>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+                <item name="build" type="c8890929:TasksNode$1" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cfir" type="2d1252cf:ModuleNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cfir" type="2d1252cf:ModuleNode" />
+                <item name="raw-cfir" type="2d1252cf:ModuleNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cfir" type="2d1252cf:ModuleNode" />
+                <item name="raw-cfir" type="2d1252cf:ModuleNode" />
+                <item name="psi2cfir" type="2d1252cf:ModuleNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cfir" type="2d1252cf:ModuleNode" />
+                <item name="raw-cfir" type="2d1252cf:ModuleNode" />
+                <item name="psi2cfir" type="2d1252cf:ModuleNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cfir" type="2d1252cf:ModuleNode" />
+                <item name="raw-cfir" type="2d1252cf:ModuleNode" />
+                <item name="psi2cfir" type="2d1252cf:ModuleNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+                <item name="other" type="c8890929:TasksNode$1" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="ROOT_SYNC" value="DONT_SYNC" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;lin-qingying&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/JetBrains/kotlin.git&quot;,
+    &quot;accountId&quot;: &quot;10e7ac36-132b-4a6b-bbec-3e5773c3aeb0&quot;
+  }
+}</component>
+  <component name="GradleScriptDefinitionsStorage" workingDir="$PROJECT_DIR$" gradleHome="C:\Users\lin17\.gradle\wrapper\dists\gradle-9.0.0-bin\d6wjpkvcgsg3oed0qlfss3wgl\gradle-9.0.0" javaHome="C:\Users\lin17\.jdks\corretto-21.0.10" gradleVersion="9.0.0">
+    <option name="jvmArguments">
+      <list>
+        <option value="-Dhttp.proxyHost=127.0.0.1" />
+        <option value="-Dhttp.proxyPort=7897" />
+        <option value="-Dhttps.proxyHost=127.0.0.1" />
+        <option value="-Dhttps.proxyPort=7897" />
+      </list>
+    </option>
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.jetbrains.intellij.platform/test-framework/242.23726.103/b0b742161118b760f18051235e582dd25aca7915/test-framework-242.23726.103-sources.jar!/com/intellij/testFramework/TestDataPath.java" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
+  <component name="ProjectId" id="3AbcvUVBWnpR76PlkOJlbcffRI3" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Gradle.Declarations.testClassWithMembers.executor": "Run",
+    "Gradle.Declarations.testEmptyClass.executor": "Debug",
+    "Gradle.RawCfirBuilderTestCase.executor": "Run",
+    "Gradle.RawCfirBuilderTestCaseGenerated.executor": "Run",
+    "Gradle.cangjie [:cfir:raw-cfir:psi2cfir:org.cangjie.cfir.builder.TestGeneratorForPsi2Cfir.main()].executor": "Run",
+    "Gradle.cangjie [build].executor": "Run",
+    "Gradle.cangjie [cfir:raw-cfir:psi2cfir:test].executor": "Run",
+    "Gradle.cangjie [clean].executor": "Run",
+    "Gradle.下载源代码.executor": "Run",
+    "Gradle.构建 cangjie.executor": "Run",
+    "JUnit.RawCfirBuilderDeclarationTest 和其他 2 个.executor": "Run",
+    "JUnit.RawCfirBuilderLazyBodiesByStubTestGenerated.executor": "Run",
+    "JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 4 个.executor": "Run",
+    "JUnit.RawCfirBuilderTestCaseGenerated$Declarations.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "git-widget-placeholder": "master",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "D:/code/intellij/cangjie/test",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "模块",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.5724138",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\code\intellij\cangjie\test" />
+      <recent name="D:\code\intellij\cangjie\psi" />
+      <recent name="D:\code\intellij\cangjie" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\code\intellij\cangjie\test" />
+    </key>
+    <key name="K2MoveDeclarationsDialog.RECENT_PACKAGE_KEY">
+      <recent name="org.cangjie.cfir.types" />
+    </key>
+  </component>
+  <component name="RunAnythingCache">
+    <option name="myCommands">
+      <command value="gradle cfir:raw-cfir:psi2cfir:test  -Dupdate.test.data=true" />
+    </option>
+  </component>
+  <component name="RunManager" selected="Gradle.cangjie [cfir:raw-cfir:psi2cfir:test]">
+    <configuration name="Declarations.testClassWithMembers" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":cfir:raw-cfir:psi2cfir:test" />
+            <option value="--tests" />
+            <option value="&quot;org.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations.testClassWithMembers&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="cangjie [cfir:raw-cfir:psi2cfir:test]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="-Dupdate.test.data=true" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="cfir:raw-cfir:psi2cfir:test" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="RawCfirBuilderLazyBodiesByStubTestGenerated" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="cangjie.cfir.raw-cfir.psi2cfir.test" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.cangjie.cfir.builder.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="org.cangjie.cfir.builder" />
+      <option name="MAIN_CLASS_NAME" value="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="RawCfirBuilderTestCaseGenerated$Declarations" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="cangjie.cfir.raw-cfir.psi2cfir.test" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.cangjie.cfir.builder.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="org.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated" />
+      <option name="MAIN_CLASS_NAME" value="org.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="TestGeneratorForPsi2Cfir" type="JetRunConfigurationType" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.cangjie.cfir.builder.TestGeneratorForPsi2Cfir" />
+      <module name="cangjie.cfir.raw-cfir.psi2cfir.testFixtures" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Gradle.cangjie [cfir:raw-cfir:psi2cfir:test]" />
+        <item itemvalue="JUnit.RawCfirBuilderTestCaseGenerated$Declarations" />
+        <item itemvalue="Gradle.Declarations.testClassWithMembers" />
+        <item itemvalue="JUnit.RawCfirBuilderTestCaseGenerated$Declarations" />
+        <item itemvalue="JUnit.RawCfirBuilderLazyBodiesByStubTestGenerated" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="" />
+      <created>1772864945426</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1772864945426</updated>
+      <workItem from="1772864947028" duration="1121000" />
+      <workItem from="1772870369950" duration="36896000" />
+      <workItem from="1772940207168" duration="28000" />
+      <workItem from="1772940255007" duration="17124000" />
+      <workItem from="1772957798302" duration="263000" />
+      <workItem from="1773026987940" duration="25425000" />
+      <workItem from="1773055783576" duration="653000" />
+      <workItem from="1773056467867" duration="8671000" />
+      <workItem from="1773065314957" duration="17170000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="master" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
+  </component>
+</project>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel target="17">
+      <module name="cfir.cfir-checkers" target="17" />
+      <module name="cfir.cfir-checkers.main" target="17" />
+      <module name="cfir.cfir-checkers.test" target="17" />
+      <module name="cfir.cfir-common" target="17" />
+      <module name="cfir.cfir-common.main" target="17" />
+      <module name="cfir.cfir-common.test" target="17" />
+      <module name="cfir.cfir-cones" target="17" />
+      <module name="cfir.cfir-cones.main" target="17" />
+      <module name="cfir.cfir-cones.test" target="17" />
+      <module name="cfir.cfir-raw" target="17" />
+      <module name="cfir.cfir-raw.main" target="17" />
+      <module name="cfir.cfir-raw.test" target="17" />
+      <module name="cfir.cfir-resolve" target="17" />
+      <module name="cfir.cfir-resolve.main" target="17" />
+      <module name="cfir.cfir-resolve.test" target="17" />
+      <module name="cfir.cfir-serialization" target="17" />
+      <module name="cfir.cfir-serialization.main" target="17" />
+      <module name="cfir.cfir-serialization.test" target="17" />
+      <module name="cfir.cfir-tree" target="17" />
+      <module name="cfir.cfir-tree.main" target="17" />
+      <module name="cfir.cfir-tree.test" target="17" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
