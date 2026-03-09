@@ -1,0 +1,42 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven("https://cache-redirector.jetbrains.com/intellij-dependencies")
+    }
+}
+
+rootProject.name = "cangjie"
+
+//基础设施
+include(":common")
+include(":dependencies:intellij-core")
+
+include(":compiler")
+
+include(":util")
+//PSI 模块
+include(":psi")
+
+
+
+include(":cfir")
+include(":cfir:cfir-common")
+include(":cfir:cfir-cones")
+include(":cfir:cfir-tree")
+// RAW_CFIR: 源码 → Raw CFIR 转换（对齐 Kotlin raw-fir）
+include(":cfir:raw-cfir")
+include(":cfir:raw-cfir:psi2cfir")
+include(":cfir:raw-cfir:light-tree2cfir")
+include(":cfir:raw-cfir:raw-cfir-common")
+
+// Analysis API（对齐 Kotlin analysis/analysis-api）
+include(":analysis:analysis-api")
+include(":analysis:analysis-api-impl-base")
+include(":analysis:analysis-api-cfir")
+
+
+include("analysis:analysis-test-framework")
+include(":tests")
+include(":tests:test-infrastructure")
+
+include("compiler:cli")
