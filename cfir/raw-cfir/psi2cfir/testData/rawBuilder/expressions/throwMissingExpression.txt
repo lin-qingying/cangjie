@@ -1,0 +1,6 @@
+FILE: throwMissingExpression.cj
+    func throwMissingExpression(): R|Unit| {
+        THROW {
+            ERROR_EXPR(Missing thrown expression)
+        }
+    }

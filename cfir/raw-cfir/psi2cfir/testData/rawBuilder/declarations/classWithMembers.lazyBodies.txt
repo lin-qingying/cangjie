@@ -1,0 +1,7 @@
+FILE: classWithMembers.cj
+    class WithMembers {
+        let <error-declaration>: <implicit>
+        let <error-declaration>: <implicit>
+        func greet(): R|Unit|
+        init()
+    }

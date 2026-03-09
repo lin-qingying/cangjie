@@ -1,0 +1,43 @@
+FILE: controlFlow.cj
+    func controlFlowTest(x: R|Int64|): R|Int64| {
+        IF {
+            condition:
+                COMPARISON(GT) {
+                    QUALIFIED_ACCESS(x)
+                    STRING("0")
+                }
+            then:
+                RETURN {
+                    QUALIFIED_ACCESS(x)
+                }
+            else:
+                RETURN {
+                    FUNCTION_CALL(unaryMinus) {
+                        receiver:
+                            QUALIFIED_ACCESS(x)
+                    }
+                }
+        }
+    }
+    func loopTest(): R|Unit| {
+        let <error-declaration>: <implicit>
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    QUALIFIED_ACCESS(i)
+                    STRING("10")
+                }
+            body:
+                ASSIGNMENT {
+                    lValue:
+                        QUALIFIED_ACCESS(i)
+                    rValue:
+                        FUNCTION_CALL(plus) {
+                            receiver:
+                                QUALIFIED_ACCESS(i)
+                            arguments:
+                                STRING("1")
+                        }
+                }
+        }
+    }

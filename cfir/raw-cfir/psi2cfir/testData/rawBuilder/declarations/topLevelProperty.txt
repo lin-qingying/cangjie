@@ -1,0 +1,3 @@
+FILE: topLevelProperty.cj
+    let <error-declaration>: <implicit>
+    let <error-declaration>: <implicit>

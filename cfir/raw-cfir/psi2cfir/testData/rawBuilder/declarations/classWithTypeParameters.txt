@@ -1,0 +1,8 @@
+FILE: classWithTypeParameters.cj
+    class Container<T> {
+        let <error-declaration>: <implicit>
+    }
+    class Pair<A, B> {
+        let <error-declaration>: <implicit>
+        let <error-declaration>: <implicit>
+    }

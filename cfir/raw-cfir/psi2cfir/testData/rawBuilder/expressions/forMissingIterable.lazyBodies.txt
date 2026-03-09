@@ -1,0 +1,2 @@
+FILE: forMissingIterable.cj
+    func forMissingIterable(): R|Unit|

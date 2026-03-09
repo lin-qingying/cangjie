@@ -1,0 +1,16 @@
+FILE: topLevelFunction.cj
+    func add(a: R|Int64|, b: R|Int64|): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(plus) {
+                receiver:
+                    QUALIFIED_ACCESS(a)
+                arguments:
+                    QUALIFIED_ACCESS(b)
+            }
+        }
+    }
+    func identity<T>(x: R|T|): R|T| {
+        RETURN {
+            QUALIFIED_ACCESS(x)
+        }
+    }

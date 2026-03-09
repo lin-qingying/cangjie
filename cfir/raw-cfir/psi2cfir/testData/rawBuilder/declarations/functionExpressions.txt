@@ -1,0 +1,7 @@
+FILE: functionExpressions.cj
+    func expressions(): R|Unit| {
+        let <error-declaration>: <implicit>
+        let <error-declaration>: <implicit>
+        let <error-declaration>: <implicit>
+        let <error-declaration>: <implicit>
+    }

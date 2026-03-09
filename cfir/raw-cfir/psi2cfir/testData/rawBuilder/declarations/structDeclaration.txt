@@ -1,0 +1,5 @@
+FILE: structDeclaration.cj
+    struct Point {
+        let <error-declaration>: <implicit>
+        let <error-declaration>: <implicit>
+    }

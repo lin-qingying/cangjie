@@ -1,0 +1,2 @@
+FILE: binaryMissingRightOperand.cj
+    func binaryMissingRightOperand(): R|Unit|

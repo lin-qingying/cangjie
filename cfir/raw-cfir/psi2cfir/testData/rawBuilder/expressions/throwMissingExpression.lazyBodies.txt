@@ -1,0 +1,2 @@
+FILE: throwMissingExpression.cj
+    func throwMissingExpression(): R|Unit|

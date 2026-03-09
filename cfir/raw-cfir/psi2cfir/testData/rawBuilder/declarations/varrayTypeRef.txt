@@ -1,0 +1,13 @@
+FILE: varrayTypeRef.cj
+    typealias FixedStrings = R|VArray<R|String|, $4>|
+    typealias HandlerTable = R|VArray<R|(R|Int64|) -> R|Bool||, $2>|
+    func copy(src: R|VArray<R|String|, $4>|): R|VArray<R|String|, $4>| {
+        RETURN {
+            QUALIFIED_ACCESS(src)
+        }
+    }
+    func useHandlers(handlers: R|VArray<R|(R|Int64|) -> R|Bool||, $2>|): R|HandlerTable| {
+        RETURN {
+            QUALIFIED_ACCESS(handlers)
+        }
+    }

@@ -1,0 +1,3 @@
+FILE: emptyClass.cj
+    class Empty {
+    }

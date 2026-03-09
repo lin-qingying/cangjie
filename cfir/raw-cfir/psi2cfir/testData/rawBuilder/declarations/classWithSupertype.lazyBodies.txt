@@ -1,0 +1,5 @@
+FILE: classWithSupertype.cj
+    open class Base {
+    }
+    class Child : R|Base| {
+    }

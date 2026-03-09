@@ -1,0 +1,3 @@
+FILE: controlFlow.cj
+    func controlFlowTest(x: R|Int64|): R|Int64|
+    func loopTest(): R|Unit|
