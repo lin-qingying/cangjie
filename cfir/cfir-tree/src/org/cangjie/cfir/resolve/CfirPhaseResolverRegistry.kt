@@ -12,6 +12,9 @@ class CfirPhaseResolverRegistry : CfirSessionComponent {
 
     fun registerProcessor(phase: CfirResolvePhase, processor: CfirResolveProcessor) {
         check(phase !in processors) { "Processor already registered for phase: $phase" }
+        check(processor.toPhase == phase) {
+            "Processor target phase mismatch: register phase=$phase, processor.toPhase=${processor.toPhase}"
+        }
         processors[phase] = processor
     }
 

@@ -1,0 +1,5 @@
+FILE: matchExpressionOfficial.cj
+    enum TimeUnit {
+        Year(R|Int32|)
+    }
+    func extractYear(time: R|TimeUnit|): R|Int32|

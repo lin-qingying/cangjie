@@ -7,10 +7,11 @@ import java.io.File
  */
 abstract class AbstractRawCfirBuilderLazyBodiesTestCase : AbstractRawCfirBuilderTestCase() {
     override fun doRawCfirTest(filePath: String) {
-        val file = createFileForLazyMode(filePath)
+        val resolvedFilePath = resolveTestDataPath(filePath).path
+        val file = createFileForLazyMode(resolvedFilePath)
         val cfirFile = file.toCfirFile(bodyBuildingMode = BodyBuildingMode.LAZY_BODIES)
         val dump = dumpCfirFile(cfirFile)
-        val expected = File(filePath.replace(".cj", ".lazyBodies.txt"))
+        val expected = File(resolvedFilePath.replace(".cj", ".lazyBodies.txt"))
         assertEqualsToFile(expected, dump)
     }
 

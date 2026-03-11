@@ -50,7 +50,7 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
     }
 
     protected fun assertAllFilesPresentByMetadata(testDataRootRelativePath: String) {
-        val testDataDir = Path.of(testDataRootRelativePath).toFile()
+        val testDataDir = resolveTestDataPath(testDataRootRelativePath)
         require(testDataDir.isDirectory) { "testData dir not found: ${testDataDir.path}" }
 
         val currentDir = currentClassTestDataDir(testDataDir)
@@ -64,6 +64,8 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         check(missing.isEmpty()) {
             "Missing generated tests for testData files in ${currentDir.path}: ${missing.sorted()}"
         }
+
+        validateRawBuilderConventionsIfNeeded(testDataDir)
     }
 
     private fun currentClassTestDataDir(rootTestDataDir: File): File {
@@ -83,27 +85,9 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         val runTestRegex = "runTest\\(\"([^\"]+\\.cj)\"\\)".toRegex()
         val covered = linkedSetOf<String>()
 
-        for (testClass in this::class.java.declaredMethods) {
-            val metadata = testClass.getAnnotation(org.cangjie.test.TestMetadata::class.java) ?: continue
-            val metadataPath = metadata.value.replace('\\', '/')
-            val candidate = testDataDir.resolve(metadataPath)
-            if (candidate.isFile && candidate.extension == "cj") {
-                covered += candidate.relativeTo(testDataDir).invariantSeparatorsPath
-            }
-        }
+        collectCoveredFromClass(this::class.java, testDataDir, testDataDir, covered)
 
-        for (nestedClass in this::class.java.declaredClasses) {
-            for (method in nestedClass.declaredMethods) {
-                val metadata = method.getAnnotation(org.cangjie.test.TestMetadata::class.java) ?: continue
-                val metadataPath = metadata.value.replace('\\', '/')
-                val candidate = testDataDir.resolve(metadataPath)
-                if (candidate.isFile && candidate.extension == "cj") {
-                    covered += candidate.relativeTo(testDataDir).invariantSeparatorsPath
-                }
-            }
-        }
-
-        val testSources = File("cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder")
+        val testSources = resolveTestDataPath("cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder")
         if (testSources.isDirectory) {
             testSources.walkTopDown().filter { it.isFile && it.extension == "kt" }.forEach { generatedFile ->
                 val content = generatedFile.readText(Charsets.UTF_8)
@@ -131,14 +115,155 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         return covered
     }
 
+    private fun collectCoveredFromClass(
+        klass: Class<*>,
+        rootTestDataDir: File,
+        inheritedDir: File,
+        covered: MutableSet<String>,
+    ) {
+        val classScopedDir = classScopedDir(klass, rootTestDataDir, inheritedDir)
+        for (method in klass.declaredMethods) {
+            val metadata = method.getAnnotation(org.cangjie.test.TestMetadata::class.java) ?: continue
+            val metadataPath = metadata.value.replace('\\', '/')
+            val candidate = classScopedDir.resolve(metadataPath)
+            if (candidate.isFile && candidate.extension == "cj" && candidate.isUnder(rootTestDataDir)) {
+                covered += candidate.relativeTo(rootTestDataDir).invariantSeparatorsPath
+            }
+        }
+        for (nested in klass.declaredClasses) {
+            collectCoveredFromClass(nested, rootTestDataDir, classScopedDir, covered)
+        }
+    }
+
+    private fun classScopedDir(
+        klass: Class<*>,
+        rootTestDataDir: File,
+        inheritedDir: File,
+    ): File {
+        val classMetadata = klass.getAnnotation(org.cangjie.test.TestMetadata::class.java) ?: return inheritedDir
+        val metadataPath = classMetadata.value.replace('\\', '/')
+        val direct = resolveTestDataPath(metadataPath)
+        if (direct.isDirectory) return direct
+        val nested = rootTestDataDir.resolve(metadataPath)
+        if (nested.isDirectory) return nested
+        return inheritedDir
+    }
+
+    private fun File.isUnder(parent: File): Boolean {
+        val parentPath = parent.canonicalFile.toPath()
+        val childPath = canonicalFile.toPath()
+        return childPath.startsWith(parentPath)
+    }
+
+    private fun validateRawBuilderConventionsIfNeeded(testDataDir: File) {
+        val rawBuilderRoot = testDataDir.findAncestorNamed("rawBuilder") ?: return
+        if (!rawBuilderRoot.isDirectory) return
+
+        val allCjFiles = rawBuilderRoot.walkTopDown()
+            .filter { it.isFile && it.extension == "cj" }
+            .sortedBy { it.invariantSeparatorsPath }
+            .toList()
+
+        val illegalNames = allCjFiles
+            .map { it.relativeTo(rawBuilderRoot).invariantSeparatorsPath }
+            .filterNot { it.substringAfterLast('/').matches(Regex("^[a-z][A-Za-z0-9]*\\.cj$")) }
+
+        check(illegalNames.isEmpty()) {
+            "rawBuilder file names must be camelCase and .cj: ${illegalNames.joinToString()}"
+        }
+
+        val updateMode = java.lang.Boolean.getBoolean(UPDATE_TEST_DATA_PROPERTY)
+        if (!updateMode) {
+            val missingGolden = allCjFiles
+                .filterNot { File(it.parentFile, "${it.nameWithoutExtension}.txt").exists() }
+                .map { it.relativeTo(rawBuilderRoot).invariantSeparatorsPath }
+
+            check(missingGolden.isEmpty()) {
+                "Missing .txt golden files for rawBuilder tests: ${missingGolden.joinToString()}"
+            }
+        }
+
+        validateCoverageMatrix(rawBuilderRoot, allCjFiles)
+    }
+
+    private fun validateCoverageMatrix(rawBuilderRoot: File, allCjFiles: List<File>) {
+        val matrixFile = File(rawBuilderRoot, "coverage-matrix.md")
+        check(matrixFile.exists()) {
+            "rawBuilder coverage matrix is missing: ${matrixFile.path}"
+        }
+
+        val entryRegex = Regex("""^- `([^`]+)`: (.+)$""")
+        val mappedPaths = linkedSetOf<String>()
+        val invalidMappedPaths = mutableListOf<String>()
+
+        matrixFile.readLines(Charsets.UTF_8)
+            .map { it.trim() }
+            .filter { it.startsWith("- `") }
+            .forEach { line ->
+                val match = entryRegex.matchEntire(line)
+                if (match == null) {
+                    invalidMappedPaths += "Invalid matrix line: $line"
+                    return@forEach
+                }
+                val rawPaths = match.groupValues[2]
+                    .split(",")
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+                rawPaths.forEach { rel ->
+                    val normalized = rel.replace('\\', '/')
+                    mappedPaths += normalized
+                    val file = File(rawBuilderRoot, normalized)
+                    if (!file.exists()) {
+                        invalidMappedPaths += "Matrix path not found: $normalized"
+                    }
+                }
+            }
+
+        check(invalidMappedPaths.isEmpty()) {
+            "rawBuilder coverage matrix has invalid entries:\n${invalidMappedPaths.joinToString("\n")}"
+        }
+
+        val actualPaths = allCjFiles
+            .map { it.relativeTo(rawBuilderRoot).invariantSeparatorsPath }
+            .toSet()
+        val uncovered = actualPaths - mappedPaths
+        check(uncovered.isEmpty()) {
+            "rawBuilder coverage matrix misses test files: ${uncovered.sorted()}"
+        }
+    }
+
+    private fun File.findAncestorNamed(dirName: String): File? {
+        var current: File? = this
+        while (current != null) {
+            if (current.name == dirName) return current
+            current = current.parentFile
+        }
+        return null
+    }
+
     open fun doRawCfirTest(filePath: String) {
-        val file = File(filePath)
-        val sourceText = loadFile(filePath).trim()
+        val file = resolveTestDataPath(filePath)
+        val sourceText = loadFile(file.path).trim()
         val cjFile = createCjFile(file.nameWithoutExtension, sourceText)
         val cfirFile = cjFile.toCfirFile()
         val actual = dumpCfirFile(cfirFile)
-        val expectedPath = filePath.replace(".cj", ".txt")
+        val expectedPath = file.path.replace(".cj", ".txt")
         assertEqualsToFile(File(expectedPath), actual)
+    }
+
+    protected fun resolveTestDataPath(path: String): File {
+        val direct = Path.of(path).toFile()
+        if (direct.isAbsolute) return direct
+        if (direct.exists()) return direct
+
+        var cursor = File(System.getProperty("user.dir", ".")).absoluteFile
+        while (true) {
+            val candidate = cursor.resolve(path)
+            if (candidate.exists()) return candidate
+            val parent = cursor.parentFile ?: break
+            cursor = parent
+        }
+        return direct
     }
 
     companion object {

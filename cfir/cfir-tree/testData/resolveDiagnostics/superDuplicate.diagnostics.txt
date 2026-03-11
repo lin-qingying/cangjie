@@ -1,0 +1,4 @@
+file: superDuplicate.cj
+phase: CHECKERS
+diagnostics: 1
+- ERROR: [CFIR_SUPER_TYPES_DUPLICATE] [RULE_SUPER_TYPES_DUPLICATE] duplicate super type 'IPrintable' for type 'TypeWithDuplicateSupers' (external/cangjie_compiler/src/Sema/TypeChecker.cpp#CheckInstDupSuperInterfaces)

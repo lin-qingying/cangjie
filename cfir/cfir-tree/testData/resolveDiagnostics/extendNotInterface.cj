@@ -1,0 +1,2 @@
+// EXTEND_NOT_INTERFACE
+main() {}

@@ -1,0 +1,60 @@
+FILE: trailingClosureOfficial.cj
+    func f(a: R|Int64|, fn: R|(R|Int64|) -> R|Int64||): <implicit> {
+        FUNCTION_CALL(fn) {
+            QUALIFIED_ACCESS(a)
+        }
+    }
+    func f2(fn: R|(R|Int64|) -> R|Int64||): <implicit> {
+        FUNCTION_CALL(fn) {
+            STRING("1")
+        }
+    }
+    func useClosures(): <implicit> {
+        FUNCTION_CALL(f) {
+            STRING("1")
+            LAMBDA(i: <implicit>) {
+                FUNCTION_CALL(times) {
+                    receiver:
+                        QUALIFIED_ACCESS(i)
+                    arguments:
+                        QUALIFIED_ACCESS(i)
+                }
+            }
+        }
+        FUNCTION_CALL(f(1)) {
+            LAMBDA(i: <implicit>) {
+                FUNCTION_CALL(times) {
+                    receiver:
+                        QUALIFIED_ACCESS(i)
+                    arguments:
+                        QUALIFIED_ACCESS(i)
+                }
+            }
+            LAMBDA(i: <implicit>) {
+                FUNCTION_CALL(times) {
+                    receiver:
+                        QUALIFIED_ACCESS(i)
+                    arguments:
+                        QUALIFIED_ACCESS(i)
+                }
+            }
+        }
+        FUNCTION_CALL(f2) {
+            LAMBDA(i: <implicit>) {
+                FUNCTION_CALL(times) {
+                    receiver:
+                        QUALIFIED_ACCESS(i)
+                    arguments:
+                        QUALIFIED_ACCESS(i)
+                }
+            }
+            LAMBDA(i: <implicit>) {
+                FUNCTION_CALL(times) {
+                    receiver:
+                        QUALIFIED_ACCESS(i)
+                    arguments:
+                        QUALIFIED_ACCESS(i)
+                }
+            }
+        }
+    }

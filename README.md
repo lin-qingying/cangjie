@@ -41,6 +41,10 @@
 ./gradlew check                  # 运行所有检查和测试
 ```
 
+## 测试约定
+
+全项目测试实现与组织规范见：`TESTING_CONVENTIONS.md`。
+
 ## 测试框架进展
 
 - 已引入 Kotlin 风格的轻量测试配置模型：`TestConfigurationBuilder`、`TestFacade`、`AnalysisHandler`、`AbstractCangjieCompilerTest`。

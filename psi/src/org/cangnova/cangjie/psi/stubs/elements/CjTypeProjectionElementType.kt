@@ -38,7 +38,7 @@ class CjTypeProjectionElementType(debugName: String) :
         CjTypeProjection::class.java,
         CangJieTypeProjectionStub::class.java,
     ) {
-    override fun createStub(psi: CjTypeProjection, parentStub: StubElement<*>?): CangJieTypeProjectionStub {
+    override fun createStub(psi: CjTypeProjection, parentStub: StubElement<*>): CangJieTypeProjectionStub {
         return CangJieTypeProjectionStubImpl(parentStub, psi.projectionKind.ordinal)
     }
 

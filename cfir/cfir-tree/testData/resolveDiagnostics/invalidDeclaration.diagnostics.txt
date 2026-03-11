@@ -1,0 +1,5 @@
+file: invalidDeclaration.cj
+phase: CHECKERS
+diagnostics: 1
+- ERROR: [CFIR_INVALID_DECLARATION] invalid declaration marker found
+

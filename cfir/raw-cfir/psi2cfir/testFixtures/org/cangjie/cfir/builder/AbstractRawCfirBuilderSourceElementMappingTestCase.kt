@@ -16,15 +16,16 @@ import java.io.File
 
 abstract class AbstractRawCfirBuilderSourceElementMappingTestCase : AbstractRawCfirBuilderTestCase() {
     override fun doRawCfirTest(filePath: String) {
-        val fileTextWithTags = loadFile(filePath)
+        val resolvedFilePath = resolveTestDataPath(filePath).path
+        val fileTextWithTags = loadFile(resolvedFilePath)
         val fileText = fileTextWithTags.replace(START_EXPRESSION_TAG, "").replace(END_EXPRESSION_TAG, "")
-        val cjFile = createPsiFile(FileUtil.getNameWithoutExtension(PathUtil.getFileName(filePath)), fileText) as CjFile
+        val cjFile = createPsiFile(FileUtil.getNameWithoutExtension(PathUtil.getFileName(resolvedFilePath)), fileText) as CjFile
 
         val selected = run {
             val start = fileTextWithTags.indexOf(START_EXPRESSION_TAG)
-            if (start < 0) error("$START_EXPRESSION_TAG was not found in $filePath")
+            if (start < 0) error("$START_EXPRESSION_TAG was not found in $resolvedFilePath")
             val end = fileTextWithTags.indexOf(END_EXPRESSION_TAG)
-            if (end < 0) error("$END_EXPRESSION_TAG was not found in $filePath")
+            if (end < 0) error("$END_EXPRESSION_TAG was not found in $resolvedFilePath")
 
             val range = TextRange(start, end - START_EXPRESSION_TAG.length)
             findElementByExactRange(cjFile, range)
@@ -39,7 +40,7 @@ abstract class AbstractRawCfirBuilderSourceElementMappingTestCase : AbstractRawC
         } ?: error("Expected at least one CFIR element, found 0")
 
         val rendered = CfirRenderer.withGoldenCompat().renderElementAsString(target)
-        val expectedPath = filePath.replace(".cj", ".txt")
+        val expectedPath = resolvedFilePath.replace(".cj", ".txt")
         assertEqualsToFile(File(expectedPath), rendered)
     }
 
