@@ -55,14 +55,14 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitVariable(variable: CfirVariable, data: D): R =
         visitDeclaration(variable, data)
 
+    open fun visitPatternVariable(variable: CfirPatternVariable, data: D): R =
+        visitDeclaration(variable, data)
+
     open fun visitValueParameter(valueParameter: CfirValueParameter, data: D): R =
         visitDeclaration(valueParameter, data)
 
     open fun visitTypeParameter(typeParameter: CfirTypeParameter, data: D): R =
         visitDeclaration(typeParameter, data)
-
-    open fun visitAnonymousInitializer(anonymousInitializer: CfirAnonymousInitializer, data: D): R =
-        visitDeclaration(anonymousInitializer, data)
 
     // ---- 表达式 ----
 

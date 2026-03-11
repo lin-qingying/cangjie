@@ -1,7 +1,6 @@
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.plugins.JavaPluginExtension
-import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
@@ -145,6 +144,3 @@ private fun Test.addInnerClassPatternsForExplicitClassIncludes() {
     }
 }
 
-internal fun Project.ideaHomePathForTests(): Provider<java.io.File> {
-    return layout.buildDirectory.dir("test-idea-home").map { it.asFile }
-}

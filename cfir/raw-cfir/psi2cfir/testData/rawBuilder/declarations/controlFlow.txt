@@ -20,7 +20,9 @@ FILE: controlFlow.cj
         }
     }
     func loopTest(): R|Unit| {
-        let <error-declaration>: <implicit>
+        var i: <implicit> = ...
+            initializer:
+                STRING("0")
         WHILE {
             condition:
                 COMPARISON(LT) {

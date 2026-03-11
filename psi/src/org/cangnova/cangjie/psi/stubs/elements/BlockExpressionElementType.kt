@@ -31,7 +31,6 @@ import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.parsing.CangJieParser
 import org.cangnova.cangjie.psi.CjBlockExpression
 import org.cangnova.cangjie.psi.CjCaseBlockExpression
-import org.cangnova.cangjie.psi.CjInitBlockExpression
 import com.intellij.lang.ASTNode
 import com.intellij.lang.Language
 import com.intellij.lang.PsiBuilderFactory
@@ -49,31 +48,12 @@ class CaseBlockExpressionElementType : BlockExpressionElementType("CASE_BLOCK") 
             chameleon.chars,
         )
 
-        return CangJieParser.parseInitFunctionBlockExpression(builder).firstChildNode
+        return CangJieParser.parseBlockExpression(builder).firstChildNode
     }
 
     override fun createCompositeNode() = CjCaseBlockExpression(null)
 
     override fun createNode(text: CharSequence?) = CjCaseBlockExpression(text)
-}
-
-class InitBlockExpressionElementType : BlockExpressionElementType("INIT_BLOCK") {
-    override fun parseContents(chameleon: ASTNode): ASTNode {
-        val project = chameleon.psi.project
-        val builder = PsiBuilderFactory.getInstance().createBuilder(
-            project,
-            chameleon,
-            null,
-            CangJieLanguage,
-            chameleon.chars,
-        )
-
-        return CangJieParser.parseInitFunctionBlockExpression(builder).firstChildNode
-    }
-
-    override fun createCompositeNode() = CjInitBlockExpression(null)
-
-    override fun createNode(text: CharSequence?) = CjInitBlockExpression(text)
 }
 
 open class BlockExpressionElementType(debugName: String = "BLOCK") :

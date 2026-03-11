@@ -1,7 +1,11 @@
 FILE: classWithMembers.cj
     class WithMembers {
-        let <error-declaration>: <implicit>
-        let <error-declaration>: <implicit>
+        var x: R|Int64| = ...
+            initializer:
+                STRING("0")
+        let name: R|String| = ...
+            initializer:
+                STRING("hello")
         func greet(): R|Unit| {
             RETURN {
                 STRING("()")

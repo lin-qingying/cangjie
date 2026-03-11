@@ -84,9 +84,6 @@ public interface CjNodeTypes {
     IElementType OPERATION_REFERENCE = new CjNodeType("OPERATION_REFERENCE", CjOperationReferenceExpression.class);
 
     IElementType OPERATION_NAME = new CjNodeType("OPERATION_NAME", CjOperationName.class);
-    IElementType CONSTRUCTOR_DELEGATION_CALL = new CjNodeType.CjLeftBoundNodeType("CONSTRUCTOR_DELEGATION_CALL", CjConstructorDelegationCall.class);
-    IElementType CONSTRUCTOR_DELEGATION_REFERENCE = new CjNodeType.CjLeftBoundNodeType("CONSTRUCTOR_DELEGATION_REFERENCE", CjConstructorDelegationReferenceExpression.class);
-
     IElementType VARIABLE = CjStubElementTypes.VARIABLE;
     IElementType FIELD = CjStubElementTypes.FIELD;
     IElementType MAIN_FUNC = CjStubElementTypes.MAIN_FUNC;
@@ -102,7 +99,6 @@ public interface CjNodeTypes {
     IFileElementType CJ_FILE = new IFileElementType(CangJieLanguage.INSTANCE);
     IElementType BLOCK = new BlockExpressionElementType();
     IElementType CASE_BLOCK = new CaseBlockExpressionElementType();
-    IElementType INIT_BLOCK = new InitBlockExpressionElementType();
 
     IElementType LAMBDA_EXPRESSION = new LambdaExpressionElementType();
 
@@ -238,7 +234,7 @@ public interface CjNodeTypes {
 
     IElementType PROPERTY_ACCESSOR = CjStubElementTypes.PROPERTY_ACCESSOR;
     IElementType ERROR_ELEMENT = new CjNodeType("ERROR_ELEMENT", CjErrorElement.class);
-    IElementType END_SECONDARY_CONSTRUCTOR = CjStubElementTypes.END_SECONDARY_CONSTRUCTOR;
+    IElementType FINALIZER = CjStubElementTypes.FINALIZER;
     IElementType SECONDARY_CONSTRUCTOR = CjStubElementTypes.SECONDARY_CONSTRUCTOR;
     IElementType PRIMARY_CONSTRUCTOR = CjStubElementTypes.PRIMARY_CONSTRUCTOR;
 

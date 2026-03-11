@@ -3,6 +3,7 @@ package org.cangjie.cfir.builder
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.psi.PsiManager
 import com.intellij.psi.SingleRootFileViewProvider
+import com.intellij.openapi.application.ApplicationManager
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.psi.stubs.CangJieFileStub
@@ -17,7 +18,7 @@ abstract class AbstractRawCfirBuilderLazyBodiesByStubTest : AbstractRawCfirBuild
         val ignoreTreeAccess = isDirectiveDefined(File(filePath).readText(), "// IGNORE_TREE_ACCESS:")
         var treeAccessFound = false
         try {
-            super.doRawCfirTest(filePath)
+            runOnEdt { super.doRawCfirTest(filePath) }
         } catch (e: Throwable) {
             if (!ignoreTreeAccess || e.message?.startsWith("Access to tree elements not allowed for") != true) {
                 throw e
@@ -64,5 +65,17 @@ abstract class AbstractRawCfirBuilderLazyBodiesByStubTest : AbstractRawCfirBuild
 
     private fun isDirectiveDefined(text: String, directive: String): Boolean {
         return text.lineSequence().any { it.trim() == directive }
+    }
+
+    private fun runOnEdt(action: () -> Unit) {
+        var error: Throwable? = null
+        ApplicationManager.getApplication().invokeAndWait {
+            try {
+                action()
+            } catch (t: Throwable) {
+                error = t
+            }
+        }
+        error?.let { throw it }
     }
 }

@@ -81,8 +81,9 @@
 - 该提案聚焦补齐 `CfirTypeRef` 对 `VArray<T, $N>` 的 Raw CFIR 建模缺口：在不改动 parser/PSI 与 cone 层既有设计的前提下，补充 `cfir-tree` 类型引用表示、`psi2cfir` lowering 与 rawBuilder 测试覆盖。
 - 已新增变更提案：`openspec/changes/add-rawbuilder-missing-expression-tests/`。
 - 该提案聚焦补齐 `cfir/raw-cfir/psi2cfir/testData/rawBuilder` 中对缺失表达式 / 错误恢复路径的测试覆盖，并参考 Kotlin `rawBuilder/expressions` 的目录组织方式收敛本仓库的套件发现范围。
-- 已新增变更提案：`openspec/changes/fix-rawbuilder-let-position-handling/`。
-- 该提案聚焦修复 Raw CFIR rawBuilder 对类体简单成员字段（`CjFieldVariable`）的 lowering 缺口，并采用更保守的 CFIR 方案：保留现有具名 `CfirVariable` 不变，仅新增 `CfirPatternVariable : CfirCallableDeclaration` 来承载模式变量声明。这保证 `Field`、`Variable`、`Property` 继续保持区分；本次仍以类成员字段修复为主，不承诺一次性补全文件级或局部 `CjPatternVariable` 的完整 pattern lowering。
+- 已推进变更实现：`openspec/changes/fix-rawbuilder-let-position-handling/`。
+- 本次实现保留现有具名 `CfirVariable(name)` 语义，同时新增 `CfirPatternVariable : CfirCallableDeclaration`（持有完整 `pattern`，并通过派生查询提供 `bindings` / `allPatternDeclarations`），避免再用具名变量或 property 语义掩盖 pattern variable。
+- `PsiRawCfirBuilder` 已补齐 `CjFieldVariable` 与 `CjPatternVariable` 的 declaration dispatch；类体字段不再统一退化为 `<error-declaration>`，`classWithMembers`、`classWithTypeParameters`、`structDeclaration` 及新增 `classMembersOrderStability` 用例均已更新 normal/lazyBodies 基线。
 
 ## 目录结构
 

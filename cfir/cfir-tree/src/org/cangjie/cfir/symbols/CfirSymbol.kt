@@ -71,6 +71,12 @@ class CfirVariableSymbol : CfirCallableSymbol<CfirVariable>() {
         if (isBound) "CfirVariableSymbol(${fir.name})" else "CfirVariableSymbol(unbound)"
 }
 
+class CfirPatternVariableSymbol : CfirCallableSymbol<CfirPatternVariable>() {
+    override fun toString(): String =
+        if (isBound) "CfirPatternVariableSymbol(${fir.bindings.joinToString { it.name.asString() }})"
+        else "CfirPatternVariableSymbol(unbound)"
+}
+
 class CfirValueParameterSymbol : CfirCallableSymbol<CfirValueParameter>() {
     override fun toString(): String =
         if (isBound) "CfirValueParameterSymbol(${fir.name})" else "CfirValueParameterSymbol(unbound)"
@@ -90,8 +96,4 @@ class CfirExtendSymbol : CfirSymbol<CfirExtend>() {
 class CfirEnumEntrySymbol : CfirSymbol<CfirEnumEntry>() {
     override fun toString(): String =
         if (isBound) "CfirEnumEntrySymbol(${fir.name})" else "CfirEnumEntrySymbol(unbound)"
-}
-
-class CfirAnonymousInitializerSymbol : CfirSymbol<CfirAnonymousInitializer>() {
-    override fun toString(): String = "CfirAnonymousInitializerSymbol"
 }

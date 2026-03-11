@@ -89,6 +89,8 @@ class PsiRawCfirBuilder(
             is CjExtend -> convertExtend(psi)
             is CjNamedFunction -> convertFunction(psi)
             is CjProperty -> convertProperty(psi)
+            is CjFieldVariable -> convertFieldVariable(psi)
+            is CjPatternVariable -> convertPatternVariable(psi)
             is CjPrimaryConstructor -> convertConstructor(psi, isPrimary = true)
             is CjSecondaryConstructor -> convertConstructor(psi, isPrimary = false)
             is CjTypeAlias -> convertTypeAlias(psi)
@@ -173,6 +175,40 @@ class PsiRawCfirBuilder(
                 returnTypeRef = typeRef,
                 name = name,
                 initializer = initializer,
+                isVar = psi.isVar,
+            )
+        }
+
+        private fun convertFieldVariable(psi: CjFieldVariable): CfirVariable {
+            return CfirVariable(
+                source = psi.toSourceElement(),
+                origin = CfirDeclarationOrigin.Source,
+                moduleData = baseModuleData,
+                status = convertDeclarationStatus(psi),
+                returnTypeRef = convertTypeRef(psi.typeReference),
+                name = psi.nameAsSafeName,
+                initializer = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) {
+                    null
+                } else {
+                    psi.initializer?.let { convertExpression(it) }
+                },
+                isVar = psi.isVar,
+            )
+        }
+
+        private fun convertPatternVariable(psi: CjPatternVariable): CfirPatternVariable {
+            return CfirPatternVariable(
+                source = psi.toSourceElement(),
+                origin = CfirDeclarationOrigin.Source,
+                moduleData = baseModuleData,
+                status = convertDeclarationStatus(psi),
+                returnTypeRef = convertTypeRef(psi.typeReference),
+                pattern = convertCasePattern(psi.pattern),
+                initializer = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) {
+                    null
+                } else {
+                    psi.initializer?.let { convertExpression(it) }
+                },
                 isVar = psi.isVar,
             )
         }
@@ -685,6 +721,39 @@ class PsiRawCfirBuilder(
                 argument = argument,
                 typeRef = convertTypeRef(psi.typeReference),
             )
+        }
+
+        private fun convertCasePattern(pattern: CjCasePatternElement?): CfirPattern {
+            return when (pattern) {
+                is CjBindingPattern -> CfirBindingPattern(
+                    source = pattern.toSourceElement(),
+                    name = pattern.nameAsSafeName,
+                )
+                is CjTypePattern -> CfirTypePattern(
+                    source = pattern.toSourceElement(),
+                    typeRef = convertTypeRef(pattern.typeReference),
+                    bindingName = pattern.nameAsName,
+                )
+                is CjTuplePattern -> CfirTuplePattern(
+                    source = pattern.toSourceElement(),
+                    elements = pattern.patterns.map { convertCasePattern(it) },
+                )
+                is CjEnumPattern -> CfirEnumPattern(
+                    source = pattern.toSourceElement(),
+                    constructorReference = CfirNamedReference(
+                        source = pattern.toSourceElement(),
+                        name = Name.special(pattern.expression?.text ?: "<enum-pattern>"),
+                    ),
+                    arguments = pattern.patterns.map { convertCasePattern(it) },
+                )
+                is CjConstantPattern -> CfirConstPattern(
+                    source = pattern.toSourceElement(),
+                    expression = pattern.expression?.let { convertExpression(it) }
+                        ?: buildErrorExpression(pattern.toSourceElement(), "Missing constant pattern expression"),
+                )
+                is CjWildcardPattern -> CfirWildcardPattern(pattern.toSourceElement())
+                else -> CfirWildcardPattern(pattern?.toSourceElement())
+            }
         }
 
         // ===== 辅助方法 =====

@@ -1,8 +1,16 @@
 pluginManagement {
+    includeBuild("repo/gradle-settings-conventions")
+    includeBuild("repo/gradle-build-conventions")
+
     repositories {
-        gradlePluginPortal()
         maven("https://cache-redirector.jetbrains.com/intellij-dependencies")
+        mavenCentral()
+        gradlePluginPortal()
     }
+}
+
+plugins {
+    id("jvm-toolchain-provisioning")
 }
 
 rootProject.name = "cangjie"

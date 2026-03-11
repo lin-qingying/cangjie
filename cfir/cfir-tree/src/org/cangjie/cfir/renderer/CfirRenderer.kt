@@ -1,7 +1,6 @@
 package org.cangjie.cfir.renderer
 
 import org.cangjie.cfir.CfirElement
-import org.cangjie.cfir.declarations.CfirAnonymousInitializer
 import org.cangjie.cfir.declarations.CfirClass
 import org.cangjie.cfir.declarations.CfirConstructor
 import org.cangjie.cfir.declarations.CfirDeclaration
@@ -12,6 +11,7 @@ import org.cangjie.cfir.declarations.CfirFile
 import org.cangjie.cfir.declarations.CfirFunction
 import org.cangjie.cfir.declarations.CfirImport
 import org.cangjie.cfir.declarations.CfirPackageDirective
+import org.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangjie.cfir.declarations.CfirProperty
 import org.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangjie.cfir.declarations.CfirTypeParameter
@@ -450,6 +450,22 @@ class CfirRenderer(
             }
         }
 
+        override fun visitPatternVariable(variable: CfirPatternVariable, data: Unit) {
+            declarationRenderer?.renderResolveInfo(variable)
+            resolvePhaseRenderer?.render(variable)
+            val keyword = if (variable.isVar) "var" else "let"
+            val init = if (variable.initializer != null) " = ..." else ""
+            println("$keyword ${renderPattern(variable.pattern)}: ${renderType(variable.returnTypeRef)}$init")
+            variable.initializer?.let {
+                printer.pushIndent()
+                println("initializer:")
+                printer.pushIndent()
+                it.accept(this, data)
+                printer.popIndent()
+                printer.popIndent()
+            }
+        }
+
         override fun visitValueParameter(valueParameter: CfirValueParameter, data: Unit) {
             declarationRenderer?.renderResolveInfo(valueParameter)
             resolvePhaseRenderer?.render(valueParameter)
@@ -478,16 +494,6 @@ class CfirRenderer(
                 "(${enumEntry.parameterTypeRefs.joinToString { renderType(it) }})"
             } else ""
             println("${enumEntry.name.asString()}$params")
-        }
-
-        override fun visitAnonymousInitializer(anonymousInitializer: CfirAnonymousInitializer, data: Unit) {
-            declarationRenderer?.renderResolveInfo(anonymousInitializer)
-            resolvePhaseRenderer?.render(anonymousInitializer)
-            println("init {")
-            printer.pushIndent()
-            anonymousInitializer.body?.accept(this, data)
-            printer.popIndent()
-            println("}")
         }
 
         override fun visitBlock(block: CfirBlock, data: Unit) {

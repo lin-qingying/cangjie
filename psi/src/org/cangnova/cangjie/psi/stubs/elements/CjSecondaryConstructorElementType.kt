@@ -24,46 +24,83 @@
 
 package org.cangnova.cangjie.psi.stubs.elements
 
+import com.intellij.lang.ASTNode
+import com.intellij.psi.stubs.IndexSink
+import com.intellij.psi.stubs.StubElement
+import com.intellij.psi.stubs.StubInputStream
+import com.intellij.psi.stubs.StubOutputStream
+import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.psi.CjConstructorElementType
-import org.cangnova.cangjie.psi.CjEndSecondaryConstructor
+import org.cangnova.cangjie.psi.CjFinalizer
 import org.cangnova.cangjie.psi.CjSecondaryConstructor
 import org.cangnova.cangjie.psi.stubs.CangJieConstructorStub
+import org.cangnova.cangjie.psi.stubs.CangJieFinalizerStub
 import org.cangnova.cangjie.psi.stubs.impl.CangJieConstructorStubImpl
-import com.intellij.psi.stubs.StubElement
-import com.intellij.util.io.StringRef
+import org.cangnova.cangjie.psi.stubs.impl.CangJieFinalizerStubImpl
+import java.io.IOException
+import org.jetbrains.annotations.NonNls
 
-class CjEndSecondaryConstructorElementType(debugName: String) :
-    CjConstructorElementType<CjEndSecondaryConstructor>(debugName, CjEndSecondaryConstructor::class.java, CangJieConstructorStub::class.java) {
-    override fun newStub(
+class CjFinalizerElementType(debugName: String) :
+    CjStubElementType<CangJieFinalizerStub, CjFinalizer>(
+        debugName,
+        CjFinalizer::class.java,
+        CangJieFinalizerStub::class.java,
+    ) {
+    override fun createPsi(stub: CangJieFinalizerStub): CjFinalizer {
+        return CjFinalizer(stub)
+    }
+
+    override fun createPsiFromAst(node: ASTNode): CjFinalizer {
+        return CjFinalizer(node)
+    }
+
+    override fun createStub(
+        psi: CjFinalizer,
         parentStub: StubElement<*>,
-        nameRef: StringRef?,
-        hasBody: Boolean,
-        isPrimary: Boolean,
-        isDelegatedCallToThis: Boolean,
-    ): CangJieConstructorStub<CjEndSecondaryConstructor> {
-        return CangJieConstructorStubImpl(
+    ): CangJieFinalizerStub {
+        return CangJieFinalizerStubImpl(
             parentStub,
-            CjStubElementTypes.END_SECONDARY_CONSTRUCTOR,
-            nameRef,
-            hasBody,
-            isPrimary,
-            isDelegatedCallToThis,
+            CjStubElementTypes.FINALIZER,
+            StringRef.fromString(psi.name),
+            psi.hasBody(),
         )
     }
 
-    override fun isDelegatedCallToThis(constructor: CjEndSecondaryConstructor): Boolean {
-        return constructor.getDelegationCallOrNull()?.isCallToThis ?: true
+    @Throws(IOException::class)
+    override fun serialize(stub: CangJieFinalizerStub, dataStream: StubOutputStream) {
+        dataStream.writeName(stub.name)
+        dataStream.writeBoolean(stub.hasBody())
     }
+
+    @Throws(IOException::class)
+    override fun deserialize(
+        dataStream: StubInputStream,
+        parentStub: StubElement<*>,
+    ): CangJieFinalizerStub {
+        val name = dataStream.readName()
+        val hasBody = dataStream.readBoolean()
+        return CangJieFinalizerStubImpl(
+            parentStub,
+            CjStubElementTypes.FINALIZER,
+            name,
+            hasBody,
+        )
+    }
+
+    override fun indexStub(stub: CangJieFinalizerStub, sink: IndexSink) {}
 }
 
-class CjSecondaryConstructorElementType(debugName: String) :
-    CjConstructorElementType<CjSecondaryConstructor>(debugName, CjSecondaryConstructor::class.java, CangJieConstructorStub::class.java) {
+class CjSecondaryConstructorElementType(@NonNls debugName: String) :
+    CjConstructorElementType<CjSecondaryConstructor>(
+        debugName,
+        CjSecondaryConstructor::class.java,
+        CangJieConstructorStub::class.java,
+    ) {
     override fun newStub(
         parentStub: StubElement<*>,
         nameRef: StringRef?,
         hasBody: Boolean,
         isPrimary: Boolean,
-        isDelegatedCallToThis: Boolean,
     ): CangJieConstructorStub<CjSecondaryConstructor> {
         return CangJieConstructorStubImpl(
             parentStub,
@@ -71,11 +108,6 @@ class CjSecondaryConstructorElementType(debugName: String) :
             nameRef,
             hasBody,
             isPrimary,
-            isDelegatedCallToThis,
         )
-    }
-
-    override fun isDelegatedCallToThis(constructor: CjSecondaryConstructor): Boolean {
-        return constructor.getDelegationCallOrNull()?.isCallToThis ?: true
     }
 }

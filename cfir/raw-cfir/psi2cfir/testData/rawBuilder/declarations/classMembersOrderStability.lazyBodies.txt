@@ -1,0 +1,8 @@
+FILE: classMembersOrderStability.cj
+    class MembersOrder {
+        func before(): R|Unit|
+        var x: R|Int64|
+        init()
+        let name: R|String|
+        func after(): R|Unit|
+    }

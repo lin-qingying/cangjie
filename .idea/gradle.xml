@@ -7,16 +7,25 @@
         <compositeConfiguration>
           <compositeBuild compositeDefinitionSource="SCRIPT">
             <builds>
-              <build path="$PROJECT_DIR$/buildSrc" name="buildSrc">
+              <build path="$PROJECT_DIR$/repo/gradle-build-conventions" name="gradle-build-conventions">
                 <projects>
-                  <project path="$PROJECT_DIR$/buildSrc" />
+                  <project path="$PROJECT_DIR$/repo/gradle-build-conventions" />
+                  <project path="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat" />
+                  <project path="$PROJECT_DIR$/repo/gradle-build-conventions/gradle-plugins-common" />
+                  <project path="$PROJECT_DIR$/repo/gradle-build-conventions/project-tests-convention" />
+                  <project path="$PROJECT_DIR$/repo/gradle-build-conventions/utilities" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/repo/gradle-settings-conventions" name="gradle-settings-conventions">
+                <projects>
+                  <project path="$PROJECT_DIR$/repo/gradle-settings-conventions" />
+                  <project path="$PROJECT_DIR$/repo/gradle-settings-conventions/jvm-toolchain-provisioning" />
                 </projects>
               </build>
             </builds>
           </compositeBuild>
         </compositeConfiguration>
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="gradleHome" value="" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
@@ -25,7 +34,6 @@
             <option value="$PROJECT_DIR$/analysis/analysis-api-cfir" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-impl-base" />
             <option value="$PROJECT_DIR$/analysis/analysis-test-framework" />
-            <option value="$PROJECT_DIR$/buildSrc" />
             <option value="$PROJECT_DIR$/cfir" />
             <option value="$PROJECT_DIR$/cfir/cfir-common" />
             <option value="$PROJECT_DIR$/cfir/cfir-cones" />
@@ -40,6 +48,13 @@
             <option value="$PROJECT_DIR$/dependencies" />
             <option value="$PROJECT_DIR$/dependencies/intellij-core" />
             <option value="$PROJECT_DIR$/psi" />
+            <option value="$PROJECT_DIR$/repo/gradle-build-conventions" />
+            <option value="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat" />
+            <option value="$PROJECT_DIR$/repo/gradle-build-conventions/gradle-plugins-common" />
+            <option value="$PROJECT_DIR$/repo/gradle-build-conventions/project-tests-convention" />
+            <option value="$PROJECT_DIR$/repo/gradle-build-conventions/utilities" />
+            <option value="$PROJECT_DIR$/repo/gradle-settings-conventions" />
+            <option value="$PROJECT_DIR$/repo/gradle-settings-conventions/jvm-toolchain-provisioning" />
             <option value="$PROJECT_DIR$/tests" />
             <option value="$PROJECT_DIR$/tests/test-infrastructure" />
             <option value="$PROJECT_DIR$/util" />

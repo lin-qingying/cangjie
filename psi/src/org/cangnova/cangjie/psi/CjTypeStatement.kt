@@ -123,11 +123,11 @@ abstract class CjTypeStatement :
     override val primaryConstructors: List<CjPrimaryConstructor>
         get() = body?.primaryConstructors.orEmpty()
 
-    override val endSecondaryConstructors: List<CjEndSecondaryConstructor>
-        get() = body?.endSecondaryConstructors.orEmpty()
+    override val finalizers: List<CjFinalizer>
+        get() = body?.finalizers.orEmpty()
     val constructors: List<CjConstructor<*>>
         get() =
-            secondaryConstructors + primaryConstructors + endSecondaryConstructors
+            secondaryConstructors + primaryConstructors
 
 
 
