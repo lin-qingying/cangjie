@@ -5,7 +5,7 @@ import org.cangjie.test.TestMetadata
 import org.junit.jupiter.api.Test
 
 @TestMetadata("testData/resolveDiagnostics")
-class MinimalResolveDiagnosticsPipelineTest : AbstractCfirResolveDiagnosticsTest() {
+class CfirResolveDiagnosticsPipelineTest : AbstractCfirResolveDiagnosticsTest() {
     @Test
     @TestMetadata("smoke.cj")
     fun smoke() {

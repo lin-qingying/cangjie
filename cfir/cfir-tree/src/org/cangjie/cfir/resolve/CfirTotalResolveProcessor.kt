@@ -19,6 +19,7 @@ class CfirTotalResolveProcessor(
     fun processFile(file: CfirFile) {
         for (phase in CfirResolvePhase.entries) {
             val processor = registry.getProcessor(phase) ?: continue
+            processor.process(file, session)
             processDeclarationsRecursively(file.declarations, processor)
         }
     }

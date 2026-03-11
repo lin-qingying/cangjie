@@ -4,15 +4,24 @@ import org.cangjie.cfir.declarations.CfirClass
 import org.cangjie.cfir.declarations.CfirClassKind
 import org.cangjie.cfir.declarations.CfirDeclaration
 import org.cangjie.cfir.declarations.CfirExtend
+import org.cangjie.cfir.declarations.CfirFile
 import org.cangjie.cfir.declarations.CfirInvalidDeclaration
+import org.cangjie.cfir.declarations.CfirImport
 import org.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangjie.cfir.diagnostics.CfirDiagnosticFactory
 import org.cangjie.cfir.diagnostics.CfirDiagnosticReporter
 import org.cangjie.cfir.diagnostics.CfirDiagnosticSeverity
 import org.cangjie.cfir.resolve.diagnostics.CfirResolveRuleCatalog
 import org.cangjie.cfir.resolve.diagnostics.CfirResolveRuleDefinition
+import org.cangjie.cfir.resolve.services.CfirResolvedImportBinding
+import org.cangjie.cfir.resolve.services.CfirResolvedImportTarget
+import org.cangjie.cfir.resolve.services.CfirSuperTypeGraphEdge
 import org.cangjie.cfir.session.CfirSession
 import org.cangjie.cfir.session.cfirProvider
+import org.cangjie.cfir.session.importBindingStoreOrNull
+import org.cangjie.cfir.session.symbolProvider
+import org.cangjie.cfir.session.superTypeGraphStoreOrNull
+import org.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangjie.cfir.types.CfirBasicTypeRef
 import org.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangjie.cfir.types.CfirImplicitTypeRef
@@ -20,6 +29,7 @@ import org.cangjie.cfir.types.CfirTypeRef
 import org.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 
 private const val SYNTHETIC_INVALID_DECLARATION_PREFIX = "<synthetic>"
 
@@ -48,6 +58,21 @@ private val MULTIPLE_CLASS_SUPER_TYPES_DIAGNOSTIC = CfirDiagnosticFactory(
     defaultSeverity = CfirDiagnosticSeverity.ERROR,
 )
 
+private val IMPORT_TARGET_NOT_FOUND_DIAGNOSTIC = CfirDiagnosticFactory(
+    name = "CFIR_IMPORT_TARGET_NOT_FOUND",
+    defaultSeverity = CfirDiagnosticSeverity.ERROR,
+)
+
+private val IMPORT_CONFLICT_DIAGNOSTIC = CfirDiagnosticFactory(
+    name = "CFIR_IMPORT_CONFLICT",
+    defaultSeverity = CfirDiagnosticSeverity.ERROR,
+)
+
+private val IMPORT_ALIAS_CONFLICT_DIAGNOSTIC = CfirDiagnosticFactory(
+    name = "CFIR_IMPORT_ALIAS_CONFLICT",
+    defaultSeverity = CfirDiagnosticSeverity.ERROR,
+)
+
 private val EXTEND_DUPLICATE_INTERFACE_DIAGNOSTIC = CfirDiagnosticFactory(
     name = "CFIR_EXTEND_DUPLICATE_INTERFACE",
     defaultSeverity = CfirDiagnosticSeverity.ERROR,
@@ -71,6 +96,10 @@ private val RULE_EXTEND_NOT_INTERFACE: CfirResolveRuleDefinition =
     CfirResolveRuleCatalog.EXTENSIONS_NOT_INTERFACE
 private val RULE_ILLEGAL_EXTENDED_TYPE: CfirResolveRuleDefinition =
     CfirResolveRuleCatalog.EXTENSIONS_ILLEGAL_EXTENDED_TYPE
+private val RULE_IMPORTS_BINDING: CfirResolveRuleDefinition =
+    CfirResolveRuleCatalog.IMPORTS_BINDING
+private val RULE_IMPORTS_CONFLICT: CfirResolveRuleDefinition =
+    CfirResolveRuleCatalog.IMPORTS_CONFLICT
 
 /**
  * Register CFIR resolve processors.
@@ -82,28 +111,17 @@ fun registerResolveProcessors(
     registry: CfirPhaseResolverRegistry,
     diagnosticReporter: CfirDiagnosticReporter,
 ) {
-    registry.registerProcessor(CfirResolvePhase.IMPORTS, CfirMinimalImportsResolveProcessor())
+    registry.registerProcessor(CfirResolvePhase.IMPORTS, CfirImportsResolveProcessor(diagnosticReporter))
     registry.registerProcessor(CfirResolvePhase.SUPER_TYPES, CfirSuperTypesResolveProcessor(diagnosticReporter))
-    registry.registerProcessor(CfirResolvePhase.TYPES, CfirMinimalTypesResolveProcessor())
-    registry.registerProcessor(CfirResolvePhase.STATUS, CfirMinimalStatusResolveProcessor())
+    registry.registerProcessor(CfirResolvePhase.TYPES, CfirTypesResolveProcessor())
+    registry.registerProcessor(CfirResolvePhase.STATUS, CfirStatusResolveProcessor())
     registry.registerProcessor(CfirResolvePhase.EXTENSIONS, CfirExtensionsResolveProcessor(diagnosticReporter))
-    registry.registerProcessor(CfirResolvePhase.IMPLICIT_TYPES, CfirMinimalImplicitTypesResolveProcessor())
-    registry.registerProcessor(CfirResolvePhase.BODY_RESOLVE, CfirMinimalBodyResolveProcessor())
-    registry.registerProcessor(CfirResolvePhase.CHECKERS, CfirMinimalCheckersResolveProcessor(diagnosticReporter))
+    registry.registerProcessor(CfirResolvePhase.IMPLICIT_TYPES, CfirImplicitTypesResolveProcessor())
+    registry.registerProcessor(CfirResolvePhase.BODY_RESOLVE, CfirBodyResolveProcessor())
+    registry.registerProcessor(CfirResolvePhase.CHECKERS, CfirCheckersResolveProcessor(diagnosticReporter))
 }
 
-@Deprecated(
-    message = "Use registerResolveProcessors for the formal CFIR_RESOLVE pipeline.",
-    replaceWith = ReplaceWith("registerResolveProcessors(registry, diagnosticReporter)"),
-)
-fun registerMinimalResolveProcessors(
-    registry: CfirPhaseResolverRegistry,
-    diagnosticReporter: CfirDiagnosticReporter,
-) {
-    registerResolveProcessors(registry, diagnosticReporter)
-}
-
-private abstract class CfirMinimalPhaseResolveProcessor(
+private abstract class CfirPhaseResolveProcessor(
     final override val fromPhase: CfirResolvePhase,
     final override val toPhase: CfirResolvePhase,
 ) : CfirResolveProcessor {
@@ -116,34 +134,125 @@ private abstract class CfirMinimalPhaseResolveProcessor(
     protected open fun doProcess(target: CfirDeclaration, session: CfirSession) {}
 }
 
-private class CfirMinimalImportsResolveProcessor : CfirMinimalPhaseResolveProcessor(
+private class CfirImportsResolveProcessor(
+    private val diagnosticReporter: CfirDiagnosticReporter,
+) : CfirPhaseResolveProcessor(
     fromPhase = CfirResolvePhase.RAW_CFIR,
     toPhase = CfirResolvePhase.IMPORTS,
-)
+) {
+    override fun doProcess(target: CfirDeclaration, session: CfirSession) {
+        if (target !is CfirFile) return
+        val store = session.importBindingStoreOrNull ?: return
+        val resolvedImports = target.imports.map { resolveImportBinding(it, session) }
+        resolvedImports
+            .filter { it.targets.isEmpty() }
+            .forEach { unresolved ->
+                diagnosticReporter.report(
+                    IMPORT_TARGET_NOT_FOUND_DIAGNOSTIC.on(
+                        source = unresolved.importDirective.source,
+                        message = "[${RULE_IMPORTS_BINDING.id}] unresolved import target '${unresolved.importDirective.importedFqName.asString()}' (${RULE_IMPORTS_BINDING.officialReference})",
+                    ),
+                )
+            }
+        reportImportConflicts(resolvedImports)
+        store.record(target, resolvedImports)
+    }
 
-private class CfirMinimalTypesResolveProcessor : CfirMinimalPhaseResolveProcessor(
+    private fun reportImportConflicts(resolvedImports: List<CfirResolvedImportBinding>) {
+        resolvedImports
+            .groupBy { it.effectiveName }
+            .forEach { (effectiveName, sameNameBindings) ->
+                if (sameNameBindings.size < 2) return@forEach
+                val signatures = sameNameBindings.map { it.stableTargetSignature() }.toSet()
+                if (signatures.size > 1) {
+                    diagnosticReporter.report(
+                        IMPORT_CONFLICT_DIAGNOSTIC.on(
+                            source = sameNameBindings.first().importDirective.source,
+                            message = "[${RULE_IMPORTS_CONFLICT.id}] conflicting imports for name '${effectiveName.asString()}' (${RULE_IMPORTS_CONFLICT.officialReference})",
+                        ),
+                    )
+                }
+            }
+
+        resolvedImports
+            .filter { it.importDirective.aliasName != null }
+            .groupBy { it.importDirective.aliasName!! }
+            .forEach { (aliasName, sameAliasBindings) ->
+                if (sameAliasBindings.size < 2) return@forEach
+                val signatures = sameAliasBindings.map { it.stableTargetSignature() }.toSet()
+                if (signatures.size > 1) {
+                    diagnosticReporter.report(
+                        IMPORT_ALIAS_CONFLICT_DIAGNOSTIC.on(
+                            source = sameAliasBindings.first().importDirective.source,
+                            message = "[${RULE_IMPORTS_CONFLICT.id}] alias conflict for '${aliasName.asString()}' (${RULE_IMPORTS_CONFLICT.officialReference})",
+                        ),
+                    )
+                }
+            }
+    }
+
+    private fun resolveImportBinding(importDirective: CfirImport, session: CfirSession): CfirResolvedImportBinding {
+        val importedFqName = importDirective.importedFqName
+        val effectiveName = importDirective.aliasName ?: importedFqName.shortNameAsIdentifier()
+        val targets = mutableListOf<CfirResolvedImportTarget>()
+
+        if (session.symbolProvider.hasPackage(importedFqName)) {
+            targets += CfirResolvedImportTarget.Package(importedFqName)
+        }
+
+        val memberName = importedFqName.shortNameAsIdentifier()
+        val packageFqName = importedFqName.parentOrRoot()
+
+        if (!importDirective.isAllUnder) {
+            val classId = ClassId(packageFqName, memberName)
+            session.symbolProvider.getClassLikeSymbolByClassId(classId)?.let { symbol ->
+                targets += CfirResolvedImportTarget.ClassLike(
+                    classId = classId,
+                    symbol = symbol,
+                )
+            }
+
+            val callableSymbols = session.symbolProvider.getTopLevelCallableSymbols(packageFqName, memberName)
+            if (callableSymbols.isNotEmpty()) {
+                targets += CfirResolvedImportTarget.Callable(
+                    packageFqName = packageFqName,
+                    name = memberName,
+                    symbols = callableSymbols,
+                )
+            }
+        }
+
+        return CfirResolvedImportBinding(
+            importDirective = importDirective,
+            effectiveName = effectiveName,
+            targets = targets,
+        )
+    }
+}
+
+private class CfirTypesResolveProcessor : CfirPhaseResolveProcessor(
     fromPhase = CfirResolvePhase.SUPER_TYPES,
     toPhase = CfirResolvePhase.TYPES,
 )
 
-private class CfirMinimalStatusResolveProcessor : CfirMinimalPhaseResolveProcessor(
+private class CfirStatusResolveProcessor : CfirPhaseResolveProcessor(
     fromPhase = CfirResolvePhase.TYPES,
     toPhase = CfirResolvePhase.STATUS,
 )
 
-private class CfirMinimalImplicitTypesResolveProcessor : CfirMinimalPhaseResolveProcessor(
+private class CfirImplicitTypesResolveProcessor : CfirPhaseResolveProcessor(
     fromPhase = CfirResolvePhase.EXTENSIONS,
     toPhase = CfirResolvePhase.IMPLICIT_TYPES,
 )
 
-private class CfirMinimalBodyResolveProcessor : CfirMinimalPhaseResolveProcessor(
+private class CfirBodyResolveProcessor : CfirPhaseResolveProcessor(
     fromPhase = CfirResolvePhase.IMPLICIT_TYPES,
     toPhase = CfirResolvePhase.BODY_RESOLVE,
 )
 
-private class CfirMinimalCheckersResolveProcessor(
+private class CfirCheckersResolveProcessor(
     private val diagnosticReporter: CfirDiagnosticReporter,
-) : CfirMinimalPhaseResolveProcessor(
+) : CfirPhaseResolveProcessor(
     fromPhase = CfirResolvePhase.BODY_RESOLVE,
     toPhase = CfirResolvePhase.CHECKERS,
 ) {
@@ -161,7 +270,7 @@ private class CfirMinimalCheckersResolveProcessor(
 
 private class CfirSuperTypesResolveProcessor(
     private val diagnosticReporter: CfirDiagnosticReporter,
-) : CfirMinimalPhaseResolveProcessor(
+) : CfirPhaseResolveProcessor(
     fromPhase = CfirResolvePhase.IMPORTS,
     toPhase = CfirResolvePhase.SUPER_TYPES,
 ) {
@@ -169,11 +278,26 @@ private class CfirSuperTypesResolveProcessor(
         if (target !is CfirClass) return
         val resolver = CfirTypeRefResolver(session)
         val seen = linkedSetOf<String>()
+        val seenResolvedInterfaceSymbols = linkedSetOf<CfirClassSymbol>()
         val classLikeSupers = mutableListOf<CfirClass>()
+        val graphEdges = mutableListOf<CfirSuperTypeGraphEdge>()
 
         for (superTypeRef in target.superTypeRefs) {
             val key = superTypeRef.renderStableKey()
+            val resolvedClass = resolver.resolveClass(superTypeRef)
+            graphEdges += CfirSuperTypeGraphEdge(
+                renderedType = key,
+                resolvedClassSymbol = resolvedClass?.symbol,
+            )
             if (!seen.add(key)) {
+                diagnosticReporter.report(
+                    SUPER_TYPES_DUPLICATE_DIAGNOSTIC.on(
+                        source = superTypeRef.source,
+                        message = "[${RULE_SUPER_TYPES_DUPLICATE.id}] duplicate super type '$key' for type '${target.name}' (${RULE_SUPER_TYPES_DUPLICATE.officialReference})",
+                    ),
+                )
+            }
+            if (resolvedClass?.classKind == CfirClassKind.INTERFACE && !seenResolvedInterfaceSymbols.add(resolvedClass.symbol)) {
                 diagnosticReporter.report(
                     SUPER_TYPES_DUPLICATE_DIAGNOSTIC.on(
                         source = superTypeRef.source,
@@ -189,8 +313,9 @@ private class CfirSuperTypesResolveProcessor(
                     ),
                 )
             }
-            resolver.resolveClass(superTypeRef)?.let { classLikeSupers += it }
+            resolvedClass?.let { classLikeSupers += it }
         }
+        session.superTypeGraphStoreOrNull?.record(target, graphEdges)
 
         if (target.classKind == CfirClassKind.INTERFACE) {
             classLikeSupers
@@ -221,7 +346,7 @@ private class CfirSuperTypesResolveProcessor(
 
 private class CfirExtensionsResolveProcessor(
     private val diagnosticReporter: CfirDiagnosticReporter,
-) : CfirMinimalPhaseResolveProcessor(
+) : CfirPhaseResolveProcessor(
     fromPhase = CfirResolvePhase.STATUS,
     toPhase = CfirResolvePhase.EXTENSIONS,
 ) {
@@ -301,6 +426,38 @@ private class CfirTypeRefResolver(
 }
 
 private fun CfirTypeRef.renderStableKey(): String = toString()
+
+private fun FqName.parentOrRoot(): FqName {
+    val fqNameString = asString()
+    val parentString = fqNameString.substringBeforeLast('.', missingDelimiterValue = "")
+    return if (parentString.isEmpty()) FqName.ROOT else FqName(parentString)
+}
+
+private fun FqName.shortNameAsIdentifier(): Name {
+    val fqNameString = asString()
+    val shortNameString = fqNameString.substringAfterLast('.')
+    return Name.identifier(shortNameString)
+}
+
+private fun CfirResolvedImportBinding.stableTargetSignature(): String {
+    val targetSignatures = targets.map { target ->
+        when (target) {
+            is CfirResolvedImportTarget.Package -> "pkg:${target.fqName.asString()}"
+            is CfirResolvedImportTarget.ClassLike -> "class:${target.classId.asString()}"
+            is CfirResolvedImportTarget.Callable -> {
+                val callableOwner = "${target.packageFqName.asString()}.${target.name.asString()}"
+                "callable:$callableOwner#${target.symbols.size}"
+            }
+        }
+    }.sorted()
+    return buildString {
+        append(importDirective.importedFqName.asString())
+        append('|')
+        append(importDirective.isAllUnder)
+        append('|')
+        append(targetSignatures.joinToString(";"))
+    }
+}
 
 private fun CfirTypeRef.isDefinitelyNotInterfaceType(): Boolean = when (this) {
     is CfirBasicTypeRef,

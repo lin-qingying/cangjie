@@ -5,110 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/AGENTS.md" beforeDir="false" afterPath="$PROJECT_DIR$/AGENTS.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeServiceImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeServiceImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangjie/analysis/api/cfir/test/AnalysisApiSurfaceTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangjie/analysis/api/cfir/test/AnalysisApiSurfaceTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangjie/analysis/api/cfir/test/configurators/AnalysisApiCFirServiceRegistrar.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangjie/analysis/api/cfir/test/configurators/AnalysisApiCFirSourceTestConfigurator.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangjie/analysis/test/services/CaAnalysisApiEnvironmentManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangjie/analysis/test/services/CaAnalysisApiEnvironmentManager.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirResolvePhase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirResolvePhase.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirPhaseResolverRegistry.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirPhaseResolverRegistry.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirMinimalResolveComponentsRegistrar.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirMinimalResolveProcessors.kt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirTotalResolveProcessor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirTotalResolveProcessor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/MinimalResolveDiagnosticsPipelineTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/MinimalResolveDiagnosticsPipelineTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/testData/resolveDiagnostics/smoke.diagnostics.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/testData/resolveDiagnostics/smoke.diagnostics.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classMembersOrderStability.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classMembersOrderStability.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classMembersOrderStability.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithMembers.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithMembers.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithMembers.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithSupertype.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithSupertype.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithSupertype.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithTypeParameters.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithTypeParameters.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithTypeParameters.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/controlFlow.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/controlFlow.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/controlFlow.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/emptyClass.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/emptyClass.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/emptyClass.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/emptyFile.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/emptyFile.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/emptyFile.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/enumDeclaration.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/enumDeclaration.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/enumDeclaration.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/extendDeclaration.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/extendDeclaration.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/extendDeclaration.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/functionExpressions.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/functionExpressions.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/functionExpressions.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/interfaceDeclaration.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/interfaceDeclaration.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/interfaceDeclaration.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/packageAndImport.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/packageAndImport.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/packageAndImport.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/structDeclaration.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/structDeclaration.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/structDeclaration.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/topLevelFunction.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/topLevelFunction.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/topLevelFunction.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/topLevelProperty.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/topLevelProperty.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/topLevelProperty.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/typeAlias.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/typeAlias.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/typeAlias.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/varrayTypeRef.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/varrayTypeRef.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/varrayTypeRef.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/binary/binaryMissingRightOperand.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/binary/binaryMissingRightOperand.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/binary/binaryMissingRightOperand.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/forMissingIterable.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/forMissingIterable.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/forMissingIterable.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/ifMissingCondition.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/ifMissingCondition.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/ifMissingCondition.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/throwMissingExpression.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/throwMissingExpression.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/throwMissingExpression.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/whileMissingCondition.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/whileMissingCondition.lazyBodies.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/whileMissingCondition.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderLazyBodiesByStubTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderLazyBodiesByStubTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderLazyBodiesTestCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderLazyBodiesTestCase.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderSourceElementMappingTestCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderSourceElementMappingTestCase.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderTestCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderTestCase.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderLazyBodiesByAstTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderLazyBodiesByAstTestGenerated.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderLazyBodiesByStubTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderLazyBodiesByStubTestGenerated.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderTestCaseGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderTestCaseGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/session/CfirSessionExtensions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/session/CfirSessionExtensions.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/providers/CfirResolveProviderPipelineTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/providers/CfirResolveProviderPipelineTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/CfirMinimalResolvePipelineTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/CfirSuperExtensionsResolveProcessorTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/CfirSuperExtensionsResolveProcessorTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/MinimalResolveDiagnosticsPipelineTest.kt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/external/kotlin" beforeDir="false" afterPath="$PROJECT_DIR$/external/kotlin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/archive/2026-03-10-add-rawbuilder-missing-expression-tests/.openspec.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/archive/2026-03-10-add-rawbuilder-missing-expression-tests/design.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/archive/2026-03-10-add-rawbuilder-missing-expression-tests/proposal.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/archive/2026-03-10-add-rawbuilder-missing-expression-tests/specs/raw-cfir-implementation/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/archive/2026-03-10-add-rawbuilder-missing-expression-tests/tasks.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/fix-rawbuilder-let-position-handling/.openspec.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/fix-rawbuilder-let-position-handling/design.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/fix-rawbuilder-let-position-handling/proposal.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/fix-rawbuilder-let-position-handling/specs/raw-cfir-implementation/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/fix-rawbuilder-let-position-handling/tasks.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/elements/CjTypeProjectionElementType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/elements/CjTypeProjectionElementType.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJieTypeProjectionStubImpl.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test-infrastructure/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test-infrastructure/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test-infrastructure/testFixtures/org/cangjie/test/testFramework/CjPlatformLiteFixture.kt" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test-infrastructure/testFixtures/org/cangjie/test/testFramework/CjPlatformLiteFixture.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/tasks.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/tasks.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -515,7 +422,7 @@
       <workItem from="1773203030145" duration="8312000" />
       <workItem from="1773212041717" duration="1224000" />
       <workItem from="1773214579628" duration="3834000" />
-      <workItem from="1773221775761" duration="12894000" />
+      <workItem from="1773221775761" duration="15376000" />
     </task>
     <servers />
   </component>
