@@ -19,5 +19,5 @@
 
 ## 4. 验证与文档同步
 
-- [ ] 4.1 运行 `:cfir:raw-cfir:psi2cfir:test`，验证 rawBuilder、lazyBodies by-ast、lazyBodies by-stub 全部通过
+- [x] 4.1 运行 `:cfir:raw-cfir:psi2cfir:test`，验证 rawBuilder、lazyBodies by-ast、lazyBodies by-stub 全部通过
 - [x] 4.2 更新 `README.md` 与 `openspec/specs/raw-cfir-implementation/spec.md` 的说明，明确“保留现有 `CfirVariable` + 新增 `CfirPatternVariable`”的结构，以及 `CfirPatternVariable` 采用“完整 pattern + 派生 bindings”的设计

@@ -56,6 +56,21 @@ class CfirFunctionSymbol : CfirCallableSymbol<CfirFunction>() {
         if (isBound) "CfirFunctionSymbol(${fir.name})" else "CfirFunctionSymbol(unbound)"
 }
 
+class CfirMainFunctionSymbol : CfirCallableSymbol<CfirMainFunction>() {
+    override fun toString(): String =
+        if (isBound) "CfirMainFunctionSymbol" else "CfirMainFunctionSymbol(unbound)"
+}
+
+class CfirMacroDeclarationSymbol : CfirCallableSymbol<CfirMacroDeclaration>() {
+    override fun toString(): String =
+        if (isBound) "CfirMacroDeclarationSymbol(${fir.name})" else "CfirMacroDeclarationSymbol(unbound)"
+}
+
+class CfirFinalizerSymbol : CfirCallableSymbol<CfirFinalizer>() {
+    override fun toString(): String =
+        if (isBound) "CfirFinalizerSymbol" else "CfirFinalizerSymbol(unbound)"
+}
+
 class CfirConstructorSymbol : CfirCallableSymbol<CfirConstructor>() {
     override fun toString(): String =
         if (isBound) "CfirConstructorSymbol" else "CfirConstructorSymbol(unbound)"
@@ -93,7 +108,12 @@ class CfirExtendSymbol : CfirSymbol<CfirExtend>() {
     override fun toString(): String = "CfirExtendSymbol"
 }
 
-class CfirEnumEntrySymbol : CfirSymbol<CfirEnumEntry>() {
+class CfirEnumConstructorSymbol : CfirSymbol<CfirEnumConstructor>() {
     override fun toString(): String =
-        if (isBound) "CfirEnumEntrySymbol(${fir.name})" else "CfirEnumEntrySymbol(unbound)"
+        if (isBound) "CfirEnumConstructorSymbol(${fir.name})" else "CfirEnumConstructorSymbol(unbound)"
+}
+
+class CfirInvalidDeclarationSymbol : CfirSymbol<CfirInvalidDeclaration>() {
+    override fun toString(): String =
+        if (isBound) "CfirInvalidDeclarationSymbol(${fir.reason})" else "CfirInvalidDeclarationSymbol(unbound)"
 }

@@ -17,6 +17,8 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFileFactory
+import com.intellij.psi.PsiTreeChangeListener
+import com.intellij.psi.impl.PsiTreeChangePreprocessor
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.CancellablePromise
 import java.util.concurrent.Callable
@@ -50,6 +52,7 @@ open class CjPlatformLiteFixture : CjUsefulTestCase() {
             BinaryFileDecompiler::class.java,
         )
         val projectEnv = CoreProjectEnvironment(fixtureDisposable, appEnv)
+        registerProjectExtensionPoints(projectEnv)
         project = projectEnv.project
         psiFileFactory = PsiFileFactory.getInstance(project)
     }
@@ -63,7 +66,7 @@ open class CjPlatformLiteFixture : CjUsefulTestCase() {
     }
 
     protected fun loadFile(filePath: String): String {
-        return java.io.File(filePath).readText(Charsets.UTF_8)
+        return java.io.File(filePath).readText(Charsets.UTF_8).replace("\r\n", "\n")
     }
 
     private fun registerAsyncExecutionService(appEnv: CoreApplicationEnvironment) {
@@ -71,6 +74,20 @@ open class CjPlatformLiteFixture : CjUsefulTestCase() {
         if (application.getService(AsyncExecutionService::class.java) != null) return
 
         application.registerService(AsyncExecutionService::class.java, TestAsyncExecutionService::class.java)
+    }
+
+    private fun registerProjectExtensionPoints(projectEnv: CoreProjectEnvironment) {
+        val area = projectEnv.project.extensionArea
+        CoreApplicationEnvironment.registerExtensionPoint(
+            area,
+            PsiTreeChangePreprocessor.EP.name,
+            PsiTreeChangePreprocessor::class.java,
+        )
+        CoreApplicationEnvironment.registerExtensionPoint(
+            area,
+            PsiTreeChangeListener.EP.name,
+            PsiTreeChangeListener::class.java,
+        )
     }
 }
 

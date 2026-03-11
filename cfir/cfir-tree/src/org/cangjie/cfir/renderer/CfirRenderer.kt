@@ -5,7 +5,7 @@ import org.cangjie.cfir.declarations.CfirClass
 import org.cangjie.cfir.declarations.CfirConstructor
 import org.cangjie.cfir.declarations.CfirDeclaration
 import org.cangjie.cfir.declarations.CfirDeclarationStatus
-import org.cangjie.cfir.declarations.CfirEnumEntry
+import org.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangjie.cfir.declarations.CfirExtend
 import org.cangjie.cfir.declarations.CfirFile
 import org.cangjie.cfir.declarations.CfirFunction
@@ -487,13 +487,13 @@ class CfirRenderer(
             println("typealias ${typeAlias.name.asString()}$typeParams = ${renderType(typeAlias.expandedTypeRef)}")
         }
 
-        override fun visitEnumEntry(enumEntry: CfirEnumEntry, data: Unit) {
-            declarationRenderer?.renderResolveInfo(enumEntry)
-            resolvePhaseRenderer?.render(enumEntry)
-            val params = if (enumEntry.parameterTypeRefs.isNotEmpty()) {
-                "(${enumEntry.parameterTypeRefs.joinToString { renderType(it) }})"
+        override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: Unit) {
+            declarationRenderer?.renderResolveInfo(enumConstructor)
+            resolvePhaseRenderer?.render(enumConstructor)
+            val params = if (enumConstructor.parameterTypeRefs.isNotEmpty()) {
+                "(${enumConstructor.parameterTypeRefs.joinToString { renderType(it) }})"
             } else ""
-            println("${enumEntry.name.asString()}$params")
+            println("${enumConstructor.name.asString()}$params")
         }
 
         override fun visitBlock(block: CfirBlock, data: Unit) {

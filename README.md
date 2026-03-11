@@ -84,6 +84,7 @@
 - 已推进变更实现：`openspec/changes/fix-rawbuilder-let-position-handling/`。
 - 本次实现保留现有具名 `CfirVariable(name)` 语义，同时新增 `CfirPatternVariable : CfirCallableDeclaration`（持有完整 `pattern`，并通过派生查询提供 `bindings` / `allPatternDeclarations`），避免再用具名变量或 property 语义掩盖 pattern variable。
 - `PsiRawCfirBuilder` 已补齐 `CjFieldVariable` 与 `CjPatternVariable` 的 declaration dispatch；类体字段不再统一退化为 `<error-declaration>`，`classWithMembers`、`classWithTypeParameters`、`structDeclaration` 及新增 `classMembersOrderStability` 用例均已更新 normal/lazyBodies 基线。
+- 已完成 `:cfir:raw-cfir:psi2cfir:test` 全量验证；为兼容 malformed-expression 的 by-stub 路径，测试基座补齐了最小 IntelliJ application/project 扩展点与同步 `AsyncExecutionService`，并同步更新 `sourceElementMapping` golden 以匹配修复后的真实表达式映射结果。
 
 ## 目录结构
 

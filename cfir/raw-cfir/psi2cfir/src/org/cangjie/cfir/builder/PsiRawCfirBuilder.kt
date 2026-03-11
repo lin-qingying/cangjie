@@ -87,23 +87,29 @@ class PsiRawCfirBuilder(
             is CjStruct -> convertClass(psi, CfirClassKind.STRUCT)
             is CjEnum -> convertClass(psi, CfirClassKind.ENUM)
             is CjExtend -> convertExtend(psi)
+            is CjMainFunction -> convertMainFunction(psi)
+            is CjMacroDeclaration -> convertMacroDeclaration(psi)
             is CjNamedFunction -> convertFunction(psi)
+            is CjFinalizer -> convertFinalizer(psi)
             is CjProperty -> convertProperty(psi)
             is CjFieldVariable -> convertFieldVariable(psi)
             is CjPatternVariable -> convertPatternVariable(psi)
             is CjPrimaryConstructor -> convertConstructor(psi, isPrimary = true)
             is CjSecondaryConstructor -> convertConstructor(psi, isPrimary = false)
             is CjTypeAlias -> convertTypeAlias(psi)
-            else -> CfirProperty(
+            else -> CfirInvalidDeclaration(
                 source = psi.toSourceElement(),
                 moduleData = baseModuleData,
-                returnTypeRef = CfirImplicitTypeRef.INSTANCE,
-                name = Name.special("<error-declaration>"),
+                reason = "Unsupported declaration: ${psi.javaClass.simpleName}",
             )
         }
 
         private fun convertClass(psi: CjClassLikeDeclaration, classKind: CfirClassKind): CfirClass {
             val name = psi.nameAsSafeName
+            val classDeclarations = convertClassMembers(psi).toMutableList()
+            if (psi is CjEnum) {
+                classDeclarations.addAll(0, psi.constructor.map { convertEnumConstructor(it) })
+            }
             return CfirClass(
                 source = psi.toSourceElement(),
                 origin = CfirDeclarationOrigin.Source,
@@ -111,7 +117,7 @@ class PsiRawCfirBuilder(
                 status = convertDeclarationStatus(psi),
                 typeParameters = convertTypeParameters(psi),
                 superTypeRefs = convertSuperTypeRefs(psi).toMutableList(),
-                declarations = convertClassMembers(psi).toMutableList(),
+                declarations = classDeclarations,
                 name = name,
                 classKind = classKind,
             )
@@ -196,6 +202,67 @@ class PsiRawCfirBuilder(
             )
         }
 
+        fun convertMainFunction(psi: CjMainFunction): CfirMainFunction {
+            val valueParams = psi.valueParameters.map { convertValueParameter(it) }
+            val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) {
+                null
+            } else {
+                psi.bodyBlockExpression?.let { convertBlock(it) }
+            }
+
+            return CfirMainFunction(
+                source = psi.toSourceElement(),
+                origin = CfirDeclarationOrigin.Source,
+                moduleData = baseModuleData,
+                status = convertDeclarationStatus(psi),
+                typeParameters = emptyList(),
+                returnTypeRef = convertTypeRef(psi.typeReference),
+                valueParameters = valueParams,
+                body = body,
+            )
+        }
+
+        fun convertMacroDeclaration(psi: CjMacroDeclaration): CfirMacroDeclaration {
+            val name = psi.nameAsSafeName
+            val valueParams = psi.valueParameters.map { convertValueParameter(it) }
+            val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) {
+                null
+            } else {
+                psi.bodyBlockExpression?.let { convertBlock(it) }
+            }
+
+            return CfirMacroDeclaration(
+                source = psi.toSourceElement(),
+                origin = CfirDeclarationOrigin.Source,
+                moduleData = baseModuleData,
+                status = convertDeclarationStatus(psi),
+                typeParameters = emptyList(),
+                returnTypeRef = convertTypeRef(psi.typeReference),
+                name = name,
+                valueParameters = valueParams,
+                body = body,
+            )
+        }
+
+        fun convertFinalizer(psi: CjFinalizer): CfirFinalizer {
+            val valueParams = psi.valueParameters.map { convertValueParameter(it) }
+            val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) {
+                null
+            } else {
+                psi.bodyBlockExpression?.let { convertBlock(it) }
+            }
+
+            return CfirFinalizer(
+                source = psi.toSourceElement(),
+                origin = CfirDeclarationOrigin.Source,
+                moduleData = baseModuleData,
+                status = convertDeclarationStatus(psi),
+                returnTypeRef = CfirImplicitTypeRef.INSTANCE,
+                valueParameters = valueParams,
+                body = body,
+            )
+        }
+
         private fun convertPatternVariable(psi: CjPatternVariable): CfirPatternVariable {
             return CfirPatternVariable(
                 source = psi.toSourceElement(),
@@ -245,6 +312,19 @@ class PsiRawCfirBuilder(
                 typeParameters = convertTypeAliasTypeParameters(psi),
                 name = name,
                 expandedTypeRef = expandedType,
+            )
+        }
+
+        private fun convertEnumConstructor(psi: CjEnumConstructor): CfirEnumConstructor {
+            val parameterTypeRefs = psi.typeReferences.map { convertTypeRef(it) }
+            val enumConstructorName = psi.name?.let { Name.identifier(it) } ?: Name.special("<anonymous-enum-constructor>")
+            return CfirEnumConstructor(
+                source = psi.toSourceElement(),
+                origin = CfirDeclarationOrigin.Source,
+                moduleData = baseModuleData,
+                name = enumConstructorName,
+                parameterTypeRefs = parameterTypeRefs,
+                initializer = null,
             )
         }
 
@@ -795,6 +875,10 @@ class PsiRawCfirBuilder(
 
         private fun convertDeclarationStatus(psi: CjDeclaration): CfirDeclarationStatus {
             val owner = psi as? CjModifierListOwner ?: return CfirDeclarationStatus.DEFAULT
+            return convertDeclarationStatus(owner)
+        }
+
+        private fun convertDeclarationStatus(owner: CjModifierListOwner): CfirDeclarationStatus {
             val modifiers = owner.modifierList ?: return CfirDeclarationStatus.DEFAULT
 
             return buildDeclarationStatus(
