@@ -1,3 +1,7 @@
 FILE: topLevelProperty.cj
-    let <error-declaration>: <implicit>
-    let <error-declaration>: <implicit>
+    let PI: R|Float64| = ...
+        initializer:
+            STRING("3.14")
+    var count: R|Int64| = ...
+        initializer:
+            STRING("0")

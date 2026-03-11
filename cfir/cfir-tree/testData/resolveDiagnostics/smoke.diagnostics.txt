@@ -1,0 +1,2 @@
+file: smoke.cj
+diagnostics: 0

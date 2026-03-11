@@ -22,26 +22,24 @@
  *
  */
 
-package org.cangnova.cangjie.psi
+package org.cangnova.cangjie.psi.stubs.impl
 
-import org.cangnova.cangjie.psi.stubs.CangJieConstructorStub
-import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
-import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
+import com.intellij.psi.stubs.IStubElementType
+import com.intellij.psi.stubs.StubElement
+import com.intellij.util.io.StringRef
+import org.cangnova.cangjie.psi.CjFinalizer
+import org.cangnova.cangjie.psi.stubs.CangJieFinalizerStub
 
-// 终结器函数
-class CjEndSecondaryConstructor : CjConstructor<CjEndSecondaryConstructor> {
-
-    constructor(node: ASTNode) : super(node)
-    constructor(stub: CangJieConstructorStub<CjEndSecondaryConstructor>) : super(
-        stub,
-        CjStubElementTypes.END_SECONDARY_CONSTRUCTOR,
-    )
-
-    override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? = visitor.visitEndSecondaryConstructor(this, data)
-    override fun getConstructorKeyword() = notNullChild<PsiElement>(super.getConstructorKeyword())
-
-    override fun getContainingTypeStatement() = parent?.parent as CjTypeStatement
-
-    override fun getInitKeyword() = notNullChild<PsiElement>(super.getInitKeyword())
+class CangJieFinalizerStubImpl(
+    parent: StubElement<out PsiElement>?,
+    elementType: IStubElementType<*, *>,
+    private val containingClassName: StringRef?,
+    private val hasBody: Boolean,
+) : CangJieStubBaseImpl<CjFinalizer>(parent, elementType), CangJieFinalizerStub {
+    override fun getFqName() = null
+    override fun getName() = StringRef.toString(containingClassName)
+    override fun isTopLevel() = false
+    override fun isExtension() = false
+    override fun hasBody() = hasBody
 }

@@ -479,11 +479,6 @@ class CjPsiFactory private constructor(
         return createPatternVariable(null, name, type, isVar, initializer)
     }
 
-    fun creareDelegatedSuperTypeEntry(@NonNls text: String): CjConstructorDelegationCall {
-        return createClass("class A { init() { $text}").secondaryConstructors.first()
-            .delegationCall!!
-    }
-
     fun createStruct(@NonNls text: String): CjStruct {
         return createDeclaration(text)
     }

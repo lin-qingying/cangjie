@@ -207,8 +207,8 @@ public interface CjStubElementTypes {
 
     CjMainFunctionElementType MAIN_FUNC = new CjMainFunctionElementType("MAIN_FUNC");
 
-    CjEndSecondaryConstructorElementType END_SECONDARY_CONSTRUCTOR =
-            new CjEndSecondaryConstructorElementType("END_SECONDARY_CONSTRUCTOR");
+    CjFinalizerElementType FINALIZER =
+            new CjFinalizerElementType("FINALIZER");
     CjSecondaryConstructorElementType SECONDARY_CONSTRUCTOR =
             new CjSecondaryConstructorElementType("SECONDARY_CONSTRUCTOR");
     CjPrimaryConstructorElementType PRIMARY_CONSTRUCTOR =

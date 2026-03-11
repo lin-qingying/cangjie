@@ -159,7 +159,7 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
                         "=== Actual ===\n$actualTrimmed"
                 )
             }
-            val expected = expectedFile.readText(Charsets.UTF_8).trim()
+            val expected = expectedFile.readText(Charsets.UTF_8).replace("\r\n", "\n").trim()
             if (expected != actualTrimmed) {
                 if (updateMode) {
                     expectedFile.writeText(actualTrimmed)

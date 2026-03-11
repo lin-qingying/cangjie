@@ -1,5 +1,6 @@
 // RAW_CFIR PSI2CFIR: PSI → Raw CFIR 转换（对齐 Kotlin raw-fir/psi2fir）
 plugins {
+    kotlin("jvm")
     id("java-test-fixtures")
     id("project-tests-convention")
 }

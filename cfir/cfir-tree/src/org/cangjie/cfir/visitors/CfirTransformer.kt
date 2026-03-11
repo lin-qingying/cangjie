@@ -71,6 +71,11 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformDeclaration(variable, data)
     }
 
+    override fun visitPatternVariable(variable: CfirPatternVariable, data: D): CfirElement {
+        variable.transformChildren(this, data)
+        return transformDeclaration(variable, data)
+    }
+
     override fun visitValueParameter(valueParameter: CfirValueParameter, data: D): CfirElement {
         valueParameter.transformChildren(this, data)
         return transformDeclaration(valueParameter, data)
@@ -79,11 +84,6 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
     override fun visitTypeParameter(typeParameter: CfirTypeParameter, data: D): CfirElement {
         typeParameter.transformChildren(this, data)
         return transformDeclaration(typeParameter, data)
-    }
-
-    override fun visitAnonymousInitializer(anonymousInitializer: CfirAnonymousInitializer, data: D): CfirElement {
-        anonymousInitializer.transformChildren(this, data)
-        return transformDeclaration(anonymousInitializer, data)
     }
 
     // ---- 表达式 ----

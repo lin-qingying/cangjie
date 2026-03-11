@@ -143,21 +143,6 @@ class CangJieParser(project: Project) : PsiParser {
         }
 
         @JvmStatic
-        fun parseInitFunctionBlockExpression(psiBuilder: PsiBuilder): ASTNode {
-            psiBuilder.setDebugMode(true)
-            val cjParsing: CangJieParsing =
-                createForTopLevel(
-                    SemanticWhitespaceAwarePsiBuilderImpl(psiBuilder),
-                )
-
-            with(ParsingContext.DEFAULT) {
-                cjParsing.parseInitFunctionBody()
-            }
-
-            return psiBuilder.treeBuilt
-        }
-
-        @JvmStatic
         fun parseBlockExpression(psiBuilder: PsiBuilder): ASTNode {
             psiBuilder.setDebugMode(true)
             val cjParsing: CangJieParsing =

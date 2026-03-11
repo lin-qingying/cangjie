@@ -482,16 +482,12 @@ open class CjVisitor<R, D> : PsiElementVisitor() {
         return visitReferenceExpression(expression, data)
     }
 
-    open fun visitEndSecondaryConstructor(constructor: CjEndSecondaryConstructor, data: D): R? {
+    open fun visitFinalizer(constructor: CjFinalizer, data: D): R? {
         return visitNamedDeclaration(constructor, data)
     }
 
     open fun visitSecondaryConstructor(constructor: CjSecondaryConstructor, data: D): R? {
         return visitNamedDeclaration(constructor, data)
-    }
-
-    open fun visitConstructorDelegationCall(call: CjConstructorDelegationCall, data: D): R? {
-        return visitCjElement(call, data)
     }
 
     open fun visitPackageDirective(packageDirective: CjPackageDirective, data: D): R? {

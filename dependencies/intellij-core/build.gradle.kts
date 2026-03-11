@@ -12,6 +12,10 @@ dependencies {
     api("com.jetbrains.intellij.platform:util-xml-dom:$intellijVersion") { isTransitive = false }
     api("com.jetbrains.intellij.platform:core:$intellijVersion") { isTransitive = false }
     api("com.jetbrains.intellij.platform:core-impl:$intellijVersion") { isTransitive = false }
+    // Required by AppUIExecutor/AsyncExecutionService in stub-backed PSI tests.
+    // Keep transitive to pull threading/runtime pieces used by ide-impl (e.g. rwmutex-idea, concurrency).
+    api("com.jetbrains.intellij.platform:ide-impl:$intellijVersion")
+    api("com.jetbrains.intellij.platform:concurrency:$intellijVersion") { isTransitive = false }
     api("com.jetbrains.intellij.platform:extensions:$intellijVersion") { isTransitive = false }
     // Language 支持（ParserDefinition, Language, FileType, PsiBuilder 等）
     api("com.jetbrains.intellij.platform:lang:$intellijVersion") { isTransitive = false }

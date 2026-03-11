@@ -38,7 +38,7 @@ interface CjPureTypeStatement : CjPureElement, CjDeclarationContainer {
     val primaryConstructorModifierList: CjModifierList?
 
     val primaryConstructorParameters: List<CjParameter>
-    val endSecondaryConstructors: List<CjEndSecondaryConstructor>
+    val finalizers: List<CjFinalizer>
     val secondaryConstructors: List<CjSecondaryConstructor>
     val primaryConstructors: List<CjPrimaryConstructor>
 

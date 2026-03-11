@@ -44,22 +44,17 @@ abstract class CjConstructorElementType<T : CjConstructor<T>>(
         nameRef: StringRef?,
         hasBody: Boolean,
         isPrimary: Boolean,
-        isDelegatedCallToThis: Boolean,
     ): CangJieConstructorStub<T>
 
     open val isPrimary: Boolean get() = false
 
-    protected abstract fun isDelegatedCallToThis(constructor: T): Boolean
-
     override fun createStub(psi: T, parentStub: StubElement<*>): CangJieConstructorStub<T> {
         val hasBody = psi.hasBody()
-        val isDelegatedCallToThis = isDelegatedCallToThis(psi)
         return newStub(
             parentStub,
             StringRef.fromString(psi.name),
             hasBody,
             isPrimary,
-            isDelegatedCallToThis
         )
     }
 
@@ -68,7 +63,6 @@ abstract class CjConstructorElementType<T : CjConstructor<T>>(
         dataStream.writeName(stub.name)
         dataStream.writeBoolean(stub.hasBody())
         dataStream.writeBoolean(stub.isPrimary)
-        dataStream.writeBoolean(stub.isDelegatedCallToThis())
     }
 
     @Throws(IOException::class)
@@ -76,8 +70,7 @@ abstract class CjConstructorElementType<T : CjConstructor<T>>(
         val name = dataStream.readName()
         val hasBody = dataStream.readBoolean()
         val isPrimary = dataStream.readBoolean()
-        val isDelegatedCallToThis = dataStream.readBoolean()
-        return newStub(parentStub, name, hasBody, isPrimary, isDelegatedCallToThis)
+        return newStub(parentStub, name, hasBody, isPrimary)
     }
 
     override fun indexStub(stub: CangJieConstructorStub<T>, sink: IndexSink) {

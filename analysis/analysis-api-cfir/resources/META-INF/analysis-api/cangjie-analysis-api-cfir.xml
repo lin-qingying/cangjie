@@ -6,5 +6,9 @@
         serviceInterface="org.cangjie.analysis.api.session.CaSessionProvider"
         serviceImplementation="org.cangjie.analysis.api.cfir.session.CaCfirSessionProvider"
     />
+    <projectService
+        serviceInterface="org.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacadeService"
+        serviceImplementation="org.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacadeServiceImpl"
+    />
   </extensions>
 </idea-plugin>

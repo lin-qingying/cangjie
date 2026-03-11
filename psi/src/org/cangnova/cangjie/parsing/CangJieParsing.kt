@@ -270,32 +270,12 @@ class CangJieParsing private constructor(
 
 
     /**
-     * 解析 this 或 super 关键字
-     *
-     * Grammar:
-     * ```
-     * constructorDelegationReference
-     *   : "this" | "super"
-     *   ;
-     * ```
-     */
-    context(parseContext: ParsingContext)
-    private fun parseThisOrSuper() {
-        check(_at(THIS_KEYWORD) || _at(SUPER_KEYWORD))
-        val mark = mark()
-
-        advance() // THIS_KEYWORD | SUPER_KEYWORD
-
-        mark.done(CONSTRUCTOR_DELEGATION_REFERENCE)
-    }
-
-    /**
      * 解析构造函数代码块
      *
      * Grammar:
      * ```
      * initBlock
-     *   : "{" constructorDelegationCall? statement* "}"
+     *   : "{" statement* "}"
      *   ;
      * ```
      */
@@ -309,21 +289,11 @@ class CangJieParsing private constructor(
         // 恢复  init() xxxxxxx {}
         expect(LBRACE, "Expecting '{'  ")
 
-        val delegationCall = mark()
-        if ((at(THIS_KEYWORD) || at(SUPER_KEYWORD)) && rawLookup(1) == LPAR) {
-            parseThisOrSuper()
-            expressionParsing.parseValueArgumentList()
-            delegationCall.done(CONSTRUCTOR_DELEGATION_CALL)
-        } else {
-            mark().done(CONSTRUCTOR_DELEGATION_REFERENCE)
-            delegationCall.done(CONSTRUCTOR_DELEGATION_CALL)
-        }
-
         expressionParsing.parseStatements()
         expect(RBRACE, "Expecting '}'")
 
         builder.restoreNewlinesState()
-        lazyBlock.done(INIT_BLOCK)
+        lazyBlock.done(BLOCK)
     }
 
     /**
@@ -3206,7 +3176,7 @@ class CangJieParsing private constructor(
                     advance() // TILDE ~
                     parseInitFunc()
                     // 析构函数
-                    declType = END_SECONDARY_CONSTRUCTOR
+                    declType = FINALIZER
                 }
             }
         }

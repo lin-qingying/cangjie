@@ -362,7 +362,10 @@ interface CangJieConstructorStub<T : CjConstructor<T>> :
     CangJieCallableStubBase<T> {
     fun hasBody(): Boolean
     val isPrimary: Boolean get() = false
-    fun isDelegatedCallToThis(): Boolean
+}
+
+interface CangJieFinalizerStub : CangJieCallableStubBase<CjFinalizer> {
+    fun hasBody(): Boolean
 }
 
 interface CangJieImportAliasStub : StubElement<CjImportAlias> {

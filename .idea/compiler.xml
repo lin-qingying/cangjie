@@ -2,6 +2,9 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel target="17">
+      <module name="cangjie.buildSrc" target="21" />
+      <module name="cangjie.buildSrc.main" target="21" />
+      <module name="cangjie.buildSrc.test" target="21" />
       <module name="cfir.cfir-checkers" target="17" />
       <module name="cfir.cfir-checkers.main" target="17" />
       <module name="cfir.cfir-checkers.test" target="17" />
@@ -24,5 +27,63 @@
       <module name="cfir.cfir-tree.main" target="17" />
       <module name="cfir.cfir-tree.test" target="17" />
     </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="cangjie.analysis.analysis-api" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-cfir" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-cfir.main" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-cfir.test" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-impl-base" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-impl-base.main" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-impl-base.test" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api.main" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api.test" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-test-framework" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-test-framework.main" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-test-framework.test" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-test-framework.testFixtures" options="-proc:none" />
+      <module name="cangjie.cfir.cfir-common" options="-proc:none" />
+      <module name="cangjie.cfir.cfir-common.main" options="-proc:none" />
+      <module name="cangjie.cfir.cfir-common.test" options="-proc:none" />
+      <module name="cangjie.cfir.cfir-cones" options="-proc:none" />
+      <module name="cangjie.cfir.cfir-cones.main" options="-proc:none" />
+      <module name="cangjie.cfir.cfir-cones.test" options="-proc:none" />
+      <module name="cangjie.cfir.cfir-tree" options="-proc:none" />
+      <module name="cangjie.cfir.cfir-tree.main" options="-proc:none" />
+      <module name="cangjie.cfir.cfir-tree.test" options="-proc:none" />
+      <module name="cangjie.cfir.raw-cfir.light-tree2cfir" options="-proc:none" />
+      <module name="cangjie.cfir.raw-cfir.light-tree2cfir.main" options="-proc:none" />
+      <module name="cangjie.cfir.raw-cfir.light-tree2cfir.test" options="-proc:none" />
+      <module name="cangjie.cfir.raw-cfir.psi2cfir" options="-proc:none" />
+      <module name="cangjie.cfir.raw-cfir.psi2cfir.main" options="-proc:none" />
+      <module name="cangjie.cfir.raw-cfir.psi2cfir.test" options="-proc:none" />
+      <module name="cangjie.cfir.raw-cfir.psi2cfir.testFixtures" options="-proc:none" />
+      <module name="cangjie.cfir.raw-cfir.raw-cfir-common" options="-proc:none" />
+      <module name="cangjie.cfir.raw-cfir.raw-cfir-common.main" options="-proc:none" />
+      <module name="cangjie.cfir.raw-cfir.raw-cfir-common.test" options="-proc:none" />
+      <module name="cangjie.common" options="-proc:none" />
+      <module name="cangjie.common.main" options="-proc:none" />
+      <module name="cangjie.common.test" options="-proc:none" />
+      <module name="cangjie.compiler" options="-proc:none" />
+      <module name="cangjie.compiler.cli" options="-proc:none" />
+      <module name="cangjie.compiler.cli.main" options="-proc:none" />
+      <module name="cangjie.compiler.cli.test" options="-proc:none" />
+      <module name="cangjie.compiler.main" options="-proc:none" />
+      <module name="cangjie.compiler.test" options="-proc:none" />
+      <module name="cangjie.dependencies.intellij-core" options="-proc:none" />
+      <module name="cangjie.dependencies.intellij-core.main" options="-proc:none" />
+      <module name="cangjie.dependencies.intellij-core.test" options="-proc:none" />
+      <module name="cangjie.psi" options="-proc:none" />
+      <module name="cangjie.psi.main" options="-proc:none" />
+      <module name="cangjie.psi.test" options="-proc:none" />
+      <module name="cangjie.tests.test-infrastructure" options="-proc:none" />
+      <module name="cangjie.tests.test-infrastructure.main" options="-proc:none" />
+      <module name="cangjie.tests.test-infrastructure.test" options="-proc:none" />
+      <module name="cangjie.tests.test-infrastructure.testFixtures" options="-proc:none" />
+      <module name="cangjie.util" options="-proc:none" />
+      <module name="cangjie.util.main" options="-proc:none" />
+      <module name="cangjie.util.test" options="-proc:none" />
+    </option>
   </component>
 </project>

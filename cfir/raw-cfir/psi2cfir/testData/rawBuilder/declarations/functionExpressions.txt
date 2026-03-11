@@ -1,7 +1,25 @@
 FILE: functionExpressions.cj
     func expressions(): R|Unit| {
-        let <error-declaration>: <implicit>
-        let <error-declaration>: <implicit>
-        let <error-declaration>: <implicit>
-        let <error-declaration>: <implicit>
+        let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(plus) {
+                    receiver:
+                        STRING("1")
+                    arguments:
+                        STRING("2")
+                }
+        let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(times) {
+                    receiver:
+                        QUALIFIED_ACCESS(a)
+                    arguments:
+                        STRING("3")
+                }
+        let c: <implicit> = ...
+            initializer:
+                STRING("hello")
+        let d: <implicit> = ...
+            initializer:
+                STRING("true")
     }

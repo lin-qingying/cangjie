@@ -44,6 +44,7 @@ object CjTokenSets {
         CjStubElementTypes.TYPEALIAS,
 
         CjStubElementTypes.SECONDARY_CONSTRUCTOR,
+        CjStubElementTypes.FINALIZER,
         CjStubElementTypes.CJ_SCRIPT,
     )
 
@@ -71,6 +72,7 @@ object CjTokenSets {
         CjStubElementTypes.FIELD,
         CjStubElementTypes.PROPERTY,
         CjStubElementTypes.SECONDARY_CONSTRUCTOR,
+        CjStubElementTypes.FINALIZER,
         CjStubElementTypes.CLASS,
         CjStubElementTypes.INTERFACE,
         CjStubElementTypes.STRUCT,

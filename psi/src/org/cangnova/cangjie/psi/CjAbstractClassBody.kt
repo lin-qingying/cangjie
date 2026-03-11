@@ -83,8 +83,8 @@ abstract class CjAbstractClassBody :
         get() = getStubOrPsiChildrenAsList(SECONDARY_CONSTRUCTOR)
     internal val primaryConstructors: List<CjPrimaryConstructor>
         get() = getStubOrPsiChildrenAsList(PRIMARY_CONSTRUCTOR)
-    internal val endSecondaryConstructors: List<CjEndSecondaryConstructor>
-        get() = getStubOrPsiChildrenAsList(END_SECONDARY_CONSTRUCTOR)
+    internal val finalizers: List<CjFinalizer>
+        get() = getStubOrPsiChildrenAsList(FINALIZER)
 
     /**
      * @return annotations that do not belong to any declaration due to incomplete code or syntax errors

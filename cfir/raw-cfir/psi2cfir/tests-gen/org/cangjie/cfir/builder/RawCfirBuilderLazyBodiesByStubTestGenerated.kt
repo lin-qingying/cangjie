@@ -30,6 +30,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
             assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations")
         }
 
+        @TestMetadata("classMembersOrderStability.cj")
+        fun testClassMembersOrderStability() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classMembersOrderStability.cj")
+        }
+
         @TestMetadata("classWithMembers.cj")
         fun testClassWithMembers() {
             runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/classWithMembers.cj")
@@ -120,29 +125,109 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
             assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions")
         }
 
-        @TestMetadata("binaryMissingRightOperand.cj")
-        fun testBinaryMissingRightOperand() {
-            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/binaryMissingRightOperand.cj")
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/atomic")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Atomic : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInAtomic() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/atomic")
+            }
+
         }
 
-        @TestMetadata("forMissingIterable.cj")
-        fun testForMissingIterable() {
-            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/forMissingIterable.cj")
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/binary")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Binary : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInBinary() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/binary")
+            }
+
+            @TestMetadata("binaryMissingRightOperand.cj")
+            fun testBinaryMissingRightOperand() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/binary/binaryMissingRightOperand.cj")
+            }
+
         }
 
-        @TestMetadata("ifMissingCondition.cj")
-        fun testIfMissingCondition() {
-            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/ifMissingCondition.cj")
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class ControlFlow : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInControlFlow() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow")
+            }
+
+            @TestMetadata("forMissingIterable.cj")
+            fun testForMissingIterable() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/forMissingIterable.cj")
+            }
+
+            @TestMetadata("ifMissingCondition.cj")
+            fun testIfMissingCondition() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/ifMissingCondition.cj")
+            }
+
+            @TestMetadata("throwMissingExpression.cj")
+            fun testThrowMissingExpression() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/throwMissingExpression.cj")
+            }
+
+            @TestMetadata("whileMissingCondition.cj")
+            fun testWhileMissingCondition() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/control-flow/whileMissingCondition.cj")
+            }
+
         }
 
-        @TestMetadata("throwMissingExpression.cj")
-        fun testThrowMissingExpression() {
-            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/throwMissingExpression.cj")
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/interactions")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Interactions : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInInteractions() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/interactions")
+            }
+
         }
 
-        @TestMetadata("whileMissingCondition.cj")
-        fun testWhileMissingCondition() {
-            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/whileMissingCondition.cj")
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/lambda")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Lambda : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInLambda() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/lambda")
+            }
+
+        }
+
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/postfix")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Postfix : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInPostfix() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/postfix")
+            }
+
+        }
+
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/prefix")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Prefix : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInPrefix() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/prefix")
+            }
+
+        }
+
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/type")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Type : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInType() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/type")
+            }
+
         }
 
     }

@@ -128,8 +128,8 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
         super.visitTypeAlias(typeAlias, Unit)
     }
 
-    open fun visitEndSecondaryConstructor(constructor: CjEndSecondaryConstructor) {
-        super.visitEndSecondaryConstructor(constructor, Unit)
+    open fun visitFinalizer(constructor: CjFinalizer) {
+        super.visitFinalizer(constructor, Unit)
     }
 
     open fun visitSecondaryConstructor(constructor: CjSecondaryConstructor) {
@@ -185,8 +185,8 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
         super.visitTypeParameter(parameter, Unit)
     }
 
-    open fun visitEnumConstructor(enumEntry: CjEnumConstructor) {
-        super.visitEnumConstructor(enumEntry, Unit)
+    open fun visitEnumConstructor(enumConstructor: CjEnumConstructor) {
+        super.visitEnumConstructor(enumConstructor, Unit)
     }
 
     open fun visitParameterList(list: CjParameterList) {
@@ -213,10 +213,6 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
         super.visitSuperTypeEntry(specifier, Unit)
     }
 
-
-    open fun visitConstructorDelegationCall(call: CjConstructorDelegationCall) {
-        super.visitConstructorDelegationCall(call, Unit)
-    }
 
     open fun visitTypeReference(typeReference: CjTypeReference) {
         super.visitTypeReference(typeReference, Unit)
@@ -464,8 +460,8 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
         visitFieldVariable(field)
     }
 
-    override fun visitEndSecondaryConstructor(constructor: CjEndSecondaryConstructor, data: Unit?): Unit {
-        visitEndSecondaryConstructor(constructor)
+    override fun visitFinalizer(constructor: CjFinalizer, data: Unit?): Unit {
+        visitFinalizer(constructor)
 
     }
 
@@ -578,14 +574,6 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
 
     override fun visitSuperTypeEntry(specifier: CjSuperTypeEntry, data: Unit?): Unit {
         visitSuperTypeEntry(specifier)
-
-    }
-
-    override fun visitConstructorDelegationCall(
-        call: CjConstructorDelegationCall,
-        data: Unit?,
-    ): Unit {
-        visitConstructorDelegationCall(call)
 
     }
 

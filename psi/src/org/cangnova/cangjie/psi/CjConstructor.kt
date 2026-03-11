@@ -47,7 +47,8 @@ abstract class CjConstructor<T : CjConstructor<T>> : CjDeclarationStub<CangJieCo
     abstract fun getContainingTypeStatement(): CjTypeStatement
 
     override val isLocal = false
-    override val bodyExpression: CjInitBlockExpression?get() {
+    override val bodyExpression: CjBlockExpression?
+        get() {
         val stub = stub
         if (stub != null) {
             if (!stub.hasBody()) {
@@ -57,7 +58,7 @@ abstract class CjConstructor<T : CjConstructor<T>> : CjDeclarationStub<CangJieCo
                 return null
             }
         }
-        return findChildByClass(CjInitBlockExpression::class.java)
+        return findChildByClass(CjBlockExpression::class.java)
     }
 
 
@@ -65,15 +66,6 @@ abstract class CjConstructor<T : CjConstructor<T>> : CjDeclarationStub<CangJieCo
         get() = valueParameterList?.parameters ?: emptyList()
     override val typeReference: CjTypeReference? = null
     override val valueParameterList: CjParameterList? get() = getStubOrPsiChild(CjStubElementTypes.VALUE_PARAMETER_LIST)
-
-    val delegationCall: CjConstructorDelegationCall? get() = bodyExpression?.getDelegationCall()
-    fun getDelegationCallOrNull(): CjConstructorDelegationCall? = bodyExpression?.getDelegationCallOrNull()
-
-    fun hasImplicitDelegationCall(): Boolean = delegationCall?.isImplicit == true
-
-    fun replaceImplicitDelegationCallWithExplicit(isThis: Boolean): CjConstructorDelegationCall {
-        return bodyExpression!!.replaceImplicitDelegationCallWithExplicit(isThis)
-    }
 
     @Throws(IncorrectOperationException::class)
     override fun setTypeReference(typeRef: CjTypeReference?) =
@@ -84,15 +76,6 @@ abstract class CjConstructor<T : CjConstructor<T>> : CjDeclarationStub<CangJieCo
     override val equalsToken = null
 
     override fun hasBlockBody() = hasBody()
-
-    fun isDelegatedCallToThis(): Boolean {
-        stub?.let { return it.isDelegatedCallToThis() }
-        return when (this) {
-            is CjPrimaryConstructor -> false
-            is CjSecondaryConstructor -> getDelegationCallOrNull()?.isCallToThis ?: true
-            else -> throw IllegalStateException("Unknown constructor type: $this")
-        }
-    }
 
     override fun hasBody(): Boolean {
         stub?.let { return it.hasBody() }

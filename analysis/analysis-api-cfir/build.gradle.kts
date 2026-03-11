@@ -1,3 +1,6 @@
+plugins {
+    kotlin("jvm")
+}
 // Analysis API CFIR 实现（对齐 Kotlin analysis-api-fir）
 dependencies {
     api(project(":analysis:analysis-api"))

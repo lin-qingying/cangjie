@@ -102,6 +102,8 @@ class PsiRawCfirBuilder(session: CfirSession) :
 - ✅ `CjExtend` → `CfirExtend` (仓颉特有)
 - ✅ `CjNamedFunction` → `CfirFunction`
 - ✅ `CjProperty` → `CfirProperty`
+- ✅ `CjFieldVariable` → `CfirVariable`（类体简单成员字段，保留 name/isVar/type/initializer/source）
+- ✅ `CjPatternVariable` → `CfirPatternVariable`（保留完整 pattern；bindings/allPatternDeclarations 通过派生查询获得）
 - ✅ `CjPrimaryConstructor` / `CjSecondaryConstructor` → `CfirConstructor`
 - ✅ `CjTypeAlias` → `CfirTypeAlias`
 - ✅ `CjParameter` → `CfirValueParameter`
@@ -153,7 +155,7 @@ private fun CjTypeElement.toFirTypeRef(...): CfirTypeRef = when (this) {
 | 问题 | 优先级 | 说明 |
 |------|--------|------|
 | 特殊类型引用覆盖（如 `VArray`） | 🔴 高 | PSI 已支持但 lowering 缺失时会直接退化为错误类型 |
-| Match 表达式模式简化 | 🟡 中 | 当前仅支持简单的常量模式和通配符 |
+| Pattern variable 的全量 lowering 边界 | 🟡 中 | 当前已建立 `CfirPatternVariable(pattern)` 形态；后续仍需按阶段补齐更深语义接入 |
 | 错误处理增强 | 🟡 中 | 缺少源码位置信息的错误表达式 |
 | 注解支持 | 🟢 低 | 暂未处理注解节点 |
 | 操作符转换完整性 | 🟢 低 | 部分操作符名称映射需完善 |
