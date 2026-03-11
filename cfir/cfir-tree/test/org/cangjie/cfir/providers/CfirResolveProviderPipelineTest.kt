@@ -3,7 +3,7 @@ package org.cangjie.cfir.providers
 import org.cangjie.cfir.common.CfirModuleData
 import org.cangjie.cfir.diagnostics.CfirDiagnosticCollector
 import org.cangjie.cfir.diagnostics.CfirDiagnosticReporter
-import org.cangjie.cfir.resolve.CfirMinimalResolveComponentsRegistrar
+import org.cangjie.cfir.resolve.CfirLegacyResolveComponentsRegistrar
 import org.cangjie.cfir.resolve.CfirPhaseResolverRegistry
 import org.cangjie.cfir.resolve.CfirResolveComponentsRegistrar
 import org.cangjie.cfir.session.CfirSession
@@ -44,7 +44,7 @@ class CfirResolveProviderPipelineTest {
         val diagnostics = CfirDiagnosticCollector()
         registerBaseComponents(session, registry, diagnostics)
 
-        CfirMinimalResolveComponentsRegistrar.register(session, registry, diagnostics)
+        CfirLegacyResolveComponentsRegistrar.register(session, registry, diagnostics)
 
         assertFalse(session.symbolProvider.hasPackage(StandardNames.BASIC_PACKAGE_FQ_NAME))
         assertNull(

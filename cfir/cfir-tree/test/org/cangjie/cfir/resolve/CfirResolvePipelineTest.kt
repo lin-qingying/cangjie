@@ -6,7 +6,7 @@ import org.cangjie.cfir.resolve.framework.createCfirResolveTestSessionContext
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-class CfirMinimalResolvePipelineTest {
+class CfirResolvePipelineTest {
     @Test
     fun processToPhaseUpdatesResolvePhase() {
         val context = createCfirResolveTestSessionContext("<test-module>")

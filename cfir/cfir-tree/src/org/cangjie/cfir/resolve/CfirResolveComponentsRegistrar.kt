@@ -2,6 +2,8 @@ package org.cangjie.cfir.resolve
 
 import org.cangjie.cfir.diagnostics.CfirDiagnosticReporter
 import org.cangjie.cfir.resolve.providers.CfirResolveProviderPipeline
+import org.cangjie.cfir.resolve.services.CfirImportBindingStore
+import org.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore
 import org.cangjie.cfir.session.CfirSession
 
 /**
@@ -19,15 +21,13 @@ object CfirResolveComponentsRegistrar {
         CfirResolveProviderPipeline
             .formalDefaults()
             .registerInto(session)
-        registerMinimalResolveProcessors(registry, diagnosticReporter)
+        session.register(CfirImportBindingStore::class, CfirImportBindingStore())
+        session.register(CfirSuperTypeGraphStore::class, CfirSuperTypeGraphStore())
+        registerResolveProcessors(registry, diagnosticReporter)
     }
 }
 
-@Deprecated(
-    message = "Use CfirResolveComponentsRegistrar for the formal CFIR_RESOLVE pipeline.",
-    replaceWith = ReplaceWith("CfirResolveComponentsRegistrar"),
-)
-object CfirMinimalResolveComponentsRegistrar {
+object CfirLegacyResolveComponentsRegistrar {
     fun register(
         session: CfirSession,
         registry: CfirPhaseResolverRegistry,
@@ -36,6 +36,8 @@ object CfirMinimalResolveComponentsRegistrar {
         CfirResolveProviderPipeline
             .legacyCompatibleDefaults()
             .registerInto(session)
-        registerMinimalResolveProcessors(registry, diagnosticReporter)
+        session.register(CfirImportBindingStore::class, CfirImportBindingStore())
+        session.register(CfirSuperTypeGraphStore::class, CfirSuperTypeGraphStore())
+        registerResolveProcessors(registry, diagnosticReporter)
     }
 }
