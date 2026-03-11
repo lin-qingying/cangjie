@@ -34,8 +34,8 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitClass(klass: CfirClass, data: D): R =
         visitDeclaration(klass, data)
 
-    open fun visitEnumEntry(enumEntry: CfirEnumEntry, data: D): R =
-        visitDeclaration(enumEntry, data)
+    open fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: D): R =
+        visitDeclaration(enumConstructor, data)
 
     open fun visitExtend(extend: CfirExtend, data: D): R =
         visitDeclaration(extend, data)
@@ -46,8 +46,20 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitFunction(function: CfirFunction, data: D): R =
         visitDeclaration(function, data)
 
+    open fun visitMainFunction(mainFunction: CfirMainFunction, data: D): R =
+        visitDeclaration(mainFunction, data)
+
+    open fun visitMacroDeclaration(macroDeclaration: CfirMacroDeclaration, data: D): R =
+        visitDeclaration(macroDeclaration, data)
+
+    open fun visitFinalizer(finalizer: CfirFinalizer, data: D): R =
+        visitDeclaration(finalizer, data)
+
     open fun visitConstructor(constructor: CfirConstructor, data: D): R =
         visitDeclaration(constructor, data)
+
+    open fun visitInvalidDeclaration(invalidDeclaration: CfirInvalidDeclaration, data: D): R =
+        visitDeclaration(invalidDeclaration, data)
 
     open fun visitProperty(property: CfirProperty, data: D): R =
         visitDeclaration(property, data)

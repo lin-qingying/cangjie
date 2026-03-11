@@ -36,9 +36,9 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformDeclaration(klass, data)
     }
 
-    override fun visitEnumEntry(enumEntry: CfirEnumEntry, data: D): CfirElement {
-        enumEntry.transformChildren(this, data)
-        return transformDeclaration(enumEntry, data)
+    override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: D): CfirElement {
+        enumConstructor.transformChildren(this, data)
+        return transformDeclaration(enumConstructor, data)
     }
 
     override fun visitExtend(extend: CfirExtend, data: D): CfirElement {

@@ -1,1 +1,6 @@
-let <error-declaration>: <implicit>
+FUNCTION_CALL(plus) {
+    receiver:
+        STRING("21")
+    arguments:
+        STRING("21")
+}

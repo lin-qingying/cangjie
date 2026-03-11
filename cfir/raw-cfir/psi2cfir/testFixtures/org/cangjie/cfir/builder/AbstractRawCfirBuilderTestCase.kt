@@ -133,7 +133,7 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
 
     open fun doRawCfirTest(filePath: String) {
         val file = File(filePath)
-        val sourceText = file.readText(Charsets.UTF_8).trim()
+        val sourceText = loadFile(filePath).trim()
         val cjFile = createCjFile(file.nameWithoutExtension, sourceText)
         val cfirFile = cjFile.toCfirFile()
         val actual = dumpCfirFile(cfirFile)

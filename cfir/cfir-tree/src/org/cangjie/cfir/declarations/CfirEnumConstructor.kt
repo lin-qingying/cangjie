@@ -4,7 +4,7 @@ import org.cangjie.cfir.common.CfirModuleData
 import org.cangjie.cfir.common.CfirSourceElement
 import org.cangnova.cangjie.name.Name
 import org.cangjie.cfir.expressions.CfirExpression
-import org.cangjie.cfir.symbols.CfirEnumEntrySymbol
+import org.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangjie.cfir.types.CfirTypeRef
 import org.cangjie.cfir.visitors.CfirTransformer
 import org.cangjie.cfir.visitors.CfirVisitor
@@ -19,7 +19,7 @@ import org.cangjie.cfir.visitors.CfirVisitor
  *     RGB(Int64, Int64, Int64)
  *   }
  */
-class CfirEnumEntry(
+class CfirEnumConstructor(
     override val source: CfirSourceElement? = null,
     override val origin: CfirDeclarationOrigin = CfirDeclarationOrigin.Source,
     override val moduleData: CfirModuleData,
@@ -31,7 +31,7 @@ class CfirEnumEntry(
     /** 初始化表达式（简单枚举的关联值） */
     var initializer: CfirExpression? = null,
 ) : CfirDeclaration {
-    override val symbol: CfirEnumEntrySymbol = CfirEnumEntrySymbol()
+    override val symbol: CfirEnumConstructorSymbol = CfirEnumConstructorSymbol()
     override var resolvePhase: CfirResolvePhase = CfirResolvePhase.RAW_CFIR
 
     init {
@@ -39,9 +39,9 @@ class CfirEnumEntry(
     }
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
-        visitor.visitEnumEntry(this, data)
+        visitor.visitEnumConstructor(this, data)
 
-    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirEnumEntry {
+    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirEnumConstructor {
         initializer = initializer?.let { it.accept(transformer, data) as CfirExpression }
         return this
     }
