@@ -5,50 +5,43 @@ import com.intellij.openapi.application.Application
 import com.intellij.openapi.project.Project
 import org.cangjie.test.services.TestService
 import org.cangjie.test.services.TestServices
+import org.cangnova.cangjie.cli.CangJieCoreEnvironment
 import org.cangnova.cangjie.cli.CangjieCoreApplicationEnvironment
 import org.cangnova.cangjie.cli.CangjieCoreProjectEnvironment
 
 /**
- * 测试环境管理器（对齐 Kotlin 的 AnalysisApiEnvironmentManager）。
- *
- * 管理 [cli.CangjieCoreApplicationEnvironment] 和 [cli.CangjieCoreProjectEnvironment] 的生命周期。
+ * Aligns with Kotlin's AnalysisApiEnvironmentManager by owning a single shared core environment.
  */
 abstract class CaAnalysisApiEnvironmentManager : TestService {
     abstract fun initializeEnvironment()
     abstract fun initializeProjectStructure()
+    abstract fun getCoreEnvironment(): CangJieCoreEnvironment
 
     fun getProject(): Project = getProjectEnvironment().project
     fun getApplication(): Application = getApplicationEnvironment().application
-
-    abstract fun getProjectEnvironment(): CangjieCoreProjectEnvironment
-    abstract fun getApplicationEnvironment(): CangjieCoreApplicationEnvironment
+    fun getProjectEnvironment(): CangjieCoreProjectEnvironment = getCoreEnvironment().projectEnvironment
+    fun getApplicationEnvironment(): CangjieCoreApplicationEnvironment = getCoreEnvironment().applicationEnvironment
 }
 
 class CaAnalysisApiEnvironmentManagerImpl(
     private val testRootDisposable: Disposable,
 ) : CaAnalysisApiEnvironmentManager() {
 
-    private val _applicationEnvironment: CangjieCoreApplicationEnvironment by lazy {
-        CangjieCoreApplicationEnvironment.create(testRootDisposable, unitTestMode = true)
-    }
-
-    private val _projectEnvironment: CangjieCoreProjectEnvironment by lazy {
-        CangjieCoreProjectEnvironment(testRootDisposable, _applicationEnvironment)
+    private val coreEnvironment: CangJieCoreEnvironment by lazy {
+        CangJieCoreEnvironment.createForTests(testRootDisposable)
     }
 
     override fun initializeEnvironment() {
-        // 触发 lazy 初始化
-        _applicationEnvironment
-        _projectEnvironment
+        coreEnvironment
     }
 
     override fun initializeProjectStructure() {
-        // TODO: 注册项目级服务（如 CaProjectStructureProvider），当基础设施就绪后实现
+        // TODO: Register project-level services when structure providers are introduced.
     }
 
-    override fun getProjectEnvironment(): CangjieCoreProjectEnvironment = _projectEnvironment
-    override fun getApplicationEnvironment(): CangjieCoreApplicationEnvironment = _applicationEnvironment
+    override fun getCoreEnvironment(): CangJieCoreEnvironment = coreEnvironment
 }
 
 val TestServices.environmentManager: CaAnalysisApiEnvironmentManager
     by TestServices.testServiceAccessor()
+

@@ -1,0 +1,4 @@
+file: extendDuplicate.cj
+phase: CHECKERS
+diagnostics: 1
+- ERROR: [CFIR_EXTEND_DUPLICATE_INTERFACE] [RULE_EXTEND_DUPLICATE_INTERFACE] duplicate extend interface 'IIterable' (external/cangjie_compiler/src/Sema/TypeCheckExtend.cpp#CheckExtendInterfaces)

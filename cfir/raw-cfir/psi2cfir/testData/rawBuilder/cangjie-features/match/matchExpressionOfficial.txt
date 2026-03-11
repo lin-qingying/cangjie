@@ -1,0 +1,18 @@
+FILE: matchExpressionOfficial.cj
+    enum TimeUnit {
+        Year(R|Int32|)
+    }
+    func extractYear(time: R|TimeUnit|): R|Int32| {
+        var res: R|Int32| = ...
+            initializer:
+                MATCH {
+                    subject:
+                        QUALIFIED_ACCESS(time)
+                    BRANCH(const(Year)) {
+                        QUALIFIED_ACCESS(x)
+                    }
+                }
+        RETURN {
+            QUALIFIED_ACCESS(res)
+        }
+    }

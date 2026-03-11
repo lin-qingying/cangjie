@@ -12,6 +12,7 @@ sourceSets {
 dependencies {
 
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
+    testFixturesApi(project(":compiler:cli"))
     testFixturesApi(project(":psi"))
     testFixturesApi(intellijCore())
     testFixturesApi(libs.junit4)

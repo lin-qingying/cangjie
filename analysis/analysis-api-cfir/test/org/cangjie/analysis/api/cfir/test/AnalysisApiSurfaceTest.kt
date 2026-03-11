@@ -1,29 +1,91 @@
 package org.cangjie.analysis.api.cfir.test
 
-import org.cangjie.analysis.api.cfir.test.configurators.AnalysisApiCFirSourceTestConfigurator
-import org.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator
-import org.cangnova.cangjie.psi.CjFile
-import org.junit.jupiter.api.Disabled
+import org.cangjie.analysis.api.CaModule
+import org.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacadeImpl
+import org.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacadeService
+import org.cangjie.analysis.api.cfir.resolve.CaCfirResolveFacade
+import org.cangjie.cfir.common.CfirModuleData
+import org.cangjie.cfir.declarations.CfirClass
+import org.cangjie.cfir.declarations.CfirClassKind
+import org.cangjie.cfir.declarations.CfirFile
+import org.cangjie.cfir.declarations.CfirPackageDirective
+import org.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangjie.cfir.diagnostics.CfirDiagnosticCollector
+import org.cangjie.cfir.diagnostics.CfirDiagnosticReporter
+import org.cangjie.cfir.resolve.CfirResolveComponentsRegistrar
+import org.cangjie.cfir.resolve.CfirPhaseResolverRegistry
+import org.cangjie.cfir.session.CfirSession
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 
-/**
- * Analysis API 表面测试（对齐 Kotlin 的 AnalysisApiSurfaceTest）。
- *
- * 验证 Analysis API 的基本功能是否正确暴露和可用。
- */
-class AnalysisApiSurfaceTest : AbstractAnalysisApiExecutionTest("analysis/analysis-api/testData/surface") {
-    override val configurator: AnalysisApiTestConfigurator =
-        AnalysisApiCFirSourceTestConfigurator(analyseInDependentSession = false)
+class AnalysisApiSurfaceTest {
+    @Test
+    fun cfirSurfaceTypesAreAvailable() {
+        assertNotNull(CaCfirSession::class.java)
+        assertNotNull(CaCfirResolutionFacadeService::class.java)
+    }
 
     @Test
-    @Disabled("TODO: 待 CFIR 模块创建逻辑就绪后启用")
-    fun supertypeIteration(mainFile: CjFile) {
-        // TODO: 实现超类型迭代测试
-        //  analyze(implClass) {
-        //      val defaultClassType = implClass.classSymbol!!.defaultType
-        //      val allSupertypeSequence = defaultClassType.allSupertypes
-        //      ...
-        //  }
+    fun cfirPluginDescriptorIsAvailable() {
+        val resource = javaClass.classLoader.getResource(
+            "META-INF/analysis-api/cangjie-analysis-api-cfir.xml"
+        )
+        assertNotNull(resource, "CFIR analysis-api plugin descriptor should be available on test classpath")
+    }
+
+    @Test
+    fun resolveFacadeConsumesPhaseProgressionAcrossModules() {
+        val moduleA = object : CaModule {
+            override val name: String = "moduleA"
+            override val project
+                get() = error("project is not used in this test")
+        }
+        val moduleB = object : CaModule {
+            override val name: String = "moduleB"
+            override val project
+                get() = error("project is not used in this test")
+        }
+
+        val diagnosticsA = resolveSingleClassToCheckers(moduleA, "A")
+        val diagnosticsB = resolveSingleClassToCheckers(moduleB, "B")
+
+        assertTrue(diagnosticsA.none { it.severity.name == "ERROR" })
+        assertTrue(diagnosticsB.none { it.severity.name == "ERROR" })
+    }
+
+    private fun resolveSingleClassToCheckers(module: CaModule, className: String) =
+        createResolveFacade(module).resolveTo(
+            file = CfirFile(
+                moduleData = CfirModuleData(Name.identifier(module.name)),
+                name = "$className.cj",
+                packageDirective = CfirPackageDirective(FqName.ROOT),
+                declarations = mutableListOf(
+                    CfirClass(
+                        moduleData = CfirModuleData(Name.identifier(module.name)),
+                        name = Name.identifier(className),
+                        classKind = CfirClassKind.CLASS,
+                    ),
+                ),
+            ),
+            targetPhase = CfirResolvePhase.CHECKERS,
+        ).diagnostics
+
+    private fun createResolveFacade(module: CaModule): CaCfirResolveFacade {
+        val session = object : CfirSession(CfirSession.Kind.Source) {}
+        val diagnostics = CfirDiagnosticCollector()
+        val moduleData = CfirModuleData(Name.identifier(module.name))
+        val phaseResolverRegistry = CfirPhaseResolverRegistry()
+        session.register(CfirModuleData::class, moduleData)
+        session.register(CfirPhaseResolverRegistry::class, phaseResolverRegistry)
+        session.register(CfirDiagnosticReporter::class, diagnostics)
+        session.register(CfirDiagnosticCollector::class, diagnostics)
+        CfirResolveComponentsRegistrar.register(session, phaseResolverRegistry, diagnostics)
+        val resolutionFacade = CaCfirResolutionFacadeImpl(module, session, diagnostics)
+        return CaCfirResolveFacade(resolutionFacade)
     }
 }
+

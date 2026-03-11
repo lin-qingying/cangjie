@@ -1,0 +1,4 @@
+file: extendNotInterface.cj
+phase: CHECKERS
+diagnostics: 1
+- ERROR: [CFIR_EXTEND_NOT_INTERFACE] [RULE_EXTEND_NOT_INTERFACE] inherited type 'Int64' in extend declaration is not an interface (external/cangjie_compiler/src/Sema/TypeCheckExtend.cpp#PreCheckExtend)

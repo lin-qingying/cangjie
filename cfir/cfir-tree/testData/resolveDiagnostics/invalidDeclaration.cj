@@ -1,0 +1,3 @@
+// INVALID_DECLARATION
+main() {}
+

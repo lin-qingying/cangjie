@@ -1,0 +1,10 @@
+FILE: extendWithWhereOfficial.cj
+    enum EnumExtend<T> {
+        AA
+    }
+    extend<T> R|EnumExtend<R|T|>| <: R|Equatable<R|EnumExtend<R|T|>|>| {
+    }
+    extend<T> R|EnumExtend<R|T|>| <: R|ToString| {
+    }
+    extend<T> R|EnumExtend<R|T|>| <: R|Hashable| {
+    }

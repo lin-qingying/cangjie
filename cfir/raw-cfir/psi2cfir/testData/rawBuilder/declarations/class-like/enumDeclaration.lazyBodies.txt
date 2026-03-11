@@ -1,0 +1,10 @@
+FILE: enumDeclaration.cj
+    enum Color {
+        Red
+        Green
+        Blue
+    }
+    enum Option<T> {
+        Some(R|T|)
+        None
+    }

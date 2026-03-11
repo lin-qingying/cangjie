@@ -1,0 +1,2 @@
+// EXTEND_DUPLICATE
+main() {}

@@ -10,8 +10,6 @@ dependencies {
 
     compileOnly(intellijCore())
 
-    testApi(testFixtures(project(":analysis:analysis-test-framework")))
-    testApi(testFixtures(project(":tests:test-infrastructure")))
-    testApi(libs.junit.jupiter)
+    testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

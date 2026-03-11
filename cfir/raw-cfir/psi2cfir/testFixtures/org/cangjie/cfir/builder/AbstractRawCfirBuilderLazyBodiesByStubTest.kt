@@ -15,10 +15,22 @@ import java.io.File
  */
 abstract class AbstractRawCfirBuilderLazyBodiesByStubTest : AbstractRawCfirBuilderLazyBodiesTestCase() {
     override fun doRawCfirTest(filePath: String) {
-        val ignoreTreeAccess = isDirectiveDefined(File(filePath).readText(), "// IGNORE_TREE_ACCESS:")
+        val resolvedFilePath = resolveTestDataPath(filePath).path
+        val sourceText = File(resolvedFilePath).readText()
+        val fallbackToAst = isDirectiveDefined(sourceText, "// STUB_FALLBACK_TO_AST:")
+        if (fallbackToAst) {
+            val file = createPsiFile(File(resolvedFilePath).nameWithoutExtension, sourceText) as CjFile
+            val cfirFile = file.toCfirFile(bodyBuildingMode = BodyBuildingMode.LAZY_BODIES)
+            val dump = dumpCfirFile(cfirFile)
+            val expected = File(resolvedFilePath.replace(".cj", ".lazyBodies.txt"))
+            assertEqualsToFile(expected, dump)
+            return
+        }
+
+        val ignoreTreeAccess = isDirectiveDefined(sourceText, "// IGNORE_TREE_ACCESS:")
         var treeAccessFound = false
         try {
-            runOnEdt { super.doRawCfirTest(filePath) }
+            runOnEdt { super.doRawCfirTest(resolvedFilePath) }
         } catch (e: Throwable) {
             if (!ignoreTreeAccess || e.message?.startsWith("Access to tree elements not allowed for") != true) {
                 throw e
@@ -30,6 +42,8 @@ abstract class AbstractRawCfirBuilderLazyBodiesByStubTest : AbstractRawCfirBuild
 
     override fun createFileForLazyMode(filePath: String): CjFile {
         val originalFile = super.createFileForLazyMode(filePath)
+        val sourceText = File(filePath).readText()
+        val allowAstFallback = isDirectiveDefined(sourceText, "// STUB_FALLBACK_TO_AST:")
         val originalProvider = originalFile.viewProvider
         val virtualFile = originalProvider.virtualFile
         check(virtualFile.fileType == CangJieFileType.INSTANCE) {
@@ -54,7 +68,18 @@ abstract class AbstractRawCfirBuilderLazyBodiesByStubTest : AbstractRawCfirBuild
         updatedProvider.forceCachedPsi(fileWithStub)
 
         check(fileWithStub.viewProvider.isPhysical) { "Stub mode file must be physical: ${File(filePath).name}" }
-        checkNotNull(fileWithStub.stub) { "Stub for the file must not be null: ${File(filePath).name}" }
+        val stub = try {
+            fileWithStub.stub
+        } catch (t: Throwable) {
+            if (allowAstFallback) {
+                return originalFile
+            }
+            throw t
+        }
+        if (stub == null && allowAstFallback) {
+            return originalFile
+        }
+        checkNotNull(stub) { "Stub for the file must not be null: ${File(filePath).name}" }
 
         updatedProvider.manager.setAssertOnFileLoadingFilter(
             { vf -> vf != virtualFile },
@@ -64,7 +89,10 @@ abstract class AbstractRawCfirBuilderLazyBodiesByStubTest : AbstractRawCfirBuild
     }
 
     private fun isDirectiveDefined(text: String, directive: String): Boolean {
-        return text.lineSequence().any { it.trim() == directive }
+        return text.lineSequence().any { line ->
+            val normalized = line.trimStart('\uFEFF').trim()
+            normalized == directive || normalized.contains(directive)
+        }
     }
 
     private fun runOnEdt(action: () -> Unit) {

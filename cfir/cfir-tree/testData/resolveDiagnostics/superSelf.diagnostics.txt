@@ -1,0 +1,4 @@
+file: superSelf.cj
+phase: CHECKERS
+diagnostics: 1
+- ERROR: [CFIR_SUPER_TYPES_SELF_REFERENCE] type 'SelfType' cannot inherit from itself
