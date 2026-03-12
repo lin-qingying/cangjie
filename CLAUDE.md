@@ -36,4 +36,23 @@ LOAD_PLUGINS → PARSE → CONDITION_COMPILE → IMPORT_PACKAGE → MACRO_EXPAND
 - 构建工具：Gradle + Kotlin DSL + Version Catalog
 - 编译器选项：`-Xjvm-default=all`
 - 测试框架：JUnit 5（JUnitPlatform）
+- **中文注释优先**：注释使用中文，优先文档注释
+
 - **接口优先**：所有独立模块和功能必须通过接口（interface）对外暴露高级抽象，实现细节不对外泄露。模块间依赖接口而非具体类，为未来扩展和替换实现留出空间
+- **规范优先**：项目级开发规范见 `DEVELOPMENT_CONVENTIONS.md`，默认对一方模块强制生效。
+  关键约束：可读性优先于炫技、一致性优先于个人习惯、明确优先于隐式、不可变优先于可变、接口隔离优先于大而全、领域建模优先于过程堆砌。
+  工程约束：模块边界清晰、依赖方向单向、领域模型稳定、接口契约明确、测试层次完整、可观测性内建、工程治理自动化、变更可控且可回滚。
+
+## Agent Runtime Notes
+- Do not create any `.gradle-user-*` directory (for example: `.gradle-user-local`, `.gradle-user-fresh`, `.gradle-user-xxxx`).
+- If Gradle cannot be executed for any reason, immediately notify the user.
+
+## Cfir/K2 FIR Alignment
+
+- Resolve framework code should mirror Kotlin K2 FIR structure as closely as practical, except where Cangjie language semantics force deviations.
+- Keep alignment targets in priority:
+  - folder hierarchy and package/module layout,
+  - inheritance chains and processor layering,
+  - class/type names and public method names (use `Cfir` prefix),
+  - processing flow.
+- If a Kotlin API has no direct Cangjie counterpart, add a corresponding Cfir API and document the deviation.

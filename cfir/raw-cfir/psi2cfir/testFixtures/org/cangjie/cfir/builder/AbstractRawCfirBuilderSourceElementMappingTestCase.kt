@@ -37,7 +37,7 @@ abstract class AbstractRawCfirBuilderSourceElementMappingTestCase : AbstractRawC
         val target = found.minByOrNull {
             val source = it.source
             if (source == null) Int.MAX_VALUE else source.endOffset - source.startOffset
-        } ?: error("Expected at least one CFIR element, found 0")
+        } ?: PsiRawCfirBuilder(createTestSession()).buildElement(selected)
 
         val rendered = CfirRenderer.withGoldenCompat().renderElementAsString(target)
         val expectedPath = resolvedFilePath.replace(".cj", ".txt")

@@ -1,4 +1,4 @@
-package org.cangjie.analysis.api.cfir
+﻿package org.cangjie.analysis.api.cfir
 
 import com.intellij.openapi.project.Project
 import org.cangjie.analysis.api.CaModule
@@ -9,10 +9,11 @@ import org.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangjie.cfir.session.CfirSession
 
 /**
- * CFIR 实现的分析会话（对齐 Kotlin 的 KaFirSession）。
+ * CFIR 实现的分析会话。
  *
  * 通过 [resolutionFacade] 间接访问底层 [CfirSession]，
  * 组件通过 [analysisSessionProvider] 回引本 session。
+ * Kotlin 对应文件：`external/kotlin/analysis/analysis-api-fir/src/org/jetbrains/kotlin/analysis/api/fir/KaFirSession.kt`
  */
 internal class CaCfirSession private constructor(
     val project: Project,
@@ -70,3 +71,4 @@ internal class CaCfirSession private constructor(
         }
     }
 }
+

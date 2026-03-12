@@ -1,27 +1,77 @@
-package org.cangjie.cfir.builder
+﻿package org.cangjie.cfir.builder
 
 import org.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 
 /**
- * Raw CFIR 构建上下文（对齐 Kotlin 的 Context<T>）。
- *
- * 泛型参数 T 为源码树节点类型（PsiElement 或 LighterASTNode），
- * 在源码 → Raw CFIR 转换过程中，维护编译状态：
- * - 当前包名
- * - 是否在局部上下文中
- * - 循环/函数/标签目标栈（后续补充）
- *
- * 注意：session 和 moduleData 在 AbstractRawCfirBuilder 中，与 Kotlin 一致。
- * 注意：仓颉没有嵌套类，不需要 className 栈。
+ * Shared state for raw CFIR building.
  */
 class Context<T> {
-    /** 当前包的全限定名 */
-    lateinit var packageFqName: FqName
-
-    /** 是否处于局部上下文（局部函数内部） */
+    var packageFqName: FqName = FqName.ROOT
     var inLocalContext: Boolean = false
 
     val arraySetArgument: MutableMap<T, CfirExpression> = mutableMapOf()
 
+    private val localContextStack: ArrayDeque<Boolean> = ArrayDeque()
+    private val functionTargets: ArrayDeque<T> = ArrayDeque()
+    private val loopTargets: ArrayDeque<T> = ArrayDeque()
+    private val labelNames: ArrayDeque<Name> = ArrayDeque()
+
+    fun <R> withPackage(fqName: FqName, block: () -> R): R {
+        val previous = packageFqName
+        packageFqName = fqName
+        return try {
+            block()
+        } finally {
+            packageFqName = previous
+        }
+    }
+
+    fun <R> withLocalContext(block: () -> R): R {
+        localContextStack.addLast(inLocalContext)
+        inLocalContext = true
+        return try {
+            block()
+        } finally {
+            inLocalContext = localContextStack.removeLast()
+        }
+    }
+
+    fun enterFunction(target: T) {
+        functionTargets.addLast(target)
+    }
+
+    fun exitFunction() {
+        if (functionTargets.isNotEmpty()) {
+            functionTargets.removeLast()
+        }
+    }
+
+    fun currentFunctionTarget(): T? = functionTargets.lastOrNull()
+
+    fun enterLoop(target: T) {
+        loopTargets.addLast(target)
+    }
+
+    fun exitLoop() {
+        if (loopTargets.isNotEmpty()) {
+            loopTargets.removeLast()
+        }
+    }
+
+    fun currentLoopTarget(): T? = loopTargets.lastOrNull()
+
+    fun pushLabel(name: Name) {
+        labelNames.addLast(name)
+    }
+
+    fun popLabel() {
+        if (labelNames.isNotEmpty()) {
+            labelNames.removeLast()
+        }
+    }
+
+    fun currentLabel(): Name? = labelNames.lastOrNull()
 }
+

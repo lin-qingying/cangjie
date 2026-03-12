@@ -1,50 +1,63 @@
-package org.cangjie.cfir.builder
+﻿package org.cangjie.cfir.builder
 
 import com.intellij.psi.tree.IElementType
+import org.cangjie.cfir.CfirElement
 import org.cangjie.cfir.common.CfirModuleData
 import org.cangjie.cfir.common.CfirSourceElement
 import org.cangjie.cfir.common.moduleData
-import org.cangjie.cfir.declarations.*
-import org.cangjie.cfir.expressions.*
+import org.cangjie.cfir.declarations.CfirDeclaration
+import org.cangjie.cfir.declarations.CfirDeclarationStatus
+import org.cangjie.cfir.declarations.CfirFile
+import org.cangjie.cfir.expressions.CfirErrorExpression
+import org.cangjie.cfir.expressions.CfirExpression
+import org.cangjie.cfir.expressions.builder.buildErrorExpression as buildErrorExpressionNode
 import org.cangjie.cfir.references.CfirNamedReference
+import org.cangjie.cfir.references.builder.buildNamedReference as buildNamedReferenceNode
 import org.cangjie.cfir.session.CfirSession
-
-import org.cangjie.cfir.types.*
+import org.cangjie.cfir.types.CfirTypeRef
+import org.cangjie.cfir.types.builder.buildImplicitTypeRef as buildImplicitTypeRefNode
 import org.cangnova.cangjie.descriptors.Visibility
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
-/**
- * Raw CFIR 构建器抽象基类（对齐 Kotlin 的 AbstractRawFirBuilder<T>）。
- *
- * 使用泛型参数 T 表示源码树节点类型：
- * - T = PsiElement → PsiRawCfirBuilder（psi2cfir）
- * - T = LighterASTNode → LightTreeRawCfirBuilder（light-tree2cfir，未来）
- *
- * 子类需实现抽象方法以适配各自的树遍历方式。
- */
 abstract class AbstractRawCfirBuilder<T : Any>(
-    val  baseSession: CfirSession,
+    val baseSession: CfirSession,
     val context: Context<T> = Context(),
 ) {
     val baseModuleData: CfirModuleData = baseSession.moduleData
 
-    // ===== 抽象方法：子类按 T 类型实现 =====
+    protected var packageFqName: FqName
+        get() = context.packageFqName
+        set(value) {
+            context.packageFqName = value
+        }
 
-    /** 获取节点的源码位置信息 */
+    protected fun <R> withPackageContext(fqName: FqName, block: () -> R): R = context.withPackage(fqName, block)
+
+    protected fun <R> withLocalContext(block: () -> R): R = context.withLocalContext(block)
+
     abstract fun T.toSourceElement(): CfirSourceElement
 
-    /** 获取节点的元素类型 */
     abstract fun T.elementType(): IElementType
 
-    /** 获取节点文本 */
     abstract fun T.asText(): String
 
-    // ===== 共享的构建方法 =====
+    open fun buildElement(element: T): CfirElement {
+        error("Unsupported build element entry: ${element::class.qualifiedName}")
+    }
 
-    /**
-     * 构建声明状态（可见性、修饰符等）。
-     * 默认实现返回 DEFAULT，子类可按需覆盖。
-     */
+    open fun buildFile(file: T): CfirFile {
+        error("Unsupported build file entry: ${file::class.qualifiedName}")
+    }
+
+    open fun buildDeclaration(declaration: T): CfirDeclaration {
+        error("Unsupported build declaration entry: ${declaration::class.qualifiedName}")
+    }
+
+    open fun buildExpression(expression: T): CfirExpression {
+        error("Unsupported build expression entry: ${expression::class.qualifiedName}")
+    }
+
     protected open fun buildDeclarationStatus(
         visibility: Visibility,
         isAbstract: Boolean = false,
@@ -73,24 +86,22 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         )
     }
 
-    /**
-     * 创建命名引用（未解析）。
-     */
+    @Suppress("UNUSED_PARAMETER")
     protected fun buildNamedReference(name: Name, source: CfirSourceElement? = null): CfirNamedReference {
-        return CfirNamedReference(source = source, name = name)
+        return buildNamedReferenceNode {
+            this.name = name
+        }
     }
 
-    /**
-     * 创建错误表达式。
-     */
+    @Suppress("UNUSED_PARAMETER")
     protected fun buildErrorExpression(source: CfirSourceElement? = null, reason: String): CfirErrorExpression {
-        return CfirErrorExpression(source = source, reason = reason)
+        return buildErrorExpressionNode {
+            this.reason = reason
+        }
     }
 
-    /**
-     * 创建隐式类型引用。
-     */
     protected fun buildImplicitTypeRef(): CfirTypeRef {
-        return CfirImplicitTypeRef.INSTANCE
+        return buildImplicitTypeRefNode()
     }
 }
+

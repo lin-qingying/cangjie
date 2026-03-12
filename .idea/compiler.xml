@@ -44,6 +44,9 @@
       <module name="cangjie.analysis.analysis-test-framework.test" options="-proc:none" />
       <module name="cangjie.analysis.analysis-test-framework.testFixtures" options="-proc:none" />
       <module name="cangjie.cfir.cfir-common" options="-proc:none" />
+      <module name="cangjie.cfir.cfir-common-psi" options="-proc:none" />
+      <module name="cangjie.cfir.cfir-common-psi.main" options="-proc:none" />
+      <module name="cangjie.cfir.cfir-common-psi.test" options="-proc:none" />
       <module name="cangjie.cfir.cfir-common.main" options="-proc:none" />
       <module name="cangjie.cfir.cfir-common.test" options="-proc:none" />
       <module name="cangjie.cfir.cfir-cones" options="-proc:none" />
@@ -52,6 +55,18 @@
       <module name="cangjie.cfir.cfir-tree" options="-proc:none" />
       <module name="cangjie.cfir.cfir-tree.main" options="-proc:none" />
       <module name="cangjie.cfir.cfir-tree.test" options="-proc:none" />
+      <module name="cangjie.cfir.cfir-tree.tree-generator" options="-proc:none" />
+      <module name="cangjie.cfir.cfir-tree.tree-generator.main" options="-proc:none" />
+      <module name="cangjie.cfir.cfir-tree.tree-generator.test" options="-proc:none" />
+      <module name="cangjie.cfir.checkers" options="-proc:none" />
+      <module name="cangjie.cfir.checkers.checkers-component-generator" options="-proc:none" />
+      <module name="cangjie.cfir.checkers.checkers-component-generator.main" options="-proc:none" />
+      <module name="cangjie.cfir.checkers.checkers-component-generator.test" options="-proc:none" />
+      <module name="cangjie.cfir.checkers.main" options="-proc:none" />
+      <module name="cangjie.cfir.checkers.test" options="-proc:none" />
+      <module name="cangjie.cfir.diagnostic-renderers" options="-proc:none" />
+      <module name="cangjie.cfir.diagnostic-renderers.main" options="-proc:none" />
+      <module name="cangjie.cfir.diagnostic-renderers.test" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.light-tree2cfir" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.light-tree2cfir.main" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.light-tree2cfir.test" options="-proc:none" />
@@ -62,6 +77,9 @@
       <module name="cangjie.cfir.raw-cfir.raw-cfir-common" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.raw-cfir-common.main" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.raw-cfir-common.test" options="-proc:none" />
+      <module name="cangjie.cfir.resolve" options="-proc:none" />
+      <module name="cangjie.cfir.resolve.main" options="-proc:none" />
+      <module name="cangjie.cfir.resolve.test" options="-proc:none" />
       <module name="cangjie.common" options="-proc:none" />
       <module name="cangjie.common.main" options="-proc:none" />
       <module name="cangjie.common.test" options="-proc:none" />
@@ -69,11 +87,20 @@
       <module name="cangjie.compiler.cli" options="-proc:none" />
       <module name="cangjie.compiler.cli.main" options="-proc:none" />
       <module name="cangjie.compiler.cli.test" options="-proc:none" />
+      <module name="cangjie.compiler.config" options="-proc:none" />
+      <module name="cangjie.compiler.config.main" options="-proc:none" />
+      <module name="cangjie.compiler.config.test" options="-proc:none" />
       <module name="cangjie.compiler.main" options="-proc:none" />
       <module name="cangjie.compiler.test" options="-proc:none" />
       <module name="cangjie.dependencies.intellij-core" options="-proc:none" />
       <module name="cangjie.dependencies.intellij-core.main" options="-proc:none" />
       <module name="cangjie.dependencies.intellij-core.test" options="-proc:none" />
+      <module name="cangjie.flatbuffers-gen" options="-proc:none" />
+      <module name="cangjie.flatbuffers-gen.main" options="-proc:none" />
+      <module name="cangjie.flatbuffers-gen.test" options="-proc:none" />
+      <module name="cangjie.generators" options="-proc:none" />
+      <module name="cangjie.generators.main" options="-proc:none" />
+      <module name="cangjie.generators.test" options="-proc:none" />
       <module name="cangjie.psi" options="-proc:none" />
       <module name="cangjie.psi.main" options="-proc:none" />
       <module name="cangjie.psi.test" options="-proc:none" />

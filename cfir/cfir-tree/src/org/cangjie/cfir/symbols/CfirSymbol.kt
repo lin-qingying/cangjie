@@ -88,7 +88,7 @@ class CfirVariableSymbol : CfirCallableSymbol<CfirVariable>() {
 
 class CfirPatternVariableSymbol : CfirCallableSymbol<CfirPatternVariable>() {
     override fun toString(): String =
-        if (isBound) "CfirPatternVariableSymbol(${fir.bindings.joinToString { it.name.asString() }})"
+        if (isBound) "CfirPatternVariableSymbol(${fir.pattern::class.simpleName})"
         else "CfirPatternVariableSymbol(unbound)"
 }
 

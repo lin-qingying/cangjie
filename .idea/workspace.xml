@@ -5,17 +5,128 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/modules/repo/gradle-build-conventions/generators/gradle-build-conventions.generators.main.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirMinimalResolveComponentsRegistrar.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirMinimalResolveProcessors.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirTotalResolveProcessor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirTotalResolveProcessor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/session/CfirSessionExtensions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/session/CfirSessionExtensions.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/providers/CfirResolveProviderPipelineTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/providers/CfirResolveProviderPipelineTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/CfirMinimalResolvePipelineTest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/CfirSuperExtensionsResolveProcessorTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/CfirSuperExtensionsResolveProcessorTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/MinimalResolveDiagnosticsPipelineTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/CLAUDE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/CaCfirSession.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/CaCfirSession.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeServiceImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeServiceImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/resolve/CaCfirResolveFacade.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/resolve/CaCfirResolveFacade.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangjie/analysis/api/cfir/test/AnalysisApiSurfaceTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangjie/analysis/api/cfir/test/AnalysisApiSurfaceTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangjie/analysis/api/components/CaSessionComponents.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangjie/analysis/api/components/CaSessionComponents.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangjie/analysis/test/framework/TestWithDisposable.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangjie/analysis/test/framework/TestWithDisposable.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-common/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/CfirElement.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirClass.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirClass.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirConstructor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirDeclaration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirEnumConstructor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirExtend.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirFile.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirFinalizer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirFunction.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirImport.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirInvalidDeclaration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirMacroDeclaration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirMainFunction.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirProperty.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirTypeAlias.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirTypeParameter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirValueParameter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/diagnostics/CfirDiagnostic.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/diagnostics/CfirDiagnosticCollector.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/diagnostics/CfirDiagnosticReporter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirBlock.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirCallExpressions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirControlExpressions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirExceptionExpressions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirJumpExpressions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirJumpExpressions.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirLambdaExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirLiteralExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirLiteralExpression.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirLoopExpressions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirMiscExpressions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirOperatorExpressions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirOperatorExpressions.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirTypeOperator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirTypeOperator.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/patterns/CfirPattern.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirBuiltinSymbolProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirCompositeExtendProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirCompositeProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirCompositeSymbolProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirEmptyExtendProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirEmptyProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirEmptySymbolProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirExtendProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirSymbolNamesProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirSymbolProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/references/CfirReference.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/renderer/CfirRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/renderer/CfirRenderer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirPhaseResolverRegistry.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirResolveComponentsRegistrar.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirResolveProcessor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirResolveProcessors.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirTotalResolveProcessor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/diagnostics/CfirResolveRuleCatalog.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/processors/CfirPhaseProcessor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/providers/CfirResolveProviderPipeline.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/services/CfirImportBindingStore.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/services/CfirResolvePhaseServices.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/services/CfirSuperTypeGraphStore.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/session/CfirSessionExtensions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/symbols/CfirSymbol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/symbols/CfirSymbol.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/types/CfirTypeRef.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/visitors/CfirDefaultVisitor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/visitors/CfirTransformer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/visitors/CfirVisitor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/providers/CfirEmptyProvidersSmokeTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/providers/CfirResolveProviderPipelineTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/renderer/CfirRendererApiTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/CfirImportsResolveProcessorTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/CfirResolveDiagnosticsPipelineTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/CfirResolvePipelineTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/CfirSuperExtensionsResolveProcessorTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/diagnostics/CfirResolveRuleCatalogTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/framework/AbstractCfirResolveDiagnosticsTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/framework/CfirResolveDiagnosticsFacade.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/framework/CfirResolveDiagnosticsHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/framework/CfirResolveTestSessionFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/framework/ResolveDiagnosticsTestArtifacts.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangjie/cfir/builder/PsiConversionUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangjie/cfir/builder/PsiConversionUtils.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangjie/cfir/builder/PsiRawCfirBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangjie/cfir/builder/PsiRawCfirBuilder.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderSourceElementMappingTestCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderSourceElementMappingTestCase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common/src/org/cangjie/cfir/builder/AbstractRawCfirBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common/src/org/cangjie/cfir/builder/AbstractRawCfirBuilder.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common/src/org/cangjie/cfir/builder/RawCfirBuilderContext.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common/src/org/cangjie/cfir/builder/RawCfirBuilderContext.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/cli/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/cli/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/external/kotlin" beforeDir="false" afterPath="$PROJECT_DIR$/external/kotlin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/tasks.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/tasks.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/.openspec.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/design.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/proposal.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-body-resolve-phase/spec.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-cangjie-semantic-parity/spec.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-checkers-phase/spec.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-complete-pipeline/spec.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-extensions-phase/spec.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-full-diagnostics-and-tests/spec.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-implicit-types-phase/spec.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-imports-phase/spec.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-lazy-jumping-contract/spec.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-status-phase/spec.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-super-types-phase/spec.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-types-phase/spec.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/compiler-architecture/spec.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/raw-cfir-implementation/spec.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/tasks.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/repo/gradle-build-conventions/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/repo/gradle-build-conventions/settings.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -122,6 +233,7 @@
     "Gradle.RawCfirBuilderLazyBodiesByAstTestGenerated.executor": "Run",
     "Gradle.RawCfirBuilderTestCase.executor": "Run",
     "Gradle.RawCfirBuilderTestCaseGenerated.executor": "Run",
+    "Gradle.cangjie [:cfir:cfir-tree:tree-generator:org.cangjie.cfir.tree.generator.MainKt.main()].executor": "Run",
     "Gradle.cangjie [:cfir:raw-cfir:psi2cfir:org.cangjie.cfir.builder.TestGeneratorForPsi2Cfir.main()].executor": "Run",
     "Gradle.cangjie [build].executor": "Run",
     "Gradle.cangjie [cfir:raw-cfir:psi2cfir:test].executor": "Run",
@@ -145,7 +257,7 @@
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "master",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/code/intellij/cangjie/test",
+    "last_opened_file_path": "D:/code/intellij/cangjie/compiler/config/src/org/cangjie/cli/common/messages",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -160,12 +272,16 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\code\intellij\cangjie\compiler\config\src\org\cangjie\cli\common\messages" />
       <recent name="D:\code\intellij\cangjie\test" />
       <recent name="D:\code\intellij\cangjie\psi" />
       <recent name="D:\code\intellij\cangjie" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\code\intellij\cangjie\test" />
+    </key>
+    <key name="CopyKotlinDeclarationDialog.RECENTS_KEY">
+      <recent name="org.cangjie.cli.common.messages" />
     </key>
     <key name="K2MoveDeclarationsDialog.RECENT_PACKAGE_KEY">
       <recent name="org.cangjie.cfir.types" />
@@ -178,7 +294,7 @@
       <command value="gradle test" />
     </option>
   </component>
-  <component name="RunManager" selected="Gradle.cangjie [test]">
+  <component name="RunManager" selected="JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 9 个">
     <configuration name="CfirMinimalResolvePipelineTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -234,58 +350,6 @@
     <configuration default="true" type="JUnit" factoryName="JUnit">
       <shortenClasspath name="ARGS_FILE" />
       <option name="TEST_OBJECT" value="class" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Atomic 和其他 33 个" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="cangjie.cfir.raw-cfir.psi2cfir.test" />
-      <shortenClasspath name="ARGS_FILE" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="org.cangjie.cfir.builder.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <option name="PACKAGE_NAME" value="org.cangjie.cfir.builder" />
-      <option name="MAIN_CLASS_NAME" value="org.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase" />
-      <option name="TEST_OBJECT" value="pattern" />
-      <patterns>
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Atomic" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$Atomic" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Expressions$Atomic" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Binary" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$Binary" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Expressions$Binary" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$ControlFlow" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$ControlFlow" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Expressions$ControlFlow" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Declarations" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Expressions" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Interactions" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$Interactions" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Expressions$Interactions" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Lambda" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$Lambda" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Expressions$Lambda" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Postfix" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$Postfix" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Expressions$Postfix" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Prefix" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$Prefix" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Expressions$Prefix" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderSourceElementMappingTestGenerated" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Type" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$Type" />
-        <pattern testClass="org.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Expressions$Type" />
-      </patterns>
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -393,12 +457,19 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="MainKt" type="JetRunConfigurationType" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.cangjie.cfir.tree.generator.MainKt" />
+      <module name="cangjie.cfir.cfir-tree.tree-generator.main" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 9 个" />
         <item itemvalue="Gradle.cangjie [test]" />
+        <item itemvalue="Kotlin.MainKt" />
         <item itemvalue="Gradle.CfirMinimalResolvePipelineTest" />
-        <item itemvalue="JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics 和其他 57 个" />
-        <item itemvalue="JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics 和其他 57 个" />
         <item itemvalue="JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics 和其他 57 个" />
       </list>
     </recent_temporary>
@@ -440,7 +511,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="master" />
+                        <option value="psi-raw-builder-fix" />
                       </list>
                     </value>
                   </entry>
