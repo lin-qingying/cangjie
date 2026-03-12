@@ -1,0 +1,27 @@
+FILE: opAndIfExpressions.cj
+    func opAndIfExpressions(a: R|Int64|, b: R|Int64|, c: R|Int64|): R|Int64| {
+        let d: <implicit> = ...
+            initializer:
+                ERROR_EXPR(Missing prefix operand)
+        let e: <implicit> = ...
+            initializer:
+                IF {
+                    condition:
+                        COMPARISON(GT) {
+                            QUALIFIED_ACCESS(a)
+                            QUALIFIED_ACCESS(b)
+                        }
+                    then:
+                        QUALIFIED_ACCESS(c)
+                    else:
+                        QUALIFIED_ACCESS(b)
+                }
+        RETURN {
+            FUNCTION_CALL(plus) {
+                receiver:
+                    QUALIFIED_ACCESS(d)
+                arguments:
+                    QUALIFIED_ACCESS(e)
+            }
+        }
+    }

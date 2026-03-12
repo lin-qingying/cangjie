@@ -1,0 +1,19 @@
+FILE: genericWhereTypeDeclarations.cj
+    interface Constraint {
+    }
+    class GenericClass<T> {
+        var value: R|T| = ...
+            initializer:
+                QUALIFIED_ACCESS(seed)
+    }
+    interface GenericInterface<T> {
+        var value: R|T|
+    }
+    struct GenericStruct<T> {
+        var value: R|T| = ...
+            initializer:
+                QUALIFIED_ACCESS(seed)
+    }
+    enum GenericEnum<T> {
+        Value(R|T|)
+    }

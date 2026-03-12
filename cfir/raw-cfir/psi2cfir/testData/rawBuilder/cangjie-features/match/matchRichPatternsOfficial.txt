@@ -1,0 +1,34 @@
+FILE: matchRichPatternsOfficial.cj
+    func classifyScore(score: R|Int64|): R|String| {
+        RETURN {
+            MATCH {
+                subject:
+                    ERROR_EXPR(Missing match subject)
+                BRANCH(const(<expr>)) {
+                    STRING("fail")
+                }
+                BRANCH(const(<expr>)) {
+                    STRING("pass")
+                }
+                BRANCH(const(<expr>)) {
+                    STRING("good")
+                }
+                BRANCH(_) {
+                    STRING("excellent")
+                }
+            }
+        }
+    }
+    func extractYear(time: R|TimeUnit|): R|Int32| {
+        RETURN {
+            MATCH {
+                subject:
+                    QUALIFIED_ACCESS(time)
+                BRANCH(const(Year)) {
+                    QUALIFIED_ACCESS(y)
+                }
+                BRANCH(const(Year)) {
+                }
+            }
+        }
+    }

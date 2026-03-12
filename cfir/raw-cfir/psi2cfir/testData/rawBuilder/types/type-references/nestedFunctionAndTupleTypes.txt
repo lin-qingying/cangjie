@@ -1,0 +1,5 @@
+FILE: nestedFunctionAndTupleTypes.cj
+    typealias Mapper = R|(R|Int64|, R|String|) -> R|Bool||
+    typealias Pair = R|(R|Int64|, R|String|)|
+    typealias HandlerTable = R|VArray<R|(R|Int64|) -> R|Bool||, $4>|
+    typealias NestedMapper = R|(R|(R|Int64|) -> R|String||, R|Pair|) -> R|Mapper||
