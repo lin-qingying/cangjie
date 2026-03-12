@@ -5,128 +5,399 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/modules/repo/gradle-build-conventions/generators/gradle-build-conventions.generators.main.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/CLAUDE.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/CaCfirSession.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/CaCfirSession.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeService.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeServiceImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeServiceImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/resolve/CaCfirResolveFacade.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangjie/analysis/api/cfir/resolve/CaCfirResolveFacade.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangjie/analysis/api/cfir/test/AnalysisApiSurfaceTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangjie/analysis/api/cfir/test/AnalysisApiSurfaceTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangjie/analysis/api/components/CaSessionComponents.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangjie/analysis/api/components/CaSessionComponents.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangjie/analysis/test/framework/TestWithDisposable.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangjie/analysis/test/framework/TestWithDisposable.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-common/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/CfirElement.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirClass.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirClass.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirConstructor.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirDeclaration.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirEnumConstructor.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirExtend.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirFile.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirFinalizer.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirFunction.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirImport.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirInvalidDeclaration.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirMacroDeclaration.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirMainFunction.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirProperty.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirTypeAlias.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirTypeParameter.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirValueParameter.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/diagnostics/CfirDiagnostic.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/diagnostics/CfirDiagnosticCollector.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/diagnostics/CfirDiagnosticReporter.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirBlock.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirCallExpressions.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirControlExpressions.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirExceptionExpressions.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirExpression.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirJumpExpressions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirJumpExpressions.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirLambdaExpression.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirLiteralExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirLiteralExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirLoopExpressions.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirMiscExpressions.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirOperatorExpressions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirOperatorExpressions.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirTypeOperator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/expressions/CfirTypeOperator.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/patterns/CfirPattern.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirBuiltinSymbolProvider.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirCompositeExtendProvider.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirCompositeProvider.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirCompositeSymbolProvider.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirEmptyExtendProvider.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirEmptyProvider.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirEmptySymbolProvider.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirExtendProvider.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirProvider.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirSymbolNamesProvider.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/providers/CfirSymbolProvider.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/references/CfirReference.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/renderer/CfirRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/renderer/CfirRenderer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirPhaseResolverRegistry.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirResolveComponentsRegistrar.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirResolveProcessor.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirResolveProcessors.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/CfirTotalResolveProcessor.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/diagnostics/CfirResolveRuleCatalog.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/processors/CfirPhaseProcessor.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/providers/CfirResolveProviderPipeline.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/services/CfirImportBindingStore.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/services/CfirResolvePhaseServices.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/services/CfirSuperTypeGraphStore.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/session/CfirSessionExtensions.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/symbols/CfirSymbol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/symbols/CfirSymbol.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/types/CfirTypeRef.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/visitors/CfirDefaultVisitor.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/visitors/CfirTransformer.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/visitors/CfirVisitor.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/providers/CfirEmptyProvidersSmokeTest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/providers/CfirResolveProviderPipelineTest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/renderer/CfirRendererApiTest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/CfirImportsResolveProcessorTest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/CfirResolveDiagnosticsPipelineTest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/CfirResolvePipelineTest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/CfirSuperExtensionsResolveProcessorTest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/diagnostics/CfirResolveRuleCatalogTest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/framework/AbstractCfirResolveDiagnosticsTest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/framework/CfirResolveDiagnosticsFacade.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/framework/CfirResolveDiagnosticsHandler.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/framework/CfirResolveTestSessionFactory.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/test/org/cangjie/cfir/resolve/framework/ResolveDiagnosticsTestArtifacts.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangjie/cfir/builder/PsiConversionUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangjie/cfir/builder/PsiConversionUtils.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangjie/cfir/builder/PsiRawCfirBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangjie/cfir/builder/PsiRawCfirBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderSourceElementMappingTestCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderSourceElementMappingTestCase.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common/src/org/cangjie/cfir/builder/AbstractRawCfirBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common/src/org/cangjie/cfir/builder/AbstractRawCfirBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common/src/org/cangjie/cfir/builder/RawCfirBuilderContext.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common/src/org/cangjie/cfir/builder/RawCfirBuilderContext.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/cli/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/cli/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/external/kotlin" beforeDir="false" afterPath="$PROJECT_DIR$/external/kotlin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/.openspec.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/design.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/proposal.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-body-resolve-phase/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-cangjie-semantic-parity/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-checkers-phase/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-complete-pipeline/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-extensions-phase/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-full-diagnostics-and-tests/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-implicit-types-phase/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-imports-phase/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-lazy-jumping-contract/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-status-phase/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-super-types-phase/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/cfir-resolve-types-phase/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/compiler-architecture/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/specs/raw-cfir-implementation/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/complete-cfir-resolve-phase/tasks.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/repo/gradle-build-conventions/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/repo/gradle-build-conventions/settings.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/BCHIRFormat.fbs" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/BCHIRFormat.fbs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/CachedASTFormat.fbs" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/CachedASTFormat.fbs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/MacroMsgFormat.fbs" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/MacroMsgFormat.fbs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/ModuleFormat.fbs" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/ModuleFormat.fbs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/NodeFormat.fbs" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/NodeFormat.fbs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/PackageFormat.fbs" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/PackageFormat.fbs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/StyleGuide.md" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/flatbuffers/StyleGuide.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/BCHIRFormat/ChirIDAnnotation.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/BCHIRFormat/ChirIDAnnotation.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/BCHIRFormat/CodePosition.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/BCHIRFormat/CodePosition.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/BCHIRFormat/CodePositionPair.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/BCHIRFormat/CodePositionPair.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/BCHIRFormat/Definition.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/BCHIRFormat/Definition.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/BCHIRFormat/MangledNamePair.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/BCHIRFormat/MangledNamePair.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/BCHIRFormat/PosAnnotation.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/BCHIRFormat/PosAnnotation.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/CompilerAddedUsage.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/CompilerAddedUsage.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/DeclDep.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/DeclDep.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/EffectMap.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/EffectMap.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/GlobalVarIndex.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/GlobalVarIndex.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/HashedPackage.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/HashedPackage.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/MemberDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/MemberDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/NameInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/NameInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/Relation.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/Relation.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/SemanticInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/SemanticInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/TopDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/TopDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/Usage.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/Usage.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/UseInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/UseInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/VirtualDep.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/CachedASTFormat/VirtualDep.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/BoolValue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/BoolValue.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/ChildMsg.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/ChildMsg.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/DefLib.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/DefLib.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/Diagnostic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/Diagnostic.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/ExitTask.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/ExitTask.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/IdInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/IdInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/IntValue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/IntValue.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/ItemInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/ItemInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/MacroCall.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/MacroCall.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/MacroMsg.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/MacroMsg.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/MacroResult.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/MacroResult.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/MsgContent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/MsgContent.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/MultiMacroCalls.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/MultiMacroCalls.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/OptionValue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/OptionValue.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/Position.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/Position.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/Token.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/Token.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/TokensValue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/MacroMsgFormat/TokensValue.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AccessibleKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AccessibleKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Annotation.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Annotation.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AnyDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AnyDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AnyExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AnyExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AnyNode.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AnyNode.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AnyPattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AnyPattern.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AnyType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AnyType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ArrayExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ArrayExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ArrayLit.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ArrayLit.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AsExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AsExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AssignExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/AssignExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/BinaryExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/BinaryExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Block.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Block.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/CallExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/CallExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ClassBody.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ClassBody.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ClassDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ClassDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/CommandTypePattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/CommandTypePattern.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ConstPattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ConstPattern.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ConstantType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ConstantType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Decl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Decl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/DeclBase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/DeclBase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/DoWhileExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/DoWhileExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/EnumDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/EnumDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/EnumPattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/EnumPattern.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ExceptTypePattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ExceptTypePattern.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Expr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Expr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ExtendDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ExtendDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/FeatureId.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/FeatureId.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/FeaturesDirective.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/FeaturesDirective.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/FeaturesSet.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/FeaturesSet.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/File.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/File.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ForInExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ForInExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/FuncArg.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/FuncArg.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/FuncDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/FuncDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/FuncParam.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/FuncParam.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/FuncParamList.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/FuncParamList.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Generic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Generic.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/GenericConstraint.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/GenericConstraint.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/GenericParamDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/GenericParamDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Handler.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Handler.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/IfExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/IfExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ImportContent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ImportContent.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ImportKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ImportKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ImportSpec.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ImportSpec.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/IncOrDecExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/IncOrDecExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/InterfaceBody.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/InterfaceBody.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/InterfaceDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/InterfaceDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/IsExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/IsExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/JumpExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/JumpExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/LambdaExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/LambdaExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/LetPatternDestructor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/LetPatternDestructor.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/LitConstExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/LitConstExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MacroDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MacroDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MacroExpandDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MacroExpandDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MacroExpandExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MacroExpandExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MacroExpandParam.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MacroExpandParam.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MacroInvocation.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MacroInvocation.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MacroParam.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MacroParam.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MainDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MainDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MatchCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MatchCase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MatchCaseOther.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MatchCaseOther.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MatchExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MatchExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MemberAccess.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/MemberAccess.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Modifier.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Modifier.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Node.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Node.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/NodeBase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/NodeBase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/OptionType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/OptionType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/OptionalChainExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/OptionalChainExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/OptionalExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/OptionalExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/PackageSpec.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/PackageSpec.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ParenExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ParenExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ParenType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ParenType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Pattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Pattern.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/PerformExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/PerformExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Position.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Position.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/PrimaryCtorDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/PrimaryCtorDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/PrimitiveType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/PrimitiveType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/PrimitiveTypeExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/PrimitiveTypeExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/PropDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/PropDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/QualifiedType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/QualifiedType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/QuoteExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/QuoteExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/RangeExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/RangeExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ReExportKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ReExportKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/RefExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/RefExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/RefType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/RefType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Reference.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Reference.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ResumeExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ResumeExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ReturnExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ReturnExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/SpawnExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/SpawnExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/StructBody.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/StructBody.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/StructDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/StructDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/SubscriptExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/SubscriptExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/SynchronizedExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/SynchronizedExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ThisType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ThisType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ThrowExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/ThrowExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Token.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Token.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TokenPart.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TokenPart.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TrailingClosureExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TrailingClosureExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TryExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TryExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TupleLit.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TupleLit.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TuplePattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TuplePattern.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TupleType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TupleType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Type.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/Type.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TypeAliasDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TypeAliasDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TypeBase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TypeBase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TypeConvExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TypeConvExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TypePattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/TypePattern.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/UnaryExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/UnaryExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/VArrayType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/VArrayType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/VarDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/VarDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/VarOrEnumPattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/VarOrEnumPattern.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/VarPattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/VarPattern.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/VarWithPatternDecl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/VarWithPatternDecl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/WhileExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/WhileExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/WildcardExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/WildcardExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/WildcardPattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/NodeFormat/WildcardPattern.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AbstractMethodParam.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AbstractMethodParam.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AccessLevel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AccessLevel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AccessModifier.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AccessModifier.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AliasInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AliasInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Allocate.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Allocate.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AllocateWithException.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AllocateWithException.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Anno.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Anno.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AnnoArg.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AnnoArg.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AnnoKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AnnoKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Annotation.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Annotation.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Apply.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Apply.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ApplyWithException.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ApplyWithException.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ArrayInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ArrayInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ArrayTyInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ArrayTyInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ArrayValue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ArrayValue.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AssignInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AssignInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AutoDiffInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/AutoDiffInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BinaryExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BinaryExpression.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BinaryInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BinaryInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Block.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Block.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BlockGroup.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BlockGroup.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BlockInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BlockInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BoolLiteral.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BoolLiteral.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BooleanType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BooleanType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Box.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Box.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BoxType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BoxType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BuiltInInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BuiltInInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BuiltInType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/BuiltInType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CHIRExprKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CHIRExprKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CHIRPackage.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CHIRPackage.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CHIRTypeKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CHIRTypeKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CPointerType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CPointerType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CStringType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CStringType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CallInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CallInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CallKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CallKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CjoVersion.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CjoVersion.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ClassDef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ClassDef.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ClassDefKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ClassDefKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ClassInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ClassInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ClassType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ClassType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CompositeTyInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CompositeTyInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CompositeValue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CompositeValue.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CompositeValueIndex.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CompositeValueIndex.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ConstValue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ConstValue.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Constant.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Constant.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ConstantValueKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ConstantValueKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Constraint.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Constraint.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CustomDefKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CustomDefKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CustomType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CustomType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CustomTypeDefElem.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/CustomTypeDefElem.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Debug.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Debug.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/DebugLocation.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/DebugLocation.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/DeclHash.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/DeclHash.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/DeclInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/DeclInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/DeclKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/DeclKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/EnumCaseIndex.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/EnumCaseIndex.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/EnumDef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/EnumDef.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/EnumInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/EnumInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Exit.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Exit.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Expr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Expr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ExprInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ExprInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ExprKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ExprKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ExtendDef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ExtendDef.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ExtendInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ExtendInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Field.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Field.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FieldByName.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FieldByName.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FileInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FileInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Float32Value.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Float32Value.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Float64Value.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Float64Value.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FloatLiteral.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FloatLiteral.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FloatType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FloatType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ForInClosedRange.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ForInClosedRange.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ForInInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ForInInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ForInIter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ForInIter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ForInKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ForInKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ForInRange.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ForInRange.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FullId.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FullId.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Func.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Func.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FuncArgInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FuncArgInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FuncInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FuncInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FuncParamList.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FuncParamList.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FuncType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/FuncType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GeneratedFromForIn.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GeneratedFromForIn.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Generic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Generic.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GenericTyInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GenericTyInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GenericType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GenericType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GetElementByName.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GetElementByName.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GetElementRef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GetElementRef.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GetException.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GetException.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GetInstantiateValue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GetInstantiateValue.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GetRTTI.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GetRTTI.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GetRTTIStatic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GetRTTIStatic.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GlobalVar.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GlobalVar.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GoTo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/GoTo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/If.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/If.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ImportSpec.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ImportSpec.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ImportedFunc.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ImportedFunc.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ImportedValue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ImportedValue.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ImportedVar.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ImportedVar.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Imports.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Imports.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IncOrDecInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IncOrDecInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/InstanceOf.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/InstanceOf.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Int16Value.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Int16Value.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Int32Value.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Int32Value.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Int64Value.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Int64Value.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Int8Value.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Int8Value.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IntLiteral.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IntLiteral.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IntOpWithException.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IntOpWithException.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IntType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IntType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/InterfaceInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/InterfaceInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Intrinsic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Intrinsic.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IntrinsicKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IntrinsicKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IntrinsicWithException.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IntrinsicWithException.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Invoke.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Invoke.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/InvokeStatic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/InvokeStatic.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/InvokeStaticWithException.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/InvokeStaticWithException.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/InvokeWithException.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/InvokeWithException.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IsAutoEnvClass.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IsAutoEnvClass.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IsCapturedClassInCC.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/IsCapturedClassInCC.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/JumpInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/JumpInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Lambda.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Lambda.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/LambdaInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/LambdaInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/LetPatternDestructorInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/LetPatternDestructorInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/LinkTypeInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/LinkTypeInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Linkage.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Linkage.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/LitConstInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/LitConstInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/LitConstKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/LitConstKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/LiteralValue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/LiteralValue.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Load.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Load.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/LocalVar.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/LocalVar.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Loop.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Loop.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/MatchCaseInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/MatchCaseInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/MatchInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/MatchInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/MemberValue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/MemberValue.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/MemberVarInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/MemberVarInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/MultiBranch.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/MultiBranch.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/NeedCheckArrayBound.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/NeedCheckArrayBound.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/NeedCheckCast.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/NeedCheckCast.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/NeverOverflowInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/NeverOverflowInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/NothingType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/NothingType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/NullLiteral.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/NullLiteral.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/NumericType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/NumericType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/OperatorKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/OperatorKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/OverflowPolicy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/OverflowPolicy.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/OverflowStrategy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/OverflowStrategy.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Package.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Package.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/PackageAccessLevel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/PackageAccessLevel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/PackageKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/PackageKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ParamInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ParamInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Parameter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Parameter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Pattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Pattern.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/PatternKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/PatternKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Phase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Phase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Pos.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Pos.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Position.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Position.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/PropInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/PropInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RaiseException.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RaiseException.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RawArrayAllocate.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RawArrayAllocate.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RawArrayAllocateWithException.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RawArrayAllocateWithException.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RawArrayInitByValue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RawArrayInitByValue.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RawArrayLiteralAllocate.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RawArrayLiteralAllocate.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RawArrayLiteralAllocateWithException.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RawArrayLiteralAllocateWithException.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RawArrayLiteralInit.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RawArrayLiteralInit.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RefType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RefType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ReferenceInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ReferenceInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RuneLiteral.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RuneLiteral.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RuneType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/RuneType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/SemaTyInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/SemaTyInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/SkipCheck.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/SkipCheck.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/SkipKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/SkipKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/SourceExpr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/SourceExpr.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Spawn.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Spawn.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/SpawnInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/SpawnInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/SpawnWithException.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/SpawnWithException.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Store.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Store.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/StoreElementByName.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/StoreElementByName.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/StoreElementRef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/StoreElementRef.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/StringKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/StringKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/StringLiteral.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/StringLiteral.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/StructDef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/StructDef.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/StructInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/StructInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/StructType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/StructType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/SubscriptInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/SubscriptInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ThisType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ThisType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TransformToConcrete.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TransformToConcrete.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TransformToGeneric.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TransformToGeneric.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TryInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TryInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Tuple.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Tuple.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TupleType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TupleType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Type.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Type.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TypeCast.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TypeCast.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TypeCastWithException.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TypeCastWithException.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TypeElem.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TypeElem.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TypeKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/TypeKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UInt16Value.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UInt16Value.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UInt32Value.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UInt32Value.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UInt64Value.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UInt64Value.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UInt8Value.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UInt8Value.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UnBox.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UnBox.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UnBoxToRef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UnBoxToRef.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UnaryExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UnaryExpression.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UnaryInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UnaryInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UnitLiteral.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UnitLiteral.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UnitType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/UnitType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VArray.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VArray.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VArrayBd.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VArrayBd.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VArrayType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VArrayType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VTableElement.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VTableElement.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Value.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/Value.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ValueElem.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ValueElem.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ValueKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/ValueKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VarInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VarInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VarWithPatternInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VarWithPatternInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VariantTypeCastWrapper.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VariantTypeCastWrapper.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VirMethodContext.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VirMethodContext.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VirMethodOffset.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VirMethodOffset.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VirtualFuncInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VirtualFuncInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VirtualFuncTypeInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VirtualFuncTypeInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VoidType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/VoidType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/WrappedRawMethod.kt" beforeDir="false" afterPath="$PROJECT_DIR$/flatbuffers-gen/gen/PackageFormat/WrappedRawMethod.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjFunctionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjFunctionImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/psiUtil/psiUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/psiUtil/psiUtils.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/StubInterfaces.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/StubInterfaces.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/elements/CjFunctionElementType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/elements/CjFunctionElementType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/elements/CjMacroElementType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/elements/CjMacroElementType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/elements/CjPropertyElementType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/elements/CjPropertyElementType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJieConstructorStubImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJieConstructorStubImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJieFieldStubImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJieFieldStubImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJieFinalizerStubImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJieFinalizerStubImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJieNamedFunctionStubImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJieNamedFunctionStubImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJiePropertyStubImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJiePropertyStubImpl.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -167,6 +438,19 @@
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
                 <item name="cangjie" type="f1a62948:ProjectNode" />
                 <item name="cangjie" type="2d1252cf:ModuleNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+                <item name="build" type="c8890929:TasksNode$1" />
               </path>
               <path>
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
@@ -257,7 +541,7 @@
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "master",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/code/intellij/cangjie/compiler/config/src/org/cangjie/cli/common/messages",
+    "last_opened_file_path": "D:/code/intellij/cangjie/flatbuffers-gen/flatbuffers",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -272,10 +556,11 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\code\intellij\cangjie\flatbuffers-gen\flatbuffers" />
+      <recent name="D:\code\intellij\cangjie" />
       <recent name="D:\code\intellij\cangjie\compiler\config\src\org\cangjie\cli\common\messages" />
       <recent name="D:\code\intellij\cangjie\test" />
       <recent name="D:\code\intellij\cangjie\psi" />
-      <recent name="D:\code\intellij\cangjie" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\code\intellij\cangjie\test" />
@@ -294,8 +579,8 @@
       <command value="gradle test" />
     </option>
   </component>
-  <component name="RunManager" selected="JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 9 个">
-    <configuration name="CfirMinimalResolvePipelineTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+  <component name="RunManager" selected="JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics 和其他 57 个">
+    <configuration name="RawCfirBuilderTestCaseGenerated" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -306,9 +591,9 @@
         </option>
         <option name="taskNames">
           <list>
-            <option value=":cfir:cfir-tree:test" />
+            <option value=":cfir:raw-cfir:psi2cfir:test" />
             <option value="--tests" />
-            <option value="&quot;org.cangjie.cfir.resolve.CfirMinimalResolvePipelineTest&quot;" />
+            <option value="&quot;org.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -318,6 +603,31 @@
       <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
       <DebugAllEnabled>false</DebugAllEnabled>
       <RunAsTest>true</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="cangjie [clean]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="clean" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
       <GradleProfilingDisabled>false</GradleProfilingDisabled>
       <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
@@ -457,20 +767,13 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="MainKt" type="JetRunConfigurationType" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.cangjie.cfir.tree.generator.MainKt" />
-      <module name="cangjie.cfir.cfir-tree.tree-generator.main" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics 和其他 57 个" />
+        <item itemvalue="Gradle.RawCfirBuilderTestCaseGenerated" />
+        <item itemvalue="Gradle.cangjie [clean]" />
         <item itemvalue="JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 9 个" />
         <item itemvalue="Gradle.cangjie [test]" />
-        <item itemvalue="Kotlin.MainKt" />
-        <item itemvalue="Gradle.CfirMinimalResolvePipelineTest" />
-        <item itemvalue="JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics 和其他 57 个" />
       </list>
     </recent_temporary>
   </component>
@@ -511,7 +814,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="psi-raw-builder-fix" />
+                        <option value="master" />
                       </list>
                     </value>
                   </entry>

@@ -40,7 +40,6 @@ import com.intellij.util.io.StringRef
 import org.jetbrains.annotations.NonNls
 import java.io.IOException
 import org.cangnova.cangjie.name.*
-import org.cangnova.cangjie.psi.psiUtil.isExtensionDeclaration
 
 class CjFunctionElementType(debugName: String) : CjStubElementType<CangJieNamedFunctionStub, CjNamedFunction>(
     debugName,
@@ -50,7 +49,6 @@ class CjFunctionElementType(debugName: String) : CjStubElementType<CangJieNamedF
 
     override fun createStub(psi: CjNamedFunction, parentStub: StubElement<*>): CangJieNamedFunctionStub {
         val isTopLevel = psi.parent is CjFile
-        val isExtension = psi.isExtensionDeclaration()
         val fqName = psi.safeFqNameForLazyResolve()
         val hasBlockBody = psi.hasBlockBody()
         val hasBody = psi.hasBody()
@@ -60,7 +58,6 @@ class CjFunctionElementType(debugName: String) : CjStubElementType<CangJieNamedF
             StringRef.fromString(psi.name),
             isTopLevel,
             fqName,
-            isExtension,
             hasBlockBody,
             hasBody,
             psi.hasTypeParameterListBeforeFunctionName(), //                psi.mayHaveContract(),
@@ -77,7 +74,6 @@ class CjFunctionElementType(debugName: String) : CjStubElementType<CangJieNamedF
         val fqName = stub.getFqName()
         dataStream.writeName(fqName?.asString())
 
-        dataStream.writeBoolean(stub.isExtension())
         dataStream.writeBoolean(stub.hasBlockBody())
         dataStream.writeBoolean(stub.hasBody())
         dataStream.writeBoolean(stub.hasTypeParameterListBeforeFunctionName())
@@ -95,13 +91,12 @@ class CjFunctionElementType(debugName: String) : CjStubElementType<CangJieNamedF
         val fqNameAsString = dataStream.readName()
         val fqName = if (fqNameAsString != null) FqName(fqNameAsString.toString()) else null
 
-        val isExtension = dataStream.readBoolean()
         val hasBlockBody = dataStream.readBoolean()
         val hasBody = dataStream.readBoolean()
         val hasTypeParameterListBeforeFunctionName = dataStream.readBoolean()
         //        bool mayHaveContract = dataStream.readBoolean();
         return CangJieNamedFunctionStubImpl(
-            parentStub, CjStubElementTypes.FUNCTION, name, isTopLevel, fqName, isExtension, hasBlockBody, hasBody,
+            parentStub, CjStubElementTypes.FUNCTION, name, isTopLevel, fqName,  hasBlockBody, hasBody,
             hasTypeParameterListBeforeFunctionName, //                mayHaveContract,
             //                mayHaveContract ? CangJieNamedFunctionStubImpl.Companion.deserializeContract(dataStream) :
 

@@ -42,7 +42,6 @@ class CangJieNamedFunctionStubImpl(
     private val nameRef: StringRef?,
     private val isTopLevel: Boolean,
     private val fqName: FqName?,
-    private val isExtension: Boolean,
     private val hasBlockBody: Boolean,
     private val hasBody: Boolean,
     private val hasTypeParameterListBeforeFunctionName: Boolean,
@@ -58,7 +57,6 @@ class CangJieNamedFunctionStubImpl(
 
     override fun getName() = StringRef.toString(nameRef)
     override fun isTopLevel() = isTopLevel
-    override fun isExtension() = isExtension
     override fun hasBlockBody() = hasBlockBody
     override fun hasBody() = hasBody
     override fun hasTypeParameterListBeforeFunctionName() = hasTypeParameterListBeforeFunctionName
@@ -81,7 +79,6 @@ class CangJieMainFunctionStubImpl(
 
     override fun getName() = StringRef.toString(nameRef)
     override fun isTopLevel() = true
-    override fun isExtension() = false
 }
 
 class CangJieMacroStubImpl(
@@ -90,7 +87,6 @@ class CangJieMacroStubImpl(
     private val nameRef: StringRef?,
     private val isTopLevel: Boolean,
     private val fqName: FqName?,
-    private val isExtension: Boolean,
     private val hasBlockBody: Boolean,
     private val hasBody: Boolean,
     private val hasTypeParameterListBeforeFunctionName: Boolean,
@@ -106,7 +102,6 @@ class CangJieMacroStubImpl(
 
     override fun getName() = StringRef.toString(nameRef)
     override fun isTopLevel() = isTopLevel
-    override fun isExtension() = isExtension
     override fun hasBlockBody() = hasBlockBody
     override fun hasBody() = hasBody
     override fun hasTypeParameterListBeforeFunctionName() = hasTypeParameterListBeforeFunctionName

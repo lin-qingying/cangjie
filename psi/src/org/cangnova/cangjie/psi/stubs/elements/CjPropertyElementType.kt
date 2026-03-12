@@ -37,7 +37,6 @@ import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 import com.intellij.util.io.StringRef
-import org.cangnova.cangjie.psi.psiUtil.isExtensionDeclaration
 
 class CjPropertyElementType(debugName: String) : CjStubElementType<CangJiePropertyStub, CjProperty>(
     debugName,
@@ -47,7 +46,6 @@ class CjPropertyElementType(debugName: String) : CjStubElementType<CangJieProper
     override fun serialize(stub: CangJiePropertyStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
         dataStream.writeName(stub.getFqName()?.asString())
-        dataStream.writeBoolean(stub.isExtension())
 
         dataStream.writeBoolean(stub.hasReturnTypeRef())
     }
@@ -56,7 +54,6 @@ class CjPropertyElementType(debugName: String) : CjStubElementType<CangJieProper
         val name = dataStream.readName()
         val fqNameAsString = dataStream.readName()
         val fqName: FqName? = if (fqNameAsString != null) FqName(fqNameAsString.toString()) else null
-        val hasReceiverTypeRef = dataStream.readBoolean()
 
         val hasReturnTypeRef = dataStream.readBoolean()
 
@@ -64,7 +61,6 @@ class CjPropertyElementType(debugName: String) : CjStubElementType<CangJieProper
             parentStub,
             name,
             fqName,
-            hasReceiverTypeRef,
             hasReturnTypeRef,
         )
     }
@@ -74,7 +70,6 @@ class CjPropertyElementType(debugName: String) : CjStubElementType<CangJieProper
             parentStub,
             StringRef.fromString(psi.name),
             psi.safeFqNameForLazyResolve(),
-            psi.isExtensionDeclaration()   ,
             psi.typeReference != null,
         )
     }

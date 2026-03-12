@@ -93,7 +93,9 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
                     getStubOrPsiChildrenAsList(
                         CjStubElementTypes.TYPE_REFERENCE,
                     )
-                val returnTypeIndex = if (stub.isExtension()) 1 else 0
+                // Extension members declared inside `extend` blocks do not carry
+                // an extra receiver type reference in function PSI children.
+                val returnTypeIndex = 0
                 if (returnTypeIndex >= typeReferences.size) {
                     return null
                 }

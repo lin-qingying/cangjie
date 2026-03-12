@@ -46,15 +46,7 @@ fun TextRange.containsInside(offset: Int): Boolean = startOffset < offset && off
 inline fun <reified T : PsiElement> PsiElement.getLastParentOfTypeInRow() =
     parents.takeWhile { it is T }.lastOrNull() as? T
 
-fun PsiElement.isExtensionDeclaration(): Boolean {
-    val callable: CjCallableDeclaration? = when (this) {
-        is CjNamedFunction, is CjProperty   -> this as CjCallableDeclaration
-        is CjPropertyAccessor -> getNonStrictParentOfType<CjProperty>()
-        else -> null
-    }
 
-    return callable ?.getParentOfType<CjExtend>(false) != null
-}
 
 fun getElementTextWithContext(psiElement: PsiElement): String {
     if (!psiElement.isValid) return "<invalid element $psiElement>"
