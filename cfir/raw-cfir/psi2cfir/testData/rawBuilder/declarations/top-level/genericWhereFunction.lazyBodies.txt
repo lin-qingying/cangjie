@@ -1,0 +1,4 @@
+FILE: genericWhereFunction.cj
+    interface C {
+    }
+    func add<T>(a: R|T|, b: R|T|): R|T|

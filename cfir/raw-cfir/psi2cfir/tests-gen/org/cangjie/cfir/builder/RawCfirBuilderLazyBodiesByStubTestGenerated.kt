@@ -43,6 +43,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/extend/extendDeclaration.cj")
             }
 
+            @TestMetadata("extendGenericWhereChain.cj")
+            fun testExtendGenericWhereChain() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/extend/extendGenericWhereChain.cj")
+            }
+
             @TestMetadata("extendWithWhereOfficial.cj")
             fun testExtendWithWhereOfficial() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/extend/extendWithWhereOfficial.cj")
@@ -61,6 +66,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
             @TestMetadata("matchExpressionOfficial.cj")
             fun testMatchExpressionOfficial() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/match/matchExpressionOfficial.cj")
+            }
+
+            @TestMetadata("matchRichPatternsOfficial.cj")
+            fun testMatchRichPatternsOfficial() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/match/matchRichPatternsOfficial.cj")
             }
 
         }
@@ -118,6 +128,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/control-flow/valid/controlFlow.cj")
             }
 
+            @TestMetadata("forWithPatternGuard.cj")
+            fun testForWithPatternGuard() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/control-flow/valid/forWithPatternGuard.cj")
+            }
+
         }
 
     }
@@ -168,6 +183,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/enumDeclaration.cj")
             }
 
+            @TestMetadata("genericWhereTypeDeclarations.cj")
+            fun testGenericWhereTypeDeclarations() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/genericWhereTypeDeclarations.cj")
+            }
+
             @TestMetadata("interfaceDeclaration.cj")
             fun testInterfaceDeclaration() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/interfaceDeclaration.cj")
@@ -206,6 +226,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
         class TopLevel : AbstractRawCfirBuilderLazyBodiesByStubTest() {
             fun testAllFilesPresentInTopLevel() {
                 assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level")
+            }
+
+            @TestMetadata("genericWhereFunction.cj")
+            fun testGenericWhereFunction() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level/genericWhereFunction.cj")
             }
 
             @TestMetadata("mainEntryOfficial.cj")
@@ -251,6 +276,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
             @TestMetadata("functionExpressions.cj")
             fun testFunctionExpressions() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/functionExpressions.cj")
+            }
+
+            @TestMetadata("opAndIfExpressions.cj")
+            fun testOpAndIfExpressions() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/opAndIfExpressions.cj")
             }
 
             @TestMetadata("trailingClosureOfficial.cj")
@@ -331,6 +361,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
         class TypeReferences : AbstractRawCfirBuilderLazyBodiesByStubTest() {
             fun testAllFilesPresentInTypeReferences() {
                 assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/types/type-references")
+            }
+
+            @TestMetadata("nestedFunctionAndTupleTypes.cj")
+            fun testNestedFunctionAndTupleTypes() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/types/type-references/nestedFunctionAndTupleTypes.cj")
             }
 
             @TestMetadata("typeAliasRefsOfficial.cj")

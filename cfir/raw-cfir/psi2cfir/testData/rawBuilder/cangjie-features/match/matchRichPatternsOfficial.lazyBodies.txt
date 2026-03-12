@@ -1,0 +1,3 @@
+FILE: matchRichPatternsOfficial.cj
+    func classifyScore(score: R|Int64|): R|String|
+    func extractYear(time: R|TimeUnit|): R|Int32|
