@@ -315,7 +315,9 @@ class CfirRenderer(
 
     inner class Visitor internal constructor() : CfirVisitor<Unit, Unit>() {
         override fun visitElement(element: CfirElement, data: Unit) {
-            println("<element: ${element::class.simpleName}>")
+            val className = element::class.simpleName.orEmpty()
+            val publicName = className.removeSuffix("Impl")
+            println("<element: $publicName>")
         }
 
         override fun visitFile(file: CfirFile, data: Unit) {
@@ -490,10 +492,15 @@ class CfirRenderer(
         override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: Unit) {
             declarationRenderer?.renderResolveInfo(enumConstructor)
             resolvePhaseRenderer?.render(enumConstructor)
-            val params = if (enumConstructor.parameterTypeRefs.isNotEmpty()) {
-                "(${enumConstructor.parameterTypeRefs.joinToString { renderType(it) }})"
-            } else ""
-            println("${enumConstructor.name.asString()}$params")
+            val rendered = when (val typeRef = enumConstructor.returnTypeRef) {
+                is CfirImplicitTypeRef -> enumConstructor.name.asString()
+                is CfirTupleTypeRef -> {
+                    val args = typeRef.elementTypeRefs.joinToString { renderType(it) }
+                    "${enumConstructor.name.asString()}($args)"
+                }
+                else -> "${enumConstructor.name.asString()}(${renderType(typeRef)})"
+            }
+            println(rendered)
         }
 
         override fun visitBlock(block: CfirBlock, data: Unit) {

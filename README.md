@@ -45,6 +45,10 @@
 
 全项目测试实现与组织规范见：`TESTING_CONVENTIONS.md`。
 
+## 开发规范
+
+项目级开发规范与工程治理约定见：`DEVELOPMENT_CONVENTIONS.md`。
+
 ## 测试框架进展
 
 - 已引入 Kotlin 风格的轻量测试配置模型：`TestConfigurationBuilder`、`TestFacade`、`AnalysisHandler`、`AbstractCangjieCompilerTest`。
@@ -68,6 +72,7 @@
 - 当前测试发现范围：主 `RawBuilder` suite 与两个 `LazyBodies(ByAst/ByStub)` suite 现均扫描 `testData/rawBuilder` 根目录；`rawBuilder/expressions` 已补齐缺失表达式/错误恢复用例，并为 lazy 模式补齐同目录下的 `*.lazyBodies.txt` 基线。
 - tests-gen 已加入 all-files-present 等效校验，新增 `.cj` 用例将被覆盖检查拦截漏测。
 - 下一步建议：在同一框架上补齐 `CfirResolveFacade` + `DiagnosticsHandler`，并接入多模块/诊断类 testdata。
+- 已完成诊断检查器框架对齐方案设计（计划补齐 Declaration/Expression/Type checkers 生成与运行入口）。
 
 ## OpenSpec 变更进展
 

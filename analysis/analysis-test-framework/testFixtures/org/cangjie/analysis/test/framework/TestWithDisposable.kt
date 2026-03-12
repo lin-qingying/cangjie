@@ -1,4 +1,4 @@
-package org.cangjie.analysis.test.framework
+﻿package org.cangjie.analysis.test.framework
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
@@ -7,7 +7,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInfo
 
 /**
- * 提供 Disposable 生命周期管理的基础测试类（对齐 Kotlin 的 TestWithDisposable）。
+ * 提供 Disposable 生命周期管理的基础测试类。
+ * Kotlin 对应文件：`external/kotlin/analysis/analysis-test-framework/testFixtures/org/jetbrains/kotlin/analysis/test/framework/TestWithDisposable.kt`
  */
 abstract class TestWithDisposable {
     private var _disposable: Disposable? = null
@@ -24,3 +25,4 @@ abstract class TestWithDisposable {
         _disposable = null
     }
 }
+

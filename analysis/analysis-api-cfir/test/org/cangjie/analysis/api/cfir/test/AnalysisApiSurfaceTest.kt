@@ -11,10 +11,8 @@ import org.cangjie.cfir.declarations.CfirClassKind
 import org.cangjie.cfir.declarations.CfirFile
 import org.cangjie.cfir.declarations.CfirPackageDirective
 import org.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangjie.cfir.diagnostics.CfirDiagnosticCollector
-import org.cangjie.cfir.diagnostics.CfirDiagnosticReporter
-import org.cangjie.cfir.resolve.CfirResolveComponentsRegistrar
-import org.cangjie.cfir.resolve.CfirPhaseResolverRegistry
+import org.cangjie.cfir.resolve.transformers.CfirResolveComponentsRegistrar
+import org.cangjie.cfir.resolve.transformers.CfirPhaseResolverRegistry
 import org.cangjie.cfir.session.CfirSession
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue

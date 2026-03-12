@@ -1,5 +1,8 @@
 package org.cangjie.analysis.api.components
 
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+import org.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
 import org.cangjie.analysis.api.lifetime.CaLifetimeOwner
 
 // ===== 符号相关 =====
@@ -53,7 +56,11 @@ interface CaDataFlowProvider : CaLifetimeOwner
 // ===== 作用域与诊断 =====
 
 /** 诊断信息（对齐 KaDiagnosticProvider） */
-interface CaDiagnosticProvider : CaLifetimeOwner
+interface CaDiagnosticProvider : CaLifetimeOwner {
+    fun diagnostics(element: PsiElement, filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>>
+
+    fun collectDiagnostics(file: PsiFile, filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>>
+}
 
 /** 作用域查询（对齐 KaScopeProvider） */
 interface CaScopeProvider : CaLifetimeOwner

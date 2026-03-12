@@ -2,7 +2,7 @@
 plugins {
     kotlin("jvm")
 }
-// Analysis API: 用户面向的分析 API（对齐 Kotlin analysis-api）
+// 面向用户的分析 API 模块（对齐 Kotlin analysis-api）
 dependencies {
     compileOnly(intellijCore())
     implementation(project(":psi"))
