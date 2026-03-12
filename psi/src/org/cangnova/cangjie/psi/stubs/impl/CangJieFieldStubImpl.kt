@@ -60,6 +60,5 @@ class CangJieFieldStubImpl(
     override fun isConst(): Boolean = isConst
     override fun hasInitializer(): Boolean = hasInitializer
     override fun hasReturnTypeRef(): Boolean = hasReturnTypeRef
-    override fun isExtension(): Boolean = false
     override fun getName(): String? = StringRef.toString(name)
 }

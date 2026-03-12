@@ -234,7 +234,6 @@ interface CangJiePropertyStub : CangJieCallableStubBase<CjProperty> {
     fun hasReturnTypeRef(): Boolean
 
     override fun isTopLevel(): Boolean = false
-    override fun isExtension(): Boolean = false
 }
 
 /**
@@ -263,7 +262,6 @@ interface CangJieFieldStub : CangJieCallableStubBase<CjFieldVariable> {
 
 interface CangJieCallableStubBase<TDeclaration : CjCallableDeclaration> : CangJieStubWithFqName<TDeclaration> {
     fun isTopLevel(): Boolean
-    fun isExtension(): Boolean
 }
 
 interface CangJieStubWithFqName<T : PsiNamedElement> : NamedStub<T> {

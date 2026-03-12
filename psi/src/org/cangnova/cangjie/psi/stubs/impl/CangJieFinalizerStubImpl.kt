@@ -40,6 +40,5 @@ class CangJieFinalizerStubImpl(
     override fun getFqName() = null
     override fun getName() = StringRef.toString(containingClassName)
     override fun isTopLevel() = false
-    override fun isExtension() = false
     override fun hasBody() = hasBody
 }
