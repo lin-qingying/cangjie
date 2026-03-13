@@ -1,0 +1,5 @@
+define i1 @main() {
+entry:
+  %expr_cmp = fcmp ogt double 1.5, 0.5
+  ret i1 %expr_cmp
+}

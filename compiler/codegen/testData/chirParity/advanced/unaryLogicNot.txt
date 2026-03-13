@@ -1,0 +1,5 @@
+define i1 @main() {
+entry:
+  %expr_not = xor i1 1, true
+  ret i1 %expr_not
+}
