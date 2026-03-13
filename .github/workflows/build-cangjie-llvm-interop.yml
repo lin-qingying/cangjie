@@ -40,3 +40,34 @@ jobs:
         run: |
           tools/cangjie-llvm-interop/build/cangjie-llvm-interop probe --json
 
+  build-windows-cl:
+    runs-on: windows-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSVC (cl.exe)
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install build tools
+        run: |
+          choco install -y ninja
+
+      - name: Configure (bootstrap official LLVM with cl)
+        run: |
+          cmake -S tools/cangjie-llvm-interop -B tools/cangjie-llvm-interop/build -G Ninja `
+            -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_CXX_COMPILER=cl `
+            -DCANGJIE_USE_OFFICIAL_LLVM=ON `
+            -DCANGJIE_LLVM_REPOSITORY=https://gitcode.com/openharmony/third_party_llvm-project.git `
+            -DCANGJIE_LLVM_TAG=master `
+            -DCANGJIE_LLVM_TARGETS=X86
+
+      - name: Build
+        run: |
+          cmake --build tools/cangjie-llvm-interop/build --parallel
+
+      - name: Probe
+        run: |
+          tools/cangjie-llvm-interop/build/cangjie-llvm-interop.exe probe --json
