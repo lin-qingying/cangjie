@@ -5,26 +5,28 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(CANGJIE_USE_OFFICIAL_LLVM "Bootstrap and use official Cangjie LLVM if LLVM_DIR is not provided." ON)
 set(CANGJIE_LLVM_REPOSITORY "https://gitcode.com/Cangjie/llvm-project.git" CACHE STRING "Official LLVM repository used by Cangjie compiler.")
-set(CANGJIE_LLVM_TAG "master" CACHE STRING "Official LLVM branch/tag aligned with cangjie compiler.")
+set(CANGJIE_LLVM_TAG "main" CACHE STRING "Official LLVM branch/tag aligned with cangjie compiler.")
 set(CANGJIE_LLVM_TARGETS "ARM;AArch64;X86" CACHE STRING "LLVM targets to build when bootstrapping official LLVM.")
 set(CANGJIE_LLVM_SOURCE_DIR "" CACHE PATH "Optional pre-downloaded official llvm-project source directory.")
 set(CANGJIE_LLVM_INSTALL_DIR "${CMAKE_BINARY_DIR}/official-llvm-install" CACHE PATH "Install prefix for bootstrapped official LLVM.")
 set(CANGJIE_LLVM_BUILD_DIR "${CMAKE_BINARY_DIR}/official-llvm-build" CACHE PATH "Build directory for bootstrapped official LLVM.")
 
-if(NOT LLVM_DIR AND CANGJIE_USE_OFFICIAL_LLVM)
-    include(cmake/BootstrapOfficialLlvm.cmake)
-    cangjie_bootstrap_official_llvm(
-        REPOSITORY "${CANGJIE_LLVM_REPOSITORY}"
-        TAG "${CANGJIE_LLVM_TAG}"
-        SOURCE_DIR "${CANGJIE_LLVM_SOURCE_DIR}"
-        BUILD_DIR "${CANGJIE_LLVM_BUILD_DIR}"
-        INSTALL_DIR "${CANGJIE_LLVM_INSTALL_DIR}"
-        TARGETS "${CANGJIE_LLVM_TARGETS}"
-    )
-    set(LLVM_DIR "${CANGJIE_LLVM_INSTALL_DIR}/lib/cmake/llvm" CACHE PATH "LLVMConfig.cmake directory" FORCE)
+set(CANGJIE_EXPECTED_LLVM_DIR "${CANGJIE_LLVM_INSTALL_DIR}/lib/cmake/llvm")
+if(LLVM_DIR AND NOT LLVM_DIR STREQUAL CANGJIE_EXPECTED_LLVM_DIR)
+    message(WARNING "Ignoring externally provided LLVM_DIR='${LLVM_DIR}'. Using bootstrapped official LLVM from ${CANGJIE_LLVM_REPOSITORY} instead.")
 endif()
+
+include(cmake/BootstrapOfficialLlvm.cmake)
+cangjie_bootstrap_official_llvm(
+    REPOSITORY "${CANGJIE_LLVM_REPOSITORY}"
+    TAG "${CANGJIE_LLVM_TAG}"
+    SOURCE_DIR "${CANGJIE_LLVM_SOURCE_DIR}"
+    BUILD_DIR "${CANGJIE_LLVM_BUILD_DIR}"
+    INSTALL_DIR "${CANGJIE_LLVM_INSTALL_DIR}"
+    TARGETS "${CANGJIE_LLVM_TARGETS}"
+)
+set(LLVM_DIR "${CANGJIE_EXPECTED_LLVM_DIR}" CACHE PATH "LLVMConfig.cmake directory" FORCE)
 
 find_package(LLVM CONFIG REQUIRED)
 
