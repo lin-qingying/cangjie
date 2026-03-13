@@ -70,6 +70,11 @@ function(cangjie_bootstrap_official_llvm)
         endif()
     endif()
 
+    set(bootstrap_shared_llvm OFF)
+    if(NOT MSVC)
+        set(bootstrap_shared_llvm ON)
+    endif()
+
     set(configure_args
         -S "${llvm_source_dir}/llvm"
         -B "${BOOTSTRAP_BUILD_DIR}"
@@ -88,8 +93,8 @@ function(cangjie_bootstrap_official_llvm)
         -DLLVM_ENABLE_ZLIB=OFF
         -DLLVM_ENABLE_ZSTD=OFF
         -DLLVM_BUILD_TOOLS=OFF
-        -DLLVM_BUILD_LLVM_DYLIB=ON
-        -DLLVM_LINK_LLVM_DYLIB=ON
+        -DLLVM_BUILD_LLVM_DYLIB=${bootstrap_shared_llvm}
+        -DLLVM_LINK_LLVM_DYLIB=${bootstrap_shared_llvm}
     )
     execute_process(
         COMMAND "${CMAKE_COMMAND}" ${configure_args} ${bootstrap_compiler_args}
