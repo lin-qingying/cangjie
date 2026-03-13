@@ -86,6 +86,17 @@ function(cangjie_bootstrap_official_llvm)
         endif()
     endif()
 
+    if(MSVC)
+        find_program(BOOTSTRAP_LLVM_AR_EXECUTABLE NAMES llvm-ar REQUIRED)
+        set(llvm_ir_cmake "${llvm_source_dir}/llvm/lib/IR/CMakeLists.txt")
+        if(EXISTS "${llvm_ir_cmake}")
+            file(READ "${llvm_ir_cmake}" llvm_ir_cmake_content)
+            string(REPLACE "\${CMAKE_AR} x" "${BOOTSTRAP_LLVM_AR_EXECUTABLE} x" llvm_ir_cmake_content "${llvm_ir_cmake_content}")
+            string(REPLACE "\${CMAKE_AR} cr" "${BOOTSTRAP_LLVM_AR_EXECUTABLE} cr" llvm_ir_cmake_content "${llvm_ir_cmake_content}")
+            file(WRITE "${llvm_ir_cmake}" "${llvm_ir_cmake_content}")
+        endif()
+    endif()
+
     set(bootstrap_c_flags "${CMAKE_C_FLAGS} $ENV{CFLAGS}")
     set(bootstrap_cxx_flags "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
     string(REPLACE "-Qunused-arguments" "" bootstrap_c_flags "${bootstrap_c_flags}")
@@ -103,18 +114,6 @@ function(cangjie_bootstrap_official_llvm)
                 -DCMAKE_CXX_COMPILER=${BOOTSTRAP_CLANGXX_EXECUTABLE}
             )
             message(STATUS "Bootstrapping LLVM with clang toolchain: ${BOOTSTRAP_CLANG_EXECUTABLE}, ${BOOTSTRAP_CLANGXX_EXECUTABLE}")
-        endif()
-    endif()
-
-    set(bootstrap_archive_args)
-    if(MSVC)
-        find_program(BOOTSTRAP_LLVM_AR_EXECUTABLE NAMES llvm-ar)
-        find_program(BOOTSTRAP_LLVM_RANLIB_EXECUTABLE NAMES llvm-ranlib)
-        if(BOOTSTRAP_LLVM_AR_EXECUTABLE)
-            list(APPEND bootstrap_archive_args -DCMAKE_AR=${BOOTSTRAP_LLVM_AR_EXECUTABLE})
-        endif()
-        if(BOOTSTRAP_LLVM_RANLIB_EXECUTABLE)
-            list(APPEND bootstrap_archive_args -DCMAKE_RANLIB=${BOOTSTRAP_LLVM_RANLIB_EXECUTABLE})
         endif()
     endif()
 
@@ -145,7 +144,7 @@ function(cangjie_bootstrap_official_llvm)
         -DLLVM_LINK_LLVM_DYLIB=${bootstrap_shared_llvm}
     )
     execute_process(
-        COMMAND "${CMAKE_COMMAND}" ${configure_args} ${bootstrap_compiler_args} ${bootstrap_archive_args}
+        COMMAND "${CMAKE_COMMAND}" ${configure_args} ${bootstrap_compiler_args}
         RESULT_VARIABLE configure_result
     )
     if(NOT configure_result EQUAL 0)
