@@ -3,9 +3,9 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.cfir.tree.generator.util
+package org.cangnova.cangjie.cfir.tree.generator.util
 
-import org.cangjie.generators.util.GeneratorsFileUtil
+import org.cangnova.cangjie.generators.util.GeneratorsFileUtil
 import org.cangnova.cangjie.utils.SmartPrinter
 import java.io.File
 

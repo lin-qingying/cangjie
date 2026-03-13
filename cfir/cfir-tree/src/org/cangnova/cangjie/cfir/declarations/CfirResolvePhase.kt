@@ -1,4 +1,4 @@
-﻿package org.cangjie.cfir.declarations
+﻿package org.cangnova.cangjie.cfir.declarations
 
 /**
  * CFIR 语义解析阶段定义（Resolve Phase Model）。

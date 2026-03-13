@@ -1,9 +1,9 @@
-package org.cangjie.cfir.resolve
+package org.cangnova.cangjie.cfir.resolve
 
-import org.cangjie.cfir.diagnostics.CjDiagnostic
-import org.cangjie.cfir.diagnostics.DiagnosticContext
-import org.cangjie.cfir.diagnostics.DiagnosticReporter
-import org.cangjie.cfir.diagnostics.Severity
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.Severity
 
 typealias CfirDiagnosticReporter = DiagnosticReporter
 

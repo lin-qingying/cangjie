@@ -1,4 +1,4 @@
-package org.cangjie.cfir.session
+package org.cangnova.cangjie.cfir.session
 
 import org.cangnova.cangjie.util.ArrayMapAccessor
 import org.cangnova.cangjie.util.ComponentArrayOwner

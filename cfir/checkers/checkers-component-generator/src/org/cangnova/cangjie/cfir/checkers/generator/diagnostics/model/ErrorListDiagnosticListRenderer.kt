@@ -1,7 +1,7 @@
-package org.cangjie.cfir.checkers.generator.diagnostics.model
+package org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model
 
-import org.cangjie.cfir.tree.generator.util.writeToFileUsingSmartPrinterIfFileContentChanged
-import org.cangjie.generators.util.printCopyright
+import org.cangnova.cangjie.cfir.tree.generator.util.writeToFileUsingSmartPrinterIfFileContentChanged
+import org.cangnova.cangjie.generators.util.printCopyright
 import org.cangnova.cangjie.utils.SmartPrinter
 import org.cangnova.cangjie.utils.ifNotEmpty
 import org.cangnova.cangjie.utils.withIndent
@@ -12,8 +12,8 @@ import kotlin.reflect.KTypeProjection
 import kotlin.reflect.KVariance
 
 object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
-    const val BASE_PACKAGE = "org.cangjie.cfir.analysis.diagnostics"
-    const val DIAGNOSTICS_PACKAGE = "org.cangjie.cfir.diagnostics"
+    const val BASE_PACKAGE = "org.cangnova.cangjie.cfir.analysis.diagnostics"
+    const val DIAGNOSTICS_PACKAGE = "org.cangnova.cangjie.cfir.diagnostics"
 
     override fun render(
         file: File,
@@ -41,9 +41,9 @@ object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
 
     private fun SmartPrinter.printImports(diagnosticList: DiagnosticList, starImportsToAdd: Set<String>) {
         val importSet = sortedSetOf<String>()
-        importSet += "org.cangjie.cfir.diagnostics.*"
-        importSet += "org.cangjie.cfir.diagnostics.rendering.BaseDiagnosticRendererFactory"
-        importSet += "org.cangjie.config.LanguageFeature"
+        importSet += "org.cangnova.cangjie.cfir.diagnostics.*"
+        importSet += "org.cangnova.cangjie.cfir.diagnostics.rendering.BaseDiagnosticRendererFactory"
+        importSet += "org.cangnova.cangjie.config.LanguageFeature"
         importSet += starImportsToAdd.map { "$it.*" }
         diagnosticList.allDiagnostics.forEach { diagnostic ->
             importSet += diagnostic.psiType.kClass.qualifiedName.orEmpty()

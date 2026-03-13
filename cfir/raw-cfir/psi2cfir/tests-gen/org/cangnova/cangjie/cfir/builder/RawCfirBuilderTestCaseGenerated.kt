@@ -1,9 +1,9 @@
-package org.cangjie.cfir.builder
+package org.cangnova.cangjie.cfir.builder
 
 import com.intellij.testFramework.TestDataPath
-import org.cangjie.ObsoleteTestInfrastructure
-import org.cangjie.test.TestMetadata
-import org.cangjie.test.JUnit3RunnerWithInners
+import org.cangnova.cangjie.ObsoleteTestInfrastructure
+import org.cangnova.cangjie.test.TestMetadata
+import org.cangnova.cangjie.test.JUnit3RunnerWithInners
 import java.io.File
 import org.junit.runner.RunWith
 

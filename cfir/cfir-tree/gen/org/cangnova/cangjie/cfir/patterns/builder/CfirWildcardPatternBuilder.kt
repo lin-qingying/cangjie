@@ -5,11 +5,11 @@
 
 @file:Suppress("DuplicatedCode", "unused")
 
-package org.cangjie.cfir.patterns.builder
+package org.cangnova.cangjie.cfir.patterns.builder
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.patterns.CfirWildcardPattern
-import org.cangjie.cfir.patterns.impl.CfirWildcardPatternImpl
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
+import org.cangnova.cangjie.cfir.patterns.impl.CfirWildcardPatternImpl
 
 @OptIn(CfirImplementationDetail::class)
 fun buildWildcardPattern(): CfirWildcardPattern {

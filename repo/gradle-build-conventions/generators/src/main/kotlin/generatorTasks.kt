@@ -21,7 +21,7 @@ fun Project.generatedDiagnosticContainersAndCheckerComponents(): TaskProvider<Ja
     return generatedSourcesTask(
         taskName = "generateCheckersComponents",
         generatorProject = ":cfir:checkers:checkers-component-generator",
-        generatorMainClass = "org.cangjie.cfir.checkers.generator.MainKt",
+        generatorMainClass = "org.cangnova.cangjie.cfir.checkers.generator.MainKt",
         argsProvider = { generationRoot -> listOf(project.name, generationRoot.toString()) },
     )
 }

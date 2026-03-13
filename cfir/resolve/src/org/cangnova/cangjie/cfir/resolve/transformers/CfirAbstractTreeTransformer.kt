@@ -2,10 +2,10 @@
  * Copyright 2010-2026. cangjie.
  */
 
-package org.cangjie.cfir.resolve.transformers
+package org.cangnova.cangjie.cfir.resolve.transformers
 
-import org.cangjie.cfir.CfirElement
-import org.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 
 abstract class CfirAbstractTreeTransformer<D>(phase: CfirResolvePhase) : CfirAbstractPhaseTransformer<D>(phase) {
     override fun <E : CfirElement> transformElement(element: E, data: D): E {

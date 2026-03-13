@@ -1,8 +1,8 @@
-package org.cangjie.cfir.resolve.framework
+package org.cangnova.cangjie.cfir.resolve.framework
 
-import org.cangjie.test.config.AnalysisHandler
-import org.cangjie.test.model.TestModule
-import org.cangjie.test.services.TestServices
+import org.cangnova.cangjie.test.config.AnalysisHandler
+import org.cangnova.cangjie.test.model.TestModule
+import org.cangnova.cangjie.test.services.TestServices
 import java.io.File
 
 class CfirResolveDiagnosticsHandler : AnalysisHandler {

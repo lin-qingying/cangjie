@@ -5,29 +5,40 @@
 
 @file:Suppress("DuplicatedCode")
 
-package org.cangjie.cfir.expressions.impl
+package org.cangnova.cangjie.cfir.expressions.impl
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.expressions.CfirExpression
-import org.cangjie.cfir.expressions.CfirThrowExpression
-import org.cangjie.cfir.types.ConeCangjieType
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 class CfirThrowExpressionImpl @CfirImplementationDetail constructor(
-    override val coneTypeOrNull: ConeCangjieType?,
-    override val exception: CfirExpression,
+    override var coneTypeOrNull: ConeCangjieType?,
+    override var exception: CfirExpression,
 ) : CfirThrowExpression() {
-    override val source: CfirSourceElement?
+    override val source: CjSourceElement?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         exception.accept(visitor, data)
     }
 
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+     {
+        this.coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun <D> transformException(transformer: CfirTransformer<D>, data: D): CfirThrowExpression
+     {
+        this.exception = exception.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression
+        return this
+    }
+
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirThrowExpressionImpl {
-        exception.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
+        transformException(transformer, data)
         return this
     }
 }

@@ -1,19 +1,20 @@
-package org.cangjie.analysis.api.cfir.test
+package org.cangnova.cangjie.analysis.api.cfir.test
 
-import org.cangjie.analysis.api.CaModule
-import org.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacadeImpl
-import org.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacadeService
-import org.cangjie.analysis.api.cfir.resolve.CaCfirResolveFacade
-import org.cangjie.cfir.common.CfirModuleData
-import org.cangjie.cfir.declarations.CfirClass
-import org.cangjie.cfir.declarations.CfirClassKind
-import org.cangjie.cfir.declarations.CfirFile
-import org.cangjie.cfir.declarations.CfirPackageDirective
-import org.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangjie.cfir.resolve.transformers.CfirResolveComponentsRegistrar
-import org.cangjie.cfir.resolve.transformers.CfirPhaseResolverRegistry
-import org.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacadeImpl
+import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacadeService
+import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolveFacade
+import org.cangnova.cangjie.cfir.analysis.resolve.CfirCheckersComponentRegistrar
+import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassKind
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirPackageDirective
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirResolveComponentsRegistrar
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirPhaseResolverRegistry
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -82,6 +83,7 @@ class AnalysisApiSurfaceTest {
         session.register(CfirDiagnosticReporter::class, diagnostics)
         session.register(CfirDiagnosticCollector::class, diagnostics)
         CfirResolveComponentsRegistrar.register(session, phaseResolverRegistry, diagnostics)
+        CfirCheckersComponentRegistrar.register(session, phaseResolverRegistry, diagnostics)
         val resolutionFacade = CaCfirResolutionFacadeImpl(module, session, diagnostics)
         return CaCfirResolveFacade(resolutionFacade)
     }

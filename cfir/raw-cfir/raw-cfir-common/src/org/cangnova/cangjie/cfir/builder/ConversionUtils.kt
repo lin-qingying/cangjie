@@ -1,8 +1,8 @@
-package org.cangjie.cfir.builder
+package org.cangnova.cangjie.cfir.builder
 
 import com.intellij.psi.tree.IElementType
-import org.cangjie.cfir.expressions.CfirBinaryOpKind
-import org.cangjie.cfir.expressions.CfirComparisonOp
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
+import org.cangnova.cangjie.cfir.expressions.CfirComparisonOp
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
 

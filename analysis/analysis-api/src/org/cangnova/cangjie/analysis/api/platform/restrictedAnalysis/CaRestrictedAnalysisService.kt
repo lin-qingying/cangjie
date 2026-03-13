@@ -1,4 +1,4 @@
-package org.cangjie.analysis.api.platform.restrictedAnalysis
+package org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis
 
 import com.intellij.openapi.components.serviceOrNull
 import com.intellij.openapi.project.Project

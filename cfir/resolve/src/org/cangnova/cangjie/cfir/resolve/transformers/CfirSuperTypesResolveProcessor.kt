@@ -1,16 +1,16 @@
-package org.cangjie.cfir.resolve.transformers
+package org.cangnova.cangjie.cfir.resolve.transformers
 
-import org.cangjie.cfir.declarations.CfirClass
-import org.cangjie.cfir.declarations.CfirClassKind
-import org.cangjie.cfir.declarations.CfirDeclaration
-import org.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangjie.cfir.diagnostics.DiagnosticContext
-import org.cangjie.cfir.diagnostics.reportOn
-import org.cangjie.cfir.resolve.diagnostics.CfirResolveRuleCatalog
-import org.cangjie.cfir.scopes.CfirScopeSession
-import org.cangjie.cfir.session.CfirSession
-import org.cangjie.cfir.session.superTypeGraphStoreOrNull
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassKind
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
+import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.diagnostics.CfirResolveRuleCatalog
+import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.superTypeGraphStoreOrNull
 
 internal class CfirSupertypeResolverProcessor(
     private val diagnosticReporter: CfirDiagnosticReporter,

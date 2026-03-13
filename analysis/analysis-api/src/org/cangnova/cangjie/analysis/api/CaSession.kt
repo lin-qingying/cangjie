@@ -1,7 +1,7 @@
-package org.cangjie.analysis.api
+package org.cangnova.cangjie.analysis.api
 
-import org.cangjie.analysis.api.components.*
-import org.cangjie.analysis.api.lifetime.CaLifetimeOwner
+import org.cangnova.cangjie.analysis.api.components.*
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 
 /**
  * 仓颉分析会话（对齐 Kotlin 的 KaSession）。

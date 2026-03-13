@@ -2,7 +2,7 @@
  * Copyright 2010-2024 cangjie.
  */
 
-package org.cangjie.cfir.analysis.checkers
+package org.cangnova.cangjie.cfir.analysis.checkers
 
 /**
  * - [MppCheckerKind.Common] means this checker runs in the session to which the current declaration belongs.

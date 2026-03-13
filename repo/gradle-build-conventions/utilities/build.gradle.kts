@@ -3,7 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.jvm")
 }
 
-group = "org.cangjie.build"
+group = "org.cangnova.cangjie.build"
 
 repositories {
     mavenCentral()

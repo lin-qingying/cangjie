@@ -1,11 +1,11 @@
-package org.cangjie.cfir.session
+package org.cangnova.cangjie.cfir.session
 
-import org.cangjie.cfir.resolve.transformers.CfirPhaseResolverRegistry
-import org.cangjie.cfir.resolve.CfirDiagnosticCollector
-import org.cangjie.cfir.resolve.CfirDiagnosticReporter
-import org.cangjie.cfir.resolve.services.CfirLazyDeclarationResolver
-import org.cangjie.cfir.resolve.services.CfirImportBindingStore
-import org.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirPhaseResolverRegistry
+import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticCollector
+import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
+import org.cangnova.cangjie.cfir.resolve.services.CfirLazyDeclarationResolver
+import org.cangnova.cangjie.cfir.resolve.services.CfirImportBindingStore
+import org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore
 
 val CfirSession.phaseResolverRegistry: CfirPhaseResolverRegistry by CfirSession.sessionComponentAccessor()
 

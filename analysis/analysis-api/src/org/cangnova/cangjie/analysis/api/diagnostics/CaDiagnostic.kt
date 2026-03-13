@@ -1,8 +1,8 @@
-package org.cangjie.analysis.api.diagnostics
+package org.cangnova.cangjie.analysis.api.diagnostics
 
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
-import org.cangjie.analysis.api.lifetime.CaLifetimeOwner
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import kotlin.reflect.KClass
 
 enum class CaSeverity {

@@ -5,24 +5,24 @@
 
 @file:Suppress("DuplicatedCode")
 
-package org.cangjie.cfir.expressions.impl
+package org.cangnova.cangjie.cfir.expressions.impl
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.expressions.CfirBlock
-import org.cangjie.cfir.expressions.CfirExpression
-import org.cangjie.cfir.expressions.CfirIfExpression
-import org.cangjie.cfir.types.ConeCangjieType
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 class CfirIfExpressionImpl @CfirImplementationDetail constructor(
-    override val coneTypeOrNull: ConeCangjieType?,
-    override val condition: CfirExpression,
-    override val thenBranch: CfirBlock,
-    override val elseBranch: CfirExpression?,
+    override var coneTypeOrNull: ConeCangjieType?,
+    override var condition: CfirExpression,
+    override var thenBranch: CfirBlock,
+    override var elseBranch: CfirExpression?,
 ) : CfirIfExpression() {
-    override val source: CfirSourceElement?
+    override val source: CjSourceElement?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -31,10 +31,33 @@ class CfirIfExpressionImpl @CfirImplementationDetail constructor(
         elseBranch?.accept(visitor, data)
     }
 
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+     {
+        this.coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun <D> transformCondition(transformer: CfirTransformer<D>, data: D): CfirIfExpression
+     {
+        this.condition = condition.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression
+        return this
+    }
+
+    override fun <D> transformThenBranch(transformer: CfirTransformer<D>, data: D): CfirIfExpression
+     {
+        this.thenBranch = thenBranch.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirBlock
+        return this
+    }
+
+    override fun <D> transformElseBranch(transformer: CfirTransformer<D>, data: D): CfirIfExpression
+     {
+        this.elseBranch = elseBranch?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression?
+        return this
+    }
+
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirIfExpressionImpl {
-        condition.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
-        thenBranch.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
-        elseBranch?.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
+        transformCondition(transformer, data)
+        transformThenBranch(transformer, data)
+        transformElseBranch(transformer, data)
         return this
     }
 }

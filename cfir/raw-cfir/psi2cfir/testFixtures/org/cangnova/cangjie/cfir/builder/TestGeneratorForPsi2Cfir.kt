@@ -1,4 +1,4 @@
-package org.cangjie.cfir.builder
+package org.cangnova.cangjie.cfir.builder
 
 import java.io.File
 
@@ -48,7 +48,7 @@ object TestGeneratorForPsi2Cfir {
         require(testDataRoot.exists()) { "testData root not found: ${testDataRoot.path}" }
 
         val outputFile = projectRoot.resolve(
-            "cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/$generatedClassName.kt"
+            "cfir/raw-cfir/psi2cfir/tests-gen/org/cangnova/cangjie/cfir/builder/$generatedClassName.kt"
         )
         outputFile.parentFile.mkdirs()
         outputFile.writeText(render(testDataRoot, projectRoot, generatedClassName, baseClassName), Charsets.UTF_8)
@@ -62,12 +62,12 @@ object TestGeneratorForPsi2Cfir {
         baseClassName: String,
     ): String {
         val sb = StringBuilder()
-        sb.appendLine("package org.cangjie.cfir.builder")
+        sb.appendLine("package org.cangnova.cangjie.cfir.builder")
         sb.appendLine()
         sb.appendLine("import com.intellij.testFramework.TestDataPath")
-        sb.appendLine("import org.cangjie.ObsoleteTestInfrastructure")
-        sb.appendLine("import org.cangjie.test.TestMetadata")
-        sb.appendLine("import org.cangjie.test.JUnit3RunnerWithInners")
+        sb.appendLine("import org.cangnova.cangjie.ObsoleteTestInfrastructure")
+        sb.appendLine("import org.cangnova.cangjie.test.TestMetadata")
+        sb.appendLine("import org.cangnova.cangjie.test.JUnit3RunnerWithInners")
         sb.appendLine("import java.io.File")
         sb.appendLine("import org.junit.runner.RunWith")
         sb.appendLine()

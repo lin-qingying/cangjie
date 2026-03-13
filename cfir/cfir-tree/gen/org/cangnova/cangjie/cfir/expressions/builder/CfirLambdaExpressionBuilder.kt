@@ -5,15 +5,15 @@
 
 @file:Suppress("DuplicatedCode", "unused")
 
-package org.cangjie.cfir.expressions.builder
+package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangjie.cfir.declarations.CfirFunction
-import org.cangjie.cfir.expressions.CfirLambdaExpression
-import org.cangjie.cfir.expressions.impl.CfirLambdaExpressionImpl
-import org.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.expressions.CfirLambdaExpression
+import org.cangnova.cangjie.cfir.expressions.impl.CfirLambdaExpressionImpl
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
 
 @CfirBuilderDsl
 class CfirLambdaExpressionBuilder {

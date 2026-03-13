@@ -5,23 +5,23 @@
 
 @file:Suppress("DuplicatedCode")
 
-package org.cangjie.cfir.expressions.impl
+package org.cangnova.cangjie.cfir.expressions.impl
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.expressions.CfirExpression
-import org.cangjie.cfir.expressions.CfirPropertyAccess
-import org.cangjie.cfir.references.CfirReference
-import org.cangjie.cfir.types.ConeCangjieType
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
+import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 class CfirPropertyAccessImpl @CfirImplementationDetail constructor(
-    override val coneTypeOrNull: ConeCangjieType?,
-    override val calleeReference: CfirReference,
-    override val explicitReceiver: CfirExpression?,
+    override var coneTypeOrNull: ConeCangjieType?,
+    override var calleeReference: CfirReference,
+    override var explicitReceiver: CfirExpression?,
 ) : CfirPropertyAccess() {
-    override val source: CfirSourceElement?
+    override val source: CjSourceElement?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -29,9 +29,26 @@ class CfirPropertyAccessImpl @CfirImplementationDetail constructor(
         explicitReceiver?.accept(visitor, data)
     }
 
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+     {
+        this.coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun <D> transformCalleeReference(transformer: CfirTransformer<D>, data: D): CfirPropertyAccess
+     {
+        this.calleeReference = calleeReference.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirReference
+        return this
+    }
+
+    override fun <D> transformExplicitReceiver(transformer: CfirTransformer<D>, data: D): CfirPropertyAccess
+     {
+        this.explicitReceiver = explicitReceiver?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression?
+        return this
+    }
+
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirPropertyAccessImpl {
-        calleeReference.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
-        explicitReceiver?.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
+        transformCalleeReference(transformer, data)
+        transformExplicitReceiver(transformer, data)
         return this
     }
 }

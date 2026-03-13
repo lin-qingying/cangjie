@@ -1,10 +1,10 @@
-package org.cangjie.cfir.resolve
+package org.cangnova.cangjie.cfir.resolve
 
-import org.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangjie.cfir.diagnostics.DiagnosticContext
-import org.cangjie.cfir.diagnostics.reportOn
-import org.cangjie.cfir.resolve.diagnostics.CfirResolveRuleCatalog
-import org.cangjie.cfir.resolve.services.CfirResolvedImportBinding
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
+import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.diagnostics.CfirResolveRuleCatalog
+import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
 
 private val RULE_IMPORTS_BINDING = CfirResolveRuleCatalog.IMPORTS_BINDING
 private val RULE_IMPORTS_CONFLICT = CfirResolveRuleCatalog.IMPORTS_CONFLICT

@@ -1,16 +1,16 @@
-package org.cangjie.cfir.tree.generator
+package org.cangnova.cangjie.cfir.tree.generator
 
-import org.cangjie.cfir.tree.generator.model.Element
-import org.cangjie.cfir.tree.generator.model.Field
-import org.cangjie.cfir.tree.generator.model.Implementation
-import org.cangjie.generators.tree.config.AbstractBuilderConfigurator
+import org.cangnova.cangjie.cfir.tree.generator.model.Element
+import org.cangnova.cangjie.cfir.tree.generator.model.Field
+import org.cangnova.cangjie.cfir.tree.generator.model.Implementation
+import org.cangnova.cangjie.generators.tree.config.AbstractBuilderConfigurator
 
 class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, Implementation, Field>(model) {
     override val namePrefix: String
         get() = "Cfir"
 
     override val defaultBuilderPackage: String
-        get() = "org.cangjie.cfir.tree.builder"
+        get() = "org.cangnova.cangjie.cfir.tree.builder"
 
     override fun configureBuilders() = with(CfirTree) {
         concreteElements().forEach { element ->

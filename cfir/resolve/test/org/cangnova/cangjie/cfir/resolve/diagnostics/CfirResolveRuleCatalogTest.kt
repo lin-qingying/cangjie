@@ -1,6 +1,6 @@
-package org.cangjie.cfir.resolve.diagnostics
+package org.cangnova.cangjie.cfir.resolve.diagnostics
 
-import org.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue

@@ -3,15 +3,15 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.generators.tree.printer
+package org.cangnova.cangjie.generators.tree.printer
 
 import org.cangnova.cangjie.descriptors.Modality
-import org.cangjie.generators.tree.*
-import org.cangjie.generators.tree.imports.ImportCollecting
-import org.cangjie.generators.util.printBlock
+import org.cangnova.cangjie.generators.tree.*
+import org.cangnova.cangjie.generators.tree.imports.ImportCollecting
+import org.cangnova.cangjie.generators.util.printBlock
 import org.cangnova.cangjie.utils.toLowerCaseAsciiOnly
 import org.cangnova.cangjie.utils.IndentingPrinter
-import org.cangjie.generators.tree.joinToWithBuffer
+import org.cangnova.cangjie.generators.tree.joinToWithBuffer
 import org.cangnova.cangjie.utils.withIndent
 import kotlin.reflect.KClass
 import kotlin.reflect.full.memberProperties

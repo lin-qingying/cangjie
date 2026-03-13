@@ -61,5 +61,5 @@ projectTests {
         }
     }
 
-    testGenerator("org.cangjie.cfir.builder.TestGeneratorForPsi2Cfir")
+    testGenerator("org.cangnova.cangjie.cfir.builder.TestGeneratorForPsi2Cfir")
 }

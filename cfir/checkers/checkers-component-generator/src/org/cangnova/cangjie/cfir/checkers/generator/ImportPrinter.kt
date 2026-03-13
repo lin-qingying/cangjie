@@ -1,4 +1,4 @@
-﻿package org.cangjie.cfir.checkers.generator
+﻿package org.cangnova.cangjie.cfir.checkers.generator
 
 import org.cangnova.cangjie.utils.SmartPrinter
 

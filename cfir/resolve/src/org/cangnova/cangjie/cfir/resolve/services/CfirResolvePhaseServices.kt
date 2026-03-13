@@ -1,4 +1,4 @@
-package org.cangjie.cfir.resolve.services
+package org.cangnova.cangjie.cfir.resolve.services
 
-import org.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 

@@ -1,8 +1,8 @@
-package org.cangjie.analysis.api.cfir.resolve
+package org.cangnova.cangjie.analysis.api.cfir.resolve
 
-import org.cangjie.cfir.declarations.CfirFile
-import org.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangjie.cfir.resolve.CfirTotalResolveProcessor
-import org.cangjie.cfir.session.diagnosticCollector
-import org.cangjie.cfir.session.phaseResolverRegistry
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.CfirTotalResolveProcessor
+import org.cangnova.cangjie.cfir.session.diagnosticCollector
+import org.cangnova.cangjie.cfir.session.phaseResolverRegistry
 

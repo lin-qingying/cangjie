@@ -1,7 +1,7 @@
-package org.cangjie.cfir.resolve.services
+package org.cangnova.cangjie.cfir.resolve.services
 
-import org.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangjie.cfir.session.CfirSessionComponent
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 
 /**
  * Tracks active resolving phases for a single CfirSession.

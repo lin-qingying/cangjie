@@ -1,4 +1,4 @@
-package org.cangjie.analysis.api.platform.restrictedAnalysis
+package org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis
 
 /**
  * 受限分析异常（对齐 Kotlin 的 KaRestrictedAnalysisException）。

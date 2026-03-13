@@ -3,7 +3,7 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.generators.util
+package org.cangnova.cangjie.generators.util
 
 interface Node {
     val parents: List<Node>

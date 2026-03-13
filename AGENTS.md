@@ -93,12 +93,12 @@ Windows 使用 `gradlew.bat`；Unix/macOS 使用 `./gradlew`。
 
 运行单个测试类：
 ```bash
-./gradlew :cfir:cfir-cones:test --tests "org.cangjie.cfir.types.PrimitiveTypeKindTest"
+./gradlew :cfir:cfir-cones:test --tests "org.cangnova.cangjie.cfir.types.PrimitiveTypeKindTest"
 ```
 
 运行单个测试方法：
 ```bash
-./gradlew :cfir:cfir-cones:test --tests "org.cangjie.cfir.types.PrimitiveTypeKindTest.typeName matches expected strings"
+./gradlew :cfir:cfir-cones:test --tests "org.cangnova.cangjie.cfir.types.PrimitiveTypeKindTest.typeName matches expected strings"
 ```
 
 模式匹配：

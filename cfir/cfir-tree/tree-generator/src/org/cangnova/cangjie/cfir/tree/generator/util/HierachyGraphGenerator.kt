@@ -3,10 +3,10 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.cfir.tree.generator.util
+package org.cangnova.cangjie.cfir.tree.generator.util
 
-import org.cangjie.cfir.tree.generator.Model
-import org.cangjie.generators.tree.ImplementationKind
+import org.cangnova.cangjie.cfir.tree.generator.Model
+import org.cangnova.cangjie.generators.tree.ImplementationKind
 import java.io.File
 
 @Suppress("unused")

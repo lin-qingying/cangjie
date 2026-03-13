@@ -1,4 +1,4 @@
-package org.cangjie.analysis.api.impl.base.permissions
+package org.cangnova.cangjie.analysis.api.impl.base.permissions
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationListener

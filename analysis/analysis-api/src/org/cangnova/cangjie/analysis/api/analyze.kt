@@ -1,6 +1,6 @@
-package org.cangjie.analysis.api
+package org.cangnova.cangjie.analysis.api
 
-import org.cangjie.analysis.api.session.CaSessionProvider
+import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import org.cangnova.cangjie.psi.CjElement
 
 /**

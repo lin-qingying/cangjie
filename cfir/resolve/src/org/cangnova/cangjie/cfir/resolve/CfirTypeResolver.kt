@@ -3,21 +3,21 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.cfir.resolve
+package org.cangnova.cangjie.cfir.resolve
 
-import org.cangjie.cfir.CfirSession
-import org.cangjie.cfir.CfirSessionComponent
-import org.cangjie.cfir.declarations.CfirClass
-import org.cangjie.cfir.declarations.CfirDeclaration
-import org.cangjie.cfir.declarations.CfirFile
-import org.cangjie.cfir.declarations.utils.isSealed
-import org.cangjie.cfir.diagnostics.ConeDiagnostic
-import org.cangjie.cfir.expressions.CfirResolvedQualifier
-import org.cangjie.cfir.scopes.CfirScope
-import org.cangjie.cfir.session.CfirSessionComponent
-import org.cangjie.cfir.symbols.impl.CfirRegularClassSymbol
-import org.cangjie.cfir.types.ConeKotlinType
-import org.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.CfirSessionComponent
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.utils.isSealed
+import org.cangnova.cangjie.cfir.diagnostics.ConeDiagnostic
+import org.cangnova.cangjie.cfir.expressions.CfirResolvedQualifier
+import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.session.CfirSessionComponent
+import org.cangnova.cangjie.cfir.symbols.impl.CfirRegularClassSymbol
+import org.cangnova.cangjie.cfir.types.ConeKotlinType
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 
 abstract class CfirTypeResolver : CfirSessionComponent {
     abstract fun resolveType(

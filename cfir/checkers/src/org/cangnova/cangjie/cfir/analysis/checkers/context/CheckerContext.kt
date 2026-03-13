@@ -1,15 +1,15 @@
-package org.cangjie.cfir.analysis.checkers.context
+package org.cangnova.cangjie.cfir.analysis.checkers.context
 
-import org.cangjie.cfir.CfirElement
-import org.cangjie.cfir.declarations.CfirDeclaration
-import org.cangjie.cfir.declarations.CfirFile
-import org.cangjie.cfir.diagnostics.CjDiagnostic
-import org.cangjie.cfir.diagnostics.DiagnosticContext
-import org.cangjie.cfir.diagnostics.DiagnosticReporter
-import org.cangjie.cfir.diagnostics.Severity
-import org.cangjie.cfir.expressions.CfirStatement
-import org.cangjie.cfir.session.CfirSession
-import org.cangjie.config.LanguageVersionSettings
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.Severity
+import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.config.LanguageVersionSettings
 
 abstract class CheckerContext : DiagnosticContext {
     abstract val file: CfirFile?

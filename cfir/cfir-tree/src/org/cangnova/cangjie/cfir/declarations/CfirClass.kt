@@ -1,4 +1,4 @@
-package org.cangjie.cfir.declarations
+package org.cangnova.cangjie.cfir.declarations
 
 enum class CfirClassKind {
     CLASS,

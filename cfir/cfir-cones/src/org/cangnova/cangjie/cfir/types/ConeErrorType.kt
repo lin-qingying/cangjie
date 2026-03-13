@@ -1,4 +1,4 @@
-package org.cangjie.cfir.types
+package org.cangnova.cangjie.cfir.types
 
 /**
  * 错误类型，表示类型解析失败。

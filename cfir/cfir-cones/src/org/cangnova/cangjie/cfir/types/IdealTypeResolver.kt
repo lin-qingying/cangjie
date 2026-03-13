@@ -1,4 +1,4 @@
-package org.cangjie.cfir.types
+package org.cangnova.cangjie.cfir.types
 
 /**
  * 理想类型解析器。

@@ -1,29 +1,26 @@
-/*
- * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
- */
 
-package org.cangjie.cfir.analysis.checkers.declaration
+
+package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 /*
  * This file was generated automatically
  * DO NOT MODIFY IT MANUALLY
  */
 
-import org.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangjie.cfir.declarations.CfirClass
-import org.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangjie.cfir.declarations.CfirDeclaration
-import org.cangjie.cfir.declarations.CfirFile
-import org.cangjie.cfir.declarations.CfirFunction
-import org.cangjie.cfir.declarations.CfirInvalidDeclaration
-import org.cangjie.cfir.declarations.CfirMainFunction
-import org.cangjie.cfir.declarations.CfirMemberDeclaration
-import org.cangjie.cfir.declarations.CfirProperty
-import org.cangjie.cfir.declarations.CfirTypeAlias
-import org.cangjie.cfir.declarations.CfirTypeParameter
-import org.cangjie.cfir.declarations.CfirValueParameter
-import org.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirInvalidDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 
 typealias CfirBasicDeclarationChecker = CfirDeclarationChecker<CfirDeclaration>
 typealias CfirMemberDeclarationChecker = CfirDeclarationChecker<CfirMemberDeclaration>

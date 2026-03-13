@@ -1,7 +1,7 @@
-package org.cangjie.cfir
+package org.cangnova.cangjie.cfir
 
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 abstract class CfirPureAbstractElement : CfirElement {
     abstract override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D)

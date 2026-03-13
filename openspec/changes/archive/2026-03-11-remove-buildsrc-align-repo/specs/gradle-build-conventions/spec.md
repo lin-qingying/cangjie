@@ -24,7 +24,7 @@
 
 #### 场景:buildsrc-compat 使用 kotlin-dsl 插件
 - **当** 构建 `buildsrc-compat` 模块
-- **那么** 其 `build.gradle.kts` 必须应用 `kotlin-dsl` 插件，且 group 为 `org.cangjie.build`
+- **那么** 其 `build.gradle.kts` 必须应用 `kotlin-dsl` 插件，且 group 为 `org.cangnova.cangjie.build`
 
 ### 需求:project-tests-convention 插件保持功能不变
 `project-tests-convention` 模块必须提供与原 `buildSrc` 版本相同的 Gradle 预编译脚本插件，包含 `ProjectTestsExtension` 和 `JUnitMode`。

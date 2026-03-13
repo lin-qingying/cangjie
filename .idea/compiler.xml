@@ -67,6 +67,9 @@
       <module name="cangjie.cfir.diagnostic-renderers" options="-proc:none" />
       <module name="cangjie.cfir.diagnostic-renderers.main" options="-proc:none" />
       <module name="cangjie.cfir.diagnostic-renderers.test" options="-proc:none" />
+      <module name="cangjie.cfir.diagnostics" options="-proc:none" />
+      <module name="cangjie.cfir.diagnostics.main" options="-proc:none" />
+      <module name="cangjie.cfir.diagnostics.test" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.light-tree2cfir" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.light-tree2cfir.main" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.light-tree2cfir.test" options="-proc:none" />
@@ -80,6 +83,9 @@
       <module name="cangjie.cfir.resolve" options="-proc:none" />
       <module name="cangjie.cfir.resolve.main" options="-proc:none" />
       <module name="cangjie.cfir.resolve.test" options="-proc:none" />
+      <module name="cangjie.cfir.symbols" options="-proc:none" />
+      <module name="cangjie.cfir.symbols.main" options="-proc:none" />
+      <module name="cangjie.cfir.symbols.test" options="-proc:none" />
       <module name="cangjie.common" options="-proc:none" />
       <module name="cangjie.common.main" options="-proc:none" />
       <module name="cangjie.common.test" options="-proc:none" />

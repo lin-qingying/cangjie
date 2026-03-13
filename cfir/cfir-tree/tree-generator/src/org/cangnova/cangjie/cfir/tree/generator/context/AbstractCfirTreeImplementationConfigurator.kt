@@ -1,9 +1,9 @@
-package org.cangjie.cfir.tree.generator.context
+package org.cangnova.cangjie.cfir.tree.generator.context
 
-import org.cangjie.cfir.tree.generator.model.Element
-import org.cangjie.cfir.tree.generator.model.Field
-import org.cangjie.cfir.tree.generator.model.Implementation
-import org.cangjie.generators.tree.config.AbstractImplementationConfigurator
+import org.cangnova.cangjie.cfir.tree.generator.model.Element
+import org.cangnova.cangjie.cfir.tree.generator.model.Field
+import org.cangnova.cangjie.cfir.tree.generator.model.Implementation
+import org.cangnova.cangjie.generators.tree.config.AbstractImplementationConfigurator
 
 abstract class AbstractCfirTreeImplementationConfigurator :
     AbstractImplementationConfigurator<Implementation, Element, Field>() {

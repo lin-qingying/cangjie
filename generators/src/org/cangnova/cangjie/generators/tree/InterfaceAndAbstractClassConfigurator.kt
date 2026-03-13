@@ -3,10 +3,10 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.generators.tree
+package org.cangnova.cangjie.generators.tree
 
-import org.cangjie.generators.util.Node
-import org.cangjie.generators.util.solveGraphForClassVsInterface
+import org.cangnova.cangjie.generators.util.Node
+import org.cangnova.cangjie.generators.util.solveGraphForClassVsInterface
 
 /**
  * Decides which element in the tree must be an (abstract) class, and which must be an interface.

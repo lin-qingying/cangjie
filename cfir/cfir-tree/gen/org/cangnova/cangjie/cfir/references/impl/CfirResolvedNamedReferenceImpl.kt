@@ -5,21 +5,21 @@
 
 @file:Suppress("DuplicatedCode")
 
-package org.cangjie.cfir.references.impl
+package org.cangnova.cangjie.cfir.references.impl
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangjie.cfir.symbols.CfirSymbol
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.name.Name
 
 class CfirResolvedNamedReferenceImpl @CfirImplementationDetail constructor(
     override val name: Name,
     override val resolvedSymbol: CfirSymbol<*>,
 ) : CfirResolvedNamedReference() {
-    override val source: CfirSourceElement?
+    override val source: CjSourceElement?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {

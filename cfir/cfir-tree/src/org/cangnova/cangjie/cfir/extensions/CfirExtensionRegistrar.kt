@@ -1,6 +1,6 @@
-package org.cangjie.cfir.extensions
+package org.cangnova.cangjie.cfir.extensions
 
-import org.cangjie.cfir.session.CfirSessionComponent
+import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 
 /** 编译器扩展基接口 */
 interface CfirExtension

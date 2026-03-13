@@ -1,18 +1,18 @@
-package org.cangjie.analysis.api.impl.base.sessions
+package org.cangnova.cangjie.analysis.api.impl.base.sessions
 
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.util.PsiUtilCore
-import org.cangjie.analysis.api.CaModule
-import org.cangjie.analysis.api.CaSession
-import org.cangjie.analysis.api.impl.base.lifetime.CaBaseLifetimeTracker
-import org.cangjie.analysis.api.impl.base.permissions.CaBaseWriteActionStartedChecker
-import org.cangjie.analysis.api.impl.base.restrictedAnalysis.CaBaseRestrictedAnalysisException
-import org.cangjie.analysis.api.platform.CaPlatformSettings
-import org.cangjie.analysis.api.platform.lifetime.CaLifetimeTokenFactory
-import org.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
-import org.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService
-import org.cangjie.analysis.api.session.CaSessionProvider
+import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.CaSession
+import org.cangnova.cangjie.analysis.api.impl.base.lifetime.CaBaseLifetimeTracker
+import org.cangnova.cangjie.analysis.api.impl.base.permissions.CaBaseWriteActionStartedChecker
+import org.cangnova.cangjie.analysis.api.impl.base.restrictedAnalysis.CaBaseRestrictedAnalysisException
+import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
+import org.cangnova.cangjie.analysis.api.platform.lifetime.CaLifetimeTokenFactory
+import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
+import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService
+import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import org.cangnova.cangjie.psi.CjElement
 
 /**

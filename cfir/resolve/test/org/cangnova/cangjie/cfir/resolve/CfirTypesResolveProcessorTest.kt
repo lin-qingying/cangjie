@@ -1,33 +1,33 @@
-package org.cangjie.cfir.resolve
+package org.cangnova.cangjie.cfir.resolve
 
-import org.cangjie.cfir.common.CfirModuleData
-import org.cangjie.cfir.declarations.CfirClass
-import org.cangjie.cfir.declarations.CfirClassKind
-import org.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangjie.cfir.declarations.CfirFile
-import org.cangjie.cfir.declarations.CfirFunction
-import org.cangjie.cfir.declarations.CfirPackageDirective
-import org.cangjie.cfir.declarations.CfirProperty
-import org.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangjie.cfir.declarations.CfirTypeParameter
-import org.cangjie.cfir.declarations.CfirValueParameter
-import org.cangjie.cfir.resolve.providers.CfirEmptyExtendProvider
-import org.cangjie.cfir.resolve.providers.CfirEmptySymbolProvider
-import org.cangjie.cfir.resolve.providers.CfirProvider
-import org.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangjie.cfir.resolve.services.CfirLazyDeclarationResolver
-import org.cangjie.cfir.session.CfirSession
-import org.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangjie.cfir.types.CfirUserTypeRef
-import org.cangjie.cfir.types.ConeClassLikeType
-import org.cangjie.cfir.types.ConeFuncType
-import org.cangjie.cfir.types.ConeTypeParameterType
-import org.cangjie.cfir.types.ConeTupleType
-import org.cangjie.cfir.types.ConeVArrayType
-import org.cangjie.cfir.types.CfirFunctionTypeRef
-import org.cangjie.cfir.types.CfirTupleTypeRef
-import org.cangjie.cfir.types.CfirVArrayTypeRef
-import org.cangjie.cfir.types.CfirErrorTypeRef
+import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassKind
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirPackageDirective
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.resolve.providers.CfirEmptyExtendProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirEmptySymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.services.CfirLazyDeclarationResolver
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.types.ConeTupleType
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.CfirFunctionTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTupleTypeRef
+import org.cangnova.cangjie.cfir.types.CfirVArrayTypeRef
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -175,7 +175,7 @@ class CfirTypesResolveProcessorTest {
         session.register(CfirDiagnosticCollector::class, diagnostics)
         session.register(CfirSymbolProvider::class, CfirEmptySymbolProvider())
         session.register(CfirProvider::class, InMemoryProvider(providedClasses))
-        session.register(org.cangjie.cfir.providers.CfirExtendProvider::class, CfirEmptyExtendProvider())
+        session.register(org.cangnova.cangjie.cfir.providers.CfirExtendProvider::class, CfirEmptyExtendProvider())
         session.register(CfirLazyDeclarationResolver::class, CfirLazyDeclarationResolver())
 
         registerResolveProcessors(phaseRegistry, diagnostics, session)

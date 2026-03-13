@@ -1,4 +1,4 @@
-package org.cangjie.cfir.types
+package org.cangnova.cangjie.cfir.types
 
 /**
  * 仓颉原始类型种类，对应 TypeKind.inc 中的基本类型。

@@ -1,6 +1,6 @@
-package org.cangjie.cfir.tree.generator
+package org.cangnova.cangjie.cfir.tree.generator
 
-import org.cangjie.cfir.tree.generator.model.Element
+import org.cangnova.cangjie.cfir.tree.generator.model.Element
 
-typealias Model = org.cangjie.generators.tree.Model<Element>
+typealias Model = org.cangnova.cangjie.generators.tree.Model<Element>
 

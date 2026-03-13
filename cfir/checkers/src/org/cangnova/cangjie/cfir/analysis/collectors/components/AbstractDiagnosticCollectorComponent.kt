@@ -1,17 +1,17 @@
-package org.cangjie.cfir.analysis.collectors.components
+package org.cangnova.cangjie.cfir.analysis.collectors.components
 
-import org.cangjie.cfir.CfirElement
-import org.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangjie.cfir.diagnostics.AbstractSourceElementPositioningStrategy
-import org.cangjie.cfir.diagnostics.CjDiagnostic
-import org.cangjie.cfir.diagnostics.CjDiagnosticFactory0
-import org.cangjie.cfir.diagnostics.CjDiagnosticFactory1
-import org.cangjie.cfir.diagnostics.DiagnosticContext
-import org.cangjie.cfir.diagnostics.PendingDiagnosticReporter
-import org.cangjie.cfir.diagnostics.reportOn
-import org.cangjie.cfir.session.CfirSession
-import org.cangjie.cfir.source.AbstractCjSourceElement
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.diagnostics.AbstractSourceElementPositioningStrategy
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory0
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory1
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
+import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 abstract class AbstractDiagnosticCollectorComponent(
     protected val session: CfirSession,

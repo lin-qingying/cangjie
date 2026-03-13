@@ -3,7 +3,7 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.cfir.tree.generator.model
+package org.cangnova.cangjie.cfir.tree.generator.model
 
 data class FieldSet(val fieldDefinitions: List<Field>) {
     operator fun invoke(config: Field.() -> Unit): FieldSet {

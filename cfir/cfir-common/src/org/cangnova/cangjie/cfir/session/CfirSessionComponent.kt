@@ -1,4 +1,4 @@
-package org.cangjie.cfir.session
+package org.cangnova.cangjie.cfir.session
 
 /**
  * 标记接口，所有 session 组件的基接口。

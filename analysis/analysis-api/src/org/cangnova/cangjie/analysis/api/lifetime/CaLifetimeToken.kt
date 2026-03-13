@@ -1,4 +1,4 @@
-package org.cangjie.analysis.api.lifetime
+package org.cangnova.cangjie.analysis.api.lifetime
 
 /**
  * 生命周期令牌（对齐 Kotlin 的 KaLifetimeToken）。

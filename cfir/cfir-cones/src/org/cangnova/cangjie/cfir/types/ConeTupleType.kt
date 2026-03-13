@@ -1,4 +1,4 @@
-package org.cangjie.cfir.types
+package org.cangnova.cangjie.cfir.types
 
 /**
  * 元组类型。

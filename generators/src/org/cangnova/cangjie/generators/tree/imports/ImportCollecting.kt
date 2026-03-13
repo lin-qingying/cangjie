@@ -3,12 +3,12 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.generators.tree.imports
+package org.cangnova.cangjie.generators.tree.imports
 
-import org.cangjie.generators.tree.TypeRef
-import org.cangjie.generators.tree.TypeVariable
-import org.cangjie.generators.tree.joinToWithBuffer
-import org.cangjie.generators.tree.Variance
+import org.cangnova.cangjie.generators.tree.TypeRef
+import org.cangnova.cangjie.generators.tree.TypeVariable
+import org.cangnova.cangjie.generators.tree.joinToWithBuffer
+import org.cangnova.cangjie.generators.tree.Variance
 
 /**
  * 表示可以将类型和其他声明添加到当前文件的导入列表的上下文。

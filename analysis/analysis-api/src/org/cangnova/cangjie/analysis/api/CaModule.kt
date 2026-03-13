@@ -1,4 +1,4 @@
-package org.cangjie.analysis.api
+package org.cangnova.cangjie.analysis.api
 
 import com.intellij.openapi.project.Project
 

@@ -1,8 +1,8 @@
-package org.cangjie.cfir.tree.generator
+package org.cangnova.cangjie.cfir.tree.generator
 
-import org.cangjie.cfir.tree.generator.util.generatedType
-import org.cangjie.cfir.tree.generator.util.type
-import org.cangjie.generators.tree.TypeKind
+import org.cangnova.cangjie.cfir.tree.generator.util.generatedType
+import org.cangnova.cangjie.cfir.tree.generator.util.type
+import org.cangnova.cangjie.generators.tree.TypeKind
 
 val cfirVisitorType = generatedType("visitors", "CfirVisitor")
 val cfirVisitorVoidType = generatedType("visitors", "CfirVisitorVoid")

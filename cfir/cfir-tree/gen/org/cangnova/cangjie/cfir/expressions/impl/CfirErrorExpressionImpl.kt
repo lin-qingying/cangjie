@@ -5,23 +5,28 @@
 
 @file:Suppress("DuplicatedCode")
 
-package org.cangjie.cfir.expressions.impl
+package org.cangnova.cangjie.cfir.expressions.impl
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.expressions.CfirErrorExpression
-import org.cangjie.cfir.types.ConeCangjieType
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 class CfirErrorExpressionImpl @CfirImplementationDetail constructor(
-    override val coneTypeOrNull: ConeCangjieType?,
+    override var coneTypeOrNull: ConeCangjieType?,
     override val reason: String,
 ) : CfirErrorExpression() {
-    override val source: CfirSourceElement?
+    override val source: CjSourceElement?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
+    }
+
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+     {
+        this.coneTypeOrNull = newConeTypeOrNull
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirErrorExpressionImpl {

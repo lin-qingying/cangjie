@@ -1,7 +1,7 @@
-package org.cangjie.analysis.api.cfir.resolve
+package org.cangnova.cangjie.analysis.api.cfir.resolve
 
-import org.cangjie.analysis.api.CaModule
-import org.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
  * CFIR 解析外观（对齐 Kotlin 的 LLResolutionFacade / LLFirResolutionFacade）。

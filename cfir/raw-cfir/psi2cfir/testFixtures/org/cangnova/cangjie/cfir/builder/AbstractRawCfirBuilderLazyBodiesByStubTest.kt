@@ -1,4 +1,4 @@
-package org.cangjie.cfir.builder
+package org.cangnova.cangjie.cfir.builder
 
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.psi.PsiManager

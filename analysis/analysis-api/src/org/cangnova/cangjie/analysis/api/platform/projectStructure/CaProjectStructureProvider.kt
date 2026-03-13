@@ -1,9 +1,9 @@
-package org.cangjie.analysis.api.platform.projectStructure
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import org.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.CaModule
 
 /**
  * 项目结构提供器（对齐 Kotlin 的 KotlinProjectStructureProvider）。

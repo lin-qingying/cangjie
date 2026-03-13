@@ -5,13 +5,13 @@
 
 @file:Suppress("DuplicatedCode", "unused")
 
-package org.cangjie.cfir.declarations.builder
+package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangjie.cfir.declarations.CfirImport
-import org.cangjie.cfir.declarations.impl.CfirImportImpl
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
+import org.cangnova.cangjie.cfir.declarations.CfirImport
+import org.cangnova.cangjie.cfir.declarations.impl.CfirImportImpl
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 

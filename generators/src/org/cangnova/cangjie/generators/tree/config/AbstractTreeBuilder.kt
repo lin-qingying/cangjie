@@ -3,9 +3,9 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.generators.tree.config
+package org.cangnova.cangjie.generators.tree.config
 
-import org.cangjie.generators.tree.*
+import org.cangnova.cangjie.generators.tree.*
 import kotlin.properties.PropertyDelegateProvider
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty

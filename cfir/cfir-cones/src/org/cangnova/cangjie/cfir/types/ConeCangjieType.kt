@@ -1,4 +1,4 @@
-package org.cangjie.cfir.types
+package org.cangnova.cangjie.cfir.types
 
 /**
  * 仓颉类型体系的根类。

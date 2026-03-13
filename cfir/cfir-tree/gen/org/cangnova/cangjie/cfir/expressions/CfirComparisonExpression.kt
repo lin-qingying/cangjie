@@ -3,23 +3,23 @@
 // This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
 // DO NOT MODIFY IT MANUALLY.
 
-package org.cangjie.cfir.expressions
+package org.cangnova.cangjie.cfir.expressions
 
-import org.cangjie.cfir.CfirElement
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.types.ConeCangjieType
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 /**
- * Generated from: [org.cangjie.cfir.tree.generator.CfirTree.comparisonExpression]
+ * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.comparisonExpression]
  */
 abstract class CfirComparisonExpression : CfirExpression() {
-    abstract override val source: CfirSourceElement?
-    abstract override val coneTypeOrNull: ConeCangjieType?
+    abstract override val source: CjSourceElement?
+    abstract override var coneTypeOrNull: ConeCangjieType?
     abstract val operation: CfirComparisonOp
-    abstract val left: CfirExpression
-    abstract val right: CfirExpression
+    abstract var left: CfirExpression
+    abstract var right: CfirExpression
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitComparisonExpression(this, data)
@@ -27,4 +27,13 @@ abstract class CfirComparisonExpression : CfirExpression() {
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformComparisonExpression(this, data) as E
+
+    override abstract fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+
+
+    abstract fun <D> transformLeft(transformer: CfirTransformer<D>, data: D): CfirComparisonExpression
+
+
+    abstract fun <D> transformRight(transformer: CfirTransformer<D>, data: D): CfirComparisonExpression
+
 }

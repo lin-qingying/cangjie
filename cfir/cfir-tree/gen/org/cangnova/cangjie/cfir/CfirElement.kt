@@ -3,18 +3,18 @@
 // This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
 // DO NOT MODIFY IT MANUALLY.
 
-package org.cangjie.cfir
+package org.cangnova.cangjie.cfir
 
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
-import org.cangjie.cfir.visitors.CfirVisitorVoid
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 
 /**
- * Generated from: [org.cangjie.cfir.tree.generator.CfirTree.rootElement]
+ * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.rootElement]
  */
 interface CfirElement {
-    val source: CfirSourceElement?
+    val source: CjSourceElement?
 
     /**
      * Runs the provided [visitor] on the CFIR subtree with the root at this node.

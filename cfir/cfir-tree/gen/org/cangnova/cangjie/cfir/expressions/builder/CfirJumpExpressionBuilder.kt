@@ -5,15 +5,15 @@
 
 @file:Suppress("DuplicatedCode", "unused")
 
-package org.cangjie.cfir.expressions.builder
+package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangjie.cfir.expressions.CfirJumpExpression
-import org.cangjie.cfir.expressions.CfirJumpKind
-import org.cangjie.cfir.expressions.impl.CfirJumpExpressionImpl
-import org.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
+import org.cangnova.cangjie.cfir.expressions.CfirJumpExpression
+import org.cangnova.cangjie.cfir.expressions.CfirJumpKind
+import org.cangnova.cangjie.cfir.expressions.impl.CfirJumpExpressionImpl
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
 
 @CfirBuilderDsl
 class CfirJumpExpressionBuilder {

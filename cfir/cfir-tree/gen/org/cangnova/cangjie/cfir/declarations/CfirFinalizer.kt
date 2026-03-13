@@ -3,33 +3,33 @@
 // This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
 // DO NOT MODIFY IT MANUALLY.
 
-package org.cangjie.cfir.declarations
+package org.cangnova.cangjie.cfir.declarations
 
-import org.cangjie.cfir.CfirElement
-import org.cangjie.cfir.common.CfirModuleData
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.expressions.CfirBlock
-import org.cangjie.cfir.symbols.CfirSymbol
-import org.cangjie.cfir.types.CfirTypeRef
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 /**
- * Generated from: [org.cangjie.cfir.tree.generator.CfirTree.finalizer]
+ * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.finalizer]
  */
 abstract class CfirFinalizer : CfirCallableDeclaration() {
-    abstract override val source: CfirSourceElement?
+    abstract override val source: CjSourceElement?
     abstract override val symbol: CfirSymbol<*>
     abstract override val origin: CfirDeclarationOrigin
-    abstract override val annotations: List<CfirAnnotation>
+    abstract override var annotations: List<CfirAnnotation>
     abstract override val moduleData: CfirModuleData
-    abstract override val resolvePhase: CfirResolvePhase
+    abstract override var resolvePhase: CfirResolvePhase
     abstract override val attributes: CfirDeclarationAttributes
-    abstract val status: CfirDeclarationStatus
-    abstract val typeParameters: List<CfirTypeParameter>
-    abstract val returnTypeRef: CfirTypeRef
-    abstract val valueParameters: List<CfirValueParameter>
-    abstract val body: CfirBlock?
+    abstract var status: CfirDeclarationStatus
+    abstract var typeParameters: List<CfirTypeParameter>
+    abstract var returnTypeRef: CfirTypeRef
+    abstract var valueParameters: List<CfirValueParameter>
+    abstract var body: CfirBlock?
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitFinalizer(this, data)
@@ -37,4 +37,34 @@ abstract class CfirFinalizer : CfirCallableDeclaration() {
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformFinalizer(this, data) as E
+
+    override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+
+
+    override abstract fun replaceResolvePhase(newResolvePhase: CfirResolvePhase)
+
+
+    abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
+
+
+    abstract fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
+
+
+    override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFinalizer
+
+
+    abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirFinalizer
+
+
+    abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirFinalizer
+
+
+    abstract fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirFinalizer
+
+
+    abstract fun <D> transformValueParameters(transformer: CfirTransformer<D>, data: D): CfirFinalizer
+
+
+    abstract fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirFinalizer
+
 }
