@@ -1,0 +1,2 @@
+FILE: dotQualifiedAccess.cj
+    func testAccess(obj: R|MyClass|): R|Unit|

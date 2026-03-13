@@ -1,0 +1,57 @@
+
+
+// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
+// DO NOT MODIFY IT MANUALLY.
+
+@file:Suppress("DuplicatedCode", "unused")
+
+package org.cangjie.cfir.expressions.builder
+
+import kotlin.contracts.*
+import org.cangjie.cfir.CfirImplementationDetail
+import org.cangjie.cfir.builder.CfirBuilderDsl
+import org.cangjie.cfir.expressions.CfirBinaryOp
+import org.cangjie.cfir.expressions.CfirBinaryOpKind
+import org.cangjie.cfir.expressions.CfirExpression
+import org.cangjie.cfir.expressions.impl.CfirBinaryOpImpl
+import org.cangjie.cfir.types.ConeCangjieType
+
+@CfirBuilderDsl
+class CfirBinaryOpBuilder {
+    var coneTypeOrNull: ConeCangjieType? = null
+    lateinit var kind: CfirBinaryOpKind
+    lateinit var left: CfirExpression
+    lateinit var right: CfirExpression
+
+    @OptIn(CfirImplementationDetail::class)
+    fun build(): CfirBinaryOp {
+        return CfirBinaryOpImpl(
+            coneTypeOrNull,
+            kind,
+            left,
+            right,
+        )
+    }
+
+}
+
+@OptIn(ExperimentalContracts::class)
+inline fun buildBinaryOp(init: CfirBinaryOpBuilder.() -> Unit): CfirBinaryOp {
+    contract {
+        callsInPlace(init, InvocationKind.EXACTLY_ONCE)
+    }
+    return CfirBinaryOpBuilder().apply(init).build()
+}
+
+@OptIn(ExperimentalContracts::class)
+inline fun buildBinaryOpCopy(original: CfirBinaryOp, init: CfirBinaryOpBuilder.() -> Unit): CfirBinaryOp {
+    contract {
+        callsInPlace(init, InvocationKind.EXACTLY_ONCE)
+    }
+    val copyBuilder = CfirBinaryOpBuilder()
+    copyBuilder.coneTypeOrNull = original.coneTypeOrNull
+    copyBuilder.kind = original.kind
+    copyBuilder.left = original.left
+    copyBuilder.right = original.right
+    return copyBuilder.apply(init).build()
+}

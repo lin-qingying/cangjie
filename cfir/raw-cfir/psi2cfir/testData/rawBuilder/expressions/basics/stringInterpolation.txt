@@ -1,0 +1,10 @@
+FILE: stringInterpolation.cj
+    func greet(name: R|String|): R|String| {
+        RETURN {
+            STRING_INTERPOLATION {
+                STRING("Hello, ")
+                QUALIFIED_ACCESS(name)
+                STRING("!")
+            }
+        }
+    }

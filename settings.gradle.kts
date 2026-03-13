@@ -31,7 +31,6 @@ include(":psi")
 
 include(":cfir")
 include(":cfir:cfir-common")
-include(":cfir:cfir-common-psi")
 include(":cfir:cfir-cones")
 include(":cfir:resolve")
 include(":cfir:cfir-tree")

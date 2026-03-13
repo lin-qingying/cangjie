@@ -1,0 +1,15 @@
+FILE: rangeExpression.cj
+    func testRange(): R|Unit| {
+        let exclusive: <implicit> = ...
+            initializer:
+                RANGE(..) {
+                    STRING("1")
+                    STRING("10")
+                }
+        let inclusive: <implicit> = ...
+            initializer:
+                RANGE(..=) {
+                    STRING("1")
+                    STRING("10")
+                }
+    }

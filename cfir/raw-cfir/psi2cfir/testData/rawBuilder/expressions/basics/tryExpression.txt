@@ -1,0 +1,34 @@
+FILE: tryExpression.cj
+    func safeDivide(a: R|Int64|, b: R|Int64|): R|Int64| {
+        TRY {
+            try:
+                RETURN {
+                    FUNCTION_CALL(div) {
+                        receiver:
+                            QUALIFIED_ACCESS(a)
+                        arguments:
+                            QUALIFIED_ACCESS(b)
+                    }
+                }
+            catch(e: <implicit>):
+                RETURN {
+                    STRING("0")
+                }
+            finally:
+                let done: <implicit> = ...
+                    initializer:
+                        STRING("true")
+        }
+    }
+    func tryCatchOnly(x: R|Int64|): R|Int64| {
+        TRY {
+            try:
+                RETURN {
+                    QUALIFIED_ACCESS(x)
+                }
+            catch(e: <implicit>):
+                RETURN {
+                    STRING("0")
+                }
+        }
+    }

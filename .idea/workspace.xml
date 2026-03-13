@@ -5,235 +5,417 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="add: implement generic functions and type declarations">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/AbstractSourceElementPositioningStrategy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/AbstractSourceElementPositioningStrategy.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/CjDiagnostic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/CjDiagnostic.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/CjDiagnosticFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/CjDiagnosticFactory.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/CjDiagnosticReportHelpers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/CjDiagnosticReportHelpers.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/DiagnosticReporter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/DiagnosticReporter.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/OffsetsOnlyPositioningStrategy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/OffsetsOnlyPositioningStrategy.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/impl/DeduplicatingDiagnosticReporter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/impl/DeduplicatingDiagnosticReporter.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/impl/PendingDiagnosticsReporterImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/impl/PendingDiagnosticsReporterImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/source/CjSourceElement.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/CfirElement.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/CfirElement.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirAnnotation.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirAnnotation.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirCallableDeclaration.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirCallableDeclaration.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirClass.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirClass.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirClassLikeDeclaration.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirClassLikeDeclaration.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirConstructor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirConstructor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirDeclaration.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirDeclaration.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirEnumConstructor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirEnumConstructor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirExtend.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirExtend.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirFile.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirFile.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirFinalizer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirFinalizer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirFunction.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirFunction.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirImport.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirImport.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirInvalidDeclaration.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirInvalidDeclaration.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirMacroDeclaration.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirMacroDeclaration.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirMainFunction.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirMainFunction.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirMemberDeclaration.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirMemberDeclaration.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirPackageDirective.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirPackageDirective.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirPatternVariable.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirPatternVariable.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirProperty.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirProperty.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirTypeAlias.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirTypeAlias.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirTypeParameter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirTypeParameter.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirValueParameter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirValueParameter.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirVariable.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirVariable.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirAnnotationBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirAnnotationBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirClassBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirClassBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirConstructorBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirConstructorBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirEnumConstructorBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirEnumConstructorBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirExtendBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirExtendBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirFileBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirFileBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirFinalizerBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirFinalizerBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirFunctionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirFunctionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirImportBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirImportBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirInvalidDeclarationBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirInvalidDeclarationBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirMacroDeclarationBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirMacroDeclarationBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirMainFunctionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirMainFunctionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirPackageDirectiveBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirPackageDirectiveBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirPatternVariableBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirPatternVariableBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirPropertyBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirPropertyBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirTypeAliasBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirTypeAliasBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirTypeParameterBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirTypeParameterBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirValueParameterBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirValueParameterBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirVariableBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirVariableBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirAnnotationImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirAnnotationImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirClassImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirClassImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirConstructorImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirConstructorImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirEnumConstructorImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirEnumConstructorImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirExtendImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirExtendImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirFileImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirFileImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirFinalizerImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirFinalizerImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirFunctionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirFunctionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirImportImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirImportImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirInvalidDeclarationImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirInvalidDeclarationImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirMacroDeclarationImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirMacroDeclarationImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirMainFunctionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirMainFunctionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirPackageDirectiveImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirPackageDirectiveImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirPatternVariableImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirPatternVariableImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirPropertyImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirPropertyImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirTypeAliasImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirTypeAliasImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirTypeParameterImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirTypeParameterImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirValueParameterImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirValueParameterImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirVariableImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirVariableImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirArrayLiteral.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirArrayLiteral.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirAssignment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirAssignment.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirBinaryOp.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirBinaryOp.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirBlock.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirBlock.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirCatch.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirCatch.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirComparisonExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirComparisonExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirErrorExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirErrorExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirForInExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirForInExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirFunctionCall.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirFunctionCall.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirIfExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirIfExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirJumpExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirJumpExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirLambdaExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirLambdaExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirLiteralExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirLiteralExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirLoopExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirLoopExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirMatchBranch.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirMatchBranch.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirMatchExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirMatchExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirPropertyAccess.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirPropertyAccess.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirQualifiedAccess.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirQualifiedAccess.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirRangeExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirRangeExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirReturnExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirReturnExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirSpawnExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirSpawnExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirStatement.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirStatement.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirStringInterpolation.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirStringInterpolation.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirSubscriptExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirSubscriptExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirThrowExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirThrowExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirTryExpression.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirTryExpression.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirTupleLiteral.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirTupleLiteral.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirTypeOperator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirTypeOperator.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirArrayLiteralBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirArrayLiteralBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirAssignmentBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirAssignmentBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirBinaryOpBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirBinaryOpBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirBlockBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirBlockBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirCatchBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirCatchBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirComparisonExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirComparisonExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirErrorExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirErrorExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirForInExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirForInExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirFunctionCallBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirFunctionCallBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirIfExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirIfExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirJumpExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirJumpExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirLambdaExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirLambdaExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirLiteralExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirLiteralExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirLoopExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirLoopExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirMatchBranchBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirMatchBranchBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirMatchExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirMatchExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirPropertyAccessBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirPropertyAccessBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirQualifiedAccessBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirQualifiedAccessBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirRangeExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirRangeExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirReturnExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirReturnExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirSpawnExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirSpawnExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirStringInterpolationBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirStringInterpolationBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirSubscriptExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirSubscriptExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirThrowExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirThrowExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirTryExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirTryExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirTupleLiteralBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirTupleLiteralBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirTypeOperatorBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirTypeOperatorBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirArrayLiteralImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirArrayLiteralImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirAssignmentImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirAssignmentImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirBinaryOpImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirBinaryOpImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirBlockImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirBlockImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirCatchImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirCatchImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirComparisonExpressionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirComparisonExpressionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirErrorExpressionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirErrorExpressionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirForInExpressionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirForInExpressionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirFunctionCallImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirFunctionCallImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirIfExpressionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirIfExpressionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirJumpExpressionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirJumpExpressionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirLambdaExpressionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirLambdaExpressionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirLiteralExpressionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirLiteralExpressionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirLoopExpressionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirLoopExpressionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirMatchBranchImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirMatchBranchImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirMatchExpressionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirMatchExpressionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirPropertyAccessImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirPropertyAccessImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirQualifiedAccessImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirQualifiedAccessImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirRangeExpressionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirRangeExpressionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirReturnExpressionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirReturnExpressionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirSpawnExpressionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirSpawnExpressionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirStringInterpolationImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirStringInterpolationImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirSubscriptExpressionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirSubscriptExpressionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirThrowExpressionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirThrowExpressionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirTryExpressionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirTryExpressionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirTupleLiteralImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirTupleLiteralImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirTypeOperatorImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirTypeOperatorImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirBindingPattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirBindingPattern.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirConstPattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirConstPattern.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirEnumPattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirEnumPattern.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirPattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirPattern.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirTuplePattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirTuplePattern.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirTypePattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirTypePattern.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirWildcardPattern.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirWildcardPattern.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirBindingPatternBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirBindingPatternBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirConstPatternBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirConstPatternBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirEnumPatternBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirEnumPatternBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirTuplePatternBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirTuplePatternBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirTypePatternBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirTypePatternBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirWildcardPatternBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirWildcardPatternBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirBindingPatternImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirBindingPatternImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirConstPatternImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirConstPatternImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirEnumPatternImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirEnumPatternImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirTuplePatternImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirTuplePatternImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirTypePatternImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirTypePatternImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirWildcardPatternImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirWildcardPatternImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/CfirErrorReference.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/CfirErrorReference.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/CfirNamedReference.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/CfirNamedReference.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/CfirReference.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/CfirReference.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/CfirResolvedNamedReference.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/CfirResolvedNamedReference.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/builder/CfirErrorReferenceBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/builder/CfirErrorReferenceBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/builder/CfirNamedReferenceBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/builder/CfirNamedReferenceBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/builder/CfirResolvedNamedReferenceBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/builder/CfirResolvedNamedReferenceBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/impl/CfirErrorReferenceImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/impl/CfirErrorReferenceImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/impl/CfirNamedReferenceImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/impl/CfirNamedReferenceImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/impl/CfirResolvedNamedReferenceImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/impl/CfirResolvedNamedReferenceImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirBasicTypeRef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirBasicTypeRef.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirErrorTypeRef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirErrorTypeRef.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirFunctionTypeRef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirFunctionTypeRef.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirImplicitTypeRef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirImplicitTypeRef.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirResolvedTypeRef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirResolvedTypeRef.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirTupleTypeRef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirTupleTypeRef.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirTypeRef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirTypeRef.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirUserTypeRef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirUserTypeRef.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirVArrayTypeRef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirVArrayTypeRef.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirBasicTypeRefBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirBasicTypeRefBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirErrorTypeRefBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirErrorTypeRefBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirFunctionTypeRefBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirFunctionTypeRefBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirImplicitTypeRefBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirImplicitTypeRefBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirResolvedTypeRefBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirResolvedTypeRefBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirTupleTypeRefBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirTupleTypeRefBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirUserTypeRefBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirUserTypeRefBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirVArrayTypeRefBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirVArrayTypeRefBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirBasicTypeRefImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirBasicTypeRefImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirErrorTypeRefImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirErrorTypeRefImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirFunctionTypeRefImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirFunctionTypeRefImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirImplicitTypeRefImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirImplicitTypeRefImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirResolvedTypeRefImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirResolvedTypeRefImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirTupleTypeRefImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirTupleTypeRefImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirUserTypeRefImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirUserTypeRefImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirVArrayTypeRefImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirVArrayTypeRefImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/visitors/CfirDefaultVisitor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/visitors/CfirDefaultVisitor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/visitors/CfirDefaultVisitorVoid.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/visitors/CfirDefaultVisitorVoid.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/visitors/CfirTransformer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/visitors/CfirTransformer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/visitors/CfirVisitor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/visitors/CfirVisitor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/visitors/CfirVisitorVoid.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/visitors/CfirVisitorVoid.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/declarations/CfirDeclarationStatus.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/renderer/CfirRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/renderer/CfirRenderer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/providers/CfirBuiltinSymbolProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangjie/cfir/resolve/providers/CfirBuiltinSymbolProvider.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/CfirTree.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/CfirTree.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/ImplementationConfigurator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/ImplementationConfigurator.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangjie/cfir/builder/PsiRawCfirBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangjie/cfir/builder/PsiRawCfirBuilder.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/common/CfirModuleData.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/common/SourceElement.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/AbstractKotlinSuppressCache.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/AbstractSourceElementPositioningStrategy.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/CjDiagnostic.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/CjDiagnosticFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/CjDiagnosticFactoryToRendererMap.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/CjDiagnosticRenderer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/CjDiagnosticRenderers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/CjDiagnosticReportHelpers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/CjDiagnosticsContainer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/CjRegisteredDiagnosticFactoriesStorage.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/DiagnosticFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/DiagnosticMarker.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/DiagnosticRangeUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/DiagnosticReporter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/GenericDiagnostics.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/OffsetsOnlyPositioningStrategy.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/Severity.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/SourceElementPositioningStrategies.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/UnboundDiagnostic.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/impl/BaseDiagnosticsCollector.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/impl/DeduplicatingDiagnosticReporter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/impl/DiagnosticsCollectorImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/impl/PendingDiagnosticsReporterImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/rendering/DiagnosticParameterRenderer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/rendering/DiagnosticRenderer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/rendering/DiagnosticRendererFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/rendering/RenderingContext.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/diagnostics/rendering/RenderingUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/session/CfirSession.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/session/CfirSessionComponent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-common/src/org/cangjie/cfir/session/CfirSessionExtensions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/ConeArrayType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/ConeAttributes.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/ConeBuiltinTypeUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/ConeCInteropTypes.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/ConeCangjieType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/ConeClassLikeType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/ConeErrorType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/ConeFuncType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/ConeIntersectionType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/ConeLookupTag.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/ConePrimitiveType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/ConeTupleType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/ConeTypeAliasType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/ConeTypeParameterType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/ConeTypeProjection.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/IdealTypeResolver.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangjie/cfir/types/StdlibClassIds.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/test/org/cangjie/cfir/types/ConeBuiltinTypeUtilsTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/test/org/cangjie/cfir/types/IdealTypeResolverTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/test/org/cangjie/cfir/types/PrimitiveTypeKindTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/test/org/cangjie/cfir/types/StdlibClassIdsTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/CfirElement.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirAnnotation.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirCallableDeclaration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirClass.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirClassLikeDeclaration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirConstructor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirDeclaration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirEnumConstructor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirExtend.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirFile.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirFinalizer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirFunction.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirImport.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirInvalidDeclaration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirMacroDeclaration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirMainFunction.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirMemberDeclaration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirPackageDirective.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirPatternVariable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirProperty.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirTypeAlias.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirTypeParameter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirValueParameter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/CfirVariable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirAnnotationBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirClassBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirConstructorBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirEnumConstructorBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirExtendBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirFileBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirFinalizerBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirFunctionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirImportBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirInvalidDeclarationBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirMacroDeclarationBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirMainFunctionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirPackageDirectiveBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirPatternVariableBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirPropertyBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirTypeAliasBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirTypeParameterBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirValueParameterBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/builder/CfirVariableBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirAnnotationImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirClassImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirConstructorImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirEnumConstructorImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirExtendImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirFileImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirFinalizerImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirFunctionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirImportImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirInvalidDeclarationImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirMacroDeclarationImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirMainFunctionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirPackageDirectiveImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirPatternVariableImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirPropertyImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirTypeAliasImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirTypeParameterImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirValueParameterImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/declarations/impl/CfirVariableImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirArrayLiteral.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirAssignment.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirBinaryOp.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirBlock.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirCatch.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirComparisonExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirErrorExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirForInExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirFunctionCall.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirIfExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirJumpExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirLambdaExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirLiteralExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirLoopExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirMatchBranch.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirMatchExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirPropertyAccess.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirQualifiedAccess.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirRangeExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirReturnExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirSpawnExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirStatement.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirStringInterpolation.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirSubscriptExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirThrowExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirTryExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirTupleLiteral.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/CfirTypeOperator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirArrayLiteralBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirAssignmentBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirBinaryOpBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirBlockBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirCatchBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirComparisonExpressionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirErrorExpressionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirForInExpressionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirFunctionCallBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirIfExpressionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirJumpExpressionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirLambdaExpressionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirLiteralExpressionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirLoopExpressionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirMatchBranchBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirMatchExpressionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirPropertyAccessBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirQualifiedAccessBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirRangeExpressionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirReturnExpressionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirSpawnExpressionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirStringInterpolationBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirSubscriptExpressionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirThrowExpressionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirTryExpressionBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirTupleLiteralBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/builder/CfirTypeOperatorBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirArrayLiteralImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirAssignmentImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirBinaryOpImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirBlockImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirCatchImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirComparisonExpressionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirErrorExpressionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirForInExpressionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirFunctionCallImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirIfExpressionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirJumpExpressionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirLambdaExpressionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirLiteralExpressionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirLoopExpressionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirMatchBranchImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirMatchExpressionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirPropertyAccessImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirQualifiedAccessImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirRangeExpressionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirReturnExpressionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirSpawnExpressionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirStringInterpolationImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirSubscriptExpressionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirThrowExpressionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirTryExpressionImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirTupleLiteralImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/expressions/impl/CfirTypeOperatorImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirBindingPattern.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirConstPattern.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirEnumPattern.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirPattern.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirTuplePattern.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirTypePattern.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/CfirWildcardPattern.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirBindingPatternBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirConstPatternBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirEnumPatternBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirTuplePatternBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirTypePatternBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/builder/CfirWildcardPatternBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirBindingPatternImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirConstPatternImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirEnumPatternImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirTuplePatternImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirTypePatternImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/patterns/impl/CfirWildcardPatternImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/CfirErrorReference.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/CfirNamedReference.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/CfirReference.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/CfirResolvedNamedReference.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/builder/CfirErrorReferenceBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/builder/CfirNamedReferenceBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/builder/CfirResolvedNamedReferenceBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/impl/CfirErrorReferenceImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/impl/CfirNamedReferenceImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/references/impl/CfirResolvedNamedReferenceImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirBasicTypeRef.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirErrorTypeRef.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirFunctionTypeRef.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirImplicitTypeRef.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirResolvedTypeRef.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirTupleTypeRef.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirTypeRef.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirUserTypeRef.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/CfirVArrayTypeRef.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirBasicTypeRefBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirErrorTypeRefBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirFunctionTypeRefBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirImplicitTypeRefBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirResolvedTypeRefBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirTupleTypeRefBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirUserTypeRefBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/builder/CfirVArrayTypeRefBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirBasicTypeRefImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirErrorTypeRefImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirFunctionTypeRefImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirImplicitTypeRefImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirResolvedTypeRefImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirTupleTypeRefImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirUserTypeRefImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/types/impl/CfirVArrayTypeRefImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/visitors/CfirDefaultVisitor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/visitors/CfirDefaultVisitorVoid.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/visitors/CfirTransformer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/visitors/CfirVisitor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangjie/cfir/visitors/CfirVisitorVoid.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/BuilderConfigurator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/CfirTree.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/Constants.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/ImplementationConfigurator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/Main.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/Model.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/Types.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/context/AbstractCfirTreeBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/context/AbstractCfirTreeImplementationConfigurator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/model/Builder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/model/Element.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/model/Field.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/model/FieldSet.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/model/Implementation.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/printer/BuilderPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/printer/DefaultVisitorVoidPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/printer/ElementPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/printer/ImplementationPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/printer/TransformerPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/printer/VisitorPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/printer/VisitorVoidPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/util/HierachyGraphGenerator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/util/Types.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangjie/cfir/tree/generator/util/util.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangjie/cfir/checkers/generator/CheckersConfiguration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangjie/cfir/checkers/generator/CheckersConfigurator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangjie/cfir/checkers/generator/Generator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangjie/cfir/checkers/generator/ImportPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangjie/cfir/checkers/generator/Main.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangjie/cfir/checkers/generator/NonSuppressibleErrorNamesGenerator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangjie/cfir/checkers/generator/diagnostics/CfirDiagnosticsList.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangjie/cfir/checkers/generator/diagnostics/model/DiagnosticGroup.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangjie/cfir/checkers/generator/diagnostics/model/DiagnosticList.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangjie/cfir/checkers/generator/diagnostics/model/DiagnosticListGenerator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangjie/cfir/checkers/generator/diagnostics/model/DiagnosticListRenderer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangjie/cfir/checkers/generator/diagnostics/model/ErrorListDiagnosticListRenderer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangjie/cfir/checkers/generator/diagnostics/model/RegularDiagnosticData.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangjie/cfir/analysis/checkers/declaration/CfirDeclarationCheckerAliases.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangjie/cfir/analysis/checkers/declaration/CfirDeclarationCheckers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangjie/cfir/analysis/checkers/declaration/CfirDeclarationCheckersDiagnosticComponent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangjie/cfir/analysis/checkers/declaration/ComposedCfirDeclarationCheckers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangjie/cfir/analysis/checkers/expression/CfirExpressionCheckerAliases.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangjie/cfir/analysis/checkers/expression/CfirExpressionCheckers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangjie/cfir/analysis/checkers/expression/CfirExpressionCheckersDiagnosticComponent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangjie/cfir/analysis/checkers/expression/ComposedCfirExpressionCheckers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangjie/cfir/analysis/checkers/type/CfirTypeCheckerAliases.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangjie/cfir/analysis/checkers/type/CfirTypeCheckers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangjie/cfir/analysis/checkers/type/CfirTypeCheckersDiagnosticComponent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangjie/cfir/analysis/checkers/type/ComposedCfirTypeCheckers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangjie/cfir/analysis/diagnostics/CfirErrors.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangjie/cfir/analysis/diagnostics/CfirNonSuppressibleErrorNames.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangjie/cfir/analysis/CheckersComponent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangjie/cfir/analysis/checkers/MppCheckerKind.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangjie/cfir/analysis/checkers/context/CheckerContext.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangjie/cfir/analysis/checkers/declaration/CfirBasicDeclarationCheckers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangjie/cfir/analysis/checkers/declaration/CfirDeclarationChecker.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangjie/cfir/analysis/checkers/expression/CfirBasicExpressionCheckers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangjie/cfir/analysis/checkers/expression/CfirExpressionChecker.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangjie/cfir/analysis/checkers/type/CfirTypeChecker.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangjie/cfir/analysis/collectors/components/AbstractDiagnosticCollectorComponent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangjie/cfir/analysis/diagnostics/CfirErrorsDefaultMessages.kt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/coverage-matrix.md" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/coverage-matrix.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderLazyBodiesByAstTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderLazyBodiesByAstTestGenerated.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderLazyBodiesByStubTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderLazyBodiesByStubTestGenerated.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderTestCaseGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderTestCaseGenerated.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common/src/org/cangjie/cfir/builder/AbstractRawCfirBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common/src/org/cangjie/cfir/builder/AbstractRawCfirBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirStatusResolveProcessor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirStatusResolveProcessor.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderLazyBodiesByAstTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderLazyBodiesByStubTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderLazyBodiesTestCase.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderSourceElementMappingTestCase.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderTestCase.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/TestGeneratorForPsi2Cfir.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common/src/org/cangjie/cfir/builder/AbstractRawCfirBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common/src/org/cangjie/cfir/builder/BodyBuildingMode.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common/src/org/cangjie/cfir/builder/ConversionUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common/src/org/cangjie/cfir/builder/RawCfirBuilderContext.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/CfirDiagnostics.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/CfirExplicitTypeRefResolver.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/CfirImportBindingResolver.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/CfirImportConflictReporter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/CfirImportResolveExtensions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/CfirSuperTypeChecker.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/CfirTypeRefExtensions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/CfirTypeRefResolver.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/CfirTypeResolver.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/diagnostics/CfirResolveRuleCatalog.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/providers/CfirResolveProviderPipeline.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/services/CfirImportBindingStore.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/services/CfirLazyDeclarationResolver.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/services/CfirResolvePhaseServices.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/services/CfirSuperTypeGraphStore.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirAbstractPhaseTransformer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirAbstractTreeTransformer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirCheckersResolveProcessor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirExtensionsResolveProcessor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirImportsResolveProcessor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirPhaseResolverRegistry.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirResolveComponentsRegistrar.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirResolveProcessor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirResolveProcessors.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirSimplePhaseProcessors.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirStatusResolveProcessor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirSuperTypesResolveProcessor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirTotalResolveProcessor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/resolve/transformers/CfirTypeResolveTransformer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangjie/cfir/session/CfirSessionExtensions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangjie/cfir/resolve/CfirImportsResolveProcessorTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangjie/cfir/resolve/CfirResolveDiagnosticsPipelineTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangjie/cfir/resolve/CfirResolvePipelineTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangjie/cfir/resolve/CfirSuperExtensionsResolveProcessorTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangjie/cfir/resolve/CfirTypesResolveProcessorTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangjie/cfir/resolve/diagnostics/CfirResolveRuleCatalogTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangjie/cfir/resolve/framework/AbstractCfirResolveDiagnosticsTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangjie/cfir/resolve/framework/CfirResolveDiagnosticsFacade.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangjie/cfir/resolve/framework/CfirResolveDiagnosticsHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangjie/cfir/resolve/framework/CfirResolveTestSessionFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangjie/cfir/resolve/framework/ResolveDiagnosticsTestArtifacts.kt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/external/kotlin" beforeDir="false" afterPath="$PROJECT_DIR$/external/kotlin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/AbstractBuilderPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/AbstractElement.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/AbstractElementPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/AbstractField.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/AbstractFieldPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/AbstractImplementation.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/AbstractImplementationPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/AbstractTransformerPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/AbstractTransformerVoidPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/AbstractVisitorPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/AbstractVisitorVoidPrinter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/Builder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/FieldContainer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/ImplementationKind.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/ImplementationKindOwner.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/InterfaceAndAbstractClassConfigurator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/ListField.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/Model.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/StandardTypes.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/TreeGeneratorUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/TypeKind.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/TypeRef.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/Variance.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/Visibility.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/config/AbstractBuilderConfigurator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/config/AbstractImplementationConfigurator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/config/AbstractTreeBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/imports/ArbitraryImportable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/imports/ImportCollecting.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/imports/ImportCollector.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/imports/Importable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/printer/common.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/printer/printUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/tree/utils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/util/GeneratorsFileUtil.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/util/InterfaceAbstractClassSolver.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangjie/generators/util/PrinterUtils.kt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/license/COPYRIGHT_HEADER.txt" beforeDir="false" afterPath="$PROJECT_DIR$/license/COPYRIGHT_HEADER.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
     </list>
@@ -347,58 +529,58 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Gradle.CfirMinimalResolvePipelineTest.executor": "Run",
-    "Gradle.Declarations.testClassWithMembers.executor": "Run",
-    "Gradle.Declarations.testEmptyClass.executor": "Debug",
-    "Gradle.RawCfirBuilderLazyBodiesByAstTestGenerated.executor": "Run",
-    "Gradle.RawCfirBuilderTestCase.executor": "Run",
-    "Gradle.RawCfirBuilderTestCaseGenerated.executor": "Run",
-    "Gradle.cangjie [:cfir:cfir-tree:tree-generator:org.cangjie.cfir.tree.generator.MainKt.main()].executor": "Run",
-    "Gradle.cangjie [:cfir:raw-cfir:psi2cfir:org.cangjie.cfir.builder.TestGeneratorForPsi2Cfir.main()].executor": "Run",
-    "Gradle.cangjie [build].executor": "Run",
-    "Gradle.cangjie [cfir:raw-cfir:psi2cfir:test].executor": "Run",
-    "Gradle.cangjie [clean].executor": "Run",
-    "Gradle.cangjie [gradle-build-conventions:build].executor": "Run",
-    "Gradle.cangjie [test].executor": "Run",
-    "Gradle.下载源代码.executor": "Run",
-    "Gradle.构建 cangjie.executor": "Run",
-    "JUnit.RawCfirBuilderDeclarationTest 和其他 2 个.executor": "Run",
-    "JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Atomic 和其他 33 个.executor": "Run",
-    "JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics 和其他 57 个.executor": "Run",
-    "JUnit.RawCfirBuilderLazyBodiesByStubTestGenerated.executor": "Run",
-    "JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 4 个.executor": "Run",
-    "JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 9 个.executor": "Run",
-    "JUnit.RawCfirBuilderTestCaseGenerated$Declarations.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "master",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/code/intellij/cangjie/flatbuffers-gen/flatbuffers",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "模块",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.5724138",
-    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.CfirMinimalResolvePipelineTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Declarations.testClassWithMembers.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Declarations.testEmptyClass.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.RawCfirBuilderLazyBodiesByAstTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.RawCfirBuilderTestCase.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.RawCfirBuilderTestCaseGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:cfir-tree:tree-generator:org.cangjie.cfir.tree.generator.MainKt.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:raw-cfir:psi2cfir:org.cangjie.cfir.builder.TestGeneratorForPsi2Cfir.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [cfir:raw-cfir:psi2cfir:test].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [clean].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [gradle-build-conventions:build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [test].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.下载源代码.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.构建 cangjie.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderDeclarationTest 和其他 2 个.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Atomic 和其他 33 个.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics 和其他 57 个.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderLazyBodiesByStubTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 4 个.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 9 个.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderTestCaseGenerated$Declarations.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/code/intellij/cangjie/docs&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;模块&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.5724138&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.DirectoryMappings&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\code\intellij\cangjie\docs" />
       <recent name="D:\code\intellij\cangjie\flatbuffers-gen\flatbuffers" />
       <recent name="D:\code\intellij\cangjie" />
       <recent name="D:\code\intellij\cangjie\compiler\config\src\org\cangjie\cli\common\messages" />
       <recent name="D:\code\intellij\cangjie\test" />
-      <recent name="D:\code\intellij\cangjie\psi" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\code\intellij\cangjie\test" />
@@ -407,6 +589,7 @@
       <recent name="org.cangjie.cli.common.messages" />
     </key>
     <key name="K2MoveDeclarationsDialog.RECENT_PACKAGE_KEY">
+      <recent name="org.cangjie.cfir.source" />
       <recent name="org.cangjie.cfir.types" />
     </key>
   </component>
@@ -635,6 +818,7 @@
       <workItem from="1773212041717" duration="1224000" />
       <workItem from="1773214579628" duration="3834000" />
       <workItem from="1773221775761" duration="15376000" />
+      <workItem from="1773370910134" duration="1182000" />
     </task>
     <task id="LOCAL-00001" summary="add: implement generic functions and type declarations">
       <option name="closed" value="true" />
