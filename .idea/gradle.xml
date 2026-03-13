@@ -53,6 +53,7 @@
             <option value="$PROJECT_DIR$/compiler" />
             <option value="$PROJECT_DIR$/compiler/cli" />
             <option value="$PROJECT_DIR$/compiler/config" />
+            <option value="$PROJECT_DIR$/compiler/frontend.common" />
             <option value="$PROJECT_DIR$/dependencies" />
             <option value="$PROJECT_DIR$/dependencies/intellij-core" />
             <option value="$PROJECT_DIR$/flatbuffers-gen" />

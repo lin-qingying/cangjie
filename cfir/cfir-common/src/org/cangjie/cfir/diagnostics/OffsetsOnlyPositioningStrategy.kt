@@ -1,7 +1,7 @@
 ﻿package org.cangjie.cfir.diagnostics
 
 import com.intellij.openapi.util.TextRange
-import org.cangjie.cfir.source.AbstractCjSourceElement
+import org.cangjie.AbstractCjSourceElement
 
 open class OffsetsOnlyPositioningStrategy : AbstractSourceElementPositioningStrategy() {
     open fun markCjDiagnostic(element: AbstractCjSourceElement, diagnostic: CjDiagnostic): List<TextRange> {

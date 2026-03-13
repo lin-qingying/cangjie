@@ -2,9 +2,9 @@
 
 package org.cangjie.cfir.diagnostics
 
-import org.cangjie.cfir.source.AbstractCjSourceElement
-import org.cangjie.cfir.source.CjLightSourceElement
-import org.cangjie.cfir.source.CjPsiSourceElement
+import org.cangjie.AbstractCjSourceElement
+import org.cangjie.CjLightSourceElement
+import org.cangjie.CjPsiSourceElement
 import org.cangjie.cli.common.messages.CompilerMessageSourceLocation
 import org.cangjie.config.AnalysisFlags
 import org.cangjie.config.LanguageFeature
