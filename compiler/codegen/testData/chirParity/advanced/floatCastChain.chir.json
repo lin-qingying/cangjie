@@ -1,0 +1,6 @@
+{
+  "scenario": "float_cast_chain",
+  "package": "parity",
+  "module": "advanced",
+  "function": "main"
+}

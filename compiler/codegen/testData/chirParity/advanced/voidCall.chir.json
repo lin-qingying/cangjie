@@ -1,0 +1,6 @@
+{
+  "scenario": "void_call",
+  "package": "parity",
+  "module": "advanced",
+  "function": "main"
+}

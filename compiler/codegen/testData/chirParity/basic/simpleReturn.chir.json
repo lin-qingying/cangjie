@@ -1,0 +1,17 @@
+{
+  "package": "baseline",
+  "module": "core",
+  "function": "main",
+  "blocks": [
+    {
+      "id": "entry",
+      "expressions": [
+        {
+          "domain": "terminator",
+          "kind": "return",
+          "operand": "0"
+        }
+      ]
+    }
+  ]
+}

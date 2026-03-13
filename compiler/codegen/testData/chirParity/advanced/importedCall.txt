@@ -1,0 +1,6 @@
+declare fastcc i32 @ext_add(i32) nounwind
+define i32 @main() {
+entry:
+  %expr_call = call fastcc i32 @ext_add(i32 1)
+  ret i32 %expr_call
+}

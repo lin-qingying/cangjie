@@ -1,0 +1,6 @@
+define i32 @main() {
+entry:
+  %expr_not = xor i32 10, -1
+  %expr_id = add i32 %expr_not, 0
+  ret i32 %expr_id
+}

@@ -216,7 +216,7 @@ entry:
         assertTrue(ir.contains("define i32 @pipeline(i32 %a, i32 %b, i1 %flag) {"), ir)
         assertTrue(ir.contains("  %expr_neg = sub i32 0, %a"), ir)
         assertTrue(ir.contains("  %expr_mul = mul i32 %a, %b"), ir)
-        assertTrue(ir.contains("  %expr_alloca = alloca i8, i64 1"), ir)
+        assertTrue(ir.contains("  %expr_alloca = alloca i32, i64 1"), ir)
         assertTrue(ir.contains("  store i32 %a, ptr %expr_alloca"), ir)
         assertTrue(ir.contains("  %expr_load = load i32, ptr %expr_alloca"), ir)
         assertTrue(ir.contains("  %expr_call = call i32 @helper(i32 %expr_load)"), ir)
@@ -271,7 +271,7 @@ entry:
     }
 
     @Test
-    fun `fails fast when encountering unsupported phi lowering`() {
+    fun `fails fast when phi node misses predecessor mapping`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val function = DefaultChirFunctionDeclaration(
             semanticId = ChirSemanticId("fn:phi"),
@@ -327,7 +327,7 @@ entry:
                 ),
             )
         }
-        assertTrue(error.message?.contains("phi lowering") == true, error.message)
+        assertTrue(error.message?.contains("missing required 'pred' attribute") == true, error.message)
     }
 
     private fun testOptions() = CodegenOptions(

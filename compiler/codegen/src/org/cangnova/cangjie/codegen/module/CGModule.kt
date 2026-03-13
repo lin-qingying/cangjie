@@ -4,7 +4,12 @@ import org.cangnova.cangjie.chir.core.declaration.ChirEnumDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirStructDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirTypeDeclaration
+import org.cangnova.cangjie.chir.core.attribute.ChirAttribute
+import org.cangnova.cangjie.chir.core.attribute.ChirBooleanAttribute
+import org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute
 import org.cangnova.cangjie.chir.core.model.ChirModule
+import org.cangnova.cangjie.codegen.backend.InMemoryLlvmBackendApi
+import org.cangnova.cangjie.codegen.backend.LlvmBackendApi
 import org.cangnova.cangjie.codegen.context.CGContext
 import org.cangnova.cangjie.codegen.dispatcher.ExpressionLoweringDispatcher
 import org.cangnova.cangjie.codegen.function.CGFunction
@@ -16,6 +21,7 @@ import org.cangnova.cangjie.codegen.ir.sanitizeIdentifier
 class CGModule(
     private val context: CGContext,
     private val module: ChirModule,
+    private val backendApi: LlvmBackendApi = InMemoryLlvmBackendApi(),
     private val dispatcher: ExpressionLoweringDispatcher = ExpressionLoweringDispatcher(),
 ) {
     fun lower(): LlvmModuleArtifact {
@@ -32,6 +38,7 @@ class CGModule(
         lines += emitTypeDeclarations()
         lines += emitGlobalDeclarations()
         lines += emitRuntimeDeclarations()
+        lines += emitRuntimeEntryMappings()
 
         val functions = module.declarations
             .asSequence()
@@ -45,7 +52,11 @@ class CGModule(
             name = context.moduleName(module),
             ir = moduleIr,
             functions = functions,
-            bitcode = if (context.options.emitBitcode) moduleIr.toByteArray() else null,
+            bitcode = if (context.options.emitBitcode) {
+                backendApi.emitBitcode(context.moduleName(module), moduleIr)
+            } else {
+                null
+            },
         )
     }
 
@@ -78,19 +89,31 @@ class CGModule(
         context.inputPackage.members.globalVariables.forEach { variable ->
             val ty = context.typeLowering.lower(variable.type)
             val name = sanitizeIdentifier(variable.name, "global")
-            val initializer = if (variable.mutable) defaultGlobalInitializer(ty) else defaultGlobalInitializer(ty)
-            declarations += "@$name = global $ty $initializer"
+            val linkage = attributeValue(variable.attributes, "linkage")
+            val initializer = attributeValue(variable.attributes, "initializer")
+                ?: defaultGlobalInitializer(ty)
+            val storageClass = if (variable.mutable) "global" else "constant"
+            declarations += buildString {
+                append("@$name = ")
+                if (!linkage.isNullOrBlank()) {
+                    append(linkage)
+                    append(' ')
+                }
+                append("$storageClass $ty $initializer")
+            }
         }
         context.inputPackage.members.importedVariables.forEach { variable ->
             val ty = context.typeLowering.lower(variable.type)
             val name = sanitizeIdentifier(variable.name, "imported_global")
-            declarations += "@$name = external global $ty"
+            val linkage = attributeValue(variable.attributes, "linkage")
+            declarations += buildString {
+                append("@$name = ")
+                append(if (linkage.isNullOrBlank()) "external" else linkage)
+                append(" global $ty")
+            }
         }
         context.inputPackage.members.importedFunctions.forEach { function ->
-            val name = sanitizeIdentifier(function.name, "imported_fn")
-            val returnType = context.typeLowering.lower(function.returnType)
-            val params = function.parameters.joinToString(", ") { context.typeLowering.lower(it.type) }
-            declarations += "declare $returnType @$name($params)"
+            declarations += renderImportedFunctionDeclaration(function)
         }
         return declarations
     }
@@ -103,6 +126,25 @@ class CGModule(
         }
     }
 
+    private fun emitRuntimeEntryMappings(): List<String> {
+        val localFunctionsById = module.declarations
+            .filterIsInstance<ChirFunctionDeclaration>()
+            .associateBy { it.semanticId }
+        val mappings = mutableListOf<String>()
+
+        fun addMapping(functionId: org.cangnova.cangjie.chir.core.identity.ChirSemanticId?, symbolName: String) {
+            if (functionId == null) return
+            val function = localFunctionsById[functionId] ?: return
+            val targetName = sanitizeIdentifier(function.name, "fn")
+            mappings += "@$symbolName = internal constant ptr @$targetName"
+        }
+
+        addMapping(context.inputPackage.packageInitFunctionId, "cangjie.package.init")
+        addMapping(context.inputPackage.packageLiteralInitFunctionId, "cangjie.package.literal_init")
+
+        return mappings
+    }
+
     private fun defaultGlobalInitializer(llvmType: String): String {
         return when {
             llvmType == "i1" -> "0"
@@ -112,5 +154,70 @@ class CGModule(
             else -> "zeroinitializer"
         }
     }
-}
 
+    private fun renderImportedFunctionDeclaration(function: ChirFunctionDeclaration): String {
+        val name = sanitizeIdentifier(function.name, "imported_fn")
+        val returnType = context.typeLowering.lower(function.returnType)
+        val linkage = attributeValue(function.attributes, "linkage")
+        val callingConvention = attributeValue(function.attributes, "calling_conv")
+            ?: attributeValue(function.attributes, "cc")
+        val params = function.parameters.joinToString(", ") { parameter ->
+            val parameterType = context.typeLowering.lower(parameter.type)
+            val attrs = collectAttributeTokens(parameter.attributes)
+            if (attrs.isEmpty()) parameterType else "$parameterType ${attrs.joinToString(" ")}"
+        }
+        val functionAttrs = collectAttributeTokens(function.attributes)
+
+        return buildString {
+            append("declare ")
+            if (!linkage.isNullOrBlank()) {
+                append(linkage)
+                append(' ')
+            }
+            if (!callingConvention.isNullOrBlank()) {
+                append(callingConvention)
+                append(' ')
+            }
+            append(returnType)
+            append(" @")
+            append(name)
+            append('(')
+            append(params)
+            append(')')
+            if (functionAttrs.isNotEmpty()) {
+                append(' ')
+                append(functionAttrs.joinToString(" "))
+            }
+        }
+    }
+
+    private fun collectAttributeTokens(attributes: Set<ChirAttribute>): List<String> {
+        val tokens = mutableListOf<String>()
+        attributes.forEach { attribute ->
+            when (attribute) {
+                is ChirBooleanAttribute -> {
+                    if (attribute.enabled && attribute.key !in reservedFunctionAttributeKeys) {
+                        tokens += attribute.key
+                    }
+                }
+                is ChirStringAttribute -> {
+                    if (attribute.key == "align") {
+                        tokens += "align ${attribute.value}"
+                    }
+                }
+            }
+        }
+        return tokens
+    }
+
+    private fun attributeValue(attributes: Set<ChirAttribute>, key: String): String? {
+        return attributes.asSequence()
+            .filterIsInstance<ChirStringAttribute>()
+            .firstOrNull { it.key == key }
+            ?.value
+    }
+
+    private companion object {
+        val reservedFunctionAttributeKeys = setOf("linkage", "personality", "calling_conv", "cc")
+    }
+}

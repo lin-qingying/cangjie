@@ -32,8 +32,10 @@ behavior that blocks full parity with `external/cangjie_compiler`.
   - expression family support remains operator-string based and incomplete
   - control-flow/phi/unwind-exception semantics are not fully modeled
   - calling convention/runtime integration is only partial skeleton
-- Official LLVM API interop (JNI/JNA) is not integrated:
-  - current backend emits textual IR artifacts; no LLVM native API bridge yet
+- Replaceable LLVM backend abstraction is now introduced, but native interop
+  backend capability is still early-stage:
+  - current default behavior can fallback to in-memory bitcode emission when
+    native interop tool is unavailable
 
 ## Known Incorrect Behavior
 
@@ -57,6 +59,5 @@ behavior that blocks full parity with `external/cangjie_compiler`.
 
 1. Expand representative baseline corpus from official compiler outputs.
 2. Replace string-dispatch lowering with explicit semantic families.
-3. Introduce LLVM backend abstraction + JNI/JNA integration.
+3. Stabilize native-interop backend tool contract and production deployment.
 4. Add structural + normalized text parity gates in CI.
-

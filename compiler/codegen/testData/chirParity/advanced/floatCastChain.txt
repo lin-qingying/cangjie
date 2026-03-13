@@ -1,0 +1,7 @@
+define double @main() {
+entry:
+  %expr_sitofp = sitofp i32 3 to float
+  %expr_fpext = fpext float %expr_sitofp to double
+  %expr_fneg = fneg double %expr_fpext
+  ret double %expr_fneg
+}
