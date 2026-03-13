@@ -1,7 +1,9 @@
 package org.cangnova.cangjie.cfir.resolve.body
 
+import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirSessionHolder
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.resolve.CfirResolutionMode
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirAbstractPhaseTransformer
 import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
@@ -47,6 +49,9 @@ abstract class CfirAbstractBodyResolveTransformer(
         /** scope 塔上下文 — 委托到 context */
         val towerDataContext get() = context.towerDataContext
 
+        /** 返回类型计算器 — 委托到 context */
+        val returnTypeCalculator: CfirReturnTypeCalculator get() = context.returnTypeCalculator
+
         /** 符号提供器 — 委托到 session */
         val symbolProvider get() = session.symbolProvider
 
@@ -70,14 +75,162 @@ abstract class CfirAbstractBodyResolveTransformer(
  *
  * 作为具体 dispatcher（如 [CfirBodyResolveTransformer]）的基类，
  * 持有 context 和 components 的所有权。
+ * 所有 transformXxx 方法委托到对应的子 transformer。
  *
  * 参考 K2 FirAbstractBodyResolveTransformerDispatcher。
  */
 abstract class CfirAbstractBodyResolveTransformerDispatcher(
     phase: CfirResolvePhase,
+    /** 仅推断隐式类型（true = IMPLICIT_TYPES 阶段，false = BODY_RESOLVE 阶段） */
+    open val implicitTypeOnly: Boolean = false,
 ) : CfirAbstractBodyResolveTransformer(phase) {
 
     abstract override val context: CfirBodyResolveContext
 
     abstract override val components: BodyResolveTransformerComponents
+
+    /** 表达式子 transformer */
+    abstract val expressionsTransformer: CfirExpressionsResolveTransformer
+
+    /** 声明子 transformer */
+    abstract val declarationsTransformer: CfirDeclarationsResolveTransformer
+
+    /**
+     * 声明内容变换钩子。
+     *
+     * 默认直接委托到 [declarationsTransformer]，
+     * 子类（如 [CfirDesignatedBodyResolveTransformer]）可覆写以实现指定路径遍历。
+     *
+     * 参考 K2 FirAbstractBodyResolveTransformerDispatcher.transformDeclarationContent。
+     */
+    open fun transformDeclarationContent(
+        declaration: CfirDeclaration,
+        data: CfirResolutionMode,
+    ): CfirDeclaration {
+        return declaration.transform(this, data)
+    }
+
+    // ---- 默认 transformElement ----
+
+    override fun <E : CfirElement> transformElement(element: E, data: CfirResolutionMode): E {
+        @Suppress("UNCHECKED_CAST")
+        element.transformChildren(this, data)
+        return element
+    }
+
+    // ---- 声明委托到 declarationsTransformer ----
+
+    override fun transformFile(file: CfirFile, data: CfirResolutionMode): CfirFile {
+        checkSessionConsistency(file)
+        return declarationsTransformer.transformFile(file, data)
+    }
+
+    override fun transformClass(klass: CfirClass, data: CfirResolutionMode): CfirDeclaration {
+        return declarationsTransformer.transformClass(klass, data)
+    }
+
+    override fun transformFunction(function: CfirFunction, data: CfirResolutionMode): CfirDeclaration {
+        return declarationsTransformer.transformFunction(function, data)
+    }
+
+    override fun transformProperty(property: CfirProperty, data: CfirResolutionMode): CfirDeclaration {
+        return declarationsTransformer.transformProperty(property, data)
+    }
+
+    override fun transformVariable(variable: CfirVariable, data: CfirResolutionMode): CfirDeclaration {
+        return declarationsTransformer.transformVariable(variable, data)
+    }
+
+    override fun transformDeclaration(declaration: CfirDeclaration, data: CfirResolutionMode): CfirDeclaration {
+        return declarationsTransformer.transformDeclaration(declaration, data)
+    }
+
+    // ---- block 委托到 declarationsTransformer（需要 scope 管理） ----
+
+    override fun transformBlock(block: CfirBlock, data: CfirResolutionMode): CfirExpression {
+        return declarationsTransformer.transformBlock(block, data)
+    }
+
+    // ---- 表达式委托到 expressionsTransformer ----
+
+    override fun transformExpression(expression: CfirExpression, data: CfirResolutionMode): CfirExpression {
+        return expressionsTransformer.transformExpression(expression, data) as CfirExpression
+    }
+
+    override fun transformLiteralExpression(
+        literalExpression: CfirLiteralExpression,
+        data: CfirResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformLiteralExpression(literalExpression, data)
+    }
+
+    override fun transformPropertyAccess(
+        propertyAccess: CfirPropertyAccess,
+        data: CfirResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformPropertyAccess(propertyAccess, data)
+    }
+
+    override fun transformQualifiedAccess(
+        qualifiedAccess: CfirQualifiedAccess,
+        data: CfirResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformQualifiedAccess(qualifiedAccess, data)
+    }
+
+    override fun transformFunctionCall(
+        functionCall: CfirFunctionCall,
+        data: CfirResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformFunctionCall(functionCall, data)
+    }
+
+    override fun transformIfExpression(
+        ifExpression: CfirIfExpression,
+        data: CfirResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformIfExpression(ifExpression, data)
+    }
+
+    override fun transformReturnExpression(
+        returnExpression: CfirReturnExpression,
+        data: CfirResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformReturnExpression(returnExpression, data)
+    }
+
+    override fun transformAssignment(
+        assignment: CfirAssignment,
+        data: CfirResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformAssignment(assignment, data)
+    }
+
+    override fun transformTupleLiteral(
+        tupleLiteral: CfirTupleLiteral,
+        data: CfirResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformTupleLiteral(tupleLiteral, data)
+    }
+
+    override fun transformArrayLiteral(
+        arrayLiteral: CfirArrayLiteral,
+        data: CfirResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformArrayLiteral(arrayLiteral, data)
+    }
+
+    override fun transformStringInterpolation(
+        stringInterpolation: CfirStringInterpolation,
+        data: CfirResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformStringInterpolation(stringInterpolation, data)
+    }
+
+    override fun transformErrorExpression(
+        errorExpression: CfirErrorExpression,
+        data: CfirResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformErrorExpression(errorExpression, data)
+    }
 }

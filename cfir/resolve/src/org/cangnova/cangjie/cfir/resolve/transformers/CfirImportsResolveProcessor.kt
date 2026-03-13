@@ -3,6 +3,9 @@ package org.cangnova.cangjie.cfir.resolve.transformers
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
+import org.cangnova.cangjie.cfir.resolve.CfirImportBindingResolver
+import org.cangnova.cangjie.cfir.resolve.CfirImportConflictReporter
 import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
@@ -20,7 +23,7 @@ internal class CfirImportResolveProcessor(
         CfirImportResolveTransformer(session, diagnosticReporter)
 }
 
-typealias CfirImportsResolveProcessor = CfirImportResolveProcessor
+internal typealias CfirImportsResolveProcessor = CfirImportResolveProcessor
 
 internal class CfirImportResolveTransformer(
     override val session: CfirSession,

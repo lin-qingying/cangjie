@@ -1,6 +1,10 @@
 package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
@@ -24,6 +28,7 @@ import org.cangnova.cangjie.cfir.types.*
  *
  * 参考 K2 FirExpressionsResolveTransformer。
  */
+@OptIn(CfirImplementationDetail::class)
 class CfirExpressionsResolveTransformer(
     transformer: CfirAbstractBodyResolveTransformerDispatcher,
 ) : CfirPartialBodyResolveTransformer(transformer) {
@@ -37,7 +42,7 @@ class CfirExpressionsResolveTransformer(
     override fun transformLiteralExpression(
         literalExpression: CfirLiteralExpression,
         data: CfirResolutionMode,
-    ): CfirElement {
+    ): CfirExpression {
         val type = synthesizeLiteralType(literalExpression.kind)
         literalExpression.replaceConeTypeOrNull(type)
         return literalExpression
@@ -60,7 +65,7 @@ class CfirExpressionsResolveTransformer(
     override fun transformPropertyAccess(
         propertyAccess: CfirPropertyAccess,
         data: CfirResolutionMode,
-    ): CfirElement {
+    ): CfirExpression {
         // 先递归解析显式接收者
         val receiver = propertyAccess.explicitReceiver
         if (receiver != null) {
@@ -105,7 +110,7 @@ class CfirExpressionsResolveTransformer(
     override fun transformQualifiedAccess(
         qualifiedAccess: CfirQualifiedAccess,
         data: CfirResolutionMode,
-    ): CfirElement {
+    ): CfirExpression {
         // 先递归解析显式接收者
         val receiver = qualifiedAccess.explicitReceiver
         if (receiver != null) {
@@ -146,7 +151,7 @@ class CfirExpressionsResolveTransformer(
     override fun transformFunctionCall(
         functionCall: CfirFunctionCall,
         data: CfirResolutionMode,
-    ): CfirElement {
+    ): CfirExpression {
         // 先递归解析显式接收者
         val receiver = functionCall.explicitReceiver
         if (receiver != null) {
@@ -189,7 +194,7 @@ class CfirExpressionsResolveTransformer(
 
     // ---- 块表达式 ----
 
-    override fun transformBlock(block: CfirBlock, data: CfirResolutionMode): CfirElement {
+    override fun transformBlock(block: CfirBlock, data: CfirResolutionMode): CfirExpression {
         // 逐语句解析（transformChildren 由 dispatcher 处理 scope）
         block.statements = block.statements.map { stmt ->
             stmt.transform<CfirElement, CfirResolutionMode>(transformer, CfirResolutionMode.ContextIndependent)
@@ -211,7 +216,7 @@ class CfirExpressionsResolveTransformer(
     override fun transformIfExpression(
         ifExpression: CfirIfExpression,
         data: CfirResolutionMode,
-    ): CfirElement {
+    ): CfirExpression {
         // 解析 condition（期望 Bool，但本阶段不强制检查）
         ifExpression.condition = ifExpression.condition
             .transform(transformer, CfirResolutionMode.WithExpectedType(builtinTypes.boolType))
@@ -247,7 +252,7 @@ class CfirExpressionsResolveTransformer(
     override fun transformReturnExpression(
         returnExpression: CfirReturnExpression,
         data: CfirResolutionMode,
-    ): CfirElement {
+    ): CfirExpression {
         val result = returnExpression.result
         if (result != null) {
             returnExpression.result = result
@@ -263,7 +268,7 @@ class CfirExpressionsResolveTransformer(
     override fun transformAssignment(
         assignment: CfirAssignment,
         data: CfirResolutionMode,
-    ): CfirElement {
+    ): CfirExpression {
         // 解析左值
         assignment.lValue = assignment.lValue
             .transform(transformer, CfirResolutionMode.ContextIndependent)
@@ -280,7 +285,7 @@ class CfirExpressionsResolveTransformer(
     override fun transformTupleLiteral(
         tupleLiteral: CfirTupleLiteral,
         data: CfirResolutionMode,
-    ): CfirElement {
+    ): CfirExpression {
         tupleLiteral.elements = tupleLiteral.elements.map { elem ->
             elem.transform<CfirExpression, CfirResolutionMode>(transformer, CfirResolutionMode.ContextIndependent)
         }
@@ -294,7 +299,7 @@ class CfirExpressionsResolveTransformer(
     override fun transformArrayLiteral(
         arrayLiteral: CfirArrayLiteral,
         data: CfirResolutionMode,
-    ): CfirElement {
+    ): CfirExpression {
         arrayLiteral.elements = arrayLiteral.elements.map { elem ->
             elem.transform<CfirExpression, CfirResolutionMode>(transformer, CfirResolutionMode.ContextIndependent)
         }
@@ -310,7 +315,7 @@ class CfirExpressionsResolveTransformer(
     override fun transformStringInterpolation(
         stringInterpolation: CfirStringInterpolation,
         data: CfirResolutionMode,
-    ): CfirElement {
+    ): CfirExpression {
         stringInterpolation.parts = stringInterpolation.parts.map { part ->
             part.transform<CfirExpression, CfirResolutionMode>(transformer, CfirResolutionMode.ContextIndependent)
         }
@@ -325,7 +330,7 @@ class CfirExpressionsResolveTransformer(
     override fun transformErrorExpression(
         errorExpression: CfirErrorExpression,
         data: CfirResolutionMode,
-    ): CfirElement {
+    ): CfirExpression {
         errorExpression.replaceConeTypeOrNull(ConeErrorType(errorExpression.reason))
         return errorExpression
     }
@@ -368,8 +373,14 @@ class CfirExpressionsResolveTransformer(
     /** 从可调用符号中提取类型 */
     private fun extractTypeFromCallableSymbol(symbol: CfirCallableSymbol<*>): ConeCangjieType {
         if (!symbol.isBound) return ConeErrorType("unbound symbol")
-        val decl = symbol.fir
-        val typeRef = decl.returnTypeRef
+        val decl = symbol.cfir
+        val typeRef = when (decl) {
+            is CfirFunction -> decl.returnTypeRef
+            is CfirProperty -> decl.returnTypeRef
+            is CfirVariable -> decl.returnTypeRef
+            is CfirValueParameter -> decl.returnTypeRef
+            else -> return ConeErrorType("unsupported callable declaration: ${decl::class.simpleName}")
+        }
         return if (typeRef is CfirResolvedTypeRef) {
             typeRef.coneType
         } else {
@@ -382,8 +393,8 @@ class CfirExpressionsResolveTransformer(
         return when (symbol) {
             is CfirCallableSymbol<*> -> extractTypeFromCallableSymbol(symbol)
             is CfirClassSymbol -> {
-                if (!symbol.isBound) return ConeErrorType("unbound class symbol")
-                ConeClassLikeType(ConeClassLookupTagImpl(symbol.fir.classId))
+                // Phase 2 不处理类型引用，CfirClass 没有 classId 属性
+                ConeErrorType("class type reference")
             }
             else -> ConeErrorType("unsupported symbol type: ${symbol::class.simpleName}")
         }
@@ -392,7 +403,7 @@ class CfirExpressionsResolveTransformer(
     /** 从函数符号中提取返回类型 */
     private fun extractReturnTypeFromSymbol(symbol: CfirSymbol<*>): ConeCangjieType {
         if (symbol is CfirFunctionSymbol && symbol.isBound) {
-            val typeRef = symbol.fir.returnTypeRef
+            val typeRef = symbol.cfir.returnTypeRef
             return if (typeRef is CfirResolvedTypeRef) typeRef.coneType
             else ConeErrorType("unresolved return type")
         }

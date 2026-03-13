@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve
 
-import org.cangnova.cangjie.cfir.common.CfirSourceElement
+import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -33,13 +33,13 @@ internal class CfirSuperTypeChecker(
             val resolvedClass = resolver.resolveClass(superTypeRef)
             graphEdges += CfirSuperTypeGraphEdge(
                 renderedType = key,
-                resolvedClassSymbol = resolvedClass?.symbol,
+                resolvedClassSymbol = resolvedClass?.symbol as? CfirClassSymbol,
             )
 
             if (!seen.add(key)) {
                 reportDuplicate(target, superTypeRef.source, key)
             }
-            if (resolvedClass?.classKind == CfirClassKind.INTERFACE && !seenResolvedInterfaceSymbols.add(resolvedClass.symbol)) {
+            if (resolvedClass?.classKind == CfirClassKind.INTERFACE && !seenResolvedInterfaceSymbols.add(resolvedClass.symbol as CfirClassSymbol)) {
                 reportDuplicate(target, superTypeRef.source, key)
             }
             if (key == target.name.asString()) {
@@ -60,7 +60,7 @@ internal class CfirSuperTypeChecker(
         )
     }
 
-    private fun reportDuplicate(target: CfirClass, source: CfirSourceElement?, key: String) {
+    private fun reportDuplicate(target: CfirClass, source: CjSourceElement?, key: String) {
         diagnosticReporter.reportOn(
             source = source,
             factory = CfirErrors.SUPER_TYPES_DUPLICATE,

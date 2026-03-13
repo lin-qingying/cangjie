@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
@@ -24,6 +25,7 @@ class CfirFileBuilder {
     lateinit var resolvePhase: CfirResolvePhase
     lateinit var attributes: CfirDeclarationAttributes
     lateinit var name: String
+    var sourceFile: CjSourceFile? = null
     lateinit var packageDirective: CfirPackageDirective
     val imports: MutableList<CfirImport> = mutableListOf()
     val declarations: MutableList<CfirDeclaration> = mutableListOf()
@@ -38,11 +40,13 @@ class CfirFileBuilder {
             resolvePhase,
             attributes,
             name,
+            sourceFile,
             packageDirective,
             imports,
             declarations,
         )
     }
+
 }
 
 @OptIn(ExperimentalContracts::class)
@@ -66,6 +70,7 @@ inline fun buildFileCopy(original: CfirFile, init: CfirFileBuilder.() -> Unit): 
     copyBuilder.resolvePhase = original.resolvePhase
     copyBuilder.attributes = original.attributes
     copyBuilder.name = original.name
+    copyBuilder.sourceFile = original.sourceFile
     copyBuilder.packageDirective = original.packageDirective
     copyBuilder.imports.addAll(original.imports)
     copyBuilder.declarations.addAll(original.declarations)
