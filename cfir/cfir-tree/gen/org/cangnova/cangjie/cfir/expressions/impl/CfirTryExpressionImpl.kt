@@ -5,24 +5,24 @@
 
 @file:Suppress("DuplicatedCode")
 
-package org.cangjie.cfir.expressions.impl
+package org.cangnova.cangjie.cfir.expressions.impl
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.expressions.CfirBlock
-import org.cangjie.cfir.expressions.CfirCatch
-import org.cangjie.cfir.expressions.CfirTryExpression
-import org.cangjie.cfir.types.ConeCangjieType
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirCatch
+import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 class CfirTryExpressionImpl @CfirImplementationDetail constructor(
-    override val coneTypeOrNull: ConeCangjieType?,
-    override val tryBlock: CfirBlock,
-    override val catches: List<CfirCatch>,
-    override val finallyBlock: CfirBlock?,
+    override var coneTypeOrNull: ConeCangjieType?,
+    override var tryBlock: CfirBlock,
+    override var catches: List<CfirCatch>,
+    override var finallyBlock: CfirBlock?,
 ) : CfirTryExpression() {
-    override val source: CfirSourceElement?
+    override val source: CjSourceElement?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -31,10 +31,33 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
         finallyBlock?.accept(visitor, data)
     }
 
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+     {
+        this.coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun <D> transformTryBlock(transformer: CfirTransformer<D>, data: D): CfirTryExpression
+     {
+        this.tryBlock = tryBlock.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirBlock
+        return this
+    }
+
+    override fun <D> transformCatches(transformer: CfirTransformer<D>, data: D): CfirTryExpression
+     {
+        this.catches = catches.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirCatch }
+        return this
+    }
+
+    override fun <D> transformFinallyBlock(transformer: CfirTransformer<D>, data: D): CfirTryExpression
+     {
+        this.finallyBlock = finallyBlock?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirBlock?
+        return this
+    }
+
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirTryExpressionImpl {
-        tryBlock.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
-        catches.forEach { it.transform<org.cangjie.cfir.CfirElement, D>(transformer, data) }
-        finallyBlock?.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
+        transformTryBlock(transformer, data)
+        transformCatches(transformer, data)
+        transformFinallyBlock(transformer, data)
         return this
     }
 }

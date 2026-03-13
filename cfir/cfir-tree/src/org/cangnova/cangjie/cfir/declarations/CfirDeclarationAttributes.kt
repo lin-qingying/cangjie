@@ -1,4 +1,4 @@
-package org.cangjie.cfir.declarations
+package org.cangnova.cangjie.cfir.declarations
 
 /**
  * 声明属性容器，用于携带声明的附加元信息。

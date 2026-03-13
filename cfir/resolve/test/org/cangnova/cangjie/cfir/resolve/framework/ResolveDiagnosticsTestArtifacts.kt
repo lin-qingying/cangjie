@@ -1,6 +1,6 @@
-package org.cangjie.cfir.resolve.framework
+package org.cangnova.cangjie.cfir.resolve.framework
 
-import org.cangjie.cfir.diagnostics.CfirDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnostic
 
 data class ResolveDiagnosticsArtifact(
     val fileName: String,

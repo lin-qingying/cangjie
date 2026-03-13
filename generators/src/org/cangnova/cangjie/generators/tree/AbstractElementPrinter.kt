@@ -3,12 +3,12 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.generators.tree
+package org.cangnova.cangjie.generators.tree
 
 import org.cangnova.cangjie.descriptors.Modality
-import org.cangjie.generators.tree.imports.ImportCollecting
-import org.cangjie.generators.tree.imports.ImportCollector
-import org.cangjie.generators.tree.printer.*
+import org.cangnova.cangjie.generators.tree.imports.ImportCollecting
+import org.cangnova.cangjie.generators.tree.imports.ImportCollector
+import org.cangnova.cangjie.generators.tree.printer.*
 import org.cangnova.cangjie.utils.SmartPrinter
 import org.cangnova.cangjie.utils.withIndent
 

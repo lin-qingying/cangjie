@@ -5,27 +5,33 @@
 
 @file:Suppress("DuplicatedCode")
 
-package org.cangjie.cfir.patterns.impl
+package org.cangnova.cangjie.cfir.patterns.impl
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.patterns.CfirPattern
-import org.cangjie.cfir.patterns.CfirTuplePattern
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 class CfirTuplePatternImpl @CfirImplementationDetail constructor(
-    override val elements: List<CfirPattern>,
+    override var elements: List<CfirPattern>,
 ) : CfirTuplePattern() {
-    override val source: CfirSourceElement?
+    override val source: CjSourceElement?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         elements.forEach { it.accept(visitor, data) }
     }
 
+    override fun <D> transformElements(transformer: CfirTransformer<D>, data: D): CfirTuplePattern
+     {
+        this.elements = elements.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirPattern }
+        return this
+    }
+
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirTuplePatternImpl {
-        elements.forEach { it.transform<org.cangjie.cfir.CfirElement, D>(transformer, data) }
+        transformElements(transformer, data)
         return this
     }
 }

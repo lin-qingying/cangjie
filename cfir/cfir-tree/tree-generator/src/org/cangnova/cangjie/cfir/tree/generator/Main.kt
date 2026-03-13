@@ -1,9 +1,9 @@
-package org.cangjie.cfir.tree.generator
+package org.cangnova.cangjie.cfir.tree.generator
 
-import org.cangjie.cfir.tree.generator.printer.*
-import org.cangjie.generators.tree.detectBaseTransformerTypes
-import org.cangjie.generators.tree.InterfaceAndAbstractClassConfigurator
-import org.cangjie.generators.tree.printer.TreeGenerator
+import org.cangnova.cangjie.cfir.tree.generator.printer.*
+import org.cangnova.cangjie.generators.tree.detectBaseTransformerTypes
+import org.cangnova.cangjie.generators.tree.InterfaceAndAbstractClassConfigurator
+import org.cangnova.cangjie.generators.tree.printer.TreeGenerator
 import java.io.File
 
 fun main(args: Array<String>) {

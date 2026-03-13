@@ -1,8 +1,8 @@
-package org.cangjie.analysis.api.cfir.components
+package org.cangnova.cangjie.analysis.api.cfir.components
 
-import org.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangjie.analysis.api.components.*
-import org.cangjie.analysis.api.lifetime.CaLifetimeToken
+import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.components.*
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 
 /**
  * CFIR 实现的各 session component（对齐 Kotlin 的 KaFir* 系列）。

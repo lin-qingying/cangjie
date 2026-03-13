@@ -1,10 +1,10 @@
-package org.cangjie.analysis.api.impl.base.permissions
+package org.cangnova.cangjie.analysis.api.impl.base.permissions
 
 import com.intellij.openapi.application.Application
 import com.intellij.openapi.application.ApplicationManager
-import org.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry
-import org.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
-import org.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionOptions
+import org.cangnova.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry
+import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
+import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionOptions
 
 /**
  * 分析权限检查器的基础实现（对齐 Kotlin 的 KaBaseAnalysisPermissionChecker）。

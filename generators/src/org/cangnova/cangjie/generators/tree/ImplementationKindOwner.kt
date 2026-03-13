@@ -3,9 +3,9 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.generators.tree
+package org.cangnova.cangjie.generators.tree
 
-import org.cangjie.generators.tree.imports.Importable
+import org.cangnova.cangjie.generators.tree.imports.Importable
 
 interface ImplementationKindOwner : TypeRef, Importable {
     var kind: ImplementationKind?

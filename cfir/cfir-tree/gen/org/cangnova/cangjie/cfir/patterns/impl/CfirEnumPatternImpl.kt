@@ -5,21 +5,21 @@
 
 @file:Suppress("DuplicatedCode")
 
-package org.cangjie.cfir.patterns.impl
+package org.cangnova.cangjie.cfir.patterns.impl
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.patterns.CfirEnumPattern
-import org.cangjie.cfir.patterns.CfirPattern
-import org.cangjie.cfir.references.CfirReference
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 class CfirEnumPatternImpl @CfirImplementationDetail constructor(
-    override val constructorReference: CfirReference,
-    override val arguments: List<CfirPattern>,
+    override var constructorReference: CfirReference,
+    override var arguments: List<CfirPattern>,
 ) : CfirEnumPattern() {
-    override val source: CfirSourceElement?
+    override val source: CjSourceElement?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -27,9 +27,21 @@ class CfirEnumPatternImpl @CfirImplementationDetail constructor(
         arguments.forEach { it.accept(visitor, data) }
     }
 
+    override fun <D> transformConstructorReference(transformer: CfirTransformer<D>, data: D): CfirEnumPattern
+     {
+        this.constructorReference = constructorReference.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirReference
+        return this
+    }
+
+    override fun <D> transformArguments(transformer: CfirTransformer<D>, data: D): CfirEnumPattern
+     {
+        this.arguments = arguments.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirPattern }
+        return this
+    }
+
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirEnumPatternImpl {
-        constructorReference.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
-        arguments.forEach { it.transform<org.cangjie.cfir.CfirElement, D>(transformer, data) }
+        transformConstructorReference(transformer, data)
+        transformArguments(transformer, data)
         return this
     }
 }

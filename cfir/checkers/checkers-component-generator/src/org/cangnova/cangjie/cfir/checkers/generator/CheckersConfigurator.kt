@@ -3,9 +3,9 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.cfir.checkers.generator
+package org.cangnova.cangjie.cfir.checkers.generator
 
-import org.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirElement
 import java.io.File
 import kotlin.reflect.KClass
 

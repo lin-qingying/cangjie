@@ -2,17 +2,17 @@
  * Copyright 2010-2024 cangjie.
  */
 
-package org.cangjie.cfir.analysis
+package org.cangnova.cangjie.cfir.analysis
 
-import org.cangjie.cfir.analysis.checkers.MppCheckerKind
-import org.cangjie.cfir.analysis.checkers.declaration.ComposedCfirDeclarationCheckers
-import org.cangjie.cfir.analysis.checkers.declaration.CfirDeclarationCheckers
-import org.cangjie.cfir.analysis.checkers.expression.ComposedCfirExpressionCheckers
-import org.cangjie.cfir.analysis.checkers.expression.CfirExpressionCheckers
-import org.cangjie.cfir.analysis.checkers.type.CfirTypeCheckers
-import org.cangjie.cfir.analysis.checkers.type.ComposedCfirTypeCheckers
-import org.cangjie.cfir.session.CfirSession
-import org.cangjie.cfir.session.CfirSessionComponent
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.ComposedCfirDeclarationCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirDeclarationCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.ComposedCfirExpressionCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirExpressionCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirTypeCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.type.ComposedCfirTypeCheckers
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 
 @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
 annotation class CheckersComponentInternal

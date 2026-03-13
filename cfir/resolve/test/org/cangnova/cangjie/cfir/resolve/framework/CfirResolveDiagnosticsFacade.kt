@@ -1,20 +1,20 @@
-package org.cangjie.cfir.resolve.framework
+package org.cangnova.cangjie.cfir.resolve.framework
 
-import org.cangjie.cfir.common.CfirModuleData
-import org.cangjie.cfir.common.moduleData
-import org.cangjie.cfir.declarations.CfirClass
-import org.cangjie.cfir.declarations.CfirClassKind
-import org.cangjie.cfir.declarations.CfirDeclaration
-import org.cangjie.cfir.declarations.CfirExtend
-import org.cangjie.cfir.declarations.CfirFile
-import org.cangjie.cfir.declarations.CfirInvalidDeclaration
-import org.cangjie.cfir.declarations.CfirPackageDirective
-import org.cangjie.cfir.resolve.CfirTotalResolveProcessor
-import org.cangjie.cfir.session.phaseResolverRegistry
-import org.cangjie.cfir.types.CfirBasicTypeRef
-import org.cangjie.cfir.types.CfirUserTypeRef
-import org.cangjie.test.config.TestFacade
-import org.cangjie.test.model.TestModule
+import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.common.moduleData
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassKind
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirInvalidDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirPackageDirective
+import org.cangnova.cangjie.cfir.resolve.CfirTotalResolveProcessor
+import org.cangnova.cangjie.cfir.session.phaseResolverRegistry
+import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
+import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
+import org.cangnova.cangjie.test.config.TestFacade
+import org.cangnova.cangjie.test.model.TestModule
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 

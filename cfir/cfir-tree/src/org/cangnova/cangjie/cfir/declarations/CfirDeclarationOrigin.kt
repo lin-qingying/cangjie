@@ -1,4 +1,4 @@
-package org.cangjie.cfir.declarations
+package org.cangnova.cangjie.cfir.declarations
 
 /**
  * 声明来源，标记一个 CFIR 声明是怎样产生的。

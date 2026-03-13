@@ -1,6 +1,6 @@
 @file:OptIn(SuspiciousFakeSourceCheck::class)
 
-package org.cangjie.cfir.source
+package org.cangnova.cangjie.cfir.source
 
 import com.intellij.lang.LighterASTNode
 import com.intellij.lang.TreeBackedLighterAST

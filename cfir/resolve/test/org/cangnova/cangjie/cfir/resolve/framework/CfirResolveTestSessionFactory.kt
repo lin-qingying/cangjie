@@ -1,9 +1,9 @@
-package org.cangjie.cfir.resolve.framework
+package org.cangnova.cangjie.cfir.resolve.framework
 
-import org.cangjie.cfir.common.CfirModuleData
-import org.cangjie.cfir.resolve.transformers.CfirResolveComponentsRegistrar
-import org.cangjie.cfir.resolve.transformers.CfirPhaseResolverRegistry
-import org.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirResolveComponentsRegistrar
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirPhaseResolverRegistry
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.name.Name
 
 data class CfirResolveTestSessionContext(

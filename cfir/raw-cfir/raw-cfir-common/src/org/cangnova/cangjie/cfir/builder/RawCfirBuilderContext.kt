@@ -1,6 +1,6 @@
-﻿package org.cangjie.cfir.builder
+﻿package org.cangnova.cangjie.cfir.builder
 
-import org.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 

@@ -1,18 +1,18 @@
 <idea-plugin>
   <extensions defaultExtensionNs="com.intellij">
     <applicationService
-        serviceInterface="org.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry"
-        serviceImplementation="org.cangjie.analysis.api.impl.base.permissions.CaBaseAnalysisPermissionRegistry"
+        serviceInterface="org.cangnova.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.permissions.CaBaseAnalysisPermissionRegistry"
     />
 
     <projectService
-        serviceInterface="org.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker"
-        serviceImplementation="org.cangjie.analysis.api.impl.base.permissions.CaBaseAnalysisPermissionChecker"
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.permissions.CaBaseAnalysisPermissionChecker"
     />
 
     <projectService
-        serviceInterface="org.cangjie.analysis.api.platform.lifetime.CaLifetimeTracker"
-        serviceImplementation="org.cangjie.analysis.api.impl.base.lifetime.CaBaseLifetimeTracker"
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.lifetime.CaLifetimeTracker"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.lifetime.CaBaseLifetimeTracker"
     />
   </extensions>
 </idea-plugin>

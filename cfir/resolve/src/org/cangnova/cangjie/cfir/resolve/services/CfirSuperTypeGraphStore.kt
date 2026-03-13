@@ -1,8 +1,8 @@
-package org.cangjie.cfir.resolve.services
+package org.cangnova.cangjie.cfir.resolve.services
 
-import org.cangjie.cfir.declarations.CfirClass
-import org.cangjie.cfir.session.CfirSessionComponent
-import org.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.session.CfirSessionComponent
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 
 data class CfirSuperTypeGraphEdge(
     val renderedType: String,

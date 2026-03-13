@@ -1,11 +1,11 @@
-package org.cangjie.cfir.builder
+package org.cangnova.cangjie.cfir.builder
 
-import org.cangjie.cfir.common.CfirModuleData
-import org.cangjie.cfir.declarations.CfirFile
-import org.cangjie.cfir.renderer.CfirRenderer
-import org.cangjie.cfir.session.CfirSession
-import org.cangjie.cfir.builder.BodyBuildingMode
-import org.cangjie.test.testFramework.CjParsingTestCase
+import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.renderer.CfirRenderer
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
+import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
@@ -69,7 +69,7 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
     }
 
     private fun currentClassTestDataDir(rootTestDataDir: File): File {
-        val classMetadata = this::class.java.getAnnotation(org.cangjie.test.TestMetadata::class.java)
+        val classMetadata = this::class.java.getAnnotation(org.cangnova.cangjie.test.TestMetadata::class.java)
         if (classMetadata != null) {
             val metadataPath = classMetadata.value.replace('\\', '/')
             val candidate = File(metadataPath)
@@ -123,7 +123,7 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
     ) {
         val classScopedDir = classScopedDir(klass, rootTestDataDir, inheritedDir)
         for (method in klass.declaredMethods) {
-            val metadata = method.getAnnotation(org.cangjie.test.TestMetadata::class.java) ?: continue
+            val metadata = method.getAnnotation(org.cangnova.cangjie.test.TestMetadata::class.java) ?: continue
             val metadataPath = metadata.value.replace('\\', '/')
             val candidate = classScopedDir.resolve(metadataPath)
             if (candidate.isFile && candidate.extension == "cj" && candidate.isUnder(rootTestDataDir)) {
@@ -140,7 +140,7 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         rootTestDataDir: File,
         inheritedDir: File,
     ): File {
-        val classMetadata = klass.getAnnotation(org.cangjie.test.TestMetadata::class.java) ?: return inheritedDir
+        val classMetadata = klass.getAnnotation(org.cangnova.cangjie.test.TestMetadata::class.java) ?: return inheritedDir
         val metadataPath = classMetadata.value.replace('\\', '/')
         val direct = resolveTestDataPath(metadataPath)
         if (direct.isDirectory) return direct

@@ -1,8 +1,8 @@
-package org.cangjie.analysis.api.impl.base
+package org.cangnova.cangjie.analysis.api.impl.base
 
-import org.cangjie.analysis.api.CaSession
-import org.cangjie.analysis.api.components.*
-import org.cangjie.analysis.api.lifetime.CaLifetimeToken
+import org.cangnova.cangjie.analysis.api.CaSession
+import org.cangnova.cangjie.analysis.api.components.*
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 
 /**
  * CaSession 的基础实现（对齐 Kotlin 的 KaBaseSession）。

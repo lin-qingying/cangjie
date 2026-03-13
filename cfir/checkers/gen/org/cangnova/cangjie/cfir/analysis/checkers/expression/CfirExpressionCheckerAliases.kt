@@ -1,33 +1,30 @@
-/*
- * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
- */
 
-package org.cangjie.cfir.analysis.checkers.expression
+
+package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 /*
  * This file was generated automatically
  * DO NOT MODIFY IT MANUALLY
  */
 
-import org.cangjie.cfir.expressions.CfirAssignment
-import org.cangjie.cfir.expressions.CfirBinaryOp
-import org.cangjie.cfir.expressions.CfirComparisonExpression
-import org.cangjie.cfir.expressions.CfirErrorExpression
-import org.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangjie.cfir.expressions.CfirIfExpression
-import org.cangjie.cfir.expressions.CfirJumpExpression
-import org.cangjie.cfir.expressions.CfirLiteralExpression
-import org.cangjie.cfir.expressions.CfirMatchExpression
-import org.cangjie.cfir.expressions.CfirPropertyAccess
-import org.cangjie.cfir.expressions.CfirQualifiedAccess
-import org.cangjie.cfir.expressions.CfirRangeExpression
-import org.cangjie.cfir.expressions.CfirReturnExpression
-import org.cangjie.cfir.expressions.CfirStatement
-import org.cangjie.cfir.expressions.CfirSubscriptExpression
-import org.cangjie.cfir.expressions.CfirThrowExpression
-import org.cangjie.cfir.expressions.CfirTryExpression
-import org.cangjie.cfir.expressions.CfirTypeOperator
+import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
+import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
+import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
+import org.cangnova.cangjie.cfir.expressions.CfirJumpExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
+import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
+import org.cangnova.cangjie.cfir.expressions.CfirRangeExpression
+import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
+import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
+import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
 
 typealias CfirBasicExpressionChecker = CfirExpressionChecker<CfirStatement>
 typealias CfirLiteralExpressionChecker = CfirExpressionChecker<CfirLiteralExpression>

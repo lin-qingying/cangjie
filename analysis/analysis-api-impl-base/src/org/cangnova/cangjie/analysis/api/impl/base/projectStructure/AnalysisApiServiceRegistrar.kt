@@ -1,4 +1,4 @@
-package org.cangjie.analysis.api.impl.base.projectStructure
+package org.cangnova.cangjie.analysis.api.impl.base.projectStructure
 
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject

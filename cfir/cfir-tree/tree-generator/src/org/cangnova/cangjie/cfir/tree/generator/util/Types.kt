@@ -3,12 +3,12 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.cfir.tree.generator.util
+package org.cangnova.cangjie.cfir.tree.generator.util
 
-import org.cangjie.cfir.tree.generator.BASE_PACKAGE
-import org.cangjie.generators.tree.ClassRef
-import org.cangjie.generators.tree.PositionTypeParameterRef
-import org.cangjie.generators.tree.TypeKind
+import org.cangnova.cangjie.cfir.tree.generator.BASE_PACKAGE
+import org.cangnova.cangjie.generators.tree.ClassRef
+import org.cangnova.cangjie.generators.tree.PositionTypeParameterRef
+import org.cangnova.cangjie.generators.tree.TypeKind
 
 fun generatedType(type: String, kind: TypeKind = TypeKind.Class): ClassRef<PositionTypeParameterRef> = generatedType("", type, kind)
 
@@ -23,8 +23,8 @@ fun type(
     exactPackage: Boolean = false,
     kind: TypeKind = TypeKind.Interface,
 ): ClassRef<PositionTypeParameterRef> {
-    val realPackage = if (exactPackage) packageName else packageName.let { "org.cangjie.cfir.$it" }
-    return org.cangjie.generators.tree.type(realPackage, type, kind)
+    val realPackage = if (exactPackage) packageName else packageName.let { "org.cangnova.cangjie.cfir.$it" }
+    return org.cangnova.cangjie.generators.tree.type(realPackage, type, kind)
 }
 
-inline fun <reified T : Any> type() = org.cangjie.generators.tree.type<T>()
+inline fun <reified T : Any> type() = org.cangnova.cangjie.generators.tree.type<T>()

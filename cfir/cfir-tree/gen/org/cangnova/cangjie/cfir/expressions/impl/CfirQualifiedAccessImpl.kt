@@ -5,25 +5,25 @@
 
 @file:Suppress("DuplicatedCode")
 
-package org.cangjie.cfir.expressions.impl
+package org.cangnova.cangjie.cfir.expressions.impl
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.expressions.CfirExpression
-import org.cangjie.cfir.expressions.CfirQualifiedAccess
-import org.cangjie.cfir.references.CfirReference
-import org.cangjie.cfir.types.CfirTypeRef
-import org.cangjie.cfir.types.ConeCangjieType
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
+import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 class CfirQualifiedAccessImpl @CfirImplementationDetail constructor(
-    override val coneTypeOrNull: ConeCangjieType?,
-    override val calleeReference: CfirReference,
-    override val explicitReceiver: CfirExpression?,
-    override val typeArguments: List<CfirTypeRef>,
+    override var coneTypeOrNull: ConeCangjieType?,
+    override var calleeReference: CfirReference,
+    override var explicitReceiver: CfirExpression?,
+    override var typeArguments: List<CfirTypeRef>,
 ) : CfirQualifiedAccess() {
-    override val source: CfirSourceElement?
+    override val source: CjSourceElement?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -32,10 +32,33 @@ class CfirQualifiedAccessImpl @CfirImplementationDetail constructor(
         typeArguments.forEach { it.accept(visitor, data) }
     }
 
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+     {
+        this.coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun <D> transformCalleeReference(transformer: CfirTransformer<D>, data: D): CfirQualifiedAccess
+     {
+        this.calleeReference = calleeReference.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirReference
+        return this
+    }
+
+    override fun <D> transformExplicitReceiver(transformer: CfirTransformer<D>, data: D): CfirQualifiedAccess
+     {
+        this.explicitReceiver = explicitReceiver?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression?
+        return this
+    }
+
+    override fun <D> transformTypeArguments(transformer: CfirTransformer<D>, data: D): CfirQualifiedAccess
+     {
+        this.typeArguments = typeArguments.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirTypeRef }
+        return this
+    }
+
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirQualifiedAccessImpl {
-        calleeReference.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
-        explicitReceiver?.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
-        typeArguments.forEach { it.transform<org.cangjie.cfir.CfirElement, D>(transformer, data) }
+        transformCalleeReference(transformer, data)
+        transformExplicitReceiver(transformer, data)
+        transformTypeArguments(transformer, data)
         return this
     }
 }

@@ -8,7 +8,7 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 
-package org.cangjie.generators.tree
+package org.cangnova.cangjie.generators.tree
 
 /**
  * 类型参数的型变标注。

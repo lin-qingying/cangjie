@@ -1,10 +1,10 @@
-package org.cangjie.cfir.resolve
+package org.cangnova.cangjie.cfir.resolve
 
-import org.cangjie.cfir.declarations.CfirClass
-import org.cangjie.cfir.session.CfirSession
-import org.cangjie.cfir.session.cfirProvider
-import org.cangjie.cfir.types.CfirTypeRef
-import org.cangjie.cfir.types.CfirUserTypeRef
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 

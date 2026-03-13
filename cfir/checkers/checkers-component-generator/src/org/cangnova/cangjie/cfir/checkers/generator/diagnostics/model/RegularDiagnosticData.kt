@@ -1,7 +1,7 @@
-﻿package org.cangjie.cfir.checkers.generator.diagnostics.model
+﻿package org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model
 
-import org.cangjie.config.LanguageFeature
-import org.cangjie.cfir.diagnostics.Severity
+import org.cangnova.cangjie.config.LanguageFeature
+import org.cangnova.cangjie.cfir.diagnostics.Severity
 import kotlin.reflect.KType
 
 sealed class DiagnosticData {
@@ -132,7 +132,7 @@ enum class PositioningStrategy {
     val expressionToCreate get() = "SourceElementPositioningStrategies.$name"
 
     companion object {
-        const val importToAdd = "org.cangjie.cfir.diagnostics.SourceElementPositioningStrategies"
+        const val importToAdd = "org.cangnova.cangjie.cfir.diagnostics.SourceElementPositioningStrategies"
     }
 }
 

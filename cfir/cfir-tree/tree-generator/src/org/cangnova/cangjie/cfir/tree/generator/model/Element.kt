@@ -3,12 +3,12 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.cfir.tree.generator.model
+package org.cangnova.cangjie.cfir.tree.generator.model
 
-import org.cangjie.cfir.tree.generator.BASE_PACKAGE
-import org.cangjie.generators.tree.*
-import org.cangjie.generators.tree.ElementOrRef as GenericElementOrRef
-import org.cangjie.generators.tree.ElementRef as GenericElementRef
+import org.cangnova.cangjie.cfir.tree.generator.BASE_PACKAGE
+import org.cangnova.cangjie.generators.tree.*
+import org.cangnova.cangjie.generators.tree.ElementOrRef as GenericElementOrRef
+import org.cangnova.cangjie.generators.tree.ElementRef as GenericElementRef
 
 class Element(name: String, override val propertyName: String, kind: Kind) : AbstractElement<Element, Field, Implementation>(name) {
     companion object {

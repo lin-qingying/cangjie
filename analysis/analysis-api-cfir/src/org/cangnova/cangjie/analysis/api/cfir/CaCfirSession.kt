@@ -1,12 +1,12 @@
-﻿package org.cangjie.analysis.api.cfir
+﻿package org.cangnova.cangjie.analysis.api.cfir
 
 import com.intellij.openapi.project.Project
-import org.cangjie.analysis.api.CaModule
-import org.cangjie.analysis.api.cfir.components.*
-import org.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacade
-import org.cangjie.analysis.api.impl.base.CaBaseSession
-import org.cangjie.analysis.api.lifetime.CaLifetimeToken
-import org.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.cfir.components.*
+import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacade
+import org.cangnova.cangjie.analysis.api.impl.base.CaBaseSession
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
+import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
  * CFIR 实现的分析会话。

@@ -7,6 +7,7 @@ dependencies {
     implementation(project(":generators"))
     implementation(project(":cfir:cfir-tree"))
     implementation(project(":cfir:cfir-tree:tree-generator"))
+    implementation(project(":cfir:diagnostics"))
 
     implementation(kotlin("reflect"))
 
@@ -21,13 +22,13 @@ val generateCfirDiagnostics by tasks.registering(JavaExec::class) {
     description = "Generate Cfir diagnostics artifacts into :cfir:checkers/gen."
     dependsOn(tasks.named("classes"))
     classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("org.cangjie.cfir.checkers.generator.MainKt")
+    mainClass.set("org.cangnova.cangjie.cfir.checkers.generator.MainKt")
     workingDir = rootProject.projectDir
     args("diagnostics", targetCheckersGenDir.asFile.absolutePath)
 }
 
 application {
-    mainClass.set("org.cangjie.cfir.checkers.generator.MainKt")
+    mainClass.set("org.cangnova.cangjie.cfir.checkers.generator.MainKt")
 }
 
 tasks.named<JavaExec>("run") {

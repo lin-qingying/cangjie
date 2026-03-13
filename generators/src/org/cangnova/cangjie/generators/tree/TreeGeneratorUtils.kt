@@ -3,7 +3,7 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.generators.tree
+package org.cangnova.cangjie.generators.tree
 
 /**
  * Appendable 版的 joinToWithBuffer，与 Kotlin 编译器 addToStdlib 中的签名对齐。

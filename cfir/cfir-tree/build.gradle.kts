@@ -25,5 +25,5 @@ sourceSets {
 generatedSourcesTask(
     taskName = "generateTree",
     generatorProject = ":cfir:cfir-tree:tree-generator",
-    generatorMainClass = "org.cangjie.cfir.tree.generator.MainKt",
+    generatorMainClass = "org.cangnova.cangjie.cfir.tree.generator.MainKt",
 )

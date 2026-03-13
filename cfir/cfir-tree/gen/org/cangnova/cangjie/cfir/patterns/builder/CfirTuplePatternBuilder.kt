@@ -5,14 +5,14 @@
 
 @file:Suppress("DuplicatedCode", "unused")
 
-package org.cangjie.cfir.patterns.builder
+package org.cangnova.cangjie.cfir.patterns.builder
 
 import kotlin.contracts.*
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangjie.cfir.patterns.CfirPattern
-import org.cangjie.cfir.patterns.CfirTuplePattern
-import org.cangjie.cfir.patterns.impl.CfirTuplePatternImpl
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
+import org.cangnova.cangjie.cfir.patterns.impl.CfirTuplePatternImpl
 
 @CfirBuilderDsl
 class CfirTuplePatternBuilder {

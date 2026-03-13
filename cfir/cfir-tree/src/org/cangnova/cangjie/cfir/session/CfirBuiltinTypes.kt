@@ -1,8 +1,8 @@
-package org.cangjie.cfir.session
+package org.cangnova.cangjie.cfir.session
 
-import org.cangjie.cfir.types.ConeCangjieType
-import org.cangjie.cfir.types.ConePrimitiveType
-import org.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 
 /**
  * 内建类型 session 组件（对齐 C++ 编译器的 TypeManager）。

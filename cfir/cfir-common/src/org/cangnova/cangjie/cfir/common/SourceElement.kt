@@ -1,5 +1,5 @@
 
-package org.cangjie.cfir.common
+package org.cangnova.cangjie.cfir.common
 
 /**
  * 源码位置信息，将 CFIR 节点关联到原始源码。

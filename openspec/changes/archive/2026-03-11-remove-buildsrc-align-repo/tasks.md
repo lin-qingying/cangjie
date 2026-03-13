@@ -1,6 +1,6 @@
 ## 1. 创建 utilities 子模块
 
-- [x] 1.1 创建 `repo/gradle-build-conventions/utilities/build.gradle.kts`，应用 `kotlin-dsl` 插件，设置 `group = "org.cangjie.build"`
+- [x] 1.1 创建 `repo/gradle-build-conventions/utilities/build.gradle.kts`，应用 `kotlin-dsl` 插件，设置 `group = "org.cangnova.cangjie.build"`
 - [x] 1.2 创建 `repo/gradle-build-conventions/utilities/src/main/kotlin/sourceSets.kt`，从 `buildsrc-compat` 迁移源集 DSL 代码
 - [x] 1.3 创建 `repo/gradle-build-conventions/utilities/src/main/kotlin/taskUtils.kt`，参考 Kotlin 实现 `getOrCreateTask` 工具函数
 - [x] 1.4 创建 `repo/gradle-build-conventions/utilities/src/main/kotlin/testTaskUtils.kt`，参考 Kotlin 实现 `ideaHomePathForTests`、`totalMaxMemoryForTestsMb`
@@ -17,7 +17,7 @@
 
 ## 3. 创建 gradle-plugins-common 骨架
 
-- [x] 3.1 创建 `repo/gradle-build-conventions/gradle-plugins-common/build.gradle.kts`，应用 `kotlin-dsl` 插件，设置 `group = "org.cangjie.build"`，添加 `implementation(project(":utilities"))` 依赖
+- [x] 3.1 创建 `repo/gradle-build-conventions/gradle-plugins-common/build.gradle.kts`，应用 `kotlin-dsl` 插件，设置 `group = "org.cangnova.cangjie.build"`，添加 `implementation(project(":utilities"))` 依赖
 - [x] 3.2 创建空的 `repo/gradle-build-conventions/gradle-plugins-common/src/main/kotlin/` 目录（通过 `.gitkeep` 占位）
 
 ## 4. 更新 gradle-build-conventions settings

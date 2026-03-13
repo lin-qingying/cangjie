@@ -4,6 +4,8 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":cfir:cfir-common"))
+
     implementation(project(":generators"))
     implementation(project(":util"))
 }
@@ -16,5 +18,5 @@ sourceSets {
 }
 
 application {
-    mainClass.set("org.cangjie.cfir.tree.generator.MainKt")
+    mainClass.set("org.cangnova.cangjie.cfir.tree.generator.MainKt")
 }

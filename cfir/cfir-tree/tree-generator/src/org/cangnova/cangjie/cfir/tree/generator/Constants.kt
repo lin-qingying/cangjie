@@ -1,4 +1,4 @@
-package org.cangjie.cfir.tree.generator
+package org.cangnova.cangjie.cfir.tree.generator
 
-internal const val BASE_PACKAGE = "org.cangjie.cfir"
+internal const val BASE_PACKAGE = "org.cangnova.cangjie.cfir"
 

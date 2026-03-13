@@ -1,30 +1,30 @@
-package org.cangjie.cfir.resolve
+package org.cangnova.cangjie.cfir.resolve
 
-import org.cangjie.cfir.common.CfirModuleData
-import org.cangjie.cfir.declarations.CfirClass
-import org.cangjie.cfir.declarations.CfirClassKind
-import org.cangjie.cfir.declarations.CfirDeclaration
-import org.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangjie.cfir.declarations.CfirExtend
-import org.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangjie.cfir.resolve.providers.CfirEmptyExtendProvider
-import org.cangjie.cfir.resolve.providers.CfirEmptySymbolProvider
-import org.cangjie.cfir.resolve.providers.CfirProvider
-import org.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore
-import org.cangjie.cfir.resolve.services.CfirLazyDeclarationResolver
-import org.cangjie.cfir.session.CfirSession
-import org.cangjie.cfir.session.superTypeGraphStore
-import org.cangjie.cfir.types.CfirUserTypeRef
-import org.cangjie.cfir.types.CfirBasicTypeRef
-import org.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassKind
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.providers.CfirEmptyExtendProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirEmptySymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore
+import org.cangnova.cangjie.cfir.resolve.services.CfirLazyDeclarationResolver
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.superTypeGraphStore
+import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
+import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 
 class CfirSuperExtensionsResolveProcessorTest {
     @Test
@@ -177,7 +177,7 @@ class CfirSuperExtensionsResolveProcessorTest {
         val file = CfirFile(
             moduleData = context.moduleData,
             name = "super_types_recovery_test.cj",
-            packageDirective = org.cangjie.cfir.declarations.CfirPackageDirective(FqName("demo.recovery")),
+            packageDirective = org.cangnova.cangjie.cfir.declarations.CfirPackageDirective(FqName("demo.recovery")),
             declarations = mutableListOf(invalidInterface, validClass),
         )
 
@@ -258,7 +258,7 @@ class CfirSuperExtensionsResolveProcessorTest {
         session.register(CfirDiagnosticCollector::class, diagnostics)
         session.register(CfirSymbolProvider::class, CfirEmptySymbolProvider())
         session.register(CfirProvider::class, InMemoryProvider(providedClasses))
-        session.register(org.cangjie.cfir.providers.CfirExtendProvider::class, CfirEmptyExtendProvider())
+        session.register(org.cangnova.cangjie.cfir.providers.CfirExtendProvider::class, CfirEmptyExtendProvider())
         session.register(CfirSuperTypeGraphStore::class, CfirSuperTypeGraphStore())
         session.register(CfirLazyDeclarationResolver::class, CfirLazyDeclarationResolver())
 

@@ -1,19 +1,16 @@
-/*
- * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
- */
 
-package org.cangjie.cfir.analysis.checkers.declaration
 
-import org.cangjie.cfir.CfirElement
-import org.cangjie.cfir.analysis.CheckersComponentInternal
-import org.cangjie.cfir.analysis.checkers.MppCheckerKind
-import org.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangjie.cfir.analysis.checkersComponent
-import org.cangjie.cfir.analysis.collectors.components.AbstractDiagnosticCollectorComponent
-import org.cangjie.cfir.declarations.*
-import org.cangjie.cfir.diagnostics.PendingDiagnosticReporter
-import org.cangjie.cfir.session.CfirSession
+package org.cangnova.cangjie.cfir.analysis.checkers.declaration
+
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkersComponent
+import org.cangnova.cangjie.cfir.analysis.collectors.components.AbstractDiagnosticCollectorComponent
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
 import org.cangnova.cangjie.utils.exceptions.withFirEntry
 

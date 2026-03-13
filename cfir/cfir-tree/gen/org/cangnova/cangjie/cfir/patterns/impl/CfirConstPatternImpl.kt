@@ -5,27 +5,33 @@
 
 @file:Suppress("DuplicatedCode")
 
-package org.cangjie.cfir.patterns.impl
+package org.cangnova.cangjie.cfir.patterns.impl
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.expressions.CfirExpression
-import org.cangjie.cfir.patterns.CfirConstPattern
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 class CfirConstPatternImpl @CfirImplementationDetail constructor(
-    override val expression: CfirExpression,
+    override var expression: CfirExpression,
 ) : CfirConstPattern() {
-    override val source: CfirSourceElement?
+    override val source: CjSourceElement?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         expression.accept(visitor, data)
     }
 
+    override fun <D> transformExpression(transformer: CfirTransformer<D>, data: D): CfirConstPattern
+     {
+        this.expression = expression.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression
+        return this
+    }
+
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirConstPatternImpl {
-        expression.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
+        transformExpression(transformer, data)
         return this
     }
 }

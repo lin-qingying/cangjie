@@ -5,25 +5,25 @@
 
 @file:Suppress("DuplicatedCode")
 
-package org.cangjie.cfir.expressions.impl
+package org.cangnova.cangjie.cfir.expressions.impl
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.expressions.CfirBlock
-import org.cangjie.cfir.expressions.CfirExpression
-import org.cangjie.cfir.expressions.CfirMatchBranch
-import org.cangjie.cfir.patterns.CfirPattern
-import org.cangjie.cfir.types.ConeCangjieType
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 class CfirMatchBranchImpl @CfirImplementationDetail constructor(
-    override val coneTypeOrNull: ConeCangjieType?,
-    override val pattern: CfirPattern,
-    override val guard: CfirExpression?,
-    override val body: CfirBlock,
+    override var coneTypeOrNull: ConeCangjieType?,
+    override var pattern: CfirPattern,
+    override var guard: CfirExpression?,
+    override var body: CfirBlock,
 ) : CfirMatchBranch() {
-    override val source: CfirSourceElement?
+    override val source: CjSourceElement?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -32,10 +32,33 @@ class CfirMatchBranchImpl @CfirImplementationDetail constructor(
         body.accept(visitor, data)
     }
 
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+     {
+        this.coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun <D> transformPattern(transformer: CfirTransformer<D>, data: D): CfirMatchBranch
+     {
+        this.pattern = pattern.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirPattern
+        return this
+    }
+
+    override fun <D> transformGuard(transformer: CfirTransformer<D>, data: D): CfirMatchBranch
+     {
+        this.guard = guard?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression?
+        return this
+    }
+
+    override fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirMatchBranch
+     {
+        this.body = body.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirBlock
+        return this
+    }
+
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirMatchBranchImpl {
-        pattern.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
-        guard?.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
-        body.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
+        transformPattern(transformer, data)
+        transformGuard(transformer, data)
+        transformBody(transformer, data)
         return this
     }
 }

@@ -1,7 +1,7 @@
-package org.cangjie.cfir.resolve
+package org.cangnova.cangjie.cfir.resolve
 
-import org.cangjie.cfir.resolve.framework.AbstractCfirResolveDiagnosticsTest
-import org.cangjie.test.TestMetadata
+import org.cangnova.cangjie.cfir.resolve.framework.AbstractCfirResolveDiagnosticsTest
+import org.cangnova.cangjie.test.TestMetadata
 import org.junit.jupiter.api.Test
 
 @TestMetadata("testData/resolveDiagnostics")

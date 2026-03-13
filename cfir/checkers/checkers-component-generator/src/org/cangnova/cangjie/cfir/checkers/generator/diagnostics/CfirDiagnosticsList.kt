@@ -1,8 +1,8 @@
-package org.cangjie.cfir.checkers.generator.diagnostics
+package org.cangnova.cangjie.cfir.checkers.generator.diagnostics
 
 import com.intellij.psi.PsiElement
-import org.cangjie.cfir.checkers.generator.diagnostics.model.DiagnosticList
-import org.cangjie.util.PrivateForInline
+import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.DiagnosticList
+import org.cangnova.cangjie.util.PrivateForInline
 
 @Suppress("UNUSED_VARIABLE", "LocalVariableName", "ClassName", "unused")
 @OptIn(PrivateForInline::class)

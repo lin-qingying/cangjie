@@ -3,13 +3,13 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.cfir.checkers.generator
+package org.cangnova.cangjie.cfir.checkers.generator
 
-import org.cangjie.cfir.CfirElement
-import org.cangjie.cfir.tree.generator.util.writeToFileUsingSmartPrinterIfFileContentChanged
-import org.cangjie.generators.util.getGenerationPath
-import org.cangjie.generators.util.printCopyright
-import org.cangjie.generators.util.printGeneratedMessage
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.tree.generator.util.writeToFileUsingSmartPrinterIfFileContentChanged
+import org.cangnova.cangjie.generators.util.getGenerationPath
+import org.cangnova.cangjie.generators.util.printCopyright
+import org.cangnova.cangjie.generators.util.printGeneratedMessage
 import org.cangnova.cangjie.utils.SmartPrinter
 import org.cangnova.cangjie.utils.withIndent
 import java.io.File
@@ -21,19 +21,19 @@ private typealias Checker = Map.Entry<KClass<*>, Pair<String, Boolean>>
 
 private const val CHECKERS_COMPONENT_INTERNAL = "CheckersComponentInternal"
 private const val CHECKERS_COMPONENT_INTERNAL_ANNOTATION = "@$CHECKERS_COMPONENT_INTERNAL"
-private const val CHECKERS_COMPONENT_INTERNAL_FQN = "org.cangjie.cfir.analysis.CheckersComponentInternal"
-private const val MPP_CHECKER_KIND_FQN = "org.cangjie.cfir.analysis.checkers.MppCheckerKind"
-private const val MPP_CHECKER_WITH_KIND_FQN = "org.cangjie.cfir.analysis.checkers.CfirCheckerWithMppKind"
+private const val CHECKERS_COMPONENT_INTERNAL_FQN = "org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal"
+private const val MPP_CHECKER_KIND_FQN = "org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind"
+private const val MPP_CHECKER_WITH_KIND_FQN = "org.cangnova.cangjie.cfir.analysis.checkers.CfirCheckerWithMppKind"
 
 // DiagnosticComponent
-private const val FIR_SESSION_FQN = "org.cangjie.cfir.session.CfirSession"
-private const val DIAGNOSTIC_REPORTER_FQN = "org.cangjie.cfir.diagnostics.PendingDiagnosticReporter"
+private const val FIR_SESSION_FQN = "org.cangnova.cangjie.cfir.session.CfirSession"
+private const val DIAGNOSTIC_REPORTER_FQN = "org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter"
 private const val ABSTRACT_DIAGNOSTIC_REPORTER_FQN =
-    "org.cangjie.cfir.analysis.collectors.components.AbstractDiagnosticCollectorComponent"
-private const val CHECKER_CONTEXT_FQN = "org.cangjie.cfir.analysis.checkers.context.CheckerContext"
-private const val FIR_FQN = "org.cangjie.cfir"
-private const val CHECKERS_COMPONENT_FQN = "org.cangjie.cfir.analysis.checkersComponent"
-private const val FIR_ELEMENT_FQN = "org.cangjie.cfir.CfirElement"
+    "org.cangnova.cangjie.cfir.analysis.collectors.components.AbstractDiagnosticCollectorComponent"
+private const val CHECKER_CONTEXT_FQN = "org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext"
+private const val FIR_FQN = "org.cangnova.cangjie.cfir"
+private const val CHECKERS_COMPONENT_FQN = "org.cangnova.cangjie.cfir.analysis.checkersComponent"
+private const val FIR_ELEMENT_FQN = "org.cangnova.cangjie.cfir.CfirElement"
 private const val WITH_ENTRY_FQN = "org.cangnova.cangjie.utils.exceptions.withFirEntry"
 private const val RETHROW_FQN = "org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails"
 

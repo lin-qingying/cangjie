@@ -1,8 +1,8 @@
-package org.cangjie.cfir.resolve
+package org.cangnova.cangjie.cfir.resolve
 
-import org.cangjie.cfir.declarations.CfirInvalidDeclaration
-import org.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangjie.cfir.resolve.framework.createCfirResolveTestSessionContext
+import org.cangnova.cangjie.cfir.declarations.CfirInvalidDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.framework.createCfirResolveTestSessionContext
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

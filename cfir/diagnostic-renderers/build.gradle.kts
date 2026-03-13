@@ -3,6 +3,7 @@ plugins {
 }
 
 dependencies {
+    api(project(":cfir:diagnostics"))
     api(project(":cfir:cfir-common"))
 }
 

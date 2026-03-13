@@ -1,9 +1,9 @@
-package org.cangjie.analysis.api.components
+package org.cangnova.cangjie.analysis.api.components
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import org.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
-import org.cangjie.analysis.api.lifetime.CaLifetimeOwner
+import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 
 // ===== 符号相关 =====
 

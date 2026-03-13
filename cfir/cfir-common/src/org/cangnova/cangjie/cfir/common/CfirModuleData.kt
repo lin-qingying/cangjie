@@ -1,7 +1,7 @@
-package org.cangjie.cfir.common
+package org.cangnova.cangjie.cfir.common
 
-import org.cangjie.cfir.session.CfirSession
-import org.cangjie.cfir.session.CfirSessionComponent
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.name.Name
 
 /**

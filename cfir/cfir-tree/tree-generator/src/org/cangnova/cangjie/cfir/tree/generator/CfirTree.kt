@@ -3,20 +3,22 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.cfir.tree.generator
+package org.cangnova.cangjie.cfir.tree.generator
 
-import org.cangjie.cfir.tree.generator.context.AbstractCfirTreeBuilder
-import org.cangjie.cfir.tree.generator.model.Element
-import org.cangjie.cfir.tree.generator.model.Element.Kind.*
-import org.cangjie.cfir.tree.generator.util.generatedType
-import org.cangjie.cfir.tree.generator.util.type
-import org.cangjie.generators.tree.ImplementationKind
-import org.cangjie.generators.tree.TypeKind
-import org.cangjie.generators.tree.TypeRef as TreeTypeRef
-import org.cangjie.generators.tree.withArgs
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.tree.generator.context.AbstractCfirTreeBuilder
+import org.cangnova.cangjie.cfir.tree.generator.model.Element
+import org.cangnova.cangjie.cfir.tree.generator.model.Element.Kind.*
+import org.cangnova.cangjie.cfir.tree.generator.util.generatedType
+import org.cangnova.cangjie.cfir.tree.generator.util.type
+import org.cangnova.cangjie.generators.tree.ImplementationKind
+import org.cangnova.cangjie.generators.tree.TypeKind
+import org.cangnova.cangjie.generators.tree.TypeRef as TreeTypeRef
+import org.cangnova.cangjie.generators.tree.withArgs
 
 object CfirTree : AbstractCfirTreeBuilder() {
-    private val sourceElementType = type("common", "CfirSourceElement")
+    val sourceElementType = type<CjSourceElement>()
+
     private val moduleDataType = type("common", "CfirModuleData")
     private val declarationOriginType = generatedType("declarations", "CfirDeclarationOrigin", TypeKind.Class)
     private val declarationAttributesType = generatedType("declarations", "CfirDeclarationAttributes", TypeKind.Class)
@@ -73,7 +75,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
         parent(statement)
         +field("symbol", symbolType)
         +field("origin", declarationOriginType)
-        +listField("annotations", annotation)
+        +listField("annotations", annotation, withReplace = true, withTransform = true)
         +field("moduleData", moduleDataType)
         +field("resolvePhase", resolvePhaseType, withReplace = true)
         +field("attributes", declarationAttributesType)
@@ -100,7 +102,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
     val classDeclaration: Element by element(Declaration, name = "Class") {
         parent(classLikeDeclaration)
-        +field("status", declarationStatusType)
+        +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +listField("typeParameters", typeParameter, withTransform = true)
         +listField("superTypeRefs", typeRef, withTransform = true)
         +listField("declarations", declaration, withTransform = true)
@@ -109,14 +111,14 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
     val enumConstructor: Element by element(Declaration, name = "EnumConstructor") {
         parent(callableDeclaration)
-        +field("status", declarationStatusType)
+        +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +listField("typeParameters", typeParameter, withTransform = true)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("name", nameType)
     }
     val extend: Element by element(Declaration, name = "Extend") {
         parent(classLikeDeclaration)
-        +field("status", declarationStatusType)
+        +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +listField("typeParameters", typeParameter, withTransform = true)
         +field("extendedTypeRef", typeRef, withTransform = true)
         +listField("superTypeRefs", typeRef, withTransform = true)
@@ -124,14 +126,14 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
     val typeAlias: Element by element(Declaration, name = "TypeAlias") {
         parent(classLikeDeclaration)
-        +field("status", declarationStatusType)
+        +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +listField("typeParameters", typeParameter, withTransform = true)
         +field("name", nameType)
         +field("expandedTypeRef", typeRef, withReplace = true, withTransform = true)
     }
     val function: Element by element(Declaration, name = "Function") {
         parent(callableDeclaration)
-        +field("status", declarationStatusType)
+        +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +listField("typeParameters", typeParameter, withTransform = true)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("name", nameType)
@@ -141,7 +143,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
     val mainFunction: Element by element(Declaration, name = "MainFunction") {
         parent(callableDeclaration)
-        +field("status", declarationStatusType)
+        +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +listField("typeParameters", typeParameter, withTransform = true)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +listField("valueParameters", valueParameter, withTransform = true)
@@ -149,7 +151,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
     val macroDeclaration: Element by element(Declaration, name = "MacroDeclaration") {
         parent(callableDeclaration)
-        +field("status", declarationStatusType)
+        +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +listField("typeParameters", typeParameter, withTransform = true)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("name", nameType)
@@ -158,7 +160,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
     val finalizer: Element by element(Declaration, name = "Finalizer") {
         parent(callableDeclaration)
-        +field("status", declarationStatusType)
+        +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +listField("typeParameters", typeParameter, withTransform = true)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +listField("valueParameters", valueParameter, withTransform = true)
@@ -166,7 +168,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
     val constructor: Element by element(Declaration, name = "Constructor") {
         parent(callableDeclaration)
-        +field("status", declarationStatusType)
+        +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +listField("typeParameters", typeParameter, withTransform = true)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +listField("valueParameters", valueParameter, withTransform = true)
@@ -179,7 +181,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
     val property: Element by element(Declaration, name = "Property") {
         parent(callableDeclaration)
-        +field("status", declarationStatusType)
+        +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +listField("typeParameters", typeParameter, withTransform = true)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("name", nameType)
@@ -190,7 +192,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
     val variable: Element by element(Declaration, name = "Variable") {
         parent(callableDeclaration)
-        +field("status", declarationStatusType)
+        +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +listField("typeParameters", typeParameter, withTransform = true)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("name", nameType)
@@ -199,7 +201,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
     val patternVariable: Element by element(Declaration, name = "PatternVariable") {
         parent(callableDeclaration)
-        +field("status", declarationStatusType)
+        +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +listField("typeParameters", typeParameter, withTransform = true)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("pattern", pattern, withTransform = true)
@@ -208,7 +210,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
     val valueParameter: Element by element(Declaration, name = "ValueParameter") {
         parent(callableDeclaration)
-        +field("status", declarationStatusType)
+        +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +listField("typeParameters", typeParameter, withTransform = true)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("name", nameType)

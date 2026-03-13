@@ -1,6 +1,6 @@
-package org.cangjie.analysis.api.cfir
+package org.cangnova.cangjie.analysis.api.cfir
 
-import org.cangjie.analysis.api.lifetime.CaLifetimeToken
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 
 /**
  * CFIR 实现的生命周期令牌（对齐 Kotlin 的 KaFirLifetimeToken）。

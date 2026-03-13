@@ -1,4 +1,4 @@
-package org.cangjie.cfir.expressions
+package org.cangnova.cangjie.cfir.expressions
 
 enum class CfirLiteralKind {
     INT,

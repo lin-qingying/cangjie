@@ -5,15 +5,15 @@
 
 @file:Suppress("DuplicatedCode")
 
-package org.cangjie.cfir.patterns.impl
+package org.cangnova.cangjie.cfir.patterns.impl
 
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.patterns.CfirWildcardPattern
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 class CfirWildcardPatternImpl : CfirWildcardPattern() {
-    override val source: CfirSourceElement?
+    override val source: CjSourceElement?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {

@@ -1,21 +1,18 @@
-package org.cangjie.cfir.resolve.transformers
+package org.cangnova.cangjie.cfir.resolve.transformers
 
-import org.cangjie.cfir.analysis.CheckersComponent
-import org.cangjie.cfir.analysis.checkers.declaration.CfirBasicDeclarationCheckers
-import org.cangjie.cfir.analysis.checkers.expression.CfirBasicExpressionCheckers
-import org.cangjie.cfir.resolve.CfirDiagnosticReporter
-import org.cangjie.cfir.resolve.providers.CfirResolveProviderPipeline
-import org.cangjie.cfir.resolve.services.CfirLazyDeclarationResolver
-import org.cangjie.cfir.resolve.services.CfirImportBindingStore
-import org.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore
-import org.cangjie.cfir.session.CfirSession
-import org.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
+import org.cangnova.cangjie.cfir.resolve.providers.CfirResolveProviderPipeline
+import org.cangnova.cangjie.cfir.resolve.services.CfirLazyDeclarationResolver
+import org.cangnova.cangjie.cfir.resolve.services.CfirImportBindingStore
+import org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 
 /**
- * Formal CFIR resolve component registration entry.
+ * CFIR resolve 组件注册入口。
  *
- * The provider chain is centralized in [CfirResolveProviderPipeline] so we can
- * evolve from legacy-compatible providers to full providers without changing call sites.
+ * 仅注册 resolve 阶段自身需要的服务和处理器（IMPORTS → BODY_RESOLVE）。
+ * CHECKERS 阶段由 checkers 模块独立注册（见 [org.cangnova.cangjie.cfir.analysis.resolve] 包）。
  */
 object CfirResolveComponentsRegistrar {
     fun register(
@@ -23,12 +20,6 @@ object CfirResolveComponentsRegistrar {
         registry: CfirPhaseResolverRegistry,
         diagnosticReporter: CfirDiagnosticReporter,
     ) {
-        val checkersComponent = CheckersComponent().apply {
-            register(CfirBasicDeclarationCheckers)
-            register(CfirBasicExpressionCheckers)
-        }
-        session.register(CheckersComponent::class, checkersComponent)
-
         CfirResolveProviderPipeline
             .formalDefaults()
             .registerInto(session)
@@ -45,12 +36,6 @@ object CfirLegacyResolveComponentsRegistrar {
         registry: CfirPhaseResolverRegistry,
         diagnosticReporter: CfirDiagnosticReporter,
     ) {
-        val checkersComponent = CheckersComponent().apply {
-            register(CfirBasicDeclarationCheckers)
-            register(CfirBasicExpressionCheckers)
-        }
-        session.register(CheckersComponent::class, checkersComponent)
-
         CfirResolveProviderPipeline
             .legacyCompatibleDefaults()
             .registerInto(session)

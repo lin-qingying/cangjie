@@ -1,4 +1,4 @@
-package org.cangjie.analysis.api.platform.permissions
+package org.cangnova.cangjie.analysis.api.platform.permissions
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service

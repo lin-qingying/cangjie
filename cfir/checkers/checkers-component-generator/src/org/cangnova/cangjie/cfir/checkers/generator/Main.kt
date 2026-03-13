@@ -1,55 +1,55 @@
-package org.cangjie.cfir.checkers.generator
+package org.cangnova.cangjie.cfir.checkers.generator
 
-import org.cangjie.cfir.checkers.generator.diagnostics.DIAGNOSTICS_LIST
-import org.cangjie.cfir.checkers.generator.diagnostics.model.ErrorListDiagnosticListRenderer
-import org.cangjie.cfir.checkers.generator.diagnostics.model.generateDiagnostics
-import org.cangjie.cfir.declarations.CfirAnnotation
-import org.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangjie.cfir.declarations.CfirClass
-import org.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangjie.cfir.declarations.CfirDeclaration
-import org.cangjie.cfir.declarations.CfirFile
-import org.cangjie.cfir.declarations.CfirFunction
-import org.cangjie.cfir.declarations.CfirInvalidDeclaration
-import org.cangjie.cfir.declarations.CfirMainFunction
-import org.cangjie.cfir.declarations.CfirMemberDeclaration
-import org.cangjie.cfir.declarations.CfirProperty
-import org.cangjie.cfir.declarations.CfirTypeAlias
-import org.cangjie.cfir.declarations.CfirTypeParameter
-import org.cangjie.cfir.declarations.CfirValueParameter
-import org.cangjie.cfir.declarations.CfirVariable
-import org.cangjie.cfir.expressions.CfirAssignment
-import org.cangjie.cfir.expressions.CfirBinaryOp
-import org.cangjie.cfir.expressions.CfirComparisonExpression
-import org.cangjie.cfir.expressions.CfirErrorExpression
-import org.cangjie.cfir.expressions.CfirExpression
-import org.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangjie.cfir.expressions.CfirIfExpression
-import org.cangjie.cfir.expressions.CfirJumpExpression
-import org.cangjie.cfir.expressions.CfirLiteralExpression
-import org.cangjie.cfir.expressions.CfirMatchExpression
-import org.cangjie.cfir.expressions.CfirPropertyAccess
-import org.cangjie.cfir.expressions.CfirQualifiedAccess
-import org.cangjie.cfir.expressions.CfirRangeExpression
-import org.cangjie.cfir.expressions.CfirReturnExpression
-import org.cangjie.cfir.expressions.CfirStatement
-import org.cangjie.cfir.expressions.CfirSubscriptExpression
-import org.cangjie.cfir.expressions.CfirThrowExpression
-import org.cangjie.cfir.expressions.CfirTryExpression
-import org.cangjie.cfir.expressions.CfirTypeOperator
-import org.cangjie.cfir.types.CfirBasicTypeRef
-import org.cangjie.cfir.types.CfirErrorTypeRef
-import org.cangjie.cfir.types.CfirFunctionTypeRef
-import org.cangjie.cfir.types.CfirImplicitTypeRef
-import org.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangjie.cfir.types.CfirTupleTypeRef
-import org.cangjie.cfir.types.CfirTypeRef
-import org.cangjie.cfir.types.CfirUserTypeRef
-import org.cangjie.cfir.types.CfirVArrayTypeRef
+import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.DIAGNOSTICS_LIST
+import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.ErrorListDiagnosticListRenderer
+import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.generateDiagnostics
+import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirInvalidDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
+import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
+import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
+import org.cangnova.cangjie.cfir.expressions.CfirJumpExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
+import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
+import org.cangnova.cangjie.cfir.expressions.CfirRangeExpression
+import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
+import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
+import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
+import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
+import org.cangnova.cangjie.cfir.types.CfirFunctionTypeRef
+import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTupleTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
+import org.cangnova.cangjie.cfir.types.CfirVArrayTypeRef
 import java.io.File
 
 fun main(args: Array<String>) {
-    val basePackage = "org.cangjie.cfir.analysis"
+    val basePackage = "org.cangnova.cangjie.cfir.analysis"
     val packageName = "$basePackage.diagnostics"
     val generationPath = args.getOrNull(1)?.let(::File)
     val task = when {
@@ -60,6 +60,7 @@ fun main(args: Array<String>) {
 
     if (task == "checkers" || task == "diagnostics" || task == "all") {
         val checkersPath = generationPath ?: File("cfir/checkers/gen")
+        val diagnosticsPath = File("cfir/diagnostics/gen")
         generateCheckersComponents(
             checkersPath,
             "$basePackage.checkers.type",
@@ -134,7 +135,7 @@ fun main(args: Array<String>) {
         }
 
         generateDiagnostics(
-            checkersPath,
+            diagnosticsPath,
             packageName,
             DIAGNOSTICS_LIST,
             starImportsToAdd = setOf(
@@ -142,6 +143,6 @@ fun main(args: Array<String>) {
                 ErrorListDiagnosticListRenderer.DIAGNOSTICS_PACKAGE,
             ),
         )
-        generateNonSuppressibleErrorNamesFile(checkersPath, packageName)
+        generateNonSuppressibleErrorNamesFile(diagnosticsPath, packageName)
     }
 }

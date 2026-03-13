@@ -5,13 +5,13 @@
 
 @file:Suppress("DuplicatedCode", "unused")
 
-package org.cangjie.cfir.references.builder
+package org.cangnova.cangjie.cfir.references.builder
 
 import kotlin.contracts.*
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangjie.cfir.references.CfirNamedReference
-import org.cangjie.cfir.references.impl.CfirNamedReferenceImpl
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
+import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.references.impl.CfirNamedReferenceImpl
 import org.cangnova.cangjie.name.Name
 
 @CfirBuilderDsl

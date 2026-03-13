@@ -1,12 +1,12 @@
-package org.cangjie.cfir.analysis.checkers.declaration
+package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
-import org.cangjie.cfir.analysis.checkers.MppCheckerKind
-import org.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangjie.cfir.declarations.CfirInvalidDeclaration
-import org.cangjie.cfir.diagnostics.DiagnosticReporter
-import org.cangjie.cfir.diagnostics.reportOn
-import org.cangjie.cfir.source.AbstractCjSourceElement
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirInvalidDeclaration
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
 
 object CfirInvalidDeclarationReasonChecker : CfirInvalidDeclarationChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)

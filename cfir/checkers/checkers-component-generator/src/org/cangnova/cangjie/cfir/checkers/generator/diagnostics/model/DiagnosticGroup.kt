@@ -1,9 +1,9 @@
-﻿package org.cangjie.cfir.checkers.generator.diagnostics.model
+﻿package org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model
 
 import com.intellij.psi.PsiElement
-import org.cangjie.cfir.diagnostics.Severity
-import org.cangjie.config.LanguageFeature
-import org.cangjie.util.PrivateForInline
+import org.cangnova.cangjie.cfir.diagnostics.Severity
+import org.cangnova.cangjie.config.LanguageFeature
+import org.cangnova.cangjie.util.PrivateForInline
 import kotlin.properties.PropertyDelegateProvider
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.typeOf

@@ -5,29 +5,40 @@
 
 @file:Suppress("DuplicatedCode")
 
-package org.cangjie.cfir.expressions.impl
+package org.cangnova.cangjie.cfir.expressions.impl
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.declarations.CfirFunction
-import org.cangjie.cfir.expressions.CfirLambdaExpression
-import org.cangjie.cfir.types.ConeCangjieType
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.expressions.CfirLambdaExpression
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 class CfirLambdaExpressionImpl @CfirImplementationDetail constructor(
-    override val coneTypeOrNull: ConeCangjieType?,
-    override val anonymousFunction: CfirFunction,
+    override var coneTypeOrNull: ConeCangjieType?,
+    override var anonymousFunction: CfirFunction,
 ) : CfirLambdaExpression() {
-    override val source: CfirSourceElement?
+    override val source: CjSourceElement?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         anonymousFunction.accept(visitor, data)
     }
 
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+     {
+        this.coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun <D> transformAnonymousFunction(transformer: CfirTransformer<D>, data: D): CfirLambdaExpression
+     {
+        this.anonymousFunction = anonymousFunction.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirFunction
+        return this
+    }
+
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirLambdaExpressionImpl {
-        anonymousFunction.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
+        transformAnonymousFunction(transformer, data)
         return this
     }
 }

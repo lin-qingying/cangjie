@@ -1,7 +1,7 @@
-package org.cangjie.analysis.api.impl.base.permissions
+package org.cangnova.cangjie.analysis.api.impl.base.permissions
 
-import org.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry
-import org.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry.CaExplicitAnalysisRestriction
+import org.cangnova.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry
+import org.cangnova.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry.CaExplicitAnalysisRestriction
 
 internal class CaBaseAnalysisPermissionRegistry : CaAnalysisPermissionRegistry {
     private val threadLocalExplicitAnalysisRestriction: ThreadLocal<CaExplicitAnalysisRestriction?> =

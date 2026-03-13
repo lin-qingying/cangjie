@@ -1,6 +1,6 @@
-package org.cangjie.cfir.resolve.providers
+package org.cangnova.cangjie.cfir.resolve.providers
 
-import org.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
  * Resolve provider registration pipeline.

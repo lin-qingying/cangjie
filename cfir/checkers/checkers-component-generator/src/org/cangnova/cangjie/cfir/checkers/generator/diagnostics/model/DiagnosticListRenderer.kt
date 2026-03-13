@@ -1,4 +1,4 @@
-﻿package org.cangjie.cfir.checkers.generator.diagnostics.model
+﻿package org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model
 
 import java.io.File
 

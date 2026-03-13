@@ -1,12 +1,12 @@
-package org.cangjie.cfir.resolve.transformers
+package org.cangnova.cangjie.cfir.resolve.transformers
 
-import org.cangjie.cfir.CfirSessionAndScopeSessionHolder
-import org.cangjie.cfir.declarations.CfirFile
-import org.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangjie.cfir.scopes.CfirScopeSession
-import org.cangjie.cfir.session.CfirSession
-import org.cangjie.cfir.session.lazyDeclarationResolver
-import org.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.CfirSessionAndScopeSessionHolder
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.lazyDeclarationResolver
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 
 @RequiresOptIn(message = "Should be used just only in resolve processor")
 annotation class AdapterForResolveProcessor

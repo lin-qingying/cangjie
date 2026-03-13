@@ -5,34 +5,34 @@
 
 @file:Suppress("DuplicatedCode")
 
-package org.cangjie.cfir.declarations.impl
+package org.cangnova.cangjie.cfir.declarations.impl
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.common.CfirModuleData
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.declarations.*
-import org.cangjie.cfir.expressions.CfirExpression
-import org.cangjie.cfir.patterns.CfirPattern
-import org.cangjie.cfir.symbols.CfirSymbol
-import org.cangjie.cfir.types.CfirTypeRef
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 class CfirPatternVariableImpl @CfirImplementationDetail constructor(
     override val symbol: CfirSymbol<*>,
     override val origin: CfirDeclarationOrigin,
-    override val annotations: List<CfirAnnotation>,
+    override var annotations: List<CfirAnnotation>,
     override val moduleData: CfirModuleData,
-    override val resolvePhase: CfirResolvePhase,
+    override var resolvePhase: CfirResolvePhase,
     override val attributes: CfirDeclarationAttributes,
-    override val status: CfirDeclarationStatus,
-    override val typeParameters: List<CfirTypeParameter>,
-    override val returnTypeRef: CfirTypeRef,
-    override val pattern: CfirPattern,
-    override val initializer: CfirExpression?,
+    override var status: CfirDeclarationStatus,
+    override var typeParameters: List<CfirTypeParameter>,
+    override var returnTypeRef: CfirTypeRef,
+    override var pattern: CfirPattern,
+    override var initializer: CfirExpression?,
     override val isVar: Boolean,
 ) : CfirPatternVariable() {
-    override val source: CfirSourceElement?
+    override val source: CjSourceElement?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -43,12 +43,68 @@ class CfirPatternVariableImpl @CfirImplementationDetail constructor(
         initializer?.accept(visitor, data)
     }
 
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+     {
+        this.annotations = newAnnotations
+    }
+
+    override fun replaceResolvePhase(newResolvePhase: CfirResolvePhase)
+     {
+        this.resolvePhase = newResolvePhase
+    }
+
+    override fun replaceStatus(newStatus: CfirDeclarationStatus)
+     {
+        this.status = newStatus
+    }
+
+    override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
+     {
+        this.returnTypeRef = newReturnTypeRef
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
+     {
+        this.annotations = annotations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnnotation }
+        return this
+    }
+
+    override fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
+     {
+        this.status = status.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirDeclarationStatus
+        return this
+    }
+
+    override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
+     {
+        this.typeParameters = typeParameters.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirTypeParameter }
+        return this
+    }
+
+    override fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
+     {
+        this.returnTypeRef = returnTypeRef.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirTypeRef
+        return this
+    }
+
+    override fun <D> transformPattern(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
+     {
+        this.pattern = pattern.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirPattern
+        return this
+    }
+
+    override fun <D> transformInitializer(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
+     {
+        this.initializer = initializer?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression?
+        return this
+    }
+
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirPatternVariableImpl {
-        annotations.forEach { it.transform<org.cangjie.cfir.CfirElement, D>(transformer, data) }
-        typeParameters.forEach { it.transform<org.cangjie.cfir.CfirElement, D>(transformer, data) }
-        returnTypeRef.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
-        pattern.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
-        initializer?.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
+        transformAnnotations(transformer, data)
+        transformTypeParameters(transformer, data)
+        transformReturnTypeRef(transformer, data)
+        transformPattern(transformer, data)
+        transformInitializer(transformer, data)
         return this
     }
 }

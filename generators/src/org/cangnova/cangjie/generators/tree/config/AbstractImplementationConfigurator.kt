@@ -3,11 +3,11 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.generators.tree.config
+package org.cangnova.cangjie.generators.tree.config
 
-import org.cangjie.generators.tree.*
-import org.cangjie.generators.tree.imports.Importable
-import org.cangjie.generators.tree.printer.call
+import org.cangnova.cangjie.generators.tree.*
+import org.cangnova.cangjie.generators.tree.imports.Importable
+import org.cangnova.cangjie.generators.tree.printer.call
 
 /**
  * Provides a DSL to configure `Impl` classes for tree nodes.

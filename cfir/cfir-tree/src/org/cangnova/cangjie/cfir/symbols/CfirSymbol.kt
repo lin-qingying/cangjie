@@ -1,6 +1,6 @@
-package org.cangjie.cfir.symbols
+package org.cangnova.cangjie.cfir.symbols
 
-import org.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.*
 
 /**
  * 符号基类。每个声明对应一个唯一的符号实例。

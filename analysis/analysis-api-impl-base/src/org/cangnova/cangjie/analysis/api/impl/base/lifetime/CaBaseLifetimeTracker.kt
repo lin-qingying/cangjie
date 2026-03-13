@@ -1,9 +1,9 @@
-package org.cangjie.analysis.api.impl.base.lifetime
+package org.cangnova.cangjie.analysis.api.impl.base.lifetime
 
 import com.intellij.openapi.project.Project
-import org.cangjie.analysis.api.CaSession
-import org.cangjie.analysis.api.lifetime.CaLifetimeToken
-import org.cangjie.analysis.api.platform.lifetime.CaLifetimeTracker
+import org.cangnova.cangjie.analysis.api.CaSession
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
+import org.cangnova.cangjie.analysis.api.platform.lifetime.CaLifetimeTracker
 
 /**
  * 基础生命周期追踪器（对齐 Kotlin 的 KaBaseLifetimeTracker）。

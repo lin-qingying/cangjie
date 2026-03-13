@@ -1,9 +1,9 @@
-package org.cangjie.cfir.resolve.transformers
+package org.cangnova.cangjie.cfir.resolve.transformers
 
-import org.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangjie.cfir.resolve.CfirDiagnosticReporter
-import org.cangjie.cfir.scopes.CfirScopeSession
-import org.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
+import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 
 fun registerResolveProcessors(
     registry: CfirPhaseResolverRegistry,
@@ -33,8 +33,4 @@ fun registerResolveProcessors(
         CfirImplicitTypesResolveProcessor(session, scopeSession),
     )
     registry.registerProcessor(CfirResolvePhase.BODY_RESOLVE, CfirBodyResolveProcessor(session, scopeSession))
-    registry.registerProcessor(
-        CfirResolvePhase.CHECKERS,
-        CfirCheckersResolveProcessor(diagnosticReporter, session, scopeSession),
-    )
 }

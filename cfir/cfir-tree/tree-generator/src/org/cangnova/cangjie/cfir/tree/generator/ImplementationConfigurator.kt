@@ -1,7 +1,7 @@
-package org.cangjie.cfir.tree.generator
+package org.cangnova.cangjie.cfir.tree.generator
 
-import org.cangjie.cfir.tree.generator.context.AbstractCfirTreeImplementationConfigurator
-import org.cangjie.cfir.tree.generator.model.Element
+import org.cangnova.cangjie.cfir.tree.generator.context.AbstractCfirTreeImplementationConfigurator
+import org.cangnova.cangjie.cfir.tree.generator.model.Element
 
 object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator() {
     override fun configure(model: Model) = with(CfirTree) {

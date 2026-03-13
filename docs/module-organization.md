@@ -284,7 +284,7 @@ K2 无对应模块，为仓颉语言独有的编译阶段。
 
 | 当前包名 | 统一为 | 涉及模块 |
 |---|---|---|
-| `org.cangnova.cangjie.*` | `org.cangjie.*` | `:common`, `:util`, `:psi`, `:compiler:cli` |
+| `org.cangnova.cangjie.*` | `org.cangnova.cangjie.*` | `:common`, `:util`, `:psi`, `:compiler:cli` |
 
 ---
 

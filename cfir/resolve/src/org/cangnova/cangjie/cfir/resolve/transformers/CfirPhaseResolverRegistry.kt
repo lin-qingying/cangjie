@@ -1,7 +1,7 @@
-package org.cangjie.cfir.resolve.transformers
+package org.cangnova.cangjie.cfir.resolve.transformers
 
-import org.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangjie.cfir.session.CfirSessionComponent
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 
 /**
  * 按阶段注册解析处理器。

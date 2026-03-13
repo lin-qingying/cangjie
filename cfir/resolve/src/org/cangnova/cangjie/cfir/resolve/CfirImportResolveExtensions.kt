@@ -1,7 +1,7 @@
-package org.cangjie.cfir.resolve
+package org.cangnova.cangjie.cfir.resolve
 
-import org.cangjie.cfir.resolve.services.CfirResolvedImportBinding
-import org.cangjie.cfir.resolve.services.CfirResolvedImportTarget
+import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
+import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 

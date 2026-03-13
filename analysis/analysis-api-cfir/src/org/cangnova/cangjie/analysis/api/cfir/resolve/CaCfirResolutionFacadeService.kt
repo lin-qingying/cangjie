@@ -1,8 +1,8 @@
-﻿package org.cangjie.analysis.api.cfir.resolve
+﻿package org.cangnova.cangjie.analysis.api.cfir.resolve
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.CaModule
 
 /**
  * 解析外观服务。

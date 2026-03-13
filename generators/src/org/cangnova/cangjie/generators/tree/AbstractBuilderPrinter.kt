@@ -3,12 +3,12 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.generators.tree
+package org.cangnova.cangjie.generators.tree
 
-import org.cangjie.generators.tree.printer.FunctionParameter
-import org.cangjie.generators.tree.printer.ImportCollectingPrinter
-import org.cangjie.generators.tree.printer.printFunctionWithBlockBody
-import org.cangjie.generators.util.printBlock
+import org.cangnova.cangjie.generators.tree.printer.FunctionParameter
+import org.cangnova.cangjie.generators.tree.printer.ImportCollectingPrinter
+import org.cangnova.cangjie.generators.tree.printer.printFunctionWithBlockBody
+import org.cangnova.cangjie.generators.util.printBlock
 import org.cangnova.cangjie.utils.withIndent
 
 abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(val printer: ImportCollectingPrinter)

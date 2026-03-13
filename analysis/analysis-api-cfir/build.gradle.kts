@@ -7,6 +7,8 @@ dependencies {
     api(project(":analysis:analysis-api-impl-base"))
     api(project(":cfir:cfir-tree"))
     api(project(":cfir:resolve"))
+    api(project(":cfir:checkers"))
+    api(project(":cfir:diagnostics"))
     implementation(project(":psi"))
 
     compileOnly(intellijCore())

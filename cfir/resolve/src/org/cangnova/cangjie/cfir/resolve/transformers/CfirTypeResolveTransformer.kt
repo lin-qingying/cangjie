@@ -3,47 +3,47 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangjie.cfir.resolve.transformers
+package org.cangnova.cangjie.cfir.resolve.transformers
 
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentList
-import org.cangjie.KtFakeSourceElementKind
-import org.cangjie.builtins.StandardNames
-import org.cangjie.config.AnalysisFlags
-import org.cangjie.config.LanguageFeature
-import org.cangjie.config.LanguageVersionSettings
-import org.cangjie.descriptors.ClassKind
-import org.cangjie.descriptors.annotations.AnnotationUseSiteTarget
-import org.cangjie.descriptors.annotations.AnnotationUseSiteTarget.*
-import org.cangjie.cfir.*
-import org.cangjie.cfir.declarations.*
-import org.cangjie.cfir.declarations.utils.fromPrimaryConstructor
-import org.cangjie.cfir.declarations.utils.isFromVararg
-import org.cangjie.cfir.declarations.utils.isInner
-import org.cangjie.cfir.expressions.*
-import org.cangjie.cfir.expressions.builder.buildAnnotationCallCopy
-import org.cangjie.cfir.expressions.builder.buildAnnotationCopy
-import org.cangjie.cfir.expressions.builder.buildExpressionStub
-import org.cangjie.cfir.extensions.extensionService
-import org.cangjie.cfir.extensions.replSnippetResolveExtensions
-import org.cangjie.cfir.resolve.ScopeSession
-import org.cangjie.cfir.resolve.TypeResolutionConfiguration
-import org.cangjie.cfir.resolve.diagnostics.ConeAmbiguouslyResolvedAnnotationFromPlugin
-import org.cangjie.cfir.resolve.diagnostics.ConeCyclicTypeBound
-import org.cangjie.cfir.resolve.lookupSuperTypes
-import org.cangjie.cfir.scopes.CfirScope
-import org.cangjie.cfir.scopes.createImportingScopes
-import org.cangjie.cfir.scopes.getNestedClassifierScope
-import org.cangjie.cfir.scopes.impl.CfirMemberTypeParameterScope
-import org.cangjie.cfir.scopes.impl.nestedClassifierScope
-import org.cangjie.cfir.scopes.impl.wrapNestedClassifierScopeWithSubstitutionForSuperType
-import org.cangjie.cfir.types.*
-import org.cangjie.cfir.types.builder.buildErrorTypeRef
-import org.cangjie.cfir.visitors.transformSingle
-import org.cangjie.name.StandardClassIds
-import org.cangjie.util.PrivateForInline
-import org.cangjie.utils.addToStdlib.shouldNotBeCalled
+import org.cangnova.cangjie.KtFakeSourceElementKind
+import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.config.AnalysisFlags
+import org.cangnova.cangjie.config.LanguageFeature
+import org.cangnova.cangjie.config.LanguageVersionSettings
+import org.cangnova.cangjie.descriptors.ClassKind
+import org.cangnova.cangjie.descriptors.annotations.AnnotationUseSiteTarget
+import org.cangnova.cangjie.descriptors.annotations.AnnotationUseSiteTarget.*
+import org.cangnova.cangjie.cfir.*
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.utils.fromPrimaryConstructor
+import org.cangnova.cangjie.cfir.declarations.utils.isFromVararg
+import org.cangnova.cangjie.cfir.declarations.utils.isInner
+import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.expressions.builder.buildAnnotationCallCopy
+import org.cangnova.cangjie.cfir.expressions.builder.buildAnnotationCopy
+import org.cangnova.cangjie.cfir.expressions.builder.buildExpressionStub
+import org.cangnova.cangjie.cfir.extensions.extensionService
+import org.cangnova.cangjie.cfir.extensions.replSnippetResolveExtensions
+import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.TypeResolutionConfiguration
+import org.cangnova.cangjie.cfir.resolve.diagnostics.ConeAmbiguouslyResolvedAnnotationFromPlugin
+import org.cangnova.cangjie.cfir.resolve.diagnostics.ConeCyclicTypeBound
+import org.cangnova.cangjie.cfir.resolve.lookupSuperTypes
+import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.createImportingScopes
+import org.cangnova.cangjie.cfir.scopes.getNestedClassifierScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirMemberTypeParameterScope
+import org.cangnova.cangjie.cfir.scopes.impl.nestedClassifierScope
+import org.cangnova.cangjie.cfir.scopes.impl.wrapNestedClassifierScopeWithSubstitutionForSuperType
+import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
+import org.cangnova.cangjie.cfir.visitors.transformSingle
+import org.cangnova.cangjie.name.StandardClassIds
+import org.cangnova.cangjie.util.PrivateForInline
+import org.cangnova.cangjie.utils.addToStdlib.shouldNotBeCalled
 
 class CfirTypeResolveProcessor(
     session: CfirSession,
@@ -504,7 +504,7 @@ open class CfirTypeResolveTransformer(
 
     /**
      * Changes to the order of scopes should also be reflected in
-     * [org.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext.withScopesForClass].
+     * [org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext.withScopesForClass].
      * Otherwise, we get different behavior between type resolve and body resolve phases.
      */
     inline fun <R> withClassScopes(

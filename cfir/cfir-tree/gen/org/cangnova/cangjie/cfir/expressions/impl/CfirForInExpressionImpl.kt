@@ -5,27 +5,27 @@
 
 @file:Suppress("DuplicatedCode")
 
-package org.cangjie.cfir.expressions.impl
+package org.cangnova.cangjie.cfir.expressions.impl
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.common.CfirSourceElement
-import org.cangjie.cfir.declarations.CfirVariable
-import org.cangjie.cfir.expressions.CfirBlock
-import org.cangjie.cfir.expressions.CfirExpression
-import org.cangjie.cfir.expressions.CfirForInExpression
-import org.cangjie.cfir.types.ConeCangjieType
-import org.cangjie.cfir.visitors.CfirTransformer
-import org.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
+import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 class CfirForInExpressionImpl @CfirImplementationDetail constructor(
-    override val coneTypeOrNull: ConeCangjieType?,
-    override val condition: CfirExpression,
+    override var coneTypeOrNull: ConeCangjieType?,
+    override var condition: CfirExpression,
     override val isDoWhile: Boolean,
-    override val variable: CfirVariable,
-    override val iterable: CfirExpression,
-    override val body: CfirBlock,
+    override var variable: CfirVariable,
+    override var iterable: CfirExpression,
+    override var body: CfirBlock,
 ) : CfirForInExpression() {
-    override val source: CfirSourceElement?
+    override val source: CjSourceElement?
         get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -35,11 +35,40 @@ class CfirForInExpressionImpl @CfirImplementationDetail constructor(
         body.accept(visitor, data)
     }
 
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+     {
+        this.coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun <D> transformCondition(transformer: CfirTransformer<D>, data: D): CfirForInExpression
+     {
+        this.condition = condition.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression
+        return this
+    }
+
+    override fun <D> transformVariable(transformer: CfirTransformer<D>, data: D): CfirForInExpression
+     {
+        this.variable = variable.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirVariable
+        return this
+    }
+
+    override fun <D> transformIterable(transformer: CfirTransformer<D>, data: D): CfirForInExpression
+     {
+        this.iterable = iterable.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression
+        return this
+    }
+
+    override fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirForInExpression
+     {
+        this.body = body.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirBlock
+        return this
+    }
+
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirForInExpressionImpl {
-        condition.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
-        variable.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
-        iterable.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
-        body.transform<org.cangjie.cfir.CfirElement, D>(transformer, data)
+        transformCondition(transformer, data)
+        transformVariable(transformer, data)
+        transformIterable(transformer, data)
+        transformBody(transformer, data)
         return this
     }
 }

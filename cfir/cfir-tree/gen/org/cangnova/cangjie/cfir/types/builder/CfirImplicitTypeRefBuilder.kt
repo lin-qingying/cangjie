@@ -5,11 +5,11 @@
 
 @file:Suppress("DuplicatedCode", "unused")
 
-package org.cangjie.cfir.types.builder
+package org.cangnova.cangjie.cfir.types.builder
 
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.types.CfirImplicitTypeRef
-import org.cangjie.cfir.types.impl.CfirImplicitTypeRefImpl
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.impl.CfirImplicitTypeRefImpl
 
 @OptIn(CfirImplementationDetail::class)
 fun buildImplicitTypeRef(): CfirImplicitTypeRef {

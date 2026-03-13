@@ -1,4 +1,4 @@
-package org.cangjie.cfir.builder
+package org.cangnova.cangjie.cfir.builder
 
 import java.io.File
 

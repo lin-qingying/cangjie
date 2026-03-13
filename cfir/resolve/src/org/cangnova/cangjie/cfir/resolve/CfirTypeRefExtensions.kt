@@ -1,9 +1,9 @@
-package org.cangjie.cfir.resolve
+package org.cangnova.cangjie.cfir.resolve
 
-import org.cangjie.cfir.types.CfirBasicTypeRef
-import org.cangjie.cfir.types.CfirErrorTypeRef
-import org.cangjie.cfir.types.CfirImplicitTypeRef
-import org.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
+import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 
 internal fun CfirTypeRef.renderStableKey(): String = toString()
 

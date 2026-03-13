@@ -5,13 +5,13 @@
 
 @file:Suppress("DuplicatedCode", "unused")
 
-package org.cangjie.cfir.types.builder
+package org.cangnova.cangjie.cfir.types.builder
 
 import kotlin.contracts.*
-import org.cangjie.cfir.CfirImplementationDetail
-import org.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangjie.cfir.types.CfirBasicTypeRef
-import org.cangjie.cfir.types.impl.CfirBasicTypeRefImpl
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
+import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
+import org.cangnova.cangjie.cfir.types.impl.CfirBasicTypeRefImpl
 import org.cangnova.cangjie.name.Name
 
 @CfirBuilderDsl

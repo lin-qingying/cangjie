@@ -1,10 +1,11 @@
-package org.cangjie.analysis.api.cfir.resolve
+package org.cangnova.cangjie.analysis.api.cfir.resolve
 
-import org.cangjie.analysis.api.CaModule
-import org.cangjie.cfir.common.CfirModuleData
-import org.cangjie.cfir.resolve.transformers.CfirResolveComponentsRegistrar
-import org.cangjie.cfir.session.CfirSession
-import org.cangjie.cfir.resolve.transformers.CfirPhaseResolverRegistry
+import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.cfir.analysis.resolve.CfirCheckersComponentRegistrar
+import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirResolveComponentsRegistrar
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirPhaseResolverRegistry
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -24,6 +25,7 @@ class CaCfirResolutionFacadeServiceImpl : CaCfirResolutionFacadeService {
         session.register(CfirDiagnosticReporter::class, diagnostics)
         session.register(CfirDiagnosticCollector::class, diagnostics)
         CfirResolveComponentsRegistrar.register(session, phaseResolverRegistry, diagnostics)
+        CfirCheckersComponentRegistrar.register(session, phaseResolverRegistry, diagnostics)
 
         return CaCfirResolutionFacadeImpl(
             useSiteModule = module,
