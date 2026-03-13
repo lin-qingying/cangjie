@@ -22,7 +22,8 @@ abstract class CfirPartialBodyResolveTransformer(
         get() = transformer.components
 
     override fun <E : CfirElement> transformElement(element: E, data: CfirResolutionMode): E {
+        element.transformChildren(transformer, data)
         @Suppress("UNCHECKED_CAST")
-        return element.transform(transformer, data) as E
+        return element as E
     }
 }

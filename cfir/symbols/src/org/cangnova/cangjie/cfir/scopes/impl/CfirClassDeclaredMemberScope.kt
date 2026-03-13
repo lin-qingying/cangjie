@@ -22,7 +22,7 @@ class CfirClassDeclaredMemberScope(
     private val classSymbol: CfirClassSymbol,
 ) : CfirClassScope {
 
-    private val memberIndex: MemberIndex by lazy { buildIndex(classSymbol.fir.declarations) }
+    private val memberIndex: MemberIndex by lazy { buildIndex(classSymbol.cfir.declarations) }
 
     override fun processClassifiersByName(name: Name, processor: (CfirClassSymbol) -> Unit) {
         memberIndex.classifiers[name]?.forEach(processor)

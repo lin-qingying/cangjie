@@ -7,6 +7,7 @@
 
 package org.cangnova.cangjie.cfir.declarations.impl
 
+import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
@@ -23,6 +24,7 @@ class CfirFileImpl @CfirImplementationDetail constructor(
     override var resolvePhase: CfirResolvePhase,
     override val attributes: CfirDeclarationAttributes,
     override val name: String,
+    override val sourceFile: CjSourceFile?,
     override var packageDirective: CfirPackageDirective,
     override var imports: List<CfirImport>,
     override var declarations: List<CfirDeclaration>,
