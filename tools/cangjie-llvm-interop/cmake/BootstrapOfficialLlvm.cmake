@@ -50,12 +50,39 @@ function(cangjie_bootstrap_official_llvm)
 
     string(REPLACE ";" "\\;" llvm_targets "${BOOTSTRAP_TARGETS}")
 
+    set(bootstrap_c_flags "${CMAKE_C_FLAGS} $ENV{CFLAGS}")
+    set(bootstrap_cxx_flags "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
+    string(REPLACE "-Qunused-arguments" "" bootstrap_c_flags "${bootstrap_c_flags}")
+    string(REPLACE "-Qunused-arguments" "" bootstrap_cxx_flags "${bootstrap_cxx_flags}")
+    string(STRIP "${bootstrap_c_flags}" bootstrap_c_flags)
+    string(STRIP "${bootstrap_cxx_flags}" bootstrap_cxx_flags)
+
+    set(bootstrap_compiler_args)
+    if(NOT MSVC)
+        find_program(BOOTSTRAP_CLANG_EXECUTABLE NAMES clang)
+        find_program(BOOTSTRAP_CLANGXX_EXECUTABLE NAMES clang++)
+        if(BOOTSTRAP_CLANG_EXECUTABLE AND BOOTSTRAP_CLANGXX_EXECUTABLE)
+            list(APPEND bootstrap_compiler_args
+                -DCMAKE_C_COMPILER=${BOOTSTRAP_CLANG_EXECUTABLE}
+                -DCMAKE_CXX_COMPILER=${BOOTSTRAP_CLANGXX_EXECUTABLE}
+            )
+            message(STATUS "Bootstrapping LLVM with clang toolchain: ${BOOTSTRAP_CLANG_EXECUTABLE}, ${BOOTSTRAP_CLANGXX_EXECUTABLE}")
+        endif()
+    endif()
+
+    set(bootstrap_shared_llvm OFF)
+    if(NOT MSVC)
+        set(bootstrap_shared_llvm ON)
+    endif()
+
     set(configure_args
         -S "${llvm_source_dir}/llvm"
         -B "${BOOTSTRAP_BUILD_DIR}"
         -G "${BOOTSTRAP_GENERATOR}"
         -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_INSTALL_PREFIX=${BOOTSTRAP_INSTALL_DIR}
+        -DCMAKE_C_FLAGS=${bootstrap_c_flags}
+        -DCMAKE_CXX_FLAGS=${bootstrap_cxx_flags}
         -DLLVM_ENABLE_PROJECTS=
         -DLLVM_TARGETS_TO_BUILD=${llvm_targets}
         -DLLVM_INCLUDE_BENCHMARKS=OFF
@@ -66,11 +93,11 @@ function(cangjie_bootstrap_official_llvm)
         -DLLVM_ENABLE_ZLIB=OFF
         -DLLVM_ENABLE_ZSTD=OFF
         -DLLVM_BUILD_TOOLS=OFF
-        -DLLVM_BUILD_LLVM_DYLIB=ON
-        -DLLVM_LINK_LLVM_DYLIB=ON
+        -DLLVM_BUILD_LLVM_DYLIB=${bootstrap_shared_llvm}
+        -DLLVM_LINK_LLVM_DYLIB=${bootstrap_shared_llvm}
     )
     execute_process(
-        COMMAND "${CMAKE_COMMAND}" ${configure_args}
+        COMMAND "${CMAKE_COMMAND}" ${configure_args} ${bootstrap_compiler_args}
         RESULT_VARIABLE configure_result
     )
     if(NOT configure_result EQUAL 0)
