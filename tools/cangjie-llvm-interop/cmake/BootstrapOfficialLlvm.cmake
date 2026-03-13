@@ -56,6 +56,7 @@ function(cangjie_bootstrap_official_llvm)
         file(WRITE "${cangjie_demangle_header}" "#pragma once\n#include <string>\nnamespace Cangjie {\nclass DemangledName {\npublic:\n  std::string GetPkgName() const { return std::string(); }\n  std::string GetFullName() const { return std::string(); }\n};\ninline DemangledName Demangle(const std::string &) { return DemangledName(); }\n} // namespace Cangjie\n")
     endif()
 
+
     set(cangjie_demangle_archive "${llvm_source_dir}/utils/demangle/libcangjie-demangle.a")
     if(NOT EXISTS "${cangjie_demangle_archive}")
         file(MAKE_DIRECTORY "${llvm_source_dir}/utils/demangle")
@@ -105,6 +106,18 @@ function(cangjie_bootstrap_official_llvm)
         endif()
     endif()
 
+    set(bootstrap_archive_args)
+    if(MSVC)
+        find_program(BOOTSTRAP_LLVM_AR_EXECUTABLE NAMES llvm-ar)
+        find_program(BOOTSTRAP_LLVM_RANLIB_EXECUTABLE NAMES llvm-ranlib)
+        if(BOOTSTRAP_LLVM_AR_EXECUTABLE)
+            list(APPEND bootstrap_archive_args -DCMAKE_AR=${BOOTSTRAP_LLVM_AR_EXECUTABLE})
+        endif()
+        if(BOOTSTRAP_LLVM_RANLIB_EXECUTABLE)
+            list(APPEND bootstrap_archive_args -DCMAKE_RANLIB=${BOOTSTRAP_LLVM_RANLIB_EXECUTABLE})
+        endif()
+    endif()
+
     set(bootstrap_shared_llvm OFF)
     if(NOT MSVC)
         set(bootstrap_shared_llvm ON)
@@ -132,7 +145,7 @@ function(cangjie_bootstrap_official_llvm)
         -DLLVM_LINK_LLVM_DYLIB=${bootstrap_shared_llvm}
     )
     execute_process(
-        COMMAND "${CMAKE_COMMAND}" ${configure_args} ${bootstrap_compiler_args}
+        COMMAND "${CMAKE_COMMAND}" ${configure_args} ${bootstrap_compiler_args} ${bootstrap_archive_args}
         RESULT_VARIABLE configure_result
     )
     if(NOT configure_result EQUAL 0)
