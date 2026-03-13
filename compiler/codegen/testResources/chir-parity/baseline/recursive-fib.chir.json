@@ -1,0 +1,12 @@
+﻿{
+    "module":  "core",
+    "provenance":  {
+                       "sdk":  "C:/Users/lin17/.cangjie/sdks/cangjie-1.0.0",
+                       "target":  "x86_64-w64-mingw32",
+                       "pipeline":  "cjc --save-temps -O0 + llvm-dis on .opt.bc",
+                       "compiler":  "cjc 1.0.0 (cjnative)"
+                   },
+    "source":  "source/recursive-fib.cj",
+    "function":  "main",
+    "package":  "baseline"
+}

@@ -1,0 +1,6 @@
+{
+  "scenario": "float_cmp",
+  "package": "parity",
+  "module": "advanced",
+  "function": "main"
+}

@@ -1,0 +1,6 @@
+{
+  "scenario": "bitwise_shift_chain",
+  "package": "parity",
+  "module": "advanced",
+  "function": "main"
+}

@@ -22,13 +22,14 @@ class ChirPrinterInspectorTest {
         val printed = ChirPrinter.print(samplePackage())
 
         val expected = """
-package printer.pkg id=pkg:printer
+package printer.pkg id=pkg:printer access=INTERNAL packageInit=_ literalInit=_
+  members globals(vars=0, funcs=0) imports(vars=0, funcs=0) types(local=0, imported=0)
   module alpha.mod id=mod:alpha
-    function alpha id=fn:alpha return=int32 entry=block:entry-alpha
+     function alpha id=fn:alpha return=int32 entry=block:entry-alpha
       block[0] entry-alpha id=block:entry-alpha
         term return id=term:return-alpha value=const(id=const:alpha,type=int32,literal=7)
   module beta.mod id=mod:beta
-    function beta id=fn:beta return=int32 entry=block:entry-beta
+     function beta id=fn:beta return=int32 entry=block:entry-beta
       param[0] x id=param:x type=int32 mutable=false
       block[0] entry-beta id=block:entry-beta
         expr[0] binary id=expr:add op=add left=const(id=const:1,type=int32,literal=1) right=const(id=const:2,type=int32,literal=2) type=int32

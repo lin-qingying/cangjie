@@ -1,0 +1,9 @@
+define i64 @main() {
+entry:
+  %expr_alloca = alloca i32, i64 1
+  %expr_ptrtoint = ptrtoint ptr %expr_alloca to i64
+  %expr_inttoptr = inttoptr i64 %expr_ptrtoint to ptr
+  %expr_bitcast = bitcast ptr %expr_inttoptr to ptr
+  %expr_ptrtoint2 = ptrtoint ptr %expr_bitcast to i64
+  ret i64 %expr_ptrtoint2
+}
