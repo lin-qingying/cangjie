@@ -1,0 +1,42 @@
+name: Build cangjie-llvm-interop
+
+on:
+  push:
+    paths:
+      - "tools/cangjie-llvm-interop/**"
+      - ".github/workflows/build-cangjie-llvm-interop.yml"
+  pull_request:
+    paths:
+      - "tools/cangjie-llvm-interop/**"
+      - ".github/workflows/build-cangjie-llvm-interop.yml"
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build g++ git python3
+
+      - name: Configure (bootstrap official LLVM)
+        run: |
+          cmake -S tools/cangjie-llvm-interop -B tools/cangjie-llvm-interop/build -G Ninja \
+            -DCANGJIE_USE_OFFICIAL_LLVM=ON \
+            -DCANGJIE_LLVM_REPOSITORY=https://gitcode.com/openharmony/third_party_llvm-project.git \
+            -DCANGJIE_LLVM_TAG=master \
+            -DCANGJIE_LLVM_TARGETS=X86
+
+      - name: Build
+        run: |
+          cmake --build tools/cangjie-llvm-interop/build --parallel
+
+      - name: Probe
+        run: |
+          tools/cangjie-llvm-interop/build/cangjie-llvm-interop probe --json
+

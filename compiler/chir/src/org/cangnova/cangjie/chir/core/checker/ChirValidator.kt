@@ -5,11 +5,14 @@ import org.cangnova.cangjie.chir.core.controlflow.ChirReturnTerminator
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
+import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
+import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
 import org.cangnova.cangjie.chir.core.expression.ChirUnaryExpression
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.chir.core.model.ChirPackage
 import org.cangnova.cangjie.chir.core.model.allDeclarations
 import org.cangnova.cangjie.chir.core.model.validateMinimalControlFlow
+import org.cangnova.cangjie.chir.core.type.ChirFunctionType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
 
@@ -91,37 +94,88 @@ class DefaultChirValidator : ChirValidator {
                 nodeId = function.semanticId,
             )
         }
+        val returnType = function.returnType
+        val isUnitReturn = returnType is ChirResolvedTypeRef && returnType.type == ChirPrimitiveType.UNIT
 
         function.blocks.forEach { block ->
             block.expressions.forEach { expression ->
                 when (expression) {
-                    is ChirUnaryExpression,
-                    is ChirBinaryExpression,
-                    is ChirCallExpression,
-                    -> if (expression.resultType == null) {
-                        issues += ChirValidationIssue(
-                            code = "MISSING_RESULT_TYPE",
-                            severity = ChirValidationSeverity.ERROR,
-                            message = "expression requires a result type",
-                            nodeId = expression.semanticId,
-                        )
+                    is ChirBinaryExpression -> {
+                        if (expression.left.type != expression.right.type) {
+                            issues += ChirValidationIssue(
+                                code = "BINARY_OPERAND_TYPE_MISMATCH",
+                                severity = ChirValidationSeverity.ERROR,
+                                message = "binary expression operands must have the same type",
+                                nodeId = expression.semanticId,
+                            )
+                        }
+                    }
+                    is ChirUnaryExpression -> Unit
+                    is ChirCallExpression -> {
+                        val functionType = (expression.callee.type as? ChirResolvedTypeRef)?.type as? ChirFunctionType
+                        if (functionType != null) {
+                            if (functionType.parameterTypes.size != expression.arguments.size) {
+                                issues += ChirValidationIssue(
+                                    code = "CALL_ARGUMENT_COUNT_MISMATCH",
+                                    severity = ChirValidationSeverity.ERROR,
+                                    message = "call argument count mismatch: expected ${functionType.parameterTypes.size}, actual ${expression.arguments.size}",
+                                    nodeId = expression.semanticId,
+                                )
+                            } else {
+                                expression.arguments.zip(functionType.parameterTypes).forEachIndexed { index, (argument, expectedType) ->
+                                    if (argument.type != expectedType) {
+                                        issues += ChirValidationIssue(
+                                            code = "CALL_ARGUMENT_TYPE_MISMATCH",
+                                            severity = ChirValidationSeverity.ERROR,
+                                            message = "call argument #$index type mismatch: expected ${expectedType.renderName}, actual ${argument.type.renderName}",
+                                            nodeId = expression.semanticId,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    is ChirMemoryExpression -> {
+                        val operation = expression.operation.lowercase()
+                        if (operation !in supportedMemoryOperations) {
+                            issues += ChirValidationIssue(
+                                code = "UNSUPPORTED_MEMORY_OPERATION",
+                                severity = ChirValidationSeverity.ERROR,
+                                message = "unsupported memory operation '${expression.operation}'",
+                                nodeId = expression.semanticId,
+                            )
+                        }
+                    }
+                    is ChirOtherExpression -> {
+                        val operation = expression.operation.lowercase()
+                        if (operation !in supportedOtherOperations) {
+                            issues += ChirValidationIssue(
+                                code = "UNSUPPORTED_OTHER_OPERATION",
+                                severity = ChirValidationSeverity.ERROR,
+                                message = "unsupported other expression operation '${expression.operation}'",
+                                nodeId = expression.semanticId,
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        val returnType = function.returnType
-        val isUnitReturn = returnType is ChirResolvedTypeRef && returnType.type == ChirPrimitiveType.UNIT
-        if (!isUnitReturn && function.blocks.isNotEmpty()) {
-            val hasValueReturn = function.blocks.any { block ->
-                (block.terminator as? ChirReturnTerminator)?.returnValue != null
-            }
-            if (!hasValueReturn) {
+            val returnTerminator = block.terminator as? ChirReturnTerminator ?: return@forEach
+            val returnValue = returnTerminator.returnValue
+            if (returnValue == null && !isUnitReturn) {
                 issues += ChirValidationIssue(
                     code = "RETURN_VALUE_MISMATCH",
-                    severity = ChirValidationSeverity.WARNING,
-                    message = "non-unit function ${function.name} has no return terminator carrying a value",
+                    severity = ChirValidationSeverity.ERROR,
+                    message = "non-unit function ${function.name} must return a value",
                     nodeId = function.semanticId,
+                )
+            }
+            if (returnValue != null && returnValue.type != returnType) {
+                issues += ChirValidationIssue(
+                    code = "RETURN_TYPE_MISMATCH",
+                    severity = ChirValidationSeverity.ERROR,
+                    message = "return value type ${returnValue.type.renderName} does not match function return type ${returnType.renderName}",
+                    nodeId = returnTerminator.semanticId,
                 )
             }
         }
@@ -142,5 +196,25 @@ class DefaultChirValidator : ChirValidator {
                 nodeId = functionId,
             )
         }
+    }
+
+    private companion object {
+        val supportedMemoryOperations = setOf("load", "store", "alloca", "gep", "getelementptr", "getelementptr.inbounds")
+        val supportedOtherOperations = setOf(
+            "select",
+            "bitcast",
+            "ptrtoint",
+            "inttoptr",
+            "trunc",
+            "zext",
+            "sext",
+            "fptrunc",
+            "fpext",
+            "sitofp",
+            "uitofp",
+            "fptosi",
+            "fptoui",
+            "phi",
+        )
     }
 }
