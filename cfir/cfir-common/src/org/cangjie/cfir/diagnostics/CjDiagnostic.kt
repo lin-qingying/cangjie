@@ -8,9 +8,9 @@ import org.cangjie.cfir.diagnostics.DiagnosticWithParameters1Marker
 import org.cangjie.cfir.diagnostics.DiagnosticWithParameters2Marker
 import org.cangjie.cfir.diagnostics.DiagnosticWithParameters3Marker
 import org.cangjie.cfir.diagnostics.DiagnosticWithParameters4Marker
-import org.cangjie.cfir.source.AbstractCjSourceElement
-import org.cangjie.cfir.source.CjLightSourceElement
-import org.cangjie.cfir.source.CjPsiSourceElement
+import org.cangjie.AbstractCjSourceElement
+import org.cangjie.CjLightSourceElement
+import org.cangjie.CjPsiSourceElement
 import org.cangjie.cli.common.messages.CompilerMessageSourceLocation
 
 // ------------------------------ diagnostics ------------------------------

@@ -1,6 +1,6 @@
 ﻿package org.cangjie.cfir.diagnostics.impl
 
-import org.cangjie.cfir.source.AbstractCjSourceElement
+import org.cangjie.AbstractCjSourceElement
 import org.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangjie.cfir.diagnostics.CjDiagnostic

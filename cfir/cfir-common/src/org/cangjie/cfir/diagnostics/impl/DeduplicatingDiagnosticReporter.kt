@@ -1,6 +1,6 @@
 ﻿package org.cangjie.cfir.diagnostics.impl
 
-import org.cangjie.cfir.source.AbstractCjSourceElement
+import org.cangjie.AbstractCjSourceElement
 import org.cangjie.cfir.diagnostics.*
 
 class DeduplicatingDiagnosticReporter(private val delegate: DiagnosticReporter) : DiagnosticReporter() {

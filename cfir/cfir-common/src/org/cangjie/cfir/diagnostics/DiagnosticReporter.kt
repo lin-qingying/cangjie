@@ -1,6 +1,6 @@
 ﻿package org.cangjie.cfir.diagnostics
 
-import org.cangjie.cfir.source.AbstractCjSourceElement
+import org.cangjie.AbstractCjSourceElement
 import org.cangjie.config.LanguageVersionSettings
 
 /**

@@ -90,6 +90,9 @@
       <module name="cangjie.compiler.config" options="-proc:none" />
       <module name="cangjie.compiler.config.main" options="-proc:none" />
       <module name="cangjie.compiler.config.test" options="-proc:none" />
+      <module name="cangjie.compiler.frontend.common" options="-proc:none" />
+      <module name="cangjie.compiler.frontend.common.main" options="-proc:none" />
+      <module name="cangjie.compiler.frontend.common.test" options="-proc:none" />
       <module name="cangjie.compiler.main" options="-proc:none" />
       <module name="cangjie.compiler.test" options="-proc:none" />
       <module name="cangjie.dependencies.intellij-core" options="-proc:none" />
