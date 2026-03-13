@@ -77,8 +77,36 @@ class CGFunction(
 
     internal fun renderTypedValue(value: ChirValue): String = "${lowerType(value.type)} ${renderValue(value)}"
 
+    internal fun renderCallArgument(value: ChirValue): String {
+        val tokens = collectAttributeTokens(value.attributes, callArgumentReservedAttributeKeys)
+        return if (tokens.isEmpty()) {
+            renderTypedValue(value)
+        } else {
+            "${lowerType(value.type)} ${tokens.joinToString(" ")} ${renderValue(value)}"
+        }
+    }
+
+    internal fun callTailKind(attributes: Set<ChirAttribute>): String? {
+        val explicit = attributeValue(attributes, "tail")
+        if (!explicit.isNullOrBlank()) return explicit
+        val enabledBoolean = attributes.asSequence()
+            .filterIsInstance<ChirBooleanAttribute>()
+            .firstOrNull { it.enabled && it.key in callTailKinds }
+        return enabledBoolean?.key
+    }
+
     internal fun blockLabel(blockId: ChirSemanticId): String {
         return blockLabelById[blockId] ?: sanitizeIdentifier(blockId.value, "bb")
+    }
+
+    internal fun resolveBlockLabel(reference: String): String? {
+        val byId = blockLabelById[ChirSemanticId(reference)]
+        if (byId != null) return byId
+        val normalizedRef = sanitizeIdentifier(reference, "bb")
+        val byName = declaration.blocks
+            .firstOrNull { sanitizeIdentifier(it.name.ifBlank { it.semanticId.value }, "bb") == normalizedRef }
+            ?.semanticId
+        return byName?.let(blockLabelById::get)
     }
 
     private fun lowerTerminator(terminator: Any): List<String> {
@@ -167,12 +195,15 @@ class CGFunction(
         }
     }
 
-    private fun collectAttributeTokens(attributes: Set<ChirAttribute>): List<String> {
+    internal fun collectAttributeTokens(
+        attributes: Set<ChirAttribute>,
+        reservedKeys: Set<String> = reservedAttributeKeys,
+    ): List<String> {
         val tokens = mutableListOf<String>()
         attributes.forEach { attribute ->
             when (attribute) {
                 is ChirBooleanAttribute -> {
-                    if (attribute.enabled && attribute.key !in reservedAttributeKeys) {
+                    if (attribute.enabled && attribute.key !in reservedKeys) {
                         tokens += attribute.key
                     }
                 }
@@ -186,7 +217,7 @@ class CGFunction(
         return tokens
     }
 
-    private fun attributeValue(attributes: Set<ChirAttribute>, key: String): String? {
+    internal fun attributeValue(attributes: Set<ChirAttribute>, key: String): String? {
         return attributes.asSequence()
             .filterIsInstance<ChirStringAttribute>()
             .firstOrNull { it.key == key }
@@ -267,6 +298,7 @@ class CGFunction(
 
     private companion object {
         val reservedAttributeKeys = setOf("linkage", "personality", "calling_conv", "cc")
+        val callArgumentReservedAttributeKeys = reservedAttributeKeys + setOf("tail", "musttail", "notail")
+        val callTailKinds = setOf("tail", "musttail", "notail")
     }
 }
-

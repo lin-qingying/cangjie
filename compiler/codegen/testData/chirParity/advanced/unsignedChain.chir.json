@@ -1,0 +1,6 @@
+{
+  "scenario": "unsigned_chain",
+  "package": "parity",
+  "module": "advanced",
+  "function": "main"
+}

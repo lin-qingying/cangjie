@@ -12,6 +12,7 @@ import org.cangnova.cangjie.chir.core.model.ChirPackage
 import org.cangnova.cangjie.chir.core.symbol.ChirSymbol
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
+import org.cangnova.cangjie.chir.core.value.ChirConstantValue
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -90,7 +91,14 @@ class ChirBuilderTest {
                     semanticId = ChirSemanticId("block:exit"),
                     name = "exit",
                     expressions = emptyList(),
-                    terminator = ChirReturnTerminator(ChirSemanticId("term:return")),
+                    terminator = ChirReturnTerminator(
+                        semanticId = ChirSemanticId("term:return"),
+                        returnValue = ChirConstantValue(
+                            semanticId = ChirSemanticId("const:zero"),
+                            type = intType,
+                            literal = "0",
+                        ),
+                    ),
                 ),
             ),
             entryBlockId = ChirSemanticId("block:entry"),

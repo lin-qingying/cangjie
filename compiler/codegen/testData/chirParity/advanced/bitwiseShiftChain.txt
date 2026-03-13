@@ -1,0 +1,11 @@
+define i32 @main() {
+entry:
+  %expr_and = and i32 6, 3
+  %expr_xor = xor i32 %expr_and, 1
+  %expr_shl = shl i32 %expr_xor, 1
+  %expr_lshr = lshr i32 %expr_shl, 1
+  %expr_or = or i32 %expr_lshr, 8
+  %expr_ashr = ashr i32 -8, 1
+  %expr_add = add i32 %expr_or, %expr_ashr
+  ret i32 %expr_add
+}

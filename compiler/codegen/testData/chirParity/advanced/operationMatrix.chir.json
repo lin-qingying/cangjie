@@ -1,0 +1,6 @@
+{
+  "scenario": "operation_matrix",
+  "package": "parity",
+  "module": "advanced",
+  "function": "main"
+}

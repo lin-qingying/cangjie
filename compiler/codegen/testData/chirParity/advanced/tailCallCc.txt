@@ -1,0 +1,6 @@
+declare fastcc i32 @ext_fast(i32)
+define i32 @main() {
+entry:
+  %expr_call = tail call fastcc i32 @ext_fast(i32 1)
+  ret i32 %expr_call
+}

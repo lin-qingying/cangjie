@@ -1,0 +1,11 @@
+﻿{
+    "source":  "source/var-mutation.cj",
+    "sample":  "var-mutation",
+    "note":  "local variable store and load chain",
+    "category":  "memory",
+    "generatedAt":  "2026-03-13T21:36:34+08:00",
+    "baseline":  "baseline/var-mutation.chir.json",
+    "target":  "x86_64-w64-mingw32",
+    "compiler":  "Cangjie Compiler 1.0.0 (cjnative)",
+    "officialOutput":  "cpp-baseline/var-mutation.llvmir.txt"
+}

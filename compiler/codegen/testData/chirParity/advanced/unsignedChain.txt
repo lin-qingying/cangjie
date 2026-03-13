@@ -1,0 +1,8 @@
+define i1 @main() {
+entry:
+  %expr_udiv = udiv i32 9, 2
+  %expr_urem = urem i32 9, 2
+  %expr_add = add i32 %expr_udiv, %expr_urem
+  %expr_cmp = icmp uge i32 %expr_add, 5
+  ret i1 %expr_cmp
+}

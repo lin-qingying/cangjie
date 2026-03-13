@@ -1,0 +1,6 @@
+declare void @ext_log(i32)
+define i32 @main() {
+entry:
+  call void @ext_log(i32 1)
+  ret i32 0
+}
