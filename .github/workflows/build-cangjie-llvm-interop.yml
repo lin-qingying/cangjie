@@ -76,7 +76,16 @@ jobs:
 
       - name: Probe
         run: |
-          tools/cangjie-llvm-interop/build/cangjie-llvm-interop probe --json
+          tools/cangjie-llvm-interop/build/cangjie-llvm-interop probe --json | tee tools/cangjie-llvm-interop/build/probe.json
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cangjie-llvm-interop-${{ runner.os }}-${{ matrix.host_arch }}
+          path: |
+            tools/cangjie-llvm-interop/build/cangjie-llvm-interop
+            tools/cangjie-llvm-interop/build/probe.json
+          if-no-files-found: error
 
   build-windows:
     name: windows-latest (x64)
@@ -100,6 +109,35 @@ jobs:
           path: tools/cangjie-llvm-interop/build
           key: interop-build-${{ runner.os }}-x64-${{ hashFiles('tools/cangjie-llvm-interop/CMakeLists.txt', 'tools/cangjie-llvm-interop/src/**', '.github/workflows/build-cangjie-llvm-interop.yml') }}
 
+      - name: Resolve LLVM_DIR (Windows)
+        id: llvm-dir-win
+        shell: pwsh
+        run: |
+          $candidates = @(
+            'C:/Program Files/LLVM/lib/cmake/llvm',
+            'C:/tools/llvm/lib/cmake/llvm'
+          )
+
+          foreach ($dir in $candidates) {
+            if (Test-Path "$dir/LLVMConfig.cmake") {
+              "value=$dir" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+              Write-Host "Resolved LLVM_DIR: $dir"
+              exit 0
+            }
+          }
+
+          $found = Get-ChildItem -Path 'C:/' -Filter LLVMConfig.cmake -Recurse -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+
+          if ($found) {
+            $dir = $found.DirectoryName.Replace('\', '/')
+            "value=$dir" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Write-Host "Resolved LLVM_DIR by search: $dir"
+            exit 0
+          }
+
+          Write-Error 'LLVMConfig.cmake not found after installing llvm package.'
+
       - name: Configure
         shell: pwsh
         run: |
@@ -107,7 +145,7 @@ jobs:
             -DCMAKE_C_COMPILER=cl `
             -DCMAKE_CXX_COMPILER=cl `
             -DCANGJIE_USE_OFFICIAL_LLVM=OFF `
-            -DLLVM_DIR="C:/Program Files/LLVM/lib/cmake/llvm"
+            -DLLVM_DIR="${{ steps.llvm-dir-win.outputs.value }}"
 
       - name: Build
         shell: pwsh
@@ -117,4 +155,13 @@ jobs:
       - name: Probe
         shell: pwsh
         run: |
-          .\tools\cangjie-llvm-interop\build\cangjie-llvm-interop.exe probe --json
+          .\tools\cangjie-llvm-interop\build\cangjie-llvm-interop.exe probe --json | Tee-Object -FilePath .\tools\cangjie-llvm-interop\build\probe.json
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cangjie-llvm-interop-${{ runner.os }}-x64
+          path: |
+            tools/cangjie-llvm-interop/build/cangjie-llvm-interop.exe
+            tools/cangjie-llvm-interop/build/probe.json
+          if-no-files-found: error
