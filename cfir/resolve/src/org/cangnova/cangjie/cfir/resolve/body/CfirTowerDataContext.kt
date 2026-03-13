@@ -1,8 +1,5 @@
 package org.cangnova.cangjie.cfir.resolve.body
 
-import kotlinx.collections.immutable.PersistentList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toPersistentList
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
 
@@ -24,32 +21,32 @@ class CfirTowerDataElement(
 /**
  * Scope 塔上下文，持有当前解析点的完整 scope 栈。
  *
- * 使用 [PersistentList] 实现不可变共享（copy-on-write），
+ * 使用 copy-on-write 语义（每次变更返回新 List），
  * 进入/退出声明上下文时通过新建 context 实例管理 scope 变化。
  *
  * 参考 K2 FirTowerDataContext。
  */
 data class CfirTowerDataContext private constructor(
     /** 所有 scope 元素，从外到内排列 */
-    val towerDataElements: PersistentList<CfirTowerDataElement>,
+    val towerDataElements: List<CfirTowerDataElement>,
     /** 局部 scope 列表（从外到内，是 towerDataElements 中 isLocal=true 的子集） */
-    val localScopes: PersistentList<CfirLocalScopeImpl>,
+    val localScopes: List<CfirLocalScopeImpl>,
     /** 非局部 scope 元素列表 */
-    val nonLocalTowerDataElements: PersistentList<CfirTowerDataElement>,
+    val nonLocalTowerDataElements: List<CfirTowerDataElement>,
 ) {
 
     constructor() : this(
-        towerDataElements = persistentListOf(),
-        localScopes = persistentListOf(),
-        nonLocalTowerDataElements = persistentListOf(),
+        towerDataElements = emptyList(),
+        localScopes = emptyList(),
+        nonLocalTowerDataElements = emptyList(),
     )
 
     /** 添加局部 scope（函数体/块内的变量 scope） */
     fun addLocalScope(localScope: CfirLocalScopeImpl): CfirTowerDataContext {
         val element = CfirTowerDataElement(localScope, isLocal = true)
         return copy(
-            towerDataElements = towerDataElements.add(element),
-            localScopes = localScopes.add(localScope),
+            towerDataElements = towerDataElements + element,
+            localScopes = localScopes + localScope,
         )
     }
 
@@ -57,8 +54,8 @@ data class CfirTowerDataContext private constructor(
     fun addNonLocalScope(scope: CfirScope): CfirTowerDataContext {
         val element = CfirTowerDataElement(scope, isLocal = false)
         return copy(
-            towerDataElements = towerDataElements.add(element),
-            nonLocalTowerDataElements = nonLocalTowerDataElements.add(element),
+            towerDataElements = towerDataElements + element,
+            nonLocalTowerDataElements = nonLocalTowerDataElements + element,
         )
     }
 

@@ -13,7 +13,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
  *
  * 通过 [resolutionFacade] 间接访问底层 [CfirSession]，
  * 组件通过 [analysisSessionProvider] 回引本 session。
- * Kotlin 对应文件：`external/kotlin/analysis/analysis-api-fir/src/org/jetbrains/kotlin/analysis/api/fir/KaFirSession.kt`
+ * Kotlin 对应文件：`external/kotlin/analysis/analysis-api-cfir/src/org/jetbrains/kotlin/analysis/api/cfir/KaFirSession.kt`
  */
 internal class CaCfirSession private constructor(
     val project: Project,
@@ -51,7 +51,7 @@ internal class CaCfirSession private constructor(
 ) {
     override val useSiteModule: CaModule get() = resolutionFacade.useSiteModule
 
-    internal val firSession: CfirSession get() = resolutionFacade.useSiteFirSession
+    internal val cfirSession: CfirSession get() = resolutionFacade.useSiteFirSession
 
     companion object {
         fun create(

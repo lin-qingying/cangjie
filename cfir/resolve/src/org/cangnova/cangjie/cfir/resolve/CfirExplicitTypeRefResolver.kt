@@ -15,6 +15,8 @@ import org.cangnova.cangjie.cfir.types.CfirTupleTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.CfirVArrayTypeRef
+import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
+import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
@@ -41,29 +43,26 @@ internal class CfirExplicitTypeRefResolver(
         is CfirFunctionTypeRef -> {
             val parameterTypes = typeRef.parameterTypeRefs.map { resolveConeType(it, scopeTypeParameters) }
             val returnType = resolveConeType(typeRef.returnTypeRef, scopeTypeParameters)
-            CfirResolvedTypeRef(
-                source = typeRef.source,
-                coneType = ConeFuncType(parameterTypes = parameterTypes, returnType = returnType),
-            )
+            buildResolvedTypeRef {
+                coneType = ConeFuncType(parameterTypes = parameterTypes, returnType = returnType)
+            }
         }
         is CfirTupleTypeRef -> {
             val elementTypes = typeRef.elementTypeRefs.map { resolveConeType(it, scopeTypeParameters) }
-            CfirResolvedTypeRef(
-                source = typeRef.source,
-                coneType = ConeTupleType(elementTypes = elementTypes),
-            )
+            buildResolvedTypeRef {
+                coneType = ConeTupleType(elementTypes = elementTypes)
+            }
         }
         is CfirVArrayTypeRef -> {
             val elementType = resolveConeType(typeRef.elementTypeRef, scopeTypeParameters)
             val size = typeRef.sizeLiteral.toLongOrNull()
-            CfirResolvedTypeRef(
-                source = typeRef.source,
+            buildResolvedTypeRef {
                 coneType = if (size != null) {
                     ConeVArrayType(elementType = elementType, size = size)
                 } else {
                     ConeErrorType("Invalid VArray size: ${typeRef.sizeLiteral}")
-                },
-            )
+                }
+            }
         }
         else -> typeRef
     }
@@ -77,12 +76,11 @@ internal class CfirExplicitTypeRefResolver(
         if (userTypeRef.qualifier.size == 1) {
             val typeParameterName = userTypeRef.qualifier.single().asString()
             if (scopeTypeParameters.containsKey(typeParameterName)) {
-                return CfirResolvedTypeRef(
-                    source = userTypeRef.source,
+                return buildResolvedTypeRef {
                     coneType = ConeTypeParameterType(
                         lookupTag = ConeTypeParameterLookupTag(typeParameterName),
-                    ),
-                )
+                    )
+                }
             }
         }
 
@@ -96,14 +94,13 @@ internal class CfirExplicitTypeRefResolver(
             val resolvedArguments = userTypeRef.typeArguments.map { argument ->
                 resolveConeType(argument, scopeTypeParameters)
             }
-            CfirResolvedTypeRef(
-                source = userTypeRef.source,
+            buildResolvedTypeRef {
                 coneType = ConeClassLikeType(
                     lookupTag = ConeClassLookupTagImpl(classId),
                     typeArguments = resolvedArguments,
                     isInterface = resolvedClass.classKind == CfirClassKind.INTERFACE,
-                ),
-            )
+                )
+            }
         } else {
             val renderedType = userTypeRef.qualifier.joinToString(".") { it.asString() }
             val reason = "unresolved explicit type '$renderedType'"
@@ -114,7 +111,7 @@ internal class CfirExplicitTypeRefResolver(
                 b = "$reason (${RULE_TYPES_ERROR_RECOVERY.officialReference})",
                 context = DiagnosticContext.Default,
             )
-            CfirErrorTypeRef(source = userTypeRef.source, reason = reason)
+            buildErrorTypeRef { this.reason = reason }
         }
     }
 

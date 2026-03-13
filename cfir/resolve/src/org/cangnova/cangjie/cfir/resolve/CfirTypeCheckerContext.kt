@@ -51,7 +51,7 @@ class CfirTypeCheckerContext(
     private fun classLikeSupertypes(classId: ClassId): List<ConeCangjieType> {
         val classSymbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return emptyList()
         if (!classSymbol.isBound) return emptyList()
-        val classDecl = classSymbol.fir
+        val classDecl = classSymbol.cfir
 
         return classDecl.superTypeRefs.mapNotNull { typeRef ->
             (typeRef as? CfirResolvedTypeRef)?.coneType

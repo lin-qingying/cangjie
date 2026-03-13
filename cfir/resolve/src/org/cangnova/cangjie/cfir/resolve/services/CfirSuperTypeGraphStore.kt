@@ -18,11 +18,13 @@ class CfirSuperTypeGraphStore : CfirSessionComponent {
     private val nodesByOwner = mutableMapOf<CfirClassSymbol, CfirSuperTypeGraphNode>()
 
     fun record(owner: CfirClass, superTypes: List<CfirSuperTypeGraphEdge>) {
-        nodesByOwner[owner.symbol] = CfirSuperTypeGraphNode(
-            owner = owner.symbol,
+        val classSymbol = owner.symbol as? CfirClassSymbol ?: return
+        nodesByOwner[classSymbol] = CfirSuperTypeGraphNode(
+            owner = classSymbol,
             superTypes = superTypes,
         )
     }
 
-    fun getNode(owner: CfirClass): CfirSuperTypeGraphNode? = nodesByOwner[owner.symbol]
+    fun getNode(owner: CfirClass): CfirSuperTypeGraphNode? =
+        (owner.symbol as? CfirClassSymbol)?.let { nodesByOwner[it] }
 }
