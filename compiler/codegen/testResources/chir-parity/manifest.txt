@@ -1,2 +1,9 @@
 # sample-name | kotlin-input | official-output | category | note
 simple-return | baseline/simple-return.chir.json | cpp-baseline/simple-return.llvmir.txt | control-flow | Minimal return-only baseline for codegen parity scaffolding
+arithmetic-chain | baseline/arithmetic-chain.chir.json | cpp-baseline/arithmetic-chain.llvmir.txt | arithmetic | Official cjc 1.0.0 output from source/arithmetic-chain.cj
+branch-classify | baseline/branch-classify.chir.json | cpp-baseline/branch-classify.llvmir.txt | control-flow | Official cjc 1.0.0 output from source/branch-classify.cj
+while-sum | baseline/while-sum.chir.json | cpp-baseline/while-sum.llvmir.txt | loop | Official cjc 1.0.0 output from source/while-sum.cj
+call-chain | baseline/call-chain.chir.json | cpp-baseline/call-chain.llvmir.txt | function-call | Official cjc 1.0.0 output from source/call-chain.cj
+var-mutation | baseline/var-mutation.chir.json | cpp-baseline/var-mutation.llvmir.txt | memory | Official cjc 1.0.0 output from source/var-mutation.cj
+string-and-print | baseline/string-and-print.chir.json | cpp-baseline/string-and-print.llvmir.txt | runtime | Official cjc 1.0.0 output from source/string-and-print.cj
+recursive-fib | baseline/recursive-fib.chir.json | cpp-baseline/recursive-fib.llvmir.txt | recursion | Official cjc 1.0.0 output from source/recursive-fib.cj

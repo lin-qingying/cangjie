@@ -1,0 +1,6 @@
+{
+  "scenario": "branch_phi",
+  "package": "parity",
+  "module": "advanced",
+  "function": "main"
+}

@@ -1,0 +1,18 @@
+define i32 @main() {
+entry:
+  %expr_neg = sub i32 0, 3
+  %expr_fneg = fneg double 1.0
+  %expr_not = xor i32 0, -1
+  %expr_lnot = xor i1 1, true
+  %expr_add = add i32 1, 2
+  %expr_udiv = udiv i32 8, 2
+  %expr_eq = icmp eq i32 1, 1
+  %expr_ult = icmp ult i32 1, 2
+  %expr_fgt = fcmp ogt double 2.0, 1.0
+  %expr_zext = zext i32 1 to i64
+  %expr_trunc = trunc i64 9 to i32
+  %expr_sitofp = sitofp i32 7 to float
+  %expr_fptosi = fptosi float 7.0 to i32
+  %expr_select = select i1 1, i32 5, i32 6
+  ret i32 %expr_select
+}

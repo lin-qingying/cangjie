@@ -1,0 +1,6 @@
+{
+  "scenario": "unary_misc",
+  "package": "parity",
+  "module": "advanced",
+  "function": "main"
+}

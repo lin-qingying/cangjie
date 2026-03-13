@@ -1,0 +1,6 @@
+{
+  "scenario": "memory_gep_align",
+  "package": "parity",
+  "module": "advanced",
+  "function": "main"
+}

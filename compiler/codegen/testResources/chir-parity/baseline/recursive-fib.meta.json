@@ -1,0 +1,11 @@
+﻿{
+    "source":  "source/recursive-fib.cj",
+    "sample":  "recursive-fib",
+    "note":  "recursive function call and branch",
+    "category":  "recursion",
+    "generatedAt":  "2026-03-13T21:36:37+08:00",
+    "baseline":  "baseline/recursive-fib.chir.json",
+    "target":  "x86_64-w64-mingw32",
+    "compiler":  "Cangjie Compiler 1.0.0 (cjnative)",
+    "officialOutput":  "cpp-baseline/recursive-fib.llvmir.txt"
+}
