@@ -38,6 +38,7 @@ import org.cangnova.cangjie.cfir.scopes.getNestedClassifierScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirMemberTypeParameterScope
 import org.cangnova.cangjie.cfir.scopes.impl.nestedClassifierScope
 import org.cangnova.cangjie.cfir.scopes.impl.wrapNestedClassifierScopeWithSubstitutionForSuperType
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.visitors.transformSingle

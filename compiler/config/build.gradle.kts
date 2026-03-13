@@ -3,5 +3,7 @@ plugins {
 }
 
 dependencies {
+    compileOnly(intellijCore())
+
     testImplementation(libs.junit.jupiter)
 }

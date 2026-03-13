@@ -8,15 +8,13 @@
 
 ## 一、总体结论
 
-当前基础设施已具备实现完整 CFIR 语义分析的**骨架能力**，但存在三个关键空缺：
+当前基础设施已具备实现完整 CFIR 语义分析的**骨架能力**，但存在两个关键空缺：
 
-1. **可改写树契约缺失（P0 阻塞）** — CFIR 树全不可变，resolve 无法推进声明的 phase 状态
-2. **表达式解析引擎缺失** — IMPLICIT_TYPES 和 BODY_RESOLVE 是空壳
-3. **类型推断引擎缺失** — 无子类型判定、约束求解、重载解析
+1. **表达式解析引擎缺失** — IMPLICIT_TYPES 和 BODY_RESOLVE 是空壳
+2. **类型推断引擎缺失** — 无子类型判定、约束求解、重载解析
 
 | 层面 | 完备度 | 评估 |
 |------|--------|------|
-| **可改写树契约** | **0%** | **全不可变树，transformer 丢弃变换结果，无 replaceXxx()，无 phase 推进** |
 | 编译管线框架 | **90%** | 9-phase resolve pipeline、Processor 注册、生命周期管理齐全 |
 | 类型系统（Cone） | **85%** | 14 种类型覆盖仓颉全部类型，缺泛型约束求解 |
 | 符号/作用域系统 | **75%** | Provider/Scope 抽象完整，缺跨模块加载和具体 Scope 实现 |
@@ -111,208 +109,7 @@
 
 ---
 
-## 三、可改写树契约（Mutable Tree Contract）
-
-> **这是当前最严重的基础设施缺陷，阻塞所有 resolve 阶段的实际执行。**
-
-### 问题现状
-
-当前 CFIR 树是**全不可变**的：
-
-```kotlin
-// CfirClassImpl.kt（生成代码）— 所有字段都是 val
-class CfirClassImpl @CfirImplementationDetail constructor(
-    override val resolvePhase: CfirResolvePhase,  // val — 无法推进 phase
-    override val status: CfirDeclarationStatus,    // val — 无法更新修饰符
-    override val superTypeRefs: List<CfirTypeRef>, // List — 无法替换已解析的类型引用
-    override val declarations: List<CfirDeclaration>, // List — 无法修改子声明
-    // ...
-) : CfirClass()
-```
-
-**三个致命问题：**
-
-1. **`resolvePhase` 不可变** — 声明创建后永远停留在 `RAW_CFIR`，无法推进到 IMPORTS、TYPES 等后续阶段
-2. **集合不可变** — `List<CfirTypeRef>` 无法被 transformer 替换（如 `CfirImplicitTypeRef` → `CfirResolvedTypeRef`）
-3. **`transformChildren()` 丢弃结果** — 对子节点调用 `transform()` 但忽略返回值：
-   ```kotlin
-   override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirClassImpl {
-       annotations.forEach { it.transform<...>(transformer, data) }  // 返回值被丢弃！
-       superTypeRefs.forEach { it.transform<...>(transformer, data) } // 返回值被丢弃！
-       return this  // 返回未修改的原始对象
-   }
-   ```
-
-### K2 FIR 的解决方案
-
-K2 使用**选择性可变**模型：
-
-```kotlin
-// K2 FirRegularClassImpl — 关键字段是 var + MutableList
-internal class FirRegularClassImpl(
-    resolvePhase: FirResolvePhase,                           // 传入后赋给 mutable resolveState
-    override var status: FirDeclarationStatus,               // var — 可更新
-    override var annotations: MutableOrEmptyList<FirAnnotation>, // var + Mutable
-    override val superTypeRefs: MutableList<FirTypeRef>,     // MutableList — 可原地替换
-    override val declarations: MutableList<FirDeclaration>,  // MutableList
-    // ...
-) : FirRegularClass() {
-    init {
-        resolveState = resolvePhase.asResolveState()  // mutable state
-    }
-}
-```
-
-**K2 的四层可变性机制：**
-
-| 机制 | 用途 | 示例 |
-|------|------|------|
-| **`var` 字段** | 整体替换标量字段 | `status`、`annotations`、`returnTypeRef` |
-| **`MutableList<T>`** | 集合元素原地增删替换 | `declarations`、`superTypeRefs`、`typeParameters` |
-| **`replaceXxx()` 方法** | 类型安全的字段更新 API | `replaceStatus()`、`replaceReturnTypeRef()`、`replaceResolvePhase()` |
-| **`transformXxx()` + `transformInplace()`** | 遍历式批量变换 | `transformAnnotations()`、`transformSuperTypeRefs()` |
-
-**Phase 状态管理：**
-
-```kotlin
-// K2 使用独立的 ResolveState 封装，支持"正在解析中"状态
-sealed class FirResolveState {
-    abstract val resolvePhase: FirResolvePhase
-}
-class FirResolvedToPhaseState(override val resolvePhase: FirResolvePhase) : FirResolveState()
-class FirInProcessOfResolvingToPhaseState(val resolvingTo: FirResolvePhase) : FirResolveState() {
-    override val resolvePhase get() = resolvingTo.previous
-}
-```
-
-**访问控制：**
-
-```kotlin
-@RequiresOptIn("Only for resolve infrastructure")
-annotation class ResolveStateAccess  // 限制谁可以修改 resolveState
-```
-
-### CFIR 需要实现的契约
-
-#### 1. Phase 状态可推进
-
-```kotlin
-// 新增：CfirResolveState 封装
-sealed class CfirResolveState {
-    abstract val resolvePhase: CfirResolvePhase
-}
-class CfirResolvedToPhaseState(override val resolvePhase: CfirResolvePhase) : CfirResolveState()
-class CfirInProcessOfResolvingState(val target: CfirResolvePhase) : CfirResolveState() {
-    override val resolvePhase get() = target.previous
-}
-
-// 声明接口扩展
-interface CfirElementWithResolveState {
-    @CfirResolveStateAccess
-    var resolveState: CfirResolveState
-    val resolvePhase: CfirResolvePhase get() = resolveState.resolvePhase
-}
-```
-
-#### 2. 字段选择性可变
-
-需要在树生成器 `ImplementationConfigurator.kt` 中配置：
-
-```kotlin
-// 需要在 resolve 过程中更新的字段标记为 mutable
-impl(classDeclaration) {
-    isMutable("status")
-    isMutable("annotations")
-    isMutable("superTypeRefs")    // CfirImplicitTypeRef → CfirResolvedTypeRef
-    isMutable("declarations")
-}
-
-impl(function) {
-    isMutable("returnTypeRef")    // 隐式返回类型推断后替换
-    isMutable("body")             // body resolve 阶段填充
-    isMutable("status")
-    isMutable("annotations")
-}
-
-impl(property) {
-    isMutable("returnTypeRef")
-    isMutable("initializer")
-    isMutable("status")
-    isMutable("annotations")
-}
-```
-
-#### 3. 生成 `replaceXxx()` 方法
-
-```kotlin
-// 生成代码示例
-abstract class CfirFunction : CfirCallableDeclaration() {
-    // ... existing abstract val/var ...
-    abstract fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
-    abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
-    abstract fun replaceBody(newBody: CfirBlock?)
-}
-
-class CfirFunctionImpl(...) : CfirFunction() {
-    override var returnTypeRef: CfirTypeRef = ...
-    override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef) {
-        returnTypeRef = newReturnTypeRef
-    }
-}
-```
-
-#### 4. 修复 `transformChildren()` 实现
-
-```kotlin
-// 修复后：使用 transformInplace 原地更新
-override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirClassImpl {
-    annotations.transformInplace(transformer, data)      // 原地更新
-    typeParameters.transformInplace(transformer, data)
-    superTypeRefs.transformInplace(transformer, data)
-    declarations.transformInplace(transformer, data)
-    return this
-}
-
-// transformInplace 扩展函数
-inline fun <D> MutableList<CfirElement>.transformInplace(
-    transformer: CfirTransformer<D>, data: D
-) {
-    val iterator = listIterator()
-    while (iterator.hasNext()) {
-        val next = iterator.next()
-        val result = next.transform<CfirElement, D>(transformer, data)
-        iterator.set(result)
-    }
-}
-```
-
-#### 5. 各 Phase 的可改写字段契约
-
-| Resolve Phase | 可写字段 | 说明 |
-|---------------|----------|------|
-| **IMPORTS** | `CfirImport.{packageFqName, resolvedStatus}` | 导入解析结果 |
-| **SUPER_TYPES** | `CfirClass.superTypeRefs` | `CfirUserTypeRef` → `CfirResolvedTypeRef` |
-| **TYPES** | `CfirFunction.returnTypeRef`, `CfirProperty.returnTypeRef`, `CfirValueParameter.returnTypeRef` | 显式类型引用解析 |
-| **STATUS** | `CfirDeclaration.status` | 可见性/修饰符规范化 |
-| **EXTENSIONS** | `CfirExtend.{resolvedExtendedType, resolvedInterfaces}` | extend 目标解析 |
-| **IMPLICIT_TYPES** | `CfirFunction.returnTypeRef`, `CfirProperty.returnTypeRef` | `CfirImplicitTypeRef` → `CfirResolvedTypeRef` |
-| **BODY_RESOLVE** | `CfirFunction.body`, 表达式节点的 `typeRef` | 函数体解析 + 表达式类型标注 |
-| **CHECKERS** | 无 | 只读阶段，仅产出诊断 |
-
-### 实现影响范围
-
-修改可改写树契约需要变更：
-
-| 组件 | 变更内容 |
-|------|----------|
-| `cfir-tree/tree-generator` | `Field` 模型增加 `isMutable` 标记；`ImplementationPrinter` 生成 `var`/`MutableList`/`replaceXxx()`；`ElementPrinter` 生成抽象 `replaceXxx()` |
-| `cfir-tree/gen` | 重新生成全部 ~219 个文件 |
-| `cfir-tree/src` | 新增 `CfirResolveState`、`CfirElementWithResolveState`、`transformInplace` 扩展 |
-| `cfir:resolve` | 所有 transformer 可以使用 `replaceXxx()` 推进 phase |
-
----
-
-## 四、基础设施组件明细
+## 三、基础设施组件明细
 
 ### A. 已完备（可直接使用）
 
@@ -336,7 +133,6 @@ inline fun <D> MutableList<CfirElement>.transformInplace(
 
 | 组件 | K2 对应 | 仓颉 C++ 对应 | 工作量 |
 |------|---------|---------------|--------|
-| **可改写树契约** | `var` 字段 + `MutableList` + `replaceXxx()` + `resolveState` | N/A（C++ AST 天然可变） | 大（需改树生成器 + 重新生成 ~219 文件） |
 | **表达式类型合成器** | `FirExpressionsResolveTransformer` | `TypeCheckerImpl::Synthesize()` | 大 |
 | **调用解析器** | `FirCallResolver` + Tower | `FunctionMatchingUnit` 匹配 | 大 |
 | **重载解析器** | `ConeOverloadConflictResolver` | 候选排序/最佳匹配 | 中 |
@@ -365,7 +161,7 @@ inline fun <D> MutableList<CfirElement>.transformInplace(
 
 ---
 
-## 五、仓颉特有语义 vs Kotlin 差异点
+## 四、仓颉特有语义 vs Kotlin 差异点
 
 以下是**不能直接复用 K2 架构**的部分：
 
@@ -383,7 +179,7 @@ inline fun <D> MutableList<CfirElement>.transformInplace(
 
 ---
 
-## 六、K2 FIR 关键架构模式参考
+## 五、K2 FIR 关键架构模式参考
 
 以下是 K2 中被验证有效的架构模式，建议 CFIR 实现时遵循：
 
@@ -424,7 +220,7 @@ local scope → class member scope → imports → package → star imports
 
 ---
 
-## 七、仓颉 C++ 编译器关键设计参考
+## 六、仓颉 C++ 编译器关键设计参考
 
 ### TypeChecker 三阶段流程
 
@@ -471,16 +267,9 @@ Check(expr, Type) → Bool   // 自顶向下验证表达式符合期望类型
 
 ---
 
-## 八、推荐实现路径
+## 七、推荐实现路径
 
 ```
-Phase 0: 可改写树契约（前置条件，阻塞所有后续工作）
-   ├─ 树生成器支持 isMutable() 字段标记
-   ├─ 生成 var 字段 + MutableList + replaceXxx() 方法
-   ├─ 修复 transformChildren() 使用 transformInplace 原地更新
-   ├─ 新增 CfirResolveState 封装（支持 phase 推进 + "正在解析中"状态）
-   └─ 重新生成全部 ~219 个 gen 文件
-
 Phase 1: 子类型系统 + Scope 实现（奠基）
    ├─ 实现 ConeSubtypeChecker（IsSubtype 判定）
    ├─ 实现 5 种核心 Scope
@@ -517,7 +306,7 @@ Phase 4: 高级特性（语义完备）
 
 ---
 
-## 九、当前模块文件统计
+## 八、当前模块文件统计
 
 | 模块 | src 文件数 | gen 文件数 | 状态 |
 |------|-----------|-----------|------|
@@ -532,14 +321,14 @@ Phase 4: 高级特性（语义完备）
 
 ---
 
-## 十、总结
+## 九、总结
 
-**评级：骨架完备，肌肉待长，骨骼需活化。**
+**评级：骨架完备，肌肉待长。**
 
-- **可改写树契约（P0 阻塞）** — 当前 CFIR 树全不可变，transformer 无法实际修改树节点。这是最紧迫的基础设施缺陷：`resolvePhase` 无法推进、`CfirImplicitTypeRef` 无法被替换为 `CfirResolvedTypeRef`、`transformChildren()` 丢弃变换结果。**必须首先解决，否则所有 resolve 阶段的处理器都是空转。**
+- **可改写树契约已就绪** — CFIR 树已支持选择性可变（`var` 字段、`replaceXxx()` 方法、`transformChildren()` 原地变换），resolve 处理器可正常推进声明的 phase 状态。
 - **框架层**（Phase pipeline、Session、Symbol/Scope 抽象、Diagnostic、Checker）已达到 K2 结构对齐度，可直接在此基础上填充实现。
 - **声明级解析**（IMPORTS → STATUS）已有实际处理逻辑，距离生产可用还需补全具体 Scope 类型和跨模块加载。
 - **表达式级解析**（IMPLICIT_TYPES → BODY_RESOLVE）是核心空缺，需要从零实现子类型判定、表达式合成、调用解析三大引擎。
 - 仓颉特有语义（extend、struct 值语义、mut、元组、spawn、模式匹配）需要在 K2 框架基础上做针对性扩展，扩展点已被框架预留。
 
-**建议从 Phase 0（可改写树契约）开始，这是所有后续工作的前置条件。**
+**建议从 Phase 1（子类型系统 + Scope 实现）开始，这是表达式解析的前置条件。**

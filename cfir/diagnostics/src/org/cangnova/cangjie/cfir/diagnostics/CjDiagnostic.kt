@@ -6,7 +6,7 @@ import com.intellij.psi.PsiFile
 import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
 import org.cangnova.cangjie.cfir.source.CjLightSourceElement
 import org.cangnova.cangjie.cfir.source.CjPsiSourceElement
-import org.cangnova.cangjie.cli.common.messages.CompilerMessageSourceLocation
+import org.cangnova.cangjie.common.messages.CompilerMessageSourceLocation
 
 // ------------------------------ diagnostics ------------------------------
 

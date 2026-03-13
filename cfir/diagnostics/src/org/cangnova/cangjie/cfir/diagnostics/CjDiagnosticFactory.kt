@@ -2,7 +2,7 @@
 
 package org.cangnova.cangjie.cfir.diagnostics
 
-import org.cangnova.cangjie.cli.common.messages.CompilerMessageSourceLocation
+import org.cangnova.cangjie.common.messages.CompilerMessageSourceLocation
 import org.cangnova.cangjie.config.AnalysisFlags
 import org.cangnova.cangjie.config.LanguageFeature
 import org.cangnova.cangjie.config.LanguageVersionSettings

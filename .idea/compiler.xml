@@ -90,9 +90,15 @@
       <module name="cangjie.common.main" options="-proc:none" />
       <module name="cangjie.common.test" options="-proc:none" />
       <module name="cangjie.compiler" options="-proc:none" />
+      <module name="cangjie.compiler.chir" options="-proc:none" />
+      <module name="cangjie.compiler.chir.main" options="-proc:none" />
+      <module name="cangjie.compiler.chir.test" options="-proc:none" />
       <module name="cangjie.compiler.cli" options="-proc:none" />
       <module name="cangjie.compiler.cli.main" options="-proc:none" />
       <module name="cangjie.compiler.cli.test" options="-proc:none" />
+      <module name="cangjie.compiler.codegen" options="-proc:none" />
+      <module name="cangjie.compiler.codegen.main" options="-proc:none" />
+      <module name="cangjie.compiler.codegen.test" options="-proc:none" />
       <module name="cangjie.compiler.config" options="-proc:none" />
       <module name="cangjie.compiler.config.main" options="-proc:none" />
       <module name="cangjie.compiler.config.test" options="-proc:none" />

@@ -1,0 +1,2 @@
+# sample-name | kotlin-input | official-output | category | note
+simple-return | baseline/simple-return.chir.json | cpp-baseline/simple-return.llvmir.txt | control-flow | Minimal return-only baseline for codegen parity scaffolding

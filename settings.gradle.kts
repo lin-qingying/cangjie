@@ -56,6 +56,8 @@ include(":tests")
 include(":tests:test-infrastructure")
 
 include("compiler:cli")
+include(":compiler:chir")
+include(":compiler:codegen")
 
 include("cfir:cfir-tree:tree-generator")
 include(":flatbuffers-gen")

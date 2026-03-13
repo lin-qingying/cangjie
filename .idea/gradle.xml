@@ -52,7 +52,9 @@
             <option value="$PROJECT_DIR$/cfir/symbols" />
             <option value="$PROJECT_DIR$/common" />
             <option value="$PROJECT_DIR$/compiler" />
+            <option value="$PROJECT_DIR$/compiler/chir" />
             <option value="$PROJECT_DIR$/compiler/cli" />
+            <option value="$PROJECT_DIR$/compiler/codegen" />
             <option value="$PROJECT_DIR$/compiler/config" />
             <option value="$PROJECT_DIR$/dependencies" />
             <option value="$PROJECT_DIR$/dependencies/intellij-core" />
