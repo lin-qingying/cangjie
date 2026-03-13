@@ -5,6 +5,8 @@ import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirStructDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirTypeDeclaration
 import org.cangnova.cangjie.chir.core.model.ChirModule
+import org.cangnova.cangjie.codegen.backend.InMemoryLlvmBackendApi
+import org.cangnova.cangjie.codegen.backend.LlvmBackendApi
 import org.cangnova.cangjie.codegen.context.CGContext
 import org.cangnova.cangjie.codegen.dispatcher.ExpressionLoweringDispatcher
 import org.cangnova.cangjie.codegen.function.CGFunction
@@ -16,6 +18,7 @@ import org.cangnova.cangjie.codegen.ir.sanitizeIdentifier
 class CGModule(
     private val context: CGContext,
     private val module: ChirModule,
+    private val backendApi: LlvmBackendApi = InMemoryLlvmBackendApi(),
     private val dispatcher: ExpressionLoweringDispatcher = ExpressionLoweringDispatcher(),
 ) {
     fun lower(): LlvmModuleArtifact {
@@ -45,7 +48,11 @@ class CGModule(
             name = context.moduleName(module),
             ir = moduleIr,
             functions = functions,
-            bitcode = if (context.options.emitBitcode) moduleIr.toByteArray() else null,
+            bitcode = if (context.options.emitBitcode) {
+                backendApi.emitBitcode(context.moduleName(module), moduleIr)
+            } else {
+                null
+            },
         )
     }
 
@@ -113,4 +120,3 @@ class CGModule(
         }
     }
 }
-
