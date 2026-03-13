@@ -1,0 +1,25 @@
+FILE: classWithThisReference.cj
+    class Box {
+        var value: R|Int64| = ...
+            initializer:
+                STRING("0")
+        func getValue(): R|Int64| {
+            RETURN {
+                PROPERTY_ACCESS(value) {
+                    receiver:
+                        QUALIFIED_ACCESS(<this>)
+                }
+            }
+        }
+        func setValue(v: R|Int64|): R|Unit| {
+            ASSIGNMENT {
+                lValue:
+                    PROPERTY_ACCESS(value) {
+                        receiver:
+                            QUALIFIED_ACCESS(<this>)
+                    }
+                rValue:
+                    QUALIFIED_ACCESS(v)
+            }
+        }
+    }

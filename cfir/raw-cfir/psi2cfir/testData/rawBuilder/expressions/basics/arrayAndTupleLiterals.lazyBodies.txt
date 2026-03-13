@@ -1,0 +1,2 @@
+FILE: arrayAndTupleLiterals.cj
+    func testLiterals(): R|Unit|

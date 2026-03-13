@@ -1,0 +1,15 @@
+FILE: dotQualifiedAccess.cj
+    func testAccess(obj: R|MyClass|): R|Unit| {
+        let v: <implicit> = ...
+            initializer:
+                PROPERTY_ACCESS(field) {
+                    receiver:
+                        QUALIFIED_ACCESS(obj)
+                }
+        FUNCTION_CALL(method) {
+            receiver:
+                QUALIFIED_ACCESS(obj)
+            arguments:
+                STRING("1")
+        }
+    }

@@ -1,0 +1,17 @@
+FILE: arrayAndTupleLiterals.cj
+    func testLiterals(): R|Unit| {
+        let arr: <implicit> = ...
+            initializer:
+                ARRAY_LITERAL {
+                    STRING("1")
+                    STRING("2")
+                    STRING("3")
+                }
+        let tup: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    STRING("1")
+                    STRING("hello")
+                    STRING("true")
+                }
+    }

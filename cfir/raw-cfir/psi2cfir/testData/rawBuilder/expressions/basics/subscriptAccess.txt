@@ -1,0 +1,22 @@
+FILE: subscriptAccess.cj
+    func testSubscript(arr: R|Array<R|Int64|>|): R|Int64| {
+        let first: <implicit> = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        QUALIFIED_ACCESS(arr)
+                    indices:
+                        STRING("0")
+                }
+        let second: <implicit> = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        QUALIFIED_ACCESS(arr)
+                    indices:
+                        STRING("1")
+                }
+        RETURN {
+            QUALIFIED_ACCESS(first)
+        }
+    }

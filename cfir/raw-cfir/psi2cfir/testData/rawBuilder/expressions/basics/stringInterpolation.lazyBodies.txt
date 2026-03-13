@@ -1,0 +1,2 @@
+FILE: stringInterpolation.cj
+    func greet(name: R|String|): R|String|

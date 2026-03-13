@@ -1,0 +1,43 @@
+FILE: breakAndContinue.cj
+    func loopControl(): R|Unit| {
+        var i: <implicit> = ...
+            initializer:
+                STRING("0")
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    QUALIFIED_ACCESS(i)
+                    STRING("100")
+                }
+            body:
+                ASSIGNMENT {
+                    lValue:
+                        QUALIFIED_ACCESS(i)
+                    rValue:
+                        FUNCTION_CALL(plus) {
+                            receiver:
+                                QUALIFIED_ACCESS(i)
+                            arguments:
+                                STRING("1")
+                        }
+                }
+                IF {
+                    condition:
+                        COMPARISON(GT) {
+                            QUALIFIED_ACCESS(i)
+                            STRING("50")
+                        }
+                    then:
+                        CONTINUE
+                }
+                IF {
+                    condition:
+                        COMPARISON(GT) {
+                            QUALIFIED_ACCESS(i)
+                            STRING("90")
+                        }
+                    then:
+                        BREAK
+                }
+        }
+    }
