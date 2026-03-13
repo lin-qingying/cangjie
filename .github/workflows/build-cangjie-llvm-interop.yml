@@ -12,17 +12,50 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
-    timeout-minutes: 180
+  build-unix:
+    name: ${{ matrix.os }} (${{ matrix.host_arch }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            host_arch: x64
+            llvm_targets: X86;AArch64;ARM;RISCV
+          - os: ubuntu-24.04-arm
+            host_arch: arm64
+            llvm_targets: AArch64;ARM;X86;RISCV
+          - os: macos-13
+            host_arch: x64
+            llvm_targets: X86;AArch64;ARM;RISCV
+          - os: macos-14
+            host_arch: arm64
+            llvm_targets: AArch64;ARM;X86;RISCV
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build tools
+      - name: Install build tools (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build g++ git python3
+
+      - name: Install build tools (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install ninja
+
+      - name: Cache LLVM bootstrap artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            tools/cangjie-llvm-interop/build/official-llvm-src
+            tools/cangjie-llvm-interop/build/official-llvm-build
+            tools/cangjie-llvm-interop/build/official-llvm-install
+          key: llvm-interop-${{ runner.os }}-${{ matrix.host_arch }}-${{ hashFiles('tools/cangjie-llvm-interop/CMakeLists.txt', 'tools/cangjie-llvm-interop/cmake/**', '.github/workflows/build-cangjie-llvm-interop.yml') }}
 
       - name: Configure (bootstrap official LLVM)
         run: |
@@ -30,7 +63,7 @@ jobs:
             -DCANGJIE_USE_OFFICIAL_LLVM=ON \
             -DCANGJIE_LLVM_REPOSITORY=https://gitcode.com/openharmony/third_party_llvm-project.git \
             -DCANGJIE_LLVM_TAG=master \
-            -DCANGJIE_LLVM_TARGETS=X86
+            -DCANGJIE_LLVM_TARGETS="${{ matrix.llvm_targets }}"
 
       - name: Build
         run: |
@@ -40,9 +73,10 @@ jobs:
         run: |
           tools/cangjie-llvm-interop/build/cangjie-llvm-interop probe --json
 
-  build-windows-cl:
+  build-windows:
+    name: windows-latest (x64)
     runs-on: windows-latest
-    timeout-minutes: 180
+    timeout-minutes: 240
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,10 +85,21 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Install build tools
+        shell: pwsh
         run: |
           choco install -y ninja
 
+      - name: Cache LLVM bootstrap artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            tools/cangjie-llvm-interop/build/official-llvm-src
+            tools/cangjie-llvm-interop/build/official-llvm-build
+            tools/cangjie-llvm-interop/build/official-llvm-install
+          key: llvm-interop-${{ runner.os }}-x64-${{ hashFiles('tools/cangjie-llvm-interop/CMakeLists.txt', 'tools/cangjie-llvm-interop/cmake/**', '.github/workflows/build-cangjie-llvm-interop.yml') }}
+
       - name: Configure (bootstrap official LLVM with cl)
+        shell: pwsh
         run: |
           cmake -S tools/cangjie-llvm-interop -B tools/cangjie-llvm-interop/build -G Ninja `
             -DCMAKE_C_COMPILER=cl `
@@ -62,12 +107,14 @@ jobs:
             -DCANGJIE_USE_OFFICIAL_LLVM=ON `
             -DCANGJIE_LLVM_REPOSITORY=https://gitcode.com/openharmony/third_party_llvm-project.git `
             -DCANGJIE_LLVM_TAG=master `
-            -DCANGJIE_LLVM_TARGETS=X86
+            -DCANGJIE_LLVM_TARGETS="X86;AArch64;ARM;RISCV"
 
       - name: Build
+        shell: pwsh
         run: |
           cmake --build tools/cangjie-llvm-interop/build --parallel
 
       - name: Probe
+        shell: pwsh
         run: |
-          tools/cangjie-llvm-interop/build/cangjie-llvm-interop.exe probe --json
+          .\tools\cangjie-llvm-interop\build\cangjie-llvm-interop.exe probe --json
