@@ -4,6 +4,8 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
+import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjFile
 
 // ===== 符号相关 =====
 
@@ -57,9 +59,12 @@ interface CaDataFlowProvider : CaLifetimeOwner
 
 /** 诊断信息（对齐 KaDiagnosticProvider） */
 interface CaDiagnosticProvider : CaLifetimeOwner {
-    fun diagnostics(element: PsiElement, filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>>
+    public fun CjElement.diagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>>
 
-    fun collectDiagnostics(file: PsiFile, filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>>
+    /**
+     * Collects all diagnostics for the given file.
+     */
+    public fun CjFile.collectDiagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>>
 }
 
 /** 作用域查询（对齐 KaScopeProvider） */

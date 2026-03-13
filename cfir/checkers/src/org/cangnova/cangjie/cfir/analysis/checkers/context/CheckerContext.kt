@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.Severity
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.config.LanguageVersionSettings
 
 abstract class CheckerContext : DiagnosticContext {
@@ -27,9 +28,10 @@ abstract class CheckerContext : DiagnosticContext {
 
     override val languageVersionSettings: LanguageVersionSettings
         get() = LanguageVersionSettings.DEFAULT
+    abstract val containingFileSymbol: CfirFileSymbol?
 
     override val containingFilePath: String?
-        get() = file?.source?.filePath
+        get() = containingFileSymbol?.sourceFile?.path
 
     override fun isDiagnosticSuppressed(diagnostic: CjDiagnostic): Boolean {
         val suppressedByAll = when (diagnostic.severity) {
@@ -50,6 +52,8 @@ class MutableCheckerContext(
     override val allWarningsSuppressed: Boolean = false,
     override val allErrorsSuppressed: Boolean = false,
 ) : CheckerContext() {
+    override val containingFileSymbol: CfirFileSymbol?
+        get() = file?.symbol as? CfirFileSymbol
     private val mutableDeclarations = mutableListOf<CfirDeclaration>()
     private val mutableStatements = mutableListOf<CfirStatement>()
     private val mutableElements = mutableListOf<CfirElement>()
