@@ -1,12 +1,18 @@
 package org.cangnova.cangjie.cfir.resolve.transformers
 
+import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
 import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.diagnosticReporter
@@ -32,8 +38,9 @@ class CfirStatusComputationSession(
     val useSiteSession: CfirSession,
     val useSiteScopeSession: CfirScopeSession,
 ) {
-    private val statusMap: MutableMap<CfirDeclaration, StatusComputationStatus> = hashMapOf()
-        .withDefault { StatusComputationStatus.NotComputed }
+    private val statusMap: MutableMap<CfirDeclaration, StatusComputationStatus> =
+        hashMapOf<CfirDeclaration, StatusComputationStatus>()
+            .withDefault { StatusComputationStatus.NotComputed }
 
     operator fun get(declaration: CfirDeclaration): StatusComputationStatus = statusMap.getValue(declaration)
 
@@ -108,9 +115,7 @@ open class CfirStatusResolveTransformer(
     statusComputationSession = statusComputationSession,
 ) {
     override fun transformDeclaration(target: CfirDeclaration) {
-        val memberTarget = target as? CfirMemberDeclaration
-        if (memberTarget == null) return
-        val status = memberTarget.status
+        val status = target.statusOrNull ?: return
 
         if (status.isStatic && (status.isOpen || status.isAbstract || status.isOverride)) {
             reportStatusModifierLegalityError(target, "static declaration cannot be open/abstract/override")
@@ -120,3 +125,20 @@ open class CfirStatusResolveTransformer(
         }
     }
 }
+
+/**
+ * 从具体声明类型中提取 [CfirDeclarationStatus]。
+ *
+ * `CfirMemberDeclaration` 不直接持有 `status`，
+ * 该属性分散定义在各具体子类中（CfirClass、CfirFunction 等）。
+ */
+private val CfirDeclaration.statusOrNull: CfirDeclarationStatus?
+    get() = when (this) {
+        is CfirClass -> status
+        is CfirFunction -> status
+        is CfirProperty -> status
+        is CfirVariable -> status
+        is CfirExtend -> status
+        is CfirTypeAlias -> status
+        else -> null
+    }

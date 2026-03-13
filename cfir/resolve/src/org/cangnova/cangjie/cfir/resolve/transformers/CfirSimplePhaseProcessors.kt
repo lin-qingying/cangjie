@@ -1,19 +1,25 @@
 package org.cangnova.cangjie.cfir.resolve.transformers
 
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.CfirResolutionMode
 import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveTransformer
+import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitAwareBodyResolveTransformer
+import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSession
+import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculatorForFullBodyResolve
+import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculatorWithJump
 import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
  * IMPLICIT_TYPES 阶段 processor。
  *
- * Phase 2 基础实现：
- * - 有显式返回类型的函数/属性 → 直接使用已解析的 returnTypeRef.coneType
- * - 无显式返回类型 → 暂标记为已完成（Phase 3 实现完整推断）
+ * 使用 [CfirImplicitAwareBodyResolveTransformer] 进行隐式返回类型推断：
+ * - 无显式返回类型的函数 → 从函数体最后一个表达式推断
+ * - 无显式类型的属性/变量 → 从 initializer 推断
+ * - 递归依赖保护（状态机：NotComputed → Computing → Computed）
+ *
+ * 参考 K2 FirImplicitTypeBodyResolveProcessor。
  */
 internal class CfirImplicitTypesResolveProcessor(
     session: CfirSession,
@@ -23,8 +29,24 @@ internal class CfirImplicitTypesResolveProcessor(
     scopeSession = scopeSession,
     phase = CfirResolvePhase.IMPLICIT_TYPES,
 ) {
-    override val transformer: CfirImplicitTypesResolveTransformer =
-        CfirImplicitTypesResolveTransformer(session)
+    private val computationSession = CfirImplicitBodyResolveComputationSession()
+    private val returnTypeCalculator = CfirReturnTypeCalculatorWithJump(session, scopeSession, computationSession)
+
+    private val implicitTypesTransformer = CfirImplicitAwareBodyResolveTransformer(
+        session = session,
+        scopeSession = scopeSession,
+        implicitBodyResolveComputationSession = computationSession,
+        phase = CfirResolvePhase.IMPLICIT_TYPES,
+        implicitTypeOnly = true,
+        returnTypeCalculator = returnTypeCalculator,
+    )
+
+    @Suppress("UNCHECKED_CAST")
+    override val transformer get() = implicitTypesTransformer as org.cangnova.cangjie.cfir.visitors.CfirTransformer<Nothing?>
+
+    override fun processFile(file: CfirFile) {
+        implicitTypesTransformer.transformFile(file, CfirResolutionMode.ContextIndependent)
+    }
 }
 
 /**
@@ -41,29 +63,16 @@ internal class CfirBodyResolveProcessor(
     scopeSession = scopeSession,
     phase = CfirResolvePhase.BODY_RESOLVE,
 ) {
-    private val bodyResolveTransformer = CfirBodyResolveTransformer(session, scopeSession)
+    private val bodyResolveTransformer = CfirBodyResolveTransformer(
+        session = session,
+        scopeSession = scopeSession,
+        returnTypeCalculator = CfirReturnTypeCalculatorForFullBodyResolve.Default,
+    )
 
     @Suppress("UNCHECKED_CAST")
     override val transformer get() = bodyResolveTransformer as org.cangnova.cangjie.cfir.visitors.CfirTransformer<Nothing?>
 
     override fun processFile(file: CfirFile) {
         bodyResolveTransformer.transformFile(file, CfirResolutionMode.ContextIndependent)
-    }
-}
-
-/**
- * IMPLICIT_TYPES 阶段 transformer。
- *
- * Phase 2 基础实现：推进 resolvePhase 到 IMPLICIT_TYPES。
- * 后续 Phase 3 将添加完整的隐式类型推断逻辑。
- */
-internal class CfirImplicitTypesResolveTransformer(
-    override val session: CfirSession,
-) : CfirAbstractTreeTransformer<Nothing?>(CfirResolvePhase.IMPLICIT_TYPES) {
-    override fun transformDeclaration(declaration: CfirDeclaration, data: Nothing?): CfirDeclaration {
-        if (declaration.resolvePhase >= CfirResolvePhase.EXTENSIONS && declaration.resolvePhase < CfirResolvePhase.IMPLICIT_TYPES) {
-            declaration.resolvePhase = CfirResolvePhase.IMPLICIT_TYPES
-        }
-        return declaration
     }
 }

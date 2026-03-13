@@ -9,7 +9,7 @@ import org.cangnova.cangjie.analysis.api.CaModule
  *
  * 从 [CaModule] 创建对应的 [CaCfirResolutionFacade]。
  * 平台需要注册此服务的实现。
- * Kotlin 对应文件：`external/kotlin/analysis/low-level-api-fir/src/org/jetbrains/kotlin/analysis/low/level/api/fir/LLResolutionFacadeService.kt`
+ * Kotlin 对应文件：`external/kotlin/analysis/low-level-api-cfir/src/org/jetbrains/kotlin/analysis/low/level/api/cfir/LLResolutionFacadeService.kt`
  */
 interface CaCfirResolutionFacadeService {
     fun getResolutionFacade(module: CaModule): CaCfirResolutionFacade

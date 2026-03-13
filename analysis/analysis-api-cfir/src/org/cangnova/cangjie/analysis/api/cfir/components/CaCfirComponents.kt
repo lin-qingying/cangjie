@@ -1,8 +1,15 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.asCaDiagnostic
+import org.cangnova.cangjie.analysis.api.cfir.resolve.DiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.api.cfir.resolve.plus
 import org.cangnova.cangjie.analysis.api.components.*
+import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
+import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjFile
 
 /**
  * CFIR 实现的各 session component（对齐 Kotlin 的 KaFir* 系列）。
@@ -25,9 +32,27 @@ internal class CaCfirSymbolRelationProvider(
 }
 
 internal class CaCfirDiagnosticProvider(
-    private val analysisSessionProvider: () -> CaCfirSession,
-) : CaDiagnosticProvider {
-    override val token: CaLifetimeToken get() = analysisSessionProvider().token
+    override val analysisSessionProvider: () -> CaCfirSession,
+) : CaBaseSessionComponent<CaCfirSession>(), CaDiagnosticProvider, CaCfirSessionComponent {
+
+    override fun CjElement.diagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>> =
+        this@CaCfirDiagnosticProvider.withValidityAssertion {
+            resolutionFacade.getDiagnostics(this@diagnostics, filter.asLLFilter())
+                .map { it.asCaDiagnostic(token) }
+        }
+
+    override fun CjFile.collectDiagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>> =
+        this@CaCfirDiagnosticProvider.withValidityAssertion {
+            resolutionFacade.collectDiagnosticsForFile(this@collectDiagnostics, filter.asLLFilter())
+                .map { it.asCaDiagnostic(token) }
+        }
+
+    private fun CaDiagnosticCheckerFilter.asLLFilter() = when (this) {
+        CaDiagnosticCheckerFilter.ONLY_COMMON_CHECKERS -> DiagnosticCheckerFilter.ONLY_DEFAULT_CHECKERS
+        CaDiagnosticCheckerFilter.ONLY_EXTENDED_CHECKERS -> DiagnosticCheckerFilter.ONLY_EXTRA_CHECKERS
+        CaDiagnosticCheckerFilter.ONLY_EXPERIMENTAL_CHECKERS -> DiagnosticCheckerFilter.ONLY_EXPERIMENTAL_CHECKERS
+        CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS -> DiagnosticCheckerFilter.ONLY_DEFAULT_CHECKERS + DiagnosticCheckerFilter.ONLY_EXTRA_CHECKERS
+    }
 }
 
 internal class CaCfirScopeProvider(

@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.symbols
 
+import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.constant.EvaluatedConstTracker
 
 /**
  * 符号基类。每个声明对应一个唯一的符号实例。
@@ -14,7 +16,7 @@ sealed class CfirSymbol<out D : CfirDeclaration> {
     private var _fir: @UnsafeVariance D? = null
 
     /** 指向对应的 CFIR 声明 */
-    val fir: D
+    val cfir: D
         get() = _fir ?: error("Symbol is not bound to a declaration")
 
     /** 符号是否已绑定到声明 */
@@ -34,17 +36,17 @@ sealed class CfirClassifierSymbol<D : CfirDeclaration> : CfirSymbol<D>()
 
 class CfirClassSymbol : CfirClassifierSymbol<CfirClass>() {
     override fun toString(): String =
-        if (isBound) "CfirClassSymbol(${fir.name})" else "CfirClassSymbol(unbound)"
+        if (isBound) "CfirClassSymbol(${cfir.name})" else "CfirClassSymbol(unbound)"
 }
 
 class CfirTypeAliasSymbol : CfirClassifierSymbol<CfirTypeAlias>() {
     override fun toString(): String =
-        if (isBound) "CfirTypeAliasSymbol(${fir.name})" else "CfirTypeAliasSymbol(unbound)"
+        if (isBound) "CfirTypeAliasSymbol(${cfir.name})" else "CfirTypeAliasSymbol(unbound)"
 }
 
 class CfirTypeParameterSymbol : CfirClassifierSymbol<CfirTypeParameter>() {
     override fun toString(): String =
-        if (isBound) "CfirTypeParameterSymbol(${fir.name})" else "CfirTypeParameterSymbol(unbound)"
+        if (isBound) "CfirTypeParameterSymbol(${cfir.name})" else "CfirTypeParameterSymbol(unbound)"
 }
 
 // ---- 可调用符号 ----
@@ -53,7 +55,7 @@ sealed class CfirCallableSymbol<D : CfirCallableDeclaration> : CfirSymbol<D>()
 
 class CfirFunctionSymbol : CfirCallableSymbol<CfirFunction>() {
     override fun toString(): String =
-        if (isBound) "CfirFunctionSymbol(${fir.name})" else "CfirFunctionSymbol(unbound)"
+        if (isBound) "CfirFunctionSymbol(${cfir.name})" else "CfirFunctionSymbol(unbound)"
 }
 
 class CfirMainFunctionSymbol : CfirCallableSymbol<CfirMainFunction>() {
@@ -63,7 +65,7 @@ class CfirMainFunctionSymbol : CfirCallableSymbol<CfirMainFunction>() {
 
 class CfirMacroDeclarationSymbol : CfirCallableSymbol<CfirMacroDeclaration>() {
     override fun toString(): String =
-        if (isBound) "CfirMacroDeclarationSymbol(${fir.name})" else "CfirMacroDeclarationSymbol(unbound)"
+        if (isBound) "CfirMacroDeclarationSymbol(${cfir.name})" else "CfirMacroDeclarationSymbol(unbound)"
 }
 
 class CfirFinalizerSymbol : CfirCallableSymbol<CfirFinalizer>() {
@@ -78,30 +80,38 @@ class CfirConstructorSymbol : CfirCallableSymbol<CfirConstructor>() {
 
 class CfirPropertySymbol : CfirCallableSymbol<CfirProperty>() {
     override fun toString(): String =
-        if (isBound) "CfirPropertySymbol(${fir.name})" else "CfirPropertySymbol(unbound)"
+        if (isBound) "CfirPropertySymbol(${cfir.name})" else "CfirPropertySymbol(unbound)"
 }
 
 class CfirVariableSymbol : CfirCallableSymbol<CfirVariable>() {
     override fun toString(): String =
-        if (isBound) "CfirVariableSymbol(${fir.name})" else "CfirVariableSymbol(unbound)"
+        if (isBound) "CfirVariableSymbol(${cfir.name})" else "CfirVariableSymbol(unbound)"
 }
 
 class CfirPatternVariableSymbol : CfirCallableSymbol<CfirPatternVariable>() {
     override fun toString(): String =
-        if (isBound) "CfirPatternVariableSymbol(${fir.pattern::class.simpleName})"
+        if (isBound) "CfirPatternVariableSymbol(${cfir.pattern::class.simpleName})"
         else "CfirPatternVariableSymbol(unbound)"
 }
 
 class CfirValueParameterSymbol : CfirCallableSymbol<CfirValueParameter>() {
     override fun toString(): String =
-        if (isBound) "CfirValueParameterSymbol(${fir.name})" else "CfirValueParameterSymbol(unbound)"
+        if (isBound) "CfirValueParameterSymbol(${cfir.name})" else "CfirValueParameterSymbol(unbound)"
 }
 
 // ---- 其他符号 ----
 
-class CfirFileSymbol : CfirSymbol<CfirFile>() {
+class CfirFileSymbol : CfirSymbol<CfirFile>() , EvaluatedConstTracker.Key{
+
+    val sourceFile: CjSourceFile? get() = cfir.sourceFile
+
+    override fun asStringBasedKey(): EvaluatedConstTracker.Key.StringBased? {
+        if (!isBound) return null
+        return sourceFile?.path?.let { EvaluatedConstTracker.Key.StringBased(it) }
+    }
+
     override fun toString(): String =
-        if (isBound) "CfirFileSymbol(${fir.name})" else "CfirFileSymbol(unbound)"
+        if (isBound) "CfirFileSymbol(${cfir.name})" else "CfirFileSymbol(unbound)"
 }
 
 class CfirExtendSymbol : CfirSymbol<CfirExtend>() {
@@ -110,10 +120,10 @@ class CfirExtendSymbol : CfirSymbol<CfirExtend>() {
 
 class CfirEnumConstructorSymbol : CfirSymbol<CfirEnumConstructor>() {
     override fun toString(): String =
-        if (isBound) "CfirEnumConstructorSymbol(${fir.name})" else "CfirEnumConstructorSymbol(unbound)"
+        if (isBound) "CfirEnumConstructorSymbol(${cfir.name})" else "CfirEnumConstructorSymbol(unbound)"
 }
 
 class CfirInvalidDeclarationSymbol : CfirSymbol<CfirInvalidDeclaration>() {
     override fun toString(): String =
-        if (isBound) "CfirInvalidDeclarationSymbol(${fir.reason})" else "CfirInvalidDeclarationSymbol(unbound)"
+        if (isBound) "CfirInvalidDeclarationSymbol(${cfir.reason})" else "CfirInvalidDeclarationSymbol(unbound)"
 }

@@ -56,7 +56,7 @@ class CfirCallResolver(
     /** 从函数符号中提取返回类型 */
     private fun extractReturnType(symbol: CfirFunctionSymbol): ConeCangjieType {
         if (!symbol.isBound) return ConeErrorType("unbound function symbol")
-        val function = symbol.fir
+        val function = symbol.cfir
         val typeRef = function.returnTypeRef
         return if (typeRef is CfirResolvedTypeRef) {
             typeRef.coneType
