@@ -1,0 +1,11 @@
+﻿{
+    "source":  "source/branch-classify.cj",
+    "sample":  "branch-classify",
+    "note":  "if else-if else branch lowering",
+    "category":  "control-flow",
+    "generatedAt":  "2026-03-13T21:36:30+08:00",
+    "baseline":  "baseline/branch-classify.chir.json",
+    "target":  "x86_64-w64-mingw32",
+    "compiler":  "Cangjie Compiler 1.0.0 (cjnative)",
+    "officialOutput":  "cpp-baseline/branch-classify.llvmir.txt"
+}

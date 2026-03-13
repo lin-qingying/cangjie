@@ -1,0 +1,16 @@
+@g_mut = global i32 0
+@g_const = constant i32 7
+@cangjie.package.init = internal constant ptr @init
+@cangjie.package.literal_init = internal constant ptr @literal_init
+define i32 @main() {
+entry:
+  ret i32 0
+}
+define i32 @init() {
+entry:
+  ret i32 0
+}
+define i32 @literal_init() {
+entry:
+  ret i32 0
+}

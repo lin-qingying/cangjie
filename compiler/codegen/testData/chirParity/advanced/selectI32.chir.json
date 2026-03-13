@@ -1,0 +1,6 @@
+{
+  "scenario": "select_i32",
+  "package": "parity",
+  "module": "advanced",
+  "function": "main"
+}

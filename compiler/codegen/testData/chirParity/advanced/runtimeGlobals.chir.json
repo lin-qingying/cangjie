@@ -1,0 +1,6 @@
+{
+  "scenario": "runtime_globals",
+  "package": "parity",
+  "module": "advanced",
+  "function": "main"
+}

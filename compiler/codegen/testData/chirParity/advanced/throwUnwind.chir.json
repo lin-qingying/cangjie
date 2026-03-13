@@ -1,0 +1,6 @@
+{
+  "scenario": "throw_unwind",
+  "package": "parity",
+  "module": "advanced",
+  "function": "main"
+}

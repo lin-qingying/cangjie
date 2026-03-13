@@ -1,0 +1,6 @@
+{
+  "scenario": "ptr_int_cast_chain",
+  "package": "parity",
+  "module": "advanced",
+  "function": "main"
+}

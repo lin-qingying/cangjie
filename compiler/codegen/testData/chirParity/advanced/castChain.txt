@@ -1,0 +1,5 @@
+define i64 @main() {
+entry:
+  %expr_zext = zext i32 1 to i64
+  ret i64 %expr_zext
+}

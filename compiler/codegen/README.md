@@ -21,3 +21,24 @@
   [chir-parity/README.md](/D:/code/intellij/cangjie/compiler/codegen/testResources/chir-parity/README.md)
 - Sample manifest:
   [manifest.txt](/D:/code/intellij/cangjie/compiler/codegen/testResources/chir-parity/manifest.txt)
+
+## TestData-Driven Parity Tests
+
+The parity test suite that runs in CI is driven by:
+
+- input fixture: `compiler/codegen/testData/chirParity/**/*.chir.json`
+- expected golden: same path + same basename + `.txt`
+
+The test class is auto-generated (psi2cfir-style) and must not be hand-edited:
+
+- generator: `org.cangnova.cangjie.codegen.parity.TestGeneratorForCodegenParity`
+- output: `compiler/codegen/tests-gen/org/cangnova/cangjie/codegen/parity/CodegenParityTestGenerated.kt`
+
+Useful commands:
+
+- generate tests only:
+  - `./gradlew :compiler:codegen:generateTestGeneratorForCodegenParityTests --no-configuration-cache`
+- run parity tests:
+  - `./gradlew :compiler:codegen:test --no-configuration-cache --tests "org.cangnova.cangjie.codegen.parity.*"`
+- run module gate (includes `parityCheck`):
+  - `./gradlew :compiler:codegen:check --no-configuration-cache`

@@ -1,0 +1,6 @@
+{
+  "scenario": "tail_call_cc",
+  "package": "parity",
+  "module": "advanced",
+  "function": "main"
+}

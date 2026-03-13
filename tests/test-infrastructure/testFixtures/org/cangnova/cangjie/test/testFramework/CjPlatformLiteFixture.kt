@@ -4,7 +4,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFileFactory
-import org.cangnova.cangjie.cli.CangJieCoreEnvironment
+import org.cangnova.cangjie.CangJieCoreEnvironment
 
 open class CjPlatformLiteFixture : CjUsefulTestCase() {
     private val fixtureDisposable = Disposer.newDisposable("CangjieKtPlatformLiteFixture")

@@ -1,0 +1,6 @@
+{
+  "scenario": "imported_call",
+  "package": "parity",
+  "module": "advanced",
+  "function": "main"
+}

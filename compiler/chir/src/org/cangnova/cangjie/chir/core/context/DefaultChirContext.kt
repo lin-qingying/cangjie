@@ -15,19 +15,19 @@ class DefaultChirContext : ChirContext {
     private val symbolIndex = LinkedHashMap<ChirSemanticId, ChirSymbol>()
 
     override val packages: Collection<ChirPackage>
-        get() = packageIndex.values
+        get() = packageIndex.values.toList()
 
     override val modules: Collection<ChirModule>
-        get() = moduleIndex.values
+        get() = moduleIndex.values.toList()
 
     override val declarations: Collection<ChirDeclaration>
-        get() = declarationIndex.values
+        get() = declarationIndex.values.toList()
 
     override val types: Collection<ChirType>
-        get() = typeIndex.values
+        get() = typeIndex.values.toList()
 
     override val symbols: Collection<ChirSymbol>
-        get() = symbolIndex.values
+        get() = symbolIndex.values.toList()
 
     override fun registerPackage(chirPackage: ChirPackage) {
         checkDuplicate(packageIndex, chirPackage.semanticId, "package")
