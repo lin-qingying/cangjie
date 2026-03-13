@@ -39,6 +39,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     private val stringType = type("kotlin", "String", exactPackage = true, kind = TypeKind.Class)
     private val booleanType = type("kotlin", "Boolean", exactPackage = true, kind = TypeKind.Class)
     private val anyType = type("kotlin", "Any", exactPackage = true, kind = TypeKind.Class)
+    private val sourceFileType = type("org.cangnova.cangjie", "CjSourceFile", exactPackage = true, kind = TypeKind.Interface)
 
     override val rootElement: Element by element(Other, name = "Element") {
         kind = ImplementationKind.Interface
@@ -96,6 +97,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     val file: Element by element(Declaration, name = "File") {
         parent(declaration)
         +field("name", stringType)
+        +field("sourceFile", sourceFileType, nullable = true)
         +field("packageDirective", packageDirective, withTransform = true)
         +listField("imports", importDirective, withTransform = true)
         +listField("declarations", declaration, withTransform = true)

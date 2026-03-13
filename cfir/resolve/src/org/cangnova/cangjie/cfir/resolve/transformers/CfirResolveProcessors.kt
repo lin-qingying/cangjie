@@ -19,7 +19,7 @@ fun registerResolveProcessors(
         CfirResolvePhase.SUPER_TYPES,
         CfirSupertypeResolverProcessor(diagnosticReporter, session, scopeSession),
     )
-    registry.registerProcessor(CfirResolvePhase.TYPES, CfirTypeResolveProcessor(session, scopeSession))
+    registry.registerProcessor(CfirResolvePhase.TYPES, CfirTypeResolveProcessor(session, scopeSession, diagnosticReporter))
     registry.registerProcessor(
         CfirResolvePhase.STATUS,
         CfirStatusResolveProcessor(session, scopeSession),

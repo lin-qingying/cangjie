@@ -5,6 +5,7 @@
 
 package org.cangnova.cangjie.cfir.declarations
 
+import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.source.CjSourceElement
@@ -24,6 +25,7 @@ abstract class CfirFile : CfirDeclaration() {
     abstract override var resolvePhase: CfirResolvePhase
     abstract override val attributes: CfirDeclarationAttributes
     abstract val name: String
+    abstract val sourceFile: CjSourceFile?
     abstract var packageDirective: CfirPackageDirective
     abstract var imports: List<CfirImport>
     abstract var declarations: List<CfirDeclaration>

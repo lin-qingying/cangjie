@@ -7,7 +7,12 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
+import org.cangnova.cangjie.cfir.resolve.CfirTypeRefResolver
 import org.cangnova.cangjie.cfir.resolve.diagnostics.CfirResolveRuleCatalog
+import org.cangnova.cangjie.cfir.resolve.isDefinitelyIllegalExtendedType
+import org.cangnova.cangjie.cfir.resolve.isDefinitelyNotInterfaceType
+import org.cangnova.cangjie.cfir.resolve.renderStableKey
 import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 

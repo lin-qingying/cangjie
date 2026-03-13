@@ -1,5 +1,8 @@
 package org.cangnova.cangjie.analysis.api.lifetime
 
+
+public interface CaSessionComponent : CaLifetimeOwner
+
 /**
  * 生命周期令牌（对齐 Kotlin 的 KaLifetimeToken）。
  *
