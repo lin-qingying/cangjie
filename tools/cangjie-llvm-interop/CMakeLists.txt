@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.20)
-project(cangjie_llvm_interop LANGUAGES CXX)
+project(cangjie_llvm_interop LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(CANGJIE_USE_OFFICIAL_LLVM "Bootstrap and use official Cangjie LLVM if LLVM_DIR is not provided." ON)
-set(CANGJIE_LLVM_REPOSITORY "https://gitcode.com/openharmony/third_party_llvm-project.git" CACHE STRING "Official LLVM repository used by Cangjie compiler.")
+set(CANGJIE_LLVM_REPOSITORY "https://gitcode.com/Cangjie/llvm-project.git" CACHE STRING "Official LLVM repository used by Cangjie compiler.")
 set(CANGJIE_LLVM_TAG "master" CACHE STRING "Official LLVM branch/tag aligned with cangjie compiler.")
 set(CANGJIE_LLVM_TARGETS "ARM;AArch64;X86" CACHE STRING "LLVM targets to build when bootstrapping official LLVM.")
 set(CANGJIE_LLVM_SOURCE_DIR "" CACHE PATH "Optional pre-downloaded official llvm-project source directory.")
