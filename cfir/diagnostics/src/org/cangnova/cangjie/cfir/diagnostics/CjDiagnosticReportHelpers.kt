@@ -3,7 +3,7 @@
 package org.cangnova.cangjie.cfir.diagnostics
 
 import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
-import org.cangnova.cangjie.cli.common.messages.CompilerMessageSourceLocation
+import org.cangnova.cangjie.common.messages.CompilerMessageSourceLocation
 
 // #### KtSourcelessFactory ####
 

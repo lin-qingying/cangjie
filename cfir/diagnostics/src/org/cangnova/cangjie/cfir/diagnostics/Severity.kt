@@ -5,7 +5,7 @@
 
 package org.cangnova.cangjie.cfir.diagnostics
 
-import org.cangnova.cangjie.cli.common.messages.CompilerMessageSeverity
+import org.cangnova.cangjie.common.messages.CompilerMessageSeverity
 
 enum class Severity {
     INFO,
@@ -13,7 +13,7 @@ enum class Severity {
     WARNING,
 
     /**
-     * see [org.cangnova.cangjie.cli.common.messages.CompilerMessageSeverity.FIXED_WARNING]
+     * see [CompilerMessageSeverity.FIXED_WARNING]
      */
     FIXED_WARNING,
     STRONG_WARNING;

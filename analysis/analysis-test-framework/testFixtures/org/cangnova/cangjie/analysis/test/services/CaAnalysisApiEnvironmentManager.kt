@@ -5,7 +5,7 @@ import com.intellij.openapi.application.Application
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.test.services.TestService
 import org.cangnova.cangjie.test.services.TestServices
-import org.cangnova.cangjie.cli.CangJieCoreEnvironment
+import org.cangnova.cangjie.CangJieCoreEnvironment
 import org.cangnova.cangjie.cli.CangjieCoreApplicationEnvironment
 import org.cangnova.cangjie.cli.CangjieCoreProjectEnvironment
 

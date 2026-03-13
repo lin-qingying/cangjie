@@ -20,6 +20,9 @@ interface CfirLocalScope : CfirScope
 /** extend scope，解析 extend 声明引入的成员 */
 interface CfirExtendScope : CfirScope
 
+/** 类型参数 scope，解析泛型类/函数中的类型参数名称 */
+interface CfirTypeParameterScope : CfirScope
+
 /**
  * 组合 scope，将多个 scope 合并为一个。
  */
