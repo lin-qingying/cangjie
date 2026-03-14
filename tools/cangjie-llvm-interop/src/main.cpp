@@ -62,6 +62,7 @@ void PrintProbeJson()
         "LLVMGetVersion",
         "LLVMContextCreate",
         "LLVMModuleCreateWithName",
+        "LLVMAddFunction",
         "LLVMPrintModuleToString",
     };
 
@@ -69,6 +70,7 @@ void PrintProbeJson()
     (void)&LLVMGetVersion;
     (void)&LLVMContextCreate;
     (void)&LLVMModuleCreateWithName;
+    (void)&LLVMAddFunction;
     (void)&LLVMPrintModuleToString;
 
     std::cout << "{";
@@ -157,4 +159,3 @@ int main(int argc, char** argv)
 
     return PrintUsage(argv[0]);
 }
-

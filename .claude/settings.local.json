@@ -16,14 +16,15 @@
       "Bash(xargs head:*)",
       "Bash(find:*)",
       "Bash(mv:*)",
-
       "Bash(mkdir:*)",
       "Bash(cp:*)",
       "Bash(do:*)",
       "Bash(grep:*)",
       "Bash(xargs:*)",
       "Bash(openspec-cn status:*)",
-      "Bash(openspec-cn instructions:*)"
+      "Bash(openspec-cn instructions:*)",
+      "Bash(openspec-cn new:*)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

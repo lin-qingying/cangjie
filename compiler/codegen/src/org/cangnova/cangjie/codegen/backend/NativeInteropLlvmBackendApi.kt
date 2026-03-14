@@ -39,8 +39,8 @@ class NativeInteropLlvmBackendApi(
             "LLVMGetVersion",
             "LLVMContextCreate",
             "LLVMModuleCreateWithName",
+            "LLVMAddFunction",
             "LLVMPrintModuleToString",
         )
     }
 }
-

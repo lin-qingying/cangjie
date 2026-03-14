@@ -119,8 +119,8 @@ class LlvmBackendFactoryTest {
             "LLVMGetVersion",
             "LLVMContextCreate",
             "LLVMModuleCreateWithName",
+            "LLVMAddFunction",
             "LLVMPrintModuleToString",
         )
     }
 }
-

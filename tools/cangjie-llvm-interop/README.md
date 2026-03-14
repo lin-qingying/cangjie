@@ -8,7 +8,7 @@ Native interop bridge for `compiler:codegen` to call LLVM without JNI/JNA.
 Prints backend capability metadata:
 
 ```json
-{"llvmVersion":"18.1.8","symbols":["LLVMGetVersion","LLVMContextCreate","LLVMModuleCreateWithName","LLVMPrintModuleToString"]}
+{"llvmVersion":"18.1.8","symbols":["LLVMGetVersion","LLVMContextCreate","LLVMModuleCreateWithName","LLVMAddFunction","LLVMPrintModuleToString"]}
 ```
 
 ### `emit-bitcode --module <name>`
