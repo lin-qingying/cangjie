@@ -26,6 +26,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     val INTERFACE_CANNOT_INHERIT_CLASS: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_INTERFACE_CANNOT_INHERIT_CLASS", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val MULTIPLE_CLASS_SUPER_TYPES: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_MULTIPLE_CLASS_SUPER_TYPES", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val STATUS_MODIFIER_LEGALITY: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_STATUS_MODIFIER_LEGALITY", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val NON_EXHAUSTIVE_MATCH: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_NON_EXHAUSTIVE_MATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
     override fun getRendererFactory(): BaseDiagnosticRendererFactory = CfirErrorsDefaultMessages
 }

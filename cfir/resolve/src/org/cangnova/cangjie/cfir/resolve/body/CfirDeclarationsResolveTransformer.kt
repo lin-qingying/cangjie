@@ -1,20 +1,15 @@
 package org.cangnova.cangjie.cfir.resolve.body
 
-import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.CfirResolutionMode
 import org.cangnova.cangjie.cfir.scopes.CfirScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitSimpleImportingScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitStarImportingScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
-import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
+import org.cangnova.cangjie.cfir.scopes.impl.*
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 
@@ -68,6 +63,15 @@ class CfirDeclarationsResolveTransformer(
             val classSymbol = klass.symbol as? CfirClassSymbol
             if (classSymbol != null) {
                 context.addNonLocalScope(CfirClassDeclaredMemberScope(classSymbol))
+
+                // 推入 extend 成员 scope（Phase 4：extend 成员查找完善）
+                val extendProvider = components.extendProvider
+                if (extendProvider != null) {
+                    val classId = resolveClassId(klass)
+                    if (classId != null) {
+                        context.addNonLocalScope(CfirExtendMemberScope(classId, extendProvider))
+                    }
+                }
             }
 
             // 遍历类成员
@@ -221,5 +225,15 @@ class CfirDeclarationsResolveTransformer(
         ) {
             declaration.resolvePhase = CfirResolvePhase.BODY_RESOLVE
         }
+    }
+
+    /** 从类声明中解析 ClassId（用于 extend scope 查找） */
+    private fun resolveClassId(klass: CfirClass): org.cangnova.cangjie.name.ClassId? {
+        val packageFqName = try {
+            context.file.packageDirective.packageFqName
+        } catch (_: UninitializedPropertyAccessException) {
+            org.cangnova.cangjie.name.FqName.ROOT
+        }
+        return org.cangnova.cangjie.name.ClassId(packageFqName, klass.name)
     }
 }

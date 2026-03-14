@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveContext
+import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceComponents
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeSubtypeChecker
 
@@ -16,4 +17,6 @@ class CfirResolutionContext(
     val bodyResolveContext: CfirBodyResolveContext,
     /** 子类型检查器 */
     val subtypeChecker: ConeSubtypeChecker,
+    /** 推断组件（Phase 4 泛型推断） */
+    val inferenceComponents: CfirInferenceComponents? = null,
 )

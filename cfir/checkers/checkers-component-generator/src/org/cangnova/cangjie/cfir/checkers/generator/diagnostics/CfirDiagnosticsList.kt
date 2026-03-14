@@ -65,5 +65,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("ruleId")
             parameter<String>("detail")
         }
+
+        val NON_EXHAUSTIVE_MATCH by error<PsiElement> {
+            parameter<String>("missingCases")
+        }
     }
 }

@@ -117,6 +117,15 @@
       <module name="cangjie.generators" options="-proc:none" />
       <module name="cangjie.generators.main" options="-proc:none" />
       <module name="cangjie.generators.test" options="-proc:none" />
+      <module name="cangjie.llvm-interop" options="-proc:none" />
+      <module name="cangjie.llvm-interop.llvm-interop-api" options="-proc:none" />
+      <module name="cangjie.llvm-interop.llvm-interop-api.main" options="-proc:none" />
+      <module name="cangjie.llvm-interop.llvm-interop-api.test" options="-proc:none" />
+      <module name="cangjie.llvm-interop.llvm-interop-jni" options="-proc:none" />
+      <module name="cangjie.llvm-interop.llvm-interop-jni.main" options="-proc:none" />
+      <module name="cangjie.llvm-interop.llvm-interop-jni.test" options="-proc:none" />
+      <module name="cangjie.llvm-interop.main" options="-proc:none" />
+      <module name="cangjie.llvm-interop.test" options="-proc:none" />
       <module name="cangjie.psi" options="-proc:none" />
       <module name="cangjie.psi.main" options="-proc:none" />
       <module name="cangjie.psi.test" options="-proc:none" />
