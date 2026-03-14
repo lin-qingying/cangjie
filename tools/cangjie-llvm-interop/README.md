@@ -17,16 +17,26 @@ Reads LLVM IR text from `stdin`, parses/verifies it with LLVM APIs, and writes b
 ## Build
 
 Default behavior:
-- If `LLVM_DIR` is not provided, CMake bootstraps LLVM automatically from:
-  - repository: `https://gitcode.com/openharmony/third_party_llvm-project.git`
-  - tag/branch: `master`
+- Use system LLVM (`CANGJIE_USE_OFFICIAL_LLVM=OFF` by default), and pass `LLVM_DIR`.
 
 ```bash
-cmake -S tools/cangjie-llvm-interop -B tools/cangjie-llvm-interop/build
+cmake -S tools/cangjie-llvm-interop -B tools/cangjie-llvm-interop/build \
+  -DCANGJIE_USE_OFFICIAL_LLVM=OFF \
+  -DLLVM_DIR=<path-to-llvm-cmake-dir>
 cmake --build tools/cangjie-llvm-interop/build --config Release
 ```
 
-On success, executable is produced in `tools/cangjie-llvm-interop/build/` (or `build/Release` on multi-config generators).
+To bootstrap official LLVM from source:
+
+```bash
+cmake -S tools/cangjie-llvm-interop -B tools/cangjie-llvm-interop/build \
+  -DCANGJIE_USE_OFFICIAL_LLVM=ON
+cmake --build tools/cangjie-llvm-interop/build --config Release
+```
+
+On success, executable name is:
+- `cangjie-llvm-interop_<os>_<arch>`
+- example: `cangjie-llvm-interop_linux_amd64`
 
 Useful CMake options:
 - `-DCANGJIE_USE_OFFICIAL_LLVM=ON|OFF`
