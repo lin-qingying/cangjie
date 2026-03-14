@@ -9,9 +9,12 @@ import org.cangnova.cangjie.cfir.resolve.CfirTypeCheckerContext
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirCallConflictResolver
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirOverloadConflictResolver
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
+import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceComponents
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirAbstractPhaseTransformer
 import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.ConeSubtypeChecker
 
@@ -73,10 +76,15 @@ abstract class CfirAbstractBodyResolveTransformer(
             CfirOverloadConflictResolver(subtypeChecker)
         }
 
+        /** 推断组件 — 懒初始化（Phase 4 泛型推断） */
+        val inferenceComponents: CfirInferenceComponents by lazy(LazyThreadSafetyMode.NONE) {
+            CfirInferenceComponents(subtypeChecker)
+        }
+
         /** 解析上下文 — 懒初始化（用于 Phase 3 验证阶段管线） */
         val resolutionContext: CfirResolutionContext? by lazy(LazyThreadSafetyMode.NONE) {
             try {
-                CfirResolutionContext(session, context, subtypeChecker)
+                CfirResolutionContext(session, context, subtypeChecker, inferenceComponents)
             } catch (_: Exception) {
                 null // 如果 typeContext 不可用，回退到旧版解析
             }
@@ -91,6 +99,15 @@ abstract class CfirAbstractBodyResolveTransformer(
         val callResolver: CfirCallResolver by lazy(LazyThreadSafetyMode.NONE) {
             CfirCallResolver(this).also { resolver ->
                 resolver.conflictResolver = conflictResolver
+            }
+        }
+
+        /** Extend 声明提供器 — 懒初始化（Phase 4 extend 成员查找） */
+        val extendProvider: CfirExtendProvider? by lazy(LazyThreadSafetyMode.NONE) {
+            try {
+                session.extendProvider
+            } catch (_: Exception) {
+                null // session 中未注册 extendProvider 时回退
             }
         }
     }
@@ -251,6 +268,13 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         data: CfirResolutionMode,
     ): CfirExpression {
         return expressionsTransformer.transformStringInterpolation(stringInterpolation, data)
+    }
+
+    override fun transformMatchExpression(
+        matchExpression: CfirMatchExpression,
+        data: CfirResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformMatchExpression(matchExpression, data)
     }
 
     override fun transformErrorExpression(

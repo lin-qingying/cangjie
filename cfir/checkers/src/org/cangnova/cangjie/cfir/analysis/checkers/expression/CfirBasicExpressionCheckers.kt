@@ -19,5 +19,8 @@ object CfirErrorExpressionDiagnosticChecker : CfirErrorExpressionChecker(MppChec
 object CfirBasicExpressionCheckers : CfirExpressionCheckers() {
     override val errorExpressionCheckers: Set<CfirErrorExpressionChecker>
         get() = setOf(CfirErrorExpressionDiagnosticChecker)
+
+    override val matchExpressionCheckers: Set<CfirMatchExpressionChecker>
+        get() = setOf(CfirMatchExhaustivenessChecker)
 }
 

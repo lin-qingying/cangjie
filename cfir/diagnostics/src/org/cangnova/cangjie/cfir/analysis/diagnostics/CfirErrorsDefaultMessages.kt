@@ -18,5 +18,6 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.INTERFACE_CANNOT_INHERIT_CLASS, "{1}", null, null)
         map.put(CfirErrors.MULTIPLE_CLASS_SUPER_TYPES, "{1}", null, null)
         map.put(CfirErrors.STATUS_MODIFIER_LEGALITY, "{1}", null, null)
+        map.put(CfirErrors.NON_EXHAUSTIVE_MATCH, "match expression is not exhaustive. Missing cases: {0}", null)
     }
 }

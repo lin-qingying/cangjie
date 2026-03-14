@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedNamedReferenceImpl
@@ -15,6 +16,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallKind
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckArguments
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckVisibility
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirInferTypeArguments
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirMapArguments
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
 import org.cangnova.cangjie.cfir.session.builtinTypes
@@ -200,7 +202,7 @@ class CfirExpressionsResolveTransformer(
         val callInfo = CfirCallInfo(
             callSite = functionCall,
             callKind = CfirCallKind.Function(
-                listOf(CfirCheckVisibility, CfirMapArguments, CfirCheckArguments)
+                listOf(CfirCheckVisibility, CfirMapArguments, CfirInferTypeArguments, CfirCheckArguments)
             ),
             name = reference.name,
             explicitReceiver = functionCall.explicitReceiver,
@@ -285,6 +287,133 @@ class CfirExpressionsResolveTransformer(
         }
         block.replaceConeTypeOrNull(blockType)
         return block
+    }
+
+    // ---- match 表达式 ----
+
+    /**
+     * match 表达式类型合成（Phase 4）。
+     *
+     * 1. 解析 subject 表达式 → 获得 subjectType
+     * 2. 遍历每个 branch:
+     *    a. 解析 pattern（类型检查 pattern 与 subjectType 的兼容性）
+     *    b. 若有 guard → 解析 guard（应为 Boolean 类型）
+     *    c. 解析 body → 获得 branchType
+     * 3. match 表达式的类型 = 所有 branchType 的公共超类型（LUB）
+     */
+    override fun transformMatchExpression(
+        matchExpression: CfirMatchExpression,
+        data: CfirResolutionMode,
+    ): CfirExpression {
+        // 1. 解析 subject 表达式
+        matchExpression.subject = matchExpression.subject
+            .transform(transformer, CfirResolutionMode.ContextIndependent)
+        val subjectType = matchExpression.subject.coneTypeOrNull
+
+        // 2. 遍历解析每个分支
+        val branchTypes = mutableListOf<ConeCangjieType>()
+        matchExpression.branches = matchExpression.branches.map { branch ->
+            resolveBranch(branch, subjectType, branchTypes)
+        }
+
+        // 3. 计算 match 表达式的结果类型
+        val resultType = computeMatchResultType(branchTypes)
+        matchExpression.replaceConeTypeOrNull(resultType)
+        return matchExpression
+    }
+
+    /** 解析单个 match 分支 */
+    private fun resolveBranch(
+        branch: CfirMatchBranch,
+        subjectType: ConeCangjieType?,
+        branchTypes: MutableList<ConeCangjieType>,
+    ): CfirMatchBranch {
+        // a. 解析模式
+        resolvePattern(branch.pattern, subjectType)
+
+        // b. 解析 guard
+        val guard = branch.guard
+        if (guard != null) {
+            branch.guard = guard.transform(transformer, CfirResolutionMode.WithExpectedType(builtinTypes.boolType))
+        }
+
+        // c. 解析 body
+        branch.body = branch.body.transform(transformer, CfirResolutionMode.ContextIndependent)
+        val bodyType = branch.body.coneTypeOrNull ?: builtinTypes.unitType
+        branch.replaceConeTypeOrNull(bodyType)
+        branchTypes.add(bodyType)
+
+        return branch
+    }
+
+    /**
+     * 解析模式，检查模式类型与期望类型的兼容性。
+     */
+    private fun resolvePattern(pattern: CfirPattern, expectedType: ConeCangjieType?) {
+        when (pattern) {
+            is CfirWildcardPattern -> {
+                // 通配符模式总是匹配
+            }
+            is CfirConstPattern -> {
+                // 解析常量表达式，检查类型兼容
+                pattern.expression = pattern.expression
+                    .transform(transformer, CfirResolutionMode.ContextIndependent)
+            }
+            is CfirBindingPattern -> {
+                // 绑定变量类型 = pattern.typeRef 指定的类型，否则为 expectedType
+                val bindingType = (pattern.typeRef as? CfirResolvedTypeRef)?.coneType
+                    ?: expectedType
+
+                // 将绑定变量添加到局部 scope
+                if (bindingType != null) {
+                    storePatternBinding(pattern.name, bindingType)
+                }
+
+                // 递归解析嵌套模式
+                pattern.nestedPattern?.let { nested -> resolvePattern(nested, expectedType) }
+            }
+            is CfirTuplePattern -> {
+                // expectedType 应为 ConeTupleType，递归解析子模式
+                val tupleType = expectedType as? ConeTupleType
+                pattern.elements.forEachIndexed { index, subPattern ->
+                    val elementType = tupleType?.elementTypes?.getOrNull(index)
+                    resolvePattern(subPattern, elementType)
+                }
+            }
+            is CfirEnumPattern -> {
+                // 递归解析枚举构造器参数模式
+                pattern.arguments.forEach { argPattern ->
+                    resolvePattern(argPattern, null)
+                }
+            }
+            is CfirTypePattern -> {
+                // 类型模式：检查 pattern 类型与 expectedType 存在子类型关系
+                val patternType = (pattern.typeRef as? CfirResolvedTypeRef)?.coneType
+                if (patternType != null && pattern.bindingName != null) {
+                    storePatternBinding(pattern.bindingName!!, patternType)
+                }
+            }
+        }
+    }
+
+    /** 将模式绑定的变量存储到当前局部 scope */
+    private fun storePatternBinding(name: org.cangnova.cangjie.name.Name, type: ConeCangjieType) {
+        // 通过 context 将绑定变量添加到当前 scope
+        // 完整实现需要创建 CfirVariable 符号并注册，此处记录类型信息
+        // TODO: Phase 5 完善绑定变量符号创建
+    }
+
+    /** 计算 match 表达式的结果类型（所有分支类型的 LUB） */
+    private fun computeMatchResultType(branchTypes: List<ConeCangjieType>): ConeCangjieType {
+        if (branchTypes.isEmpty()) return builtinTypes.unitType
+        if (branchTypes.size == 1) return branchTypes.single()
+
+        // 所有类型相同
+        val first = branchTypes.first()
+        if (branchTypes.all { it == first }) return first
+
+        // 不同类型：使用 ConeUnionType 表示，后续由推断阶段细化
+        return ConeUnionType(branchTypes.toSet())
     }
 
     // ---- if 表达式 ----

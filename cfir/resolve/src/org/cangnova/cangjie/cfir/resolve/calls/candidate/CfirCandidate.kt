@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
 import org.cangnova.cangjie.cfir.resolve.calls.CfirTypeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.inference.CfirConstraintSystem
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
@@ -32,6 +33,9 @@ class CfirCandidate(
 
     /** 类型参数替换器（显式类型参数的替换） */
     var substitutor: CfirTypeSubstitutor = CfirTypeSubstitutor.Empty
+
+    /** 约束系统（泛型推断时使用，Phase 4） */
+    var constraintSystem: CfirConstraintSystem? = null
 
     /** 当前最低适用性等级（验证阶段中取最差值） */
     var lowestApplicability: CfirCandidateApplicability = CfirCandidateApplicability.RESOLVED
