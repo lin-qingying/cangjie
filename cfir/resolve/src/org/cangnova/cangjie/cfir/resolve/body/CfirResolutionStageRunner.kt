@@ -1,61 +1,42 @@
 package org.cangnova.cangjie.cfir.resolve.body
 
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateApplicability
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckerSinkImpl
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
+
 /**
  * 候选验证管线执行器。
  *
- * 负责对调用解析中的每个候选（Candidate）执行一系列验证阶段（ResolutionStage），
- * 判定候选的适用性（Applicability）。
+ * 对调用解析中的每个候选（CfirCandidate）按其 callKind 的 resolutionSequence
+ * 顺序执行验证阶段，通过 CfirCheckerSinkImpl 收集诊断，
+ * 支持 stopOnFirstError 提前退出。
  *
- * Phase 2 仅提供骨架实现（无实际验证阶段），后续将逐步添加：
- * - CheckExtensionReceiver
- * - CheckDispatchReceiver
- * - MapArguments
- * - CheckArguments
- * 等验证阶段。
- *
- * 参考 K2 ResolutionStageRunner。
+ * 对齐 K2 ResolutionStageRunner。
  */
 class CfirResolutionStageRunner {
 
     /**
      * 对候选执行验证管线。
      *
-     * Phase 2 直接返回 RESOLVED（所有候选都视为适用），
-     * 后续将添加实际的阶段验证逻辑。
+     * 遍历 candidate.callInfo.callKind.resolutionSequence 中的每个阶段，
+     * 各阶段通过 sink 报告诊断并可能触发提前退出。
+     *
+     * @return 候选通过管线后的最终适用性等级
      */
     fun processCandidate(
         candidate: CfirCandidate,
+        context: CfirResolutionContext,
         stopOnFirstError: Boolean = true,
     ): CfirCandidateApplicability {
-        // Phase 2: 无验证阶段，所有候选直接通过
-        return CfirCandidateApplicability.RESOLVED
+        val sink = CfirCheckerSinkImpl(candidate, stopOnFirstError)
+        val stages = candidate.callInfo.callKind.resolutionSequence
+
+        for (stage in stages) {
+            if (sink.shouldStop) break
+            stage.check(candidate, sink, context)
+        }
+
+        return candidate.lowestApplicability
     }
-}
-
-/**
- * 候选适用性等级。
- *
- * 参考 K2 CandidateApplicability。
- */
-enum class CfirCandidateApplicability {
-    /** 候选被隐藏（不可见） */
-    HIDDEN,
-    /** 候选不适用 */
-    INAPPLICABLE,
-    /** 候选适用（通过所有验证阶段） */
-    RESOLVED,
-}
-
-/**
- * 调用解析候选。
- *
- * 封装一个候选函数符号及其验证结果。
- * Phase 2 为简化骨架，后续将添加：参数映射、类型推断变量、诊断信息等。
- *
- * 参考 K2 Candidate。
- */
-class CfirCandidate(
-    val symbol: org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol,
-) {
-    var applicability: CfirCandidateApplicability = CfirCandidateApplicability.RESOLVED
 }
