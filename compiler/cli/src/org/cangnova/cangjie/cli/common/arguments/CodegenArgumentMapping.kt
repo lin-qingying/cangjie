@@ -12,7 +12,7 @@ fun CommonCompilerArguments.toCodegenOptions(): CodegenOptions {
         partitionMode = codegenPartitionMode.toModulePartitionMode(),
         verifyBeforeWrite = verifyLlvmModule,
         emitBitcode = emitLlvmBitcode,
-        llvmBackendKind = if (rollbackToLegacyCodegenPath) LlvmBackendKind.IN_MEMORY else LlvmBackendKind.NATIVE_INTEROP,
+        llvmBackendKind = if (rollbackToLegacyCodegenPath) LlvmBackendKind.IN_MEMORY else LlvmBackendKind.JNI,
     )
 }
 

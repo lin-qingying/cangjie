@@ -1,0 +1,140 @@
+name: build-llvm-jni
+
+on:
+  push:
+    paths:
+      - ".github/workflows/build-llvm-jni.yml"
+      - "llvm-interop/**"
+      - "repo/gradle-build-conventions/native-compile-plugin/**"
+      - "gradle/**"
+      - "gradlew"
+      - "gradlew.bat"
+      - "settings.gradle.kts"
+  pull_request:
+    paths:
+      - ".github/workflows/build-llvm-jni.yml"
+      - "llvm-interop/**"
+      - "repo/gradle-build-conventions/native-compile-plugin/**"
+      - "gradle/**"
+      - "gradlew"
+      - "gradlew.bat"
+      - "settings.gradle.kts"
+
+jobs:
+  build-native:
+    name: native-${{ matrix.platform_id }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform_id: linux-x86_64
+            lib_file: libcangjie_llvm_jni.so
+          - runner: ubuntu-24.04-arm
+            platform_id: linux-aarch64
+            lib_file: libcangjie_llvm_jni.so
+          - runner: macos-13
+            platform_id: macos-x86_64
+            lib_file: libcangjie_llvm_jni.dylib
+          - runner: macos-14
+            platform_id: macos-aarch64
+            lib_file: libcangjie_llvm_jni.dylib
+          - runner: windows-2022
+            platform_id: windows-x86_64
+            lib_file: cangjie_llvm_jni.dll
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install LLVM on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-18 clang-18 lld-18
+          echo "LLVM_DIR=/usr/lib/llvm-18" >> "$GITHUB_ENV"
+
+      - name: Install LLVM on macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          brew update
+          brew install llvm@18
+          echo "LLVM_DIR=$(brew --prefix llvm@18)" >> "$GITHUB_ENV"
+
+      - name: Install LLVM on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install llvm -y
+          "LLVM_DIR=C:\Program Files\LLVM" >> $env:GITHUB_ENV
+
+      - name: Build native JNI library
+        shell: pwsh
+        run: |
+          $gradle = if ($env:RUNNER_OS -eq "Windows") { ".\gradlew.bat" } else { "./gradlew" }
+          & $gradle `
+            :llvm-interop:llvm-interop-jni:nativeCompile `
+            :llvm-interop:llvm-interop-jni:aggregateNativeArtifacts `
+            --no-configuration-cache `
+            -Pllvm.dir="$env:LLVM_DIR"
+
+      - name: Run JNI integration test on Linux x86_64
+        if: matrix.platform_id == 'linux-x86_64'
+        shell: pwsh
+        env:
+          CANGJIE_LLVM_JNI_INTEGRATION: "true"
+          CANGJIE_LLVM_JNI_LIBRARY_PATH: ${{ github.workspace }}/llvm-interop/llvm-interop-jni/build/native/linux-x86_64/libcangjie_llvm_jni.so
+        run: |
+          $gradle = "./gradlew"
+          & $gradle `
+            :llvm-interop:llvm-interop-jni:test `
+            --tests "org.cangnova.cangjie.llvm.jni.LlvmNativeIntegrationTest" `
+            --no-configuration-cache
+          & $gradle `
+            :compiler:codegen:test `
+            --tests "org.cangnova.cangjie.codegen.pipeline.JniBackendEndToEndIntegrationTest" `
+            --no-configuration-cache
+
+      - name: Upload platform artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.platform_id }}
+          path: llvm-interop/llvm-interop-jni/build/native/${{ matrix.platform_id }}/${{ matrix.lib_file }}
+          if-no-files-found: error
+
+  aggregate-native-artifacts:
+    name: aggregate-native-artifacts
+    runs-on: ubuntu-24.04
+    needs: build-native
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: native
+
+      - name: Flatten native artifact layout
+        shell: bash
+        run: |
+          mkdir -p native-bundle/native
+          for dir in native/native-*; do
+            platform="${dir##*/native-}"
+            mkdir -p "native-bundle/native/$platform"
+            cp "$dir"/* "native-bundle/native/$platform/"
+          done
+
+      - name: Upload aggregated native bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: llvm-jni-native-bundle
+          path: native-bundle/native
+          if-no-files-found: error
