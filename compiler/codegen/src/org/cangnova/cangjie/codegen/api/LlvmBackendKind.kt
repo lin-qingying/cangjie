@@ -1,7 +1,6 @@
 package org.cangnova.cangjie.codegen.api
 
 enum class LlvmBackendKind {
-    NATIVE_INTEROP,
+    JNI,
     IN_MEMORY,
 }
-

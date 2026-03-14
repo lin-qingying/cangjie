@@ -15,6 +15,7 @@ sourceSets {
 
 dependencies {
     implementation(project(":compiler:chir"))
+    implementation(project(":llvm-interop:llvm-interop-jni"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit4)
     testRuntimeOnly(libs.junit.vintage.engine)

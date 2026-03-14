@@ -59,5 +59,9 @@ include("compiler:cli")
 include(":compiler:chir")
 include(":compiler:codegen")
 
+include(":llvm-interop")
+include(":llvm-interop:llvm-interop-api")
+include(":llvm-interop:llvm-interop-jni")
+
 include("cfir:cfir-tree:tree-generator")
 include(":flatbuffers-gen")

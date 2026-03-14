@@ -3,33 +3,40 @@ package org.cangnova.cangjie.codegen.backend
 import org.cangnova.cangjie.codegen.api.CodegenOptions
 import org.cangnova.cangjie.codegen.api.LlvmBackendKind
 import org.cangnova.cangjie.codegen.diagnostics.LlvmBackendException
+import org.cangnova.cangjie.codegen.diagnostics.LlvmBackendVersionMismatchException
 
-class LlvmBackendFactory(
-    private val toolRunner: NativeInteropToolRunner = ProcessNativeInteropToolRunner(),
-    private val toolLocator: NativeInteropToolLocator = NativeInteropToolLocator(),
-) {
-    fun createAndInitialize(options: CodegenOptions): LlvmBackendApi {
+open class LlvmBackendFactory {
+    fun createAndInitialize(options: CodegenOptions): LlvmBackend {
         return when (options.llvmBackendKind) {
             LlvmBackendKind.IN_MEMORY -> InMemoryLlvmBackendApi().also(LlvmBackendApi::initialize)
-            LlvmBackendKind.NATIVE_INTEROP -> createNativeInterop(options)
+            LlvmBackendKind.JNI -> createJniOrFallback(options)
         }
     }
 
-    private fun createNativeInterop(options: CodegenOptions): LlvmBackendApi {
-        val resolvedTool = toolLocator.resolve(options.nativeInteropTool)
-        val backend = NativeInteropLlvmBackendApi(
-            tool = resolvedTool,
-            requiredMajorVersion = options.requiredLlvmMajorVersion,
-            runner = toolRunner,
-        )
+    private fun createJniOrFallback(options: CodegenOptions): LlvmBackend {
+        val jniBackend = createJniBackend()
         return try {
-            backend.initialize()
-            backend
+            jniBackend.initialize()
+            checkVersion(jniBackend, options.requiredLlvmMajorVersion)
+            jniBackend
         } catch (error: LlvmBackendException) {
-            if (options.nativeInteropFailOnUnavailable) {
+            if (options.failOnUnavailable) {
                 throw error
             }
             InMemoryLlvmBackendApi().also(LlvmBackendApi::initialize)
+        }
+    }
+
+    protected open fun createJniBackend(): LlvmBackend = JniLlvmBackend()
+
+    private fun checkVersion(backend: LlvmBackend, expectedMajorVersion: Int) {
+        val actualVersion = backend.capabilities.llvmVersion ?: return
+        val actualMajor = actualVersion.takeWhile { it.isDigit() }.toIntOrNull() ?: return
+        if (actualMajor != expectedMajorVersion) {
+            throw LlvmBackendVersionMismatchException(
+                expectedMajor = expectedMajorVersion,
+                actualVersion = actualVersion,
+            )
         }
     }
 }

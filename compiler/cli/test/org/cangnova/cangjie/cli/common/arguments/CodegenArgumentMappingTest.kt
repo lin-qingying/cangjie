@@ -12,7 +12,7 @@ class CodegenArgumentMappingTest {
     fun `new pipeline is enabled by default`() {
         val options = CommonCompilerArguments().toCodegenOptions()
         assertTrue(options.enabled)
-        assertEquals(LlvmBackendKind.NATIVE_INTEROP, options.llvmBackendKind)
+        assertEquals(LlvmBackendKind.JNI, options.llvmBackendKind)
     }
 
     @Test

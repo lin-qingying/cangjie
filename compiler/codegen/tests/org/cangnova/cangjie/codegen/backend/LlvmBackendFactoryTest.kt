@@ -2,27 +2,20 @@ package org.cangnova.cangjie.codegen.backend
 
 import org.cangnova.cangjie.codegen.api.CodegenOptions
 import org.cangnova.cangjie.codegen.api.LlvmBackendKind
-import org.cangnova.cangjie.codegen.diagnostics.LlvmBackendMissingSymbolsException
 import org.cangnova.cangjie.codegen.diagnostics.LlvmBackendUnavailableException
 import org.cangnova.cangjie.codegen.diagnostics.LlvmBackendVersionMismatchException
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class LlvmBackendFactoryTest {
     @Test
-    fun `fallbacks to in-memory backend when interop tool is unavailable in non-strict mode`() {
-        val factory = LlvmBackendFactory(
-            toolRunner = FakeNativeInteropToolRunner(
-                probeError = LlvmBackendUnavailableException("tool missing"),
-            ),
-        )
+    fun `returns in-memory backend when configured as in-memory`() {
+        val factory = LlvmBackendFactory()
 
         val backend = factory.createAndInitialize(
             CodegenOptions(
-                llvmBackendKind = LlvmBackendKind.NATIVE_INTEROP,
-                nativeInteropFailOnUnavailable = false,
+                llvmBackendKind = LlvmBackendKind.IN_MEMORY,
             ),
         )
 
@@ -30,97 +23,105 @@ class LlvmBackendFactoryTest {
     }
 
     @Test
-    fun `throws when interop tool is unavailable in strict mode`() {
-        val factory = LlvmBackendFactory(
-            toolRunner = FakeNativeInteropToolRunner(
-                probeError = LlvmBackendUnavailableException("tool missing"),
+    fun `returns jni backend with default options when available`() {
+        val factory = LlvmBackendFactoryForTest(
+            jniBackend = JniLlvmBackend(
+                native = FakeNativeFacade(
+                    available = true,
+                    version = "18.1.0",
+                ),
+            ),
+        )
+
+        val backend = factory.createAndInitialize(CodegenOptions())
+        assertEquals("jni", backend.id)
+    }
+
+    @Test
+    fun `fallbacks to in-memory when jni is unavailable and non-strict`() {
+        val factory = LlvmBackendFactoryForTest(
+            jniBackend = JniLlvmBackend(
+                native = FakeNativeFacade(
+                    available = false,
+                    diagnosticsMessage = "not found",
+                ),
+            ),
+        )
+
+        val backend = factory.createAndInitialize(
+            CodegenOptions(
+                llvmBackendKind = LlvmBackendKind.JNI,
+                failOnUnavailable = false,
+            ),
+        )
+        assertEquals("in-memory", backend.id)
+    }
+
+    @Test
+    fun `throws when jni is unavailable in strict mode`() {
+        val factory = LlvmBackendFactoryForTest(
+            jniBackend = JniLlvmBackend(
+                native = FakeNativeFacade(
+                    available = false,
+                    diagnosticsMessage = "missing native library",
+                ),
             ),
         )
 
         assertThrows<LlvmBackendUnavailableException> {
             factory.createAndInitialize(
                 CodegenOptions(
-                    llvmBackendKind = LlvmBackendKind.NATIVE_INTEROP,
-                    nativeInteropFailOnUnavailable = true,
+                    llvmBackendKind = LlvmBackendKind.JNI,
+                    failOnUnavailable = true,
                 ),
             )
         }
     }
 
     @Test
-    fun `throws on llvm version mismatch`() {
-        val backend = NativeInteropLlvmBackendApi(
-            tool = "fake-tool",
-            requiredMajorVersion = 18,
-            runner = FakeNativeInteropToolRunner(
-                probeResult = NativeInteropProbeResult(
-                    llvmVersion = "17.0.6",
-                    symbols = defaultSymbols,
+    fun `throws on llvm major version mismatch`() {
+        val factory = LlvmBackendFactoryForTest(
+            jniBackend = JniLlvmBackend(
+                native = FakeNativeFacade(
+                    available = true,
+                    version = "17.0.6",
                 ),
             ),
         )
 
-        val error = assertThrows<LlvmBackendVersionMismatchException> { backend.initialize() }
+        val error = assertThrows<LlvmBackendVersionMismatchException> {
+            factory.createAndInitialize(
+                CodegenOptions(
+                    llvmBackendKind = LlvmBackendKind.JNI,
+                    failOnUnavailable = true,
+                    requiredLlvmMajorVersion = 18,
+                ),
+            )
+        }
         assertEquals(18, error.expectedMajor)
         assertEquals("17.0.6", error.actualVersion)
     }
 
-    @Test
-    fun `throws on missing required symbols`() {
-        val backend = NativeInteropLlvmBackendApi(
-            tool = "fake-tool",
-            requiredMajorVersion = 18,
-            runner = FakeNativeInteropToolRunner(
-                probeResult = NativeInteropProbeResult(
-                    llvmVersion = "18.1.0",
-                    symbols = setOf("LLVMGetVersion"),
-                ),
-            ),
-        )
-
-        val error = assertThrows<LlvmBackendMissingSymbolsException> { backend.initialize() }
-        assertTrue(error.symbols.contains("LLVMContextCreate"))
+    private class LlvmBackendFactoryForTest(
+        private val jniBackend: LlvmBackend,
+    ) : LlvmBackendFactory() {
+        override fun createJniBackend(): LlvmBackend = jniBackend
     }
 
-    @Test
-    fun `uses interop backend for bitcode emission when probe passes`() {
-        val backend = NativeInteropLlvmBackendApi(
-            tool = "fake-tool",
-            requiredMajorVersion = 18,
-            runner = FakeNativeInteropToolRunner(
-                probeResult = NativeInteropProbeResult(
-                    llvmVersion = "18.0.0",
-                    symbols = defaultSymbols,
-                ),
-                bitcodeResult = byteArrayOf(0x42, 0x43),
-            ),
-        )
+    private class FakeNativeFacade(
+        private val available: Boolean,
+        private val diagnosticsMessage: String = "",
+        private val version: String? = null,
+    ) : JniNativeFacade {
+        override val isAvailable: Boolean
+            get() = available
 
-        backend.initialize()
-        val bitcode = backend.emitBitcode("sample", "define i32 @main() { ret i32 0 }")
-        assertTrue(bitcode.contentEquals(byteArrayOf(0x42, 0x43)))
-    }
+        override val diagnostics: String
+            get() = diagnosticsMessage
 
-    private class FakeNativeInteropToolRunner(
-        private val probeResult: NativeInteropProbeResult? = null,
-        private val probeError: Throwable? = null,
-        private val bitcodeResult: ByteArray = byteArrayOf(),
-    ) : NativeInteropToolRunner {
-        override fun probe(tool: String): NativeInteropProbeResult {
-            probeError?.let { throw it }
-            return probeResult ?: error("probeResult is required when probeError is null")
-        }
+        override val llvmVersion: String?
+            get() = version
 
-        override fun emitBitcode(tool: String, moduleName: String, llvmIr: String): ByteArray = bitcodeResult
-    }
-
-    private companion object {
-        val defaultSymbols = setOf(
-            "LLVMGetVersion",
-            "LLVMContextCreate",
-            "LLVMModuleCreateWithName",
-            "LLVMAddFunction",
-            "LLVMPrintModuleToString",
-        )
+        override fun emitBitcode(moduleName: String, llvmIr: String): ByteArray = llvmIr.toByteArray()
     }
 }
