@@ -99,6 +99,7 @@
       <module name="cangjie.compiler.codegen" options="-proc:none" />
       <module name="cangjie.compiler.codegen.main" options="-proc:none" />
       <module name="cangjie.compiler.codegen.test" options="-proc:none" />
+      <module name="cangjie.compiler.codegen.testFixtures" options="-proc:none" />
       <module name="cangjie.compiler.config" options="-proc:none" />
       <module name="cangjie.compiler.config.main" options="-proc:none" />
       <module name="cangjie.compiler.config.test" options="-proc:none" />

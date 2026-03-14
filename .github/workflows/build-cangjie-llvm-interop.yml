@@ -1,72 +1,54 @@
-name: Build cangjie-llvm-interop
+name: Multi-Platform Build (cangjie-llvm-interop)
 
 on:
   push:
-    paths:
-      - "tools/cangjie-llvm-interop/**"
-      - ".github/workflows/build-cangjie-llvm-interop.yml"
+    branches: [ main, master, develop ]
+    tags:
+      - "v*"
   pull_request:
-    paths:
-      - "tools/cangjie-llvm-interop/**"
-      - ".github/workflows/build-cangjie-llvm-interop.yml"
+    branches: [ main, master ]
   workflow_dispatch:
 
+env:
+  PROJECT_NAME: cangjie-llvm-interop
+  BUILD_TYPE: Release
+
 jobs:
-  build-unix:
-    name: ${{ matrix.os }} (${{ matrix.host_arch }})
-    runs-on: ${{ matrix.os }}
+  build-linux-amd64:
+    runs-on: ubuntu-22.04
     timeout-minutes: 120
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            host_arch: x64
-          - os: ubuntu-24.04-arm
-            host_arch: arm64
-          - os: macos-13
-            host_arch: x64
-          - os: macos-14
-            host_arch: arm64
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies (Linux)
-        if: runner.os == 'Linux'
+      - name: Setup CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build g++ llvm-dev
-
-      - name: Install dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install ninja llvm@18
+          sudo apt-get install -y \
+            build-essential \
+            g++ \
+            ninja-build \
+            llvm-dev
 
       - name: Resolve LLVM_DIR
         id: llvm-dir
-        shell: bash
         run: |
-          if [ "${RUNNER_OS}" = "Linux" ]; then
-            echo "value=$(llvm-config --cmakedir)" >> "$GITHUB_OUTPUT"
-          elif [ "${RUNNER_OS}" = "macOS" ]; then
-            LLVM_PREFIX="$(brew --prefix llvm@18)"
-            echo "value=${LLVM_PREFIX}/lib/cmake/llvm" >> "$GITHUB_OUTPUT"
-          else
-            echo "Unsupported OS: ${RUNNER_OS}" >&2
-            exit 1
-          fi
+          echo "value=$(llvm-config --cmakedir)" >> "$GITHUB_OUTPUT"
 
       - name: Cache CMake build directory
         uses: actions/cache@v4
         with:
           path: tools/cangjie-llvm-interop/build
-          key: interop-build-${{ runner.os }}-${{ matrix.host_arch }}-${{ hashFiles('tools/cangjie-llvm-interop/CMakeLists.txt', 'tools/cangjie-llvm-interop/src/**', '.github/workflows/build-cangjie-llvm-interop.yml') }}
+          key: interop-build-${{ runner.os }}-amd64-${{ hashFiles('tools/cangjie-llvm-interop/CMakeLists.txt', 'tools/cangjie-llvm-interop/src/**', '.github/workflows/build-cangjie-llvm-interop.yml') }}
 
-      - name: Configure
+      - name: Configure CMake
         run: |
           cmake -S tools/cangjie-llvm-interop -B tools/cangjie-llvm-interop/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
             -DCANGJIE_USE_OFFICIAL_LLVM=OFF \
             -DLLVM_DIR="${{ steps.llvm-dir.outputs.value }}"
 
@@ -76,38 +58,92 @@ jobs:
 
       - name: Probe
         run: |
-          tools/cangjie-llvm-interop/build/cangjie-llvm-interop probe --json | tee tools/cangjie-llvm-interop/build/probe.json
+          tools/cangjie-llvm-interop/build/${{ env.PROJECT_NAME }}_linux_amd64 probe --json | tee tools/cangjie-llvm-interop/build/probe_linux_amd64.json
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cangjie-llvm-interop-${{ runner.os }}-${{ matrix.host_arch }}
+          name: linux-amd64
           path: |
-            tools/cangjie-llvm-interop/build/cangjie-llvm-interop
-            tools/cangjie-llvm-interop/build/probe.json
+            tools/cangjie-llvm-interop/build/${{ env.PROJECT_NAME }}_linux_amd64
+            tools/cangjie-llvm-interop/build/probe_linux_amd64.json
+          retention-days: 7
           if-no-files-found: error
 
-  build-windows:
-    name: windows-latest (x64)
-    runs-on: windows-latest
+  build-linux-arm64:
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 120
+
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup MSVC (cl.exe)
-        uses: ilammy/msvc-dev-cmd@v1
+      - name: Setup CMake
+        uses: lukka/get-cmake@latest
 
       - name: Install dependencies
-        shell: pwsh
         run: |
-          choco install -y ninja llvm
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            g++ \
+            ninja-build \
+            llvm-dev
+
+      - name: Resolve LLVM_DIR
+        id: llvm-dir
+        run: |
+          echo "value=$(llvm-config --cmakedir)" >> "$GITHUB_OUTPUT"
 
       - name: Cache CMake build directory
         uses: actions/cache@v4
         with:
           path: tools/cangjie-llvm-interop/build
-          key: interop-build-${{ runner.os }}-x64-${{ hashFiles('tools/cangjie-llvm-interop/CMakeLists.txt', 'tools/cangjie-llvm-interop/src/**', '.github/workflows/build-cangjie-llvm-interop.yml') }}
+          key: interop-build-${{ runner.os }}-arm64-${{ hashFiles('tools/cangjie-llvm-interop/CMakeLists.txt', 'tools/cangjie-llvm-interop/src/**', '.github/workflows/build-cangjie-llvm-interop.yml') }}
+
+      - name: Configure CMake
+        run: |
+          cmake -S tools/cangjie-llvm-interop -B tools/cangjie-llvm-interop/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DCANGJIE_USE_OFFICIAL_LLVM=OFF \
+            -DLLVM_DIR="${{ steps.llvm-dir.outputs.value }}"
+
+      - name: Build
+        run: |
+          cmake --build tools/cangjie-llvm-interop/build --parallel
+
+      - name: Probe
+        run: |
+          tools/cangjie-llvm-interop/build/${{ env.PROJECT_NAME }}_linux_arm64 probe --json | tee tools/cangjie-llvm-interop/build/probe_linux_arm64.json
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64
+          path: |
+            tools/cangjie-llvm-interop/build/${{ env.PROJECT_NAME }}_linux_arm64
+            tools/cangjie-llvm-interop/build/probe_linux_arm64.json
+          retention-days: 7
+          if-no-files-found: error
+
+  build-windows-amd64:
+    runs-on: windows-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          choco install -y llvm
 
       - name: Resolve LLVM_DIR (Windows)
         id: llvm-dir-win
@@ -138,12 +174,19 @@ jobs:
 
           Write-Error 'LLVMConfig.cmake not found after installing llvm package.'
 
-      - name: Configure
+      - name: Cache CMake build directory
+        uses: actions/cache@v4
+        with:
+          path: tools/cangjie-llvm-interop/build
+          key: interop-build-${{ runner.os }}-amd64-${{ hashFiles('tools/cangjie-llvm-interop/CMakeLists.txt', 'tools/cangjie-llvm-interop/src/**', '.github/workflows/build-cangjie-llvm-interop.yml') }}
+
+      - name: Configure CMake
         shell: pwsh
         run: |
           cmake -S tools/cangjie-llvm-interop -B tools/cangjie-llvm-interop/build -G Ninja `
-            -DCMAKE_C_COMPILER=cl `
-            -DCMAKE_CXX_COMPILER=cl `
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
+            -DCMAKE_C_COMPILER=clang `
+            -DCMAKE_CXX_COMPILER=clang++ `
             -DCANGJIE_USE_OFFICIAL_LLVM=OFF `
             -DLLVM_DIR="${{ steps.llvm-dir-win.outputs.value }}"
 
@@ -155,13 +198,161 @@ jobs:
       - name: Probe
         shell: pwsh
         run: |
-          .\tools\cangjie-llvm-interop\build\cangjie-llvm-interop.exe probe --json | Tee-Object -FilePath .\tools\cangjie-llvm-interop\build\probe.json
+          .\tools\cangjie-llvm-interop\build\${{ env.PROJECT_NAME }}_windows_amd64.exe probe --json | Tee-Object -FilePath .\tools\cangjie-llvm-interop\build\probe_windows_amd64.json
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cangjie-llvm-interop-${{ runner.os }}-x64
+          name: windows-amd64
           path: |
-            tools/cangjie-llvm-interop/build/cangjie-llvm-interop.exe
-            tools/cangjie-llvm-interop/build/probe.json
+            tools/cangjie-llvm-interop/build/${{ env.PROJECT_NAME }}_windows_amd64.exe
+            tools/cangjie-llvm-interop/build/probe_windows_amd64.json
+          retention-days: 7
           if-no-files-found: error
+
+  build-macos-amd64:
+    runs-on: macos-13
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Install dependencies
+        run: |
+          brew install ninja llvm@18
+
+      - name: Resolve LLVM_DIR
+        id: llvm-dir
+        run: |
+          echo "value=$(brew --prefix llvm@18)/lib/cmake/llvm" >> "$GITHUB_OUTPUT"
+
+      - name: Cache CMake build directory
+        uses: actions/cache@v4
+        with:
+          path: tools/cangjie-llvm-interop/build
+          key: interop-build-${{ runner.os }}-amd64-${{ hashFiles('tools/cangjie-llvm-interop/CMakeLists.txt', 'tools/cangjie-llvm-interop/src/**', '.github/workflows/build-cangjie-llvm-interop.yml') }}
+
+      - name: Configure CMake
+        run: |
+          cmake -S tools/cangjie-llvm-interop -B tools/cangjie-llvm-interop/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DCANGJIE_USE_OFFICIAL_LLVM=OFF \
+            -DLLVM_DIR="${{ steps.llvm-dir.outputs.value }}"
+
+      - name: Build
+        run: |
+          cmake --build tools/cangjie-llvm-interop/build --parallel
+
+      - name: Probe
+        run: |
+          tools/cangjie-llvm-interop/build/${{ env.PROJECT_NAME }}_macos_amd64 probe --json | tee tools/cangjie-llvm-interop/build/probe_macos_amd64.json
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-amd64
+          path: |
+            tools/cangjie-llvm-interop/build/${{ env.PROJECT_NAME }}_macos_amd64
+            tools/cangjie-llvm-interop/build/probe_macos_amd64.json
+          retention-days: 7
+          if-no-files-found: error
+
+  build-macos-arm64:
+    runs-on: macos-14
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Install dependencies
+        run: |
+          brew install ninja llvm@18
+
+      - name: Resolve LLVM_DIR
+        id: llvm-dir
+        run: |
+          echo "value=$(brew --prefix llvm@18)/lib/cmake/llvm" >> "$GITHUB_OUTPUT"
+
+      - name: Cache CMake build directory
+        uses: actions/cache@v4
+        with:
+          path: tools/cangjie-llvm-interop/build
+          key: interop-build-${{ runner.os }}-arm64-${{ hashFiles('tools/cangjie-llvm-interop/CMakeLists.txt', 'tools/cangjie-llvm-interop/src/**', '.github/workflows/build-cangjie-llvm-interop.yml') }}
+
+      - name: Configure CMake
+        run: |
+          cmake -S tools/cangjie-llvm-interop -B tools/cangjie-llvm-interop/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DCANGJIE_USE_OFFICIAL_LLVM=OFF \
+            -DLLVM_DIR="${{ steps.llvm-dir.outputs.value }}"
+
+      - name: Build
+        run: |
+          cmake --build tools/cangjie-llvm-interop/build --parallel
+
+      - name: Probe
+        run: |
+          tools/cangjie-llvm-interop/build/${{ env.PROJECT_NAME }}_macos_arm64 probe --json | tee tools/cangjie-llvm-interop/build/probe_macos_arm64.json
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64
+          path: |
+            tools/cangjie-llvm-interop/build/${{ env.PROJECT_NAME }}_macos_arm64
+            tools/cangjie-llvm-interop/build/probe_macos_arm64.json
+          retention-days: 7
+          if-no-files-found: error
+
+  create-release:
+    needs: [build-linux-amd64, build-linux-arm64, build-windows-amd64, build-macos-amd64, build-macos-arm64]
+    runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure
+        run: ls -R artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          cp artifacts/linux-amd64/${{ env.PROJECT_NAME }}_linux_amd64 release/
+          cp artifacts/linux-arm64/${{ env.PROJECT_NAME }}_linux_arm64 release/
+          cp artifacts/windows-amd64/${{ env.PROJECT_NAME }}_windows_amd64.exe release/
+          cp artifacts/macos-amd64/${{ env.PROJECT_NAME }}_macos_amd64 release/
+          cp artifacts/macos-arm64/${{ env.PROJECT_NAME }}_macos_arm64 release/
+          cp artifacts/linux-amd64/probe_linux_amd64.json release/
+          cp artifacts/linux-arm64/probe_linux_arm64.json release/
+          cp artifacts/windows-amd64/probe_windows_amd64.json release/
+          cp artifacts/macos-amd64/probe_macos_amd64.json release/
+          cp artifacts/macos-arm64/probe_macos_arm64.json release/
+
+          cd release
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
