@@ -11,6 +11,11 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedNamedReferenceImpl
 import org.cangnova.cangjie.cfir.resolve.CfirResolutionMode
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallInfo
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallKind
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckArguments
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckVisibility
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirMapArguments
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.symbols.*
@@ -174,19 +179,90 @@ class CfirExpressionsResolveTransformer(
             return functionCall
         }
 
-        // 通过 callResolver 解析调用
-        val result = callResolver.resolveCall(reference.name, functionCall.arguments)
+        // Phase 3: 尝试完整的调用解析流程
+        val resolutionContext = components.resolutionContext
+        if (resolutionContext != null) {
+            return resolveCallWithPhase3(functionCall, reference, resolutionContext)
+        }
+
+        // 回退到旧版解析
+        return resolveCallLegacy(functionCall, reference)
+    }
+
+    /**
+     * Phase 3 完整调用解析：构建 CallInfo → 调用解析 → 绑定结果。
+     */
+    private fun resolveCallWithPhase3(
+        functionCall: CfirFunctionCall,
+        reference: CfirNamedReference,
+        resolutionContext: org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext,
+    ): CfirExpression {
+        val callInfo = CfirCallInfo(
+            callSite = functionCall,
+            callKind = CfirCallKind.Function(
+                listOf(CfirCheckVisibility, CfirMapArguments, CfirCheckArguments)
+            ),
+            name = reference.name,
+            explicitReceiver = functionCall.explicitReceiver,
+            arguments = functionCall.arguments,
+            typeArguments = functionCall.typeArguments,
+            session = session,
+        )
+
+        val result = callResolver.resolveCallAndSelectCandidate(callInfo, resolutionContext)
 
         when (result) {
             is CfirCallResolutionResult.Success -> {
-                functionCall.calleeReference = CfirResolvedNamedReferenceImpl(reference.name, result.symbol)
-                functionCall.replaceConeTypeOrNull(result.returnType)
+                val candidate = result.candidate
+                functionCall.calleeReference = CfirResolvedNamedReferenceImpl(reference.name, candidate.symbol)
+                val returnType = candidate.resolvedReturnType() ?: ConeErrorType("unresolved return type")
+                functionCall.replaceConeTypeOrNull(returnType)
+            }
+            is CfirCallResolutionResult.ResolvedWithErrors -> {
+                val candidate = result.candidate
+                functionCall.calleeReference = CfirResolvedNamedReferenceImpl(reference.name, candidate.symbol)
+                val returnType = candidate.resolvedReturnType() ?: ConeErrorType("resolved with errors")
+                functionCall.replaceConeTypeOrNull(returnType)
             }
             is CfirCallResolutionResult.Ambiguity -> {
                 functionCall.replaceConeTypeOrNull(ConeErrorType("ambiguous call: ${reference.name}"))
             }
             is CfirCallResolutionResult.NoCandidate -> {
                 functionCall.replaceConeTypeOrNull(ConeErrorType("unresolved call: ${reference.name}"))
+            }
+            is CfirCallResolutionResult.LegacySuccess -> {
+                functionCall.calleeReference = CfirResolvedNamedReferenceImpl(reference.name, result.symbol)
+                functionCall.replaceConeTypeOrNull(result.returnType)
+            }
+            is CfirCallResolutionResult.LegacyAmbiguity -> {
+                functionCall.replaceConeTypeOrNull(ConeErrorType("ambiguous call: ${reference.name}"))
+            }
+        }
+        return functionCall
+    }
+
+    /**
+     * 旧版调用解析回退路径。
+     */
+    private fun resolveCallLegacy(
+        functionCall: CfirFunctionCall,
+        reference: CfirNamedReference,
+    ): CfirExpression {
+        val result = callResolver.resolveCall(reference.name, functionCall.arguments)
+
+        when (result) {
+            is CfirCallResolutionResult.LegacySuccess -> {
+                functionCall.calleeReference = CfirResolvedNamedReferenceImpl(reference.name, result.symbol)
+                functionCall.replaceConeTypeOrNull(result.returnType)
+            }
+            is CfirCallResolutionResult.LegacyAmbiguity -> {
+                functionCall.replaceConeTypeOrNull(ConeErrorType("ambiguous call: ${reference.name}"))
+            }
+            is CfirCallResolutionResult.NoCandidate -> {
+                functionCall.replaceConeTypeOrNull(ConeErrorType("unresolved call: ${reference.name}"))
+            }
+            else -> {
+                functionCall.replaceConeTypeOrNull(ConeErrorType("unexpected resolution result"))
             }
         }
         return functionCall

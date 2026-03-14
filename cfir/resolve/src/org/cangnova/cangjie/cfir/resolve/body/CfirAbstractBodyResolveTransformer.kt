@@ -5,10 +5,15 @@ import org.cangnova.cangjie.cfir.CfirSessionHolder
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.resolve.CfirResolutionMode
+import org.cangnova.cangjie.cfir.resolve.CfirTypeCheckerContext
+import org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirCallConflictResolver
+import org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirOverloadConflictResolver
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirAbstractPhaseTransformer
 import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.types.ConeSubtypeChecker
 
 /**
  * Body 解析 transformer 抽象基类。
@@ -58,6 +63,25 @@ abstract class CfirAbstractBodyResolveTransformer(
         /** 候选验证管线执行器 — 即时初始化（无状态，轻量） */
         val resolutionStageRunner: CfirResolutionStageRunner = CfirResolutionStageRunner()
 
+        /** 子类型检查器 — 懒初始化 */
+        val subtypeChecker: ConeSubtypeChecker by lazy(LazyThreadSafetyMode.NONE) {
+            ConeSubtypeChecker(CfirTypeCheckerContext(session))
+        }
+
+        /** 重载冲突解析器 — 懒初始化 */
+        val conflictResolver: CfirCallConflictResolver by lazy(LazyThreadSafetyMode.NONE) {
+            CfirOverloadConflictResolver(subtypeChecker)
+        }
+
+        /** 解析上下文 — 懒初始化（用于 Phase 3 验证阶段管线） */
+        val resolutionContext: CfirResolutionContext? by lazy(LazyThreadSafetyMode.NONE) {
+            try {
+                CfirResolutionContext(session, context, subtypeChecker)
+            } catch (_: Exception) {
+                null // 如果 typeContext 不可用，回退到旧版解析
+            }
+        }
+
         /** Tower 解析器 — 懒初始化 */
         val towerResolver: CfirTowerResolver by lazy(LazyThreadSafetyMode.NONE) {
             CfirTowerResolver(this, resolutionStageRunner)
@@ -65,7 +89,9 @@ abstract class CfirAbstractBodyResolveTransformer(
 
         /** 调用解析器 — 懒初始化 */
         val callResolver: CfirCallResolver by lazy(LazyThreadSafetyMode.NONE) {
-            CfirCallResolver(this)
+            CfirCallResolver(this).also { resolver ->
+                resolver.conflictResolver = conflictResolver
+            }
         }
     }
 }
