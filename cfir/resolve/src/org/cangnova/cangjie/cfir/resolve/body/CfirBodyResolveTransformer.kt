@@ -1,18 +1,14 @@
-package org.cangnova.cangjie.cfir.resolve.body
+﻿package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
- * Body 解析 transformer — 具体 dispatcher。
- *
- * 薄壳实现，持有 context、components 和两个子 transformer。
- * 所有 transformXxx 方法通过 [CfirAbstractBodyResolveTransformerDispatcher]
- * 委托到对应的子 transformer。
- *
- * 参考 K2 FirBodyResolveTransformer。
- */
+ * Body 瑙ｆ瀽 transformer 鈥?鍏蜂綋 dispatcher銆? *
+ * 钖勫３瀹炵幇锛屾寔鏈?context銆乧omponents 鍜屼袱涓瓙 transformer銆? * 鎵€鏈?transformXxx 鏂规硶閫氳繃 [CfirAbstractBodyResolveTransformerDispatcher]
+ * 濮旀墭鍒板搴旂殑瀛?transformer銆? *
+ * 鍙傝€?K2 FirBodyResolveTransformer銆? */
 open class CfirBodyResolveTransformer(
     session: CfirSession,
     scopeSession: CfirScopeSession,
@@ -33,3 +29,4 @@ open class CfirBodyResolveTransformer(
     final override val expressionsTransformer = CfirExpressionsResolveTransformer(this)
     final override val declarationsTransformer = CfirDeclarationsResolveTransformer(this)
 }
+

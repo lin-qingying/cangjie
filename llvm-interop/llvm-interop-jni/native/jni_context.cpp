@@ -1,3 +1,4 @@
+// JNI 上下文相关桥接实现。
 #include "jni_utils.h"
 
 #include <llvm-c/Core.h>

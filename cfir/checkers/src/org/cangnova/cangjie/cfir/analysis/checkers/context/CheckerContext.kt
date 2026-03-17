@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.analysis.checkers.context
+﻿package org.cangnova.cangjie.cfir.analysis.checkers.context
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
@@ -7,6 +7,10 @@ import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.Severity
+import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
@@ -20,6 +24,7 @@ abstract class CheckerContext : DiagnosticContext {
     abstract val containingDeclarations: List<CfirDeclaration>
     abstract val containingStatements: List<CfirStatement>
     abstract val containingElements: List<CfirElement>
+    abstract val callsOrAssignments: List<CfirElement>
 
     abstract val suppressedDiagnostics: Set<String>
     abstract val allInfosSuppressed: Boolean
@@ -57,6 +62,7 @@ class MutableCheckerContext(
     private val mutableDeclarations = mutableListOf<CfirDeclaration>()
     private val mutableStatements = mutableListOf<CfirStatement>()
     private val mutableElements = mutableListOf<CfirElement>()
+    private val mutableCallsOrAssignments = mutableListOf<CfirElement>()
 
     override val containingDeclarations: List<CfirDeclaration>
         get() = mutableDeclarations
@@ -66,6 +72,8 @@ class MutableCheckerContext(
 
     override val containingElements: List<CfirElement>
         get() = mutableElements
+    override val callsOrAssignments: List<CfirElement>
+        get() = mutableCallsOrAssignments
 
     fun addDeclaration(declaration: CfirDeclaration) {
         mutableDeclarations += declaration
@@ -90,13 +98,26 @@ class MutableCheckerContext(
     fun addElement(element: CfirElement) {
         if (mutableElements.lastOrNull() !== element) {
             mutableElements += element
+            if (element.isCallOrAssignmentCandidate()) {
+                mutableCallsOrAssignments += element
+            }
         }
     }
 
     fun dropElement() {
         if (mutableElements.isNotEmpty()) {
-            mutableElements.removeLast()
+            val removed = mutableElements.removeLast()
+            if (removed.isCallOrAssignmentCandidate()) {
+                mutableCallsOrAssignments.removeLast()
+            }
         }
+    }
+
+    private fun CfirElement.isCallOrAssignmentCandidate(): Boolean {
+        return this is CfirFunctionCall ||
+                this is CfirPropertyAccess ||
+                this is CfirQualifiedAccess ||
+                this is CfirAssignment
     }
 }
 

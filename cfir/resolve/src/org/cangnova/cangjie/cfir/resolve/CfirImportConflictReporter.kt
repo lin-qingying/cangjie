@@ -1,13 +1,9 @@
-package org.cangnova.cangjie.cfir.resolve
+﻿package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.resolve.diagnostics.CfirResolveRuleCatalog
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
-
-private val RULE_IMPORTS_BINDING = CfirResolveRuleCatalog.IMPORTS_BINDING
-private val RULE_IMPORTS_CONFLICT = CfirResolveRuleCatalog.IMPORTS_CONFLICT
 
 internal class CfirImportConflictReporter(
     private val diagnosticReporter: CfirDiagnosticReporter,
@@ -19,8 +15,7 @@ internal class CfirImportConflictReporter(
                 diagnosticReporter.reportOn(
                     source = unresolved.importDirective.source,
                     factory = CfirErrors.IMPORT_TARGET_NOT_FOUND,
-                    a = RULE_IMPORTS_BINDING.id,
-                    b = "unresolved import target '${unresolved.importDirective.importedFqName.asString()}' (${RULE_IMPORTS_BINDING.officialReference})",
+                    a = unresolved.importDirective.importedFqName,
                     context = DiagnosticContext.Default,
                 )
             }
@@ -36,8 +31,7 @@ internal class CfirImportConflictReporter(
                     diagnosticReporter.reportOn(
                         source = sameNameBindings.first().importDirective.source,
                         factory = CfirErrors.IMPORT_CONFLICT,
-                        a = RULE_IMPORTS_CONFLICT.id,
-                        b = "conflicting imports for name '${effectiveName.asString()}' (${RULE_IMPORTS_CONFLICT.officialReference})",
+                        a = effectiveName,
                         context = DiagnosticContext.Default,
                     )
                 }
@@ -53,11 +47,11 @@ internal class CfirImportConflictReporter(
                     diagnosticReporter.reportOn(
                         source = sameAliasBindings.first().importDirective.source,
                         factory = CfirErrors.IMPORT_ALIAS_CONFLICT,
-                        a = RULE_IMPORTS_CONFLICT.id,
-                        b = "alias conflict for '${aliasName.asString()}' (${RULE_IMPORTS_CONFLICT.officialReference})",
+                        a = aliasName,
                         context = DiagnosticContext.Default,
                     )
                 }
             }
     }
 }
+

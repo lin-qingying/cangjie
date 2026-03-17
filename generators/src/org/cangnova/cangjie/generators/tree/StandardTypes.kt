@@ -1,10 +1,10 @@
-/*
- * Copyright 2010-2023 JetBrains s.r.o. and Kotlin Programming Language contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
- */
+
 
 package org.cangnova.cangjie.generators.tree
 
+/**
+ * 生成器常用标准类型引用集合。
+ */
 object StandardTypes {
     val unit = type<Unit>()
     val nothing = type("kotlin", "Nothing")
@@ -18,4 +18,3 @@ object StandardTypes {
     val map = type<Map<*, *>>()
     val hashMap = type("kotlin.collections", "HashMap", TypeKind.Class)
 }
-

@@ -34,8 +34,8 @@ behavior that blocks full parity with `external/cangjie_compiler`.
   - calling convention/runtime integration is only partial skeleton
 - Replaceable LLVM backend abstraction is now introduced, but native interop
   backend capability is still early-stage:
-  - current default behavior can fallback to in-memory bitcode emission when
-    native interop tool is unavailable
+  - current backend policy is JNI-only and fails fast when native interop
+    toolchain is unavailable
 
 ## Known Incorrect Behavior
 

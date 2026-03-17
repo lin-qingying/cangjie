@@ -5,18 +5,17 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 
 /**
- * 源模块声明查询接口。
- *
- * 提供按包名和 ClassId 查询当前编译模块中声明的能力。
- * 参考 K2 FirProvider。
+ * Source declaration provider aligned with Kotlin FIR provider abstractions.
  */
-interface CfirProvider : CfirSessionComponent {
+abstract class CfirProvider : CfirSessionComponent {
+    abstract val symbolProvider: CfirSymbolProvider
 
-    /** 获取指定包下的所有 CFIR 源文件 */
-    fun getCfirFilesByPackage(fqName: FqName): List<CfirFile>
+    abstract fun getCfirFilesByPackage(fqName: FqName): List<CfirFile>
 
-    /** 通过 ClassId 查找类声明 */
-    fun getClassByClassId(classId: ClassId): CfirClass?
+    abstract fun getClassByClassId(classId: ClassId): CfirClass?
+
+    abstract fun getClassNamesInPackage(fqName: FqName): Set<Name>
 }

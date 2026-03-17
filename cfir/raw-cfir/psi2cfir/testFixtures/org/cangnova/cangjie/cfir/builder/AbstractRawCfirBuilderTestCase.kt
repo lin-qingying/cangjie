@@ -1,9 +1,18 @@
-package org.cangnova.cangjie.cfir.builder
+﻿package org.cangnova.cangjie.cfir.builder
 
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.common.CfirPlatform
+import org.cangnova.cangjie.cfir.common.CfirSourceModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
+import org.cangnova.cangjie.cfir.resolve.providers.CfirBuiltinSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import org.cangnova.cangjie.lang.CangJieFileType
@@ -14,8 +23,7 @@ import java.nio.file.Path
 import java.io.File
 
 /**
- * Raw CFIR 构建测试入口基类。
- */
+ * Raw CFIR 鏋勫缓娴嬭瘯鍏ュ彛鍩虹被銆? */
 abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
     "",
     "cj",
@@ -32,9 +40,32 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
     }
 
     protected fun createTestSession(): CfirSession {
-        return object : CfirSession(Kind.Source) {}.apply {
-            val moduleData = CfirModuleData(Name.identifier("<test>"))
-            register(CfirModuleData::class, moduleData)
+        return object : CfirSession(Kind.Source) {}.also { session ->
+            val moduleData = CfirSourceModuleData(
+                name = Name.identifier("<test>"),
+                dependencies = emptyList(),
+                refinementDependencies = emptyList(),
+                platform = CfirPlatform.DEFAULT,
+            ).apply {
+                bindSession(session)
+            }
+            session.register(CfirModuleData::class, moduleData)
+
+            // Align test session baseline with source-session wiring used by entrypoint factories.
+            val scopeProvider = CfirCangJieScopeProvider()
+            session.register(CfirCangJieScopeProvider::class, scopeProvider)
+
+            val sourceProvider = CfirProviderImpl(session, scopeProvider)
+            session.register(CfirProvider::class, sourceProvider)
+
+            val symbolProvider = CfirCompositeSymbolProvider(
+                session,
+                listOf(
+                    sourceProvider.symbolProvider,
+                    CfirBuiltinSymbolProvider(session),
+                ),
+            )
+            session.register(CfirSymbolProvider::class, symbolProvider)
         }
     }
 
@@ -42,7 +73,9 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         session: CfirSession = createTestSession(),
         bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
     ): CfirFile {
-        return PsiRawCfirBuilder(session, bodyBuildingMode).buildCfirFile(this)
+        return PsiRawCfirBuilder(session, bodyBuildingMode).buildCfirFile(this).also { cfirFile ->
+            (runCatching { session.cfirProvider }.getOrNull() as? CfirProviderImpl)?.recordFile(cfirFile)
+        }
     }
 
     protected fun dumpCfirFile(cfirFile: CfirFile): String {
@@ -140,12 +173,15 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
         rootTestDataDir: File,
         inheritedDir: File,
     ): File {
-        val classMetadata = klass.getAnnotation(org.cangnova.cangjie.test.TestMetadata::class.java) ?: return inheritedDir
+        val classMetadata =
+            klass.getAnnotation(org.cangnova.cangjie.test.TestMetadata::class.java) ?: return inheritedDir
         val metadataPath = classMetadata.value.replace('\\', '/')
         val direct = resolveTestDataPath(metadataPath)
         if (direct.isDirectory) return direct
         val nested = rootTestDataDir.resolve(metadataPath)
         if (nested.isDirectory) return nested
+        val inheritedNested = inheritedDir.resolve(metadataPath)
+        if (inheritedNested.isDirectory) return inheritedNested
         return inheritedDir
     }
 
@@ -280,8 +316,8 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
                 }
                 throw AssertionError(
                     "Golden file missing: ${expectedFile.path}\n" +
-                        "Run with -D$UPDATE_TEST_DATA_PROPERTY=true to create/update golden files.\n" +
-                        "=== Actual ===\n$actualTrimmed"
+                            "Run with -D$UPDATE_TEST_DATA_PROPERTY=true to create/update golden files.\n" +
+                            "=== Actual ===\n$actualTrimmed"
                 )
             }
             val expected = expectedFile.readText(Charsets.UTF_8).replace("\r\n", "\n").trim()
@@ -291,14 +327,15 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
                 }
                 throw AssertionError(
                     "Golden file mismatch: ${expectedFile.path}\n" +
-                        if (updateMode) {
-                            "File updated. Re-run to verify.\n"
-                        } else {
-                            "Run with -D$UPDATE_TEST_DATA_PROPERTY=true to update golden files.\n"
-                        } +
-                        "=== Expected ===\n$expected\n=== Actual ===\n$actualTrimmed"
+                            if (updateMode) {
+                                "File updated. Re-run to verify.\n"
+                            } else {
+                                "Run with -D$UPDATE_TEST_DATA_PROPERTY=true to update golden files.\n"
+                            } +
+                            "=== Expected ===\n$expected\n=== Actual ===\n$actualTrimmed"
                 )
             }
         }
     }
 }
+

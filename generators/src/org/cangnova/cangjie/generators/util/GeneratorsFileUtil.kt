@@ -10,19 +10,22 @@ import java.io.File
 import java.io.IOException
 import kotlin.io.path.*
 
+/**
+ * 生成器文件 I/O 工具。
+ */
 object GeneratorsFileUtil {
     private val isTeamCityBuild: Boolean =
         System.getProperty("teamcity", "false").toBoolean() || System.getenv("TEAMCITY_VERSION") != null
 
     val GENERATED_MESSAGE = """
     /*
-     * This file was generated automatically
-     * DO NOT MODIFY IT MANUALLY
+     * 本文件由生成器自动生成
+     * 请勿手动修改
      */
      """.trimIndent()
 
-    const val GENERATED_MESSAGE_PREFIX = "// This file was generated automatically. See "
-    const val GENERATED_MESSAGE_SUFFIX = "// DO NOT MODIFY IT MANUALLY."
+    const val GENERATED_MESSAGE_PREFIX = "// 本文件由生成器自动生成。参见 "
+    const val GENERATED_MESSAGE_SUFFIX = "// 请勿手动修改。"
 
     @OptIn(ExperimentalPathApi::class)
     @JvmStatic

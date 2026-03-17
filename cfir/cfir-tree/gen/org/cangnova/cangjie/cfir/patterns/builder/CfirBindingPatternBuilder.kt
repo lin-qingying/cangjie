@@ -1,7 +1,7 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 @file:Suppress("DuplicatedCode", "unused")
 
@@ -13,11 +13,13 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.impl.CfirBindingPatternImpl
+import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
 
 @CfirBuilderDsl
 class CfirBindingPatternBuilder {
+    var source: CjSourceElement? = null
     lateinit var name: Name
     var typeRef: CfirTypeRef? = null
     var nestedPattern: CfirPattern? = null
@@ -25,6 +27,7 @@ class CfirBindingPatternBuilder {
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirBindingPattern {
         return CfirBindingPatternImpl(
+            source,
             name,
             typeRef,
             nestedPattern,
@@ -47,6 +50,7 @@ inline fun buildBindingPatternCopy(original: CfirBindingPattern, init: CfirBindi
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }
     val copyBuilder = CfirBindingPatternBuilder()
+    copyBuilder.source = original.source
     copyBuilder.name = original.name
     copyBuilder.typeRef = original.typeRef
     copyBuilder.nestedPattern = original.nestedPattern

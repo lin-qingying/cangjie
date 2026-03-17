@@ -1,0 +1,75 @@
+# P0 CFIR 正确性修复实现计划
+
+## 修复概览
+
+5 个 P0 修复，按依赖关系排序实现：
+
+---
+
+## Fix 1: 继承成员 scope 缺失
+
+**问题**: `CfirClassDeclaredMemberScope` 仅索引 `klass.declarations`（直接声明），不递归父类 → 子类调用继承方法报 unresolved。
+
+**方案**: 创建 `CfirClassUseSiteMemberScope`，组合当前类声明 + 父类成员 scope。
+
+**修改文件**:
+- **新建** `cfir/symbols/src/.../scopes/impl/CfirClassUseSiteMemberScope.kt`
+  - 接受 `CfirClassSymbol` + `CfirSymbolProvider`
+  - 内部持有 `CfirClassDeclaredMemberScope`（本类声明）
+  - 从 `CfirClass.superTypeRefs` 提取父类 ClassId → 通过 symbolProvider 查找父类 → 递归构建父类 scope
+  - 查询时先查本类，再查父类（遵循遮蔽规则）
+- **修改** `cfir/resolve/src/.../body/CfirExpressionsResolveTransformer.kt`
+  - `getMemberScope()` 方法：返回 `CfirClassUseSiteMemberScope` 替代 `CfirClassDeclaredMemberScope`
+- **修改** `cfir/resolve/src/.../body/CfirDeclarationsResolveTransformer.kt`
+  - `transformClass()` 中也使用 `CfirClassUseSiteMemberScope`
+
+---
+
+## Fix 2: 约束系统 incorporation 缺失
+
+**问题**: `CfirConstraintSystemImpl.computeFixedType()` 直接 `lowerBounds.first()`，多个下界时丢失约束。
+
+**方案**: 计算所有下界的 LUB（或所有上界的 GLB），多约束合并。
+
+**修改文件**:
+- **修改** `cfir/resolve/src/.../inference/CfirConstraintSystemImpl.kt`
+  - `computeFixedType()`: 多下界时计算 `ConeUnionType`；多上界时计算 `ConeIntersectionType`
+  - 添加 `processSubtypeConstraint` 中双变量约束的传递处理
+
+---
+
+## Fix 3: match 绑定变量未注册到局部 scope
+
+**问题**: `CfirExpressionsResolveTransformer.storePatternBinding()` 是空方法。
+
+**方案**: 创建 `CfirPatternVariable` 符号并注册到 `context.storeVariable()`。
+
+**修改文件**:
+- **修改** `cfir/resolve/src/.../body/CfirExpressionsResolveTransformer.kt`
+  - `storePatternBinding()`: 创建 `CfirPatternVariableSymbol` + 绑定 `CfirPatternVariableImpl` → 调用 `context.storeVariable(name, symbol)`
+
+---
+
+## Fix 4: commonSupertype 简化
+
+**问题**: `commonSupertype()` 不同类型时返回 `first()`，导致 if/try/match 多分支结果类型不准。
+
+**方案**: 使用 `ConeUnionType` 表示多分支联合类型（与 `computeMatchResultType` 保持一致）。
+
+**修改文件**:
+- **修改** `cfir/resolve/src/.../body/CfirExpressionsResolveTransformer.kt`
+  - `commonSupertype()`: 不同类型时返回 `ConeUnionType(types.toSet())` 替代 `first()`
+
+---
+
+## Fix 5: 枚举穷尽性不工作
+
+**问题**: `getEnumConstructorNames()` 返回 `emptyList()`，match enum 永远不报非穷尽。
+
+**方案**: 通过 `context.session.symbolProvider` 查找枚举 ClassId → 遍历 `CfirClass.declarations` 中的 `CfirEnumConstructor` → 收集所有构造器名称。
+
+**修改文件**:
+- **修改** `cfir/checkers/src/.../expression/CfirMatchExhaustivenessChecker.kt`
+  - `getEnumConstructorNames()` 改为接受 `CheckerContext` 参数
+  - 通过 `context.session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)` 获取枚举类符号
+  - 遍历 `klass.declarations.filterIsInstance<CfirEnumConstructor>()` 收集名称

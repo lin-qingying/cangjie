@@ -39,3 +39,4 @@ bin/
 /.gradle-user-fresh/
 /.gradle-user-fresh-resolve/
 /.gradle-user/
+/llvm-interop/third_party/

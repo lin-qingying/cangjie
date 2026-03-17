@@ -1,52 +1,60 @@
-import org.apache.tools.ant.taskdefs.condition.Os
+﻿import org.apache.tools.ant.taskdefs.condition.Os
+import java.io.File
 import java.net.URI
 import java.nio.file.Files
-plugins{
+import java.util.zip.ZipInputStream
+import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.TaskAction
+
+plugins {
     kotlin("jvm")
 }
+
 dependencies {
     implementation(libs.flatbuffers.java)
 }
 
-val flatcVersion = "25.2.10"
-val flatcExeName: String = "flatc" + (if (Os.isFamily(Os.FAMILY_WINDOWS)) ".exe" else "")
-val cacheDir = layout.buildDirectory.dir("flatc").get().asFile
+abstract class LocateFlatcTask : DefaultTask() {
+    @get:Input
+    abstract val flatcVersion: Property<String>
 
-// 根据操作系统和架构确定文件名
-val assetName by lazy{
-    val os = when {
-        Os.isFamily(Os.FAMILY_WINDOWS) -> "Windows"
-        Os.isFamily(Os.FAMILY_MAC) && Os.isArch("arm64") -> "MacIntel"
-        Os.isFamily(Os.FAMILY_MAC) -> "Mac"
-        else -> "Linux"
-    }
+    @get:Input
+    abstract val flatcExeName: Property<String>
 
-    val compilerSuffix = when{
-        Os.isFamily(Os.FAMILY_UNIX) -> ".clang++-18"
-        else -> ""
-    }
+    @get:Input
+    abstract val assetName: Property<String>
 
-    "$os.flatc.binary$compilerSuffix.zip"
-}
+    @get:OutputFile
+    abstract val flatcPath: RegularFileProperty
 
-val zipFile by lazy { cacheDir.resolve(assetName) }
-val _flatcPath by lazy { cacheDir.resolve(flatcExeName) }
+    @get:OutputFile
+    abstract val zipFile: RegularFileProperty
 
-// 查找合适的flatc版本的任务
-val locateFlatc = tasks.register<Task>("locateFlatc") {
-    outputs.file(_flatcPath)
+    @TaskAction
+    fun locate() {
+        val exeName = flatcExeName.get()
+        val version = flatcVersion.get()
+        val targetFlatc = flatcPath.get().asFile
+        val targetZip = zipFile.get().asFile
+        val cacheDir = targetFlatc.parentFile
 
-    doLast {
-        // 检查系统是否有合适版本的flatc
-        val candidates = listOfNotNull(
-            System.getenv("FLATC_HOME")?.let { File(it, "bin${File.separator}$flatcExeName") },
-            System.getenv("FLATC_HOME")?.let { File(it, flatcExeName) }
-        ).plus(
-            System.getenv("PATH")
-                ?.split(File.pathSeparator)
-                ?.map { File(it, flatcExeName) }
-                ?: emptyList()
-        ).filter { it.canExecute() }
+        val pathCandidates = System.getenv("PATH")
+            ?.split(File.pathSeparator)
+            ?.map { File(it, exeName) }
+            .orEmpty()
+
+        val flatcHome = System.getenv("FLATC_HOME")
+        val homeCandidates = listOfNotNull(
+            flatcHome?.let { File(it, "bin${File.separator}$exeName") },
+            flatcHome?.let { File(it, exeName) }
+        )
+
+        val candidates = (homeCandidates + pathCandidates).filter { it.canExecute() }
 
         val systemFlatc = candidates.firstOrNull { exe ->
             try {
@@ -55,99 +63,124 @@ val locateFlatc = tasks.register<Task>("locateFlatc") {
                     .start()
                 val result = process.inputStream.bufferedReader().use { it.readText() }.trim()
                 process.waitFor()
-                result.contains("flatc version") && result.contains(flatcVersion)
-            } catch (e: Exception) {
+                result.contains("flatc version") && result.contains(version)
+            } catch (_: Exception) {
                 false
             }
         }
 
         if (systemFlatc != null && systemFlatc.exists()) {
-            // 直接使用系统flatc
-            logger.lifecycle("找到系统 flatc: ${systemFlatc.absolutePath}")
-            if (!_flatcPath.parentFile.exists()) _flatcPath.parentFile.mkdirs()
-            if (!_flatcPath.exists()) {
-                systemFlatc.copyTo(_flatcPath, overwrite = true)
-                _flatcPath.setExecutable(true)
+            logger.lifecycle("Found system flatc: ${systemFlatc.absolutePath}")
+            if (!cacheDir.exists()) {
+                cacheDir.mkdirs()
             }
-        } else {
-            // 下载并解压到缓存目录
-            logger.lifecycle("系统未找到匹配版本的 flatc，将从GitHub自动下载...")
+            if (!targetFlatc.exists()) {
+                systemFlatc.copyTo(targetFlatc, overwrite = true)
+                targetFlatc.setExecutable(true)
+            }
+            return
+        }
 
-            if (!cacheDir.exists()) cacheDir.mkdirs()
+        logger.lifecycle("No matching system flatc found, downloading from GitHub release")
 
-            if (!zipFile.exists()) {
-                val urlString = "https://github.com/google/flatbuffers/releases/download" +
-                        "/v$flatcVersion/$assetName"
-                val url = URI(urlString).toURL()
-                logger.lifecycle("从网络下载 flatc: $url")
-                try {
-                    url.openStream().use { input ->
-                        Files.newOutputStream(zipFile.toPath()).use { output ->
-                            input.copyTo(output)
-                        }
+        if (!cacheDir.exists()) {
+            cacheDir.mkdirs()
+        }
+
+        if (!targetZip.exists()) {
+            val urlString = "https://github.com/google/flatbuffers/releases/download/v${version}/${assetName.get()}"
+            val url = URI(urlString).toURL()
+            logger.lifecycle("Downloading flatc from: $url")
+            try {
+                url.openStream().use { input ->
+                    Files.newOutputStream(targetZip.toPath()).use { output ->
+                        input.copyTo(output)
                     }
-                    logger.lifecycle("下载完成")
-                } catch (e: Exception) {
-                    throw GradleException("下载 flatc 失败", e)
                 }
+            } catch (e: Exception) {
+                throw GradleException("Failed to download flatc", e)
             }
-
-            // 解压文件
-            logger.lifecycle("解压 flatc 到 ${cacheDir.absolutePath}")
-            copy {
-                from(zipTree(zipFile)) {
-                    include { it.name == flatcExeName }
-                }
-                into(cacheDir)
-            }
-
-            // 确认flatc文件存在且可执行
-            if (!_flatcPath.exists()) {
-                throw GradleException("flatc 文件解压失败")
-            }
-            // 设置可执行权限 (755)
-            _flatcPath.setExecutable(true, false)
-            _flatcPath.setReadable(true, false)
-            _flatcPath.setWritable(true, false)
-
-            logger.lifecycle("成功部署 flatc 到: ${_flatcPath.absolutePath}")
         }
+
+        ZipInputStream(targetZip.inputStream().buffered()).use { zis ->
+            var entry = zis.nextEntry
+            var extracted = false
+            while (entry != null) {
+                if (!entry.isDirectory && entry.name.substringAfterLast('/') == exeName) {
+                    Files.newOutputStream(targetFlatc.toPath()).use { out ->
+                        zis.copyTo(out)
+                    }
+                    extracted = true
+                    break
+                }
+                entry = zis.nextEntry
+            }
+            if (!extracted) {
+                throw GradleException("flatc executable not found in archive: ${targetZip.absolutePath}")
+            }
+        }
+
+        targetFlatc.setExecutable(true, false)
+        targetFlatc.setReadable(true, false)
+        targetFlatc.setWritable(true, false)
+
+        if (!targetFlatc.exists() || !targetFlatc.canExecute()) {
+            throw GradleException("flatc is not executable: ${targetFlatc.absolutePath}")
+        }
+
+        logger.lifecycle("flatc is ready at: ${targetFlatc.absolutePath}")
     }
 }
 
-// 确保flatc存在的验证任务
-val ensureFlatc = tasks.register<Task>("ensureFlatc") {
-    dependsOn(locateFlatc)
-    outputs.file(_flatcPath)
-
-    doLast {
-        if (!_flatcPath.exists() || !_flatcPath.canExecute()) {
-            throw GradleException("flatc 不可访问: ${_flatcPath.absolutePath}")
-        }
+val resolvedFlatcVersion = "25.2.10"
+val resolvedFlatcExeName = "flatc" + if (Os.isFamily(Os.FAMILY_WINDOWS)) ".exe" else ""
+val resolvedAssetName = run {
+    val os = when {
+        Os.isFamily(Os.FAMILY_WINDOWS) -> "Windows"
+        Os.isFamily(Os.FAMILY_MAC) && Os.isArch("arm64") -> "MacIntel"
+        Os.isFamily(Os.FAMILY_MAC) -> "Mac"
+        else -> "Linux"
     }
+
+    val compilerSuffix = if (Os.isFamily(Os.FAMILY_UNIX)) ".clang++-18" else ""
+    "$os.flatc.binary$compilerSuffix.zip"
 }
 
-// FlatBuffers configuration - 使用我们确定的路径
-val inputDir = file("flatbuffers")
-val outputDir = file("$projectDir/gen")
+val cacheDirProvider = layout.buildDirectory.dir("flatc")
+val flatcPathProvider = cacheDirProvider.map { it.file(resolvedFlatcExeName) }
+val zipFileProvider = cacheDirProvider.map { it.file(resolvedAssetName) }
+
+val locateFlatc = tasks.register<LocateFlatcTask>("locateFlatc") {
+    this.flatcVersion.set(resolvedFlatcVersion)
+    this.flatcExeName.set(resolvedFlatcExeName)
+    this.assetName.set(resolvedAssetName)
+    flatcPath.set(flatcPathProvider)
+    zipFile.set(zipFileProvider)
+}
+
+val inputDir = layout.projectDirectory.dir("flatbuffers")
+val outputDir = layout.projectDirectory.dir("gen")
+
+outputDir.asFile.mkdirs()
 
 tasks.register<Exec>("generateKotlinFlatBuffers") {
-    dependsOn(ensureFlatc)
+    dependsOn(locateFlatc)
 
     inputs.dir(inputDir)
     outputs.dir(outputDir)
 
-    doFirst {
-        outputDir.mkdirs()
-    }
+    val schemaFiles = fileTree(inputDir.asFile) {
+        include("**/*.fbs")
+    }.files.map { it.absolutePath }
 
     commandLine(
-        _flatcPath.absolutePath,
+        flatcPathProvider.get().asFile.absolutePath,
         "--kotlin",
         "--gen-mutable",
         "--gen-object-api",
-        "-o", outputDir.absolutePath,
-        *fileTree(inputDir).filter { it.extension == "fbs" }.map { it.absolutePath }.toTypedArray()
+        "-o",
+        outputDir.asFile.absolutePath,
+        *schemaFiles.toTypedArray(),
     )
 }
 
@@ -155,11 +188,8 @@ tasks.compileKotlin {
     dependsOn("generateKotlinFlatBuffers")
 }
 
-sourceSets{
+sourceSets {
     "main" {
         generatedDir()
     }
 }
-
-// 确保构建目录存在
-cacheDir.mkdirs()

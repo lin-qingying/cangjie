@@ -21,7 +21,7 @@ import org.cangnova.cangjie.generators.tree.printer.printAcceptMethod
 internal class ElementPrinter(printer: ImportCollectingPrinter) : AbstractElementPrinter<Element, Field>(printer) {
     override fun makeFieldPrinter(printer: ImportCollectingPrinter): AbstractFieldPrinter<Field> =
         object : AbstractFieldPrinter<Field>(printer) {
-            override fun forceMutable(field: Field): Boolean = field.isMutable
+//            override fun forceMutable(field: Field): Boolean = field.isMutable
         }
 
     override fun ImportCollectingPrinter.printAdditionalMethods(element: Element) {

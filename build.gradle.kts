@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     base
     idea
@@ -7,5 +9,11 @@ plugins {
 }
 
 allprojects {
+    tasks.withType<KotlinCompile>().configureEach {
+        compilerOptions {
+            freeCompilerArgs.add("-Xjvm-default=all")
+            freeCompilerArgs.add("-XXLanguage:+ExplicitBackingFields")
+        }
+    }
     pluginManager.apply("common-configuration")
 }

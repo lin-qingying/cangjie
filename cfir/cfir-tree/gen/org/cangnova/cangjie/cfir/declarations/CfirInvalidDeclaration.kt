@@ -1,7 +1,7 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 package org.cangnova.cangjie.cfir.declarations
 
@@ -17,11 +17,10 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitor
  */
 abstract class CfirInvalidDeclaration : CfirDeclaration() {
     abstract override val source: CjSourceElement?
+    abstract override val moduleData: CfirModuleData
+    abstract override val annotations: List<CfirAnnotation>
     abstract override val symbol: CfirSymbol<*>
     abstract override val origin: CfirDeclarationOrigin
-    abstract override var annotations: List<CfirAnnotation>
-    abstract override val moduleData: CfirModuleData
-    abstract override var resolvePhase: CfirResolvePhase
     abstract override val attributes: CfirDeclarationAttributes
     abstract val reason: String
 
@@ -33,9 +32,6 @@ abstract class CfirInvalidDeclaration : CfirDeclaration() {
         transformer.transformInvalidDeclaration(this, data) as E
 
     override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-
-
-    override abstract fun replaceResolvePhase(newResolvePhase: CfirResolvePhase)
 
 
     override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirInvalidDeclaration

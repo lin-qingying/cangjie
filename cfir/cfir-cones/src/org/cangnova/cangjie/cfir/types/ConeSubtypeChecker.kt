@@ -85,9 +85,10 @@ class ConeSubtypeChecker(private val context: ConeTypeContext) {
             return isIdealSubtypeOf(subType, superType)
         }
 
-        // 规则 6: 原始类型 — 仅同种 kind
+        // 规则 6: 原始类型 — 同种 kind 或数值拓宽
         if (subType is ConePrimitiveType && superType is ConePrimitiveType) {
             return subType.kind == superType.kind
+                || ConeNumericWidening.isWideningAllowed(subType.kind, superType.kind)
         }
 
         // 规则 10: 函数类型 — 参数逆变 + 返回值协变

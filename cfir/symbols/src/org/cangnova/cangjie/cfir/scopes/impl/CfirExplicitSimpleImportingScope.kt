@@ -30,7 +30,8 @@ class CfirExplicitSimpleImportingScope(
         val map = HashMap<Name, MutableList<CfirImport>>()
         for (import in imports) {
             if (import.isAllUnder) continue // 忽略星号导入
-            val effectiveName = import.aliasName ?: import.importedFqName.shortName()
+            val importedFqName = import.importedFqName
+            val effectiveName = import.aliasName ?: importedFqName?.shortName() ?: continue
             map.getOrPut(effectiveName) { mutableListOf() }.add(import)
         }
         importsByName = map
@@ -39,7 +40,8 @@ class CfirExplicitSimpleImportingScope(
     override fun processClassifiersByName(name: Name, processor: (CfirClassSymbol) -> Unit) {
         val imports = importsByName[name] ?: return
         for (import in imports) {
-            val classId = ClassId.topLevel(import.importedFqName)
+            val importedFqName = import.importedFqName ?: continue
+            val classId = ClassId.topLevel(importedFqName)
             val symbol = symbolProvider.getClassLikeSymbolByClassId(classId)
             if (symbol != null) processor(symbol)
         }
@@ -48,7 +50,7 @@ class CfirExplicitSimpleImportingScope(
     override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol) -> Unit) {
         val imports = importsByName[name] ?: return
         for (import in imports) {
-            val fqName = import.importedFqName
+            val fqName = import.importedFqName ?: continue
             val packageFqName = fqName.parent()
             val callableName = fqName.shortName()
             symbolProvider.getTopLevelFunctionSymbols(packageFqName, callableName).forEach(processor)
@@ -58,7 +60,7 @@ class CfirExplicitSimpleImportingScope(
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
         val imports = importsByName[name] ?: return
         for (import in imports) {
-            val fqName = import.importedFqName
+            val fqName = import.importedFqName ?: continue
             val packageFqName = fqName.parent()
             val callableName = fqName.shortName()
             symbolProvider.getTopLevelPropertySymbols(packageFqName, callableName).forEach(processor)

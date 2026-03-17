@@ -9,6 +9,11 @@ import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.generators.tree.printer.ImportCollectingPrinter
 import org.cangnova.cangjie.generators.util.printBlock
 
+/**
+ * Void 风格 Visitor 打印器。
+ *
+ * 生成 `visit*` 无数据版本，并适配到带 data 参数的方法签名。
+ */
 abstract class AbstractVisitorVoidPrinter<Element, Field>(
     printer: ImportCollectingPrinter,
 ) : AbstractVisitorPrinter<Element, Field>(printer)

@@ -1,3 +1,4 @@
+// JNI bitcode 写出相关桥接实现。
 #include "jni_utils.h"
 
 #include <llvm-c/BitWriter.h>

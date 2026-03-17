@@ -2,24 +2,24 @@
 
 根据 `docs/cfir-semantic-analysis-gap.md`（2026-03-13）与当前项目代码逐项核对
 
-日期：2026-03-14（Phase 4 完成后更新）
+日期：2026-03-14（Phase 5: Checker 类型检查 完成后更新）
 
 ---
 
 ## 一、总体结论
 
-**骨架完备 → 肌肉 80% 就位。**
+**骨架完备 → 肌肉 80% 就位 → 类型检查闭环。**
 
-差距分析文档写于 2026-03-13，反映的是 Phase 1 实施前的基线。此后连续完成 4 个 Phase 的实现，语义分析能力已从"10% 表达式解析"提升到覆盖完整调用解析管线、泛型推断、模式匹配和 extend 集成。
+差距分析文档写于 2026-03-13，反映的是 Phase 1 实施前的基线。此后连续完成 5 个 Phase 的实现，语义分析能力已从"10% 表达式解析"提升到覆盖完整调用解析管线、泛型推断、模式匹配、extend 集成，**并完成 CHECKERS 阶段的 5 个核心类型检查器**。
 
 | 维度 | 差距文档评估 | 当前实际 | 变化 |
 |------|------------|---------|------|
-| 编译管线框架 | 90% | 90% | — |
+| 编译管线框架 | 90% | 100% | +10% CHECKERS 处理器注册 |
 | 类型系统（Cone） | 85% | 90% | +5% 子类型检查器完善 |
 | 符号/作用域系统 | 75% | 95% | +20% 8 种 Scope 全部实现 |
 | 声明级解析（Phase 1-6） | 70% | 92% | +22% extend scope 集成 |
 | 表达式级解析（Phase 7-8） | **10%** | **85%** | **+75% Phase 1-4 主力突破** |
-| 检查器框架 | 80% | 85% | +5% 穷尽性检查器 |
+| 检查器框架 | 80% | **92%** | **+12% 5 个类型检查器 + 管线集成** |
 | 诊断系统 | 95% | 95% | — |
 
 ---
@@ -34,6 +34,7 @@
 | Phase 2 | 表达式类型合成 | ✅ 完成 | CfirExpressionsResolveTransformer（字面量/变量/属性/if/块/元组/数组/插值） |
 | Phase 3 | 调用解析 + 重载 | ✅ 完成 | Tower 候选收集、4 阶段验证管线、重载冲突解析器 |
 | Phase 4 | 泛型约束 + 模式匹配 + extend | ✅ 完成 | 约束系统、类型参数推断、match 解析 + 穷尽性、extend provider |
+| Phase 5 | **Checker 类型检查** | ✅ **完成** | **5 个核心类型检查器、3 个诊断 ID、CHECKERS 处理器注册** |
 
 ---
 
@@ -50,7 +51,7 @@
 | 7 | CfirSymbolProvider 抽象 | ✅ | symbols/src/.../CfirSymbolProvider.kt | ~200 |
 | 8 | CfirScope 抽象 | ✅ | symbols/src/.../CfirScope.kt | ~100 |
 | 9 | 诊断全链路 | ✅ | diagnostics/src + gen（Factory→Reporter→Collector→Renderer） | ~2100 |
-| 10 | 检查器框架 | ✅ | checkers/src + gen（Declaration/Expression/Type 三类） | ~1200 |
+| 10 | 检查器框架 | ✅ | checkers/src + gen（Declaration/Expression/Type 三类 + 5 个类型检查器） | ~1400 |
 | 11 | Raw CFIR 构建 | ✅ | raw-cfir/psi2cfir/src + light-tree2cfir | ~2000 |
 
 ---
@@ -85,12 +86,13 @@
 
 | # | 组件 | 差距文档 | 当前状态 | 完成度 | 备注 |
 |---|------|--------|---------|-------|------|
-| 1 | **模式匹配穷尽性** | "完全缺失" | ✅ **Phase 4 新增** | **70%** | CfirMatchExhaustivenessChecker（159 行）：简化 Maranget 算法，覆盖通配符/布尔/枚举检查 |
-| 2 | **模式匹配类型推断** | "完全缺失" | ✅ **Phase 4 新增** | **70%** | transformMatchExpression：6 种模式解析（Wildcard/Const/Binding/Tuple/Enum/Type） |
-| 3 | 数据流分析 / Smart Cast | "可后置" | ❌ 未实现 | 0% | CfirDataFlowAnalyzerContext 接口已有，具体分析逻辑缺失 |
-| 4 | Spawn 表达式 | "仓颉特有" | ❌ 未实现 | 0% | — |
-| 5 | const 求值 | "可后置" | ❌ 未实现 | 0% | — |
-| 6 | 操作符重载解析 | 差距文档未独立列出 | ❌ 未实现 | 0% | 需将操作符转换为函数调用 |
+| 1 | **模式匹配穷尽性** | "完全缺失" | ✅ Phase 4 新增 | **70%** | CfirMatchExhaustivenessChecker（159 行）：简化 Maranget 算法，覆盖通配符/布尔/枚举检查 |
+| 2 | **模式匹配类型推断** | "完全缺失" | ✅ Phase 4 新增 | **70%** | transformMatchExpression：6 种模式解析（Wildcard/Const/Binding/Tuple/Enum/Type） |
+| 3 | **类型检查器（Check 阶段）** | "框架已有，缺规则" | ✅ **Phase 5 新增** | **70%** | 5 个核心 checker：变量/属性初始化、赋值、return、参数类型检查；CHECKERS 处理器已注册 |
+| 4 | 数据流分析 / Smart Cast | "可后置" | ❌ 未实现 | 0% | CfirDataFlowAnalyzerContext 接口已有，具体分析逻辑缺失 |
+| 5 | Spawn 表达式 | "仓颉特有" | ❌ 未实现 | 0% | — |
+| 6 | const 求值 | "可后置" | ❌ 未实现 | 0% | — |
+| 7 | 操作符重载解析 | 差距文档未独立列出 | ❌ 未实现 | 0% | 需将操作符转换为函数调用 |
 
 ---
 
@@ -105,7 +107,7 @@
 | EXTENSIONS | 扩展解析 | ✅ 95% | extend scope 自动推入 | extend 声明✅、成员注入✅、**scope 集成✅** |
 | IMPLICIT_TYPES | 隐式推断 | ✅ 90% | — | 返回类型推断✅、变量类型✅、递归保护✅ |
 | **BODY_RESOLVE** | **函数体解析** | ✅ **85%** | **+15%** | 表达式合成✅、调用解析✅、重载✅、**泛型推断✅**、**match✅** |
-| CHECKERS | 诊断检查 | ⚠️ 55% | **+5%** | 框架✅、穷尽性✅、**规则仍需补齐** |
+| CHECKERS | 诊断检查 | ✅ **75%** | **+20% Phase 5 类型检查器** | 框架✅、穷尽性✅、**类型不匹配✅**、**return 类型✅**、**参数类型✅**、**赋值类型✅**、管线集成✅ |
 
 ---
 
@@ -140,6 +142,19 @@
 | CfirMatchExhaustivenessChecker.kt | 穷尽性检查（简化 Maranget） | 159 |
 | **小计** | | **783** |
 
+### Phase 5 新增组件（Checker 类型检查）
+
+| 文件 | 功能 | 行数 |
+|------|------|------|
+| CfirTypeCheckUtils.kt | 子类型检查工具（BasicConeTypeContext） | 35 |
+| CfirInitializerTypeMismatchChecker.kt | 变量初始化类型检查 | 33 |
+| CfirPropertyInitializerTypeMismatchChecker.kt | 属性初始化类型检查 | 33 |
+| CfirAssignmentTypeMismatchChecker.kt | 赋值类型检查 | 31 |
+| CfirReturnTypeMismatchChecker.kt | return 表达式类型检查 | 34 |
+| CfirArgumentTypeMismatchChecker.kt | 函数参数类型检查 | 44 |
+| CfirCheckersResolveProcessor.kt | CHECKERS 阶段处理器 + 递归 Walker | 87 |
+| **小计** | | **~297** |
+
 ### 调用解析 4 阶段验证管线
 
 ```
@@ -170,6 +185,13 @@ CfirCheckVisibility → CfirMapArguments → CfirInferTypeArguments → CfirChec
 ✅ 参数类型检查（子类型 + 替换器应用）
 ✅ 穷尽性检查（通配符/布尔/枚举）
 ✅ NON_EXHAUSTIVE_MATCH 诊断
+✅ **CHECKERS 阶段管线集成（CfirCheckersResolveProcessor）**
+✅ **变量初始化类型检查（CfirInitializerTypeMismatchChecker）**
+✅ **属性初始化类型检查（CfirPropertyInitializerTypeMismatchChecker）**
+✅ **赋值类型检查（CfirAssignmentTypeMismatchChecker）**
+✅ **return 类型检查（CfirReturnTypeMismatchChecker）**
+✅ **函数参数类型检查（CfirArgumentTypeMismatchChecker）**
+✅ **TYPE_MISMATCH / RETURN_TYPE_MISMATCH / ARGUMENT_TYPE_MISMATCH 诊断**
 
 ### 已知缺陷 / 未实现
 
@@ -194,10 +216,10 @@ CfirCheckVisibility → CfirMapArguments → CfirInferTypeArguments → CfirChec
 | cfir-tree | 18 | 1,582 | 205 | 12,300 | 0 |
 | symbols | 24 | 917 | 0 | 0 | 0 |
 | diagnostics | 29 | 2,104 | 2 | 56 | 0 |
-| checkers | 10 | 481 | 12 | 765 | 0 |
-| **resolve** | **73** | **5,668** | 0 | 0 | **712** |
+| checkers | 17 | 778 | 12 | 765 | 0 |
+| **resolve** | **74** | **5,755** | 0 | 0 | **712** |
 | raw-cfir | 6* | — | 0 | 0 | 0 |
-| **合计** | **185** | **12,864** | **219** | **13,121** | **1,556** |
+| **合计** | **192** | **13,161** | **219** | **13,121** | **1,556** |
 
 *raw-cfir 的 src 文件位于 psi2cfir 和 light-tree2cfir 子模块中
 
@@ -235,6 +257,7 @@ CfirCheckVisibility → CfirMapArguments → CfirInferTypeArguments → CfirChec
 | "Scope 6 种待实现" | 确实 0% | **~95%**（8 种已实现） |
 | "泛型约束系统缺失" | 确实 0% | **~80%**（约束收集 + 变量固定） |
 | "模式匹配穷尽性缺失" | 确实 0% | **~70%**（6 种模式 + 简化 Maranget） |
+| "Checker 框架缺规则" | ~80%（仅框架） | **~75%**（5 个类型检查器 + CHECKERS 管线集成） |
 | "extend 成员查找框架已有" | ~50%（仅 scope） | **~95%**（+ provider + tower 集成） |
 | ".cjo 反序列化未实现" | ~30%（仅接口） | **~30%**（未变，独立性强） |
 
@@ -254,7 +277,7 @@ CfirCheckVisibility → CfirMapArguments → CfirInferTypeArguments → CfirChec
 
 | # | 项目 | 预估工作量 | 备注 |
 |---|------|----------|------|
-| 1 | **Checker 规则补齐** | 持续 | 类型不匹配、未使用变量、不可达代码等 |
+| 1 | **Checker 规则补齐** | 持续 | 5 个核心类型检查器已完成，未使用变量、不可达代码等待补齐 |
 | 2 | **lambda / 闭包表达式** | 中（2 周） | 仓颉闭包语法 |
 | 3 | **范围表达式（Range）** | 小（1 周） | `0..10` 语法糖 |
 
@@ -272,19 +295,20 @@ CfirCheckVisibility → CfirMapArguments → CfirInferTypeArguments → CfirChec
 ## 十二、总结
 
 ```
-项目状态：骨架完备 → 肌肉 80% 就位
+项目状态：骨架完备 → 肌肉 80% 就位 → 类型检查闭环
 
   编译管线框架        ████████████████████  100%
   声明级解析(1-6)     █████████████████░░░   92%
   表达式级解析(7-8)   █████████████████░░░   85%  ← Phase 1-4 主力突破
   泛型系统            ████████████████░░░░   80%  ← Phase 4 新增
+  诊断/检查器         ███████████████░░░░░   75%  ← Phase 5 类型检查器
   模式匹配            ██████████████░░░░░░   70%  ← Phase 4 新增
-  诊断/检查器         ███████████░░░░░░░░░   55%
   跨模块(.cjo)       ██████░░░░░░░░░░░░░░   30%
 
-  resolve 模块: 73 文件 / 5,668 行（Phase 4 新增 ~800 行）
-  全 cfir 手写代码: 185 文件 / 12,864 行
+  resolve 模块: 74 文件 / 5,755 行（Phase 5 新增 ~87 行）
+  checkers 模块: 17 文件 / 778 行（Phase 5 新增 ~210 行）
+  全 cfir 手写代码: 192 文件 / 13,161 行
   测试用例: 515 个
 ```
 
-**差距已从"框架级空缺"收窄为"特性级补齐"。** 核心调用解析管线、泛型推断、模式匹配三大能力已建立，下一步重点是操作符重载、.cjo 跨模块加载、Checker 规则补齐。
+**差距已从"框架级空缺"收窄为"特性级补齐"。** 核心调用解析管线、泛型推断、模式匹配三大能力已建立，**类型不匹配诊断管线已完成闭环**（`var x: Int32 = "hello"` 等场景现在会报 TYPE_MISMATCH 错误）。下一步重点是操作符重载、.cjo 跨模块加载、更多 Checker 规则补齐。

@@ -1,10 +1,10 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.scopes.CfirLocalScope
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -17,12 +17,12 @@ import org.cangnova.cangjie.name.Name
  */
 class CfirLocalScopeImpl : CfirLocalScope {
 
-    private val variables = HashMap<Name, MutableList<CfirVariableSymbol>>()
+    private val variables = HashMap<Name, MutableList<CfirCallableSymbol<*>>>()
     private val functions = HashMap<Name, MutableList<CfirFunctionSymbol>>()
     private val classifiers = HashMap<Name, MutableList<CfirClassSymbol>>()
 
-    /** 添加局部变量 */
-    fun addVariable(name: Name, symbol: CfirVariableSymbol) {
+    /** 添加局部变量（支持 CfirVariableSymbol 和 CfirPatternVariableSymbol） */
+    fun addVariable(name: Name, symbol: CfirCallableSymbol<*>) {
         variables.getOrPut(name) { mutableListOf() }.add(symbol)
     }
 
@@ -50,7 +50,7 @@ class CfirLocalScopeImpl : CfirLocalScope {
     }
 
     /** 按名称查找局部变量符号 */
-    fun processVariablesByName(name: Name, processor: (CfirVariableSymbol) -> Unit) {
+    fun processVariablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
         variables[name]?.forEach(processor)
     }
 }

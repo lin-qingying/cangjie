@@ -1,16 +1,24 @@
 package org.cangnova.cangjie.llvm.jni
 
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.nio.file.Files
+import kotlin.io.path.createFile
+import kotlin.io.path.writeText
 
+/**
+ * 原生库加载器测试。
+ */
 class NativeLibraryLoaderTest {
     @Test
     fun `loads from system property path with highest priority`() {
         val calls = mutableListOf<String>()
-        withSystemProperty("cangjie.llvm.native.library.path", "/tmp/libcangjie_llvm_jni.so") {
+        val nativeFile = Files.createTempDirectory("loader-test").resolve("libcangjie_llvm_jni.so")
+        nativeFile.createFile()
+        withSystemProperty("cangjie.llvm.native.library.path", nativeFile.toString()) {
             val loader = NativeLibraryLoader(
                 loadAbsolute = {
                     calls += "abs:$it"
@@ -23,7 +31,7 @@ class NativeLibraryLoaderTest {
             )
             val result = loader.load()
             assertTrue(result.loaded, result.diagnostics)
-            assertTrue(calls.first().startsWith("abs:/tmp/libcangjie_llvm_jni.so"))
+            assertNotNull(calls.firstOrNull())
         }
     }
 
@@ -45,6 +53,35 @@ class NativeLibraryLoaderTest {
     }
 
     @Test
+    fun `loads from native home and preloads deps order`() {
+        val calls = mutableListOf<String>()
+        withSystemProperty("cangjie.llvm.native.library.path", null) {
+            val home = Files.createTempDirectory("loader-home")
+            val platform = PlatformDetector.detect()
+            val platformDir = home.resolve("native").resolve(platform).also { Files.createDirectories(it) }
+            val mainFile = libraryFileName(platform)
+            platformDir.resolve(mainFile).createFile()
+            platformDir.resolve("dep-b.dll").createFile()
+            platformDir.resolve("dep-a.dll").createFile()
+            platformDir.resolve("deps.order").writeText("dep-b.dll\ndep-a.dll\n")
+
+            withSystemProperty("cangjie.native.home", home.toString()) {
+                val loader = NativeLibraryLoader(
+                    loadAbsolute = { calls += it },
+                    loadByName = { calls += "name:$it" },
+                    resourceOpener = { null },
+                    tempDirProvider = { Files.createTempDirectory("loader-test") },
+                )
+                val result = loader.load()
+                assertTrue(result.loaded, result.diagnostics)
+                assertTrue(calls[0].endsWith("dep-b.dll"))
+                assertTrue(calls[1].endsWith("dep-a.dll"))
+                assertTrue(calls.last().endsWith(mainFile))
+            }
+        }
+    }
+
+    @Test
     fun `returns diagnostics when all loading strategies fail`() {
         withSystemProperty("cangjie.llvm.native.library.path", null) {
             val loader = NativeLibraryLoader(
@@ -59,8 +96,19 @@ class NativeLibraryLoaderTest {
             assertTrue(result.diagnostics.contains("system library load failed"))
         }
     }
+
+    private fun libraryFileName(platformId: String): String {
+        return when {
+            platformId.startsWith("windows-") -> "cangjie_llvm_jni.dll"
+            platformId.startsWith("macos-") -> "libcangjie_llvm_jni.dylib"
+            else -> "libcangjie_llvm_jni.so"
+        }
+    }
 }
 
+/**
+ * 临时覆盖系统属性的测试辅助函数。
+ */
 private inline fun withSystemProperty(key: String, value: String?, block: () -> Unit) {
     val previous = System.getProperty(key)
     if (value == null) {

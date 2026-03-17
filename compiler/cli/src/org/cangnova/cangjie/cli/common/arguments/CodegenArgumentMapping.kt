@@ -4,17 +4,6 @@ import org.cangnova.cangjie.codegen.api.CodegenOptions
 import org.cangnova.cangjie.codegen.api.LlvmBackendKind
 import org.cangnova.cangjie.codegen.api.ModulePartitionMode
 
-fun CommonCompilerArguments.toCodegenOptions(): CodegenOptions {
-    val legacyEnable = enableChirToLlvmCodegen
-    val enableNewPipeline = legacyEnable ?: enableLlvmBackendPipeline
-    return CodegenOptions(
-        enabled = enableNewPipeline,
-        partitionMode = codegenPartitionMode.toModulePartitionMode(),
-        verifyBeforeWrite = verifyLlvmModule,
-        emitBitcode = emitLlvmBitcode,
-        llvmBackendKind = if (rollbackToLegacyCodegenPath) LlvmBackendKind.IN_MEMORY else LlvmBackendKind.JNI,
-    )
-}
 
 private fun String?.toModulePartitionMode(): ModulePartitionMode {
     return when (this?.trim()?.lowercase()) {

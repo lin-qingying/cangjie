@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
@@ -22,8 +22,8 @@ private typealias Checker = Map.Entry<KClass<*>, Pair<String, Boolean>>
 private const val CHECKERS_COMPONENT_INTERNAL = "CheckersComponentInternal"
 private const val CHECKERS_COMPONENT_INTERNAL_ANNOTATION = "@$CHECKERS_COMPONENT_INTERNAL"
 private const val CHECKERS_COMPONENT_INTERNAL_FQN = "org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal"
-private const val MPP_CHECKER_KIND_FQN = "org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind"
-private const val MPP_CHECKER_WITH_KIND_FQN = "org.cangnova.cangjie.cfir.analysis.checkers.CfirCheckerWithMppKind"
+private const val DISPATCH_KIND_FQN = "org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind"
+private const val DISPATCHED_CHECKER_FQN = "org.cangnova.cangjie.cfir.analysis.checkers.CfirCheckerWithDispatchKind"
 
 // DiagnosticComponent
 private const val FIR_SESSION_FQN = "org.cangnova.cangjie.cfir.session.CfirSession"
@@ -133,11 +133,11 @@ class Generator(
         val filename = "${composedComponentName}.kt"
         generationPath.resolve(filename).writeToFileUsingSmartPrinterIfFileContentChanged {
             printPackageAndCopyright()
-            printImports(true, MPP_CHECKER_KIND_FQN, MPP_CHECKER_WITH_KIND_FQN)
+            printImports(true, DISPATCH_KIND_FQN, DISPATCHED_CHECKER_FQN)
             printGeneratedMessage()
-            println("class $composedComponentName(val predicate: (CfirCheckerWithMppKind) -> Boolean) : $checkersComponentName() {")
+            println("class $composedComponentName(val predicate: (CfirCheckerWithDispatchKind) -> Boolean) : $checkersComponentName() {")
             withIndent {
-                println("constructor(mppKind: MppCheckerKind) : this({ it.mppKind == mppKind })")
+                println("constructor(dispatchKind: CheckerDispatchKind) : this({ it.dispatchKind == dispatchKind })")
                 println()
 
                 // public overrides
@@ -191,7 +191,7 @@ class Generator(
                 FIR_SESSION_FQN,
                 DIAGNOSTIC_REPORTER_FQN,
                 ABSTRACT_DIAGNOSTIC_REPORTER_FQN,
-                MPP_CHECKER_KIND_FQN,
+                DISPATCH_KIND_FQN,
                 CHECKER_CONTEXT_FQN,
                 "$FIR_FQN.$checkersPackageName.*",
                 CHECKERS_COMPONENT_FQN,
@@ -265,14 +265,14 @@ class Generator(
     }
 
     private fun SmartPrinter.printDiagnosticComponentConstructor() {
-        println("constructor(session: CfirSession, reporter: PendingDiagnosticReporter, mppKind: MppCheckerKind) : this(")
+        println("constructor(session: CfirSession, reporter: PendingDiagnosticReporter, dispatchKind: CheckerDispatchKind) : this(")
         withIndent {
             println("session,")
             println("reporter,")
-            println("when (mppKind) {")
+            println("when (dispatchKind) {")
             withIndent {
-                println("MppCheckerKind.Common -> session.checkersComponent.common$checkersComponentName")
-                println("MppCheckerKind.Platform -> session.checkersComponent.platform$checkersComponentName")
+                println("CheckerDispatchKind.Common -> session.checkersComponent.common$checkersComponentName")
+                println("CheckerDispatchKind.Platform -> session.checkersComponent.platform$checkersComponentName")
             }
             println("}")
         }
@@ -371,6 +371,8 @@ class Generator(
         generateDiagnosticComponent()
     }
 }
+
+
 
 
 

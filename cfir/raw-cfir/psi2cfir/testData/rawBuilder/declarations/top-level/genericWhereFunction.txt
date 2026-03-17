@@ -1,7 +1,7 @@
 FILE: genericWhereFunction.cj
-    interface C {
+    internal? interface C {
     }
-    func add<T>(a: R|T|, b: R|T|): R|T| {
+    internal? func add<T>(a: R|T|, b: R|T|): R|T| {
         RETURN {
             QUALIFIED_ACCESS(a)
         }

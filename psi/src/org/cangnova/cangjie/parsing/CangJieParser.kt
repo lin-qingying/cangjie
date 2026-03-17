@@ -24,7 +24,6 @@
 
 package org.cangnova.cangjie.parsing
 
-import org.cangnova.cangjie.lang.declarations.CjDeclarationsFile
 import org.cangnova.cangjie.macro.file.CjMacroCallFile
 import org.cangnova.cangjie.parsing.CangJieParsing.Companion.createForTopLevel
 import com.intellij.lang.ASTNode
@@ -40,7 +39,7 @@ import org.jetbrains.annotations.NotNull
 class CangJieParser(project: Project) : PsiParser {
     @Deprecated("use Companion parse")
     override fun parse(root: IElementType, builder: PsiBuilder): ASTNode {
-      error("use Companion parse")
+        error("use Companion parse")
     }
 
     companion object {
@@ -112,32 +111,13 @@ class CangJieParser(project: Project) : PsiParser {
                     SemanticWhitespaceAwarePsiBuilderImpl(psiBuilder),
                 )
 
-            val extension = FileUtilRt.getExtension(psiFile.name)
 
-            if (psiFile is CjDeclarationsFile) {
-                cjParsing.isDeclarationsFile = (true)
-                cjParsing.parseFile()
-            } else if (psiFile is CjMacroCallFile) {
-                cjParsing.isDeclarationsFile = (false)
-                cjParsing.parseFile()
+            if (psiFile is CjMacroCallFile) {
+                cjParsing.parseOnlyAnnotationFile()
             } else {
-                cjParsing.isDeclarationsFile = (false)
                 cjParsing.parseFile()
             }
-//
-//            if (extension.isEmpty() || extension == CangJieFileType.EXTENSION || psiFile is CjFile && psiFile.isCompiled
-//
-//                || psiFile is CjMacroCallFile
-//            ) {
-//                cjParsing.isDeclarationsFile = (false)
-//                cjParsing.parseFile()
-//            } else if (psiFile is CjDeclarationsFile) {
-//                cjParsing.isDeclarationsFile = (true)
-//                cjParsing.parseFile()
-//
-//            } else {
-//                cjParsing.parseScript()
-//            }
+
 
             return psiBuilder.treeBuilt
         }

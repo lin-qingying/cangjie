@@ -1,11 +1,12 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -18,10 +19,11 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitor
  */
 abstract class CfirQualifiedAccess : CfirExpression() {
     abstract override val source: CjSourceElement?
-    abstract override var coneTypeOrNull: ConeCangjieType?
-    abstract var calleeReference: CfirReference
-    abstract var explicitReceiver: CfirExpression?
-    abstract var typeArguments: List<CfirTypeRef>
+    abstract override val annotations: List<CfirAnnotation>
+    abstract override val coneTypeOrNull: ConeCangjieType?
+    abstract val calleeReference: CfirReference
+    abstract val explicitReceiver: CfirExpression?
+    abstract val typeArguments: List<CfirTypeRef>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitQualifiedAccess(this, data)
@@ -30,7 +32,16 @@ abstract class CfirQualifiedAccess : CfirExpression() {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformQualifiedAccess(this, data) as E
 
+    override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+
+
     override abstract fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+
+
+    abstract fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>)
+
+
+    override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirQualifiedAccess
 
 
     abstract fun <D> transformCalleeReference(transformer: CfirTransformer<D>, data: D): CfirQualifiedAccess

@@ -62,7 +62,7 @@ interface CaDiagnosticProvider : CaLifetimeOwner {
     public fun CjElement.diagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>>
 
     /**
-     * Collects all diagnostics for the given file.
+     * 收集指定文件的全部诊断信息。
      */
     public fun CjFile.collectDiagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>>
 }

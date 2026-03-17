@@ -10,6 +10,7 @@ add_library(cangjie_llvm_jni SHARED
     jni_builder.cpp
     jni_analysis.cpp
     jni_bitwriter.cpp
+    jni_registry.cpp
 )
 
 target_compile_features(cangjie_llvm_jni PRIVATE cxx_std_17)

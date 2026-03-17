@@ -6,8 +6,8 @@
 package org.cangnova.cangjie.generators.tree
 
 /**
- * Returns a bottom-up hierarchy of inheritance, from this element, to its top-most base elements, recursively,
- * in a breadth first manner.
+ * 以广度优先方式返回自底向上的继承层次：
+ * 从当前元素开始，递归到最顶层父元素。
  */
 fun <Element : AbstractElement<Element, *, *>> Element.elementAncestorsAndSelfBreadthFirst(): Sequence<Element> = sequence {
     val queue = ArrayDeque<Element>()

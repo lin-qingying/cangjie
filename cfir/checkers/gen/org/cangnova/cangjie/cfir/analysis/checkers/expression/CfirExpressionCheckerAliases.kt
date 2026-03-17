@@ -1,10 +1,9 @@
-
+﻿
 
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 /*
- * This file was generated automatically
- * DO NOT MODIFY IT MANUALLY
+ * 鏈枃浠剁敱鐢熸垚鍣ㄨ嚜鍔ㄧ敓鎴? * 璇峰嬁鎵嬪姩淇敼
  */
 
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
@@ -44,3 +43,4 @@ typealias CfirJumpExpressionChecker = CfirExpressionChecker<CfirJumpExpression>
 typealias CfirRangeExpressionChecker = CfirExpressionChecker<CfirRangeExpression>
 typealias CfirSubscriptExpressionChecker = CfirExpressionChecker<CfirSubscriptExpression>
 typealias CfirErrorExpressionChecker = CfirExpressionChecker<CfirErrorExpression>
+

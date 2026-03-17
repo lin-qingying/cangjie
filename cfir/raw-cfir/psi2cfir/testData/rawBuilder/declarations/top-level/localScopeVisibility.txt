@@ -1,0 +1,8 @@
+FILE: localScopeVisibility.cj
+    internal? func localScopeVisibility(): R|Unit| {
+        local? func localHelper(): R|Unit| {
+        }
+        local? let localValue: R|Int64| = ...
+            initializer:
+                INT(1)
+    }

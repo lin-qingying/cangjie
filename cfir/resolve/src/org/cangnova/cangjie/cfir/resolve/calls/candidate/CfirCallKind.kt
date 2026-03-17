@@ -1,32 +1,29 @@
-package org.cangnova.cangjie.cfir.resolve.calls.candidate
+﻿package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionStage
 
 /**
- * 调用种类，决定候选验证管线使用哪些阶段。
- *
- * 每种调用种类携带一个验证阶段序列 [resolutionSequence]，
- * [CfirResolutionStageRunner] 按序执行这些阶段。
- *
- * 对齐 K2 CallKind，简化为 3 种（去掉 DelegatingConstructorCall/CustomForIde 等）。
- */
+ * 璋冪敤绉嶇被锛屽喅瀹氬€欓€夐獙璇佺绾夸娇鐢ㄥ摢浜涢樁娈点€? *
+ * 姣忕璋冪敤绉嶇被鎼哄甫涓€涓獙璇侀樁娈靛簭鍒?[resolutionSequence]锛? * [CfirResolutionStageRunner] 鎸夊簭鎵ц杩欎簺闃舵銆? *
+ * 瀵归綈 K2 CallKind锛岀畝鍖栦负 3 绉嶏紙鍘绘帀 DelegatingConstructorCall/CustomForIde 绛夛級銆? */
 sealed class CfirCallKind {
 
-    /** 该调用种类所需的验证阶段序列 */
+    /** 璇ヨ皟鐢ㄧ绫绘墍闇€鐨勯獙璇侀樁娈靛簭鍒?*/
     abstract val resolutionSequence: List<CfirResolutionStage>
 
-    /** 函数调用 */
+    /** 鍑芥暟璋冪敤 */
     class Function(
         override val resolutionSequence: List<CfirResolutionStage>,
     ) : CfirCallKind()
 
-    /** 变量/属性访问 */
+    /** 鍙橀噺/灞炴€ц闂?*/
     class VariableAccess(
         override val resolutionSequence: List<CfirResolutionStage>,
     ) : CfirCallKind()
 
-    /** 构造器调用 */
+    /** 鏋勯€犲櫒璋冪敤 */
     class ConstructorCall(
         override val resolutionSequence: List<CfirResolutionStage>,
     ) : CfirCallKind()
 }
+

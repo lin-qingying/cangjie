@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.resolve
+﻿package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
@@ -29,10 +29,11 @@ internal fun CfirResolvedImportBinding.stableTargetSignature(): String {
         }
     }.sorted()
     return buildString {
-        append(importDirective.importedFqName.asString())
+        append(importDirective.importedFqName?.asString() ?: "")
         append('|')
         append(importDirective.isAllUnder)
         append('|')
         append(targetSignatures.joinToString(";"))
     }
 }
+

@@ -1,10 +1,10 @@
 FILE: enumDeclaration.cj
-    enum Color {
+    internal? enum Color {
         Red
         Green
         Blue
     }
-    enum Option<T> {
+    internal? enum Option<T> {
         Some(R|T|)
         None
     }

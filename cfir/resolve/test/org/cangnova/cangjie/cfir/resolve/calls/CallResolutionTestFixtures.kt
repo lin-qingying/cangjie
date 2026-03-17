@@ -1,8 +1,13 @@
-@file:OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
+﻿@file:OptIn(
+    org.cangnova.cangjie.cfir.CfirImplementationDetail::class,
+    org.cangnova.cangjie.cfir.declarations.ResolveStateAccess::class,
+)
 
 package org.cangnova.cangjie.cfir.resolve.calls
 
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.common.CfirPlatform
+import org.cangnova.cangjie.cfir.common.CfirSourceModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirFunctionImpl
@@ -22,15 +27,20 @@ import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
 import org.cangnova.cangjie.name.Name
 
 /**
- * Phase 3 调用解析单元测试共享工具。
- *
- * 提供构建 CfirFunction、CfirValueParameter、CfirCandidate 等测试 fixture 的工厂方法。
- */
+ * Phase 3 璋冪敤瑙ｆ瀽鍗曞厓娴嬭瘯鍏变韩宸ュ叿銆? *
+ * 鎻愪緵鏋勫缓 CfirFunction銆丆firValueParameter銆丆firCandidate 绛夋祴璇?fixture 鐨勫伐鍘傛柟娉曘€? */
 object CallResolutionTestFixtures {
 
-    val TEST_MODULE_DATA = CfirModuleData(Name.identifier("test-module"))
+    val TEST_MODULE_DATA: CfirModuleData = CfirSourceModuleData(
+        name = Name.identifier("test-module"),
+        dependencies = emptyList(),
+        refinementDependencies = emptyList(),
+        platform = CfirPlatform.DEFAULT,
+    ).apply {
+        bindSession(StubCfirSession)
+    }
 
-    /** 构建一个绑定到函数声明的 CfirFunctionSymbol */
+    /** 鏋勫缓涓€涓粦瀹氬埌鍑芥暟澹版槑鐨?CfirFunctionSymbol */
     fun buildFunctionSymbol(
         name: String,
         returnType: ConeCangjieType = ConePrimitiveType.UNIT,
@@ -48,25 +58,26 @@ object CallResolutionTestFixtures {
             )
         }
         val function = CfirFunctionImpl(
+            source = null,
+            moduleData = TEST_MODULE_DATA,
+            annotations = emptyList(),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Source,
-            annotations = emptyList(),
-            moduleData = TEST_MODULE_DATA,
-            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
             attributes = CfirDeclarationAttributes.EMPTY,
             status = CfirDeclarationStatusImpl(),
             typeParameters = typeParameters,
-            returnTypeRef = CfirResolvedTypeRefImpl(returnType),
+            returnTypeRef = CfirResolvedTypeRefImpl(source = null, annotations = emptyList(), coneType = returnType, delegatedTypeRef = null),
             name = Name.identifier(name),
             valueParameters = params,
             body = null,
             isMut = false,
         )
+        function.resolveState = CfirResolvePhase.BODY_RESOLVE.asResolveState()
         symbol.bind(function)
         return symbol
     }
 
-    /** 构建一个 CfirValueParameter */
+    /** 鏋勫缓涓€涓?CfirValueParameter */
     fun buildValueParameter(
         name: String,
         type: ConeCangjieType,
@@ -74,38 +85,39 @@ object CallResolutionTestFixtures {
     ): CfirValueParameter {
         val symbol = CfirValueParameterSymbol()
         val defaultExpr: CfirExpression? = if (hasDefault) {
-            CfirLiteralExpressionImpl(null, CfirLiteralKind.INT, 0)
+            CfirLiteralExpressionImpl(source = null, annotations = emptyList(), coneTypeOrNull = null, kind = CfirLiteralKind.INT, value = 0)
         } else null
         val param = CfirValueParameterImpl(
+            source = null,
+            moduleData = TEST_MODULE_DATA,
+            annotations = emptyList(),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Source,
-            annotations = emptyList(),
-            moduleData = TEST_MODULE_DATA,
-            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
             attributes = CfirDeclarationAttributes.EMPTY,
             status = CfirDeclarationStatusImpl(),
             typeParameters = emptyList(),
-            returnTypeRef = CfirResolvedTypeRefImpl(type),
+            returnTypeRef = CfirResolvedTypeRefImpl(source = null, annotations = emptyList(), coneType = type, delegatedTypeRef = null),
             name = Name.identifier(name),
             defaultValue = defaultExpr,
         )
+        param.resolveState = CfirResolvePhase.BODY_RESOLVE.asResolveState()
         symbol.bind(param)
         return param
     }
 
-    /** 构建一个带类型的表达式 stub（用作调用参数） */
+    /** 鏋勫缓涓€涓甫绫诲瀷鐨勮〃杈惧紡 stub锛堢敤浣滆皟鐢ㄥ弬鏁帮級 */
     fun buildTypedExpression(type: ConeCangjieType): CfirExpression {
-        return CfirLiteralExpressionImpl(type, CfirLiteralKind.INT, 0)
+        return CfirLiteralExpressionImpl(source = null, annotations = emptyList(), coneTypeOrNull = type, kind = CfirLiteralKind.INT, value = 0)
     }
 
-    /** 构建一个最小的 CfirCallInfo（用于测试验证阶段） */
+    /** 鏋勫缓涓€涓渶灏忕殑 CfirCallInfo锛堢敤浜庢祴璇曢獙璇侀樁娈碉級 */
     fun buildCallInfo(
         name: String,
         arguments: List<CfirExpression> = emptyList(),
         stages: List<CfirResolutionStage> = emptyList(),
     ): CfirCallInfo {
         return CfirCallInfo(
-            callSite = CfirLiteralExpressionImpl(null, CfirLiteralKind.UNIT, null),
+            callSite = CfirLiteralExpressionImpl(source = null, annotations = emptyList(), coneTypeOrNull = null, kind = CfirLiteralKind.UNIT, value = null),
             callKind = CfirCallKind.Function(stages),
             name = Name.identifier(name),
             explicitReceiver = null,
@@ -115,7 +127,7 @@ object CallResolutionTestFixtures {
         )
     }
 
-    /** 构建 CfirCandidate */
+    /** 鏋勫缓 CfirCandidate */
     fun buildCandidate(
         functionSymbol: CfirFunctionSymbol,
         callInfo: CfirCallInfo,
@@ -128,8 +140,9 @@ object CallResolutionTestFixtures {
 }
 
 /**
- * 最小化 CfirSession stub，仅用于测试。
- */
+ * 鏈€灏忓寲 CfirSession stub锛屼粎鐢ㄤ簬娴嬭瘯銆? */
 private object StubCfirSession : org.cangnova.cangjie.cfir.session.CfirSession(Kind.Source) {
     override fun toString(): String = "StubCfirSession"
 }
+
+

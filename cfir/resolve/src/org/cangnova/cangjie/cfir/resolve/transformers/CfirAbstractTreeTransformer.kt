@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2010-2026. cangjie.
  */
 
@@ -13,3 +13,4 @@ abstract class CfirAbstractTreeTransformer<D>(phase: CfirResolvePhase) : CfirAbs
         return (element.transformChildren(this, data) as E)
     }
 }
+

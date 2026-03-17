@@ -1,7 +1,7 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 package org.cangnova.cangjie.cfir.declarations
 
@@ -18,9 +18,10 @@ import org.cangnova.cangjie.name.Name
  */
 abstract class CfirImport : CfirPureAbstractElement(), CfirElement {
     abstract override val source: CjSourceElement?
-    abstract val importedFqName: FqName
+    abstract val importedFqName: FqName?
     abstract val isAllUnder: Boolean
     abstract val aliasName: Name?
+    abstract val aliasSource: CjSourceElement?
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitImport(this, data)

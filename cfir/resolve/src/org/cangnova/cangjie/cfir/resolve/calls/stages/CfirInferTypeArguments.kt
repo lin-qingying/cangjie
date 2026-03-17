@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.resolve.calls.stages
+﻿package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -6,26 +6,20 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.resolve.calls.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
 import org.cangnova.cangjie.cfir.resolve.inference.CfirConstraintPosition
-import org.cangnova.cangjie.cfir.resolve.inference.CfirConstraintSystem
 import org.cangnova.cangjie.cfir.resolve.inference.CfirTypeVariable
+import org.cangnova.cangjie.cfir.resolve.inference.inferenceLogger
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
-import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
 
 /**
- * 泛型类型参数推断阶段。
- *
- * 对泛型候选执行类型推断：
- * 1. 若调用方提供了显式类型参数 → 直接构建 Map 替换器（沿用 Phase 3 路径）
- * 2. 若需要推断 → 为每个类型参数注册类型变量 → 收集约束 → 固定 → 构建替换器
- *
- * 该阶段在 CheckArguments 之前执行，确保 CheckArguments 使用推断后的替换器。
- *
- * 对齐 K2 CheckCallArguments + inference 部分。
- */
+ * 娉涘瀷绫诲瀷鍙傛暟鎺ㄦ柇闃舵銆? *
+ * 瀵规硾鍨嬪€欓€夋墽琛岀被鍨嬫帹鏂細
+ * 1. 鑻ヨ皟鐢ㄦ柟鎻愪緵浜嗘樉寮忕被鍨嬪弬鏁?鈫?鐩存帴鏋勫缓 Map 鏇挎崲鍣紙娌跨敤 Phase 3 璺緞锛? * 2. 鑻ラ渶瑕佹帹鏂?鈫?涓烘瘡涓被鍨嬪弬鏁版敞鍐岀被鍨嬪彉閲?鈫?鏀堕泦绾︽潫 鈫?鍥哄畾 鈫?鏋勫缓鏇挎崲鍣? *
+ * 璇ラ樁娈靛湪 CheckArguments 涔嬪墠鎵ц锛岀‘淇?CheckArguments 浣跨敤鎺ㄦ柇鍚庣殑鏇挎崲鍣ㄣ€? *
+ * 瀵归綈 K2 CheckCallArguments + inference 閮ㄥ垎銆? */
 object CfirInferTypeArguments : CfirResolutionStage() {
 
     override fun check(
@@ -34,21 +28,21 @@ object CfirInferTypeArguments : CfirResolutionStage() {
         context: CfirResolutionContext,
     ) {
         val typeParameters = extractTypeParameters(candidate) ?: return
-        if (typeParameters.isEmpty()) return // 非泛型函数，跳过
+        if (typeParameters.isEmpty()) return // 闈炴硾鍨嬪嚱鏁帮紝璺宠繃
 
         val explicitTypeArgs = candidate.callInfo.typeArguments
 
         if (explicitTypeArgs.isNotEmpty()) {
-            // 显式类型参数：直接构建 Map 替换器
+            // 鏄惧紡绫诲瀷鍙傛暟锛氱洿鎺ユ瀯寤?Map 鏇挎崲鍣?
             buildExplicitSubstitutor(candidate, typeParameters, explicitTypeArgs)
             return
         }
 
-        // 需要推断：创建约束系统并收集约束
+        // 闇€瑕佹帹鏂細鍒涘缓绾︽潫绯荤粺骞舵敹闆嗙害鏉?
         inferTypeArguments(candidate, typeParameters, context)
     }
 
-    /** 从候选符号中提取类型参数列表 */
+    /** 浠庡€欓€夌鍙蜂腑鎻愬彇绫诲瀷鍙傛暟鍒楄〃 */
     private fun extractTypeParameters(candidate: CfirCandidate): List<CfirTypeParameter>? {
         if (!candidate.symbol.isBound) return null
         return when (val decl = candidate.symbol.cfir) {
@@ -59,8 +53,7 @@ object CfirInferTypeArguments : CfirResolutionStage() {
     }
 
     /**
-     * 显式类型参数路径：从类型参数和显式类型实参构建 Map 替换器。
-     */
+     * 鏄惧紡绫诲瀷鍙傛暟璺緞锛氫粠绫诲瀷鍙傛暟鍜屾樉寮忕被鍨嬪疄鍙傛瀯寤?Map 鏇挎崲鍣ㄣ€?     */
     private fun buildExplicitSubstitutor(
         candidate: CfirCandidate,
         typeParameters: List<CfirTypeParameter>,
@@ -79,8 +72,7 @@ object CfirInferTypeArguments : CfirResolutionStage() {
     }
 
     /**
-     * 推断路径：创建约束系统 → 注册类型变量 → 收集参数约束 → 固定 → 构建替换器。
-     */
+     * 鎺ㄦ柇璺緞锛氬垱寤虹害鏉熺郴缁?鈫?娉ㄥ唽绫诲瀷鍙橀噺 鈫?鏀堕泦鍙傛暟绾︽潫 鈫?鍥哄畾 鈫?鏋勫缓鏇挎崲鍣ㄣ€?     */
     private fun inferTypeArguments(
         candidate: CfirCandidate,
         typeParameters: List<CfirTypeParameter>,
@@ -89,7 +81,7 @@ object CfirInferTypeArguments : CfirResolutionStage() {
         val inferenceComponents = context.inferenceComponents ?: return
         val constraintSystem = inferenceComponents.createConstraintSystem()
 
-        // 1. 为每个类型参数注册类型变量
+        // 1. 涓烘瘡涓被鍨嬪弬鏁版敞鍐岀被鍨嬪彉閲?
         val typeVariableMap = mutableMapOf<String, CfirTypeVariable>()
         for (typeParam in typeParameters) {
             val paramName = typeParam.name.asString()
@@ -103,17 +95,21 @@ object CfirInferTypeArguments : CfirResolutionStage() {
             constraintSystem.registerTypeVariable(variable)
             typeVariableMap[paramName] = variable
 
-            // 注册声明的上界约束
+            // 娉ㄥ唽澹版槑鐨勪笂鐣岀害鏉?
             for (bound in typeParam.bounds) {
                 val boundType = (bound as? CfirResolvedTypeRef)?.coneType ?: continue
                 variable.upperBounds.add(boundType)
             }
         }
 
-        // 保存约束系统到候选
+        // 淇濆瓨绾︽潫绯荤粺鍒板€欓€?
         candidate.constraintSystem = constraintSystem
+        context.session.inferenceLogger?.apply {
+            logCandidate(candidate)
+            logStage("InferTypeArguments", constraintSystem)
+        }
 
-        // 2. 收集参数约束：对每对 (argType, paramType) 添加 argType <: substitute(paramType)
+        // 2. 鏀堕泦鍙傛暟绾︽潫锛氬姣忓 (argType, paramType) 娣诲姞 argType <: substitute(paramType)
         val valueParameters = extractValueParameters(candidate)
         val arguments = candidate.callInfo.arguments
         val mapping = candidate.argumentMapping
@@ -134,10 +130,10 @@ object CfirInferTypeArguments : CfirResolutionStage() {
             )
         }
 
-        // 3. 固定所有类型变量
+        // 3. 鍥哄畾鎵€鏈夌被鍨嬪彉閲?
         constraintSystem.fixAllVariables()
 
-        // 4. 构建替换器
+        // 4. 鏋勫缓鏇挎崲鍣?
         candidate.substitutor = constraintSystem.buildResultingSubstitutor()
     }
 
@@ -158,3 +154,4 @@ object CfirInferTypeArguments : CfirResolutionStage() {
         return (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType
     }
 }
+

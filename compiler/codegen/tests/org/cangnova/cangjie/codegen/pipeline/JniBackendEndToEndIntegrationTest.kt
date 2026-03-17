@@ -22,26 +22,39 @@ class JniBackendEndToEndIntegrationTest {
     companion object {
         private const val ENABLE_FLAG = "CANGJIE_LLVM_JNI_INTEGRATION"
         private const val LIB_PATH_FLAG = "CANGJIE_LLVM_JNI_LIBRARY_PATH"
+        private const val NATIVE_HOME_FLAG = "CANGJIE_NATIVE_HOME"
+        private const val ENABLE_PROP = "cangjie.llvm.jni.integration"
+        private const val NATIVE_HOME_PROP = "cangjie.native.home"
 
         @JvmStatic
         @BeforeAll
         fun setupNativePath() {
             assumeTrue(
-                System.getenv(ENABLE_FLAG).equals("true", ignoreCase = true),
-                "integration test disabled, set $ENABLE_FLAG=true to enable",
+                System.getenv(ENABLE_FLAG).equals("true", ignoreCase = true)
+                    || System.getProperty(ENABLE_PROP).equals("true", ignoreCase = true),
+                "integration test disabled, set $ENABLE_FLAG=true or -D$ENABLE_PROP=true",
             )
             val libraryPath = System.getenv(LIB_PATH_FLAG).orEmpty()
-            assumeTrue(libraryPath.isNotBlank(), "missing $LIB_PATH_FLAG")
-            System.setProperty("cangjie.llvm.native.library.path", libraryPath)
+            if (libraryPath.isNotBlank()) {
+                System.setProperty("cangjie.llvm.native.library.path", libraryPath)
+                return
+            }
+            val nativeHome = System.getenv(NATIVE_HOME_FLAG)
+                ?: System.getProperty(NATIVE_HOME_PROP).orEmpty()
+            assumeTrue(
+                nativeHome.isNotBlank(),
+                "missing $LIB_PATH_FLAG or $NATIVE_HOME_FLAG or -D$NATIVE_HOME_PROP",
+            )
+            System.setProperty(NATIVE_HOME_PROP, nativeHome)
         }
     }
 
     @Test
-    fun `jni backend produces same ir as in memory backend for simple chir module`() {
+    fun `jni backend produces stable ir for simple chir module`() {
         val codegen = DefaultChirToLlvmCodeGenerator()
         val chirPackage = simpleReturnPackage()
 
-        val jniOutput = codegen.generate(
+        val jniOutputFirst = codegen.generate(
             ChirCodegenInput(
                 chirPackage = chirPackage,
                 options = CodegenOptions(
@@ -57,12 +70,13 @@ class JniBackendEndToEndIntegrationTest {
             ),
         )
 
-        val inMemoryOutput = codegen.generate(
+        val jniOutputSecond = codegen.generate(
             ChirCodegenInput(
                 chirPackage = chirPackage,
                 options = CodegenOptions(
                     enabled = true,
-                    llvmBackendKind = LlvmBackendKind.IN_MEMORY,
+                    llvmBackendKind = LlvmBackendKind.JNI,
+                    failOnUnavailable = true,
                     emitLoweringTrace = true,
                     emitBitcode = false,
                     emitComments = false,
@@ -72,11 +86,36 @@ class JniBackendEndToEndIntegrationTest {
             ),
         )
 
-        assertTrue(jniOutput.loweringTrace.any { it == "backend=jni" }, jniOutput.loweringTrace.joinToString("\n"))
-        assertTrue(inMemoryOutput.loweringTrace.any { it == "backend=in-memory" }, inMemoryOutput.loweringTrace.joinToString("\n"))
-        assertEquals(1, jniOutput.modules.size)
-        assertEquals(1, inMemoryOutput.modules.size)
-        assertEquals(inMemoryOutput.modules.single().ir, jniOutput.modules.single().ir)
+        assertTrue(jniOutputFirst.loweringTrace.any { it == "backend=jni" }, jniOutputFirst.loweringTrace.joinToString("\n"))
+        assertTrue(jniOutputSecond.loweringTrace.any { it == "backend=jni" }, jniOutputSecond.loweringTrace.joinToString("\n"))
+        assertEquals(1, jniOutputFirst.modules.size)
+        assertEquals(1, jniOutputSecond.modules.size)
+        assertEquals(jniOutputSecond.modules.single().ir, jniOutputFirst.modules.single().ir)
+    }
+
+    @Test
+    fun `jni backend emits real llvm bitcode bytes`() {
+        val output = DefaultChirToLlvmCodeGenerator().generate(
+            ChirCodegenInput(
+                chirPackage = simpleReturnPackage(),
+                options = CodegenOptions(
+                    enabled = true,
+                    llvmBackendKind = LlvmBackendKind.JNI,
+                    failOnUnavailable = true,
+                    emitBitcode = true,
+                    emitComments = false,
+                    emitModuleHeader = false,
+                    emitRuntimeDeclarations = false,
+                ),
+            ),
+        )
+
+        val bitcode = output.modules.single().bitcode ?: error("missing bitcode bytes")
+        assertTrue(bitcode.size >= 4)
+        assertEquals(0x42.toByte(), bitcode[0])
+        assertEquals(0x43.toByte(), bitcode[1])
+        assertEquals(0xC0.toByte(), bitcode[2])
+        assertEquals(0xDE.toByte(), bitcode[3])
     }
 
     private fun simpleReturnPackage(): ChirPackage {

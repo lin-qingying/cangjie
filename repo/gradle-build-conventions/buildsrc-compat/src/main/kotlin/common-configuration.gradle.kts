@@ -20,6 +20,7 @@ plugins.withId("org.jetbrains.kotlin.jvm") {
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         compilerOptions {
             freeCompilerArgs.add("-Xjvm-default=all")
+            freeCompilerArgs.add("-XXLanguage:+ExplicitBackingFields")
         }
     }
 

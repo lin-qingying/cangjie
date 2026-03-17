@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.checkers.generator
+﻿package org.cangnova.cangjie.cfir.checkers.generator
 
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.DIAGNOSTICS_LIST
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.ErrorListDiagnosticListRenderer
@@ -7,12 +7,18 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirInvalidDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
+import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
@@ -23,20 +29,36 @@ import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirCatch
+import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirJumpExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLambdaExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
+import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
+import org.cangnova.cangjie.cfir.expressions.CfirMacroExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
+import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
+import org.cangnova.cangjie.cfir.expressions.CfirQuoteExpression
 import org.cangnova.cangjie.cfir.expressions.CfirRangeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
+import org.cangnova.cangjie.cfir.expressions.CfirSpawnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.expressions.CfirStringInterpolation
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
+import org.cangnova.cangjie.cfir.expressions.CfirSynchronizedExpression
 import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
+import org.cangnova.cangjie.cfir.expressions.CfirUnsafeExpression
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirFunctionTypeRef
@@ -60,7 +82,7 @@ fun main(args: Array<String>) {
 
     if (task == "checkers" || task == "diagnostics" || task == "all") {
         val checkersPath = generationPath ?: File("cfir/checkers/gen")
-        val diagnosticsPath = File("cfir/diagnostics/gen")
+        val diagnosticsPath = File("cfir/checkers/gen")
         generateCheckersComponents(
             checkersPath,
             "$basePackage.checkers.type",
@@ -90,6 +112,22 @@ fun main(args: Array<String>) {
             ) {
                 alias<CfirStatement>("BasicExpressionChecker", false).let {
                     visitAlso<CfirExpression>(it)
+                    visitAlso<CfirBlock>(it)
+                    visitAlso<CfirLazyBlock>(it)
+                    visitAlso<CfirLazyExpression>(it)
+                    visitAlso<CfirStringInterpolation>(it)
+                    visitAlso<CfirMatchBranch>(it)
+                    visitAlso<CfirCatch>(it)
+                    visitAlso<CfirLoopExpression>(it)
+                    visitAlso<CfirForInExpression>(it)
+                    visitAlso<CfirLambdaExpression>(it)
+                    visitAlso<CfirArrayLiteral>(it)
+                    visitAlso<CfirTupleLiteral>(it)
+                    visitAlso<CfirSpawnExpression>(it)
+                    visitAlso<CfirSynchronizedExpression>(it)
+                    visitAlso<CfirUnsafeExpression>(it)
+                    visitAlso<CfirQuoteExpression>(it)
+                    visitAlso<CfirMacroExpression>(it)
                 }
                 alias<CfirLiteralExpression>("LiteralExpressionChecker")
                 alias<CfirFunctionCall>("FunctionCallChecker")
@@ -119,8 +157,16 @@ fun main(args: Array<String>) {
             ) {
                 alias<CfirDeclaration>("BasicDeclarationChecker")
                 alias<CfirMemberDeclaration>("MemberDeclarationChecker")
-                alias<CfirCallableDeclaration>("CallableDeclarationChecker")
-                alias<CfirClassLikeDeclaration>("ClassLikeChecker")
+                alias<CfirCallableDeclaration>("CallableDeclarationChecker").let {
+                    visitAlso<CfirEnumConstructor>(it)
+                    visitAlso<CfirMacroDeclaration>(it)
+                    visitAlso<CfirFinalizer>(it)
+                    visitAlso<CfirConstructor>(it)
+                    visitAlso<CfirPatternVariable>(it)
+                }
+                alias<CfirClassLikeDeclaration>("ClassLikeChecker").let {
+                    visitAlso<CfirExtend>(it)
+                }
                 alias<CfirClass>("ClassChecker")
                 alias<CfirFile>("FileChecker")
                 alias<CfirFunction>("FunctionChecker")
@@ -146,3 +192,4 @@ fun main(args: Array<String>) {
         generateNonSuppressibleErrorNamesFile(diagnosticsPath, packageName)
     }
 }
+

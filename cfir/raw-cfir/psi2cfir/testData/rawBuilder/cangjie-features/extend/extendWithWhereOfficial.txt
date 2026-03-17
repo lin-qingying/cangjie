@@ -1,5 +1,5 @@
 FILE: extendWithWhereOfficial.cj
-    enum EnumExtend<T> {
+    public enum EnumExtend<T> {
         AA
     }
     extend<T> R|EnumExtend<R|T|>| <: R|Equatable<R|EnumExtend<R|T|>|>| {

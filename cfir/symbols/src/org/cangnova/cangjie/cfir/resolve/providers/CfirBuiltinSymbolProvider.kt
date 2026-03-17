@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.common.CfirBinaryDependenciesModuleData
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirClassKind
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
@@ -8,6 +9,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.ResolveStateAccess
+import org.cangnova.cangjie.cfir.declarations.asResolveState
 import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -23,8 +26,8 @@ import org.cangnova.cangjie.name.Name
  * 涓轰粨棰夊唴寤哄師濮嬬被鍨嬶紙Int8, Bool, Float64 绛夛級鎻愪緵棰勬瀯寤虹殑鍚堟垚绫荤鍙枫€? * 杩欎簺绫诲瀷鐢?[PrimitiveTypeKind] 鏋氫妇瀹氫箟锛屼笉灞炰簬鏍囧噯搴?std.core 鐨勭被澹版槑锛? * 鑰屾槸缂栬瘧鍣ㄥ唴寤虹殑鍘熷绫诲瀷銆? *
  * 瀵归綈 Kotlin K2 鐨?FirBuiltinSymbolProvider锛堜粎鍐呭缓閮ㄥ垎锛夈€? */
 class CfirBuiltinSymbolProvider(
-    private val session: CfirSession,
-) : CfirSymbolProvider() {
+    session: CfirSession,
+) : CfirSymbolProvider(session) {
 
     override val symbolNamesProvider: CfirSymbolNamesProvider = BuiltinNamesProvider
 
@@ -45,20 +48,22 @@ class CfirBuiltinSymbolProvider(
         return fqName == StandardNames.BASIC_PACKAGE_FQ_NAME
     }
 
-    @OptIn(CfirImplementationDetail::class)
+    @OptIn(CfirImplementationDetail::class, ResolveStateAccess::class)
     private fun buildBuiltinClassSymbols(): Map<ClassId, CfirClassSymbol> {
-        val moduleData = CfirModuleData(Name.identifier("builtins"))
+        val moduleData = CfirBinaryDependenciesModuleData(Name.identifier("builtins")).apply {
+            bindSession(this@CfirBuiltinSymbolProvider.session)
+        }
         return buildMap {
             for (kind in PrimitiveTypeKind.entries) {
                 val name = Name.identifier(kind.typeName)
                 val classId = ClassId(StandardNames.BASIC_PACKAGE_FQ_NAME, name)
                 val symbol = CfirClassSymbol()
                 val cfirClass = CfirClassImpl(
+                    source = null,
                     symbol = symbol,
                     origin = CfirDeclarationOrigin.Synthetic,
                     annotations = emptyList(),
                     moduleData = moduleData,
-                    resolvePhase = CfirResolvePhase.RAW_CFIR,
                     attributes = CfirDeclarationAttributes.EMPTY,
                     status = CfirDeclarationStatusImpl.DEFAULT,
                     typeParameters = emptyList(),
@@ -67,6 +72,7 @@ class CfirBuiltinSymbolProvider(
                     name = name,
                     classKind = CfirClassKind.STRUCT,
                 )
+                cfirClass.resolveState = CfirResolvePhase.RAW_CFIR.asResolveState()
                 symbol.bind(cfirClass)
                 put(classId, symbol)
             }
@@ -88,4 +94,3 @@ class CfirBuiltinSymbolProvider(
             PrimitiveTypeKind.entries.mapTo(mutableSetOf()) { Name.identifier(it.typeName) }
     }
 }
-

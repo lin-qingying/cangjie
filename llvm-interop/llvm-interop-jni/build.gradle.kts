@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.testing.Test
+
 plugins {
     kotlin("jvm")
     id("native-compile-plugin")
@@ -15,29 +17,10 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
-val generateJniHeaders by tasks.registering(JavaCompile::class) {
-    group = "build"
-    description = "Generate JNI headers from Kotlin external declarations."
-    source = sourceSets["main"].java
-    classpath = sourceSets["main"].compileClasspath
-    destinationDirectory.set(layout.buildDirectory.dir("tmp/jni-header-classes"))
-    options.compilerArgs.addAll(
-        listOf(
-            "-h",
-            layout.buildDirectory.dir("generated/jni-headers").get().asFile.absolutePath,
-        ),
-    )
-}
-
 nativeCompile {
-    sourceDir("src/main/native")
-    includeDir(layout.buildDirectory.dir("generated/jni-headers"))
+    sourceDir("native")
     compilerArgs.add("-std=c++17")
     outputName.set("cangjie_llvm_jni")
-}
-
-tasks.named("nativeCompile") {
-    dependsOn(generateJniHeaders)
 }
 
 val currentPlatformId = run {
@@ -73,8 +56,25 @@ val aggregateNativeArtifacts by tasks.registering(Copy::class) {
 
     val builtLibrary = layout.buildDirectory.file("native/$nativeLibraryFileName")
     from(builtLibrary)
+    val llvmDirProvider = providers.gradleProperty("llvm.dir")
+        .orElse(providers.environmentVariable("LLVM_DIR"))
+    llvmDirProvider.orNull?.let { llvmDir ->
+        val llvmBin = file("$llvmDir/bin")
+        if (llvmBin.exists()) {
+            from(llvmBin) {
+                include("*.dll", "*.so", "*.dylib")
+                exclude(nativeLibraryFileName)
+            }
+        }
+    }
     into(layout.buildDirectory.dir("native/$currentPlatformId"))
 
     // nativeCompile can skip when LLVM is missing.
     onlyIf { builtLibrary.get().asFile.exists() }
+}
+
+tasks.withType<Test>().configureEach {
+    dependsOn(aggregateNativeArtifacts)
+    systemProperty("cangjie.llvm.jni.integration", "true")
+    systemProperty("cangjie.native.home", layout.buildDirectory.get().asFile.absolutePath)
 }

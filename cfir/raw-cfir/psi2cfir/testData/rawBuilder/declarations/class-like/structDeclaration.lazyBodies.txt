@@ -1,5 +1,5 @@
 FILE: structDeclaration.cj
-    struct Point {
-        var x: R|Float64|
-        var y: R|Float64|
+    internal? struct Point {
+        internal? var x: R|Float64|
+        internal? var y: R|Float64|
     }

@@ -6,8 +6,11 @@ plugins {
 dependencies {
     implementation(project(":generators"))
     implementation(project(":cfir:cfir-tree"))
+    implementation(project(":cfir:cfir-cones"))
+
     implementation(project(":cfir:cfir-tree:tree-generator"))
     implementation(project(":cfir:diagnostics"))
+    implementation(project(":psi"))
 
     implementation(kotlin("reflect"))
 
@@ -24,7 +27,7 @@ val generateCfirDiagnostics by tasks.registering(JavaExec::class) {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("org.cangnova.cangjie.cfir.checkers.generator.MainKt")
     workingDir = rootProject.projectDir
-    args("diagnostics", targetCheckersGenDir.asFile.absolutePath)
+    args("all", targetCheckersGenDir.asFile.absolutePath)
 }
 
 application {

@@ -1,12 +1,12 @@
-/*
- * Copyright 2010-2023 JetBrains s.r.o. and Kotlin Programming Language contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
- */
+
 
 package org.cangnova.cangjie.generators.tree
 
 import kotlin.reflect.KMutableProperty1
 
+/**
+ * 树模型根对象，持有所有元素并提供后处理步骤。
+ */
 data class Model<Element : AbstractElement<Element, *, *>>(
     val elements: List<Element>,
     val rootElement: Element,

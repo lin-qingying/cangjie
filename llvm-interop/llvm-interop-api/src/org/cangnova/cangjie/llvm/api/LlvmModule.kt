@@ -1,5 +1,8 @@
 package org.cangnova.cangjie.llvm.api
 
+/**
+ * LLVM 模块封装。
+ */
 class LlvmModule internal constructor(
     val ref: LlvmModuleRef,
     private val owner: LlvmContext,

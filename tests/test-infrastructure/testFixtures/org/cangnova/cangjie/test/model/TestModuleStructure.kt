@@ -13,12 +13,31 @@ data class DependencyDescription(
     val relation: DependencyRelation = DependencyRelation.Regular,
 )
 
-data class TestFile(
-    val name: String,
-    val content: String,
-    val originalFile: File? = null,
-)
+class TestFile(
+    val relativePath: String,
+    val originalContent: String,
+    val originalFile: File,
+    val startLineNumberInOriginalFile: Int, // line count starts with 0
+    /*
+     * isAdditional means that this file provided as addition to sources of testdata
+     *   and there is no need to apply any handlers or preprocessors over it
+     */
+    val isAdditional: Boolean,
+    val directives: RegisteredDirectives
+) {
+    val name: String = relativePath.split("/").last()
 
+    override fun toString(): String = relativePath
+
+    fun copy(): TestFile = TestFile(
+        relativePath,
+        originalContent,
+        originalFile,
+        startLineNumberInOriginalFile,
+        isAdditional,
+        directives
+    )
+}
 data class TestModule(
     val name: String,
     val files: List<TestFile>,

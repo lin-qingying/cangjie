@@ -12,8 +12,8 @@ import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
 /**
- * Provides a DSL to configure builder classes for tree nodes, for example, add intermediate builders, or add default values
- * for properties in the generated builders.
+ * 为树节点的 Builder 生成提供 DSL 配置能力。
+ * 例如可新增中间 Builder、或为生成属性设置默认值。
  */
 abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField>(
     val model: Model<Element>
@@ -22,21 +22,21 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
         ElementField : AbstractField<ElementField> {
 
     /**
-     * The prefix that will be used to generate names of builder classes.
+     * 生成 Builder 类名时使用的前缀。
      *
-     * Should be the same as [AbstractElement.namePrefix].
+     * 应与 [AbstractElement.namePrefix] 保持一致。
      */
     protected abstract val namePrefix: String
 
     /**
-     * The package in which [IntermediateBuilder]s should be generated.
+     * [IntermediateBuilder] 的默认生成包名。
      */
     protected abstract val defaultBuilderPackage: String
 
     /**
-     * A customization point to fine-tune existing builder classes or add new ones.
+     * 自定义入口：用于微调已有 Builder 或新增 Builder。
      *
-     * Override this method and use the following DSL methods to configure builder generation:
+     * 可在重写中使用以下 DSL：
      * - [builder]
      * - [noBuilder]
      * - [configureFieldInAllLeafBuilders]
@@ -46,20 +46,17 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
     val intermediateBuilders = mutableListOf<IntermediateBuilder<ElementField, Element>>()
 
     /**
-     * Provides a way to configure an intermediate builder class.
+     * 配置中间 Builder 类。
      *
-     * @param config The configuration block. See [IntermediateBuilderConfigurationContext]'s documentation for description of its DSL
-     * methods.
+     * @param config 配置块，DSL 见 [IntermediateBuilderConfigurationContext]。
      */
     protected fun builder(config: IntermediateBuilderConfigurationContext.() -> Unit) = IntermediateBuilderDelegateProvider(config)
 
     /**
-     * Provides a way to configure a leaf builder class, i.e. the builder class responsible for finally constructing an instance of
-     * the corresponding implementation class.
+     * 配置叶子 Builder 类（即最终负责构造对应实现类实例的 Builder）。
      *
-     * @param element The element for which to configure builder generation.
-     * @param config The configuration block. See [LeafBuilderConfigurationContext]'s documentation for description of its DSL
-     * methods.
+     * @param element 要配置 Builder 生成行为的元素。
+     * @param config 配置块，DSL 见 [LeafBuilderConfigurationContext]。
      */
     protected fun builder(element: Element, type: String? = null, config: LeafBuilderConfigurationContext.() -> Unit) {
         val implementation = element.extractImplementation(type)
@@ -69,7 +66,7 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
     }
 
     /**
-     * Disables generating any builder classes for [element].
+     * 禁用 [element] 的 Builder 生成。
      */
     protected fun noBuilder(element: Element, type: String? = null) {
         val implementation = element.extractImplementation(type)
@@ -103,8 +100,9 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
     }
 
     /**
-     * Out of all implementations, returns those for which [implementationPredicate] returns `true`
-     * _and_ [element] is one of its non-immediate parents.
+     * 在所有实现中筛选：
+     * 1. 满足 [implementationPredicate]；
+     * 2. 且 [element] 是其非直接父类之一。
      */
     protected inline fun findImplementationsWithElementInParents(
         element: Element,
@@ -124,14 +122,12 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
         get() = model.elements.flatMap { it.implementations }.mapNotNull { it.builder }
 
     /**
-     * Allows to batch-apply [config] to certain fields in _all_ the builders that satisfy the given
-     * [builderPredicate].
+     * 对满足 [builderPredicate] 的所有叶子 Builder 中指定字段批量应用 [config]。
      *
-     * @param field The name of the field to configure across all builder classes.
-     * @param builderPredicate Only builders satisfying this predicate will participate in this configuration.
-     * @param fieldPredicate Only fields satisfying this predicate will be configured.
-     * @param config The configuration block. Accepts the field name as an argument.
-     * See [LeafBuilderConfigurationContext]'s documentation for description of its DSL methods.
+     * @param field 需要配置的字段名。
+     * @param builderPredicate 仅匹配该谓词的 Builder 会参与配置。
+     * @param fieldPredicate 仅匹配该谓词的字段会参与配置。
+     * @param config 配置块，参数为字段名；DSL 见 [LeafBuilderConfigurationContext]。
      */
     protected fun configureFieldInAllLeafBuilders(
         field: String,
@@ -148,9 +144,9 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
     }
 
     /**
-     * Allows to batch-apply [config] to _all_ leaf builders.
+     * 对所有叶子 Builder 批量应用 [config]。
      *
-     * @param config The configuration block. See [LeafBuilderConfigurationContext]'s documentation for description of its DSL methods.
+     * @param config 配置块，DSL 见 [LeafBuilderConfigurationContext]。
      */
     protected fun configureAllLeafBuilders(config: LeafBuilderConfigurationContext.() -> Unit) {
         for (builder in allLeafBuilders) {
@@ -159,7 +155,7 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
     }
 
     /**
-     * A DSL for configuring one or more intermediate or leaf builder classes.
+     * 用于配置一个或多个中间/叶子 Builder 的 DSL 基类。
      */
     protected abstract inner class BuilderConfigurationContext {
         protected abstract val builder: Builder<ElementField, Element>
@@ -169,20 +165,19 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
         }
 
         /**
-         * Types/functions that you want to additionally import in the file with the builder class.
+         * 为 Builder 文件追加额外导入的类型/函数。
          *
-         * This is useful if, for example, default values of fields reference classes or functions from other packages.
-         *
-         * Note that classes referenced in field types will be imported automatically.
+         * 当字段默认值引用其他包中的符号时可使用此方法。
+         * 注意：字段类型本身涉及的类型会自动导入。
          */
         fun additionalImports(vararg types: Importable) {
             types.forEach { builder.usedTypes += it }
         }
 
         /**
-         * Specifies the default value of [field] in this builder class. The default value can be arbitrary code.
+         * 指定本 Builder 中 [field] 的默认值，值可以是任意 Kotlin 代码片段。
          *
-         * Use [additionalImports] if the default value uses types/functions that are not otherwise imported.
+         * 若默认值依赖未导入符号，请配合 [additionalImports]。
          */
         fun default(field: String, value: String) {
             default(field) {
@@ -191,7 +186,7 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
         }
 
         /**
-         * Specifies that the default value of each field in [fields] in this builder class should be `true`.
+         * 将 [fields] 在本 Builder 中的默认值统一设为 `true`。
          */
         fun defaultTrue(vararg fields: String) {
             for (field in fields) {
@@ -202,7 +197,7 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
         }
 
         /**
-         * Specifies that the default value of each field in [fields] in this builder class should be `false`.
+         * 将 [fields] 在本 Builder 中的默认值统一设为 `false`。
          */
         fun defaultFalse(vararg fields: String) {
             for (field in fields) {
@@ -213,9 +208,9 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
         }
 
         /**
-         * Specifies that the default value of each field of [fields] in this builder class should be `null`.
+         * 将 [fields] 在本 Builder 中的默认值统一设为 `null`。
          *
-         * Note: the field must be configured as nullable.
+         * 注意：字段必须为可空类型。
          */
         fun defaultNull(vararg fields: String) {
             for (field in fields) {
@@ -229,23 +224,23 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
         }
 
         /**
-         * Allows to configure the default value of [field] in this builder class.
+         * 以 DSL 方式配置本 Builder 中 [field] 的默认值。
          *
-         * See the [DefaultValueContext] documentation for description of its DSL methods.
+         * 详见 [DefaultValueContext]。
          */
         fun default(field: String, init: DefaultValueContext.() -> Unit) {
             DefaultValueContext(getField(field)).apply(init).applyConfiguration()
         }
 
         /**
-         * A DSL for configuring a field's default value.
+         * 字段默认值配置 DSL。
          */
         inner class DefaultValueContext(private val field: ElementField) {
 
             /**
-             * The default value of this field in the builder class. Can be arbitrary code.
+             * 该字段在 Builder 中的默认值，可为任意 Kotlin 代码。
              *
-             * Use [additionalImports] if the default value uses types/functions that are not otherwise imported.
+             * 若依赖未导入符号，请使用 [additionalImports]。
              */
             var value: String? = null
 
@@ -256,13 +251,13 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
     }
 
     /**
-     * A DSL for configuring one or more intermediate builder classes.
+     * 用于配置一个或多个中间 Builder 的 DSL。
      *
-     * Use the following syntax for configuring the set of generated fields in this builder class:
+     * 可使用以下语法配置生成字段集合：
      * ```kotlin
-     * fields from myElement // To use all fields from myElement in the builder class
-     * fields from myElement without "myField" // To use all fields except myField from myElement in the builder class.
-     * fields from myElement without listOf("foo", "bar") // To use all fields except foo and bar from myElement in the builder class.
+     * fields from myElement // 使用 myElement 的全部字段
+     * fields from myElement without "myField" // 排除 myField
+     * fields from myElement without listOf("foo", "bar") // 排除 foo 与 bar
      * ```
      */
     protected inner class IntermediateBuilderConfigurationContext(
@@ -271,7 +266,7 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
         inner class Fields {
 
             /**
-             * Copy all fields from [element] to this builder class.
+             * 将 [element] 的全部字段复制到当前 Builder。
              */
             infix fun from(element: Element): ExceptConfigurator {
                 builder.fields += element.allFields.map { it.copy() }
@@ -284,14 +279,14 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
         inner class ExceptConfigurator {
 
             /**
-             * Exclude the field with [name] from this builder class.
+             * 从当前 Builder 中排除字段 [name]。
              */
             infix fun without(name: String) {
                 without(listOf(name))
             }
 
             /**
-             * Exclude the fields with [names] from this builder class.
+             * 从当前 Builder 中批量排除 [names]。
              */
             infix fun without(names: List<String>) {
                 builder.fields.removeAll { it.name in names }
@@ -299,14 +294,14 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
         }
 
         /**
-         * A configurator for copying fields from some element to this intermediate builder.
+         * 字段复制配置入口（从元素复制到当前中间 Builder）。
          *
-         * See [IntermediateBuilderConfigurationContext] for the usage example.
+         * 用法见 [IntermediateBuilderConfigurationContext]。
          */
         val fields = Fields()
 
         /**
-         * The list of parents of this intermediate builder. Can be used for adding builder superclasses to this builder class.
+         * 当前中间 Builder 的父 Builder 列表，可用于追加父类关系。
          */
         val parents: MutableList<IntermediateBuilder<ElementField, Element>>
             get() = builder.parents
@@ -337,29 +332,28 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
     }
 
     /**
-     * A DSL for configuring one or more leaf builder classes.
+     * 用于配置一个或多个叶子 Builder 的 DSL。
      */
     protected inner class LeafBuilderConfigurationContext(
         override val builder: LeafBuilder<ElementField, Element, Implementation>
     ) : BuilderConfigurationContext() {
 
         /**
-         * The list of parents of this leaf builder. Can be used for adding builder superclasses to this builder class.
+         * 当前叶子 Builder 的父 Builder 列表，可用于追加父类关系。
          */
         val parents: MutableList<IntermediateBuilder<ElementField, Element>>
             get() = builder.parents
 
         /**
-         * Makes this builder an open class.
+         * 将当前 Builder 生成为 `open class`。
          */
         fun openBuilder() {
             builder.isOpen = true
         }
 
         /**
-         * In addition to the regular `build*()` function, generate `build*Copy()` function that accepts
-         * an instance of the corresponding tree element and copies values from that instance to the builder, allowing to change them
-         * in the process.
+         * 除常规 `build*()` 外，同时生成 `build*Copy()`：
+         * 接收对应树元素实例并复制其值到 Builder，便于在复制过程中修改。
          */
         fun withCopy() {
             builder.wantsCopy = true

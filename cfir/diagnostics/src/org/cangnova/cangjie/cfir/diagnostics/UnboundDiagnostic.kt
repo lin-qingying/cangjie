@@ -6,6 +6,16 @@
 package org.cangnova.cangjie.cfir.diagnostics
 
 import com.intellij.openapi.util.TextRange
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+
+interface Diagnostic : UnboundDiagnostic, DiagnosticMarker {
+    override val psiElement: PsiElement
+    val psiFile: PsiFile
+
+    override val factoryName: String
+        get() = factory.name
+}
 
 interface UnboundDiagnostic {
     val factory: DiagnosticFactory<*>

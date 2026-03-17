@@ -1,2 +1,2 @@
 FILE: throwMissingExpression.cj
-    func throwMissingExpression(): R|Unit|
+    internal? func throwMissingExpression(): R|Unit|

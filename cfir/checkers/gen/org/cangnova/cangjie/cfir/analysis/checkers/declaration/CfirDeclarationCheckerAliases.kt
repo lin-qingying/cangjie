@@ -1,10 +1,9 @@
-
+﻿
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 /*
- * This file was generated automatically
- * DO NOT MODIFY IT MANUALLY
+ * 鏈枃浠剁敱鐢熸垚鍣ㄨ嚜鍔ㄧ敓鎴? * 璇峰嬁鎵嬪姩淇敼
  */
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
@@ -36,3 +35,4 @@ typealias CfirTypeAliasChecker = CfirDeclarationChecker<CfirTypeAlias>
 typealias CfirTypeParameterChecker = CfirDeclarationChecker<CfirTypeParameter>
 typealias CfirValueParameterChecker = CfirDeclarationChecker<CfirValueParameter>
 typealias CfirInvalidDeclarationChecker = CfirDeclarationChecker<CfirInvalidDeclaration>
+

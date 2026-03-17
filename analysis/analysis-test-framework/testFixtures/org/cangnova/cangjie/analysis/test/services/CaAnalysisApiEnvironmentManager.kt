@@ -10,7 +10,7 @@ import org.cangnova.cangjie.cli.CangjieCoreApplicationEnvironment
 import org.cangnova.cangjie.cli.CangjieCoreProjectEnvironment
 
 /**
- * Aligns with Kotlin's AnalysisApiEnvironmentManager by owning a single shared core environment.
+ * 与 Kotlin 的 AnalysisApiEnvironmentManager 对齐，负责持有单一共享核心环境。
  */
 abstract class CaAnalysisApiEnvironmentManager : TestService {
     abstract fun initializeEnvironment()
@@ -36,7 +36,7 @@ class CaAnalysisApiEnvironmentManagerImpl(
     }
 
     override fun initializeProjectStructure() {
-        // TODO: Register project-level services when structure providers are introduced.
+        // TODO: 在引入结构提供器后注册 project 级服务。
     }
 
     override fun getCoreEnvironment(): CangJieCoreEnvironment = coreEnvironment
@@ -44,4 +44,3 @@ class CaAnalysisApiEnvironmentManagerImpl(
 
 val TestServices.environmentManager: CaAnalysisApiEnvironmentManager
     by TestServices.testServiceAccessor()
-

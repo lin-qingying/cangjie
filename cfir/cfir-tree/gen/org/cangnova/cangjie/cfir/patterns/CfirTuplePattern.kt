@@ -1,7 +1,7 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 package org.cangnova.cangjie.cfir.patterns
 
@@ -15,7 +15,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitor
  */
 abstract class CfirTuplePattern : CfirPattern() {
     abstract override val source: CjSourceElement?
-    abstract var elements: List<CfirPattern>
+    abstract val elements: List<CfirPattern>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitTuplePattern(this, data)

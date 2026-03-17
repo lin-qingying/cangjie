@@ -16,7 +16,7 @@ dependencies {
     testFixturesApi(project(":cfir:cfir-tree"))
 
     testFixturesApi(testFixtures(project(":tests:test-infrastructure")))
-    testFixturesApi(project(":compiler:cli"))
+
     testFixturesApi(intellijCore())
 
 

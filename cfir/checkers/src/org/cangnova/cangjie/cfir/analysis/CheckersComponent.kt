@@ -1,10 +1,14 @@
-/*
+﻿/*
  * Copyright 2010-2024 cangjie.
  */
 
 package org.cangnova.cangjie.cfir.analysis
 
-import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.cangnova.cangjie.cfir.SessionConfiguration
+import org.cangnova.cangjie.cfir.analysis.checkers.CommonLanguageVersionSettingsCheckers.languageVersionSettingsCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.LanguageVersionSettingsCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
+import org.cangnova.cangjie.cfir.analysis.checkers.config.ComposedLanguageVersionSettingsCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.ComposedCfirDeclarationCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirDeclarationCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.ComposedCfirExpressionCheckers
@@ -18,19 +22,26 @@ import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 annotation class CheckersComponentInternal
 
 class CheckersComponent : CfirSessionComponent {
-    val commonCfirDeclarationCheckers: ComposedCfirDeclarationCheckers = ComposedCfirDeclarationCheckers(MppCheckerKind.Common)
-    val platformCfirDeclarationCheckers: ComposedCfirDeclarationCheckers = ComposedCfirDeclarationCheckers(MppCheckerKind.Platform)
+    val commonCfirDeclarationCheckers: ComposedCfirDeclarationCheckers = ComposedCfirDeclarationCheckers(CheckerDispatchKind.Common)
+    val platformCfirDeclarationCheckers: ComposedCfirDeclarationCheckers = ComposedCfirDeclarationCheckers(CheckerDispatchKind.Platform)
 
-    val commonCfirExpressionCheckers: ComposedCfirExpressionCheckers = ComposedCfirExpressionCheckers(MppCheckerKind.Common)
-    val platformCfirExpressionCheckers: ComposedCfirExpressionCheckers = ComposedCfirExpressionCheckers(MppCheckerKind.Platform)
+    val commonCfirExpressionCheckers: ComposedCfirExpressionCheckers = ComposedCfirExpressionCheckers(CheckerDispatchKind.Common)
+    val platformCfirExpressionCheckers: ComposedCfirExpressionCheckers = ComposedCfirExpressionCheckers(CheckerDispatchKind.Platform)
+    val languageVersionSettingsCheckers: LanguageVersionSettingsCheckers
+        field = ComposedLanguageVersionSettingsCheckers()
 
-    val commonCfirTypeCheckers: ComposedCfirTypeCheckers = ComposedCfirTypeCheckers(MppCheckerKind.Common)
-    val platformCfirTypeCheckers: ComposedCfirTypeCheckers = ComposedCfirTypeCheckers(MppCheckerKind.Platform)
+    val commonCfirTypeCheckers: ComposedCfirTypeCheckers = ComposedCfirTypeCheckers(CheckerDispatchKind.Common)
+    val platformCfirTypeCheckers: ComposedCfirTypeCheckers = ComposedCfirTypeCheckers(CheckerDispatchKind.Platform)
 
     @OptIn(CheckersComponentInternal::class)
     fun register(checkers: CfirDeclarationCheckers) {
         commonCfirDeclarationCheckers.register(checkers)
         platformCfirDeclarationCheckers.register(checkers)
+    }
+    @SessionConfiguration
+    @OptIn( CheckersComponentInternal::class)
+    fun register(checkers: LanguageVersionSettingsCheckers) {
+        languageVersionSettingsCheckers.register(checkers)
     }
 
     @OptIn(CheckersComponentInternal::class)
@@ -50,3 +61,4 @@ val CfirSession.checkersComponent: CheckersComponent
     get() = nullableCheckersComponent ?: error("Expected `${CheckersComponent::class}` to be registered in current session.")
 
 val CfirSession.nullableCheckersComponent: CheckersComponent? by CfirSession.nullableSessionComponentAccessor()
+

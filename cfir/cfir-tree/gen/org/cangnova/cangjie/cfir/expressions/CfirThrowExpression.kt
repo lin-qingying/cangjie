@@ -1,11 +1,12 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -16,8 +17,9 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitor
  */
 abstract class CfirThrowExpression : CfirExpression() {
     abstract override val source: CjSourceElement?
-    abstract override var coneTypeOrNull: ConeCangjieType?
-    abstract var exception: CfirExpression
+    abstract override val annotations: List<CfirAnnotation>
+    abstract override val coneTypeOrNull: ConeCangjieType?
+    abstract val exception: CfirExpression
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitThrowExpression(this, data)
@@ -26,7 +28,13 @@ abstract class CfirThrowExpression : CfirExpression() {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformThrowExpression(this, data) as E
 
+    override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+
+
     override abstract fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+
+
+    override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirThrowExpression
 
 
     abstract fun <D> transformException(transformer: CfirTransformer<D>, data: D): CfirThrowExpression

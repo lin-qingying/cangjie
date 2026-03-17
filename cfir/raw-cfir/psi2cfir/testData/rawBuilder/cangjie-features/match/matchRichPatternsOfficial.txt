@@ -1,5 +1,5 @@
 FILE: matchRichPatternsOfficial.cj
-    func classifyScore(score: R|Int64|): R|String| {
+    internal? func classifyScore(score: R|Int64|): R|String| {
         RETURN {
             MATCH {
                 subject:
@@ -19,7 +19,7 @@ FILE: matchRichPatternsOfficial.cj
             }
         }
     }
-    func extractYear(time: R|TimeUnit|): R|Int32| {
+    internal? func extractYear(time: R|TimeUnit|): R|Int32| {
         RETURN {
             MATCH {
                 subject:

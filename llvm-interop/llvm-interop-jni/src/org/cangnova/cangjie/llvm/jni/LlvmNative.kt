@@ -1,5 +1,10 @@
 package org.cangnova.cangjie.llvm.jni
 
+/**
+ * LLVM JNI 原生入口。
+ *
+ * 提供 Kotlin 侧到本地 LLVM C API 的静态桥接方法。
+ */
 object LlvmNative {
     @JvmField
     val isAvailable: Boolean
@@ -22,6 +27,7 @@ object LlvmNative {
     @JvmStatic external fun moduleSetDataLayout(module: Long, dataLayout: String)
     @JvmStatic external fun moduleAddFunction(module: Long, name: String, functionType: Long): Long
     @JvmStatic external fun moduleAddGlobal(module: Long, type: Long, name: String): Long
+    @JvmStatic external fun moduleParseAssemblyInContext(name: String, assembly: String, context: Long): Long
     @JvmStatic external fun modulePrintToString(module: Long): String
     @JvmStatic external fun moduleVerify(module: Long)
 

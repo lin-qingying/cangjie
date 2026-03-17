@@ -1,18 +1,17 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 package org.cangnova.cangjie.cfir.visitors
 
+import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.*
-import org.cangnova.cangjie.cfir.references.CfirErrorReference
-import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.references.CfirReference
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.*
 import org.cangnova.cangjie.cfir.types.*
 
 /**
@@ -24,6 +23,30 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitElement(element: CfirElement, data: D): CfirElement {
         return transformElement(element, data)
+    }
+
+    open fun transformElementWithResolveState(elementWithResolveState: CfirElementWithResolveState, data: D): CfirElementWithResolveState {
+        return transformElement(elementWithResolveState, data)
+    }
+
+    final override fun visitElementWithResolveState(elementWithResolveState: CfirElementWithResolveState, data: D): CfirElementWithResolveState {
+        return transformElementWithResolveState(elementWithResolveState, data)
+    }
+
+    open fun transformAnnotationContainer(annotationContainer: CfirAnnotationContainer, data: D): CfirAnnotationContainer {
+        return transformElement(annotationContainer, data)
+    }
+
+    final override fun visitAnnotationContainer(annotationContainer: CfirAnnotationContainer, data: D): CfirAnnotationContainer {
+        return transformAnnotationContainer(annotationContainer, data)
+    }
+
+    open fun transformControlFlowGraphOwner(controlFlowGraphOwner: CfirControlFlowGraphOwner, data: D): CfirControlFlowGraphOwner {
+        return transformElement(controlFlowGraphOwner, data)
+    }
+
+    final override fun visitControlFlowGraphOwner(controlFlowGraphOwner: CfirControlFlowGraphOwner, data: D): CfirControlFlowGraphOwner {
+        return transformControlFlowGraphOwner(controlFlowGraphOwner, data)
     }
 
     open fun transformPackageDirective(packageDirective: CfirPackageDirective, data: D): CfirPackageDirective {
@@ -40,6 +63,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitImport(import: CfirImport, data: D): CfirImport {
         return transformImport(import, data)
+    }
+
+    open fun transformResolvedImport(resolvedImport: CfirResolvedImport, data: D): CfirImport {
+        return transformElement(resolvedImport, data)
+    }
+
+    final override fun visitResolvedImport(resolvedImport: CfirResolvedImport, data: D): CfirImport {
+        return transformResolvedImport(resolvedImport, data)
     }
 
     open fun transformAnnotation(annotation: CfirAnnotation, data: D): CfirAnnotation {
@@ -66,155 +97,155 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformDeclaration(declaration, data)
     }
 
-    open fun transformMemberDeclaration(memberDeclaration: CfirMemberDeclaration, data: D): CfirDeclaration {
+    open fun transformMemberDeclaration(memberDeclaration: CfirMemberDeclaration, data: D): CfirMemberDeclaration {
         return transformElement(memberDeclaration, data)
     }
 
-    final override fun visitMemberDeclaration(memberDeclaration: CfirMemberDeclaration, data: D): CfirDeclaration {
+    final override fun visitMemberDeclaration(memberDeclaration: CfirMemberDeclaration, data: D): CfirMemberDeclaration {
         return transformMemberDeclaration(memberDeclaration, data)
     }
 
-    open fun transformCallableDeclaration(callableDeclaration: CfirCallableDeclaration, data: D): CfirDeclaration {
+    open fun transformCallableDeclaration(callableDeclaration: CfirCallableDeclaration, data: D): CfirCallableDeclaration {
         return transformElement(callableDeclaration, data)
     }
 
-    final override fun visitCallableDeclaration(callableDeclaration: CfirCallableDeclaration, data: D): CfirDeclaration {
+    final override fun visitCallableDeclaration(callableDeclaration: CfirCallableDeclaration, data: D): CfirCallableDeclaration {
         return transformCallableDeclaration(callableDeclaration, data)
     }
 
-    open fun transformClassLikeDeclaration(classLikeDeclaration: CfirClassLikeDeclaration, data: D): CfirDeclaration {
+    open fun transformClassLikeDeclaration(classLikeDeclaration: CfirClassLikeDeclaration, data: D): CfirClassLikeDeclaration {
         return transformElement(classLikeDeclaration, data)
     }
 
-    final override fun visitClassLikeDeclaration(classLikeDeclaration: CfirClassLikeDeclaration, data: D): CfirDeclaration {
+    final override fun visitClassLikeDeclaration(classLikeDeclaration: CfirClassLikeDeclaration, data: D): CfirClassLikeDeclaration {
         return transformClassLikeDeclaration(classLikeDeclaration, data)
     }
 
-    open fun transformFile(file: CfirFile, data: D): CfirDeclaration {
+    open fun transformFile(file: CfirFile, data: D): CfirFile {
         return transformElement(file, data)
     }
 
-    final override fun visitFile(file: CfirFile, data: D): CfirDeclaration {
+    final override fun visitFile(file: CfirFile, data: D): CfirFile {
         return transformFile(file, data)
     }
 
-    open fun transformClass(klass: CfirClass, data: D): CfirDeclaration {
+    open fun transformClass(klass: CfirClass, data: D): CfirClass {
         return transformElement(klass, data)
     }
 
-    final override fun visitClass(klass: CfirClass, data: D): CfirDeclaration {
+    final override fun visitClass(klass: CfirClass, data: D): CfirClass {
         return transformClass(klass, data)
     }
 
-    open fun transformEnumConstructor(enumConstructor: CfirEnumConstructor, data: D): CfirDeclaration {
+    open fun transformEnumConstructor(enumConstructor: CfirEnumConstructor, data: D): CfirEnumConstructor {
         return transformElement(enumConstructor, data)
     }
 
-    final override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: D): CfirDeclaration {
+    final override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: D): CfirEnumConstructor {
         return transformEnumConstructor(enumConstructor, data)
     }
 
-    open fun transformExtend(extend: CfirExtend, data: D): CfirDeclaration {
+    open fun transformExtend(extend: CfirExtend, data: D): CfirExtend {
         return transformElement(extend, data)
     }
 
-    final override fun visitExtend(extend: CfirExtend, data: D): CfirDeclaration {
+    final override fun visitExtend(extend: CfirExtend, data: D): CfirExtend {
         return transformExtend(extend, data)
     }
 
-    open fun transformTypeAlias(typeAlias: CfirTypeAlias, data: D): CfirDeclaration {
+    open fun transformTypeAlias(typeAlias: CfirTypeAlias, data: D): CfirTypeAlias {
         return transformElement(typeAlias, data)
     }
 
-    final override fun visitTypeAlias(typeAlias: CfirTypeAlias, data: D): CfirDeclaration {
+    final override fun visitTypeAlias(typeAlias: CfirTypeAlias, data: D): CfirTypeAlias {
         return transformTypeAlias(typeAlias, data)
     }
 
-    open fun transformFunction(function: CfirFunction, data: D): CfirDeclaration {
+    open fun transformFunction(function: CfirFunction, data: D): CfirFunction {
         return transformElement(function, data)
     }
 
-    final override fun visitFunction(function: CfirFunction, data: D): CfirDeclaration {
+    final override fun visitFunction(function: CfirFunction, data: D): CfirFunction {
         return transformFunction(function, data)
     }
 
-    open fun transformMainFunction(mainFunction: CfirMainFunction, data: D): CfirDeclaration {
+    open fun transformMainFunction(mainFunction: CfirMainFunction, data: D): CfirMainFunction {
         return transformElement(mainFunction, data)
     }
 
-    final override fun visitMainFunction(mainFunction: CfirMainFunction, data: D): CfirDeclaration {
+    final override fun visitMainFunction(mainFunction: CfirMainFunction, data: D): CfirMainFunction {
         return transformMainFunction(mainFunction, data)
     }
 
-    open fun transformMacroDeclaration(macroDeclaration: CfirMacroDeclaration, data: D): CfirDeclaration {
+    open fun transformMacroDeclaration(macroDeclaration: CfirMacroDeclaration, data: D): CfirMacroDeclaration {
         return transformElement(macroDeclaration, data)
     }
 
-    final override fun visitMacroDeclaration(macroDeclaration: CfirMacroDeclaration, data: D): CfirDeclaration {
+    final override fun visitMacroDeclaration(macroDeclaration: CfirMacroDeclaration, data: D): CfirMacroDeclaration {
         return transformMacroDeclaration(macroDeclaration, data)
     }
 
-    open fun transformFinalizer(finalizer: CfirFinalizer, data: D): CfirDeclaration {
+    open fun transformFinalizer(finalizer: CfirFinalizer, data: D): CfirFinalizer {
         return transformElement(finalizer, data)
     }
 
-    final override fun visitFinalizer(finalizer: CfirFinalizer, data: D): CfirDeclaration {
+    final override fun visitFinalizer(finalizer: CfirFinalizer, data: D): CfirFinalizer {
         return transformFinalizer(finalizer, data)
     }
 
-    open fun transformConstructor(constructor: CfirConstructor, data: D): CfirDeclaration {
+    open fun transformConstructor(constructor: CfirConstructor, data: D): CfirConstructor {
         return transformElement(constructor, data)
     }
 
-    final override fun visitConstructor(constructor: CfirConstructor, data: D): CfirDeclaration {
+    final override fun visitConstructor(constructor: CfirConstructor, data: D): CfirConstructor {
         return transformConstructor(constructor, data)
     }
 
-    open fun transformInvalidDeclaration(invalidDeclaration: CfirInvalidDeclaration, data: D): CfirDeclaration {
+    open fun transformInvalidDeclaration(invalidDeclaration: CfirInvalidDeclaration, data: D): CfirInvalidDeclaration {
         return transformElement(invalidDeclaration, data)
     }
 
-    final override fun visitInvalidDeclaration(invalidDeclaration: CfirInvalidDeclaration, data: D): CfirDeclaration {
+    final override fun visitInvalidDeclaration(invalidDeclaration: CfirInvalidDeclaration, data: D): CfirInvalidDeclaration {
         return transformInvalidDeclaration(invalidDeclaration, data)
     }
 
-    open fun transformProperty(property: CfirProperty, data: D): CfirDeclaration {
+    open fun transformProperty(property: CfirProperty, data: D): CfirProperty {
         return transformElement(property, data)
     }
 
-    final override fun visitProperty(property: CfirProperty, data: D): CfirDeclaration {
+    final override fun visitProperty(property: CfirProperty, data: D): CfirProperty {
         return transformProperty(property, data)
     }
 
-    open fun transformVariable(variable: CfirVariable, data: D): CfirDeclaration {
+    open fun transformVariable(variable: CfirVariable, data: D): CfirVariable {
         return transformElement(variable, data)
     }
 
-    final override fun visitVariable(variable: CfirVariable, data: D): CfirDeclaration {
+    final override fun visitVariable(variable: CfirVariable, data: D): CfirVariable {
         return transformVariable(variable, data)
     }
 
-    open fun transformPatternVariable(patternVariable: CfirPatternVariable, data: D): CfirDeclaration {
+    open fun transformPatternVariable(patternVariable: CfirPatternVariable, data: D): CfirPatternVariable {
         return transformElement(patternVariable, data)
     }
 
-    final override fun visitPatternVariable(patternVariable: CfirPatternVariable, data: D): CfirDeclaration {
+    final override fun visitPatternVariable(patternVariable: CfirPatternVariable, data: D): CfirPatternVariable {
         return transformPatternVariable(patternVariable, data)
     }
 
-    open fun transformValueParameter(valueParameter: CfirValueParameter, data: D): CfirDeclaration {
+    open fun transformValueParameter(valueParameter: CfirValueParameter, data: D): CfirValueParameter {
         return transformElement(valueParameter, data)
     }
 
-    final override fun visitValueParameter(valueParameter: CfirValueParameter, data: D): CfirDeclaration {
+    final override fun visitValueParameter(valueParameter: CfirValueParameter, data: D): CfirValueParameter {
         return transformValueParameter(valueParameter, data)
     }
 
-    open fun transformTypeParameter(typeParameter: CfirTypeParameter, data: D): CfirDeclaration {
+    open fun transformTypeParameter(typeParameter: CfirTypeParameter, data: D): CfirTypeParameter {
         return transformElement(typeParameter, data)
     }
 
-    final override fun visitTypeParameter(typeParameter: CfirTypeParameter, data: D): CfirDeclaration {
+    final override fun visitTypeParameter(typeParameter: CfirTypeParameter, data: D): CfirTypeParameter {
         return transformTypeParameter(typeParameter, data)
     }
 
@@ -240,6 +271,22 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitBlock(block: CfirBlock, data: D): CfirExpression {
         return transformBlock(block, data)
+    }
+
+    open fun transformLazyBlock(lazyBlock: CfirLazyBlock, data: D): CfirExpression {
+        return transformElement(lazyBlock, data)
+    }
+
+    final override fun visitLazyBlock(lazyBlock: CfirLazyBlock, data: D): CfirExpression {
+        return transformLazyBlock(lazyBlock, data)
+    }
+
+    open fun transformLazyExpression(lazyExpression: CfirLazyExpression, data: D): CfirExpression {
+        return transformElement(lazyExpression, data)
+    }
+
+    final override fun visitLazyExpression(lazyExpression: CfirLazyExpression, data: D): CfirExpression {
+        return transformLazyExpression(lazyExpression, data)
     }
 
     open fun transformLiteralExpression(literalExpression: CfirLiteralExpression, data: D): CfirExpression {
@@ -434,6 +481,38 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformSpawnExpression(spawnExpression, data)
     }
 
+    open fun transformSynchronizedExpression(synchronizedExpression: CfirSynchronizedExpression, data: D): CfirExpression {
+        return transformElement(synchronizedExpression, data)
+    }
+
+    final override fun visitSynchronizedExpression(synchronizedExpression: CfirSynchronizedExpression, data: D): CfirExpression {
+        return transformSynchronizedExpression(synchronizedExpression, data)
+    }
+
+    open fun transformUnsafeExpression(unsafeExpression: CfirUnsafeExpression, data: D): CfirExpression {
+        return transformElement(unsafeExpression, data)
+    }
+
+    final override fun visitUnsafeExpression(unsafeExpression: CfirUnsafeExpression, data: D): CfirExpression {
+        return transformUnsafeExpression(unsafeExpression, data)
+    }
+
+    open fun transformQuoteExpression(quoteExpression: CfirQuoteExpression, data: D): CfirExpression {
+        return transformElement(quoteExpression, data)
+    }
+
+    final override fun visitQuoteExpression(quoteExpression: CfirQuoteExpression, data: D): CfirExpression {
+        return transformQuoteExpression(quoteExpression, data)
+    }
+
+    open fun transformMacroExpression(macroExpression: CfirMacroExpression, data: D): CfirExpression {
+        return transformElement(macroExpression, data)
+    }
+
+    final override fun visitMacroExpression(macroExpression: CfirMacroExpression, data: D): CfirExpression {
+        return transformMacroExpression(macroExpression, data)
+    }
+
     open fun transformSubscriptExpression(subscriptExpression: CfirSubscriptExpression, data: D): CfirExpression {
         return transformElement(subscriptExpression, data)
     }
@@ -584,6 +663,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitReference(reference: CfirReference, data: D): CfirReference {
         return transformReference(reference, data)
+    }
+
+    open fun transformControlFlowGraphReference(controlFlowGraphReference: CfirControlFlowGraphReference, data: D): CfirReference {
+        return transformElement(controlFlowGraphReference, data)
+    }
+
+    final override fun visitControlFlowGraphReference(controlFlowGraphReference: CfirControlFlowGraphReference, data: D): CfirReference {
+        return transformControlFlowGraphReference(controlFlowGraphReference, data)
     }
 
     open fun transformNamedReference(namedReference: CfirNamedReference, data: D): CfirReference {

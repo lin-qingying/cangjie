@@ -9,7 +9,10 @@ import org.junit.runner.manipulation.Filterable
 import org.junit.runner.manipulation.NoTestsRemainException
 import org.junit.runner.manipulation.Sortable
 import org.junit.runner.manipulation.Sorter
+import org.junit.runner.notification.Failure
 import org.junit.runner.notification.RunNotifier
+import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 
 /**
  * 最小可用的 Runner：执行一个类及其所有嵌套类中的测试。
@@ -69,7 +72,74 @@ class JUnit3RunnerWithInners(private val klass: Class<*>) : Runner(), Filterable
         if (TestCase::class.java.isAssignableFrom(klass)) {
             return JUnit38ClassRunner(klass)
         }
-        return null
+        val testLikeMethods = klass.declaredMethods
+            .filter(::isLegacyTestMethod)
+            .sortedBy { it.name }
+        if (testLikeMethods.isEmpty()) return null
+        return LegacyNameBasedRunner(klass, testLikeMethods)
+    }
+
+    private fun isLegacyTestMethod(method: Method): Boolean {
+        if (!method.name.startsWith("test")) return false
+        if (method.parameterCount != 0) return false
+        if (method.returnType != Void.TYPE) return false
+        return Modifier.isPublic(method.modifiers)
+    }
+}
+
+private class LegacyNameBasedRunner(
+    private val klass: Class<*>,
+    methods: List<Method>,
+) : Runner(), Filterable, Sortable {
+    private val methods: MutableList<Method> = methods.toMutableList()
+
+    override fun getDescription(): Description {
+        return Description.createSuiteDescription(klass).also { suite ->
+            methods.forEach { method ->
+                suite.addChild(Description.createTestDescription(klass, method.name))
+            }
+        }
+    }
+
+    override fun run(notifier: RunNotifier) {
+        for (method in methods) {
+            val description = Description.createTestDescription(klass, method.name)
+            notifier.fireTestStarted(description)
+            try {
+                val instance = klass.getDeclaredConstructor().newInstance()
+                method.isAccessible = true
+                method.invoke(instance)
+                notifier.fireTestFinished(description)
+            } catch (t: Throwable) {
+                notifier.fireTestFailure(Failure(description, unwrapInvocationException(t)))
+                notifier.fireTestFinished(description)
+            }
+        }
+    }
+
+    override fun filter(filter: Filter) {
+        val iterator = methods.listIterator()
+        while (iterator.hasNext()) {
+            val method = iterator.next()
+            val description = Description.createTestDescription(klass, method.name)
+            if (!filter.shouldRun(description)) {
+                iterator.remove()
+            }
+        }
+        if (methods.isEmpty()) throw NoTestsRemainException()
+    }
+
+    override fun sort(sorter: Sorter) {
+        methods.sortWith { left, right ->
+            sorter.compare(
+                Description.createTestDescription(klass, left.name),
+                Description.createTestDescription(klass, right.name),
+            )
+        }
+    }
+
+    private fun unwrapInvocationException(t: Throwable): Throwable {
+        return t.cause?.takeIf { t is java.lang.reflect.InvocationTargetException } ?: t
     }
 }
 

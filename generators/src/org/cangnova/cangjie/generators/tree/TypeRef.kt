@@ -10,6 +10,9 @@ import org.cangnova.cangjie.generators.tree.imports.Importable
 import java.util.*
 import kotlin.reflect.KClass
 
+/**
+ * 生成器内部的类型引用抽象。
+ */
 interface TypeRef {
 
     fun substitute(map: TypeParameterSubstitutionMap): TypeRef
@@ -31,8 +34,14 @@ interface TypeRef {
     }
 }
 
+/**
+ * 可表示为类引用或元素引用的类型。
+ */
 sealed interface ClassOrElementRef : TypeRefWithNullability, Importable
 
+/**
+ * 普通类/接口类型引用。
+ */
 class ClassRef<P : TypeParameterRef> private constructor(
     val kind: TypeKind,
     names: List<String>,
@@ -98,6 +107,9 @@ class ClassRef<P : TypeParameterRef> private constructor(
     override fun hashCode(): Int = Objects.hash(kind, args, nullable, names)
 }
 
+/**
+ * 带型变信息的类型引用包装。
+ */
 data class TypeRefWithVariance<out T : TypeRef>(val variance: Variance, val typeRef: T) : TypeRef {
 
     override fun renderTo(appendable: Appendable, importCollector: ImportCollecting) {
@@ -112,6 +124,9 @@ data class TypeRefWithVariance<out T : TypeRef>(val variance: Variance, val type
         TypeRefWithVariance(variance, typeRef.substitute(map))
 }
 
+/**
+ * 元素类型或其引用的统一抽象。
+ */
 sealed interface ElementOrRef<Element> : ParametrizedTypeRef<ElementOrRef<Element>, NamedTypeParameterRef>, ClassOrElementRef
         where Element : AbstractElement<Element, *, *> {
     val element: Element
@@ -122,6 +137,9 @@ sealed interface ElementOrRef<Element> : ParametrizedTypeRef<ElementOrRef<Elemen
 fun <Element : AbstractElement<Element, *, *>> ElementOrRef<Element>.toRef(): ElementRef<Element> =
     ElementRef(element, args, nullable)
 
+/**
+ * 树元素类型引用。
+ */
 data class ElementRef<Element : AbstractElement<Element, *, *>>(
     override val element: Element,
     override val args: Map<NamedTypeParameterRef, TypeRef> = emptyMap(),
@@ -154,6 +172,9 @@ data class ElementRef<Element : AbstractElement<Element, *, *>>(
     }
 }
 
+/**
+ * Lambda 类型引用。
+ */
 data class Lambda(
     val receiver: TypeRefWithNullability?,
     val parameterTypes: List<TypeRefWithNullability> = emptyList(),
@@ -182,6 +203,9 @@ data class Lambda(
     override fun copy(nullable: Boolean) = Lambda(receiver, parameterTypes, returnType, nullable)
 }
 
+/**
+ * 类型参数引用抽象。
+ */
 sealed interface TypeParameterRef : TypeRef, TypeRefWithNullability {
     override fun substitute(map: TypeParameterSubstitutionMap): TypeRef {
         map[this]?.let {
@@ -191,6 +215,9 @@ sealed interface TypeParameterRef : TypeRef, TypeRefWithNullability {
     }
 }
 
+/**
+ * 按位置索引的类型参数引用。
+ */
 data class PositionTypeParameterRef(
     val index: Int,
     override val nullable: Boolean = false,
@@ -204,6 +231,9 @@ data class PositionTypeParameterRef(
     override fun copy(nullable: Boolean) = PositionTypeParameterRef(index, nullable)
 }
 
+/**
+ * 按名称引用的类型参数。
+ */
 open class NamedTypeParameterRef(
     val name: String,
     override val nullable: Boolean = false,
@@ -226,6 +256,9 @@ open class NamedTypeParameterRef(
     final override fun copy(nullable: Boolean) = NamedTypeParameterRef(name, nullable)
 }
 
+/**
+ * 支持可空性的类型引用。
+ */
 interface TypeRefWithNullability : TypeRef {
     val nullable: Boolean
 
@@ -238,6 +271,9 @@ fun TypeRefWithNullability.renderNullabilityTo(appendable: Appendable) {
     }
 }
 
+/**
+ * 参数化类型引用抽象。
+ */
 interface ParametrizedTypeRef<Self : ParametrizedTypeRef<Self, P>, P : TypeParameterRef> : TypeRef {
     val args: Map<P, TypeRef>
 
@@ -256,6 +292,7 @@ private fun ParametrizedTypeRef<*, *>.renderArgsTo(appendable: Appendable, impor
     }
 }
 
+/** 类型参数替换映射。 */
 typealias TypeParameterSubstitutionMap = Map<out TypeParameterRef, TypeRef>
 
 fun <Self : ParametrizedTypeRef<Self, NamedTypeParameterRef>> ParametrizedTypeRef<Self, NamedTypeParameterRef>.withArgs(
@@ -267,6 +304,9 @@ fun <Self : ParametrizedTypeRef<Self, PositionTypeParameterRef>> ParametrizedTyp
 ) = copy(args.withIndex().associate { (i, t) -> PositionTypeParameterRef(i) to t })
 
 
+/**
+ * 类型变量定义（可带边界与型变）。
+ */
 class TypeVariable(
     name: String,
     val bounds: List<TypeRef> = emptyList(),

@@ -10,6 +10,11 @@ import kotlin.properties.PropertyDelegateProvider
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
+/**
+ * 抽象树元素配置器。
+ *
+ * 提供 DSL 用于声明元素、父子关系与类型参数，并最终构建 [Model]。
+ */
 abstract class AbstractElementConfigurator<Element, Field, Category>
         where Element : AbstractElement<Element, Field, *>,
               Field : AbstractField<Field> {
@@ -94,6 +99,9 @@ abstract class AbstractElementConfigurator<Element, Field, Category>
     }
 }
 
+/**
+ * 无分类场景下的元素 DSL 入口。
+ */
 fun <Element, Field> AbstractElementConfigurator<Element, Field, Nothing?>.element(
     name: String? = null,
     initializer: Element.() -> Unit = {},
@@ -103,6 +111,9 @@ fun <Element, Field> AbstractElementConfigurator<Element, Field, Nothing?>.eleme
     return element(null, name, initializer)
 }
 
+/**
+ * 无分类场景下的密封元素 DSL 入口。
+ */
 fun <Element, Field> AbstractElementConfigurator<Element, Field, Nothing?>.sealedElement(
     name: String? = null,
     initializer: Element.() -> Unit = {},
@@ -111,4 +122,3 @@ fun <Element, Field> AbstractElementConfigurator<Element, Field, Nothing?>.seale
               Field : AbstractField<Field> {
     return sealedElement(null, name, initializer)
 }
-

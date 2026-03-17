@@ -76,8 +76,9 @@ abstract class NativeCompileTask @Inject constructor(
     @TaskAction
     fun compile() {
         val platform = NativePlatform.current()
-        val sources = sourceDirs.files
-            .flatMap { root -> project.fileTree(root).matching { include("**/*.c", "**/*.cc", "**/*.cpp") }.files }
+        val sources = sourceDirs.asFileTree
+            .matching { include("**/*.c", "**/*.cc", "**/*.cpp") }
+            .files
             .sortedBy { it.absolutePath }
 
         if (sources.isEmpty()) {
@@ -95,6 +96,7 @@ abstract class NativeCompileTask @Inject constructor(
         }
 
         val compiler = ToolchainResolver.resolveCompiler(llvmRoot, platform)
+        val sharedLinkFlags = ToolchainResolver.resolveSharedLinkFlags(compiler, platform)
         val llvmInclude = File(llvmRoot, "include")
         val includeArgs = buildList {
             add("-I${llvmInclude.absolutePath}")
@@ -127,15 +129,34 @@ abstract class NativeCompileTask @Inject constructor(
         val llvmLibDirs = listOf(File(llvmRoot, "lib"), File(llvmRoot, "lib64"))
             .filter { it.exists() && it.isDirectory }
             .map { "-L${it.absolutePath}" }
+        val llvmStaticLibs = if (sharedLinkFlags.contains("-shared")) {
+            File(llvmRoot, "lib")
+                .listFiles()
+                ?.asSequence()
+                ?.filter { it.isFile && it.name.startsWith("libLLVM") && it.name.endsWith(".a") }
+                ?.sortedBy { it.name }
+                ?.map { it.absolutePath }
+                ?.toList()
+                .orEmpty()
+        } else {
+            emptyList()
+        }
 
         execOperations.exec {
             executable = compiler
             args(
                 *(buildList {
-                    addAll(platform.sharedLinkFlags)
+                    addAll(sharedLinkFlags)
                     addAll(linkerArgs.get())
                     addAll(llvmLibDirs)
                     addAll(objects.map { it.absolutePath })
+                    if (llvmStaticLibs.isNotEmpty()) {
+                        add("-Wl,--start-group")
+                        addAll(llvmStaticLibs)
+                        add("-Wl,--end-group")
+                        // LLVM static archives on MinGW require explicit system libs at the end.
+                        addAll(listOf("-lwinpthread", "-lole32", "-luuid", "-lpsapi"))
+                    }
                     add("-o")
                     add(output.absolutePath)
                 }.toTypedArray()),
@@ -292,6 +313,15 @@ private object ToolchainResolver {
                 .start()
                 .waitFor() == 0
         }.getOrDefault(false)
+    }
+
+    fun resolveSharedLinkFlags(compiler: String, platform: NativePlatform): List<String> {
+        if (platform.os != "windows") return platform.sharedLinkFlags
+        val name = File(compiler).name.lowercase()
+        return when {
+            name == "cl.exe" || name == "clang-cl.exe" -> listOf("/DLL")
+            else -> listOf("-shared")
+        }
     }
 }
 

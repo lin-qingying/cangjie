@@ -1,3 +1,4 @@
+// JNI 分析相关桥接实现。
 #include "jni_utils.h"
 
 #include <llvm-c/Analysis.h>

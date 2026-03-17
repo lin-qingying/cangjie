@@ -1,12 +1,11 @@
-
+﻿
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
 
 /*
- * This file was generated automatically
- * DO NOT MODIFY IT MANUALLY
+ * 鏈枃浠剁敱鐢熸垚鍣ㄨ嚜鍔ㄧ敓鎴? * 璇峰嬁鎵嬪姩淇敼
  */
 
 @Suppress("UNCHECKED_CAST")
@@ -45,3 +44,4 @@ abstract class CfirDeclarationCheckers {
     @CheckersComponentInternal internal val allValueParameterCheckers: Array<CfirValueParameterChecker> by lazy { (valueParameterCheckers + callableDeclarationCheckers + memberDeclarationCheckers + basicDeclarationCheckers).toTypedArray() as Array<CfirValueParameterChecker> }
     @CheckersComponentInternal internal val allInvalidDeclarationCheckers: Array<CfirInvalidDeclarationChecker> by lazy { (invalidDeclarationCheckers + basicDeclarationCheckers).toTypedArray() as Array<CfirInvalidDeclarationChecker> }
 }
+

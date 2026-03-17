@@ -4,6 +4,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
+/**
+ * 平台检测器测试。
+ */
 class PlatformDetectorTest {
     @Test
     fun `maps linux amd64 to linux-x86_64`() {

@@ -1,20 +1,20 @@
 FILE: subscriptAccess.cj
-    func testSubscript(arr: R|Array<R|Int64|>|): R|Int64| {
-        let first: <implicit> = ...
+    internal? func testSubscript(arr: R|Array<R|Int64|>|): R|Int64| {
+        local? let first: <implicit> = ...
             initializer:
                 SUBSCRIPT {
                     receiver:
                         QUALIFIED_ACCESS(arr)
                     indices:
-                        STRING("0")
+                        INT(0)
                 }
-        let second: <implicit> = ...
+        local? let second: <implicit> = ...
             initializer:
                 SUBSCRIPT {
                     receiver:
                         QUALIFIED_ACCESS(arr)
                     indices:
-                        STRING("1")
+                        INT(1)
                 }
         RETURN {
             QUALIFIED_ACCESS(first)

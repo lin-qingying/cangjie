@@ -1,18 +1,17 @@
-
+﻿
 
 package org.cangnova.cangjie.cfir.analysis.checkers.type
 
 import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
-import org.cangnova.cangjie.cfir.analysis.checkers.CfirCheckerWithMppKind
-import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.cangnova.cangjie.cfir.analysis.checkers.CfirCheckerWithDispatchKind
+import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
 
 /*
- * This file was generated automatically
- * DO NOT MODIFY IT MANUALLY
+ * 鏈枃浠剁敱鐢熸垚鍣ㄨ嚜鍔ㄧ敓鎴? * 璇峰嬁鎵嬪姩淇敼
  */
 
-class ComposedCfirTypeCheckers(val predicate: (CfirCheckerWithMppKind) -> Boolean) : CfirTypeCheckers() {
-    constructor(mppKind: MppCheckerKind) : this({ it.mppKind == mppKind })
+class ComposedCfirTypeCheckers(val predicate: (CfirCheckerWithDispatchKind) -> Boolean) : CfirTypeCheckers() {
+    constructor(dispatchKind: CheckerDispatchKind) : this({ it.dispatchKind == dispatchKind })
 
     override val typeRefCheckers: Set<CfirTypeRefChecker>
         get() = _typeRefCheckers
@@ -28,3 +27,4 @@ class ComposedCfirTypeCheckers(val predicate: (CfirCheckerWithMppKind) -> Boolea
         checkers.resolvedTypeRefCheckers.filterTo(_resolvedTypeRefCheckers, predicate)
     }
 }
+

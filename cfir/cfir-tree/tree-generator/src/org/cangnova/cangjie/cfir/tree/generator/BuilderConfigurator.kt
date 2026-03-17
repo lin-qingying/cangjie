@@ -19,21 +19,47 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
             }
         }
 
-        configureFieldInAllLeafBuilders("source") {
-            defaultNull(it)
+        // constructor 有两个具名实现，需要分别指定
+        builder(constructor, "CfirConstructorImpl") {
+            withCopy()
         }
+        builder(constructor, "CfirPrimaryConstructor") {
+            withCopy()
+        }
+
+        // resolvedImportDirective 单独配置
+        builder(resolvedImportDirective) {
+            withCopy()
+        }
+
+        // lazyBlock / lazyExpression 不需要 builder（占位节点，不对外构造）
+
+
     }
 
     private fun CfirTree.concreteElements(): List<Element> = listOf(
-        packageDirective, importDirective,
+        packageDirective,
+        // importDirective 已改为抽象基类，由 resolvedImportDirective 替代
+        // constructor 已单独配置为两个具名实现
+
+        // -------- 声明节点 --------
         file, classDeclaration, enumConstructor, extend, typeAlias, function, mainFunction, macroDeclaration, finalizer,
-        constructor, invalidDeclaration, property, variable, patternVariable, valueParameter, typeParameter,
-        block, literalExpression, stringInterpolation, functionCall, propertyAccess, qualifiedAccess, assignment, binaryOp,
+        invalidDeclaration, property, variable, patternVariable, valueParameter, typeParameter,
+
+        // -------- 语句 / 表达式节点 --------
+        block,
+        literalExpression, stringInterpolation, functionCall, propertyAccess, qualifiedAccess, assignment, binaryOp,
         comparisonExpression, typeOperator, ifExpression, matchExpression, matchBranch, catchClause, loopExpression, forInExpression, tryExpression,
         throwExpression, returnExpression, jumpExpression, lambdaExpression, rangeExpression, arrayLiteral, tupleLiteral,
-        spawnExpression, subscriptExpression, errorExpression,
+        spawnExpression, synchronizedExpression, unsafeExpression, quoteExpression, macroExpression, subscriptExpression, errorExpression,
+
+        // -------- 模式节点 --------
         constPattern, wildcardPattern, bindingPattern, tuplePattern, enumPattern, typePattern,
+
+        // -------- 类型引用节点 --------
         resolvedTypeRef, userTypeRef, basicTypeRef, implicitTypeRef, functionTypeRef, tupleTypeRef, varrayTypeRef, errorTypeRef,
-        namedReference, resolvedNamedReference, errorReference
+
+        // -------- 引用节点 --------
+        namedReference, resolvedNamedReference, errorReference,
     )
 }

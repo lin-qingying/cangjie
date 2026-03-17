@@ -38,6 +38,18 @@ open class CfirDeclarationStatusImpl(
             this[Modifier.OVERRIDE] = value
         }
 
+    override var isVisibilityExplicit: Boolean
+        get() = this[Modifier.VISIBILITY_EXPLICIT]
+        set(value) {
+            this[Modifier.VISIBILITY_EXPLICIT] = value
+        }
+
+    override var isModalityExplicit: Boolean
+        get() = this[Modifier.MODALITY_EXPLICIT]
+        set(value) {
+            this[Modifier.MODALITY_EXPLICIT] = value
+        }
+
     override var isOperator: Boolean
         get() = this[Modifier.OPERATOR]
         set(value) {
@@ -124,6 +136,8 @@ open class CfirDeclarationStatusImpl(
         ABSTRACT(0x400),
         OPEN(0x800),
         SEALED(0x1000),
+        VISIBILITY_EXPLICIT(0x2000),
+        MODALITY_EXPLICIT(0x4000),
     }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}

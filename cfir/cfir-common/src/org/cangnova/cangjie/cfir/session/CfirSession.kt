@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.session
 
+import org.cangnova.cangjie.cfir.ConeTypeRegistry
 import org.cangnova.cangjie.util.ArrayMapAccessor
 import org.cangnova.cangjie.util.ComponentArrayOwner
 import org.cangnova.cangjie.util.NullableArrayMapAccessor
@@ -16,11 +17,14 @@ abstract class CfirSession(
     val kind: Kind,
 ) : ComponentArrayOwner<CfirSessionComponent, CfirSessionComponent>() {
 
-    companion object : TypeRegistry<CfirSessionComponent, CfirSessionComponent>() {
+    companion object : ConeTypeRegistry<CfirSessionComponent, CfirSessionComponent>() {
         inline fun <reified T : CfirSessionComponent> sessionComponentAccessor(): ArrayMapAccessor<CfirSessionComponent, CfirSessionComponent, T> {
             return generateAccessor(T::class)
         }
 
+        inline fun <reified T : CfirSessionComponent> sessionComponentAccessor(id: String): ArrayMapAccessor<CfirSessionComponent, CfirSessionComponent, T> {
+            return generateAccessor(id)
+        }
         inline fun <reified T : CfirSessionComponent> nullableSessionComponentAccessor(): NullableArrayMapAccessor<CfirSessionComponent, CfirSessionComponent, T> {
             return generateNullableAccessor(T::class)
         }
@@ -30,6 +34,10 @@ abstract class CfirSession(
 
     fun register(tClass: KClass<out CfirSessionComponent>, value: CfirSessionComponent) {
         registerComponent(tClass, value)
+    }
+
+    fun register(keyQualifiedName: String, value: CfirSessionComponent) {
+        registerComponent(keyQualifiedName, value)
     }
 
     enum class Kind {

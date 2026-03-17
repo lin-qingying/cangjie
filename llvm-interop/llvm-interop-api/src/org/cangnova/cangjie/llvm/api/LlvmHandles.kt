@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.llvm.api
 
+/** LLVMContext 原生句柄。 */
 @JvmInline
 value class LlvmContextRef(val address: Long) {
     companion object {
@@ -9,6 +10,7 @@ value class LlvmContextRef(val address: Long) {
     val isNull: Boolean get() = address == 0L
 }
 
+/** LLVMModule 原生句柄。 */
 @JvmInline
 value class LlvmModuleRef(val address: Long) {
     companion object {
@@ -18,6 +20,7 @@ value class LlvmModuleRef(val address: Long) {
     val isNull: Boolean get() = address == 0L
 }
 
+/** LLVMType 原生句柄。 */
 @JvmInline
 value class LlvmTypeRef(val address: Long) {
     companion object {
@@ -27,6 +30,7 @@ value class LlvmTypeRef(val address: Long) {
     val isNull: Boolean get() = address == 0L
 }
 
+/** LLVMValue 原生句柄。 */
 @JvmInline
 value class LlvmValueRef(val address: Long) {
     companion object {
@@ -36,6 +40,7 @@ value class LlvmValueRef(val address: Long) {
     val isNull: Boolean get() = address == 0L
 }
 
+/** LLVMBasicBlock 原生句柄。 */
 @JvmInline
 value class LlvmBasicBlockRef(val address: Long) {
     companion object {
@@ -45,6 +50,7 @@ value class LlvmBasicBlockRef(val address: Long) {
     val isNull: Boolean get() = address == 0L
 }
 
+/** LLVMBuilder 原生句柄。 */
 @JvmInline
 value class LlvmBuilderRef(val address: Long) {
     companion object {
@@ -54,6 +60,7 @@ value class LlvmBuilderRef(val address: Long) {
     val isNull: Boolean get() = address == 0L
 }
 
+/** LLVMTargetMachine 原生句柄。 */
 @JvmInline
 value class LlvmTargetMachineRef(val address: Long) {
     companion object {

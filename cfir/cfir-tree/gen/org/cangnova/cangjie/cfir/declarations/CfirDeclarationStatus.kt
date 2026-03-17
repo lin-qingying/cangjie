@@ -1,7 +1,7 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 package org.cangnova.cangjie.cfir.declarations
 
@@ -19,6 +19,8 @@ interface CfirDeclarationStatus : CfirElement {
     override val source: CjSourceElement?
     val visibility: Visibility
     val modality: Modality?
+    val isVisibilityExplicit: Boolean
+    val isModalityExplicit: Boolean
     val isOverride: Boolean
     val isOperator: Boolean
     val isStatic: Boolean

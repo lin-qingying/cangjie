@@ -1,17 +1,17 @@
 FILE: arrayAndTupleLiterals.cj
-    func testLiterals(): R|Unit| {
-        let arr: <implicit> = ...
+    internal? func testLiterals(): R|Unit| {
+        local? let arr: <implicit> = ...
             initializer:
                 ARRAY_LITERAL {
-                    STRING("1")
-                    STRING("2")
-                    STRING("3")
+                    INT(1)
+                    INT(2)
+                    INT(3)
                 }
-        let tup: <implicit> = ...
+        local? let tup: <implicit> = ...
             initializer:
                 TUPLE_LITERAL {
-                    STRING("1")
+                    INT(1)
                     STRING("hello")
-                    STRING("true")
+                    BOOLEAN(true)
                 }
     }

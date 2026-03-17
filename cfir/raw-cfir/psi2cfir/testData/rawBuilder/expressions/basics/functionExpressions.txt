@@ -1,25 +1,25 @@
 FILE: functionExpressions.cj
-    func expressions(): R|Unit| {
-        let a: <implicit> = ...
+    internal? func expressions(): R|Unit| {
+        local? let a: <implicit> = ...
             initializer:
                 FUNCTION_CALL(plus) {
                     receiver:
-                        STRING("1")
+                        INT(1)
                     arguments:
-                        STRING("2")
+                        INT(2)
                 }
-        let b: <implicit> = ...
+        local? let b: <implicit> = ...
             initializer:
                 FUNCTION_CALL(times) {
                     receiver:
                         QUALIFIED_ACCESS(a)
                     arguments:
-                        STRING("3")
+                        INT(3)
                 }
-        let c: <implicit> = ...
+        local? let c: <implicit> = ...
             initializer:
                 STRING("hello")
-        let d: <implicit> = ...
+        local? let d: <implicit> = ...
             initializer:
-                STRING("true")
+                BOOLEAN(true)
     }

@@ -10,19 +10,6 @@ import org.junit.jupiter.api.assertThrows
 
 class LlvmBackendFactoryTest {
     @Test
-    fun `returns in-memory backend when configured as in-memory`() {
-        val factory = LlvmBackendFactory()
-
-        val backend = factory.createAndInitialize(
-            CodegenOptions(
-                llvmBackendKind = LlvmBackendKind.IN_MEMORY,
-            ),
-        )
-
-        assertEquals("in-memory", backend.id)
-    }
-
-    @Test
     fun `returns jni backend with default options when available`() {
         val factory = LlvmBackendFactoryForTest(
             jniBackend = JniLlvmBackend(
@@ -38,7 +25,7 @@ class LlvmBackendFactoryTest {
     }
 
     @Test
-    fun `fallbacks to in-memory when jni is unavailable and non-strict`() {
+    fun `throws when jni is unavailable even in non-strict mode`() {
         val factory = LlvmBackendFactoryForTest(
             jniBackend = JniLlvmBackend(
                 native = FakeNativeFacade(
@@ -48,13 +35,14 @@ class LlvmBackendFactoryTest {
             ),
         )
 
-        val backend = factory.createAndInitialize(
+        assertThrows<LlvmBackendUnavailableException> {
+            factory.createAndInitialize(
             CodegenOptions(
                 llvmBackendKind = LlvmBackendKind.JNI,
                 failOnUnavailable = false,
             ),
-        )
-        assertEquals("in-memory", backend.id)
+            )
+        }
     }
 
     @Test

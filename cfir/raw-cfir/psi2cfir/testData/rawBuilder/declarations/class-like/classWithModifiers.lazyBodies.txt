@@ -1,10 +1,10 @@
 FILE: classWithModifiers.cj
-    abstract class Shape {
-        abstract func area(): R|Float64|
+    internal? abstract class Shape {
+        internal? abstract func area(): R|Float64|
     }
-    sealed class Color {
+    internal? sealed class Color {
     }
-    class Counter {
-        static var count: R|Int64|
-        static func getCount(): R|Int64|
+    internal? class Counter {
+        internal? static var count: R|Int64|
+        internal? static func getCount(): R|Int64|
     }

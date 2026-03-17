@@ -1,2 +1,2 @@
 FILE: doWhileLoop.cj
-    func countdown(): R|Unit|
+    internal? func countdown(): R|Unit|

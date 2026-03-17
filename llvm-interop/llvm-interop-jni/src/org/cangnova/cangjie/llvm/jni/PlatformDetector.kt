@@ -1,6 +1,12 @@
 package org.cangnova.cangjie.llvm.jni
 
+/**
+ * 运行平台检测器。
+ */
 object PlatformDetector {
+    /**
+     * 将操作系统和架构映射为统一的平台标识（如 `linux-x86_64`）。
+     */
     fun detect(
         osName: String = System.getProperty("os.name"),
         osArch: String = System.getProperty("os.arch"),

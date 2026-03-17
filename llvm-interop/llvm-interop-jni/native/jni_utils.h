@@ -1,3 +1,4 @@
+// JNI 桥接通用工具与异常辅助。
 #pragma once
 
 #include <jni.h>

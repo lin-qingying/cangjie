@@ -1,18 +1,17 @@
-
+﻿
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
-import org.cangnova.cangjie.cfir.analysis.checkers.CfirCheckerWithMppKind
-import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.cangnova.cangjie.cfir.analysis.checkers.CfirCheckerWithDispatchKind
+import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
 
 /*
- * This file was generated automatically
- * DO NOT MODIFY IT MANUALLY
+ * 鏈枃浠剁敱鐢熸垚鍣ㄨ嚜鍔ㄧ敓鎴? * 璇峰嬁鎵嬪姩淇敼
  */
 
-class ComposedCfirDeclarationCheckers(val predicate: (CfirCheckerWithMppKind) -> Boolean) : CfirDeclarationCheckers() {
-    constructor(mppKind: MppCheckerKind) : this({ it.mppKind == mppKind })
+class ComposedCfirDeclarationCheckers(val predicate: (CfirCheckerWithDispatchKind) -> Boolean) : CfirDeclarationCheckers() {
+    constructor(dispatchKind: CheckerDispatchKind) : this({ it.dispatchKind == dispatchKind })
 
     override val basicDeclarationCheckers: Set<CfirBasicDeclarationChecker>
         get() = _basicDeclarationCheckers
@@ -76,3 +75,4 @@ class ComposedCfirDeclarationCheckers(val predicate: (CfirCheckerWithMppKind) ->
         checkers.invalidDeclarationCheckers.filterTo(_invalidDeclarationCheckers, predicate)
     }
 }
+

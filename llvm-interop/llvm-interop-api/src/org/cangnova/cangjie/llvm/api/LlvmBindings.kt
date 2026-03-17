@@ -1,5 +1,8 @@
 package org.cangnova.cangjie.llvm.api
 
+/**
+ * LLVM 整数比较谓词。
+ */
 enum class LlvmIntPredicate {
     EQ,
     NE,
@@ -13,6 +16,9 @@ enum class LlvmIntPredicate {
     SLE,
 }
 
+/**
+ * LLVM 浮点比较谓词。
+ */
 enum class LlvmFloatPredicate {
     FALSE,
     OEQ,
@@ -32,16 +38,27 @@ enum class LlvmFloatPredicate {
     TRUE,
 }
 
+/**
+ * PHI 指令的一条 incoming 分支信息。
+ */
 data class LlvmPhiIncoming(
     val value: LlvmValueRef,
     val block: LlvmBasicBlockRef,
 )
 
+/**
+ * 模块校验结果。
+ */
 data class LlvmVerificationResult(
     val ok: Boolean,
     val message: String? = null,
 )
 
+/**
+ * LLVM 绑定抽象层。
+ *
+ * 由不同后端实现（如 JNI）提供具体能力。
+ */
 internal interface LlvmBindings {
     fun contextCreate(): LlvmContextRef = unsupported()
     fun contextDispose(context: LlvmContextRef) = unsupportedUnit()
@@ -187,11 +204,17 @@ internal interface LlvmBindings {
     ): LlvmValueRef = unsupported()
 }
 
+/**
+ * 当前进程内的 LLVM 绑定注册表。
+ */
 internal object LlvmBindingRegistry {
     @Volatile
     var bindings: LlvmBindings = object : LlvmBindings {}
 }
 
+/**
+ * 在测试范围内临时替换 LLVM 绑定实现。
+ */
 internal inline fun <T> withLlvmBindingsForTest(bindings: LlvmBindings, block: () -> T): T {
     val previous = LlvmBindingRegistry.bindings
     LlvmBindingRegistry.bindings = bindings

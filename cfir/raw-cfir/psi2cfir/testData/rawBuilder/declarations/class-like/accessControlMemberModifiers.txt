@@ -1,0 +1,23 @@
+FILE: accessControlMemberModifiers.cj
+    internal? class AccessControlMemberModifiers {
+        private let privateValue: R|Int64| = ...
+            initializer:
+                INT(1)
+        protected var protectedValue: R|Int64| = ...
+            initializer:
+                INT(2)
+        internal let internalValue: R|Int64| = ...
+            initializer:
+                INT(3)
+        internal? let implicitValue: R|Int64| = ...
+            initializer:
+                INT(4)
+        private func privateFn(): R|Unit| {
+        }
+        protected func protectedFn(): R|Unit| {
+        }
+        internal func internalFn(): R|Unit| {
+        }
+        internal? func implicitFn(): R|Unit| {
+        }
+    }

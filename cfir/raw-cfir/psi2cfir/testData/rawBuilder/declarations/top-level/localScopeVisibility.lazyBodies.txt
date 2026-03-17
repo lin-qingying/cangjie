@@ -1,0 +1,2 @@
+FILE: localScopeVisibility.cj
+    internal? func localScopeVisibility(): R|Unit|

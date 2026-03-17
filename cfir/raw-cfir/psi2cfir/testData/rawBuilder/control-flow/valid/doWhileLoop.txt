@@ -1,13 +1,13 @@
 FILE: doWhileLoop.cj
-    func countdown(): R|Unit| {
-        var x: <implicit> = ...
+    internal? func countdown(): R|Unit| {
+        local? var x: <implicit> = ...
             initializer:
-                STRING("10")
+                INT(10)
         DO_WHILE {
             condition:
                 COMPARISON(GT) {
                     QUALIFIED_ACCESS(x)
-                    STRING("0")
+                    INT(0)
                 }
             body:
                 ASSIGNMENT {
@@ -18,7 +18,7 @@ FILE: doWhileLoop.cj
                             receiver:
                                 QUALIFIED_ACCESS(x)
                             arguments:
-                                STRING("1")
+                                INT(1)
                         }
                 }
         }

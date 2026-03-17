@@ -1,18 +1,17 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 package org.cangnova.cangjie.cfir.visitors
 
+import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.*
-import org.cangnova.cangjie.cfir.references.CfirErrorReference
-import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.references.CfirReference
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.*
 import org.cangnova.cangjie.cfir.types.*
 
 /**
@@ -25,6 +24,30 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
     }
 
     abstract fun visitElement(element: CfirElement)
+
+    final override fun visitElementWithResolveState(elementWithResolveState: CfirElementWithResolveState, data: Nothing?) {
+        visitElementWithResolveState(elementWithResolveState)
+    }
+
+    open fun visitElementWithResolveState(elementWithResolveState: CfirElementWithResolveState) {
+        visitElement(elementWithResolveState)
+    }
+
+    final override fun visitAnnotationContainer(annotationContainer: CfirAnnotationContainer, data: Nothing?) {
+        visitAnnotationContainer(annotationContainer)
+    }
+
+    open fun visitAnnotationContainer(annotationContainer: CfirAnnotationContainer) {
+        visitElement(annotationContainer)
+    }
+
+    final override fun visitControlFlowGraphOwner(controlFlowGraphOwner: CfirControlFlowGraphOwner, data: Nothing?) {
+        visitControlFlowGraphOwner(controlFlowGraphOwner)
+    }
+
+    open fun visitControlFlowGraphOwner(controlFlowGraphOwner: CfirControlFlowGraphOwner) {
+        visitElement(controlFlowGraphOwner)
+    }
 
     final override fun visitPackageDirective(packageDirective: CfirPackageDirective, data: Nothing?) {
         visitPackageDirective(packageDirective)
@@ -40,6 +63,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitImport(import: CfirImport) {
         visitElement(import)
+    }
+
+    final override fun visitResolvedImport(resolvedImport: CfirResolvedImport, data: Nothing?) {
+        visitResolvedImport(resolvedImport)
+    }
+
+    open fun visitResolvedImport(resolvedImport: CfirResolvedImport) {
+        visitElement(resolvedImport)
     }
 
     final override fun visitAnnotation(annotation: CfirAnnotation, data: Nothing?) {
@@ -242,6 +273,22 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(block)
     }
 
+    final override fun visitLazyBlock(lazyBlock: CfirLazyBlock, data: Nothing?) {
+        visitLazyBlock(lazyBlock)
+    }
+
+    open fun visitLazyBlock(lazyBlock: CfirLazyBlock) {
+        visitElement(lazyBlock)
+    }
+
+    final override fun visitLazyExpression(lazyExpression: CfirLazyExpression, data: Nothing?) {
+        visitLazyExpression(lazyExpression)
+    }
+
+    open fun visitLazyExpression(lazyExpression: CfirLazyExpression) {
+        visitElement(lazyExpression)
+    }
+
     final override fun visitLiteralExpression(literalExpression: CfirLiteralExpression, data: Nothing?) {
         visitLiteralExpression(literalExpression)
     }
@@ -434,6 +481,38 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(spawnExpression)
     }
 
+    final override fun visitSynchronizedExpression(synchronizedExpression: CfirSynchronizedExpression, data: Nothing?) {
+        visitSynchronizedExpression(synchronizedExpression)
+    }
+
+    open fun visitSynchronizedExpression(synchronizedExpression: CfirSynchronizedExpression) {
+        visitElement(synchronizedExpression)
+    }
+
+    final override fun visitUnsafeExpression(unsafeExpression: CfirUnsafeExpression, data: Nothing?) {
+        visitUnsafeExpression(unsafeExpression)
+    }
+
+    open fun visitUnsafeExpression(unsafeExpression: CfirUnsafeExpression) {
+        visitElement(unsafeExpression)
+    }
+
+    final override fun visitQuoteExpression(quoteExpression: CfirQuoteExpression, data: Nothing?) {
+        visitQuoteExpression(quoteExpression)
+    }
+
+    open fun visitQuoteExpression(quoteExpression: CfirQuoteExpression) {
+        visitElement(quoteExpression)
+    }
+
+    final override fun visitMacroExpression(macroExpression: CfirMacroExpression, data: Nothing?) {
+        visitMacroExpression(macroExpression)
+    }
+
+    open fun visitMacroExpression(macroExpression: CfirMacroExpression) {
+        visitElement(macroExpression)
+    }
+
     final override fun visitSubscriptExpression(subscriptExpression: CfirSubscriptExpression, data: Nothing?) {
         visitSubscriptExpression(subscriptExpression)
     }
@@ -584,6 +663,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitReference(reference: CfirReference) {
         visitElement(reference)
+    }
+
+    final override fun visitControlFlowGraphReference(controlFlowGraphReference: CfirControlFlowGraphReference, data: Nothing?) {
+        visitControlFlowGraphReference(controlFlowGraphReference)
+    }
+
+    open fun visitControlFlowGraphReference(controlFlowGraphReference: CfirControlFlowGraphReference) {
+        visitElement(controlFlowGraphReference)
     }
 
     final override fun visitNamedReference(namedReference: CfirNamedReference, data: Nothing?) {

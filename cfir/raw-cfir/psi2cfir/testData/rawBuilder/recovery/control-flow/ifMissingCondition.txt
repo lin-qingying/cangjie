@@ -1,13 +1,13 @@
 FILE: ifMissingCondition.cj
-    func ifMissingCondition(): R|Int64| {
+    internal? func ifMissingCondition(): R|Int64| {
         RETURN {
             IF {
                 condition:
                     ERROR_EXPR(Missing if condition)
                 then:
-                    STRING("1")
+                    INT(1)
                 else:
-                    STRING("2")
+                    INT(2)
             }
         }
     }

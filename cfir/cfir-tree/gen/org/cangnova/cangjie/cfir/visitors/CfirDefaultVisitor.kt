@@ -1,13 +1,14 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 package org.cangnova.cangjie.cfir.visitors
 
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.*
+import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.references.CfirErrorReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -18,6 +19,9 @@ import org.cangnova.cangjie.cfir.types.*
  */
 abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
+    override fun visitResolvedImport(resolvedImport: CfirResolvedImport, data: D): R =
+        visitImport(resolvedImport, data)
+
     override fun visitMemberDeclaration(memberDeclaration: CfirMemberDeclaration, data: D): R =
         visitDeclaration(memberDeclaration, data)
 
@@ -26,12 +30,6 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitClassLikeDeclaration(classLikeDeclaration: CfirClassLikeDeclaration, data: D): R =
         visitMemberDeclaration(classLikeDeclaration, data)
-
-    override fun visitFile(file: CfirFile, data: D): R =
-        visitDeclaration(file, data)
-
-    override fun visitClass(klass: CfirClass, data: D): R =
-        visitClassLikeDeclaration(klass, data)
 
     override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: D): R =
         visitCallableDeclaration(enumConstructor, data)
@@ -75,8 +73,17 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitTypeParameter(typeParameter: CfirTypeParameter, data: D): R =
         visitDeclaration(typeParameter, data)
 
+    override fun visitExpression(expression: CfirExpression, data: D): R =
+        visitStatement(expression, data)
+
     override fun visitBlock(block: CfirBlock, data: D): R =
         visitExpression(block, data)
+
+    override fun visitLazyBlock(lazyBlock: CfirLazyBlock, data: D): R =
+        visitBlock(lazyBlock, data)
+
+    override fun visitLazyExpression(lazyExpression: CfirLazyExpression, data: D): R =
+        visitExpression(lazyExpression, data)
 
     override fun visitLiteralExpression(literalExpression: CfirLiteralExpression, data: D): R =
         visitExpression(literalExpression, data)
@@ -150,6 +157,18 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitSpawnExpression(spawnExpression: CfirSpawnExpression, data: D): R =
         visitExpression(spawnExpression, data)
 
+    override fun visitSynchronizedExpression(synchronizedExpression: CfirSynchronizedExpression, data: D): R =
+        visitExpression(synchronizedExpression, data)
+
+    override fun visitUnsafeExpression(unsafeExpression: CfirUnsafeExpression, data: D): R =
+        visitExpression(unsafeExpression, data)
+
+    override fun visitQuoteExpression(quoteExpression: CfirQuoteExpression, data: D): R =
+        visitExpression(quoteExpression, data)
+
+    override fun visitMacroExpression(macroExpression: CfirMacroExpression, data: D): R =
+        visitExpression(macroExpression, data)
+
     override fun visitSubscriptExpression(subscriptExpression: CfirSubscriptExpression, data: D): R =
         visitExpression(subscriptExpression, data)
 
@@ -197,6 +216,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitErrorTypeRef(errorTypeRef: CfirErrorTypeRef, data: D): R =
         visitTypeRef(errorTypeRef, data)
+
+    override fun visitControlFlowGraphReference(controlFlowGraphReference: CfirControlFlowGraphReference, data: D): R =
+        visitReference(controlFlowGraphReference, data)
 
     override fun visitNamedReference(namedReference: CfirNamedReference, data: D): R =
         visitReference(namedReference, data)

@@ -1,2 +1,2 @@
 type IntAlias = Int64
-type StringList = Array<String>
+public type StringList = Array<String>

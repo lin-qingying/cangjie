@@ -28,7 +28,7 @@ class CfirExplicitStarImportingScope(
     init {
         starImportPackages = imports
             .filter { it.isAllUnder }
-            .map { it.importedFqName }
+            .mapNotNull { it.importedFqName }
             .distinct()
     }
 

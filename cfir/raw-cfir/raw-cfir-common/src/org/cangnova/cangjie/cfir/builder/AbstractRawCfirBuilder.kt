@@ -3,7 +3,8 @@
 import com.intellij.psi.tree.IElementType
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
-import org.cangnova.cangjie.cfir.common.CfirSourceElement
+import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
+import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
@@ -38,7 +39,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
 
     protected fun <R> withLocalContext(block: () -> R): R = context.withLocalContext(block)
 
-    abstract fun T.toSourceElement(): CfirSourceElement
+    abstract fun T.toSourceElement(): AbstractCjSourceElement
 
     abstract fun T.elementType(): IElementType
 
@@ -62,6 +63,8 @@ abstract class AbstractRawCfirBuilder<T : Any>(
 
     protected open fun buildDeclarationStatus(
         visibility: Visibility,
+        isVisibilityExplicit: Boolean = false,
+        isModalityExplicit: Boolean = false,
         isAbstract: Boolean = false,
         isOpen: Boolean = false,
         isSealed: Boolean = false,
@@ -79,6 +82,8 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         status.isAbstract = isAbstract
         status.isOpen = isOpen
         status.isSealed = isSealed
+        status.isVisibilityExplicit = isVisibilityExplicit
+        status.isModalityExplicit = isModalityExplicit
         status.isStatic = isStatic
         status.isMut = isMut
         status.isOverride = isOverride
@@ -89,15 +94,17 @@ abstract class AbstractRawCfirBuilder<T : Any>(
     }
 
     @Suppress("UNUSED_PARAMETER")
-    protected fun buildNamedReference(name: Name, source: CfirSourceElement? = null): CfirNamedReference {
+    protected fun buildNamedReference(name: Name, source: AbstractCjSourceElement? = null): CfirNamedReference {
         return buildNamedReferenceNode {
+            this.source = source as? CjSourceElement
             this.name = name
         }
     }
 
     @Suppress("UNUSED_PARAMETER")
-    protected fun buildErrorExpression(source: CfirSourceElement? = null, reason: String): CfirErrorExpression {
+    protected fun buildErrorExpression(source: AbstractCjSourceElement? = null, reason: String): CfirErrorExpression {
         return buildErrorExpressionNode {
+            this.source = source as? CjSourceElement
             this.reason = reason
         }
     }

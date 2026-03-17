@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.resolve.services
+﻿package org.cangnova.cangjie.cfir.resolve.services
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirImport
@@ -46,3 +46,4 @@ class CfirImportBindingStore : CfirSessionComponent {
 
     fun getBindings(file: CfirFile): CfirFileImportBindings? = bindingsByFile[file]
 }
+

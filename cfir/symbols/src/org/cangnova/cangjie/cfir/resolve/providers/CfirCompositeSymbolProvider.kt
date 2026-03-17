@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.name.ClassId
@@ -13,8 +14,9 @@ import org.cangnova.cangjie.name.Name
  * 类查找返回首个命中结果；可调用查找合并所有 provider 的结果。
  */
 class CfirCompositeSymbolProvider(
-    private val providers: List<CfirSymbolProvider>,
-) : CfirSymbolProvider() {
+    session: CfirSession,
+    val providers: List<CfirSymbolProvider>,
+) : CfirSymbolProvider(session) {
 
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassSymbol? {
         for (provider in providers) {

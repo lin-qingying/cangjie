@@ -1,18 +1,17 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 package org.cangnova.cangjie.cfir.visitors
 
+import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.*
-import org.cangnova.cangjie.cfir.references.CfirErrorReference
-import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.references.CfirReference
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.*
 import org.cangnova.cangjie.cfir.types.*
 
 /**
@@ -22,11 +21,23 @@ abstract class CfirVisitor<out R, in D> {
 
     abstract fun visitElement(element: CfirElement, data: D): R
 
+    open fun visitElementWithResolveState(elementWithResolveState: CfirElementWithResolveState, data: D): R =
+        visitElement(elementWithResolveState, data)
+
+    open fun visitAnnotationContainer(annotationContainer: CfirAnnotationContainer, data: D): R =
+        visitElement(annotationContainer, data)
+
+    open fun visitControlFlowGraphOwner(controlFlowGraphOwner: CfirControlFlowGraphOwner, data: D): R =
+        visitElement(controlFlowGraphOwner, data)
+
     open fun visitPackageDirective(packageDirective: CfirPackageDirective, data: D): R =
         visitElement(packageDirective, data)
 
     open fun visitImport(import: CfirImport, data: D): R =
         visitElement(import, data)
+
+    open fun visitResolvedImport(resolvedImport: CfirResolvedImport, data: D): R =
+        visitElement(resolvedImport, data)
 
     open fun visitAnnotation(annotation: CfirAnnotation, data: D): R =
         visitElement(annotation, data)
@@ -103,6 +114,12 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitBlock(block: CfirBlock, data: D): R =
         visitElement(block, data)
 
+    open fun visitLazyBlock(lazyBlock: CfirLazyBlock, data: D): R =
+        visitElement(lazyBlock, data)
+
+    open fun visitLazyExpression(lazyExpression: CfirLazyExpression, data: D): R =
+        visitElement(lazyExpression, data)
+
     open fun visitLiteralExpression(literalExpression: CfirLiteralExpression, data: D): R =
         visitElement(literalExpression, data)
 
@@ -175,6 +192,18 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitSpawnExpression(spawnExpression: CfirSpawnExpression, data: D): R =
         visitElement(spawnExpression, data)
 
+    open fun visitSynchronizedExpression(synchronizedExpression: CfirSynchronizedExpression, data: D): R =
+        visitElement(synchronizedExpression, data)
+
+    open fun visitUnsafeExpression(unsafeExpression: CfirUnsafeExpression, data: D): R =
+        visitElement(unsafeExpression, data)
+
+    open fun visitQuoteExpression(quoteExpression: CfirQuoteExpression, data: D): R =
+        visitElement(quoteExpression, data)
+
+    open fun visitMacroExpression(macroExpression: CfirMacroExpression, data: D): R =
+        visitElement(macroExpression, data)
+
     open fun visitSubscriptExpression(subscriptExpression: CfirSubscriptExpression, data: D): R =
         visitElement(subscriptExpression, data)
 
@@ -231,6 +260,9 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitReference(reference: CfirReference, data: D): R =
         visitElement(reference, data)
+
+    open fun visitControlFlowGraphReference(controlFlowGraphReference: CfirControlFlowGraphReference, data: D): R =
+        visitElement(controlFlowGraphReference, data)
 
     open fun visitNamedReference(namedReference: CfirNamedReference, data: D): R =
         visitElement(namedReference, data)

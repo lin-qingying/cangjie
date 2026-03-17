@@ -1,10 +1,10 @@
-
+﻿
 
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
-import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkersComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.AbstractDiagnosticCollectorComponent
@@ -15,8 +15,7 @@ import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
 import org.cangnova.cangjie.utils.exceptions.withFirEntry
 
 /*
- * This file was generated automatically
- * DO NOT MODIFY IT MANUALLY
+ * 鏈枃浠剁敱鐢熸垚鍣ㄨ嚜鍔ㄧ敓鎴? * 璇峰嬁鎵嬪姩淇敼
  */
 
 @OptIn(CheckersComponentInternal::class)
@@ -25,12 +24,12 @@ class CfirExpressionCheckersDiagnosticComponent(
     reporter: PendingDiagnosticReporter,
     private val checkers: CfirExpressionCheckers,
 ) : AbstractDiagnosticCollectorComponent(session, reporter) {
-    constructor(session: CfirSession, reporter: PendingDiagnosticReporter, mppKind: MppCheckerKind) : this(
+    constructor(session: CfirSession, reporter: PendingDiagnosticReporter, dispatchKind: CheckerDispatchKind) : this(
         session,
         reporter,
-        when (mppKind) {
-            MppCheckerKind.Common -> session.checkersComponent.commonCfirExpressionCheckers
-            MppCheckerKind.Platform -> session.checkersComponent.platformCfirExpressionCheckers
+        when (dispatchKind) {
+            CheckerDispatchKind.Common -> session.checkersComponent.commonCfirExpressionCheckers
+            CheckerDispatchKind.Platform -> session.checkersComponent.platformCfirExpressionCheckers
         }
     )
 
@@ -112,6 +111,70 @@ class CfirExpressionCheckersDiagnosticComponent(
         checkers.allBasicExpressionCheckers.check(expression, data)
     }
 
+    override fun visitBlock(block: CfirBlock, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(block, data)
+    }
+
+    override fun visitLazyBlock(lazyBlock: CfirLazyBlock, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(lazyBlock, data)
+    }
+
+    override fun visitLazyExpression(lazyExpression: CfirLazyExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(lazyExpression, data)
+    }
+
+    override fun visitStringInterpolation(stringInterpolation: CfirStringInterpolation, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(stringInterpolation, data)
+    }
+
+    override fun visitMatchBranch(matchBranch: CfirMatchBranch, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(matchBranch, data)
+    }
+
+    override fun visitCatch(catch: CfirCatch, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(catch, data)
+    }
+
+    override fun visitLoopExpression(loopExpression: CfirLoopExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(loopExpression, data)
+    }
+
+    override fun visitForInExpression(forInExpression: CfirForInExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(forInExpression, data)
+    }
+
+    override fun visitLambdaExpression(lambdaExpression: CfirLambdaExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(lambdaExpression, data)
+    }
+
+    override fun visitArrayLiteral(arrayLiteral: CfirArrayLiteral, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(arrayLiteral, data)
+    }
+
+    override fun visitTupleLiteral(tupleLiteral: CfirTupleLiteral, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(tupleLiteral, data)
+    }
+
+    override fun visitSpawnExpression(spawnExpression: CfirSpawnExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(spawnExpression, data)
+    }
+
+    override fun visitSynchronizedExpression(synchronizedExpression: CfirSynchronizedExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(synchronizedExpression, data)
+    }
+
+    override fun visitUnsafeExpression(unsafeExpression: CfirUnsafeExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(unsafeExpression, data)
+    }
+
+    override fun visitQuoteExpression(quoteExpression: CfirQuoteExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(quoteExpression, data)
+    }
+
+    override fun visitMacroExpression(macroExpression: CfirMacroExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(macroExpression, data)
+    }
+
     private inline fun <reified E : CfirStatement> Array<CfirExpressionChecker<E>>.check(
         element: E,
         context: CheckerContext
@@ -130,3 +193,4 @@ class CfirExpressionCheckersDiagnosticComponent(
         }
     }
 }
+

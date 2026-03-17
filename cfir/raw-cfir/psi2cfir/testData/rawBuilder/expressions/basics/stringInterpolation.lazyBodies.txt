@@ -1,2 +1,2 @@
 FILE: stringInterpolation.cj
-    func greet(name: R|String|): R|String|
+    internal? func greet(name: R|String|): R|String|
