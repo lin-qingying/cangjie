@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.resolve
+﻿package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -6,12 +6,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.resolve.diagnostics.CfirResolveRuleCatalog
 import org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphEdge
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
-
-private val RULE_SUPER_TYPES_DUPLICATE = CfirResolveRuleCatalog.SUPER_TYPES_DUPLICATE_INTERFACE
-private val RULE_SUPER_TYPES_SELF_REFERENCE = CfirResolveRuleCatalog.SUPER_TYPES_SELF_REFERENCE
+import org.cangnova.cangjie.name.Name
 
 internal data class CfirSuperTypeCheckResult(
     val classLikeSupers: List<CfirClass>,
@@ -20,11 +17,12 @@ internal data class CfirSuperTypeCheckResult(
 
 internal class CfirSuperTypeChecker(
     private val diagnosticReporter: CfirDiagnosticReporter,
-    private val resolver: CfirTypeRefResolver,
+    private val resolver: CfirTypeResolver,
 ) {
     fun collectAndCheck(target: CfirClass): CfirSuperTypeCheckResult {
-        val seen = linkedSetOf<String>()
+        val seen = linkedMapOf<String, CjSourceElement?>()
         val seenResolvedInterfaceSymbols = linkedSetOf<CfirClassSymbol>()
+        val firstSourceByInterfaceSymbol = linkedMapOf<CfirClassSymbol, CjSourceElement?>()
         val classLikeSupers = mutableListOf<CfirClass>()
         val graphEdges = mutableListOf<CfirSuperTypeGraphEdge>()
 
@@ -36,18 +34,30 @@ internal class CfirSuperTypeChecker(
                 resolvedClassSymbol = resolvedClass?.symbol as? CfirClassSymbol,
             )
 
-            if (!seen.add(key)) {
-                reportDuplicate(target, superTypeRef.source, key)
+            val firstSourceByKey = seen.putIfAbsent(key, superTypeRef.source)
+            val duplicateByKey = firstSourceByKey != null
+            if (duplicateByKey) {
+                reportDuplicate(target, firstSourceByKey, key, resolvedClass?.name)
             }
-            if (resolvedClass?.classKind == CfirClassKind.INTERFACE && !seenResolvedInterfaceSymbols.add(resolvedClass.symbol as CfirClassSymbol)) {
-                reportDuplicate(target, superTypeRef.source, key)
+            val interfaceSymbol = resolvedClass?.takeIf { it.classKind == CfirClassKind.INTERFACE }?.symbol as? CfirClassSymbol
+            if (interfaceSymbol != null) {
+                firstSourceByInterfaceSymbol.putIfAbsent(interfaceSymbol, superTypeRef.source)
+                val duplicateBySymbol = !seenResolvedInterfaceSymbols.add(interfaceSymbol)
+                if (duplicateBySymbol && !duplicateByKey) {
+                    reportDuplicate(
+                        target,
+                        firstSourceByInterfaceSymbol[interfaceSymbol] ?: superTypeRef.source,
+                        key,
+                        resolvedClass.name,
+                    )
+                }
             }
-            if (key == target.name.asString()) {
+            val approximateTypeName = key.toApproxName()
+            if (approximateTypeName == target.name || resolvedClass?.name == target.name) {
                 diagnosticReporter.reportOn(
                     source = superTypeRef.source,
                     factory = CfirErrors.SUPER_TYPES_SELF_REFERENCE,
-                    a = RULE_SUPER_TYPES_SELF_REFERENCE.id,
-                    b = "type '${target.name}' cannot inherit from itself (${RULE_SUPER_TYPES_SELF_REFERENCE.officialReference})",
+                    a = target.name,
                     context = DiagnosticContext.Default,
                 )
             }
@@ -60,13 +70,18 @@ internal class CfirSuperTypeChecker(
         )
     }
 
-    private fun reportDuplicate(target: CfirClass, source: CjSourceElement?, key: String) {
+    private fun reportDuplicate(target: CfirClass, source: CjSourceElement?, key: String, resolvedName: Name?) {
         diagnosticReporter.reportOn(
             source = source,
             factory = CfirErrors.SUPER_TYPES_DUPLICATE,
-            a = RULE_SUPER_TYPES_DUPLICATE.id,
-            b = "duplicate super type '$key' for type '${target.name}' (${RULE_SUPER_TYPES_DUPLICATE.officialReference})",
+            a = resolvedName ?: key.toApproxName(),
             context = DiagnosticContext.Default,
         )
     }
 }
+
+private fun String.toApproxName(): Name {
+    val raw = substringAfterLast('.').substringBefore('<')
+    return Name.identifierIfValid(raw) ?: Name.ERROR_NAME
+}
+

@@ -73,7 +73,7 @@ object PluginStructureProvider {
             }
         }
     }
-    // workaround for ambiguity resolution
+    // 规避重载解析歧义
     private fun <T> MockComponentManager.registerServiceWithInterface(interfaceClass: Class<T>, implementationClass: Class<T>) {
         registerService(interfaceClass, implementationClass)
     }

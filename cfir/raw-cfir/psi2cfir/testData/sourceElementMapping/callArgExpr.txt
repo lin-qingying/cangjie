@@ -1,6 +1,6 @@
 FUNCTION_CALL(plus) {
     receiver:
-        STRING("21")
+        INT(21)
     arguments:
-        STRING("21")
+        INT(21)
 }

@@ -1,8 +1,8 @@
 FILE: classWithTypeParameters.cj
-    class Container<T> {
-        var value: R|T|
+    internal? class Container<T> {
+        internal? var value: R|T|
     }
-    class Pair<A, B> {
-        var first: R|A|
-        var second: R|B|
+    internal? class Pair<A, B> {
+        internal? var first: R|A|
+        internal? var second: R|B|
     }

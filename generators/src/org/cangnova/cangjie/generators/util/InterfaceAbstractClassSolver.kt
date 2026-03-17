@@ -1,15 +1,18 @@
-/*
- * Copyright 2010-2019 JetBrains s.r.o. and Kotlin Programming Language contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
- */
+
 
 package org.cangnova.cangjie.generators.util
 
+/**
+ * 图节点抽象，用于“类/接口”求解问题。
+ */
 interface Node {
     val parents: List<Node>
     val origin: Node
 }
 
+/**
+ * 根据继承图与约束求解每个节点应为“类(true)”还是“接口(false)”。
+ */
 fun solveGraphForClassVsInterface(
     elements: List<Node>,
     requiredInterfaces: Collection<Node>,
@@ -150,4 +153,3 @@ private fun buildGraphs(
 
     return g to gt
 }
-

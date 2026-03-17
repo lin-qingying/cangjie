@@ -1,6 +1,6 @@
 FILE: classWithThisReference.cj
-    class Box {
-        var value: R|Int64|
-        func getValue(): R|Int64|
-        func setValue(v: R|Int64|): R|Unit|
+    internal? class Box {
+        internal? var value: R|Int64|
+        internal? func getValue(): R|Int64|
+        internal? func setValue(v: R|Int64|): R|Unit|
     }

@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.resolve.services
+﻿package org.cangnova.cangjie.cfir.resolve.services
 
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
@@ -27,3 +27,4 @@ class CfirLazyDeclarationResolver : CfirSessionComponent {
     val isResolvingAny: Boolean
         get() = phaseStack.isNotEmpty()
 }
+

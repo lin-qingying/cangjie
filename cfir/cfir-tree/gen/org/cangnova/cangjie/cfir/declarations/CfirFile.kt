@@ -1,13 +1,14 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -16,19 +17,19 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.file]
  */
-abstract class CfirFile : CfirDeclaration() {
+abstract class CfirFile : CfirDeclaration(), CfirControlFlowGraphOwner {
     abstract override val source: CjSourceElement?
+    abstract override val moduleData: CfirModuleData
+    abstract override val annotations: List<CfirAnnotation>
     abstract override val symbol: CfirSymbol<*>
     abstract override val origin: CfirDeclarationOrigin
-    abstract override var annotations: List<CfirAnnotation>
-    abstract override val moduleData: CfirModuleData
-    abstract override var resolvePhase: CfirResolvePhase
     abstract override val attributes: CfirDeclarationAttributes
+    abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
     abstract val name: String
     abstract val sourceFile: CjSourceFile?
-    abstract var packageDirective: CfirPackageDirective
-    abstract var imports: List<CfirImport>
-    abstract var declarations: List<CfirDeclaration>
+    abstract val packageDirective: CfirPackageDirective
+    abstract val imports: List<CfirImport>
+    abstract val declarations: List<CfirDeclaration>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitFile(this, data)
@@ -40,7 +41,7 @@ abstract class CfirFile : CfirDeclaration() {
     override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
 
-    override abstract fun replaceResolvePhase(newResolvePhase: CfirResolvePhase)
+    override abstract fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 
 
     override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFile

@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.resolve.body
+﻿package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
@@ -12,16 +12,13 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 
 /**
- * 隐式类型感知 body resolve transformer。
+ * 闅愬紡绫诲瀷鎰熺煡 body resolve transformer銆? *
+ * 鍖呰 [CfirBodyResolveTransformer]锛屽湪鍙樻崲鍙皟鐢ㄥ０鏄庢椂閫氳繃
+ * [CfirImplicitBodyResolveComputationSession] 鐨勭姸鎬佹満杩涜缂撳瓨鍜岄€掑綊淇濇姢銆? *
+ * - IMPLICIT_TYPES 闃舵锛歚implicitTypeOnly=true`锛屽彧鎺ㄦ柇澹版槑杈圭晫绫诲瀷
+ * - BODY_RESOLVE 闃舵锛歚implicitTypeOnly=false`锛屽畬鏁磋В鏋愬嚱鏁颁綋
  *
- * 包装 [CfirBodyResolveTransformer]，在变换可调用声明时通过
- * [CfirImplicitBodyResolveComputationSession] 的状态机进行缓存和递归保护。
- *
- * - IMPLICIT_TYPES 阶段：`implicitTypeOnly=true`，只推断声明边界类型
- * - BODY_RESOLVE 阶段：`implicitTypeOnly=false`，完整解析函数体
- *
- * 参考 K2 FirImplicitAwareBodyResolveTransformer。
- */
+ * 鍙傝€?K2 FirImplicitAwareBodyResolveTransformer銆? */
 open class CfirImplicitAwareBodyResolveTransformer(
     session: CfirSession,
     scopeSession: CfirScopeSession,
@@ -39,30 +36,30 @@ open class CfirImplicitAwareBodyResolveTransformer(
     implicitTypeOnly = implicitTypeOnly,
 ) {
 
-    override fun transformFunction(function: CfirFunction, data: CfirResolutionMode): CfirDeclaration {
+    override fun transformFunction(function: CfirFunction, data: CfirResolutionMode): CfirFunction {
+        @Suppress("UNCHECKED_CAST")
         return computeCachedTransformationResult(function) {
             super.transformFunction(function, data)
-        }
+        } as CfirFunction
     }
 
-    override fun transformProperty(property: CfirProperty, data: CfirResolutionMode): CfirDeclaration {
+    override fun transformProperty(property: CfirProperty, data: CfirResolutionMode): CfirProperty {
+        @Suppress("UNCHECKED_CAST")
         return computeCachedTransformationResult(property) {
             super.transformProperty(property, data)
-        }
+        } as CfirProperty
     }
 
-    override fun transformVariable(variable: CfirVariable, data: CfirResolutionMode): CfirDeclaration {
+    override fun transformVariable(variable: CfirVariable, data: CfirResolutionMode): CfirVariable {
+        @Suppress("UNCHECKED_CAST")
         return computeCachedTransformationResult(variable) {
             super.transformVariable(variable, data)
-        }
+        } as CfirVariable
     }
 
     /**
-     * 通过状态机缓存变换结果。
-     *
-     * 对可调用声明：检查是否已计算，若已缓存则直接返回，否则执行变换并缓存。
-     * 对非可调用声明：直接执行变换。
-     */
+     * 閫氳繃鐘舵€佹満缂撳瓨鍙樻崲缁撴灉銆?     *
+     * 瀵瑰彲璋冪敤澹版槑锛氭鏌ユ槸鍚﹀凡璁＄畻锛岃嫢宸茬紦瀛樺垯鐩存帴杩斿洖锛屽惁鍒欐墽琛屽彉鎹㈠苟缂撳瓨銆?     * 瀵归潪鍙皟鐢ㄥ０鏄庯細鐩存帴鎵ц鍙樻崲銆?     */
     private fun <D : CfirDeclaration> computeCachedTransformationResult(
         declaration: D,
         transformation: () -> CfirDeclaration,
@@ -74,15 +71,15 @@ open class CfirImplicitAwareBodyResolveTransformer(
 
         return when (val status = implicitBodyResolveComputationSession.getStatus(symbol)) {
             is CfirImplicitBodyResolveComputationStatus.Computed -> {
-                // 已缓存 → 直接返回缓存的声明
+                // 宸茬紦瀛?鈫?鐩存帴杩斿洖缂撳瓨鐨勫０鏄?
                 status.transformedDeclaration
             }
             is CfirImplicitBodyResolveComputationStatus.Computing -> {
-                // 递归 → 跳过（返回原声明）
+                // 閫掑綊 鈫?璺宠繃锛堣繑鍥炲師澹版槑锛?
                 declaration
             }
             is CfirImplicitBodyResolveComputationStatus.NotComputed -> {
-                // 未计算 → 通过状态机执行
+                // 鏈绠?鈫?閫氳繃鐘舵€佹満鎵ц
                 implicitBodyResolveComputationSession.compute(symbol) {
                     @Suppress("UNCHECKED_CAST")
                     transformation() as CfirCallableDeclaration
@@ -91,3 +88,4 @@ open class CfirImplicitAwareBodyResolveTransformer(
         }
     }
 }
+

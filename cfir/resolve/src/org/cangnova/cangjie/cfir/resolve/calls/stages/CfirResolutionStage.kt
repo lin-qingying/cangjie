@@ -1,29 +1,22 @@
-package org.cangnova.cangjie.cfir.resolve.calls.stages
+﻿package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
 
 /**
- * 候选验证阶段抽象基类。
- *
- * 每个阶段检查候选的某一方面（可见性、参数映射、参数类型等），
- * 通过 [CfirCheckerSink] 报告诊断。
- *
- * Phase 3 使用同步 API（K2 使用 suspend），因为仓颉不需要 postpone/resume。
- *
- * 对齐 K2 ResolutionStage。
- */
+ * 鍊欓€夐獙璇侀樁娈垫娊璞″熀绫汇€? *
+ * 姣忎釜闃舵妫€鏌ュ€欓€夌殑鏌愪竴鏂归潰锛堝彲瑙佹€с€佸弬鏁版槧灏勩€佸弬鏁扮被鍨嬬瓑锛夛紝
+ * 閫氳繃 [CfirCheckerSink] 鎶ュ憡璇婃柇銆? *
+ * Phase 3 浣跨敤鍚屾 API锛圞2 浣跨敤 suspend锛夛紝鍥犱负浠撻涓嶉渶瑕?postpone/resume銆? *
+ * 瀵归綈 K2 ResolutionStage銆? */
 abstract class CfirResolutionStage {
 
     /**
-     * 检查候选是否通过当前阶段的验证。
-     *
-     * @param candidate 待验证的候选
-     * @param sink 诊断报告接收器
-     * @param context 解析上下文
-     */
+     * 妫€鏌ュ€欓€夋槸鍚﹂€氳繃褰撳墠闃舵鐨勯獙璇併€?     *
+     * @param candidate 寰呴獙璇佺殑鍊欓€?     * @param sink 璇婃柇鎶ュ憡鎺ユ敹鍣?     * @param context 瑙ｆ瀽涓婁笅鏂?     */
     abstract fun check(
         candidate: CfirCandidate,
         sink: CfirCheckerSink,
         context: CfirResolutionContext,
     )
 }
+

@@ -5,4 +5,7 @@
 
 package org.cangnova.cangjie.generators.tree.imports
 
+/**
+ * 任意文本导入项（包名 + 类型名）。
+ */
 data class ArbitraryImportable(override val packageName: String, override val typeName: String) : Importable

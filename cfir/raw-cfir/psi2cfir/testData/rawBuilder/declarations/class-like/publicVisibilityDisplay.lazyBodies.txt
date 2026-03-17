@@ -1,0 +1,10 @@
+FILE: publicVisibilityDisplay.cj
+    public class ExplicitPublic {
+        public func explicitPublic(): R|Unit|
+        internal? func implicitInternal(): R|Unit|
+        public let explicitPublicValue: R|Int64|
+        internal? let implicitInternalValue: R|Int64|
+    }
+    internal? class ImplicitInternalFromClassDefault {
+        public func publicMember(): R|Unit|
+    }

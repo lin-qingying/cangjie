@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.resolve.services
+﻿package org.cangnova.cangjie.cfir.resolve.services
 
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
@@ -28,3 +28,4 @@ class CfirSuperTypeGraphStore : CfirSessionComponent {
     fun getNode(owner: CfirClass): CfirSuperTypeGraphNode? =
         (owner.symbol as? CfirClassSymbol)?.let { nodesByOwner[it] }
 }
+

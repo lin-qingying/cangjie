@@ -7,7 +7,6 @@ dependencies {
     api(project(":cfir:cfir-tree"))
     api(project(":cfir:diagnostics"))
 //    api(project(":cfir:resolve"))
-    implementation(project(":cfir:diagnostic-renderers"))
     compileOnly(intellijCore())
 }
 

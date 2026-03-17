@@ -1,2 +1,2 @@
 FILE: forMissingIterable.cj
-    func forMissingIterable(): R|Unit|
+    internal? func forMissingIterable(): R|Unit|

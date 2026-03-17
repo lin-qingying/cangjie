@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2010-2026. cangjie.
  */
 
@@ -36,3 +36,4 @@ abstract class CfirAbstractPhaseTransformer<D>(
         }
     }
 }
+

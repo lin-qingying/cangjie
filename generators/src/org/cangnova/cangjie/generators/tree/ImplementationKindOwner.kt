@@ -1,12 +1,12 @@
-/*
- * Copyright 2010-2023 JetBrains s.r.o. and Kotlin Programming Language contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
- */
+
 
 package org.cangnova.cangjie.generators.tree
 
 import org.cangnova.cangjie.generators.tree.imports.Importable
 
+/**
+ * 持有实现类型信息的模型抽象。
+ */
 interface ImplementationKindOwner : TypeRef, Importable {
     var kind: ImplementationKind?
     val allParents: List<ImplementationKindOwner>

@@ -7,6 +7,7 @@ class TestConfigurationBuilder {
     private val facadeFactories = mutableListOf<(TestServices) -> TestFacade>()
     private val handlerFactories = mutableListOf<(TestServices) -> AnalysisHandler>()
     private val defaultDirectives = mutableListOf<Directive>()
+    private val defaultsProviderBuilder = DefaultsProviderBuilder()
 
     fun useFrontendFacades(vararg facades: (TestServices) -> TestFacade) {
         facadeFactories += facades
@@ -20,11 +21,16 @@ class TestConfigurationBuilder {
         DefaultDirectivesBuilder(defaultDirectives).configure()
     }
 
+    fun globalDefaults(configure: DefaultsProviderBuilder.() -> Unit) {
+        defaultsProviderBuilder.configure()
+    }
+
     fun build(): TestConfiguration {
         return TestConfiguration(
             facadeFactories = facadeFactories.toList(),
             handlerFactories = handlerFactories.toList(),
             defaultDirectives = defaultDirectives.toList(),
+            defaultsProviderBuilder = defaultsProviderBuilder,
         )
     }
 

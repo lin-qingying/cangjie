@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model
+﻿package org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model
 
 import org.cangnova.cangjie.cfir.tree.generator.util.writeToFileUsingSmartPrinterIfFileContentChanged
 import org.cangnova.cangjie.generators.util.printCopyright
@@ -135,3 +135,4 @@ object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
         is DeprecationDiagnosticData -> "CjDiagnosticFactoryForDeprecation"
     } + parameters.size
 }
+

@@ -240,6 +240,7 @@ fun ImportCollectingPrinter.printPropertyDeclaration(
     printOptInWrapped: Boolean = false,
     deprecation: Deprecated? = null,
     initializer: String? = null,
+    additionalAnnotations: List<ClassRef<*>> = emptyList(),
 ) {
     printKDoc(kDoc)
 
@@ -248,7 +249,17 @@ fun ImportCollectingPrinter.printPropertyDeclaration(
     }
 
     if (isVolatile) {
-        println("@", type<Volatile>().render())
+        println("@kotlin.concurrent.Volatile")
+    }
+
+    // 打印额外的自定义注解
+    for (annotation in additionalAnnotations) {
+        val rendered = annotation.render()
+        if (inConstructor) {
+            println("@property:", rendered)
+        } else {
+            println("@", rendered)
+        }
     }
 
     optInAnnotation?.let {

@@ -172,7 +172,7 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
         val testServices = TestServices()
         _testServices = testServices
 
-        // 1. Initialize environment
+        // 1. 初始化环境
         val environmentManager = CaAnalysisApiEnvironmentManagerImpl(disposable)
         testServices.register(CaAnalysisApiEnvironmentManager::class, environmentManager)
         environmentManager.initializeEnvironment()
@@ -180,27 +180,27 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
         val application = environmentManager.getApplication() as MockApplication
         val project = environmentManager.getProject() as MockProject
 
-        // Collect all registrars
+        // 收集全部注册器
         val allRegistrars = configurator.serviceRegistrars + additionalServiceRegistrars
 
-        // 2. Register application services
+        // 2. 注册 application 级服务
         allRegistrars.forEach { it.registerApplicationServices(application, testServices) }
 
-        // 3. Create test module structure
+        // 3. 创建测试模块结构
         val moduleStructure = configurator.createModules(testDataPath, testServices, project)
         testServices.register(CjTestModuleStructure::class, moduleStructure)
 
-        // 4. Register project extension points and services
+        // 4. 注册 project 级扩展点和服务
         allRegistrars.forEach { it.registerProjectExtensionPoints(project, testServices) }
         allRegistrars.forEach { it.registerProjectServices(project, testServices) }
 
-        // 5. Initialize project structure
+        // 5. 初始化项目结构
         environmentManager.initializeProjectStructure()
 
-        // 6. Register project model services
+        // 6. 注册 project model 服务
         allRegistrars.forEach { it.registerProjectModelServices(project, disposable, testServices) }
 
-        // 7. Prepare files in modules
+        // 7. 预处理模块内文件
         moduleStructure.mainModules.forEach { module ->
             configurator.prepareFilesInModule(module, testServices)
         }

@@ -1,25 +1,21 @@
-package org.cangnova.cangjie.cfir.resolve.body
+﻿package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 
 /**
- * 隐式返回类型推断的计算状态。
- *
- * 三状态机：NotComputed → Computing → Computed，
- * 用于递归依赖检测和缓存已计算的结果。
- *
- * 参考 K2 ImplicitBodyResolveComputationStatus。
- */
+ * 闅愬紡杩斿洖绫诲瀷鎺ㄦ柇鐨勮绠楃姸鎬併€? *
+ * 涓夌姸鎬佹満锛歂otComputed 鈫?Computing 鈫?Computed锛? * 鐢ㄤ簬閫掑綊渚濊禆妫€娴嬪拰缂撳瓨宸茶绠楃殑缁撴灉銆? *
+ * 鍙傝€?K2 ImplicitBodyResolveComputationStatus銆? */
 sealed class CfirImplicitBodyResolveComputationStatus {
-    /** 尚未开始计算 */
+    /** 灏氭湭寮€濮嬭绠?*/
     object NotComputed : CfirImplicitBodyResolveComputationStatus()
 
-    /** 正在计算中（用于递归检测） */
+    /** 姝ｅ湪璁＄畻涓紙鐢ㄤ簬閫掑綊妫€娴嬶級 */
     object Computing : CfirImplicitBodyResolveComputationStatus()
 
-    /** 已完成计算，缓存解析后的类型和变换后的声明 */
+    /** 宸插畬鎴愯绠楋紝缂撳瓨瑙ｆ瀽鍚庣殑绫诲瀷鍜屽彉鎹㈠悗鐨勫０鏄?*/
     class Computed(
         val resolvedType: ConeCangjieType,
         val transformedDeclaration: CfirCallableDeclaration,
@@ -27,38 +23,32 @@ sealed class CfirImplicitBodyResolveComputationStatus {
 }
 
 /**
- * 隐式类型推断计算会话。
+ * 闅愬紡绫诲瀷鎺ㄦ柇璁＄畻浼氳瘽銆? *
+ * 绠＄悊鎵€鏈夊彲璋冪敤澹版槑鐨勮绠楃姸鎬侊紝鎻愪緵閫掑綊淇濇姢锛? * - 棣栨璁＄畻锛歂otComputed 鈫?Computing 鈫?Computed
+ * - 閫掑綊璁块棶锛氭娴嬪埌 Computing 鐘舵€?鈫?杩斿洖閿欒绫诲瀷
+ * - 閲嶅璁块棶锛欳omputed 鐘舵€?鈫?鐩存帴杩斿洖缂撳瓨缁撴灉
  *
- * 管理所有可调用声明的计算状态，提供递归保护：
- * - 首次计算：NotComputed → Computing → Computed
- * - 递归访问：检测到 Computing 状态 → 返回错误类型
- * - 重复访问：Computed 状态 → 直接返回缓存结果
- *
- * 参考 K2 ImplicitBodyResolveComputationSession。
- */
+ * 鍙傝€?K2 ImplicitBodyResolveComputationSession銆? */
 class CfirImplicitBodyResolveComputationSession {
 
     private val statusMap = HashMap<CfirCallableSymbol<*>, CfirImplicitBodyResolveComputationStatus>()
 
-    /** 当前正在计算的符号栈，用于调试和错误报告 */
+    /** 褰撳墠姝ｅ湪璁＄畻鐨勭鍙锋爤锛岀敤浜庤皟璇曞拰閿欒鎶ュ憡 */
     private val computingSymbolsStack = mutableListOf<CfirCallableSymbol<*>>()
 
-    /** 查询符号的当前计算状态 */
+    /** 鏌ヨ绗﹀彿鐨勫綋鍓嶈绠楃姸鎬?*/
     fun getStatus(symbol: CfirCallableSymbol<*>): CfirImplicitBodyResolveComputationStatus {
         return statusMap[symbol] ?: CfirImplicitBodyResolveComputationStatus.NotComputed
     }
 
     /**
-     * 执行计算并缓存结果。
+     * 鎵ц璁＄畻骞剁紦瀛樼粨鏋溿€?     *
+     * 1. 鏍囪涓?Computing 骞跺帇鏍?     * 2. 鎵ц [transformation] 鑾峰緱鍙樻崲鍚庣殑澹版槑
+     * 3. 鎻愬彇杩斿洖绫诲瀷骞剁紦瀛樹负 Computed
+     * 4. 寮规爤
      *
-     * 1. 标记为 Computing 并压栈
-     * 2. 执行 [transformation] 获得变换后的声明
-     * 3. 提取返回类型并缓存为 Computed
-     * 4. 弹栈
-     *
-     * @param symbol 被计算的符号
-     * @param transformation 实际执行 body resolve 的变换闭包
-     * @return 变换后的声明
+     * @param symbol 琚绠楃殑绗﹀彿
+     * @param transformation 瀹為檯鎵ц body resolve 鐨勫彉鎹㈤棴鍖?     * @return 鍙樻崲鍚庣殑澹版槑
      */
     fun <D : CfirCallableDeclaration> compute(
         symbol: CfirCallableSymbol<*>,
@@ -76,7 +66,7 @@ class CfirImplicitBodyResolveComputationSession {
         }
     }
 
-    /** 从变换后的声明中提取已解析的返回类型 */
+    /** 浠庡彉鎹㈠悗鐨勫０鏄庝腑鎻愬彇宸茶В鏋愮殑杩斿洖绫诲瀷 */
     private fun extractResolvedType(declaration: CfirCallableDeclaration): ConeCangjieType {
         val typeRef = when (declaration) {
             is org.cangnova.cangjie.cfir.declarations.CfirFunction -> declaration.returnTypeRef
@@ -91,3 +81,4 @@ class CfirImplicitBodyResolveComputationSession {
         }
     }
 }
+

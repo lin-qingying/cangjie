@@ -1,7 +1,7 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 @file:Suppress("DuplicatedCode", "unused")
 
@@ -15,16 +15,17 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPatternVariableImpl
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 
 @CfirBuilderDsl
 class CfirPatternVariableBuilder {
+    var source: CjSourceElement? = null
+    lateinit var moduleData: CfirModuleData
+    val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var symbol: CfirSymbol<*>
     lateinit var origin: CfirDeclarationOrigin
-    val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    lateinit var moduleData: CfirModuleData
-    lateinit var resolvePhase: CfirResolvePhase
     lateinit var attributes: CfirDeclarationAttributes
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
@@ -36,11 +37,11 @@ class CfirPatternVariableBuilder {
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirPatternVariable {
         return CfirPatternVariableImpl(
+            source,
+            moduleData,
+            annotations,
             symbol,
             origin,
-            annotations,
-            moduleData,
-            resolvePhase,
             attributes,
             status,
             typeParameters,
@@ -48,7 +49,9 @@ class CfirPatternVariableBuilder {
             pattern,
             initializer,
             isVar,
-        )
+        ).also {
+            it.initDefaultResolveState()
+        }
     }
 
 }
@@ -67,11 +70,11 @@ inline fun buildPatternVariableCopy(original: CfirPatternVariable, init: CfirPat
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }
     val copyBuilder = CfirPatternVariableBuilder()
+    copyBuilder.source = original.source
+    copyBuilder.moduleData = original.moduleData
+    copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.symbol = original.symbol
     copyBuilder.origin = original.origin
-    copyBuilder.annotations.addAll(original.annotations)
-    copyBuilder.moduleData = original.moduleData
-    copyBuilder.resolvePhase = original.resolvePhase
     copyBuilder.attributes = original.attributes
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)

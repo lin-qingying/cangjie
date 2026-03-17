@@ -1,13 +1,13 @@
-/*
- * Copyright 2010-2023 JetBrains s.r.o. and Kotlin Programming Language contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
- */
+
 
 package org.cangnova.cangjie.generators.tree
 
 import org.cangnova.cangjie.generators.tree.imports.ImportCollecting
 import org.cangnova.cangjie.generators.tree.imports.Importable
 
+/**
+ * 生成器 Builder 模型基类。
+ */
 sealed class Builder<ElementField, Element> : FieldContainer<ElementField>, TypeRefWithNullability, Importable
         where ElementField : AbstractField<*>,
               Element : AbstractElement<Element, *, *> {
@@ -53,7 +53,7 @@ class LeafBuilder<Field, Element, Implementation>(
     override val typeName: String
         get() = (implementation.name ?: implementation.element.typeName) + "Builder"
 
-    override val allFields: List<Field> by lazy { implementation.fieldsInConstructor }
+    override val allFields: List<Field> by lazy { implementation.fieldsInConstructor.filter { !it.isFinal } }
 
     override val uselessFields: List<Field> by lazy {
         val fieldsFromParents = parents.flatMap { it.allFields }.map { it.name }.toSet()
@@ -66,6 +66,9 @@ class LeafBuilder<Field, Element, Implementation>(
     var wantsCopy: Boolean = false
 }
 
+/**
+ * 中间层 Builder 模型。
+ */
 class IntermediateBuilder<Field, Element>(
     override val typeName: String,
     override var packageName: String,
@@ -88,5 +91,6 @@ class IntermediateBuilder<Field, Element>(
     override val uselessFields: List<Field> = emptyList()
 }
 
+/** 当前实现类型是否需要生成叶子 Builder。 */
 val ImplementationKind.hasLeafBuilder: Boolean
     get() = this == ImplementationKind.FinalClass || this == ImplementationKind.OpenClass

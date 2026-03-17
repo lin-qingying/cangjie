@@ -1,5 +1,10 @@
 package org.cangnova.cangjie.llvm.api
 
+/**
+ * LLVM 上下文封装。
+ *
+ * 管理类型构造、模块/构建器创建及资源生命周期。
+ */
 class LlvmContext internal constructor(
     private val bindings: LlvmBindings = LlvmBindingRegistry.bindings,
 ) : AutoCloseable {

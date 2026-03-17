@@ -9,6 +9,7 @@ junit-platform-launcher = "1.10.2"
 vavr = "0.10.4"
 jansi = "2.4.1"
 flatbuffers = "25.2.10"
+junit5 = "5.12.2"
 
 [libraries]
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -21,6 +22,7 @@ vavr = { module = "io.vavr:vavr", version.ref = "vavr" }
 jansi = { module = "org.fusesource.jansi:jansi", version.ref = "jansi" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 flatbuffers-java = { module = "com.google.flatbuffers:flatbuffers-java", version.ref = "flatbuffers" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit5" }
 
 [plugins]
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

@@ -1,3 +1,3 @@
 FILE: topLevelProperty.cj
-    let PI: R|Float64|
-    var count: R|Int64|
+    internal? let PI: R|Float64|
+    internal? var count: R|Int64|

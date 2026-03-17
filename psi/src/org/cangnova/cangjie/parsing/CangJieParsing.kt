@@ -1088,6 +1088,24 @@ class CangJieParsing private constructor(
         fileMarker.done(CJ_SCRIPT)
     }
 
+    fun parseOnlyAnnotationFile() {
+
+        with(ParsingContext.ANNOTATION_ONLY) {
+            val fileMarker = mark()
+
+            // 处理开头 package
+            parsePreamble()
+
+            // 处理声明式语句
+            while (!eof()) {
+                parseTopLevelDeclaration()
+            }
+
+            checkUnclosedBlockComment()
+            fileMarker.done(CJ_FILE)
+        }
+
+    }
     /**
      * 解析仓颉源文件
      *
@@ -2406,24 +2424,6 @@ class CangJieParsing private constructor(
 
         parseByType()
 
-        if (isDeclarationsFile) {
-            if (at(LBRACE)) {
-                val body = mark()
-
-                val tokenSet = TokenSet.orSet(
-                    KEYWORDS, TokenSet.create(OPEN_KEYWORD, ABSTRACT_KEYWORD, SEALED_KEYWORD)
-                )
-                while (!atSet(tokenSet) && !eof()) {
-                    advance()
-                }
-                error(
-                    CangJieParsingBundle.message(
-                        "parsing.error.not.allowed.context", "Property body", "declarations file"
-                    )
-                )
-            }
-            return PROPERTY
-        }
 
         if (at(LBRACE)) {
             parsePropertyBody(detector)
@@ -3253,21 +3253,6 @@ class CangJieParsing private constructor(
             )
         }
 
-        if (isDeclarationsFile) {
-            if (at(LBRACE)) {
-                val body = mark()
-                while (!atSet(KEYWORDALL) && !eof()) {
-                    advance()
-                }
-                // parseFunctionBody()
-                body.error(
-                    CangJieParsingBundle.message(
-                        "parsing.error.not.allowed.context", "Method bodies", "declaration files"
-                    )
-                )
-            }
-            return
-        }
 
         parseInitFunctionBody()
     }
@@ -3465,21 +3450,7 @@ class CangJieParsing private constructor(
 
         parseTypeConstraintsGuarded(typeParameterListOccurred)
 
-        // 函数体
-        if (isDeclarationsFile) {
-            if (at(LBRACE)) {
-                val body = mark()
-                while (!atSet(KEYWORDALL) && !eof()) {
-                    advance()
-                }
-                body.error(
-                    CangJieParsingBundle.message(
-                        "parsing.error.not.allowed.context", "Method bodies", "declaration files"
-                    )
-                )
-            }
-            return type
-        }
+
 
         if (at(LBRACE)) {
             parseFunctionBody()
@@ -3721,20 +3692,6 @@ class CangJieParsing private constructor(
 
         parseTypeConstraintsGuarded(typeParameterListOccurred)
 
-        if (isDeclarationsFile) {
-            if (at(LBRACE)) {
-                val body = mark()
-                while (!atSet(KEYWORDALL) && !eof()) {
-                    advance()
-                }
-                body.error(
-                    CangJieParsingBundle.message(
-                        "parsing.error.not.allowed.context", "Method bodies", "declaration files"
-                    )
-                )
-            }
-            return MACRO
-        }
 
         // 函数体
         if (at(LBRACE)) {
@@ -3756,20 +3713,7 @@ class CangJieParsing private constructor(
             error.error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "{"))
         }
 
-        if (isDeclarationsFile) {
-            if (at(LBRACE)) {
-                val body = mark()
-                while (!atSet(KEYWORDALL) && !eof()) {
-                    advance()
-                }
-                body.error(
-                    CangJieParsingBundle.message(
-                        "parsing.error.not.allowed.context", "Method bodies", "declaration files"
-                    )
-                )
-            }
-            return
-        }
+
 
         if (at(LBRACE)) {
             parseInitFunctionBlock()
@@ -3947,7 +3891,7 @@ class CangJieParsing private constructor(
     /**
      * 解析函数类型的参数列表
      *
-     * 用于解析函数类型声明中的参数列表，参���可以省略名称（仅类型）。
+     * 用于解析函数类型声明中的参数列表，参数可以省略名称（仅类型）。
      * 不允许混合使用命名参数和匿名参数。
      *
      * Grammar:
@@ -4199,7 +4143,7 @@ class CangJieParsing private constructor(
      *    - 解析注解（如 `@Deprecated`）
      *    - 解析修饰符（如 `public`, `private`, `protected`）
      *    - 期望 `let` 或 `var` 关键字（如果有修饰符）
-     * 2. 解析参数的剩余部��：
+     * 2. 解析参数的剩余部分：
      *    - 参数名
      *    - 类型注解（可选，取决于 typeRequired）
      *    - 默认值（可选）

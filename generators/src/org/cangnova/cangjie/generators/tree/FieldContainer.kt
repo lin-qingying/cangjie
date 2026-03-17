@@ -5,6 +5,9 @@
 
 package org.cangnova.cangjie.generators.tree
 
+/**
+ * 字段容器抽象。
+ */
 interface FieldContainer<out Field : AbstractField<*>> {
 
     val allFields: List<Field>
@@ -47,6 +50,9 @@ interface FieldContainer<out Field : AbstractField<*>> {
         get() = walkableChildren.filter { it.isMutable || it is ListField }
 }
 
+/**
+ * 按给定顺序重排字段列表；未出现在顺序列表中的字段保持在末尾。
+ */
 internal fun <Field : AbstractField<*>> List<Field>.reorderFieldsIfNecessary(order: List<String>?): List<Field> =
     if (order == null) {
         this

@@ -1,3 +1,4 @@
+// JNI 类型系统相关桥接实现。
 #include "jni_utils.h"
 
 #include <llvm-c/Core.h>

@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.concurrent.atomic.AtomicLong
 
+/**
+ * LLVM API 契约测试。
+ */
 class LlvmApiContractTest {
     @Test
     fun `context use closes builder module and context in order`() {
@@ -97,6 +100,9 @@ class LlvmApiContractTest {
     }
 }
 
+/**
+ * LLVM 绑定测试替身。
+ */
 private class FakeLlvmBindings(
     private val verificationResult: LlvmVerificationResult = LlvmVerificationResult(ok = true),
 ) : LlvmBindings {

@@ -4,6 +4,9 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * LLVM 句柄类型测试。
+ */
 class LlvmHandlesTest {
     @Test
     fun `all handles expose null sentinel and null check`() {

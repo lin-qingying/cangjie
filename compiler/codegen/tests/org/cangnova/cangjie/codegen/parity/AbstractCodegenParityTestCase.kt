@@ -77,7 +77,7 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
         return direct
     }
 
-    private fun generateFixtureIr(fixtureText: String): String {
+    protected fun generateFixtureIr(fixtureText: String): String {
         val chirPackage = buildChirPackageFromFixture(fixtureText)
         return DefaultChirToLlvmCodeGenerator()
             .generate(

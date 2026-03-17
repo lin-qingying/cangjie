@@ -75,6 +75,7 @@ class CjDiagnosticFactoryToRendererMap internal constructor(val name: String) {
         put(factory.warningFactory, CjDiagnosticWithParameters1Renderer(factory.warningMessage(message), rendererA))
     }
 
+
     fun <A, B> put(
         factory: CjDiagnosticFactoryForDeprecation2<A, B>,
         message: String,

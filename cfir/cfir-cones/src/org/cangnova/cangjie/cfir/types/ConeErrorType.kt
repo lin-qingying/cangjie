@@ -6,15 +6,24 @@ package org.cangnova.cangjie.cfir.types
  */
 class ConeErrorType(
     val reason: String,
+    val diagnostic: ConeDiagnostic? = null,
     override val attributes: ConeAttributes = ConeAttributes.EMPTY,
 ) : ConeRigidType() {
+    constructor(
+        diagnostic: ConeDiagnostic,
+        attributes: ConeAttributes = ConeAttributes.EMPTY,
+    ) : this(
+        reason = diagnostic.reason,
+        diagnostic = diagnostic,
+        attributes = attributes,
+    )
 
     override val isError: Boolean get() = true
 
     override fun equals(other: Any?): Boolean =
-        other is ConeErrorType && reason == other.reason
+        other is ConeErrorType && reason == other.reason && diagnostic == other.diagnostic
 
-    override fun hashCode(): Int = reason.hashCode()
+    override fun hashCode(): Int = 31 * reason.hashCode() + (diagnostic?.hashCode() ?: 0)
 
     override fun toString(): String = "ERROR($reason)"
 }

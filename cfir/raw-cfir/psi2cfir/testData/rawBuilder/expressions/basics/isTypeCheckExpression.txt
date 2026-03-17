@@ -1,5 +1,5 @@
 FILE: isTypeCheckExpression.cj
-    func checkType(obj: R|Object|): R|Bool| {
+    internal? func checkType(obj: R|Object|): R|Bool| {
         RETURN {
             TYPE_OP(IS, R|String|) {
                 QUALIFIED_ACCESS(obj)

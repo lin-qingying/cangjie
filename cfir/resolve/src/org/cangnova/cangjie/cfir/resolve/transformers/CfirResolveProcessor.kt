@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.resolve.transformers
+﻿package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.CfirSessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -56,3 +56,4 @@ abstract class CfirTransformerBasedResolveProcessor(
         file.accept(transformer, null)
     }
 }
+

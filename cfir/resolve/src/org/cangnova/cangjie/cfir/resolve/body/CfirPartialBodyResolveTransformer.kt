@@ -1,16 +1,12 @@
-package org.cangnova.cangjie.cfir.resolve.body
+﻿package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.resolve.CfirResolutionMode
 
 /**
- * Body 解析部分 transformer，委托 context/components 到 dispatcher。
- *
- * 所有具体的子 transformer（如 [CfirExpressionsResolveTransformer]）
- * 都通过此类间接获取 dispatcher 持有的 context 和 components。
- *
- * 参考 K2 FirPartialBodyResolveTransformer。
- */
+ * Body 瑙ｆ瀽閮ㄥ垎 transformer锛屽鎵?context/components 鍒?dispatcher銆? *
+ * 鎵€鏈夊叿浣撶殑瀛?transformer锛堝 [CfirExpressionsResolveTransformer]锛? * 閮介€氳繃姝ょ被闂存帴鑾峰彇 dispatcher 鎸佹湁鐨?context 鍜?components銆? *
+ * 鍙傝€?K2 FirPartialBodyResolveTransformer銆? */
 abstract class CfirPartialBodyResolveTransformer(
     val transformer: CfirAbstractBodyResolveTransformerDispatcher,
 ) : CfirAbstractBodyResolveTransformer(transformer.transformerPhase) {
@@ -27,3 +23,4 @@ abstract class CfirPartialBodyResolveTransformer(
         return element as E
     }
 }
+

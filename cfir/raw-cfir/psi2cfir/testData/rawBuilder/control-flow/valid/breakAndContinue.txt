@@ -1,13 +1,13 @@
 FILE: breakAndContinue.cj
-    func loopControl(): R|Unit| {
-        var i: <implicit> = ...
+    internal? func loopControl(): R|Unit| {
+        local? var i: <implicit> = ...
             initializer:
-                STRING("0")
+                INT(0)
         WHILE {
             condition:
                 COMPARISON(LT) {
                     QUALIFIED_ACCESS(i)
-                    STRING("100")
+                    INT(100)
                 }
             body:
                 ASSIGNMENT {
@@ -18,14 +18,14 @@ FILE: breakAndContinue.cj
                             receiver:
                                 QUALIFIED_ACCESS(i)
                             arguments:
-                                STRING("1")
+                                INT(1)
                         }
                 }
                 IF {
                     condition:
                         COMPARISON(GT) {
                             QUALIFIED_ACCESS(i)
-                            STRING("50")
+                            INT(50)
                         }
                     then:
                         CONTINUE
@@ -34,7 +34,7 @@ FILE: breakAndContinue.cj
                     condition:
                         COMPARISON(GT) {
                             QUALIFIED_ACCESS(i)
-                            STRING("90")
+                            INT(90)
                         }
                     then:
                         BREAK

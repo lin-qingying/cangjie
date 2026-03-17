@@ -12,6 +12,11 @@ import org.cangnova.cangjie.utils.SmartPrinter
 import org.cangnova.cangjie.utils.ifNotEmpty
 import org.cangnova.cangjie.utils.withIndent
 
+/**
+ * 抽象实现类打印器。
+ *
+ * 负责将实现类模型输出为 Kotlin 源码，并处理构造参数、字段与继承信息。
+ */
 abstract class AbstractImplementationPrinter<Implementation, Element, Field>(
     private val printer: ImportCollectingPrinter,
 )

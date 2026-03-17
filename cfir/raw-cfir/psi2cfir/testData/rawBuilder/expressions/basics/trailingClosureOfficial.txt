@@ -1,17 +1,17 @@
 FILE: trailingClosureOfficial.cj
-    func f(a: R|Int64|, fn: R|(R|Int64|) -> R|Int64||): <implicit> {
+    internal? func f(a: R|Int64|, fn: R|(R|Int64|) -> R|Int64||): <implicit> {
         FUNCTION_CALL(fn) {
             QUALIFIED_ACCESS(a)
         }
     }
-    func f2(fn: R|(R|Int64|) -> R|Int64||): <implicit> {
+    internal? func f2(fn: R|(R|Int64|) -> R|Int64||): <implicit> {
         FUNCTION_CALL(fn) {
-            STRING("1")
+            INT(1)
         }
     }
-    func useClosures(): <implicit> {
+    internal? func useClosures(): <implicit> {
         FUNCTION_CALL(f) {
-            STRING("1")
+            INT(1)
             LAMBDA(i: <implicit>) {
                 FUNCTION_CALL(times) {
                     receiver:

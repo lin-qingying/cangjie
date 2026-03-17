@@ -8,7 +8,6 @@ import org.cangnova.cangjie.chir.core.attribute.ChirAttribute
 import org.cangnova.cangjie.chir.core.attribute.ChirBooleanAttribute
 import org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute
 import org.cangnova.cangjie.chir.core.model.ChirModule
-import org.cangnova.cangjie.codegen.backend.InMemoryLlvmBackendApi
 import org.cangnova.cangjie.codegen.backend.LlvmBackendApi
 import org.cangnova.cangjie.codegen.context.CGContext
 import org.cangnova.cangjie.codegen.dispatcher.ExpressionLoweringDispatcher
@@ -21,7 +20,7 @@ import org.cangnova.cangjie.codegen.ir.sanitizeIdentifier
 class CGModule(
     private val context: CGContext,
     private val module: ChirModule,
-    private val backendApi: LlvmBackendApi = InMemoryLlvmBackendApi(),
+    private val backendApi: LlvmBackendApi,
     private val dispatcher: ExpressionLoweringDispatcher = ExpressionLoweringDispatcher(),
 ) {
     fun lower(): LlvmModuleArtifact {

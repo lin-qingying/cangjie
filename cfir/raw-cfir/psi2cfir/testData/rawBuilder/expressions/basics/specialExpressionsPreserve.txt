@@ -1,0 +1,25 @@
+FILE: specialExpressionsPreserve.cj
+    internal? func specialExpressionsPreserve(lock: R|Int64|): R|Unit| {
+        SYNCHRONIZED {
+            monitor:
+                QUALIFIED_ACCESS(lock)
+            body:
+                local? let a: <implicit> = ...
+                    initializer:
+                        INT(1)
+        }
+        UNSAFE {
+            local? let b: <implicit> = ...
+                initializer:
+                    INT(2)
+        }
+        local? let q: <implicit> = ...
+            initializer:
+                QUOTE("quote(hello $(lock))") {
+                }
+        local? let m: <implicit> = ...
+            initializer:
+                MACRO_EXPR(demo) {
+                    input: "(foo)"
+                }
+    }

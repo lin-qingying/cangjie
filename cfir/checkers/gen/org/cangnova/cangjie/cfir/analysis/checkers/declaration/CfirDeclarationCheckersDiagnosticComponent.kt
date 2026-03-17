@@ -1,10 +1,10 @@
-
+﻿
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
-import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkersComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.AbstractDiagnosticCollectorComponent
@@ -15,8 +15,7 @@ import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
 import org.cangnova.cangjie.utils.exceptions.withFirEntry
 
 /*
- * This file was generated automatically
- * DO NOT MODIFY IT MANUALLY
+ * 鏈枃浠剁敱鐢熸垚鍣ㄨ嚜鍔ㄧ敓鎴? * 璇峰嬁鎵嬪姩淇敼
  */
 
 @OptIn(CheckersComponentInternal::class)
@@ -25,12 +24,12 @@ class CfirDeclarationCheckersDiagnosticComponent(
     reporter: PendingDiagnosticReporter,
     private val checkers: CfirDeclarationCheckers,
 ) : AbstractDiagnosticCollectorComponent(session, reporter) {
-    constructor(session: CfirSession, reporter: PendingDiagnosticReporter, mppKind: MppCheckerKind) : this(
+    constructor(session: CfirSession, reporter: PendingDiagnosticReporter, dispatchKind: CheckerDispatchKind) : this(
         session,
         reporter,
-        when (mppKind) {
-            MppCheckerKind.Common -> session.checkersComponent.commonCfirDeclarationCheckers
-            MppCheckerKind.Platform -> session.checkersComponent.platformCfirDeclarationCheckers
+        when (dispatchKind) {
+            CheckerDispatchKind.Common -> session.checkersComponent.commonCfirDeclarationCheckers
+            CheckerDispatchKind.Platform -> session.checkersComponent.platformCfirDeclarationCheckers
         }
     )
 
@@ -96,6 +95,30 @@ class CfirDeclarationCheckersDiagnosticComponent(
         checkers.allInvalidDeclarationCheckers.check(invalidDeclaration, data)
     }
 
+    override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: CheckerContext) {
+        checkers.allCallableDeclarationCheckers.check(enumConstructor, data)
+    }
+
+    override fun visitMacroDeclaration(macroDeclaration: CfirMacroDeclaration, data: CheckerContext) {
+        checkers.allCallableDeclarationCheckers.check(macroDeclaration, data)
+    }
+
+    override fun visitFinalizer(finalizer: CfirFinalizer, data: CheckerContext) {
+        checkers.allCallableDeclarationCheckers.check(finalizer, data)
+    }
+
+    override fun visitConstructor(constructor: CfirConstructor, data: CheckerContext) {
+        checkers.allCallableDeclarationCheckers.check(constructor, data)
+    }
+
+    override fun visitPatternVariable(patternVariable: CfirPatternVariable, data: CheckerContext) {
+        checkers.allCallableDeclarationCheckers.check(patternVariable, data)
+    }
+
+    override fun visitExtend(extend: CfirExtend, data: CheckerContext) {
+        checkers.allClassLikeCheckers.check(extend, data)
+    }
+
     private inline fun <reified E : CfirDeclaration> Array<CfirDeclarationChecker<E>>.check(
         element: E,
         context: CheckerContext
@@ -114,3 +137,4 @@ class CfirDeclarationCheckersDiagnosticComponent(
         }
     }
 }
+

@@ -1,6 +1,6 @@
 FILE: dotQualifiedAccess.cj
-    func testAccess(obj: R|MyClass|): R|Unit| {
-        let v: <implicit> = ...
+    internal? func testAccess(obj: R|MyClass|): R|Unit| {
+        local? let v: <implicit> = ...
             initializer:
                 PROPERTY_ACCESS(field) {
                     receiver:
@@ -10,6 +10,6 @@ FILE: dotQualifiedAccess.cj
             receiver:
                 QUALIFIED_ACCESS(obj)
             arguments:
-                STRING("1")
+                INT(1)
         }
     }

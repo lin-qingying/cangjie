@@ -1,7 +1,7 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 package org.cangnova.cangjie.cfir.declarations
 
@@ -20,17 +20,16 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitor
  */
 abstract class CfirPatternVariable : CfirCallableDeclaration() {
     abstract override val source: CjSourceElement?
+    abstract override val moduleData: CfirModuleData
+    abstract override val annotations: List<CfirAnnotation>
     abstract override val symbol: CfirSymbol<*>
     abstract override val origin: CfirDeclarationOrigin
-    abstract override var annotations: List<CfirAnnotation>
-    abstract override val moduleData: CfirModuleData
-    abstract override var resolvePhase: CfirResolvePhase
     abstract override val attributes: CfirDeclarationAttributes
-    abstract var status: CfirDeclarationStatus
-    abstract var typeParameters: List<CfirTypeParameter>
-    abstract var returnTypeRef: CfirTypeRef
-    abstract var pattern: CfirPattern
-    abstract var initializer: CfirExpression?
+    abstract val status: CfirDeclarationStatus
+    abstract val typeParameters: List<CfirTypeParameter>
+    abstract val returnTypeRef: CfirTypeRef
+    abstract val pattern: CfirPattern
+    abstract val initializer: CfirExpression?
     abstract val isVar: Boolean
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
@@ -41,9 +40,6 @@ abstract class CfirPatternVariable : CfirCallableDeclaration() {
         transformer.transformPatternVariable(this, data) as E
 
     override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-
-
-    override abstract fun replaceResolvePhase(newResolvePhase: CfirResolvePhase)
 
 
     abstract fun replaceStatus(newStatus: CfirDeclarationStatus)

@@ -16,7 +16,7 @@ abstract class AbstractVisitorPrinter<Element : AbstractElement<Element, Field, 
 ) {
 
     /**
-     * The visitor type to print.
+     * 要生成的 Visitor 类型。
      */
     abstract val visitorType: ClassRef<*>
 
@@ -36,18 +36,18 @@ abstract class AbstractVisitorPrinter<Element : AbstractElement<Element, Field, 
         get() = emptyList()
 
     /**
-     * The result type parameter of the visitor. All visitor methods return result of this type.
+     * Visitor 的结果类型参数；所有访问方法均返回该类型。
      */
     protected val resultTypeVariable = TypeVariable("R", emptyList(), Variance.OUT_VARIANCE)
 
     /**
-     * The data type parameter of the visitor. ALl visitor methods accept a parameter of this type.
+     * Visitor 的数据类型参数；所有访问方法均接收该类型参数。
      */
     protected val dataTypeVariable = TypeVariable("D", emptyList(), Variance.IN_VARIANCE)
 
     /**
-     * The type parameters of the visitor class. Void visitors have no type parameters,
-     * regular visitors usually have [resultTypeVariable] and [dataTypeVariable] here.
+     * Visitor 类的类型参数列表。
+     * Void 版本通常无类型参数，常规版本通常包含 [resultTypeVariable] 与 [dataTypeVariable]。
      */
     abstract val visitorTypeParameters: List<TypeVariable>
 
@@ -56,28 +56,28 @@ abstract class AbstractVisitorPrinter<Element : AbstractElement<Element, Field, 
     abstract fun visitMethodReturnType(element: Element): TypeRef
 
     /**
-     * The superclass for this visitor class.
+     * Visitor 类的父类型列表。
      */
     abstract val visitorSuperTypes: List<ClassRef<PositionTypeParameterRef>>
 
     /**
-     * If `true`, visitor methods for generic tree elements will be parameterized correspondingly.
-     * Otherwise, type arguments of generic tree elements will be replaced with `*`.
+     * 若为 `true`，泛型元素的 visitor 方法会保留对应类型参数；
+     * 否则会将泛型参数替换为 `*`。
      */
     open val allowTypeParametersInVisitorMethods: Boolean
         get() = false
 
     /**
-     * Allows to customize the default element to visit if the method for visiting this [element] is not overridden.
+     * 自定义当前 [element] 未被覆盖时默认委托到哪个父元素访问方法。
      *
-     * If returns `null`, methods for this element will not be overridden in this visitor class (except the root element).
+     * 若返回 `null`，则该元素在本 visitor 中不会生成覆盖方法（根元素除外）。
      */
     open fun parentInVisitor(element: Element): Element? = element.parentInVisitor
 
     open fun skipElement(element: Element): Boolean = false
 
     /**
-     * Prints a single visitor method declaration, without body.
+     * 输出单个 visitor 方法声明（不含方法体）。
      */
     protected fun ImportCollectingPrinter.printVisitMethodDeclaration(
         element: Element,

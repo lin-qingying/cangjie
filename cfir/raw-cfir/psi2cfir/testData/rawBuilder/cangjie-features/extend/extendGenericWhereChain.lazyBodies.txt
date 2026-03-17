@@ -1,9 +1,9 @@
 FILE: extendGenericWhereChain.cj
-    interface Display {
+    public interface Display {
     }
-    interface HashableLike {
+    public interface HashableLike {
     }
-    enum Wrapper<T> {
+    public enum Wrapper<T> {
         Item(R|T|)
     }
     extend<T> R|Wrapper<R|T|>| <: R|Display| {

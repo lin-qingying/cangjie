@@ -1,7 +1,7 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 @file:Suppress("DuplicatedCode", "unused")
 
@@ -13,17 +13,21 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
 import org.cangnova.cangjie.cfir.patterns.impl.CfirConstPatternImpl
+import org.cangnova.cangjie.cfir.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirConstPatternBuilder {
+    var source: CjSourceElement? = null
     lateinit var expression: CfirExpression
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirConstPattern {
         return CfirConstPatternImpl(
+            source,
             expression,
         )
     }
+
 }
 
 @OptIn(ExperimentalContracts::class)
@@ -40,6 +44,7 @@ inline fun buildConstPatternCopy(original: CfirConstPattern, init: CfirConstPatt
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }
     val copyBuilder = CfirConstPatternBuilder()
+    copyBuilder.source = original.source
     copyBuilder.expression = original.expression
     return copyBuilder.apply(init).build()
 }

@@ -1,21 +1,18 @@
-package org.cangnova.cangjie.cfir.resolve
+﻿package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 
 /**
- * 表达式解析模式，控制类型合成方向。
- *
- * 参考仓颉 C++ 编译器的 Synthesize/Check 双向类型检查模式，
- * 以及 K2 的 ResolutionMode。
- *
- * - [ContextIndependent]：自底向上推断（Synthesize），无期望类型
- * - [WithExpectedType]：自顶向下验证（Check），有期望类型
- */
+ * 琛ㄨ揪寮忚В鏋愭ā寮忥紝鎺у埗绫诲瀷鍚堟垚鏂瑰悜銆? *
+ * 鍙傝€冧粨棰?C++ 缂栬瘧鍣ㄧ殑 Synthesize/Check 鍙屽悜绫诲瀷妫€鏌ユā寮忥紝
+ * 浠ュ強 K2 鐨?ResolutionMode銆? *
+ * - [ContextIndependent]锛氳嚜搴曞悜涓婃帹鏂紙Synthesize锛夛紝鏃犳湡鏈涚被鍨? * - [WithExpectedType]锛氳嚜椤跺悜涓嬮獙璇侊紙Check锛夛紝鏈夋湡鏈涚被鍨? */
 sealed class CfirResolutionMode {
 
-    /** 自底向上推断 — 无期望类型，纯粹从表达式本身合成类型 */
+    /** 鑷簳鍚戜笂鎺ㄦ柇 鈥?鏃犳湡鏈涚被鍨嬶紝绾补浠庤〃杈惧紡鏈韩鍚堟垚绫诲瀷 */
     object ContextIndependent : CfirResolutionMode()
 
-    /** 自顶向下验证 — 有期望类型，用于类型检查和隐式转换 */
+    /** 鑷《鍚戜笅楠岃瘉 鈥?鏈夋湡鏈涚被鍨嬶紝鐢ㄤ簬绫诲瀷妫€鏌ュ拰闅愬紡杞崲 */
     class WithExpectedType(val expectedType: ConeCangjieType) : CfirResolutionMode()
 }
+

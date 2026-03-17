@@ -12,7 +12,11 @@ import java.io.File
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
-// -------------------------------- imports --------------------------------
+/**
+ * 生成器打印辅助工具集合：
+ * 包括导入输出、版权与自动生成说明输出，以及通用代码块打印。
+ */
+// -------------------------------- 导入相关 --------------------------------
 
 fun SmartPrinter.printImports(
     packageName: String,
@@ -74,7 +78,7 @@ private val defaultImportedPackages = setOf(
     "kotlin.io",
 )
 
-// -------------------------------- disclaimers --------------------------------
+// -------------------------------- 说明头相关 --------------------------------
 
 private val COPYRIGHT = File("license/COPYRIGHT_HEADER.txt").readText()
 
@@ -88,7 +92,7 @@ fun SmartPrinter.printGeneratedMessage() {
     println()
 }
 
-// -------------------------------- other utils --------------------------------
+// -------------------------------- 其他工具 --------------------------------
 
 fun getGenerationPath(rootPath: File, packageName: String): File {
     return packageName
@@ -102,4 +106,3 @@ inline fun IndentingPrinter.printBlock(header: String = "", body: () -> Unit) {
     withIndent(body)
     println("}")
 }
-

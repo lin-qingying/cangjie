@@ -1,0 +1,5 @@
+func constEvalArithmeticOverflow(): Int64 {
+    let a: Int64 = <!CONST_EVAL_ARITHMETIC_OVERFLOW!>9223372036854775807 + 1<!>
+    let b: Int64 = <!CONST_EVAL_ARITHMETIC_OVERFLOW!>9223372036854775807 * 2<!>
+    return a + b
+}

@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.resolve.body
+﻿package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -8,14 +8,9 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 
 /**
- * BODY_RESOLVE 阶段返回类型计算器。
- *
- * 直接从声明的 returnTypeRef 提取已解析的类型。
- * 用于 BODY_RESOLVE 阶段，此时所有声明的返回类型已经在
- * IMPLICIT_TYPES 阶段被推断完毕。
- *
- * 参考 K2 ReturnTypeCalculatorForFullBodyResolve。
- */
+ * BODY_RESOLVE 闃舵杩斿洖绫诲瀷璁＄畻鍣ㄣ€? *
+ * 鐩存帴浠庡０鏄庣殑 returnTypeRef 鎻愬彇宸茶В鏋愮殑绫诲瀷銆? * 鐢ㄤ簬 BODY_RESOLVE 闃舵锛屾鏃舵墍鏈夊０鏄庣殑杩斿洖绫诲瀷宸茬粡鍦? * IMPLICIT_TYPES 闃舵琚帹鏂畬姣曘€? *
+ * 鍙傝€?K2 ReturnTypeCalculatorForFullBodyResolve銆? */
 class CfirReturnTypeCalculatorForFullBodyResolve : CfirReturnTypeCalculator {
 
     override fun tryCalculateReturnType(declaration: CfirCallableDeclaration): ConeCangjieType? {
@@ -34,3 +29,4 @@ class CfirReturnTypeCalculatorForFullBodyResolve : CfirReturnTypeCalculator {
         val Default = CfirReturnTypeCalculatorForFullBodyResolve()
     }
 }
+

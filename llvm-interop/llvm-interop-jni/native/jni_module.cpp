@@ -1,7 +1,11 @@
+// JNI 模块相关桥接实现。
 #include "jni_utils.h"
 
 #include <llvm-c/Analysis.h>
 #include <llvm-c/Core.h>
+#include <llvm-c/IRReader.h>
+#include <llvm-c/Support.h>
+#include <cstring>
 
 extern "C" JNIEXPORT jlong JNICALL Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleCreateInContext(
     JNIEnv* env,
@@ -75,6 +79,42 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_cangnova_cangjie_llvm_jni_LlvmNative
             global_name.c_str()
         )
     );
+}
+
+extern "C" JNIEXPORT jlong JNICALL Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleParseAssemblyInContext(
+    JNIEnv* env,
+    jclass,
+    jstring name,
+    jstring assembly,
+    jlong context
+) {
+    JniUtfChars module_name(env, name);
+    JniUtfChars assembly_text(env, assembly);
+
+    auto* llvm_context = jlong_to_ptr<LLVMOpaqueContext>(context);
+    auto* buffer = LLVMCreateMemoryBufferWithMemoryRangeCopy(
+        assembly_text.c_str(),
+        static_cast<size_t>(strlen(assembly_text.c_str())),
+        module_name.c_str()
+    );
+    if (buffer == nullptr) {
+        throw_llvm_exception(env, "failed to create LLVM memory buffer from assembly");
+        return 0;
+    }
+
+    LLVMModuleRef module = nullptr;
+    char* message = nullptr;
+    const int failed = LLVMParseIRInContext(llvm_context, buffer, &module, &message);
+    if (!failed) {
+        return ptr_to_jlong(module);
+    }
+
+    std::string error = message == nullptr ? "failed to parse LLVM assembly" : message;
+    if (message != nullptr) {
+        LLVMDisposeMessage(message);
+    }
+    throw_llvm_exception(env, error);
+    return 0;
 }
 
 extern "C" JNIEXPORT jstring JNICALL Java_org_cangnova_cangjie_llvm_jni_LlvmNative_modulePrintToString(

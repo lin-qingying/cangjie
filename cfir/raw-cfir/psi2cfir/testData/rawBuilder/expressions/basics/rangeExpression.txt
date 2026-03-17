@@ -1,15 +1,15 @@
 FILE: rangeExpression.cj
-    func testRange(): R|Unit| {
-        let exclusive: <implicit> = ...
+    internal? func testRange(): R|Unit| {
+        local? let exclusive: <implicit> = ...
             initializer:
                 RANGE(..) {
-                    STRING("1")
-                    STRING("10")
+                    INT(1)
+                    INT(10)
                 }
-        let inclusive: <implicit> = ...
+        local? let inclusive: <implicit> = ...
             initializer:
                 RANGE(..=) {
-                    STRING("1")
-                    STRING("10")
+                    INT(1)
+                    INT(10)
                 }
     }

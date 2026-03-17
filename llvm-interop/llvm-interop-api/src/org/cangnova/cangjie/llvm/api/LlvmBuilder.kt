@@ -1,10 +1,16 @@
 package org.cangnova.cangjie.llvm.api
 
+/**
+ * `switch` 指令分支项。
+ */
 data class LlvmSwitchCase(
     val value: LlvmValueRef,
     val target: LlvmBasicBlockRef,
 )
 
+/**
+ * LLVM IR 构建器封装。
+ */
 class LlvmBuilder internal constructor(
     val ref: LlvmBuilderRef,
     private val owner: LlvmContext,

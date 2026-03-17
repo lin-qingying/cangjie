@@ -1,7 +1,7 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 @file:Suppress("DuplicatedCode", "unused")
 
@@ -14,17 +14,18 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirFunctionImpl
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
 
 @CfirBuilderDsl
 class CfirFunctionBuilder {
+    var source: CjSourceElement? = null
+    lateinit var moduleData: CfirModuleData
+    val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var symbol: CfirSymbol<*>
     lateinit var origin: CfirDeclarationOrigin
-    val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    lateinit var moduleData: CfirModuleData
-    lateinit var resolvePhase: CfirResolvePhase
     lateinit var attributes: CfirDeclarationAttributes
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
@@ -37,11 +38,11 @@ class CfirFunctionBuilder {
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirFunction {
         return CfirFunctionImpl(
+            source,
+            moduleData,
+            annotations,
             symbol,
             origin,
-            annotations,
-            moduleData,
-            resolvePhase,
             attributes,
             status,
             typeParameters,
@@ -50,7 +51,9 @@ class CfirFunctionBuilder {
             valueParameters,
             body,
             isMut,
-        )
+        ).also {
+            it.initDefaultResolveState()
+        }
     }
 
 }
@@ -69,11 +72,11 @@ inline fun buildFunctionCopy(original: CfirFunction, init: CfirFunctionBuilder.(
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }
     val copyBuilder = CfirFunctionBuilder()
+    copyBuilder.source = original.source
+    copyBuilder.moduleData = original.moduleData
+    copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.symbol = original.symbol
     copyBuilder.origin = original.origin
-    copyBuilder.annotations.addAll(original.annotations)
-    copyBuilder.moduleData = original.moduleData
-    copyBuilder.resolvePhase = original.resolvePhase
     copyBuilder.attributes = original.attributes
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)

@@ -1,29 +1,23 @@
-package org.cangnova.cangjie.cfir.resolve.calls.overloads
+﻿package org.cangnova.cangjie.cfir.resolve.calls.overloads
 
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
 
 /**
- * 调用冲突解析器抽象基类。
- *
- * 从一组通过验证的候选中选择最特定的候选集合。
- * 理想情况下返回单一候选，多候选表示歧义。
- *
- * 对齐 K2 ConeCallConflictResolver。
- */
+ * 璋冪敤鍐茬獊瑙ｆ瀽鍣ㄦ娊璞″熀绫汇€? *
+ * 浠庝竴缁勯€氳繃楠岃瘉鐨勫€欓€変腑閫夋嫨鏈€鐗瑰畾鐨勫€欓€夐泦鍚堛€? * 鐞嗘兂鎯呭喌涓嬭繑鍥炲崟涓€鍊欓€夛紝澶氬€欓€夎〃绀烘涔夈€? *
+ * 瀵归綈 K2 ConeCallConflictResolver銆? */
 abstract class CfirCallConflictResolver {
 
     /**
-     * 从候选集合中选择最特定的候选。
-     *
-     * @param candidates 通过验证管线的候选集合
-     * @return 最特定的候选集合（单一 = 成功，多个 = 歧义）
-     */
+     * 浠庡€欓€夐泦鍚堜腑閫夋嫨鏈€鐗瑰畾鐨勫€欓€夈€?     *
+     * @param candidates 閫氳繃楠岃瘉绠＄嚎鐨勫€欓€夐泦鍚?     * @return 鏈€鐗瑰畾鐨勫€欓€夐泦鍚堬紙鍗曚竴 = 鎴愬姛锛屽涓?= 姝т箟锛?     */
     abstract fun chooseMaximallySpecificCandidates(
         candidates: Set<CfirCandidate>,
     ): Set<CfirCandidate>
 
-    /** 便捷方法：接受 Collection */
+    /** 渚挎嵎鏂规硶锛氭帴鍙?Collection */
     fun chooseMaximallySpecificCandidates(
         candidates: Collection<CfirCandidate>,
     ): Set<CfirCandidate> = chooseMaximallySpecificCandidates(candidates.toSet())
 }
+

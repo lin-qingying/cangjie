@@ -1,2 +1,2 @@
 FILE: isTypeCheckExpression.cj
-    func checkType(obj: R|Object|): R|Bool|
+    internal? func checkType(obj: R|Object|): R|Bool|

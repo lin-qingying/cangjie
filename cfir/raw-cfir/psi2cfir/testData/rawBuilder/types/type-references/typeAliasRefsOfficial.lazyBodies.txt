@@ -1,6 +1,6 @@
 FILE: typeAliasRefsOfficial.cj
-    typealias AA = R|Int64|
-    typealias HH = R|() -> R|Unit||
-    typealias JJ = R|(R|Int64|, R|Int64|)|
-    typealias KK = R|(R|Array<R|Int64|>|) -> R|Unit||
-    typealias Fixed = R|VArray<R|String|, $4>|
+    internal? typealias AA = R|Int64|
+    internal? typealias HH = R|() -> R|Unit||
+    internal? typealias JJ = R|(R|Int64|, R|Int64|)|
+    internal? typealias KK = R|(R|Array<R|Int64|>|) -> R|Unit||
+    internal? typealias Fixed = R|VArray<R|String|, $4>|

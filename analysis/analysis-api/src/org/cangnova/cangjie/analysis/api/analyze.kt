@@ -14,7 +14,7 @@ import org.cangnova.cangjie.psi.CjElement
  *
  * 示例：
  * ```
- * analyze(element) { // this: CaSession
+ * analyze(element) { // 当前接收者：CaSession
  *     val symbol = element.symbol
  *     val type = symbol.returnType
  * }

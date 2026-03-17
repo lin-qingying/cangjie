@@ -1,86 +1,77 @@
-package org.cangnova.cangjie.cfir.resolve.body
+﻿package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
-import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.name.Name
 
 /**
- * Body 解析上下文，管理 scope 塔和声明容器栈。
+ * Body 瑙ｆ瀽涓婁笅鏂囷紝绠＄悊 scope 濉斿拰澹版槑瀹瑰櫒鏍堛€? *
+ * 閫氳繃鏋勯€犲嚱鏁版敞鍏ユ牳蹇冧緷璧栵細
+ * - [returnTypeCalculator]锛氬０鏄庤繑鍥炵被鍨嬭绠楀櫒
+ * - [dataFlowAnalyzerContext]锛氭暟鎹祦鍒嗘瀽涓婁笅鏂? *
+ * 杩愯鏃剁姸鎬侊細
+ * - [towerDataContext]锛歴cope 濉旓紙copy-on-write 璇箟锛? * - [file]锛氬綋鍓嶅鐞嗙殑鏂囦欢
+ * - [containers]锛氬０鏄庡鍣ㄦ爤锛堟枃浠?鈫?绫?鈫?鍑芥暟 鈫?鍧楋級
  *
- * 通过构造函数注入核心依赖：
- * - [returnTypeCalculator]：声明返回类型计算器
- * - [dataFlowAnalyzerContext]：数据流分析上下文
- *
- * 运行时状态：
- * - [towerDataContext]：scope 塔（copy-on-write 语义）
- * - [file]：当前处理的文件
- * - [containers]：声明容器栈（文件 → 类 → 函数 → 块）
- *
- * 参考 K2 BodyResolveContext(returnTypeCalculator, dataFlowAnalyzerContext, isContextCollectorMode)。
- */
+ * 鍙傝€?K2 BodyResolveContext(returnTypeCalculator, dataFlowAnalyzerContext, isContextCollectorMode)銆? */
 class CfirBodyResolveContext(
     var returnTypeCalculator: CfirReturnTypeCalculator,
     val dataFlowAnalyzerContext: CfirDataFlowAnalyzerContext,
     private val isContextCollectorMode: Boolean = false,
 ) {
 
-    /** 当前文件 */
+    /** 褰撳墠鏂囦欢 */
     lateinit var file: CfirFile
 
-    /** 当前 scope 塔上下文 */
+    /** 褰撳墠 scope 濉斾笂涓嬫枃 */
     var towerDataContext: CfirTowerDataContext = CfirTowerDataContext()
         private set
 
     /**
-     * 当前最内层局部 scope 引用。
-     *
-     * 由于 [CfirTowerDataContext] 使用 copy-on-write 语义（返回新 List），
-     * 通过 towerDataContext.localScopes 取得的对象在后续 towerDataContext 更新后
-     * 不再是同一实例。因此维护一个独立引用，确保 [storeVariable] 能正确写入可变的局部 scope。
-     */
+     * 褰撳墠鏈€鍐呭眰灞€閮?scope 寮曠敤銆?     *
+     * 鐢变簬 [CfirTowerDataContext] 浣跨敤 copy-on-write 璇箟锛堣繑鍥炴柊 List锛夛紝
+     * 閫氳繃 towerDataContext.localScopes 鍙栧緱鐨勫璞″湪鍚庣画 towerDataContext 鏇存柊鍚?     * 涓嶅啀鏄悓涓€瀹炰緥銆傚洜姝ょ淮鎶や竴涓嫭绔嬪紩鐢紝纭繚 [storeVariable] 鑳芥纭啓鍏ュ彲鍙樼殑灞€閮?scope銆?     */
     private var currentLocalScope: CfirLocalScopeImpl? = null
 
-    /** 声明容器栈 */
+    /** 澹版槑瀹瑰櫒鏍?*/
     val containers: ArrayDeque<CfirDeclaration> = ArrayDeque()
 
-    /** 当前最内层容器 */
+    /** 褰撳墠鏈€鍐呭眰瀹瑰櫒 */
     val containerIfAny: CfirDeclaration?
         get() = containers.lastOrNull()
 
-    // ---- scope 管理（委托到 towerDataContext） ----
+    // ---- scope 绠＄悊锛堝鎵樺埌 towerDataContext锛?----
 
-    /** 添加非局部 scope（包、导入、类成员等） */
+    /** 娣诲姞闈炲眬閮?scope锛堝寘銆佸鍏ャ€佺被鎴愬憳绛夛級 */
     fun addNonLocalScope(scope: CfirScope) {
         towerDataContext = towerDataContext.addNonLocalScope(scope)
     }
 
-    /** 批量添加非局部 scope */
+    /** 鎵归噺娣诲姞闈炲眬閮?scope */
     fun addNonLocalScopes(scopes: List<CfirScope>) {
         towerDataContext = towerDataContext.addNonLocalScopes(scopes)
     }
 
-    /** 添加局部 scope（函数体/块内变量 scope） */
+    /** 娣诲姞灞€閮?scope锛堝嚱鏁颁綋/鍧楀唴鍙橀噺 scope锛?*/
     fun addLocalScope(localScope: CfirLocalScopeImpl) {
         towerDataContext = towerDataContext.addLocalScope(localScope)
         currentLocalScope = localScope
     }
 
-    /** 添加局部变量到当前最内层局部 scope */
-    fun storeVariable(name: Name, symbol: CfirVariableSymbol) {
+    /** 娣诲姞灞€閮ㄥ彉閲忓埌褰撳墠鏈€鍐呭眰灞€閮?scope */
+    fun storeVariable(name: Name, symbol: CfirCallableSymbol<*>) {
         val localScope = currentLocalScope ?: return
         localScope.addVariable(name, symbol)
     }
 
-    // ---- 上下文切换（scoped 方法） ----
+    // ---- 涓婁笅鏂囧垏鎹紙scoped 鏂规硶锛?----
 
     /**
-     * 在新的 scope 上下文中执行操作，执行完后恢复。
-     *
-     * 对齐 K2 BodyResolveContext 的 withTowerDataContext 模式。
-     */
+     * 鍦ㄦ柊鐨?scope 涓婁笅鏂囦腑鎵ц鎿嶄綔锛屾墽琛屽畬鍚庢仮澶嶃€?     *
+     * 瀵归綈 K2 BodyResolveContext 鐨?withTowerDataContext 妯″紡銆?     */
     fun <T> withTowerDataContext(newContext: CfirTowerDataContext, action: () -> T): T {
         val old = towerDataContext
         val oldLocalScope = currentLocalScope
@@ -94,7 +85,7 @@ class CfirBodyResolveContext(
         }
     }
 
-    /** 将声明压入容器栈，执行操作后弹出。 */
+    /** 灏嗗０鏄庡帇鍏ュ鍣ㄦ爤锛屾墽琛屾搷浣滃悗寮瑰嚭銆?*/
     fun <T> withContainer(declaration: CfirDeclaration, action: () -> T): T {
         containers.addLast(declaration)
         return try {
@@ -104,7 +95,7 @@ class CfirBodyResolveContext(
         }
     }
 
-    /** 设置当前文件并执行操作。 */
+    /** 璁剧疆褰撳墠鏂囦欢骞舵墽琛屾搷浣溿€?*/
     fun <T> withFile(file: CfirFile, action: () -> T): T {
         val oldFile = if (::file.isInitialized) this.file else null
         this.file = file
@@ -115,3 +106,4 @@ class CfirBodyResolveContext(
         }
     }
 }
+

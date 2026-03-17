@@ -1,2 +1,2 @@
 FILE: arrayAndTupleLiterals.cj
-    func testLiterals(): R|Unit|
+    internal? func testLiterals(): R|Unit|

@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.resolve.calls.overloads
+﻿package org.cangnova.cangjie.cfir.resolve.calls.overloads
 
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -8,27 +8,24 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 
 /**
- * 扁平化函数签名，用于重载消歧中的特化度比较。
- *
- * 提取候选的关键信息用于逐参数位置比较。
- *
- * 对齐 K2 FlatSignature。
- */
+ * 鎵佸钩鍖栧嚱鏁扮鍚嶏紝鐢ㄤ簬閲嶈浇娑堟涓殑鐗瑰寲搴︽瘮杈冦€? *
+ * 鎻愬彇鍊欓€夌殑鍏抽敭淇℃伅鐢ㄤ簬閫愬弬鏁颁綅缃瘮杈冦€? *
+ * 瀵归綈 K2 FlatSignature銆? */
 class CfirFlatSignature(
-    /** 原始候选 */
+    /** 鍘熷鍊欓€?*/
     val origin: CfirCandidate,
-    /** 类型参数列表 */
+    /** 绫诲瀷鍙傛暟鍒楄〃 */
     val typeParameters: List<CfirTypeParameter>,
-    /** 值参数类型列表 */
+    /** 鍊煎弬鏁扮被鍨嬪垪琛?*/
     val valueParameterTypes: List<ConeCangjieType?>,
-    /** 使用的默认值参数数量 */
+    /** 浣跨敤鐨勯粯璁ゅ€煎弬鏁版暟閲?*/
     val numDefaults: Int,
 ) {
-    /** 是否为泛型函数 */
+    /** 鏄惁涓烘硾鍨嬪嚱鏁?*/
     val isGeneric: Boolean get() = typeParameters.isNotEmpty()
 
     companion object {
-        /** 从候选构建 FlatSignature */
+        /** 浠庡€欓€夋瀯寤?FlatSignature */
         fun create(candidate: CfirCandidate): CfirFlatSignature {
             val symbol = candidate.symbol
             if (!symbol.isBound) {
@@ -62,3 +59,4 @@ class CfirFlatSignature(
         }
     }
 }
+

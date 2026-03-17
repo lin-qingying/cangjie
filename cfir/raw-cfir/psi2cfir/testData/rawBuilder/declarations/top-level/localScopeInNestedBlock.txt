@@ -1,0 +1,13 @@
+FILE: localScopeInNestedBlock.cj
+    internal? func localScopeInNestedBlock(): R|Unit| {
+        IF {
+            condition:
+                BOOLEAN(true)
+            then:
+                local? func nestedLocal(): R|Unit| {
+                }
+                local? let nestedValue: R|Int64| = ...
+                    initializer:
+                        INT(1)
+        }
+    }

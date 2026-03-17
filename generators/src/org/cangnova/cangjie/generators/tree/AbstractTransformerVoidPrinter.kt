@@ -11,6 +11,11 @@ import org.cangnova.cangjie.generators.tree.printer.ImportCollectingPrinter
 import org.cangnova.cangjie.generators.tree.printer.printFunctionDeclaration
 import org.cangnova.cangjie.utils.withIndent
 
+/**
+ * Void 风格 Transformer 打印器。
+ *
+ * 通过 `Nothing?` 作为数据参数类型，生成不依赖外部数据的 transform API。
+ */
 abstract class AbstractTransformerVoidPrinter<Element : AbstractElement<Element, Field, *>, Field : AbstractField<Field>>(
     printer: ImportCollectingPrinter
 ) : AbstractTransformerPrinter<Element, Field>(printer) {

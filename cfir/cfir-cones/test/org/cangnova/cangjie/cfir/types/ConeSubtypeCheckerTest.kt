@@ -167,9 +167,24 @@ class ConeSubtypeCheckerTest {
         }
 
         @Test
-        fun `different primitive kinds are not subtypes`() {
-            assertFalse(checker.isSubtypeOf(ConePrimitiveType.INT32, ConePrimitiveType.INT64))
-            assertFalse(checker.isSubtypeOf(ConePrimitiveType.FLOAT32, ConePrimitiveType.FLOAT64))
+        fun `same-family widening is subtype`() {
+            // 同族数值拓宽：Int32 <: Int64, Float32 <: Float64
+            assertTrue(checker.isSubtypeOf(ConePrimitiveType.INT32, ConePrimitiveType.INT64))
+            assertTrue(checker.isSubtypeOf(ConePrimitiveType.FLOAT32, ConePrimitiveType.FLOAT64))
+        }
+
+        @Test
+        fun `cross-family primitive kinds are not subtypes`() {
+            // 跨族不可拓宽
+            assertFalse(checker.isSubtypeOf(ConePrimitiveType.INT32, ConePrimitiveType.UINT32))
+            assertFalse(checker.isSubtypeOf(ConePrimitiveType.INT32, ConePrimitiveType.FLOAT64))
+        }
+
+        @Test
+        fun `narrowing is not subtype`() {
+            // 窄化不允许
+            assertFalse(checker.isSubtypeOf(ConePrimitiveType.INT64, ConePrimitiveType.INT32))
+            assertFalse(checker.isSubtypeOf(ConePrimitiveType.FLOAT64, ConePrimitiveType.FLOAT32))
         }
     }
 

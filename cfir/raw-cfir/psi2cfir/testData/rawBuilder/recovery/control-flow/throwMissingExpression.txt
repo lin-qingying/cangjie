@@ -1,5 +1,5 @@
 FILE: throwMissingExpression.cj
-    func throwMissingExpression(): R|Unit| {
+    internal? func throwMissingExpression(): R|Unit| {
         THROW {
             ERROR_EXPR(Missing thrown expression)
         }

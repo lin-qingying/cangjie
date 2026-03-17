@@ -1,43 +1,35 @@
-package org.cangnova.cangjie.cfir.resolve.calls
+﻿package org.cangnova.cangjie.cfir.resolve.calls
 
 import org.cangnova.cangjie.cfir.types.*
 
 /**
- * 类型参数替换器接口。
- *
- * 将类型中的 ConeTypeParameterType 替换为具体类型。
- * Phase 3 仅支持显式类型参数的 Map 替换，完整类型推断留到 Phase 4。
- *
- * 对齐 K2 ConeSubstitutor / TypeSubstitutor。
- */
+ * 绫诲瀷鍙傛暟鏇挎崲鍣ㄦ帴鍙ｃ€? *
+ * 灏嗙被鍨嬩腑鐨?ConeTypeParameterType 鏇挎崲涓哄叿浣撶被鍨嬨€? * Phase 3 浠呮敮鎸佹樉寮忕被鍨嬪弬鏁扮殑 Map 鏇挎崲锛屽畬鏁寸被鍨嬫帹鏂暀鍒?Phase 4銆? *
+ * 瀵归綈 K2 ConeSubstitutor / TypeSubstitutor銆? */
 interface CfirTypeSubstitutor {
 
     /**
-     * 替换类型中的类型参数。
-     *
-     * @param type 待替换的类型
-     * @return 替换后的类型；若无需替换则返回原类型
+     * 鏇挎崲绫诲瀷涓殑绫诲瀷鍙傛暟銆?     *
+     * @param type 寰呮浛鎹㈢殑绫诲瀷
+     * @return 鏇挎崲鍚庣殑绫诲瀷锛涜嫢鏃犻渶鏇挎崲鍒欒繑鍥炲師绫诲瀷
      */
     fun substituteOrSelf(type: ConeCangjieType): ConeCangjieType
 
     companion object {
-        /** 空替换器（不做任何替换） */
+        /** 绌烘浛鎹㈠櫒锛堜笉鍋氫换浣曟浛鎹級 */
         val Empty: CfirTypeSubstitutor = EmptySubstitutor
     }
 }
 
-/** 空替换器实现 */
+/** 绌烘浛鎹㈠櫒瀹炵幇 */
 private object EmptySubstitutor : CfirTypeSubstitutor {
     override fun substituteOrSelf(type: ConeCangjieType): ConeCangjieType = type
     override fun toString(): String = "CfirTypeSubstitutor.Empty"
 }
 
 /**
- * 基于 Map 的类型参数替换器。
- *
- * 将 ConeTypeParameterType 按 lookupTag.name 匹配替换。
- * 对复合类型（函数类型、元组等）递归替换具体类型的类型参数。
- */
+ * 鍩轰簬 Map 鐨勭被鍨嬪弬鏁版浛鎹㈠櫒銆? *
+ * 灏?ConeTypeParameterType 鎸?lookupTag.name 鍖归厤鏇挎崲銆? * 瀵瑰鍚堢被鍨嬶紙鍑芥暟绫诲瀷銆佸厓缁勭瓑锛夐€掑綊鏇挎崲鍏蜂綋绫诲瀷鐨勭被鍨嬪弬鏁般€? */
 class CfirTypeSubstitutorByMap(
     private val substitution: Map<String, ConeCangjieType>,
 ) : CfirTypeSubstitutor {
@@ -52,11 +44,11 @@ class CfirTypeSubstitutorByMap(
             is ConeTypeParameterType -> substitution[type.lookupTag.name] ?: type
             is ConeClassLikeType -> substituteClassLikeType(type)
             is ConeStructType -> substituteStructType(type)
-            is ConeEnumType -> type // 枚举类型暂不替换
+            is ConeEnumType -> type // 鏋氫妇绫诲瀷鏆備笉鏇挎崲
             is ConeFuncType -> substituteFuncType(type)
             is ConeTupleType -> substituteTupleType(type)
             is ConeArrayType -> substituteArrayType(type)
-            else -> type // 原始类型、错误类型等无需替换
+            else -> type // 鍘熷绫诲瀷銆侀敊璇被鍨嬬瓑鏃犻渶鏇挎崲
         }
     }
 
@@ -95,3 +87,4 @@ class CfirTypeSubstitutorByMap(
 
     override fun toString(): String = "CfirTypeSubstitutorByMap($substitution)"
 }
+

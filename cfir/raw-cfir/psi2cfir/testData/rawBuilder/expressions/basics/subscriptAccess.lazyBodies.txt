@@ -1,2 +1,2 @@
 FILE: subscriptAccess.cj
-    func testSubscript(arr: R|Array<R|Int64|>|): R|Int64|
+    internal? func testSubscript(arr: R|Array<R|Int64|>|): R|Int64|

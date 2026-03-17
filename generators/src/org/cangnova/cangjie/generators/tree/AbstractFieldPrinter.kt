@@ -17,13 +17,13 @@ abstract class AbstractFieldPrinter<Field : AbstractField<*>>(
 ) {
 
     /**
-     * Allows to forcibly make the field a `var` instead of `val`.
+     * 允许将字段强制生成为 `var`，而不是 `val`。
      */
     protected open fun forceMutable(field: Field): Boolean = false
 
     /**
-     * Allows to override the printed type of [field]. For example, for list fields we may want to use [MutableList] instead of [List]
-     * in implementation classes.
+     * 允许覆盖 [field] 的输出类型。
+     * 例如在实现类中，列表字段可使用 [MutableList] 而不是 [List]。
      */
     protected open fun actualTypeOfField(field: Field): TypeRefWithNullability = field.typeRef
 
@@ -65,7 +65,8 @@ abstract class AbstractFieldPrinter<Field : AbstractField<*>>(
                     defaultValue != null -> defaultValue.defaultValue
                     !inConstructor && field.customSetter != null -> field.name
                     else -> null
-                }
+                },
+                additionalAnnotations = if (!shouldBeParameter && (inImplementation || field.isFinal)) field.additionalAnnotations else emptyList(),
             )
             println()
 

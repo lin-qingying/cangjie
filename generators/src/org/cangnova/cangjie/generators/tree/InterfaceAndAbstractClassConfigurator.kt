@@ -1,7 +1,4 @@
-/*
- * Copyright 2010-2023 JetBrains s.r.o. and Kotlin Programming Language contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
- */
+
 
 package org.cangnova.cangjie.generators.tree
 
@@ -9,9 +6,9 @@ import org.cangnova.cangjie.generators.util.Node
 import org.cangnova.cangjie.generators.util.solveGraphForClassVsInterface
 
 /**
- * Decides which element in the tree must be an (abstract) class, and which must be an interface.
+ * 决定树中哪些元素应为（抽象）类，哪些应为接口。
  *
- * @property elements The list of elements of the tree to infer their [ImplementationKind].
+ * @property elements 需要推断 [ImplementationKind] 的元素列表。
  */
 class InterfaceAndAbstractClassConfigurator(val elements: List<ImplementationKindOwner>) {
 

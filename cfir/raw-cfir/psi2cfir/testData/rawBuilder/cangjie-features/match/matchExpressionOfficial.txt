@@ -1,9 +1,9 @@
 FILE: matchExpressionOfficial.cj
-    enum TimeUnit {
+    internal? enum TimeUnit {
         Year(R|Int32|)
     }
-    func extractYear(time: R|TimeUnit|): R|Int32| {
-        var res: R|Int32| = ...
+    internal? func extractYear(time: R|TimeUnit|): R|Int32| {
+        local? var res: R|Int32| = ...
             initializer:
                 MATCH {
                     subject:

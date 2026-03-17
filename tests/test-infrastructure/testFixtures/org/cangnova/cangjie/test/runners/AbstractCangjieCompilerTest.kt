@@ -1,50 +1,54 @@
 package org.cangnova.cangjie.test.runners
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.TestInfo
+import com.intellij.testFramework.TestDataFile
+import com.intellij.testIntegration.TestFailedLineManager
+import org.cangnova.cangjie.test.CangJieTestInfo
+import org.cangnova.cangjie.test.NonGroupingTestRunner
+import org.cangnova.cangjie.test.TestInfrastructureInternals
+import org.cangnova.cangjie.test.builders.TestConfigurationBuilder
+import org.cangnova.cangjie.test.builders.nonGroupingPhaseTestRunner
+import org.cangnova.cangjie.test.model.ResultingArtifact
+import org.cangnova.cangjie.test.toCangJieTestInfo
 
-import junit.framework.TestCase
-import org.cangnova.cangjie.test.config.TestConfigurationBuilder
-import org.cangnova.cangjie.test.directives.CangjieTestDirectives
-import org.cangnova.cangjie.test.directives.model.DirectivesContainer
-import org.cangnova.cangjie.test.model.TestModuleStructure
-import org.cangnova.cangjie.test.services.DefaultDirectivesService
-import org.cangnova.cangjie.test.services.TestServices
-import org.cangnova.cangjie.test.services.impl.TestModuleStructureExtractorImpl
-import java.nio.file.Path
-import java.nio.file.Paths
+abstract class AbstractCangjieCompilerTest {
+    @OptIn(TestInfrastructureInternals::class)
+    protected open val configuration: TestConfigurationBuilder.() -> Unit = {
+        startingArtifactFactory = { ResultingArtifact.Source() }
+        @OptIn(TestInfrastructureInternals::class)
+        testInfo = this@AbstractCangjieCompilerTest.testInfo
 
-abstract class AbstractCangjieCompilerTest : TestCase() {
-    protected abstract fun TestConfigurationBuilder.configuration()
-
-    protected open val directivesContainer: DirectivesContainer = CangjieTestDirectives
-
-    protected fun runTest(testDataFilePath: String) {
-        val testDataPath = Paths.get(testDataFilePath)
-        runTest(testDataPath)
+        configureInternal(this)
     }
 
-    protected fun runTest(testDataPath: Path) {
-        val testServices = TestServices()
-        val moduleStructure = TestModuleStructureExtractorImpl(directivesContainer).extract(testDataPath)
-        testServices.register(TestModuleStructure::class, moduleStructure)
+    abstract fun configure(builder: TestConfigurationBuilder)
 
-        val configurationBuilder = TestConfigurationBuilder().apply { configuration() }
-        val configuration = configurationBuilder.build()
-        testServices.register(
-            DefaultDirectivesService::class,
-            DefaultDirectivesService(configuration.defaultDirectives.toSet()),
-        )
+    @TestInfrastructureInternals
+    protected open fun configureInternal(builder: TestConfigurationBuilder) {
+        configure(builder)
+    }
+    private lateinit var testInfo: CangJieTestInfo
 
-        val facades = configuration.facadeFactories.map { it(testServices) }
-        val handlers = configuration.handlerFactories.map { it(testServices) }
+    lateinit var testRunner: NonGroupingTestRunner
+        private set
 
-        moduleStructure.modules.forEach { module ->
-            val artifact = facades.fold<_, Any?>(null) { currentArtifact, facade ->
-                facade.transform(module, currentArtifact)
-            }
-            handlers.forEach { handler ->
-                handler.processModule(module, artifact, testServices)
-            }
-        }
+    open fun runTest(@TestDataFile filePath: String) {
+        initTestRunner(filePath).runTest(filePath)
+    }
+    @BeforeEach
+    fun initTestInfo(testInfo:  TestInfo) {
+        initTestInfo(testInfo.toCangJieTestInfo())
+    }
 
-        handlers.forEach { it.processAfterAllModules(testServices) }
+    fun initTestInfo(testInfo: CangJieTestInfo) {
+        this.testInfo = testInfo
+    }
+
+    fun initTestRunner(@TestDataFile filePath: String): NonGroupingTestRunner {
+        return nonGroupingPhaseTestRunner(filePath, configuration).also { testRunner = it }
+    }
+
+    fun initTestRunnerAndCreateModuleStructure(@TestDataFile filePath: String) {
+        initTestRunner(filePath).prepareModuleStructure(filePath)
     }
 }

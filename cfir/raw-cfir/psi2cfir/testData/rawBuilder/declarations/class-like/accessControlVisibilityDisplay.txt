@@ -1,0 +1,15 @@
+FILE: accessControlVisibilityDisplay.cj
+    internal class ExplicitInternal {
+        internal func explicitInternal(): R|Unit| {
+        }
+        internal? func implicitInternal(): R|Unit| {
+        }
+        private func privateVisible(): R|Unit| {
+        }
+    }
+    internal? class ImplicitInternal {
+        internal func explicitInternalMember(): R|Unit| {
+        }
+        internal? func implicitInternalMember(): R|Unit| {
+        }
+    }

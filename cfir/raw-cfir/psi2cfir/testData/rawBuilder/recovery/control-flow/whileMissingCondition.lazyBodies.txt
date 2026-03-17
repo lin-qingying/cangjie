@@ -1,2 +1,2 @@
 FILE: whileMissingCondition.cj
-    func whileMissingCondition(): R|Unit|
+    internal? func whileMissingCondition(): R|Unit|

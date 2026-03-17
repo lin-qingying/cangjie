@@ -22,6 +22,7 @@ dependencies {
     // testFixtures 对外暴露的基类依赖
     testFixturesApi(project(":cfir:cfir-tree"))
     testFixturesApi(project(":cfir:raw-cfir:raw-cfir-common"))
+    testFixturesApi(project(":cfir:symbols"))
     testFixturesApi(project(":psi"))
     testFixturesApi(testFixtures(project(":tests:test-infrastructure")))
     testFixturesApi(libs.junit4)

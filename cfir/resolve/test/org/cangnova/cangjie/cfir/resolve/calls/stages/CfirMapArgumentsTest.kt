@@ -1,4 +1,4 @@
-@file:OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
+﻿@file:OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
 
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
@@ -14,8 +14,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * CfirMapArguments 参数映射阶段测试。
- */
+ * CfirMapArguments 鍙傛暟鏄犲皠闃舵娴嬭瘯銆? */
 class CfirMapArgumentsTest {
 
     @Nested
@@ -147,7 +146,7 @@ class CfirMapArgumentsTest {
     }
 }
 
-// ---- 测试用 Stub 对象 ----
+// ---- 娴嬭瘯鐢?Stub 瀵硅薄 ----
 
 private object StubSessionForTest : org.cangnova.cangjie.cfir.session.CfirSession(Kind.Source) {
     override fun toString(): String = "StubSession"
@@ -164,3 +163,4 @@ private val StubSubtypeChecker = org.cangnova.cangjie.cfir.types.ConeSubtypeChec
         override fun isSameTypeConstructor(a: org.cangnova.cangjie.cfir.types.ConeCangjieType, b: org.cangnova.cangjie.cfir.types.ConeCangjieType) = a == b
     }
 )
+

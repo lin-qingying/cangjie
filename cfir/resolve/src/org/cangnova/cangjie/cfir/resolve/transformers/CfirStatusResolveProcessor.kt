@@ -1,10 +1,13 @@
-package org.cangnova.cangjie.cfir.resolve.transformers
+﻿package org.cangnova.cangjie.cfir.resolve.transformers
 
+import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
+import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
@@ -16,7 +19,7 @@ import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
 import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.diagnosticReporter
-import org.cangnova.cangjie.cfir.resolve.diagnostics.CfirResolveRuleCatalog
+import org.cangnova.cangjie.name.Name
 
 internal class CfirStatusResolveProcessor(
     session: CfirSession,
@@ -31,8 +34,6 @@ internal class CfirStatusResolveProcessor(
         CfirStatusResolveTransformer(statusComputationSession)
     }
 }
-
-private val RULE_STATUS_MODIFIER_LEGALITY = CfirResolveRuleCatalog.STATUS_MODIFIER_LEGALITY
 
 class CfirStatusComputationSession(
     val useSiteSession: CfirSession,
@@ -78,7 +79,16 @@ open class AbstractCfirStatusResolveTransformer(
     private val diagnosticReporter: CfirDiagnosticReporter
         get() = statusComputationSession.useSiteSession.diagnosticReporter
 
+    override fun <E : CfirElement> transformElement(element: E, data: Nothing?): E {
+        if (element is CfirDeclaration) {
+            @Suppress("UNCHECKED_CAST")
+            return transformDeclaration(element, data) as E
+        }
+        return super.transformElement(element, data)
+    }
+
     override fun transformDeclaration(declaration: CfirDeclaration, data: Nothing?): CfirDeclaration {
+        declaration.transformChildren(this, data)
         processDeclaration(declaration)
         return declaration
     }
@@ -89,21 +99,26 @@ open class AbstractCfirStatusResolveTransformer(
         if (computationStatus != CfirStatusComputationSession.StatusComputationStatus.Computed) {
             transformDeclaration(target)
         }
-        target.resolvePhase = CfirResolvePhase.STATUS
+        target.replaceResolvePhase(CfirResolvePhase.STATUS)
         statusComputationSession.endComputing(target)
     }
 
     protected open fun transformDeclaration(target: CfirDeclaration) {}
 
-    protected fun reportStatusModifierLegalityError(
-        target: CfirDeclaration,
-        message: String,
-    ) {
+    protected fun reportStaticCannotBeOpenAbstractOverride(target: CfirDeclaration) {
         diagnosticReporter.reportOn(
             source = target.source,
-            factory = CfirErrors.STATUS_MODIFIER_LEGALITY,
-            a = RULE_STATUS_MODIFIER_LEGALITY.id,
-            b = "$message (${RULE_STATUS_MODIFIER_LEGALITY.officialReference})",
+            factory = CfirErrors.STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE,
+            a = target.declarationNameOrNull,
+            context = DiagnosticContext.Default,
+        )
+    }
+
+    protected fun reportMutOnlyOnFunction(target: CfirDeclaration) {
+        diagnosticReporter.reportOn(
+            source = target.source,
+            factory = CfirErrors.MUT_ONLY_ON_FUNCTION,
+            a = target.declarationNameOrNull,
             context = DiagnosticContext.Default,
         )
     }
@@ -118,20 +133,17 @@ open class CfirStatusResolveTransformer(
         val status = target.statusOrNull ?: return
 
         if (status.isStatic && (status.isOpen || status.isAbstract || status.isOverride)) {
-            reportStatusModifierLegalityError(target, "static declaration cannot be open/abstract/override")
+            reportStaticCannotBeOpenAbstractOverride(target)
         }
         if (status.isMut && target !is CfirFunction) {
-            reportStatusModifierLegalityError(target, "mut modifier is only valid on function declarations")
+            reportMutOnlyOnFunction(target)
         }
     }
 }
 
 /**
- * 从具体声明类型中提取 [CfirDeclarationStatus]。
- *
- * `CfirMemberDeclaration` 不直接持有 `status`，
- * 该属性分散定义在各具体子类中（CfirClass、CfirFunction 等）。
- */
+ * 浠庡叿浣撳０鏄庣被鍨嬩腑鎻愬彇 [CfirDeclarationStatus]銆? *
+ * `CfirMemberDeclaration` 涓嶇洿鎺ユ寔鏈?`status`锛? * 璇ュ睘鎬у垎鏁ｅ畾涔夊湪鍚勫叿浣撳瓙绫讳腑锛圕firClass銆丆firFunction 绛夛級銆? */
 private val CfirDeclaration.statusOrNull: CfirDeclarationStatus?
     get() = when (this) {
         is CfirClass -> status
@@ -142,3 +154,14 @@ private val CfirDeclaration.statusOrNull: CfirDeclarationStatus?
         is CfirTypeAlias -> status
         else -> null
     }
+
+private val CfirDeclaration.declarationNameOrNull: Name?
+    get() = when (this) {
+        is CfirClass -> name
+        is CfirFunction -> name
+        is CfirProperty -> name
+        is CfirVariable -> name
+        is CfirTypeAlias -> name
+        else -> null
+    }
+

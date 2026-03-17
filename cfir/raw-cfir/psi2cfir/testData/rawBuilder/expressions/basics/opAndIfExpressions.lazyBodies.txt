@@ -1,2 +1,2 @@
 FILE: opAndIfExpressions.cj
-    func opAndIfExpressions(a: R|Int64|, b: R|Int64|, c: R|Int64|): R|Int64|
+    internal? func opAndIfExpressions(a: R|Int64|, b: R|Int64|, c: R|Int64|): R|Int64|

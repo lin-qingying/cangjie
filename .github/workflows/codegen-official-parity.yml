@@ -1,0 +1,52 @@
+name: codegen-official-parity
+
+on:
+  push:
+    paths:
+      - ".github/workflows/codegen-official-parity.yml"
+      - "compiler/codegen/tests/org/cangnova/cangjie/codegen/parity/**"
+      - "compiler/codegen/testData/chirParity/**"
+      - "compiler/codegen/testFixtures/org/cangnova/cangjie/codegen/parity/**"
+      - "compiler/codegen/tests-gen/org/cangnova/cangjie/codegen/parity/**"
+      - "compiler/codegen/build.gradle.kts"
+      - "gradle/**"
+      - "gradlew"
+      - "gradlew.bat"
+      - "settings.gradle.kts"
+  pull_request:
+    paths:
+      - ".github/workflows/codegen-official-parity.yml"
+      - "compiler/codegen/tests/org/cangnova/cangjie/codegen/parity/**"
+      - "compiler/codegen/testData/chirParity/**"
+      - "compiler/codegen/testFixtures/org/cangnova/cangjie/codegen/parity/**"
+      - "compiler/codegen/tests-gen/org/cangnova/cangjie/codegen/parity/**"
+      - "compiler/codegen/build.gradle.kts"
+      - "gradle/**"
+      - "gradlew"
+      - "gradlew.bat"
+      - "settings.gradle.kts"
+  workflow_dispatch:
+
+jobs:
+  official-llvm-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run official LLVM parity test
+        shell: bash
+        run: |
+          ./gradlew \
+            :compiler:codegen:test \
+            --tests "org.cangnova.cangjie.codegen.parity.OfficialCompilerLlvmIrComparisonTest" \
+            --no-configuration-cache

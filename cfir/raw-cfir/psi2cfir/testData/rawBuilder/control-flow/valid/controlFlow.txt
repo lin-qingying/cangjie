@@ -1,10 +1,10 @@
 FILE: controlFlow.cj
-    func controlFlowTest(x: R|Int64|): R|Int64| {
+    internal? func controlFlowTest(x: R|Int64|): R|Int64| {
         IF {
             condition:
                 COMPARISON(GT) {
                     QUALIFIED_ACCESS(x)
-                    STRING("0")
+                    INT(0)
                 }
             then:
                 RETURN {
@@ -19,15 +19,15 @@ FILE: controlFlow.cj
                 }
         }
     }
-    func loopTest(): R|Unit| {
-        var i: <implicit> = ...
+    internal? func loopTest(): R|Unit| {
+        local? var i: <implicit> = ...
             initializer:
-                STRING("0")
+                INT(0)
         WHILE {
             condition:
                 COMPARISON(LT) {
                     QUALIFIED_ACCESS(i)
-                    STRING("10")
+                    INT(10)
                 }
             body:
                 ASSIGNMENT {
@@ -38,7 +38,7 @@ FILE: controlFlow.cj
                             receiver:
                                 QUALIFIED_ACCESS(i)
                             arguments:
-                                STRING("1")
+                                INT(1)
                         }
                 }
         }

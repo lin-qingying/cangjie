@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.resolve.transformers
+﻿package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -12,15 +12,11 @@ import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
- * IMPLICIT_TYPES 阶段 processor。
- *
- * 使用 [CfirImplicitAwareBodyResolveTransformer] 进行隐式返回类型推断：
- * - 无显式返回类型的函数 → 从函数体最后一个表达式推断
- * - 无显式类型的属性/变量 → 从 initializer 推断
- * - 递归依赖保护（状态机：NotComputed → Computing → Computed）
- *
- * 参考 K2 FirImplicitTypeBodyResolveProcessor。
- */
+ * IMPLICIT_TYPES 闃舵 processor銆? *
+ * 浣跨敤 [CfirImplicitAwareBodyResolveTransformer] 杩涜闅愬紡杩斿洖绫诲瀷鎺ㄦ柇锛? * - 鏃犳樉寮忚繑鍥炵被鍨嬬殑鍑芥暟 鈫?浠庡嚱鏁颁綋鏈€鍚庝竴涓〃杈惧紡鎺ㄦ柇
+ * - 鏃犳樉寮忕被鍨嬬殑灞炴€?鍙橀噺 鈫?浠?initializer 鎺ㄦ柇
+ * - 閫掑綊渚濊禆淇濇姢锛堢姸鎬佹満锛歂otComputed 鈫?Computing 鈫?Computed锛? *
+ * 鍙傝€?K2 FirImplicitTypeBodyResolveProcessor銆? */
 internal class CfirImplicitTypesResolveProcessor(
     session: CfirSession,
     scopeSession: CfirScopeSession,
@@ -50,11 +46,8 @@ internal class CfirImplicitTypesResolveProcessor(
 }
 
 /**
- * BODY_RESOLVE 阶段 processor。
- *
- * 使用 [CfirBodyResolveTransformer] 进行表达式级别的类型合成。
- * 覆写 [processFile] 以传递正确的 [CfirResolutionMode] 数据。
- */
+ * BODY_RESOLVE 闃舵 processor銆? *
+ * 浣跨敤 [CfirBodyResolveTransformer] 杩涜琛ㄨ揪寮忕骇鍒殑绫诲瀷鍚堟垚銆? * 瑕嗗啓 [processFile] 浠ヤ紶閫掓纭殑 [CfirResolutionMode] 鏁版嵁銆? */
 internal class CfirBodyResolveProcessor(
     session: CfirSession,
     scopeSession: CfirScopeSession,
@@ -76,3 +69,4 @@ internal class CfirBodyResolveProcessor(
         bodyResolveTransformer.transformFile(file, CfirResolutionMode.ContextIndependent)
     }
 }
+

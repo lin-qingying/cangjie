@@ -1,30 +1,30 @@
 package org.cangnova.cangjie.analysis.api.components
 
 /**
- * [CaDiagnosticCheckerFilter] controls which kinds of diagnostics are included in the result of diagnostic collection.
+ * [CaDiagnosticCheckerFilter] 用于控制诊断收集结果中包含哪些类型的诊断。
  */
 enum class CaDiagnosticCheckerFilter {
     /**
-     * Includes diagnostics only from the compiler's common checkers.
+     * 仅包含编译器通用检查器产生的诊断。
      */
     ONLY_COMMON_CHECKERS,
 
     /**
-     * Includes diagnostics from extended checkers (that typically run only in the IDE).
+     * 包含扩展检查器产生的诊断（通常仅在 IDE 中运行）。
      */
     ONLY_EXTENDED_CHECKERS,
 
     /**
-     * Includes diagnostics from experimental checkers.
+     * 包含实验性检查器产生的诊断。
      *
-     * Their role is to be run in the IDE similar to [ONLY_EXTENDED_CHECKERS] with the following differences:
-     * * They might have false positives
-     * * They might be slow
+     * 其使用方式与 [ONLY_EXTENDED_CHECKERS] 类似，主要在 IDE 中运行，但有以下差异：
+     * * 可能出现误报
+     * * 可能较慢
      */
     ONLY_EXPERIMENTAL_CHECKERS,
 
     /**
-     * Includes diagnostics from both common and extended checkers.
+     * 同时包含通用检查器与扩展检查器产生的诊断。
      */
     EXTENDED_AND_COMMON_CHECKERS,
 }

@@ -1,7 +1,4 @@
-/*
- * Copyright 2010-2023 JetBrains s.r.o. and Kotlin Programming Language contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
- */
+
 
 package org.cangnova.cangjie.generators.tree
 
@@ -12,6 +9,11 @@ import org.cangnova.cangjie.generators.tree.printer.printFunctionDeclaration
 import org.cangnova.cangjie.generators.tree.printer.printFunctionWithBlockBody
 import org.cangnova.cangjie.generators.util.printBlock
 
+/**
+ * 抽象 Transformer 打印器。
+ *
+ * 为元素生成 `transform*` 方法及与 `visit*` 方法的桥接逻辑。
+ */
 abstract class AbstractTransformerPrinter<Element : AbstractElement<Element, Field, *>, Field : AbstractField<Field>>(
     printer: ImportCollectingPrinter,
 ) : AbstractVisitorPrinter<Element, Field>(printer) {

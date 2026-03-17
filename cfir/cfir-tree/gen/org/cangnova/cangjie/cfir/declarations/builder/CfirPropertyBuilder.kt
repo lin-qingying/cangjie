@@ -1,7 +1,7 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 @file:Suppress("DuplicatedCode", "unused")
 
@@ -14,17 +14,18 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPropertyImpl
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
 
 @CfirBuilderDsl
 class CfirPropertyBuilder {
+    var source: CjSourceElement? = null
+    lateinit var moduleData: CfirModuleData
+    val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var symbol: CfirSymbol<*>
     lateinit var origin: CfirDeclarationOrigin
-    val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    lateinit var moduleData: CfirModuleData
-    lateinit var resolvePhase: CfirResolvePhase
     lateinit var attributes: CfirDeclarationAttributes
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
@@ -33,16 +34,15 @@ class CfirPropertyBuilder {
     var initializer: CfirExpression? = null
     var getter: CfirFunction? = null
     var setter: CfirFunction? = null
-    var isVar: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirProperty {
         return CfirPropertyImpl(
+            source,
+            moduleData,
+            annotations,
             symbol,
             origin,
-            annotations,
-            moduleData,
-            resolvePhase,
             attributes,
             status,
             typeParameters,
@@ -51,8 +51,9 @@ class CfirPropertyBuilder {
             initializer,
             getter,
             setter,
-            isVar,
-        )
+        ).also {
+            it.initDefaultResolveState()
+        }
     }
 
 }
@@ -71,11 +72,11 @@ inline fun buildPropertyCopy(original: CfirProperty, init: CfirPropertyBuilder.(
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }
     val copyBuilder = CfirPropertyBuilder()
+    copyBuilder.source = original.source
+    copyBuilder.moduleData = original.moduleData
+    copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.symbol = original.symbol
     copyBuilder.origin = original.origin
-    copyBuilder.annotations.addAll(original.annotations)
-    copyBuilder.moduleData = original.moduleData
-    copyBuilder.resolvePhase = original.resolvePhase
     copyBuilder.attributes = original.attributes
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
@@ -84,6 +85,5 @@ inline fun buildPropertyCopy(original: CfirProperty, init: CfirPropertyBuilder.(
     copyBuilder.initializer = original.initializer
     copyBuilder.getter = original.getter
     copyBuilder.setter = original.setter
-    copyBuilder.isVar = original.isVar
     return copyBuilder.apply(init).build()
 }

@@ -1,2 +1,2 @@
 FILE: binaryMissingRightOperand.cj
-    func binaryMissingRightOperand(): R|Unit|
+    internal? func binaryMissingRightOperand(): R|Unit|

@@ -22,7 +22,7 @@ class TestModuleStructureExtractorImpl(
 ) : TestModuleStructureExtractor {
     override fun extract(testDataPath: Path): TestModuleStructure {
         val originalFiles = collectOriginalFiles(testDataPath)
-        require(originalFiles.isNotEmpty()) { "在 $testDataPath 未找到任何测试数据文件" }
+        require(originalFiles.isNotEmpty()) { "No test data files were found at $testDataPath" }
 
         val (modules, allDirectives) = when (originalFiles.size) {
             1 -> parseSingleFile(originalFiles.single())
@@ -57,9 +57,12 @@ class TestModuleStructureExtractorImpl(
         val moduleName = "main"
         val testFiles = files.map { file ->
             TestFile(
-                name = file.name,
-                content = file.readText(Charsets.UTF_8),
+                relativePath = file.name,
+                originalContent = file.readText(Charsets.UTF_8),
                 originalFile = file,
+                startLineNumberInOriginalFile = 0,
+                isAdditional = false,
+                directives = RegisteredDirectives.Empty,
             )
         }
         val directives = RegisteredDirectives.Empty
@@ -74,14 +77,12 @@ class TestModuleStructureExtractorImpl(
             val name: String,
             val files: MutableList<TestFile>,
             val dependencies: MutableList<DependencyDescription>,
-            val directives: MutableList<RegisteredDirectives>,
         )
 
         var currentModule = MutableModule(
             name = "main",
             files = mutableListOf(),
             dependencies = mutableListOf(),
-            directives = mutableListOf(),
         )
 
         val modules = linkedMapOf<String, MutableModule>()
@@ -93,7 +94,14 @@ class TestModuleStructureExtractorImpl(
         fun flushFile() {
             if (currentFileBuffer.isEmpty()) return
             val content = currentFileBuffer.toString().trimEnd()
-            currentModule.files += TestFile(currentFileName, content, originalFile = file)
+            currentModule.files += TestFile(
+                relativePath = currentFileName,
+                originalContent = content,
+                originalFile = file,
+                startLineNumberInOriginalFile = 0,
+                isAdditional = false,
+                directives = RegisteredDirectives.Empty,
+            )
             currentFileBuffer.clear()
         }
 
@@ -105,7 +113,6 @@ class TestModuleStructureExtractorImpl(
                     name = newModuleName,
                     files = mutableListOf(),
                     dependencies = mutableListOf(),
-                    directives = mutableListOf(),
                 )
             }
         }
@@ -129,7 +136,7 @@ class TestModuleStructureExtractorImpl(
 
                     CangjieTestDirectives.FILE.name -> {
                         val value = raw.rawValue?.trim().orEmpty()
-                        require(value.isNotBlank()) { "FILE 指令必须提供文件名" }
+                        require(value.isNotBlank()) { "FILE directive requires file name" }
                         switchFile(value)
                         continue
                     }
@@ -141,7 +148,6 @@ class TestModuleStructureExtractorImpl(
                     }
                 }
 
-                // 已知但非结构性指令：记录到 directives 中（且不写入源码文本）
                 if (parser.parse(line)) continue
             }
 
@@ -162,7 +168,6 @@ class TestModuleStructureExtractorImpl(
         return testModules to registeredDirectives
     }
 
-    /** 解析 `name(dep1, dep2)` 得到模块名与依赖列表。 */
     private fun parseModuleHeader(value: String): Pair<String, List<String>> {
         val trimmed = value.trim()
         val open = trimmed.indexOf('(')
@@ -176,4 +181,3 @@ class TestModuleStructureExtractorImpl(
         return name to deps
     }
 }
-

@@ -1,10 +1,10 @@
-
+﻿
 
 package org.cangnova.cangjie.cfir.analysis.checkers.type
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
-import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkersComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.AbstractDiagnosticCollectorComponent
@@ -15,8 +15,7 @@ import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
 import org.cangnova.cangjie.utils.exceptions.withFirEntry
 
 /*
- * This file was generated automatically
- * DO NOT MODIFY IT MANUALLY
+ * 鏈枃浠剁敱鐢熸垚鍣ㄨ嚜鍔ㄧ敓鎴? * 璇峰嬁鎵嬪姩淇敼
  */
 
 @OptIn(CheckersComponentInternal::class)
@@ -25,12 +24,12 @@ class CfirTypeCheckersDiagnosticComponent(
     reporter: PendingDiagnosticReporter,
     private val checkers: CfirTypeCheckers,
 ) : AbstractDiagnosticCollectorComponent(session, reporter) {
-    constructor(session: CfirSession, reporter: PendingDiagnosticReporter, mppKind: MppCheckerKind) : this(
+    constructor(session: CfirSession, reporter: PendingDiagnosticReporter, dispatchKind: CheckerDispatchKind) : this(
         session,
         reporter,
-        when (mppKind) {
-            MppCheckerKind.Common -> session.checkersComponent.commonCfirTypeCheckers
-            MppCheckerKind.Platform -> session.checkersComponent.platformCfirTypeCheckers
+        when (dispatchKind) {
+            CheckerDispatchKind.Common -> session.checkersComponent.commonCfirTypeCheckers
+            CheckerDispatchKind.Platform -> session.checkersComponent.platformCfirTypeCheckers
         }
     )
 
@@ -90,3 +89,4 @@ class CfirTypeCheckersDiagnosticComponent(
         }
     }
 }
+

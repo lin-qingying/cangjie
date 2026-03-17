@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
@@ -15,7 +16,7 @@ import org.cangnova.cangjie.name.Name
  * 提供从本模块和依赖模块中查找符号的统一入口。
  * 参考 K2 FirSymbolProvider（abstract class，vtable dispatch）。
  */
-abstract class CfirSymbolProvider : CfirSessionComponent {
+abstract class CfirSymbolProvider(val session: CfirSession)  : CfirSessionComponent {
 
     /** 名称过滤器，子类可覆盖以提供快速过滤 */
     open val symbolNamesProvider: CfirSymbolNamesProvider

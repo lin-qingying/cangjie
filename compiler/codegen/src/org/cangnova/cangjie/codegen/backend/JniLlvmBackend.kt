@@ -22,8 +22,21 @@ internal object DefaultJniNativeFacade : JniNativeFacade {
         get() = System.getProperty("cangjie.llvm.version")
 
     override fun emitBitcode(moduleName: String, llvmIr: String): ByteArray {
-        // TODO: bridge through JNI module/build APIs after full backend integration.
-        return llvmIr.toByteArray()
+        var context = 0L
+        var module = 0L
+        try {
+            context = LlvmNative.contextCreate()
+            module = LlvmNative.moduleParseAssemblyInContext(moduleName, llvmIr, context)
+            LlvmNative.moduleVerify(module)
+            return LlvmNative.writeBitcodeToMemoryBuffer(module)
+        } finally {
+            if (module != 0L) {
+                LlvmNative.moduleDispose(module)
+            }
+            if (context != 0L) {
+                LlvmNative.contextDispose(context)
+            }
+        }
     }
 }
 

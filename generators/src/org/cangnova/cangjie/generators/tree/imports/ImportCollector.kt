@@ -9,7 +9,7 @@ import java.util.SortedMap
 import java.util.SortedSet
 
 /**
- * Used to collect [TypeRef]s for printing a list of imports for those [TypeRef]s.
+ * 用于收集 [TypeRef] 所需导入，并输出 import 列表。
  */
 internal class ImportCollector(currentPackage: String) : ImportCollecting {
 
@@ -17,20 +17,20 @@ internal class ImportCollector(currentPackage: String) : ImportCollecting {
         private val STAR = sortedSetOf("*")
 
         /**
-         * The maximum number of imports from a single package before collapsing those imports to a star-import.
+         * 单个包的显式导入数量超过该阈值后，折叠为星号导入。
          */
         private const val STAR_COLLAPSE_THRESHOLD = 4
     }
 
     /**
-     * A map of package names to a list of entities to import from that package.
+     * 包名到导入实体集合的映射。
      */
     private val imports: SortedMap<String, SortedSet<String>> = sortedMapOf()
 
     /**
-     * Entities from these packages will not be imported explicitly.
+     * 这些包中的实体不会显式导入。
      *
-     * See [the list of default imports](https://kotlinlang.org/docs/packages.html#default-imports).
+     * 参见 [默认导入列表](https://kotlinlang.org/docs/packages.html#default-imports)。
      */
     private val ignoredPackages = hashSetOf(
         currentPackage,
@@ -43,7 +43,6 @@ internal class ImportCollector(currentPackage: String) : ImportCollecting {
         "kotlin.sequences",
         "kotlin.text",
         "java.lang",
-        "kotlin.jvm",
     )
 
     private fun addImport(packageName: String, entity: String) {
@@ -65,9 +64,9 @@ internal class ImportCollector(currentPackage: String) : ImportCollecting {
     }
 
     /**
-     * Prints all the collected imports in alphabetical order.
+     * 按字母序输出所有收集到的导入。
      *
-     * @return `true` if at least one import was printed, `false` if no imports were printed.
+     * @return 若至少输出了一条导入则为 `true`，否则为 `false`。
      */
     fun printAllImports(printer: Appendable): Boolean {
         var atLeastOneImport = false

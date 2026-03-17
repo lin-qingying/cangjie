@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.analysis.collectors.components
+﻿package org.cangnova.cangjie.cfir.analysis.collectors.components
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
@@ -49,4 +49,5 @@ abstract class AbstractDiagnosticCollectorComponent(
         reporter.reportOn(source, factory, a, context, positioningStrategy)
     }
 }
+
 

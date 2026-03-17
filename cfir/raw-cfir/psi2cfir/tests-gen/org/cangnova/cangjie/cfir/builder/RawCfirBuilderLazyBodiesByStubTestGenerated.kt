@@ -163,6 +163,16 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like")
             }
 
+            @TestMetadata("accessControlMemberModifiers.cj")
+            fun testAccessControlMemberModifiers() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/accessControlMemberModifiers.cj")
+            }
+
+            @TestMetadata("accessControlVisibilityDisplay.cj")
+            fun testAccessControlVisibilityDisplay() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/accessControlVisibilityDisplay.cj")
+            }
+
             @TestMetadata("classMembersOrderStability.cj")
             fun testClassMembersOrderStability() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/classMembersOrderStability.cj")
@@ -213,6 +223,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/interfaceDeclaration.cj")
             }
 
+            @TestMetadata("publicVisibilityDisplay.cj")
+            fun testPublicVisibilityDisplay() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/publicVisibilityDisplay.cj")
+            }
+
             @TestMetadata("structDeclaration.cj")
             fun testStructDeclaration() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/structDeclaration.cj")
@@ -251,6 +266,16 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
             @TestMetadata("genericWhereFunction.cj")
             fun testGenericWhereFunction() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level/genericWhereFunction.cj")
+            }
+
+            @TestMetadata("localScopeInNestedBlock.cj")
+            fun testLocalScopeInNestedBlock() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level/localScopeInNestedBlock.cj")
+            }
+
+            @TestMetadata("localScopeVisibility.cj")
+            fun testLocalScopeVisibility() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level/localScopeVisibility.cj")
             }
 
             @TestMetadata("mainEntryOfficial.cj")
@@ -321,6 +346,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
             @TestMetadata("rangeExpression.cj")
             fun testRangeExpression() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/rangeExpression.cj")
+            }
+
+            @TestMetadata("specialExpressionsPreserve.cj")
+            fun testSpecialExpressionsPreserve() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/specialExpressionsPreserve.cj")
             }
 
             @TestMetadata("stringInterpolation.cj")

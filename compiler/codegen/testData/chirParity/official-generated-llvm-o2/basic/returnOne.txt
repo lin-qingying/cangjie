@@ -1,0 +1,353 @@
+; ModuleID = 'C:\Users\lin17\AppData\Local\Temp\cj-official-baseline-3c9fdfab-d237-4120-a7f2-676c11bdb629\returnOne\temps\main.opt.bc'
+source_filename = "0-default"
+target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-w64-windows-gnu"
+
+%TypeInfo = type { i8*, i8, i8, i16, i32, %BitMap*, i32, i8, i8, i16, i32*, i8*, i8*, i8*, %TypeInfo*, %ExtensionDef**, i8*, i8* }
+%BitMap = type { i32, [0 x i8] }
+%ExtensionDef = type { i32, i8, i8*, i8*, i8*, i8* }
+%cjStringType = type { i8 addrspace(1)*, i32, i32 }
+%TypeTemplate = type { i8*, i8, i8, i16, i16, i8*, i8*, i8*, i8*, %ExtensionDef**, i16 }
+%default_default.pkgInfoType = type { i8*, i32, i32, i32, i32, i64, i8*, i8*, i8*, i8*, i8* }
+%Unit.Type = type {}
+%"record.std.core:String" = type { i8 addrspace(1)*, i32, i32 }
+%struct._param = type { void (i8*)*, i8* }
+
+@"$has_applied_pkg_init_func" = internal unnamed_addr global i1 false, align 8, !GlobalVarType !0 #0
+@has_invoked_pkg_init_literal = internal unnamed_addr global i1 false, align 8, !GlobalVarType !0 #0
+@cj.sdk.version = private global [6 x i8] c"1.0.0\00", align 1
+@"std.core:OutOfMemoryError.ti" = external global %TypeInfo, !RelatedType !1 #1
+@"$const_cjstring.eOeYIhisqu" = private constant %cjStringType { i8 addrspace(1)* addrspacecast (i8* bitcast ({ i8*, i64, [126 x i8] }* @"$const_cjstring_data.dAEf2E5Y2bu" to i8*) to i8 addrspace(1)*), i32 83, i32 26 } #2
+@"$const_cjstring.5CeEPuGykeB" = private constant %cjStringType { i8 addrspace(1)* addrspacecast (i8* bitcast ({ i8*, i64, [126 x i8] }* @"$const_cjstring_data.dAEf2E5Y2bu" to i8*) to i8 addrspace(1)*), i32 109, i32 17 } #2
+@"std.core:Error.ti" = external global %TypeInfo, !RelatedType !2 #1
+@"std.core:Exception.ti" = external global %TypeInfo, !RelatedType !3 #1
+@"RawArray<UInt8>.ti" = internal global %TypeInfo { i8* getelementptr inbounds ([16 x i8], [16 x i8]* @"RawArray<UInt8>.name", i32 0, i32 0), i8 -126, i8 64, i16 0, i32 0, %BitMap* null, i32 0, i8 0, i8 0, i16 -32768, i32* null, i8* bitcast (%TypeTemplate* @RawArray.tt to i8*), i8* null, i8* null, %TypeInfo* @UInt8.ti, %ExtensionDef** null, i8* null, i8* null }, no_sanitize_address, !RelatedType !4 #1
+@UInt8.ti = external global %TypeInfo, !RelatedType !5
+@"RawArray<UInt8>.name" = private global [16 x i8] c"RawArray<UInt8>\00", align 1 #3
+@RawArray.tt = external global %TypeTemplate
+@"$const_cjstring_data.dAEf2E5Y2bu" = private constant { i8*, i64, [126 x i8] } { i8* bitcast (%TypeInfo* @"RawArray<UInt8>.ti" to i8*), i64 126, [126 x i8] c"The result would be less than Int64.Min.The result would be greater than Int64.Max.An exception has occurred:    Out of memory" } #4
+@default_default.packageInfo = local_unnamed_addr global %default_default.pkgInfoType { i8* null, i32 0, i32 0, i32 0, i32 0, i64 1, i8* getelementptr inbounds ([8 x i8], [8 x i8]* @default.reflectStr, i32 0, i32 0), i8* getelementptr inbounds ([8 x i8], [8 x i8]* @default.reflectStr, i32 0, i32 0), i8* getelementptr inbounds ([1 x i8], [1 x i8]* @NullString.reflectStr, i32 0, i32 0), i8* null, i8* null }, no_sanitize_address #5
+@default.reflectStr = internal global [8 x i8] c"default\00", align 1 #5
+@NullString.reflectStr = internal global [1 x i8] zeroinitializer, align 1 #5
+@wrapper.F0uPuE.CJStubGV = internal global void (void (i8*)*, i8*)* @wrapper.F0uPuE #6
+@CJ_MCC_HandleSafepoint.CJStubGV = internal global void ()* @CJ_MCC_HandleSafepoint #6
+
+; Function Attrs: noinline
+define void @_CGP7defaultiiHv() local_unnamed_addr #7 gc "cangjie" personality i32 (...)* @"__cj_personality_v0$" !dbg !14 {
+bb0:
+  %token = call cangjiegccc token (...) @llvm.cj.gc.statepoint(i64 4, i32 0, void ()* @CJ_MCC_StackCheck, i32 0, i32 0)
+  %0 = load i1, i1* @"$has_applied_pkg_init_func", align 8, !dbg !19
+  %token2 = call cangjiegccc token (...) @llvm.cj.gc.statepoint(i64 3, i32 0, void ()* @CJ_MCC_HandleSafepoint, i32 0, i32 0)
+  br i1 %0, label %common.ret, label %bb2, !dbg !19
+
+common.ret:                                       ; preds = %bb0, %bb2
+  ret void, !dbg !19
+
+bb2:                                              ; preds = %bb0
+  store i1 true, i1* @"$has_applied_pkg_init_func", align 8, !dbg !19
+  %token4 = tail call token (...) @llvm.cj.gc.statepoint(i64 0, i32 0, void ()* @_CGPatiiHv, i32 0, i32 0), !dbg !19
+  tail call void @CJ_MRT_PreInitializePackage(i8* null), !dbg !19
+  br label %common.ret
+}
+
+define private i32 @"__cj_personality_v0$"(...) {
+entry:
+  ret i32 0
+}
+
+declare void @_CGPatiiHv() local_unnamed_addr #8 gc "cangjie"
+
+; Function Attrs: noinline
+define void @_CGP7defaultilHv() local_unnamed_addr #9 gc "cangjie" personality i32 (...)* @"__cj_personality_v0$" !dbg !20 {
+bb0:
+  %token = call cangjiegccc token (...) @llvm.cj.gc.statepoint(i64 4, i32 0, void ()* @CJ_MCC_StackCheck, i32 0, i32 0)
+  %0 = load i1, i1* @has_invoked_pkg_init_literal, align 8, !dbg !21
+  %token2 = call cangjiegccc token (...) @llvm.cj.gc.statepoint(i64 3, i32 0, void ()* @CJ_MCC_HandleSafepoint, i32 0, i32 0)
+  br i1 %0, label %common.ret, label %bb2, !dbg !21
+
+common.ret:                                       ; preds = %bb0, %bb2
+  ret void, !dbg !21
+
+bb2:                                              ; preds = %bb0
+  store i1 true, i1* @has_invoked_pkg_init_literal, align 8, !dbg !21
+  %token4 = tail call token (...) @llvm.cj.gc.statepoint(i64 0, i32 0, void ()* @_CGPatilHv, i32 0, i32 0), !dbg !21
+  br label %common.ret
+}
+
+declare void @_CGPatilHv() local_unnamed_addr gc "cangjie"
+
+; Function Attrs: mustprogress noinline norecurse nounwind willreturn
+define i32 @"_CN7default6<main>Hv"() local_unnamed_addr #10 gc "cangjie" personality i32 (...)* @"__cj_personality_v0$" !dbg !22 {
+allocas:
+  ret i32 1, !dbg !24
+}
+
+; Function Attrs: mustprogress noinline norecurse nounwind willreturn
+define i64 @user.main() local_unnamed_addr #10 gc "cangjie" personality i32 (...)* @"__cj_personality_v0$" !dbg !25 {
+allocas:
+  ret i64 1, !dbg !26
+}
+
+define void @main(i32 %argc, i8** %argv) local_unnamed_addr #11 {
+entry:
+  tail call void @CJ_MRT_CjRuntimeInit()
+  tail call void @CJ_MRT_SetCommandLineArgs(i32 %argc, i8** %argv)
+  tail call void @CJ_MRT_CjRuntimeStart(i32 ()* nonnull @"cj_entry$")
+  ret void
+}
+
+declare void @CJ_MRT_CjRuntimeInit() local_unnamed_addr
+
+declare void @CJ_MRT_SetCommandLineArgs(i32, i8**) local_unnamed_addr
+
+define i32 @"cj_entry$"() #11 gc "cangjie" personality i32 (...)* @"__cj_personality_v0$" {
+allocas:
+  %token = call cangjiegccc token (...) @llvm.cj.gc.statepoint(i64 4, i32 0, void ()* @CJ_MCC_StackCheck, i32 0, i32 0)
+  %0 = alloca %Unit.Type, align 8
+  %token22 = call cangjiegccc token (...) @llvm.cj.gc.statepoint(i64 3, i32 0, void ()* @CJ_MCC_HandleSafepoint, i32 0, i32 0)
+  %token24 = tail call token (...) @llvm.cj.gc.statepoint(i64 0, i32 0, void ()* @CJ_MCC_CheckThreadLocalDataOffset, i32 0, i32 0)
+  %token26 = invoke token (...) @llvm.cj.gc.statepoint(i64 0, i32 0, void ()* @_CGP7defaultiiHv, i32 0, i32 0)
+          to label %normalDest1 unwind label %unwindDest18
+
+normalDest1:                                      ; preds = %allocas
+  %token28 = invoke token (...) @llvm.cj.gc.statepoint(i64 0, i32 0, void (%Unit.Type*)* @_CNat27CJ_CORE_ExecAtexitCallbacksHv, i32 1, i32 0, %Unit.Type* sret(%Unit.Type) %0)
+          to label %common.ret16 unwind label %unwindDest17
+
+common.ret.sink.split2:                           ; preds = %is.Exception
+  %1 = call coldcc i8 addrspace(1)* @llvm.cj.gc.relocate.p1i8(token %token38, i32 0, i32 0) ; (%4, %4)
+  br label %common.ret.sink.split
+
+common.ret.sink.split6:                           ; preds = %is.Error
+  %2 = call coldcc i8 addrspace(1)* @llvm.cj.gc.relocate.p1i8(token %token36, i32 0, i32 0) ; (%4, %4)
+  br label %common.ret.sink.split
+
+common.ret.sink.split11:                          ; preds = %normalDest3
+  br label %common.ret.sink.split
+
+common.ret.sink.split:                            ; preds = %common.ret.sink.split11, %common.ret.sink.split6, %common.ret.sink.split2, %judge.Exception, %rethrow
+  %token30 = call token (...) @llvm.cj.gc.statepoint(i64 0, i32 0, void (%Unit.Type*)* @_CNat27CJ_CORE_ExecAtexitCallbacksHv, i32 1, i32 0, %Unit.Type* sret(%Unit.Type) %0)
+  br label %common.ret
+
+common.ret16:                                     ; preds = %normalDest1
+  br label %common.ret
+
+common.ret:                                       ; preds = %common.ret16, %common.ret.sink.split
+  ret i32 1
+
+unwindDest17:                                     ; preds = %normalDest1
+  %lpad19 = landingpad token
+          catch i8* null
+  br label %unwindDest
+
+unwindDest18:                                     ; preds = %allocas
+  %lpad20 = landingpad token
+          catch i8* null
+  br label %unwindDest
+
+unwindDest:                                       ; preds = %unwindDest18, %unwindDest17
+  %3 = call i8* @CJ_MCC_GetExceptionWrapper()
+  %4 = call i8 addrspace(1)* @CJ_MCC_PostThrowException(i8* %3)
+  %5 = bitcast i8 addrspace(1)* %4 to i8* addrspace(1)*
+  %6 = load i8*, i8* addrspace(1)* %5, align 8
+  %7 = call i1 @CJ_MCC_IsSubType(i8* %6, i8* bitcast (%TypeInfo* @"std.core:OutOfMemoryError.ti" to i8*))
+  br i1 %7, label %is.OOM, label %judge.Error
+
+is.OOM:                                           ; preds = %unwindDest
+  %token32 = invoke token (...) @llvm.cj.gc.statepoint(i64 0, i32 0, void (%Unit.Type*, %"record.std.core:String"*)* @_CNat8eprintlnHRNat6StringE, i32 2, i32 0, %Unit.Type* sret(%Unit.Type) %0, %"record.std.core:String"* bitcast (%cjStringType* @"$const_cjstring.eOeYIhisqu" to %"record.std.core:String"*))
+          to label %normalDest3 unwind label %rethrow4813
+
+normalDest3:                                      ; preds = %is.OOM
+  %token34 = invoke token (...) @llvm.cj.gc.statepoint(i64 0, i32 0, void (%Unit.Type*, %"record.std.core:String"*)* @_CNat8eprintlnHRNat6StringE, i32 2, i32 0, %Unit.Type* sret(%Unit.Type) %0, %"record.std.core:String"* bitcast (%cjStringType* @"$const_cjstring.5CeEPuGykeB" to %"record.std.core:String"*))
+          to label %common.ret.sink.split11 unwind label %rethrow4812
+
+judge.Error:                                      ; preds = %unwindDest
+  %8 = call i1 @CJ_MCC_IsSubType(i8* %6, i8* bitcast (%TypeInfo* @"std.core:Error.ti" to i8*))
+  br i1 %8, label %is.Error, label %judge.Exception
+
+is.Error:                                         ; preds = %judge.Error
+  %9 = getelementptr i8, i8* %6, i64 72
+  %10 = bitcast i8* %9 to %ExtensionDef***
+  %11 = load %ExtensionDef**, %ExtensionDef*** %10, align 8
+  %12 = load %ExtensionDef*, %ExtensionDef** %11, align 8
+  %13 = getelementptr %ExtensionDef, %ExtensionDef* %12, i64 0, i32 5
+  %14 = bitcast i8** %13 to i8***
+  %15 = load i8**, i8*** %14, align 8
+  %16 = getelementptr i8*, i8** %15, i64 2
+  %17 = bitcast i8** %16 to void (%Unit.Type*, i8 addrspace(1)*)**
+  %18 = load void (%Unit.Type*, i8 addrspace(1)*)*, void (%Unit.Type*, i8 addrspace(1)*)** %17, align 8
+  %token36 = invoke token (...) @llvm.cj.gc.statepoint(i64 0, i32 0, void (%Unit.Type*, i8 addrspace(1)*)* %18, i32 2, i32 0, %Unit.Type* sret(%Unit.Type) %0, i8 addrspace(1)* %4) [ "gc-live"(i8 addrspace(1)* %4) ]
+          to label %common.ret.sink.split6 unwind label %rethrow47
+
+judge.Exception:                                  ; preds = %judge.Error
+  %19 = call i1 @CJ_MCC_IsSubType(i8* %6, i8* bitcast (%TypeInfo* @"std.core:Exception.ti" to i8*))
+  br i1 %19, label %is.Exception, label %common.ret.sink.split
+
+is.Exception:                                     ; preds = %judge.Exception
+  %token38 = invoke token (...) @llvm.cj.gc.statepoint(i64 0, i32 0, void (%Unit.Type*, i8 addrspace(1)*)* @_CNat15handleExceptionHCNat9ExceptionE, i32 2, i32 0, %Unit.Type* sret(%Unit.Type) %0, i8 addrspace(1)* %4) [ "gc-live"(i8 addrspace(1)* %4) ]
+          to label %common.ret.sink.split2 unwind label %rethrow3
+
+rethrow3:                                         ; preds = %is.Exception
+  %lpad = landingpad token
+          catch i8* null
+  %20 = call coldcc i8 addrspace(1)* @llvm.cj.gc.relocate.p1i8(token %lpad, i32 0, i32 0) ; (%4, %4)
+  br label %rethrow
+
+rethrow47:                                        ; preds = %is.Error
+  %lpad9 = landingpad token
+          catch i8* null
+  %21 = call coldcc i8 addrspace(1)* @llvm.cj.gc.relocate.p1i8(token %lpad9, i32 0, i32 0) ; (%4, %4)
+  br label %rethrow4
+
+rethrow4812:                                      ; preds = %normalDest3
+  %lpad14 = landingpad token
+          catch i8* null
+  br label %rethrow48
+
+rethrow4813:                                      ; preds = %is.OOM
+  %lpad15 = landingpad token
+          catch i8* null
+  br label %rethrow48
+
+rethrow48:                                        ; preds = %rethrow4813, %rethrow4812
+  br label %rethrow4
+
+rethrow4:                                         ; preds = %rethrow48, %rethrow47
+  br label %rethrow
+
+rethrow:                                          ; preds = %rethrow4, %rethrow3
+  br label %common.ret.sink.split
+}
+
+declare void @CJ_MCC_CheckThreadLocalDataOffset() local_unnamed_addr
+
+declare void @_CNat27CJ_CORE_ExecAtexitCallbacksHv(%Unit.Type* sret(%Unit.Type)) local_unnamed_addr gc "cangjie"
+
+declare void @_CNat8eprintlnHRNat6StringE(%Unit.Type* sret(%Unit.Type), %"record.std.core:String"* nocapture) local_unnamed_addr gc "cangjie"
+
+declare void @_CNat15handleExceptionHCNat9ExceptionE(%Unit.Type* sret(%Unit.Type), i8 addrspace(1)*) local_unnamed_addr gc "cangjie"
+
+declare void @CJ_MRT_CjRuntimeStart(i32 ()*) local_unnamed_addr
+
+; Function Attrs: noinline
+define void @_CGP7defaultirHv(i8* nocapture %param) local_unnamed_addr #12 gc "cangjie" personality i32 (...)* @"__cj_personality_v0$" {
+entry:
+  %token = call cangjiegccc token (...) @llvm.cj.gc.statepoint(i64 4, i32 0, void ()* @CJ_MCC_StackCheck, i32 0, i32 0)
+  %token2 = call cangjiegccc token (...) @llvm.cj.gc.statepoint(i64 3, i32 0, void ()* @CJ_MCC_HandleSafepoint, i32 0, i32 0)
+  %token4 = tail call token (...) @llvm.cj.gc.statepoint(i64 0, i32 0, void ()* @_CGP7defaultifHv, i32 0, i32 0)
+  %token6 = tail call token (...) @llvm.cj.gc.statepoint(i64 0, i32 0, void ()* @_CGP7defaultilHv, i32 0, i32 0)
+  %token8 = tail call token (...) @llvm.cj.gc.statepoint(i64 0, i32 0, void ()* @_CGP7defaultiiHv, i32 0, i32 0)
+  %0 = bitcast i8* %param to %struct._param*
+  %1 = getelementptr inbounds %struct._param, %struct._param* %0, i64 0, i32 0
+  %2 = load void (i8*)*, void (i8*)** %1, align 8
+  %3 = getelementptr inbounds %struct._param, %struct._param* %0, i64 0, i32 1
+  %4 = load i8*, i8** %3, align 8
+  %token10 = tail call token (...) @llvm.cj.gc.statepoint(i64 0, i32 0, void (void (i8*)*, i8*)* @wrapper.F0uPuE, i32 2, i32 0, void (i8*)* %2, i8* %4)
+  ret void
+}
+
+; Function Attrs: noinline
+define void @_CGP7defaultifHv() local_unnamed_addr #9 gc "cangjie" personality i32 (...)* @"__cj_personality_v0$" {
+entry:
+  %token = call cangjiegccc token (...) @llvm.cj.gc.statepoint(i64 4, i32 0, void ()* @CJ_MCC_StackCheck, i32 0, i32 0)
+  %token2 = call cangjiegccc token (...) @llvm.cj.gc.statepoint(i64 3, i32 0, void ()* @CJ_MCC_HandleSafepoint, i32 0, i32 0)
+  %token4 = tail call token (...) @llvm.cj.gc.statepoint(i64 0, i32 0, void ()* @_CGPatifHv, i32 0, i32 0)
+  store i1 false, i1* @has_invoked_pkg_init_literal, align 8
+  store i1 false, i1* @"$has_applied_pkg_init_func", align 8
+  ret void
+}
+
+; Function Attrs: noinline
+declare void @_CGPatifHv() local_unnamed_addr #9
+
+; Function Attrs: noinline
+define private void @wrapper.F0uPuE(void (i8*)* nocapture %0, i8* %1) #13 {
+entry:
+  tail call void %0(i8* %1)
+  ret void
+}
+
+declare void @CJ_MCC_C2NStub(...) #14
+
+declare void @CJ_MCC_N2CStub(...) #14
+
+declare i8 addrspace(1)* @CJ_MCC_OnFinalizerCreated(i8 addrspace(1)*) #14
+
+; Function Attrs: nounwind
+declare void @CJ_MRT_PreInitializePackage(i8*) #15
+
+; Function Attrs: nounwind
+declare i8* @CJ_MCC_GetExceptionWrapper() #15
+
+; Function Attrs: nounwind
+declare i8 addrspace(1)* @CJ_MCC_PostThrowException(i8*) #15
+
+; Function Attrs: mustprogress nounwind speculatable willreturn
+declare i1 @CJ_MCC_IsSubType(i8*, i8*) #16
+
+declare void @CJ_MCC_StackCheck() local_unnamed_addr #17
+
+declare cangjiegccc void @CJ_MCC_HandleSafepoint() local_unnamed_addr #18
+
+declare token @llvm.cj.gc.statepoint(...)
+
+declare void @__tmp_use(...)
+
+; Function Attrs: nounwind readnone
+declare i8 addrspace(1)* @llvm.cj.gc.relocate.p1i8(token, i32 immarg, i32 immarg) #19
+
+attributes #0 = { "CJGlobalValue" }
+attributes #1 = { "CFileKlass" }
+attributes #2 = { "cjstring_literal" }
+attributes #3 = { "CJTypeName" }
+attributes #4 = { "cjstring_data" }
+attributes #5 = { "CFileReflect" }
+attributes #6 = { "cj-native" }
+attributes #7 = { noinline "cjinit" }
+attributes #8 = { "cjinit" }
+attributes #9 = { noinline }
+attributes #10 = { mustprogress noinline norecurse nounwind willreturn "cj_fast_call" "cjinit" "leaf-function" }
+attributes #11 = { "EscapeAnalysis" "cjinit" }
+attributes #12 = { noinline "EscapeAnalysis" }
+attributes #13 = { noinline "EscapeAnalysis" "cj2c" }
+attributes #14 = { "cj-runtime" "gc-leaf-function" }
+attributes #15 = { nounwind "cj-runtime" "gc-leaf-function" }
+attributes #16 = { mustprogress nounwind speculatable willreturn "cj-runtime" "gc-leaf-function" }
+attributes #17 = { "cj-stack-check" }
+attributes #18 = { "gc-safepoint" }
+attributes #19 = { nounwind readnone }
+
+!llvm.module.flags = !{!6, !7, !8, !9, !10}
+!llvm.dbg.cu = !{!11}
+!pkg_init_func = !{!13}
+!global_variables = !{}
+!functions = !{}
+!CodeGenAddedForIncr = !{}
+!StaticGenericTIsForIncr = !{}
+
+!0 = !{!"b"}
+!1 = !{!"ObjLayout.std.core:OutOfMemoryError"}
+!2 = !{!"ObjLayout.std.core:Error"}
+!3 = !{!"ObjLayout.std.core:Exception"}
+!4 = !{!"ArrayLayout.UInt8"}
+!5 = !{!"UInt8.Type"}
+!6 = !{i32 2, !"CJBC", i32 1}
+!7 = !{i32 2, !"Cangjie_OPT", i32 1}
+!8 = !{i32 2, !"Debug Info Version", i32 3}
+!9 = !{i32 2, !"Dwarf Version", i32 4}
+!10 = !{i32 2, !"HasRewrittenStatepoint", i32 1}
+!11 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !12, producer: "Cangjie Compiler", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!12 = !DIFile(filename: "0-default", directory: ".")
+!13 = !{!"_CGP7defaultiiHv"}
+!14 = distinct !DISubprogram(scope: !16, file: !15, type: !17, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !11, retainedNodes: !18)
+!15 = !DIFile(filename: "", directory: "")
+!16 = !DINamespace(name: "default", scope: null)
+!17 = !DISubroutineType(types: !18)
+!18 = !{}
+!19 = !DILocation(line: 0, scope: !14)
+!20 = distinct !DISubprogram(scope: !16, file: !15, type: !17, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !11, retainedNodes: !18)
+!21 = !DILocation(line: 0, scope: !20)
+!22 = distinct !DISubprogram(scope: !16, file: !23, line: 1, type: !17, scopeLine: 1, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !11, retainedNodes: !18)
+!23 = !DIFile(filename: "main.cj", directory: "C:\\Users\\lin17\\AppData\\Local\\Temp\\cj-official-baseline-3c9fdfab-d237-4120-a7f2-676c11bdb629\\returnOne")
+!24 = !DILocation(line: 2, column: 5, scope: !22)
+!25 = distinct !DISubprogram(scope: !16, file: !15, type: !17, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !11, retainedNodes: !18)
+!26 = !DILocation(line: 0, scope: !25)

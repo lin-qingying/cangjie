@@ -1,2 +1,2 @@
 FILE: rangeExpression.cj
-    func testRange(): R|Unit|
+    internal? func testRange(): R|Unit|

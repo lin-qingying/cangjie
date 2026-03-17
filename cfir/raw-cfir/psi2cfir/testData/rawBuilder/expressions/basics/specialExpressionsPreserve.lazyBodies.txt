@@ -1,0 +1,2 @@
+FILE: specialExpressionsPreserve.cj
+    internal? func specialExpressionsPreserve(lock: R|Int64|): R|Unit|

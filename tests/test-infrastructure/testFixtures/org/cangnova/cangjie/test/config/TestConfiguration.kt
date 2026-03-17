@@ -18,4 +18,5 @@ class TestConfiguration(
     val facadeFactories: List<(TestServices) -> TestFacade>,
     val handlerFactories: List<(TestServices) -> AnalysisHandler>,
     val defaultDirectives: List<Directive>,
+    val defaultsProviderBuilder: DefaultsProviderBuilder = DefaultsProviderBuilder(),
 )

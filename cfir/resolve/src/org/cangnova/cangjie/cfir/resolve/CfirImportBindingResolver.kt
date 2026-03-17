@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.resolve
+﻿package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
@@ -12,32 +12,39 @@ internal class CfirImportBindingResolver(
 ) {
     fun resolveImportBinding(importDirective: CfirImport): CfirResolvedImportBinding {
         val importedFqName = importDirective.importedFqName
-        val effectiveName = importDirective.aliasName ?: importedFqName.shortNameAsIdentifier()
+        val aliasName = importDirective.aliasName
+        val effectiveName = when {
+            aliasName != null -> aliasName
+            importedFqName != null -> importedFqName.shortNameAsIdentifier()
+            else -> org.cangnova.cangjie.name.Name.identifier("")
+        }
         val targets = mutableListOf<CfirResolvedImportTarget>()
 
-        if (session.symbolProvider.hasPackage(importedFqName)) {
+        if (importedFqName != null && session.symbolProvider.hasPackage(importedFqName)) {
             targets += CfirResolvedImportTarget.Package(importedFqName)
         }
 
-        val memberName = importedFqName.shortNameAsIdentifier()
-        val packageFqName = importedFqName.parentOrRoot()
+        if (importedFqName != null) {
+            val memberName = importedFqName.shortNameAsIdentifier()
+            val packageFqName = importedFqName.parentOrRoot()
 
-        if (!importDirective.isAllUnder) {
-            val classId = ClassId(packageFqName, memberName)
-            session.symbolProvider.getClassLikeSymbolByClassId(classId)?.let { symbol ->
-                targets += CfirResolvedImportTarget.ClassLike(
-                    classId = classId,
-                    symbol = symbol,
-                )
-            }
+            if (!importDirective.isAllUnder) {
+                val classId = ClassId(packageFqName, memberName)
+                session.symbolProvider.getClassLikeSymbolByClassId(classId)?.let { symbol ->
+                    targets += CfirResolvedImportTarget.ClassLike(
+                        classId = classId,
+                        symbol = symbol,
+                    )
+                }
 
-            val callableSymbols = session.symbolProvider.getTopLevelCallableSymbols(packageFqName, memberName)
-            if (callableSymbols.isNotEmpty()) {
-                targets += CfirResolvedImportTarget.Callable(
-                    packageFqName = packageFqName,
-                    name = memberName,
-                    symbols = callableSymbols,
-                )
+                val callableSymbols = session.symbolProvider.getTopLevelCallableSymbols(packageFqName, memberName)
+                if (callableSymbols.isNotEmpty()) {
+                    targets += CfirResolvedImportTarget.Callable(
+                        packageFqName = packageFqName,
+                        name = memberName,
+                        symbols = callableSymbols,
+                    )
+                }
             }
         }
 
@@ -48,3 +55,4 @@ internal class CfirImportBindingResolver(
         )
     }
 }
+

@@ -9,5 +9,8 @@ abstract class AbstractCfirTreeImplementationConfigurator :
     AbstractImplementationConfigurator<Implementation, Element, Field>() {
     final override fun createImplementation(element: Element, name: String?): Implementation =
         Implementation(element, name)
+    protected fun ImplementationContext.noSource() {
+        defaultNull("source", withGetter = true)
+    }
 }
 

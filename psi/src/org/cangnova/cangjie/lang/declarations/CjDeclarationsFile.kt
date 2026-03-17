@@ -27,19 +27,3 @@ package org.cangnova.cangjie.lang.declarations
 import org.cangnova.cangjie.psi.CjFile
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.psi.FileViewProvider
-
-class CjDeclarationsFile(
-    private val provider: FileViewProvider,
-
-    ) : CjFile(
-    provider,
-            isCompiled = true
-) {
-    override fun toString(): String {
-        return "CangJieDeclaration File: $name"
-    }
-
-    override fun getFileType(): FileType {
-        return CangJieDeclarationsFileType
-    }
-}

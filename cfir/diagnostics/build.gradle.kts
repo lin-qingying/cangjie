@@ -8,6 +8,9 @@ plugins {
 
 dependencies {
     api(project(":cfir:cfir-common"))
+    api(project(":cfir:cfir-cones"))
+    api(project(":psi"))
+
     api(project(":common"))
     api(project(":compiler:config"))
     api(project(":util"))
@@ -17,7 +20,7 @@ dependencies {
 
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.compilerOptions {
-    freeCompilerArgs.set(listOf("-Xcontext-parameters"))
+    freeCompilerArgs.add("-Xcontext-parameters")
 }
 
 sourceSets {

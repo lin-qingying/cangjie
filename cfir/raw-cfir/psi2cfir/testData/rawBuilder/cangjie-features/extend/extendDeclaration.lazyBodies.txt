@@ -1,4 +1,4 @@
 FILE: extendDeclaration.cj
     extend R|Int64| {
-        func isPositive(): R|Bool|
+        internal? func isPositive(): R|Bool|
     }

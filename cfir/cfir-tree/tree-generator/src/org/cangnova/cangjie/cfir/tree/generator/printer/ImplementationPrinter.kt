@@ -73,7 +73,9 @@ internal class ImplementationPrinter(printer: ImportCollectingPrinter) :
             } else {
                 println(replaceSignature)
                 printBlock {
-                    println("this.${field.name} = new${field.name.replaceFirstChar(Char::uppercaseChar)}")
+                    if (field.isMutable && field.implementationDefaultStrategy?.withGetter != true) {
+                        println("this.${field.name} = new${field.name.replaceFirstChar(Char::uppercaseChar)}")
+                    }
                 }
             }
         }
@@ -94,19 +96,21 @@ internal class ImplementationPrinter(printer: ImportCollectingPrinter) :
             } else {
                 println(transformSignature)
                 printBlock {
-                    when (field) {
-                        is SimpleField -> {
-                            val transformed = if (field.nullable) {
-                                "${field.name}?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data)"
-                            } else {
-                                "${field.name}.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data)"
+                    if (field.isMutable) {
+                        when (field) {
+                            is SimpleField -> {
+                                val transformed = if (field.nullable) {
+                                    "${field.name}?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data)"
+                                } else {
+                                    "${field.name}.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data)"
+                                }
+                                println("this.${field.name} = $transformed as ${field.typeRef.render()}")
                             }
-                            println("this.${field.name} = $transformed as ${field.typeRef.render()}")
-                        }
 
-                        is ListField -> {
-                            val baseType = field.baseType.render()
-                            println("this.${field.name} = ${field.name}.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as $baseType }")
+                            is ListField -> {
+                                val baseType = field.baseType.render()
+                                println("this.${field.name} = ${field.name}.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as $baseType }")
+                            }
                         }
                     }
                     println("return this")

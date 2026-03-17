@@ -1,9 +1,9 @@
 FILE: classWithThisReference.cj
-    class Box {
-        var value: R|Int64| = ...
+    internal? class Box {
+        internal? var value: R|Int64| = ...
             initializer:
-                STRING("0")
-        func getValue(): R|Int64| {
+                INT(0)
+        internal? func getValue(): R|Int64| {
             RETURN {
                 PROPERTY_ACCESS(value) {
                     receiver:
@@ -11,7 +11,7 @@ FILE: classWithThisReference.cj
                 }
             }
         }
-        func setValue(v: R|Int64|): R|Unit| {
+        internal? func setValue(v: R|Int64|): R|Unit| {
             ASSIGNMENT {
                 lValue:
                     PROPERTY_ACCESS(value) {

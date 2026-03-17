@@ -1,11 +1,11 @@
 FILE: forMissingIterable.cj
-    func forMissingIterable(): R|Unit| {
+    internal? func forMissingIterable(): R|Unit| {
         FOR_IN(<anonymous>: <implicit>) {
             iterable:
                 ERROR_EXPR(Missing for-in iterable)
             body:
                 RETURN {
-                    STRING("()")
+                    UNIT(())
                 }
         }
     }

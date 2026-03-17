@@ -28,6 +28,13 @@ abstract class AbstractField<Field : AbstractField<Field>> {
 
     open val arbitraryImportables: MutableList<Importable> = mutableListOf()
 
+    /**
+     * 字段上的额外注解（逐个打印为 `@AnnotationName`）。
+     *
+     * 与 [optInAnnotation] 不同，这些注解不会被 `@OptIn(...)::class` 包裹。
+     */
+    open val additionalAnnotations: MutableList<ClassRef<*>> = mutableListOf()
+
     open var optInAnnotation: ClassRef<*>? = null
     open var replaceOptInAnnotation: ClassRef<*>? = null
 
@@ -79,6 +86,7 @@ abstract class AbstractField<Field : AbstractField<Field>> {
     protected open fun updateFieldsInCopy(copy: Field) {
         copy.kDoc = kDoc
         copy.arbitraryImportables += arbitraryImportables
+        copy.additionalAnnotations += additionalAnnotations
         copy.optInAnnotation = optInAnnotation
         copy.replaceOptInAnnotation = replaceOptInAnnotation
         copy.isMutable = isMutable

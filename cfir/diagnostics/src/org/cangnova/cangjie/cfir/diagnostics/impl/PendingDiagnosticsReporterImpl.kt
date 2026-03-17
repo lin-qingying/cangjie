@@ -66,6 +66,24 @@ class PendingDiagnosticsReporterImpl(private val delegate: DiagnosticReporter) :
             }
         }
     }
+
+    /**
+     * 安全网：提交所有剩余的 pending 诊断，无论元素匹配。
+     * 正常流程中 [CfirReportCommitterDiagnosticComponent.endOfFile] 会处理，
+     * 此方法作为最终兜底。
+     */
+    fun commitAll(context: DiagnosticContext) {
+        val iterator = pendingDiagnosticsByFilePath.iterator()
+        while (iterator.hasNext()) {
+            val (_, pendingList) = iterator.next()
+            for (diagnostic in pendingList) {
+                if (!context.isDiagnosticSuppressed(diagnostic)) {
+                    delegate.report(diagnostic, context)
+                }
+            }
+            iterator.remove()
+        }
+    }
 }
 
 

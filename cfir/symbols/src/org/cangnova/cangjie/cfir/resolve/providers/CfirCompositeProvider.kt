@@ -2,15 +2,21 @@ package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 
 /**
  * Composite source provider.
  */
 class CfirCompositeProvider(
+    session: CfirSession,
     private val providers: List<CfirProvider>,
-) : CfirProvider {
+) : CfirProvider() {
+    override val symbolProvider: CfirSymbolProvider =
+        CfirCompositeSymbolProvider(session,providers.map { it.symbolProvider })
+
     override fun getCfirFilesByPackage(fqName: FqName): List<CfirFile> =
         providers.flatMap { it.getCfirFilesByPackage(fqName) }
 
@@ -20,5 +26,13 @@ class CfirCompositeProvider(
             if (result != null) return result
         }
         return null
+    }
+
+    override fun getClassNamesInPackage(fqName: FqName): Set<Name> {
+        return buildSet {
+            for (provider in providers) {
+                addAll(provider.getClassNamesInPackage(fqName))
+            }
+        }
     }
 }

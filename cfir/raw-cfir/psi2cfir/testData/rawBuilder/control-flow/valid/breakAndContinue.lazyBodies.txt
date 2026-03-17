@@ -1,2 +1,2 @@
 FILE: breakAndContinue.cj
-    func loopControl(): R|Unit|
+    internal? func loopControl(): R|Unit|

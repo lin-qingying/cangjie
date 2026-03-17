@@ -1,7 +1,7 @@
 
 
-// This file was generated automatically. See cfir/cfir-tree/tree-generator/Readme.md.
-// DO NOT MODIFY IT MANUALLY.
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
 
 @file:Suppress("DuplicatedCode")
 
@@ -15,10 +15,9 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.name.Name
 
 class CfirNamedReferenceImpl @CfirImplementationDetail constructor(
+    override val source: CjSourceElement?,
     override val name: Name,
 ) : CfirNamedReference() {
-    override val source: CjSourceElement?
-        get() = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
     }
