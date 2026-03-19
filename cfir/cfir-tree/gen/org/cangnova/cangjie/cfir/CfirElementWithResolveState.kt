@@ -8,9 +8,9 @@ package org.cangnova.cangjie.cfir
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirResolveState
 import org.cangnova.cangjie.cfir.declarations.ResolveStateAccess
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.source.CjSourceElement
 
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.elementWithResolveState]

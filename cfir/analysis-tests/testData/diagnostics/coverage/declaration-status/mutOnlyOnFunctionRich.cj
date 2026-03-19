@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 <!MUT_ONLY_ON_FUNCTION!>mut class MutClass {}<!>
 
 class MutHolder {
@@ -11,3 +12,4 @@ class MutHolder {
 <!MUT_ONLY_ON_FUNCTION!>mut enum MutEnum {
     | A
 }<!>
+

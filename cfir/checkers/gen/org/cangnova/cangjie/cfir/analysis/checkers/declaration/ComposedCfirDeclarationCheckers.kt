@@ -1,4 +1,4 @@
-﻿
+
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
@@ -7,7 +7,8 @@ import org.cangnova.cangjie.cfir.analysis.checkers.CfirCheckerWithDispatchKind
 import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
 
 /*
- * 鏈枃浠剁敱鐢熸垚鍣ㄨ嚜鍔ㄧ敓鎴? * 璇峰嬁鎵嬪姩淇敼
+ * 本文件由生成器自动生成
+ * 请勿手动修改
  */
 
 class ComposedCfirDeclarationCheckers(val predicate: (CfirCheckerWithDispatchKind) -> Boolean) : CfirDeclarationCheckers() {
@@ -31,8 +32,10 @@ class ComposedCfirDeclarationCheckers(val predicate: (CfirCheckerWithDispatchKin
         get() = _mainFunctionCheckers
     override val propertyCheckers: Set<CfirPropertyChecker>
         get() = _propertyCheckers
-    override val variableCheckers: Set<CfirVariableChecker>
-        get() = _variableCheckers
+    override val fieldVariableCheckers: Set<CfirFieldVariableChecker>
+        get() = _fieldVariableCheckers
+    override val patternVariableCheckers: Set<CfirPatternVariableChecker>
+        get() = _patternVariableCheckers
     override val typeAliasCheckers: Set<CfirTypeAliasChecker>
         get() = _typeAliasCheckers
     override val typeParameterCheckers: Set<CfirTypeParameterChecker>
@@ -51,7 +54,8 @@ class ComposedCfirDeclarationCheckers(val predicate: (CfirCheckerWithDispatchKin
     private val _functionCheckers: MutableSet<CfirFunctionChecker> = mutableSetOf()
     private val _mainFunctionCheckers: MutableSet<CfirMainFunctionChecker> = mutableSetOf()
     private val _propertyCheckers: MutableSet<CfirPropertyChecker> = mutableSetOf()
-    private val _variableCheckers: MutableSet<CfirVariableChecker> = mutableSetOf()
+    private val _fieldVariableCheckers: MutableSet<CfirFieldVariableChecker> = mutableSetOf()
+    private val _patternVariableCheckers: MutableSet<CfirPatternVariableChecker> = mutableSetOf()
     private val _typeAliasCheckers: MutableSet<CfirTypeAliasChecker> = mutableSetOf()
     private val _typeParameterCheckers: MutableSet<CfirTypeParameterChecker> = mutableSetOf()
     private val _valueParameterCheckers: MutableSet<CfirValueParameterChecker> = mutableSetOf()
@@ -68,11 +72,11 @@ class ComposedCfirDeclarationCheckers(val predicate: (CfirCheckerWithDispatchKin
         checkers.functionCheckers.filterTo(_functionCheckers, predicate)
         checkers.mainFunctionCheckers.filterTo(_mainFunctionCheckers, predicate)
         checkers.propertyCheckers.filterTo(_propertyCheckers, predicate)
-        checkers.variableCheckers.filterTo(_variableCheckers, predicate)
+        checkers.fieldVariableCheckers.filterTo(_fieldVariableCheckers, predicate)
+        checkers.patternVariableCheckers.filterTo(_patternVariableCheckers, predicate)
         checkers.typeAliasCheckers.filterTo(_typeAliasCheckers, predicate)
         checkers.typeParameterCheckers.filterTo(_typeParameterCheckers, predicate)
         checkers.valueParameterCheckers.filterTo(_valueParameterCheckers, predicate)
         checkers.invalidDeclarationCheckers.filterTo(_invalidDeclarationCheckers, predicate)
     }
 }
-

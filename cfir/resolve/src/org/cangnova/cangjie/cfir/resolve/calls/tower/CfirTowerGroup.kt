@@ -1,39 +1,42 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.calls.tower
 
 /**
- * Tower 灞傜骇鍒嗙粍锛岃〃绀哄€欓€夊湪 scope 濉斾腑鐨勬潵婧愬眰绾с€? *
- * 鐢ㄤ簬鍊欓€夋敹闆嗗櫒鐨勫眰绾т紭鍏堢骇姣旇緝锛? * - 鏇撮珮浼樺厛绾э紙ordinal 鏇村皬锛夌殑灞傜骇浼樺厛
- * - 鍚屼竴灞傜骇鍐呴€氳繃 [depth] 鍖哄垎宓屽娣卞害锛堣秺娣辫秺浼樺厛锛? *
- * 瀵归綈 K2 TowerGroup锛屼娇鐢ㄦ灇涓?depth 绠€鍖栵紙K2 浣跨敤浣嶇紪鐮侊級銆? * 浠撻鐗规湁锛氬鍔?EXTEND 灞傜骇锛堜粙浜?LOCAL 鍜?IMPORTED 涔嬮棿锛夈€? */
+ * Tower 层级分组，表示候选在 scope 塔中的来源层级。
+ * 候选收集器会用它比较层级优先级：
+ * - 层级越高，优先级越高
+ * - 同一层级中，`depth` 越深优先级越高
+ * 对齐 K2 `TowerGroup`，但这里直接用 `depth` 表示嵌套深度。
+ * 仓颉额外加入了 `EXTEND` 层级，位于 `LOCAL` 和 `IMPORTED` 之间。
+ */
 data class CfirTowerGroup(
-    /** 灞傜骇绉嶇被 */
+    /** 层级种类。 */
     val kind: Kind,
-    /** 宓屽娣卞害锛堢敤浜庡尯鍒嗗悓绫?scope 鐨勪紭鍏堢骇锛屽€艰秺澶ц秺浼樺厛锛?*/
+    /** 嵌套深度，值越大表示越靠内层。 */
     val depth: Int = 0,
 ) : Comparable<CfirTowerGroup> {
 
     /**
-     * Scope 濉旂殑灞傜骇绉嶇被銆?     *
-     * 鎸変紭鍏堢骇浠庨珮鍒颁綆鎺掑垪锛歁EMBER > LOCAL > EXTEND > IMPORTED > PACKAGE銆?     */
+     * Scope 塔上的层级种类。
+     * 优先级从高到低依次为：`MEMBER > LOCAL > EXTEND > IMPORTED > PACKAGE`。
+     */
     enum class Kind {
-        /** 绫荤殑鐩存帴鎴愬憳锛圕lassDeclaredMemberScope锛?*/
+        /** 类的直接成员。 */
         MEMBER,
-        /** 灞€閮?scope锛堝嚱鏁颁綋/鍧楀唴澹版槑锛?*/
+        /** 局部 scope，如函数体或块内部声明。 */
         LOCAL,
-        /** extend 澹版槑寮曞叆鐨勬垚鍛橈紙ExtendMemberScope锛夛紝浠撻鐗规湁 */
+        /** `extend` 声明引入的成员，仓颉特有。 */
         EXTEND,
-        /** import 寮曞叆鐨勫０鏄庯紙ImportingScope锛?*/
+        /** import 引入的声明。 */
         IMPORTED,
-        /** 鍖呯骇澹版槑锛圥ackageMemberScope锛?*/
+        /** 包级声明。 */
         PACKAGE,
     }
 
     override fun compareTo(other: CfirTowerGroup): Int {
-        // kind ordinal 瓒婂皬瓒婁紭鍏?
+        // kind ordinal 越小，优先级越高
         val kindComparison = this.kind.ordinal.compareTo(other.kind.ordinal)
         if (kindComparison != 0) return kindComparison
-        // 鍚?kind 涓?
-        // depth 瓒婂ぇ瓒婁紭鍏堬紙瓒婂唴灞傝秺濂斤級
+        // 同 kind 中，depth 越大优先级越高
         return other.depth.compareTo(this.depth)
     }
 

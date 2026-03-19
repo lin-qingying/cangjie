@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 open class Parent {
     open func canOverride(): Unit {}
 }
@@ -13,3 +14,4 @@ class StaticStatus {
 abstract class AbstractStaticStatus {
     <!STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE!>static abstract func absFn(): Unit<!>
 }
+

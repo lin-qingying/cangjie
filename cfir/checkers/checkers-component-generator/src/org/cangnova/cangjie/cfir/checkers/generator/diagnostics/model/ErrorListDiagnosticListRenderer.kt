@@ -43,7 +43,7 @@ object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
         val importSet = sortedSetOf<String>()
         importSet += "org.cangnova.cangjie.cfir.diagnostics.*"
         importSet += "org.cangnova.cangjie.cfir.diagnostics.rendering.BaseDiagnosticRendererFactory"
-        importSet += "org.cangnova.cangjie.config.LanguageFeature"
+        importSet += "org.cangnova.cangjie.LanguageFeature"
         importSet += starImportsToAdd.map { "$it.*" }
         diagnosticList.allDiagnostics.forEach { diagnostic ->
             importSet += diagnostic.psiType.kClass.qualifiedName.orEmpty()

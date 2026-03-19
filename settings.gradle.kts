@@ -15,7 +15,7 @@ plugins {
 
 rootProject.name = "cangjie"
 
-//鍩虹璁炬柦
+// 基础设施
 include(":common")
 include(":generators")
 include(":dependencies:intellij-core")
@@ -27,7 +27,7 @@ include(":compiler:arguments")
 include(":compiler:cli-arguments-generator")
 
 include(":util")
-//PSI 妯″潡
+// PSI 模块
 include(":psi")
 
 
@@ -35,7 +35,7 @@ include(":psi")
 include(":cfir")
 include(":cfir:cfir-common")
 include(":cfir:cfir-cones")
-include(":cfir:diagnostics")
+include(":common:diagnostics")
 include(":cfir:symbols")
 include(":cfir:resolve")
 include(":cfir:cfir-tree")
@@ -43,13 +43,13 @@ include(":cfir:checkers")
 include(":cfir:checkers:checkers-component-generator")
 include(":cfir:cfir-serialization")
 include(":cfir:entrypoint")
-// RAW_CFIR: 婧愮爜 -> Raw CFIR 杞崲锛堝榻?Kotlin raw-fir锛?
+// RAW_CFIR: 源码 -> Raw CFIR 转换，对齐 Kotlin raw-fir
 include(":cfir:raw-cfir")
 include(":cfir:raw-cfir:psi2cfir")
 include(":cfir:raw-cfir:light-tree2cfir")
 include(":cfir:raw-cfir:raw-cfir-common")
 
-// Analysis API锛堝榻?Kotlin analysis/analysis-api锛?
+// Analysis API，对齐 Kotlin analysis/analysis-api
 include(":analysis:analysis-api")
 include(":analysis:analysis-api-impl-base")
 include(":analysis:analysis-api-cfir")
@@ -75,3 +75,5 @@ include(":cfir:analysis-tests")
 
 
 include("cfir:diagnostic-renderers")
+
+include("compiler:plugin")

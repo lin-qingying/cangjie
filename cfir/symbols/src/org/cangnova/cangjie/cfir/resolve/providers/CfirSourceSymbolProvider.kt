@@ -3,20 +3,31 @@ package org.cangnova.cangjie.cfir.resolve.providers
 import org.cangnova.cangjie.cfir.nameConflictsTracker
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
+import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
+import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
+import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
+import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
+import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
+import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -158,9 +169,20 @@ class CfirProviderImpl(
                 state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(declaration.name)
             }
 
-            is CfirVariable -> {
+            is CfirPatternVariable -> {
                 if (!isTopLevel) return
-                val symbol = declaration.symbol as? CfirVariableSymbol ?: return
+                val symbol = declaration.symbol as? CfirPatternVariableSymbol ?: return
+                val bindingNames = collectBindingNames(declaration.pattern)
+                for (name in bindingNames) {
+                    val callableId = CallableId(packageFqName, name)
+                    state.callableMap.getOrPut(callableId, ::mutableListOf).add(symbol)
+                    state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(name)
+                }
+            }
+
+            is CfirFieldVariable -> {
+                if (!isTopLevel) return
+                val symbol = declaration.symbol as? CfirFieldVariableSymbol ?: return
                 val callableId = CallableId(packageFqName, declaration.name)
                 state.callableMap.getOrPut(callableId, ::mutableListOf).add(symbol)
                 state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(declaration.name)
@@ -218,6 +240,20 @@ class CfirProviderImpl(
             ClassId(packageFqName, shortName)
         } else {
             ClassId(packageFqName, containingClass.relativeClassName.child(shortName), isLocal = false)
+        }
+    }
+
+    private fun collectBindingNames(pattern: CfirPattern): List<Name> {
+        return when (pattern) {
+            is CfirBindingPattern -> buildList {
+                add(pattern.name)
+                pattern.nestedPattern?.let { addAll(collectBindingNames(it)) }
+            }
+            is CfirTuplePattern -> pattern.elements.flatMap(::collectBindingNames)
+            is CfirEnumPattern -> pattern.arguments.flatMap(::collectBindingNames)
+            is CfirTypePattern -> listOfNotNull(pattern.bindingName)
+            is CfirOrPattern -> pattern.alternatives.firstOrNull()?.let(::collectBindingNames).orEmpty()
+            is CfirWildcardPattern, is CfirConstPattern , is CfirExpressionPattern -> emptyList()
         }
     }
 

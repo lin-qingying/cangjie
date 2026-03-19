@@ -6,11 +6,10 @@ import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
 
 /**
- * 鍊欓€夋敹闆嗗櫒锛岃礋璐ｅ湪 scope 濉旈亶鍘嗚繃绋嬩腑鏀堕泦鍜屾帓搴忓€欓€夈€? *
- * 璺熻釜褰撳墠鏈€浣冲€欓€夌殑閫傜敤鎬х瓑绾у拰濉斿眰绾э細
- * - 鏇翠紭 TowerGroup 鏃舵竻闄ゆ棫鍊欓€? * - 鍚?TowerGroup 涓寜閫傜敤鎬ф帓搴? * - 鏀寔 shouldStopAtTheGroup 鎻愬墠缁堟 Tower 閬嶅巻
- *
- * 瀵归綈 K2 CandidateCollector(components, resolutionStageRunner)銆? */
+ * 候选收集器，负责在 scope 塔遍历过程中收集并排序候选。
+ * 它会持续跟踪当前最优的适用性等级与 tower 层级，
+ * 并支持在满足条件时提前停止后续 tower 遍历。
+ */
 class CfirCandidateCollector(
     val components: CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
     private val resolutionStageRunner: CfirResolutionStageRunner,
@@ -21,14 +20,16 @@ class CfirCandidateCollector(
     var currentApplicability: CfirCandidateApplicability = CfirCandidateApplicability.HIDDEN
         private set
 
-    /** 褰撳墠鏈€浣冲€欓€夌殑 TowerGroup */
+    /** 当前最优候选所在的 tower 层级。 */
     var bestGroup: CfirTowerGroup? = null
         private set
 
     /**
-     * 鏀堕泦涓€涓€欓€夛紝閫氳繃 resolutionStageRunner 楠岃瘉銆?     *
-     * @param group 鍊欓€夋潵婧愮殑 Tower 灞傜骇
-     * @param candidate 寰呮敹闆嗙殑鍊欓€?     * @param context 瑙ｆ瀽涓婁笅鏂?     */
+     * 收集一个候选，并通过 `resolutionStageRunner` 执行验证。
+     * @param group 候选来源的 tower 层级
+     * @param candidate 待收集的候选
+     * @param context 解析上下文
+     */
     fun consumeCandidate(
         group: CfirTowerGroup,
         candidate: CfirCandidate,
@@ -38,13 +39,13 @@ class CfirCandidateCollector(
 
         val currentBest = bestGroup
         if (currentBest == null || group < currentBest) {
-            // 鏇翠紭 Tower 灞傜骇 鈥?娓呴櫎鏃у€欓€?
+            // 更优 tower 层级出现时，清空旧候选
             candidates.clear()
             bestGroup = group
             currentApplicability = applicability
             candidates.add(candidate)
         } else if (group == currentBest) {
-            // 鍚屼竴灞傜骇 鈥?鎸夐€傜敤鎬ф瘮杈?
+            // 同层级内按适用性比较
             if (applicability.ordinal >= currentApplicability.ordinal) {
                 if (applicability.ordinal > currentApplicability.ordinal) {
                     candidates.clear()
@@ -53,28 +54,28 @@ class CfirCandidateCollector(
                 candidates.add(candidate)
             }
         }
-        // group > currentBest 鈫?蹇界暐锛堝姡璐ㄥ眰绾э級
+        // 当前 group 比最优层级更差时直接忽略
 
         return applicability
     }
 
-    /** 杩斿洖鏈€浣冲€欓€夊垪琛?*/
+    /** 返回当前最优候选列表。 */
     fun bestCandidates(): List<CfirCandidate> = candidates.toList()
 
-    /** 鏄惁宸叉壘鍒版垚鍔熷€欓€?*/
+    /** 是否已经找到成功候选。 */
     val isSuccess: Boolean
         get() = currentApplicability.isSuccess && candidates.isNotEmpty()
 
     /**
-     * 鏄惁搴斿湪褰撳墠 group 鍋滄 Tower 閬嶅巻銆?     *
-     * 褰撳凡鏈夋垚鍔熷€欓€変笖寰呮煡璇㈢殑 group 姣斿綋鍓嶆渶浣?group 鏇村樊鏃惰繑鍥?true銆?     */
+     * 判断是否应在当前 group 结束后停止 tower 遍历。
+     */
     fun shouldStopAtTheGroup(group: CfirTowerGroup): Boolean {
         val currentBest = bestGroup ?: return false
         if (!currentApplicability.shouldStopResolve) return false
         return group > currentBest
     }
 
-    /** 閲嶇疆鐘舵€侊紝鐢ㄤ簬鏂颁竴杞敹闆?*/
+    /** 重置内部状态，用于新一轮收集。 */
     fun newDataSet() {
         candidates.clear()
         currentApplicability = CfirCandidateApplicability.HIDDEN

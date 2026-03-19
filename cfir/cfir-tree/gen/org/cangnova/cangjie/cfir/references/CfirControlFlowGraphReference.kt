@@ -6,9 +6,9 @@
 package org.cangnova.cangjie.cfir.references
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.source.CjSourceElement
 
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.controlFlowGraphReference]

@@ -1,4 +1,4 @@
-﻿
+
 
 package org.cangnova.cangjie.cfir.analysis.checkers.type
 
@@ -15,7 +15,8 @@ import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
 import org.cangnova.cangjie.utils.exceptions.withFirEntry
 
 /*
- * 鏈枃浠剁敱鐢熸垚鍣ㄨ嚜鍔ㄧ敓鎴? * 璇峰嬁鎵嬪姩淇敼
+ * 本文件由生成器自动生成
+ * 请勿手动修改
  */
 
 @OptIn(CheckersComponentInternal::class)
@@ -89,4 +90,3 @@ class CfirTypeCheckersDiagnosticComponent(
         }
     }
 }
-

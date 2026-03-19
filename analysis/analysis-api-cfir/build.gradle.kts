@@ -8,7 +8,7 @@ dependencies {
     api(project(":cfir:cfir-tree"))
     api(project(":cfir:resolve"))
     api(project(":cfir:checkers"))
-    api(project(":cfir:diagnostics"))
+    api(project(":common:diagnostics"))
     implementation(project(":psi"))
 
     compileOnly(intellijCore())

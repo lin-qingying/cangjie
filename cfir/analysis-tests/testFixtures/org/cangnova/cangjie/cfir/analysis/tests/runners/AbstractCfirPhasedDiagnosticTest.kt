@@ -1,12 +1,19 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.tests.runners
 
+import org.cangnova.cangjie.cfir.analysis.tests.services.CfirInlineDiagnosticsChecker
+import org.cangnova.cangjie.cfir.analysis.tests.services.StructuredInlineDiagnosticsAssertionError
 import org.cangnova.cangjie.test.CfirParser
 import org.cangnova.cangjie.test.TargetBackend
 import org.cangnova.cangjie.test.builders.TestConfigurationBuilder
+import org.cangnova.cangjie.test.config.TestPhaseDirectives
+import org.cangnova.cangjie.test.config.TestPhase
+import org.cangnova.cangjie.test.config.commonConfigurationForTest
+import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives.CFIR_PARSER
 import org.cangnova.cangjie.test.directives.LanguageSettingsDirectives
-import org.cangnova.cangjie.test.directives.model.SimpleDirectivesContainer
 import org.cangnova.cangjie.test.frontend.CfirDefaultFacade
+import org.cangnova.cangjie.test.model.FrontendKinds
 import org.cangnova.cangjie.test.runners.AbstractCangjieCompilerWithTargetBackendTest
+import org.cangnova.cangjie.test.services.impl.JUnit5Assertions
 
 /**
  * CFIR phased diagnostics test base.
@@ -21,18 +28,19 @@ abstract class AbstractCfirPhasedDiagnosticTest(
 ) : AbstractCangjieCompilerWithTargetBackendTest(TargetBackend.ANY) {
 
     override fun configure(builder: TestConfigurationBuilder) = with(builder) {
-        useDirectives(LanguageSettingsDirectives, CfirPhasedDiagnosticDirectives)
+        assertions = JUnit5Assertions
+        useDirectives(LanguageSettingsDirectives, TestPhaseDirectives)
 
         defaultDirectives {
-            put(CfirPhasedDiagnosticDirectives.LATEST_PHASE_IN_PIPELINE, TestPhase.BACKEND)
-            put(CfirPhasedDiagnosticDirectives.CFIR_PARSER, parser)
-            put(LanguageSettingsDirectives.LANGUAGE, "+EnableDfaWarningsInC2")
+            TestPhaseDirectives.LATEST_PHASE_IN_PIPELINE with TestPhase.BACKEND
+            CFIR_PARSER with parser
         }
 
-        // Current Cangjie phased diagnostics pipeline is frontend-only for now.
-        // Keep the shape aligned with K2 phased configuration and extend with
-        // converter/backend facades when those artifacts are available.
-        facadeStep(::CfirDefaultFacade)
+        commonConfigurationForTest(
+            targetFrontend = FrontendKinds.CFIR,
+            frontendFacade = ::CfirDefaultFacade,
+        )
+
 
         enableMetaInfoHandler()
     }
@@ -41,21 +49,43 @@ abstract class AbstractCfirPhasedDiagnosticTest(
 open class AbstractPhasedDiagnosticLightTreeTest : AbstractCfirPhasedDiagnosticTest(CfirParser.LightTree)
 open class AbstractPhasedDiagnosticPsiTest : AbstractCfirPhasedDiagnosticTest(CfirParser.Psi)
 
-enum class TestPhase {
-    FRONTEND,
-    BACKEND,
+abstract class AbstractCfirStructuredPhasedDiagnosticTest(
+    private val structuredParser: CfirParser,
+) : AbstractCangjieCompilerWithTargetBackendTest(TargetBackend.ANY) {
+
+    override fun configure(builder: TestConfigurationBuilder) = with(builder) {
+        useDirectives(LanguageSettingsDirectives, TestPhaseDirectives)
+
+        defaultDirectives {
+            TestPhaseDirectives.LATEST_PHASE_IN_PIPELINE with TestPhase.BACKEND
+            CFIR_PARSER with structuredParser
+        }
+
+        commonConfigurationForTest(
+            targetFrontend = FrontendKinds.CFIR,
+            frontendFacade = ::CfirDefaultFacade,
+        )
+
+        useAfterAnalysisCheckers(::CfirInlineDiagnosticsChecker)
+    }
+
+    override fun runTest(filePath: String) {
+        try {
+            super.runTest(filePath)
+        } catch (error: AssertionError) {
+            val structured = generateSequence(error as Throwable?) { it.cause }
+                .filterIsInstance<StructuredInlineDiagnosticsAssertionError>()
+                .firstOrNull()
+            if (structured != null) {
+                throw structured
+            }
+            throw error
+        }
+    }
 }
 
-object CfirPhasedDiagnosticDirectives : SimpleDirectivesContainer() {
-    val LATEST_PHASE_IN_PIPELINE by enumDirective<TestPhase>(
-        description = "Latest phase that should be executed by phased diagnostics pipeline."
-    )
+open class AbstractStructuredPhasedDiagnosticLightTreeTest :
+    AbstractCfirStructuredPhasedDiagnosticTest(CfirParser.LightTree)
 
-    val CFIR_PARSER by enumDirective<CfirParser>(
-        description = "Parser mode used by phased diagnostics tests."
-    )
-
-    val SUPPRESS_NO_TYPE_ALIAS_EXPANSION_MODE by stringDirective(
-        description = "Suppresses failures in without-alias-expansion diagnostics mode."
-    )
-}
+open class AbstractStructuredPhasedDiagnosticPsiTest :
+    AbstractCfirStructuredPhasedDiagnosticTest(CfirParser.Psi)

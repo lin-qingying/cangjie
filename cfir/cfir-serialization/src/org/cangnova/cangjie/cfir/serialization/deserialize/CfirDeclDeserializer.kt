@@ -4,6 +4,10 @@ import PackageFormat.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.*
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.builder.buildBindingPattern
+import org.cangnova.cangjie.cfir.patterns.builder.buildTuplePattern
+import org.cangnova.cangjie.cfir.patterns.builder.buildWildcardPattern
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
@@ -45,6 +49,7 @@ class CfirDeclDeserializer(
             DeclKind.FuncDecl -> convertFunction(decl)
             DeclKind.PropDecl -> convertProperty(decl)
             DeclKind.VarDecl -> convertVariable(decl)
+            DeclKind.VarWithPatternDecl -> convertVariableWithPattern(decl)
             DeclKind.ExtendDecl -> convertExtend(decl)
             DeclKind.TypeAliasDecl -> convertTypeAlias(decl)
             DeclKind.GenericParamDecl -> convertTypeParameter(decl)
@@ -294,17 +299,17 @@ class CfirDeclDeserializer(
     }
 
     /** VarDecl → CfirVariable */
-    private fun convertVariable(decl: Decl): CfirVariable {
+    private fun convertVariable(decl: Decl): CfirFieldVariable {
         val name = Name.identifier(decl.identifier ?: "???")
-        val symbol = CfirVariableSymbol()
+        val symbol = CfirFieldVariableSymbol()
         val status = buildStatus(decl)
         val typeParams = deserializeTypeParameters(decl)
         val returnTypeRef = buildTypeRef(decl.type)
 
-        val varInfo = decl.info(VarInfo()) as? VarInfo
+        val varInfo = if (decl.infoType == DeclInfo.VarInfo) decl.info(VarInfo()) as? VarInfo else null
         val isVar = varInfo?.isVar ?: false
 
-        val cfirVar = CfirVariableImpl(
+        val cfirVar = CfirFieldVariableImpl(
             source = null,
             moduleData = context.moduleData,
             annotations = emptyList(),
@@ -324,6 +329,73 @@ class CfirDeclDeserializer(
     }
 
     /** ExtendDecl → CfirExtend */
+    private fun convertVariableWithPattern(decl: Decl): CfirPatternVariable {
+        val symbol = CfirPatternVariableSymbol()
+        val status = buildStatus(decl)
+        val typeParams = deserializeTypeParameters(decl)
+        val returnTypeRef = buildTypeRef(decl.type)
+
+        val info = if (decl.infoType == DeclInfo.VarWithPatternInfo) {
+            decl.info(VarWithPatternInfo()) as? VarWithPatternInfo
+        } else {
+            null
+        }
+        val fallbackName = decl.identifier?.let(Name::identifier) ?: Name.special("<pattern>")
+        val pattern = deserializeIrrefutablePattern(info?.irrefutablePattern, fallbackName, returnTypeRef)
+
+        val cfirVar = CfirPatternVariableImpl(
+            source = null,
+            moduleData = context.moduleData,
+            annotations = emptyList(),
+            symbol = symbol,
+            origin = CfirDeclarationOrigin.Library,
+            attributes = CfirDeclarationAttributes.EMPTY,
+            status = status,
+            initializer = null,
+            isVar = info?.isVar ?: false,
+            typeParameters = typeParams,
+            returnTypeRef = returnTypeRef,
+            pattern = pattern,
+        )
+        symbol.bind(cfirVar)
+        cfirVar.markResolved()
+        return cfirVar
+    }
+
+    private fun deserializeIrrefutablePattern(
+        fbPattern: Pattern?,
+        fallbackName: Name,
+        returnTypeRef: CfirResolvedTypeRef,
+    ): CfirPattern {
+        if (fbPattern == null) {
+            return buildBindingPattern {
+                name = fallbackName
+                typeRef = returnTypeRef
+            }
+        }
+
+        return when (fbPattern.kind) {
+            PatternKind.VarPattern -> buildBindingPattern {
+                name = fallbackName
+                typeRef = returnTypeRef
+            }
+            PatternKind.TuplePattern -> buildTuplePattern {
+                for (i in 0 until fbPattern.patternsLength) {
+                    elements += deserializeIrrefutablePattern(
+                        fbPattern = fbPattern.patterns(i),
+                        fallbackName = fallbackName,
+                        returnTypeRef = returnTypeRef,
+                    )
+                }
+            }
+            PatternKind.WildcardPattern -> buildWildcardPattern()
+            else -> buildBindingPattern {
+                name = fallbackName
+                typeRef = returnTypeRef
+            }
+        }
+    }
+
     private fun convertExtend(decl: Decl): CfirExtend {
         val symbol = CfirExtendSymbol()
         val status = buildStatus(decl)

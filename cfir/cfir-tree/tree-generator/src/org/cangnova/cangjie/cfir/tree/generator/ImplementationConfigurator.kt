@@ -162,7 +162,7 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         // constructor 已单独配置为两个具名实现
         invalidDeclaration,
         property,
-        variable,
+        fieldVariable,
         patternVariable,
         valueParameter,
         typeParameter,

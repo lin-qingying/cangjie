@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.pipeline
 
+import org.cangnova.cangjie.cfir.DependencyListForCliModule
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.common.CfirSourceModuleData
@@ -22,14 +23,15 @@ data class SessionWithSources<F>(
  * This mirrors Kotlin's SessionConstructionUtils structure for the single-module
  * flow used in this repository:
  * 1) create shared library session
- * 2) create regular library session (depends on shared session)
- * 3) create source session (depends on library session)
+ * 2) create regular library session that binds dependency module data
+ * 3) create source session whose module data depends on dependency lists
  */
 object CfirSessionConstructionUtils {
     fun <F> prepareSessions(
         files: List<F>,
         configuration: CompilerConfiguration,
         rootModuleName: Name,
+        dependencyList: DependencyListForCliModule,
         createSharedLibrarySession: () -> CfirSession,
         createLibrarySession: (sharedLibrarySession: CfirSession) -> CfirSession,
         createSourceSession: CfirSessionProducer<F>,
@@ -44,12 +46,12 @@ object CfirSessionConstructionUtils {
         val sessionConfigurator: CfirSessionConfigurator.() -> Unit = {}
 
         val sharedSession = createSharedLibrarySession()
-        val regularLibrarySession = createLibrarySession(sharedSession)
+        createLibrarySession(sharedSession)
 
         val nonScriptSession = createSingleSession(
             files = nonScriptFiles,
             rootModuleName = rootModuleName,
-            dependencies = listOf(regularLibrarySession.moduleData),
+            dependencyList = dependencyList,
             sessionConfigurator = sessionConfigurator,
             sourceSessionProducer = createSourceSession,
         )
@@ -59,7 +61,11 @@ object CfirSessionConstructionUtils {
         val scriptsSession = createSingleSession(
             files = scriptFiles,
             rootModuleName = Name.identifier("${rootModuleName.asString()}-scripts"),
-            dependencies = listOf(regularLibrarySession.moduleData, nonScriptSession.session.moduleData),
+            dependencyList = DependencyListForCliModule(
+                regularDependencies = dependencyList.regularDependencies,
+                dependsOnDependencies = dependencyList.dependsOnDependencies + nonScriptSession.session.moduleData,
+                moduleDataProvider = dependencyList.moduleDataProvider,
+            ),
             sessionConfigurator = sessionConfigurator,
             sourceSessionProducer = createSourceSession,
         )
@@ -73,14 +79,14 @@ object CfirSessionConstructionUtils {
     private fun <F> createSingleSession(
         files: List<F>,
         rootModuleName: Name,
-        dependencies: List<CfirModuleData>,
+        dependencyList: DependencyListForCliModule,
         sessionConfigurator: CfirSessionConfigurator.() -> Unit,
         sourceSessionProducer: CfirSessionProducer<F>,
     ): SessionWithSources<F> {
         val sourceModuleData = CfirSourceModuleData(
             name = rootModuleName,
-            dependencies = dependencies,
-            refinementDependencies = emptyList(),
+            dependencies = dependencyList.regularDependencies,
+            refinementDependencies = dependencyList.dependsOnDependencies,
             platform = CfirPlatform.DEFAULT,
         )
 

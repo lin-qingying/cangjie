@@ -12,22 +12,22 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirMatchExpressionImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: List<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangjieType?,
-    override var subject: CfirExpression,
+    override var subject: CfirExpression?,
     override var branches: List<CfirMatchBranch>,
 ) : CfirMatchExpression() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
-        subject.accept(visitor, data)
+        subject?.accept(visitor, data)
         branches.forEach { it.accept(visitor, data) }
     }
 
@@ -49,7 +49,7 @@ class CfirMatchExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformSubject(transformer: CfirTransformer<D>, data: D): CfirMatchExpression
      {
-        this.subject = subject.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression
+        this.subject = subject?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression?
         return this
     }
 

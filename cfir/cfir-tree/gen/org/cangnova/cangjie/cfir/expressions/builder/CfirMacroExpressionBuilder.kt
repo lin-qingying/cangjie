@@ -13,9 +13,9 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirMacroExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirMacroExpressionImpl
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirMacroExpressionBuilder {

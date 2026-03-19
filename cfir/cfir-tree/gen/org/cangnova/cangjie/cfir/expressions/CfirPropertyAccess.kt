@@ -6,21 +6,22 @@
 package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirResolvable
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.references.CfirReference
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.source.CjSourceElement
 
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.propertyAccess]
  */
-abstract class CfirPropertyAccess : CfirExpression() {
+abstract class CfirPropertyAccess : CfirExpression(), CfirResolvable {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangjieType?
-    abstract val calleeReference: CfirReference
+    abstract override val calleeReference: CfirReference
     abstract val explicitReceiver: CfirExpression?
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
@@ -36,10 +37,13 @@ abstract class CfirPropertyAccess : CfirExpression() {
     override abstract fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
 
 
+    override abstract fun replaceCalleeReference(newCalleeReference: CfirReference)
+
+
     override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirPropertyAccess
 
 
-    abstract fun <D> transformCalleeReference(transformer: CfirTransformer<D>, data: D): CfirPropertyAccess
+    override abstract fun <D> transformCalleeReference(transformer: CfirTransformer<D>, data: D): CfirPropertyAccess
 
 
     abstract fun <D> transformExplicitReceiver(transformer: CfirTransformer<D>, data: D): CfirPropertyAccess

@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 func logicNotMain(): Bool {
     return !true
 }
@@ -5,3 +6,4 @@ func logicNotMain(): Bool {
 main(): Int32 {
     return if (logicNotMain()) { 1 } else { 0 }
 }
+

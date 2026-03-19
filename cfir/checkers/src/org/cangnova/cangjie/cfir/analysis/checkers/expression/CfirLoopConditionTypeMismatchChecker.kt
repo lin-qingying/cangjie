@@ -11,11 +11,12 @@ import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.session.builtinTypes
-import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 /**
- * `while/do-while` 鏉′欢绫诲瀷妫€鏌ワ細鏉′欢琛ㄨ揪寮忓繀椤讳负 Bool銆? *
- * `for-in` 娌℃湁鐢ㄦ埛鍙啓鐨勫竷灏旀潯浠讹紝璺宠繃璇ヨ妭鐐广€? */
+ * `while` / `do-while` 条件类型检查：条件表达式必须为 `Bool`。
+ * `for-in` 没有用户可写的布尔条件，因此直接跳过。
+ */
 object CfirLoopConditionTypeMismatchChecker : CfirBasicExpressionChecker(CheckerDispatchKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {

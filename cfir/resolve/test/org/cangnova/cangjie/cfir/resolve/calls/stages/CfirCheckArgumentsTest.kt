@@ -17,7 +17,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * CfirCheckArguments 鍙傛暟绫诲瀷妫€鏌ラ樁娈垫祴璇曘€? */
+ * `CfirCheckArguments` 参数类型检查阶段测试。
+ */
 class CfirCheckArgumentsTest {
 
     private lateinit var context: CfirResolutionContext
@@ -39,7 +40,7 @@ class CfirCheckArgumentsTest {
             val symbol = buildFunctionSymbol("f", parameterTypes = listOf(ConePrimitiveType.INT32))
             val callInfo = buildCallInfo("f", arguments = listOf(buildTypedExpression(ConePrimitiveType.INT32)))
             val candidate = buildCandidate(symbol, callInfo)
-            // 鍏堝仛鍙傛暟鏄犲皠
+            // 先执行参数映射
             CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
 
             CfirCheckArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
@@ -112,7 +113,7 @@ class CfirCheckArgumentsTest {
                 "f",
                 arguments = listOf(
                     buildTypedExpression(ConePrimitiveType.INT32),
-                    buildTypedExpression(ConePrimitiveType.INT32), // 搴旇鏄?Bool
+                    buildTypedExpression(ConePrimitiveType.INT32), // 应该是 Bool
                 ),
             )
             val candidate = buildCandidate(symbol, callInfo)
@@ -141,13 +142,13 @@ class CfirCheckArgumentsTest {
     }
 }
 
-// ---- Stub 瀵硅薄 ----
+// ---- Stub 对象 ----
 
 private object StubSession : org.cangnova.cangjie.cfir.session.CfirSession(Kind.Source) {
     override fun toString(): String = "StubSession"
 }
 
-/** 鏀寔 IdealInt/IdealFloat 瀛愮被鍨嬪垽瀹氱殑娴嬭瘯 TypeContext */
+/** 支持 `IdealInt` / `IdealFloat` 子类型判定的测试 `TypeContext`。 */
 private class TestTypeContext : ConeTypeContext {
     override fun supertypes(type: ConeCangjieType): Collection<ConeCangjieType> = emptyList()
     override fun isSameTypeConstructor(a: ConeCangjieType, b: ConeCangjieType): Boolean {

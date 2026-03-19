@@ -3,19 +3,31 @@
 import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveContext
 import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceComponents
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.types.ConeSubtypeChecker
+import org.cangnova.cangjie.name.FqName
 
 /**
- * 瑙ｆ瀽涓婁笅鏂囷紝涓洪獙璇侀樁娈垫彁渚涙墍闇€鐨勭幆澧冧俊鎭€? *
- * 瀵归綈 K2 ResolutionContext锛堝幓鎺?BodyResolveComponents 渚濊禆锛屼粎鏆撮湶蹇呰鏈嶅姟锛夈€? */
+ * 调用解析上下文，为验证阶段提供所需环境信息。
+ * 对齐 K2 `ResolutionContext`，但只暴露当前实现真正需要的服务。
+ */
 class CfirResolutionContext(
-    /** 缂栬瘧鍣?session */
+    /** 编译器会话。 */
     val session: CfirSession,
-    /** Body 瑙ｆ瀽涓婁笅鏂?*/
+    /** Body resolve 上下文。 */
     val bodyResolveContext: CfirBodyResolveContext,
-    /** 瀛愮被鍨嬫鏌ュ櫒 */
+    /** 子类型检查器。 */
     val subtypeChecker: ConeSubtypeChecker,
-    /** 鎺ㄦ柇缁勪欢锛圥hase 4 娉涘瀷鎺ㄦ柇锛?*/
+    /** 泛型推断组件，主要供后续阶段使用。 */
     val inferenceComponents: CfirInferenceComponents? = null,
+    /** 调用处的期望返回类型，用于泛型返回类型约束收集。 */
+    val expectedType: ConeCangjieType? = null,
+    /** 使用点所属文件路径，用于可见性检查。 */
+    val containingFilePath: String? = null,
+    /** 使用点所属包名，用于可见性检查。 */
+    val containingPackageFqName: FqName? = null,
+    /** 使用点所属类符号，用于可见性检查。 */
+    val containingClassSymbol: CfirClassSymbol? = null,
 )
 

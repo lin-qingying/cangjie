@@ -15,9 +15,9 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTypeOperationKind
 import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
 import org.cangnova.cangjie.cfir.expressions.impl.CfirTypeOperatorImpl
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirTypeOperatorBuilder {

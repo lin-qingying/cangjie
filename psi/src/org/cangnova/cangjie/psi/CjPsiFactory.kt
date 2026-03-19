@@ -32,6 +32,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.LocalTimeCounter
+import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjModifierKeywordToken

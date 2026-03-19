@@ -6,10 +6,11 @@ import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 
 /**
- * [ConeTypeContext] 鐨勫疄鐜帮紝杩炴帴瀛愮被鍨嬫鏌ョ畻娉曚笌绗﹀彿绯荤粺銆? *
- * 閫氳繃 [CfirSession] 鐨?symbolProvider 鏌ヨ绫荤殑瓒呯被鍨嬩俊鎭紝
- * 灏?CFIR 澹版槑涓殑 superTypeRefs 杞崲涓哄瓙绫诲瀷妫€鏌ュ櫒鍙敤鐨?[ConeCangjieType] 鍒楄〃銆? *
- * 鍙傝€?K2 ConeTypeCheckerContext銆? */
+ * [ConeTypeContext] 的实现，负责连接子类型检查算法与符号系统。
+ * 它通过 [CfirSession] 的 `symbolProvider` 查询类的直接超类型信息，
+ * 并将 CFIR 声明中的 `superTypeRefs` 转换为子类型检查器可用的 [ConeCangjieType] 列表。
+ * 参考 K2 `ConeTypeCheckerContext`。
+ */
 class CfirTypeCheckerContext(
     private val session: CfirSession,
 ) : ConeTypeContext {
@@ -21,7 +22,7 @@ class CfirTypeCheckerContext(
             is ConeEnumType -> classLikeSupertypes(type.classId)
             is ConeTypeParameterType -> type.upperBounds
             is ConeIntersectionType -> {
-                // 浜ゅ弶绫诲瀷鐨勮秴绫诲瀷鏄悇鎴愬憳瓒呯被鍨嬬殑鍚堝苟
+                // 交叉类型的超类型是各成员超类型的合并
                 type.intersectedTypes.flatMap { supertypes(it) }.distinct()
             }
             else -> emptyList()
@@ -44,7 +45,7 @@ class CfirTypeCheckerContext(
         }
     }
 
-    /** 閫氳繃 symbolProvider 鏌ユ壘绫?缁撴瀯浣?鏋氫妇鐨勭洿鎺ヨ秴绫诲瀷 */
+    /** 通过 symbolProvider 查找类、结构体或枚举的直接超类型。 */
     private fun classLikeSupertypes(classId: ClassId): List<ConeCangjieType> {
         val classSymbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return emptyList()
         if (!classSymbol.isBound) return emptyList()

@@ -1,8 +1,10 @@
 package org.cangnova.cangjie.cfir.entrypoint.configuration
 
 import org.cangnova.cangjie.cfir.diagnostics.CjRegisteredDiagnosticFactoriesStorage
+import org.cangnova.cangjie.config.CLIConfigurationKeys
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.CompilerConfigurationKey
+import kotlin.text.get
 
 /**
  * 前端阶段配置键集合。
@@ -29,3 +31,5 @@ var CompilerConfiguration.diagnosticFactoriesStorage: CjRegisteredDiagnosticFact
             requireNotNull(value) { "nullable values are not allowed" },
         )
     }
+
+

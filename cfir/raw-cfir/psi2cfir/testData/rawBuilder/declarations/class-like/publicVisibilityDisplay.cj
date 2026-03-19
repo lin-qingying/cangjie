@@ -1,4 +1,5 @@
-﻿// STUB_FALLBACK_TO_AST:
+// RUN_PIPELINE_TILL: FRONTEND
+// STUB_FALLBACK_TO_AST:
 public class ExplicitPublic {
     public func explicitPublic(): Unit {}
     func implicitInternal(): Unit {}
@@ -10,3 +11,4 @@ public class ExplicitPublic {
 class ImplicitInternalFromClassDefault {
     public func publicMember(): Unit {}
 }
+

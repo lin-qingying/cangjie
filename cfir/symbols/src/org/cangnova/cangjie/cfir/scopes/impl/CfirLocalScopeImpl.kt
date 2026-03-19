@@ -21,7 +21,7 @@ class CfirLocalScopeImpl : CfirLocalScope {
     private val functions = HashMap<Name, MutableList<CfirFunctionSymbol>>()
     private val classifiers = HashMap<Name, MutableList<CfirClassSymbol>>()
 
-    /** 添加局部变量（支持 CfirVariableSymbol 和 CfirPatternVariableSymbol） */
+    /** 添加局部变量（支持 CfirFieldVariableSymbol 和 CfirPatternVariableSymbol） */
     fun addVariable(name: Name, symbol: CfirCallableSymbol<*>) {
         variables.getOrPut(name) { mutableListOf() }.add(symbol)
     }
@@ -46,7 +46,7 @@ class CfirLocalScopeImpl : CfirLocalScope {
 
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
         // 局部变量通过 processVariablesByName 查找
-        // CfirPropertySymbol 用于类成员属性，局部变量使用 CfirVariableSymbol
+        // CfirPropertySymbol 用于类成员属性，局部变量使用 CfirFieldVariableSymbol
     }
 
     /** 按名称查找局部变量符号 */

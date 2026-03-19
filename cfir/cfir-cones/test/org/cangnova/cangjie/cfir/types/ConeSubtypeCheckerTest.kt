@@ -389,6 +389,15 @@ class ConeSubtypeCheckerTest {
             )
             assertFalse(checker.isSubtypeOf(tp, other))
         }
+
+        @Test
+        fun `type parameters resolved from the same name remain equal across phases`() {
+            val fromDeclaration = ConeTypeParameterType(ConeTypeParameterLookupTag("T"))
+            val fromBodyChecker = ConeTypeParameterType(ConeTypeParameterLookupTag("T"))
+
+            assertTrue(checker.isSubtypeOf(fromDeclaration, fromBodyChecker))
+            assertTrue(checker.isSubtypeOf(fromBodyChecker, fromDeclaration))
+        }
     }
 
     // ---- 规则 14: 交叉类型 ----

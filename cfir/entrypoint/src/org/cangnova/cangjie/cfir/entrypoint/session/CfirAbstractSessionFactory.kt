@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.entrypoint.session
 
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.common.CfirBinaryDependenciesModuleData
@@ -21,6 +22,8 @@ import org.cangnova.cangjie.cfir.entrypoint.checkers.registerCommonCheckers
 import org.cangnova.cangjie.cfir.entrypoint.configuration.diagnosticFactoriesStorage
 import org.cangnova.cangjie.cfir.resolve.inference.FirInferenceLogger
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLibrarySessionProvider
+import org.cangnova.cangjie.cfir.resolve.CfirDefaultImportsProvider
+import org.cangnova.cangjie.cfir.scopes.CfirDefaultImportsProviderHolder
 import org.cangnova.cangjie.cfir.session.registerModuleData
 import org.cangnova.cangjie.cfir.session.StructuredProviders
 import org.cangnova.cangjie.cfir.session.DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY
@@ -183,6 +186,7 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
                 configuration.fileMappingTracker,
             )
             registerCliCompilerOnlyResolveComponents()
+            register(CfirDefaultImportsProviderHolder::class, CfirDefaultImportsProviderHolder.of(CfirDefaultImportsProvider))
 
             registerSourceSessionComponents(context)
 

@@ -9,9 +9,10 @@ import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitor
 
 /**
- * CFIR 鏍戦亶鍘嗛鏋讹紝绠＄悊 [MutableCheckerContext] 涓殑澹版槑/璇彞/鍏冪礌鏍堛€? *
- * 瀵归綈 K2 `AbstractDiagnosticCollectorVisitor`銆? *
- * 瀛愮被閫氳繃 [checkElement] 瀹炵幇鍏蜂綋鐨勬鏌ラ€昏緫銆? */
+ * CFIR 树遍历骨架，负责管理 [MutableCheckerContext] 中的声明、语句和元素栈。
+ * 对齐 K2 `AbstractDiagnosticCollectorVisitor`。
+ * 子类通过 [checkElement] 实现具体的检查逻辑。
+ */
 abstract class CfirAbstractDiagnosticCollectorVisitor(
     protected var context: MutableCheckerContext,
 ) : CfirDefaultVisitor<Unit, Nothing?>() {
@@ -20,7 +21,7 @@ abstract class CfirAbstractDiagnosticCollectorVisitor(
     protected open fun onDeclarationExit(declaration: CfirDeclaration) {}
     open fun checkSettings() {}
 
-    // --- 璁块棶鍏ュ彛 ---
+    // --- 访问入口 ---
 
     override fun visitElement(element: CfirElement, data: Nothing?) {
         withElement(element) {
@@ -44,7 +45,7 @@ abstract class CfirAbstractDiagnosticCollectorVisitor(
         }
     }
 
-    // --- 澹版槑閬嶅巻 ---
+    // --- 声明遍历 ---
 
     protected fun visitWithDeclaration(declaration: CfirDeclaration) {
         checkElement(declaration)
@@ -54,7 +55,7 @@ abstract class CfirAbstractDiagnosticCollectorVisitor(
         onDeclarationExit(declaration)
     }
 
-    // --- 涓婁笅鏂囩鐞?---
+    // --- 上下文管理 ---
 
     protected inline fun <R> withDeclaration(decl: CfirDeclaration, block: () -> R): R {
         context.addDeclaration(decl)

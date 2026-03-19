@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 class Box {
     var value: Int64 = 0
 
@@ -9,3 +10,4 @@ class Box {
         this.value = v
     }
 }
+

@@ -22,7 +22,7 @@ import org.cangnova.cangjie.test.services.EnvironmentConfiguratorsProvider
 import org.cangnova.cangjie.test.services.GlobalMetadataInfoHandler
 import org.cangnova.cangjie.test.services.MetaTestConfigurator
 import org.cangnova.cangjie.test.services.ModuleStructureExtractor
-import org.cangnova.cangjie.test.services.ModuleStructureExtractorImpl
+import org.cangnova.cangjie.test.services.impl.ModuleStructureExtractorImpl
 import org.cangnova.cangjie.test.services.ModuleStructureTransformer
 import org.cangnova.cangjie.test.services.PreAnalysisHandler
 import org.cangnova.cangjie.test.services.RuntimeClasspathProvider
@@ -33,7 +33,6 @@ import org.cangnova.cangjie.test.services.SourceFileProvider
 import org.cangnova.cangjie.test.services.SourceFileProviderImpl
 import org.cangnova.cangjie.test.services.TestService
 import org.cangnova.cangjie.test.services.TestServices
-import kotlin.invoke
 
 interface NonGroupingPhaseTestConfiguration : TestConfiguration<TestStep.NonGroupingStep<*, *>> {
     val startingArtifactFactory: (TestModule) -> ResultingArtifact<*>

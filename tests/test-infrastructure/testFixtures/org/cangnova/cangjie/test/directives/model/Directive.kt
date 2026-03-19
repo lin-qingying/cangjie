@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.test.directives.model
 
+import org.cangnova.cangjie.test.util.joinToArrayString
+
 // --------------------------- Directive declaration ---------------------------
 
 enum class DirectiveApplicability(
@@ -72,6 +74,13 @@ class RegisteredDirectivesImpl(
 
     override fun isEmpty(): Boolean =
         simpleDirectives.isEmpty() && stringDirectives.isEmpty() && valueDirectives.isEmpty()
+    override fun toString(): String {
+        return buildString {
+            simpleDirectives.forEach { appendLine("  $it") }
+            stringDirectives.forEach { (d, v) -> appendLine("  $d: ${v.joinToArrayString()}") }
+            valueDirectives.forEach { (d, v) -> appendLine("  $d: ${v.joinToArrayString()}") }
+        }
+    }
 
     override fun iterator(): Iterator<Directive> {
         return buildList {

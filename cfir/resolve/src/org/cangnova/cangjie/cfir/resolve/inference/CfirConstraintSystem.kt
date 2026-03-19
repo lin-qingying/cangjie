@@ -4,43 +4,44 @@ import org.cangnova.cangjie.cfir.resolve.calls.CfirTypeSubstitutor
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 
 /**
- * 娉涘瀷绾︽潫绯荤粺鎺ュ彛銆? *
- * 绠＄悊绫诲瀷鍙橀噺鐨勬敞鍐屻€佺害鏉熸敹闆嗐€佸彉閲忓浐瀹氬拰鏈€缁堟浛鎹㈠櫒鏋勫缓銆? * 浣跨敤 2 绉嶇姸鎬侊紙BUILDING 鈫?COMPLETED锛夛紝绠€鍖?K2 鐨?4 绉嶇姸鎬佹ā鍨嬨€? *
- * 瀵归綈 K2 ConstraintStorage + ConstraintSystemBuilder锛堝悎骞朵负鍗曚竴鎺ュ彛锛夈€? */
+ * 泛型约束系统接口。
+ * 它负责管理类型变量注册、约束收集、变量固定以及最终替换器构建。
+ * 对齐 K2 的 `ConstraintStorage` + `ConstraintSystemBuilder`，这里合并成单一接口。
+ */
 interface CfirConstraintSystem : CfirConstraintSystemMarker {
 
-    /** 娉ㄥ唽绫诲瀷鍙橀噺 */
+    /** 注册类型变量。 */
     fun registerTypeVariable(variable: CfirTypeVariable)
 
-    /** 娣诲姞瀛愮被鍨嬬害鏉燂細sub <: super */
+    /** 添加子类型约束：`sub <: super`。 */
     fun addSubtypeConstraint(subType: ConeCangjieType, superType: ConeCangjieType, position: CfirConstraintPosition)
 
-    /** 娣诲姞绛変环绾︽潫锛歭eft == right */
+    /** 添加等价约束：`left == right`。 */
     fun addEqualityConstraint(left: ConeCangjieType, right: ConeCangjieType, position: CfirConstraintPosition)
 
-    /** 鍥哄畾鎸囧畾绫诲瀷鍙橀噺 */
+    /** 固定指定类型变量。 */
     fun fixVariable(variable: CfirTypeVariable)
 
-    /** 鎸変緷璧栭『搴忓浐瀹氭墍鏈夋湭鍥哄畾鐨勭被鍨嬪彉閲?*/
+    /** 按依赖顺序固定所有尚未固定的类型变量。 */
     fun fixAllVariables()
 
-    /** 浠庡浐瀹氱粨鏋滄瀯寤虹被鍨嬫浛鎹㈠櫒 */
+    /** 根据固定结果构建类型替换器。 */
     fun buildResultingSubstitutor(): CfirTypeSubstitutor
 
-    /** 鏄惁瀛樺湪鎺ㄦ柇閿欒 */
+    /** 是否存在推断错误。 */
     val hasErrors: Boolean
 
-    /** 閿欒淇℃伅鍒楄〃 */
+    /** 错误信息列表。 */
     val errors: List<String>
 
-    /** 鎵€鏈夊凡娉ㄥ唽鐨勭被鍨嬪彉閲?*/
+    /** 所有已注册的类型变量。 */
     val typeVariables: List<CfirTypeVariable>
 
-    /** 鎵€鏈夊凡鏀堕泦鐨勭害鏉?*/
+    /** 所有已收集的约束。 */
     val constraints: List<CfirConstraint>
 
     companion object {
-        /** 鍒涘缓绌虹害鏉熺郴缁熷疄渚?*/
+        /** 创建空约束系统实例。 */
         fun create(): CfirConstraintSystem = CfirConstraintSystemImpl()
     }
 }

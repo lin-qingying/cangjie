@@ -1,13 +1,17 @@
-﻿package org.cangnova.cangjie.cfir.serialization.cjo
+package org.cangnova.cangjie.cfir.serialization.cjo
 
+import PackageFormat.Package
+import org.cangnova.cangjie.cfir.serialization.CjoConstants
 import java.io.File
+import java.nio.ByteBuffer
+import java.util.concurrent.ConcurrentHashMap
 
 /**
- * .cjo 文件搜索路径配置。
+ * .cjo file search path configuration.
  *
- * 仅保留两种加载方式：
- * 1. `CANGJIE_STDLIB_MODULE`：仅用于标准库包（`std` / `std.*`）
- * 2. `CANGJIE_LIBRARY`：可用于任意包
+ * Search order:
+ * 1. build mapping from cjo header (`fullPkgName`) to real file path
+ * 2. fallback to legacy path convention for malformed fixtures
  */
 class CjoSearchPath(
     private val envProvider: (String) -> String? = System::getenv,
@@ -15,8 +19,13 @@ class CjoSearchPath(
     private val stdlibSearchPaths: List<File> by lazy { readPaths("CANGJIE_STDLIB_MODULE") }
     private val librarySearchPaths: List<File> by lazy { readPaths("CANGJIE_LIBRARY") }
 
+    private val directoryIndexCache = ConcurrentHashMap<File, Map<String, File>>()
+    private val resolvedByPackage = ConcurrentHashMap<String, File>()
+    private val missingPackages = ConcurrentHashMap.newKeySet<String>()
+
     private fun readPaths(envName: String): List<File> {
-        return envProvider(envName)?.split(File.pathSeparator)
+        return envProvider(envName)
+            ?.split(File.pathSeparator)
             ?.map { File(it) }
             ?.filter { it.isDirectory }
             .orEmpty()
@@ -35,15 +44,56 @@ class CjoSearchPath(
     }
 
     /**
-     * 在搜索路径中查找指定包名对应的 .cjo 文件。
-     * @return 找到的 .cjo 文件，未找到返回 null
+     * Find cjo file for given full package name.
      */
     fun findCjoFile(fullPkgName: String): File? {
-        val relativePath = org.cangnova.cangjie.cfir.serialization.CjoConstants.packageNameToPath(fullPkgName)
-        for (dir in searchPathsFor(fullPkgName)) {
-            val candidate = File(dir, relativePath)
-            if (candidate.isFile) return candidate
+        resolvedByPackage[fullPkgName]?.let { return it }
+        if (fullPkgName in missingPackages) return null
+
+        val searchPaths = searchPathsFor(fullPkgName)
+
+        for (dir in searchPaths) {
+            val indexed = indexDirectoryByHeader(dir)[fullPkgName] ?: continue
+            resolvedByPackage.putIfAbsent(fullPkgName, indexed)
+            missingPackages.remove(fullPkgName)
+            return resolvedByPackage[fullPkgName] ?: indexed
         }
+
+        val legacyRelativePath = CjoConstants.packageNameToPath(fullPkgName)
+        for (dir in searchPaths) {
+            val candidate = File(dir, legacyRelativePath)
+            if (!candidate.isFile) continue
+            resolvedByPackage.putIfAbsent(fullPkgName, candidate)
+            missingPackages.remove(fullPkgName)
+            return resolvedByPackage[fullPkgName] ?: candidate
+        }
+
+        missingPackages += fullPkgName
         return null
+    }
+
+    private fun indexDirectoryByHeader(root: File): Map<String, File> {
+        return directoryIndexCache.getOrPut(root) {
+            if (!root.isDirectory) return@getOrPut emptyMap()
+
+            val files = root.walkTopDown()
+                .filter { it.isFile && it.extension.equals("cjo", ignoreCase = true) }
+                .toList()
+                .sortedBy { it.relativeTo(root).invariantSeparatorsPath }
+
+            val index = LinkedHashMap<String, File>()
+            for (file in files) {
+                val packageName = readPackageNameFromHeader(file) ?: continue
+                index.putIfAbsent(packageName, file)
+            }
+            index
+        }
+    }
+
+    private fun readPackageNameFromHeader(file: File): String? {
+        return runCatching {
+            val pkg = Package.getRootAsPackage(ByteBuffer.wrap(file.readBytes()))
+            pkg.fullPkgName?.takeIf { it.isNotBlank() }
+        }.getOrNull()
     }
 }

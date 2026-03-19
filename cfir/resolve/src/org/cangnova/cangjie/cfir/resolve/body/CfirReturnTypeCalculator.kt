@@ -10,28 +10,32 @@ import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 
 /**
- * 澹版槑杩斿洖绫诲瀷璁＄畻鍣ㄣ€? *
- * 璐熻矗璁＄畻鍑芥暟/灞炴€х瓑鍙皟鐢ㄥ０鏄庣殑杩斿洖绫诲瀷锛? * 鏄殣寮忕被鍨嬫帹鏂紙IMPLICIT_TYPES 闃舵锛夌殑鏍稿績鍩虹璁炬柦銆? *
- * Phase 2 鎻愪緵榛樿瀹炵幇锛堢洿鎺ヨ繑鍥炲凡瑙ｆ瀽鐨勬樉寮忕被鍨嬶級锛? * Phase 3 灏嗗疄鐜板畬鏁寸殑闅愬紡杩斿洖绫诲瀷鎺ㄦ柇銆? *
- * 鍙傝€?K2 ReturnTypeCalculator / ReturnTypeCalculatorForFullBodyResolve銆? */
+ * 声明返回类型计算器。
+ * 负责计算函数、属性等可调用声明的返回类型，是 IMPLICIT_TYPES 阶段的基础设施。
+ * Phase 2 提供默认实现，直接使用已解析的显式类型；
+ * Phase 3 再补全完整的隐式返回类型推断。
+ * 参考 K2 `ReturnTypeCalculator` / `ReturnTypeCalculatorForFullBodyResolve`。
+ */
 interface CfirReturnTypeCalculator {
 
     /**
-     * 璁＄畻鍙皟鐢ㄥ０鏄庣殑杩斿洖绫诲瀷銆?     *
-     * @return 宸茶В鏋愮殑杩斿洖绫诲瀷锛屾垨 null锛堝鏋滄棤娉曡绠楋級
+     * 计算可调用声明的返回类型。
+     * @return 已解析的返回类型；若无法计算则返回 `null`
      */
     fun tryCalculateReturnType(declaration: CfirCallableDeclaration): ConeCangjieType?
 
     /**
-     * 璁＄畻鍙皟鐢ㄥ０鏄庣殑杩斿洖绫诲瀷寮曠敤銆?     *
-     * 榛樿瀹炵幇鍩轰簬 [tryCalculateReturnType] 鏋勫缓 [CfirResolvedTypeRef]锛?     * 瀛愮被鍙鍐欎互鎻愪緵鏇撮珮鏁堢殑瀹炵幇銆?     *
-     * @return 宸茶В鏋愮殑绫诲瀷寮曠敤锛屾垨 null锛堝鏋滄棤娉曡绠楋級
+     * 计算可调用声明的返回类型引用。
+     * 默认实现基于 [tryCalculateReturnType] 构建 [CfirResolvedTypeRef]，
+     * 子类可以覆写它以提供更高效的实现。
+     * @return 已解析的类型引用；若无法计算则返回 `null`
      */
     fun tryCalculateReturnTypeRef(declaration: CfirCallableDeclaration): CfirTypeRef? {
         val type = tryCalculateReturnType(declaration) ?: return null
@@ -44,7 +48,8 @@ interface CfirReturnTypeCalculator {
     }
 
     /**
-     * Phase 2 榛樿瀹炵幇锛氫笉鍋氭帹鏂紝鐩存帴浣跨敤宸叉湁鐨勬樉寮忕被鍨嬨€?     */
+     * Phase 2 默认实现：不做推断，直接使用已有的显式类型。
+     */
     object Default : CfirReturnTypeCalculator {
         override fun tryCalculateReturnType(declaration: CfirCallableDeclaration): ConeCangjieType? = null
     }
@@ -59,8 +64,9 @@ private val CfirCallableDeclaration.returnTypeRefOrNull: CfirTypeRef?
         is CfirConstructor -> returnTypeRef
         is CfirEnumConstructor -> returnTypeRef
         is CfirProperty -> returnTypeRef
-        is CfirVariable -> returnTypeRef
+        is CfirFieldVariable -> returnTypeRef
         is CfirPatternVariable -> returnTypeRef
+        is CfirVariable -> null
         is CfirValueParameter -> returnTypeRef
     }
 

@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 func controlFlowTest(x: Int64): Int64 {
     if (x > 0) {
         return x
@@ -12,3 +13,4 @@ func loopTest(): Unit {
         i = i + 1
     }
 }
+

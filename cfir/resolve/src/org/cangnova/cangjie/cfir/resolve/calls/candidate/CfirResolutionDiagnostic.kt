@@ -4,33 +4,40 @@ import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 
 /**
- * 璋冪敤瑙ｆ瀽璇婃柇鍩虹被銆? *
- * 姣忎釜璇婃柇鎼哄甫涓€涓€傜敤鎬х瓑绾э紝鐢ㄤ簬鏇存柊鍊欓€夌殑 lowestApplicability銆? * 鍏蜂綋瀛愮被鎻忚堪鍚勭瑙ｆ瀽澶辫触鍘熷洜銆? *
- * 瀵归綈 K2 ResolutionDiagnostic锛堟暎钀藉澶勶級锛岀粺涓€鏀舵暃鍒版鏂囦欢銆? */
+ * 调用解析诊断基类。
+ * 每个诊断都携带一个适用性等级，用于更新候选的 `lowestApplicability`。
+ * 具体子类分别描述不同的解析失败原因。
+ * 对齐 K2 `ResolutionDiagnostic`，这里把相关诊断集中放在一个文件里。
+ */
 abstract class CfirResolutionDiagnostic(
     val applicability: CfirCandidateApplicability,
 )
 
-/** 鍊欓€夎闅愯棌锛堜笉鍙鐨勫唴閮?API 绛夛級 */
+/** 候选被隐藏，如访问了不可见的内部 API。 */
 class HiddenCandidate(
     val symbol: CfirSymbol<*>,
 ) : CfirResolutionDiagnostic(CfirCandidateApplicability.HIDDEN)
 
-/** 瀹炲弬鏁伴噺涓庡舰鍙傛暟閲忎笉鍖归厤 */
+/** 实参数量与形参数量不匹配。 */
 class WrongArgumentCount(
     val expectedCount: Int,
     val actualCount: Int,
 ) : CfirResolutionDiagnostic(CfirCandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
 
-/** 瀹炲弬绫诲瀷涓庡舰鍙傜被鍨嬩笉鍏煎 */
+/** 实参类型与形参类型不兼容。 */
 class ArgumentTypeMismatch(
     val expectedType: ConeCangjieType,
     val actualType: ConeCangjieType,
     val parameterIndex: Int,
 ) : CfirResolutionDiagnostic(CfirCandidateApplicability.INAPPLICABLE)
 
-/** 鍙鎬ц繚瑙勶紙private/protected 绛夛級 */
+/** 可见性违规，例如访问到了 `private` / `protected` 成员。 */
 class VisibilityError(
     val symbol: CfirSymbol<*>,
 ) : CfirResolutionDiagnostic(CfirCandidateApplicability.RESOLVED_WITH_ERROR)
+
+/** 泛型推断中的约束系统错误。 */
+class InferenceConstraintError(
+    val message: String,
+) : CfirResolutionDiagnostic(CfirCandidateApplicability.INAPPLICABLE)
 

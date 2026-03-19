@@ -12,7 +12,7 @@ data class CfirOutputPartForDependsOnModule(
     val module: TestModule,
     val session: CfirSession,
     val scopeSession: ScopeSession,
-    val firAnalyzerFacade: Any?,
+    val firAnalyzerFacade: AbstractCfirAnalyzerFacade?,
     val firFilesByTestFile: Map<TestFile, CfirFile>,
 )
 

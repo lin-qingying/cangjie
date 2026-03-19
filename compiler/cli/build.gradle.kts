@@ -10,7 +10,9 @@ dependencies {
     implementation(project(":compiler:chir"))
     implementation(project(":compiler:codegen"))
     implementation(project(":cfir:entrypoint"))
+
     compileOnly(intellijCore())
+    testCompileOnly(intellijCore())
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
@@ -26,4 +28,3 @@ generatedSourcesTask(
         )
     }
 )
-

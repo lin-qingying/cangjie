@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 func cmpMain(): Bool {
     return 1.5 > 0.5
 }
@@ -8,4 +9,5 @@ main(): Int32 {
     }
     return 0
 }
+
 

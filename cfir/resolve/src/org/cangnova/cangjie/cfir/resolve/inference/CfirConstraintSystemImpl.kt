@@ -1,35 +1,26 @@
-﻿package org.cangnova.cangjie.cfir.resolve.inference
+package org.cangnova.cangjie.cfir.resolve.inference
 
 import org.cangnova.cangjie.cfir.resolve.calls.CfirTypeSubstitutor
-import org.cangnova.cangjie.cfir.resolve.calls.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
-import org.cangnova.cangjie.cfir.types.ConeIntersectionType
+import org.cangnova.cangjie.cfir.types.ConeSubtypeChecker
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
-import org.cangnova.cangjie.cfir.types.ConeUnionType
 
-/**
- * Simplified constraint system for CFIR call inference.
- */
 class CfirConstraintSystemImpl(
+    private val subtypeChecker: ConeSubtypeChecker? = null,
     private val inferenceLogger: FirInferenceLogger? = null,
 ) : CfirConstraintSystem {
+    private val storage = CfirConstraintStorage()
+    private val incorporator = CfirConstraintIncorporator(storage)
+    private val fixationFinder = CfirVariableFixationFinder()
+    private val resultTypeResolver = CfirResultTypeResolver(storage, subtypeChecker)
 
-    private val _typeVariables: MutableList<CfirTypeVariable> = mutableListOf()
-    private val _constraints: MutableList<CfirConstraint> = mutableListOf()
-    private val _errors: MutableList<String> = mutableListOf()
-
-    private val variableByName: MutableMap<String, CfirTypeVariable> = mutableMapOf()
-
-    private var nextFreshId: Int = 0
-
-    override val typeVariables: List<CfirTypeVariable> get() = _typeVariables
-    override val constraints: List<CfirConstraint> get() = _constraints
-    override val hasErrors: Boolean get() = _errors.isNotEmpty()
-    override val errors: List<String> get() = _errors
+    override val typeVariables: List<CfirTypeVariable> get() = storage.typeVariables
+    override val constraints: List<CfirConstraint> get() = storage.constraints
+    override val hasErrors: Boolean get() = storage.hasErrors
+    override val errors: List<String> get() = storage.errors
 
     override fun registerTypeVariable(variable: CfirTypeVariable) {
-        _typeVariables.add(variable)
-        variableByName[variable.name] = variable
+        storage.registerTypeVariable(variable)
         inferenceLogger?.logNewVariable(variable, this)
     }
 
@@ -38,8 +29,7 @@ class CfirConstraintSystemImpl(
         superType: ConeCangjieType,
         position: CfirConstraintPosition,
     ) {
-        val constraint = CfirSubtypeConstraint(subType, superType, position)
-        _constraints.add(constraint)
+        storage.addConstraint(CfirSubtypeConstraint(subType, superType, position))
 
         val initialConstraint = CfirInitialConstraint(
             a = subType,
@@ -48,9 +38,13 @@ class CfirConstraintSystemImpl(
             position = position,
         )
         inferenceLogger?.logInitial(initialConstraint, this)
-
         inferenceLogger.withOrigin(initialConstraint) {
-            processSubtypeConstraint(subType, superType)
+            incorporator.processSubtypeConstraint(
+                subType = subType,
+                superType = superType,
+                onUpperBound = ::onUpperBoundAdded,
+                onLowerBound = ::onLowerBoundAdded,
+            )
         }
     }
 
@@ -59,8 +53,7 @@ class CfirConstraintSystemImpl(
         right: ConeCangjieType,
         position: CfirConstraintPosition,
     ) {
-        val constraint = CfirEqualityConstraint(left, right, position)
-        _constraints.add(constraint)
+        storage.addConstraint(CfirEqualityConstraint(left, right, position))
 
         val initialConstraint = CfirInitialConstraint(
             a = left,
@@ -69,134 +62,123 @@ class CfirConstraintSystemImpl(
             position = position,
         )
         inferenceLogger?.logInitial(initialConstraint, this)
-
         inferenceLogger.withOrigin(initialConstraint) {
-            // Equality is modeled as two subtype relations.
-            processSubtypeConstraint(left, right)
-            processSubtypeConstraint(right, left)
+            incorporator.processSubtypeConstraint(
+                subType = left,
+                superType = right,
+                onUpperBound = ::onUpperBoundAdded,
+                onLowerBound = ::onLowerBoundAdded,
+            )
+            incorporator.processSubtypeConstraint(
+                subType = right,
+                superType = left,
+                onUpperBound = ::onUpperBoundAdded,
+                onLowerBound = ::onLowerBoundAdded,
+            )
         }
     }
 
-    private fun processSubtypeConstraint(subType: ConeCangjieType, superType: ConeCangjieType) {
-        val subVariable = findTypeVariable(subType)
-        val superVariable = findTypeVariable(superType)
-
-        when {
-            subVariable != null && superVariable != null -> {
-                // 双变量约束：sub <: super → sub 的上界包含 super 类型，super 的下界包含 sub 类型
-                subVariable.upperBounds.add(superType)
-                superVariable.lowerBounds.add(subType)
-            }
-
-            subVariable != null -> {
-                subVariable.upperBounds.add(superType)
-                inferenceLogger?.log(
-                    subVariable,
-                    CfirVariableConstraint(CfirConstraintKind.UPPER, superType),
-                    this,
-                )
-            }
-
-            superVariable != null -> {
-                superVariable.lowerBounds.add(subType)
-                inferenceLogger?.log(
-                    superVariable,
-                    CfirVariableConstraint(CfirConstraintKind.LOWER, subType),
-                    this,
-                )
-            }
-        }
+    private fun onUpperBoundAdded(variable: CfirTypeVariable, type: ConeCangjieType) {
+        inferenceLogger?.log(variable, CfirVariableConstraint(CfirConstraintKind.UPPER, type), this)
     }
 
-    private fun findTypeVariable(type: ConeCangjieType): CfirTypeVariable? {
-        if (type !is ConeTypeParameterType) return null
-        return variableByName[type.lookupTag.name]
+    private fun onLowerBoundAdded(variable: CfirTypeVariable, type: ConeCangjieType) {
+        inferenceLogger?.log(variable, CfirVariableConstraint(CfirConstraintKind.LOWER, type), this)
     }
 
     override fun fixVariable(variable: CfirTypeVariable) {
         if (variable.isFixed) return
 
-        logReadiness(variable)
-
-        val fixedType = computeFixedType(variable)
+        val hasConflictingConstraints = resultTypeResolver.hasConflictingBounds(variable)
+        val fixedType = resultTypeResolver.computeResultType(variable)
         if (fixedType != null) {
+            if (hasConflictingConstraints) {
+                val message = "Cannot infer type for ${variable.name}: conflicting constraints"
+                if (storage.reportError(message)) {
+                    inferenceLogger?.logError(CfirConstraintSystemError(message), this)
+                }
+            }
             variable.fixedType = fixedType
+            storage.markFixed(variable, fixedType)
+            incorporateFixedVariable(variable, fixedType)
+            storage.removeConstraintsContainingTypeVariable(variable.name)
             inferenceLogger?.logFixVariable(variable, fixedType, this)
+            return
+        }
+
+        val message = if (hasConflictingConstraints) {
+            "Cannot infer type for ${variable.name}: conflicting constraints"
         } else {
-            val message = "Cannot infer type for ${variable.name}: not enough constraints"
-            _errors.add(message)
+            "Cannot infer type for ${variable.name}: not enough constraints"
+        }
+        if (storage.reportError(message)) {
             inferenceLogger?.logError(CfirConstraintSystemError(message), this)
         }
     }
 
-    private fun logReadiness(variable: CfirTypeVariable) {
-        val variableConstraints = buildList {
-            variable.upperBounds.forEach { add(CfirVariableConstraint(CfirConstraintKind.UPPER, it)) }
-            variable.lowerBounds.forEach { add(CfirVariableConstraint(CfirConstraintKind.LOWER, it)) }
-        }
-
-        val fixationLog = InferenceLogger.FixationLogRecord(
-            map = mapOf(
-                variable to InferenceLogger.FixationLogVariableInfo(
-                    readiness = CfirSimpleFixationReadiness(variableConstraints.isNotEmpty()),
-                    constraints = variableConstraints,
-                )
-            ),
-            chosen = variable,
-        )
-        inferenceLogger?.logReadiness(fixationLog, this)
-    }
-
-    private fun computeFixedType(variable: CfirTypeVariable): ConeCangjieType? {
-        val lowers = variable.lowerBounds
-        val uppers = variable.upperBounds
-
-        if (lowers.isNotEmpty()) {
-            // 多个下界：取联合类型（LUB 近似）
-            val distinct = lowers.distinct()
-            return if (distinct.size == 1) distinct.single() else ConeUnionType(distinct.toSet())
-        }
-
-        if (uppers.isNotEmpty()) {
-            // 多个上界：取交叉类型（GLB 近似）
-            val distinct = uppers.distinct()
-            return if (distinct.size == 1) distinct.single() else ConeIntersectionType(distinct)
-        }
-
-        return null
-    }
-
     override fun fixAllVariables() {
-        for (variable in _typeVariables) {
-            if (!variable.isFixed) {
-                fixVariable(variable)
+        storage.enterCompletionMode()
+        val unresolved = storage.typeVariables.toMutableSet()
+        var stagnationRounds = 0
+        while (unresolved.isNotEmpty()) {
+            val ready = fixationFinder.chooseNextVariable(unresolved) ?: unresolved.first()
+            inferenceLogger?.logReadiness(fixationFinder.buildFixationLog(unresolved, ready), this)
+
+            val wasFixed = ready.isFixed
+            fixVariable(ready)
+            if (ready.isFixed || wasFixed) {
+                unresolved.remove(ready)
+                stagnationRounds = 0
+                continue
+            }
+
+            stagnationRounds++
+            if (stagnationRounds >= unresolved.size) {
+                unresolved.remove(ready)
+                stagnationRounds = 0
             }
         }
+        storage.freeze()
     }
 
-    override fun buildResultingSubstitutor(): CfirTypeSubstitutor {
-        val substitution = mutableMapOf<String, ConeCangjieType>()
-        for (variable in _typeVariables) {
-            val fixed = variable.fixedType
-            if (fixed != null) {
-                substitution[variable.name] = fixed
-            }
-        }
-        return if (substitution.isEmpty()) {
-            CfirTypeSubstitutor.Empty
-        } else {
-            CfirTypeSubstitutorByMap(substitution)
+    override fun buildResultingSubstitutor(): CfirTypeSubstitutor = storage.buildCurrentSubstitutor()
+
+    fun nextFreshTypeId(): Int = storage.nextFreshTypeId()
+
+    private fun incorporateFixedVariable(variable: CfirTypeVariable, fixedType: ConeCangjieType) {
+        val variableType = ConeTypeParameterType(variable.lookupTag)
+        val position = CfirConstraintPosition.FixVariable(variable.name)
+
+        val initialConstraint = CfirInitialConstraint(
+            a = variableType,
+            b = fixedType,
+            constraintKind = CfirConstraintKind.EQUALITY,
+            position = position,
+        )
+        storage.addConstraint(CfirEqualityConstraint(variableType, fixedType, position))
+        inferenceLogger?.logInitial(initialConstraint, this)
+
+        inferenceLogger.withOrigin(initialConstraint) {
+            incorporator.processSubtypeConstraint(
+                subType = variableType,
+                superType = fixedType,
+                onUpperBound = ::onUpperBoundAdded,
+                onLowerBound = ::onLowerBoundAdded,
+            )
+            incorporator.processSubtypeConstraint(
+                subType = fixedType,
+                superType = variableType,
+                onUpperBound = ::onUpperBoundAdded,
+                onLowerBound = ::onLowerBoundAdded,
+            )
         }
     }
-
-    fun nextFreshTypeId(): Int = nextFreshId++
 
     override fun toString(): String = buildString {
         append("CfirConstraintSystem(")
-        append("variables=${_typeVariables.size}, ")
-        append("constraints=${_constraints.size}, ")
-        append("errors=${_errors.size}")
+        append("variables=${storage.typeVariables.size}, ")
+        append("constraints=${storage.constraints.size}, ")
+        append("errors=${storage.errors.size}")
         append(")")
     }
 }
-

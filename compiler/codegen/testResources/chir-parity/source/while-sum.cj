@@ -1,4 +1,5 @@
-﻿func sumTo(n: Int64): Int64 {
+// RUN_PIPELINE_TILL: FRONTEND
+func sumTo(n: Int64): Int64 {
     var i = 0
     var acc = 0
     while (i <= n) {
@@ -11,3 +12,4 @@
 main(): Int64 {
     return sumTo(10)
 }
+

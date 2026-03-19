@@ -8,6 +8,7 @@ package org.cangnova.cangjie.cfir.visitors
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.CfirResolvable
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.*
@@ -47,6 +48,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitControlFlowGraphOwner(controlFlowGraphOwner: CfirControlFlowGraphOwner) {
         visitElement(controlFlowGraphOwner)
+    }
+
+    final override fun visitResolvable(resolvable: CfirResolvable, data: Nothing?) {
+        visitResolvable(resolvable)
+    }
+
+    open fun visitResolvable(resolvable: CfirResolvable) {
+        visitElement(resolvable)
     }
 
     final override fun visitPackageDirective(packageDirective: CfirPackageDirective, data: Nothing?) {
@@ -225,6 +234,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(variable)
     }
 
+    final override fun visitFieldVariable(fieldVariable: CfirFieldVariable, data: Nothing?) {
+        visitFieldVariable(fieldVariable)
+    }
+
+    open fun visitFieldVariable(fieldVariable: CfirFieldVariable) {
+        visitElement(fieldVariable)
+    }
+
     final override fun visitPatternVariable(patternVariable: CfirPatternVariable, data: Nothing?) {
         visitPatternVariable(patternVariable)
     }
@@ -375,6 +392,22 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitMatchExpression(matchExpression: CfirMatchExpression) {
         visitElement(matchExpression)
+    }
+
+    final override fun visitOrPattern(orPattern: CfirOrPattern, data: Nothing?) {
+        visitOrPattern(orPattern)
+    }
+
+    open fun visitOrPattern(orPattern: CfirOrPattern) {
+        visitElement(orPattern)
+    }
+
+    final override fun visitExpressionPattern(expressionPattern: CfirExpressionPattern, data: Nothing?) {
+        visitExpressionPattern(expressionPattern)
+    }
+
+    open fun visitExpressionPattern(expressionPattern: CfirExpressionPattern) {
+        visitElement(expressionPattern)
     }
 
     final override fun visitMatchBranch(matchBranch: CfirMatchBranch, data: Nothing?) {

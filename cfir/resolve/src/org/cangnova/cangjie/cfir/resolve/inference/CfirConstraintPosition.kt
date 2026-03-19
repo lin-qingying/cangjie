@@ -1,29 +1,35 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.inference
 
 /**
- * 绾︽潫鏉ユ簮浣嶇疆锛岃褰曠害鏉熶骇鐢熺殑涓婁笅鏂囥€? *
- * 鐢ㄤ簬璇婃柇淇℃伅锛屽府鍔╁畾浣嶆帹鏂け璐ョ殑鍘熷洜銆? *
- * 瀵归綈 K2 ConstraintPosition锛堢畝鍖栵紝鍘绘帀 lambda/callable-ref 绛変綅缃級銆? */
+ * 约束来源位置，用于记录约束产生的上下文。
+ * 它主要服务于诊断信息，帮助定位推断失败的原因。
+ * 对齐 K2 `ConstraintPosition`，但做了简化。
+ */
 sealed class CfirConstraintPosition {
 
-    /** 鏉ヨ嚜鍑芥暟鍙傛暟浣嶇疆鐨勭害鏉?*/
+    /** 来自函数参数位置的约束。 */
     data class ArgumentPosition(val index: Int) : CfirConstraintPosition() {
         override fun toString(): String = "argument[$index]"
     }
 
-    /** 鏉ヨ嚜鏈熸湜杩斿洖绫诲瀷鐨勭害鏉?*/
+    /** 来自期望类型的约束。 */
     data object ExpectedType : CfirConstraintPosition() {
         override fun toString(): String = "expected type"
     }
 
-    /** 鏉ヨ嚜鍑芥暟杩斿洖绫诲瀷鐨勭害鏉?*/
+    /** 来自函数返回类型的约束。 */
     data object ReturnType : CfirConstraintPosition() {
         override fun toString(): String = "return type"
     }
 
-    /** 鏉ヨ嚜绫诲瀷鍙傛暟涓婄晫鐨勭害鏉?*/
+    /** 来自类型参数上界的约束。 */
     data object UpperBound : CfirConstraintPosition() {
         override fun toString(): String = "upper bound"
+    }
+
+    /** 来自类型变量固定阶段的约束。 */
+    data class FixVariable(val variableName: String) : CfirConstraintPosition() {
+        override fun toString(): String = "fix variable[$variableName]"
     }
 }
 

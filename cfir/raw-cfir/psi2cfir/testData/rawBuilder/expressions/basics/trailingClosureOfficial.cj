@@ -1,4 +1,5 @@
-﻿// STUB_FALLBACK_TO_AST:
+// RUN_PIPELINE_TILL: FRONTEND
+// STUB_FALLBACK_TO_AST:
 func f(a: Int64, fn: (Int64) -> Int64) {
     fn(a)
 }

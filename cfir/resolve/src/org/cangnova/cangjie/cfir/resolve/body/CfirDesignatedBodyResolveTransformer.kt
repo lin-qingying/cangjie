@@ -7,11 +7,10 @@ import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
- * 鎸囧畾璺緞 body resolve transformer銆? *
- * 浠呰В鏋愭寚瀹氱殑澹版槑锛岃烦杩囪矾寰勫鐨勫叾浠栧０鏄庛€? * 鏀寔 file 鈫?(class)? 鈫?declaration 涓夌骇璺緞銆? *
- * 鐢ㄤ簬 [CfirReturnTypeCalculatorWithJump] 瑙﹀彂鐨勬寜闇€瑙ｆ瀽锛? * 褰?IMPLICIT_TYPES 闃舵閬囧埌涓€涓皻鏈В鏋愮殑澹版槑寮曠敤鏃讹紝
- * 閫氳繃 designated transformer 浠呰В鏋愮洰鏍囧０鏄庯紝閬垮厤鍏ㄦ枃浠堕噸瑙ｆ瀽銆? *
- * 鍙傝€?K2 FirDesignatedBodyResolveTransformerForReturnTypeCalculator銆? */
+ * 指定路径的 body resolve transformer。
+ * 它只解析目标声明以及必要的路径容器，用于按需触发 designated resolve，
+ * 避免整份文件被重复解析。
+ */
 class CfirDesignatedBodyResolveTransformer(
     private val designation: CfirCallableDeclaration,
     session: CfirSession,
@@ -27,7 +26,7 @@ class CfirDesignatedBodyResolveTransformer(
     returnTypeCalculator = returnTypeCalculator,
 ) {
 
-    /** 鏈€鍚庝竴娆″彉鎹㈢殑缁撴灉 */
+    /** 最近一次变换的结果。 */
     var lastResult: CfirElement? = null
         private set
 
@@ -35,13 +34,13 @@ class CfirDesignatedBodyResolveTransformer(
         declaration: CfirDeclaration,
         data: CfirResolutionMode,
     ): CfirDeclaration {
-        // 浠呭彉鎹㈡寚瀹氱殑澹版槑
+        // 只变换指定目标声明
         if (declaration === designation) {
             val result = declaration.transform<CfirDeclaration, CfirResolutionMode>(this, data)
             lastResult = result
             return result
         }
-        // 璺緞涓婄殑瀹瑰櫒锛坒ile銆乧lass锛夐渶瑕佺户缁亶鍘嗕互寤虹珛 scope 涓婁笅鏂?
+        // 路径上的容器仍需继续遍历，以建立必要的 scope 上下文
         return when (declaration) {
             is CfirFile -> super.transformDeclarationContent(declaration, data)
             is CfirClass -> {
@@ -51,11 +50,11 @@ class CfirDesignatedBodyResolveTransformer(
                     declaration
                 }
             }
-            else -> declaration // 璺宠繃鏃犲叧澹版槑
+            else -> declaration // 跳过无关声明
         }
     }
 
-    /** 妫€鏌ョ被鏄惁鍖呭惈鎸囧畾鐨勫０鏄?*/
+    /** 检查类是否包含指定声明。 */
     private fun containsDesignation(klass: CfirClass): Boolean {
         return klass.declarations.any { it === designation }
     }

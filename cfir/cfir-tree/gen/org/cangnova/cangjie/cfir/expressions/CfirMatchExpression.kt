@@ -7,10 +7,10 @@ package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.source.CjSourceElement
 
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.matchExpression]
@@ -19,7 +19,7 @@ abstract class CfirMatchExpression : CfirExpression() {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangjieType?
-    abstract val subject: CfirExpression
+    abstract val subject: CfirExpression?
     abstract val branches: List<CfirMatchBranch>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =

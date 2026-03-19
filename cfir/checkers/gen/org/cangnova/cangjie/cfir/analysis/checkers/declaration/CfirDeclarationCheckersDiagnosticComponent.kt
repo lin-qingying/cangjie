@@ -1,4 +1,4 @@
-﻿
+
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
@@ -15,7 +15,8 @@ import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
 import org.cangnova.cangjie.utils.exceptions.withFirEntry
 
 /*
- * 鏈枃浠剁敱鐢熸垚鍣ㄨ嚜鍔ㄧ敓鎴? * 璇峰嬁鎵嬪姩淇敼
+ * 本文件由生成器自动生成
+ * 请勿手动修改
  */
 
 @OptIn(CheckersComponentInternal::class)
@@ -75,8 +76,12 @@ class CfirDeclarationCheckersDiagnosticComponent(
         checkers.allPropertyCheckers.check(property, data)
     }
 
-    override fun visitVariable(variable: CfirVariable, data: CheckerContext) {
-        checkers.allVariableCheckers.check(variable, data)
+    override fun visitFieldVariable(fieldVariable: CfirFieldVariable, data: CheckerContext) {
+        checkers.allFieldVariableCheckers.check(fieldVariable, data)
+    }
+
+    override fun visitPatternVariable(patternVariable: CfirPatternVariable, data: CheckerContext) {
+        checkers.allPatternVariableCheckers.check(patternVariable, data)
     }
 
     override fun visitTypeAlias(typeAlias: CfirTypeAlias, data: CheckerContext) {
@@ -111,10 +116,6 @@ class CfirDeclarationCheckersDiagnosticComponent(
         checkers.allCallableDeclarationCheckers.check(constructor, data)
     }
 
-    override fun visitPatternVariable(patternVariable: CfirPatternVariable, data: CheckerContext) {
-        checkers.allCallableDeclarationCheckers.check(patternVariable, data)
-    }
-
     override fun visitExtend(extend: CfirExtend, data: CheckerContext) {
         checkers.allClassLikeCheckers.check(extend, data)
     }
@@ -137,4 +138,3 @@ class CfirDeclarationCheckersDiagnosticComponent(
         }
     }
 }
-

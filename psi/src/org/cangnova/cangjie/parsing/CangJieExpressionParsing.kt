@@ -1982,10 +1982,10 @@ open class CangJieExpressionParsing(
         context(parsingcontext: ParsingContext)
         private fun parseEnumPatternArguments() {
             advance()
-            parseExpression()
+            parsePattern()
             while (at(COMMA)) {
                 advance()
-                parseExpression()
+                parsePattern()
             }
             expect(RPAR, CangJieParsingBundle.message("parsing.error.expecting.symbol", ")"))
         }

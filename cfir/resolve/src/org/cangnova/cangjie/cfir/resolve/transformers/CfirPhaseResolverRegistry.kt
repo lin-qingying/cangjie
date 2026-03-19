@@ -4,7 +4,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 
 /**
- * 鎸夐樁娈垫敞鍐岃В鏋愬鐞嗗櫒銆? */
+ * 按阶段注册解析处理器。
+ */
 class CfirPhaseResolverRegistry : CfirSessionComponent {
 
     private val processors = mutableMapOf<CfirResolvePhase, CfirResolveProcessor>()

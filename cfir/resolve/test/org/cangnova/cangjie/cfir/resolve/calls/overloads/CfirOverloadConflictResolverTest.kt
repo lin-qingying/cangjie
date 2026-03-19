@@ -18,7 +18,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * CfirOverloadConflictResolver 閲嶈浇娑堟娴嬭瘯銆? */
+ * `CfirOverloadConflictResolver` 的重载消歧测试。
+ */
 class CfirOverloadConflictResolverTest {
 
     private lateinit var resolver: CfirOverloadConflictResolver
@@ -51,7 +52,7 @@ class CfirOverloadConflictResolverTest {
 
         @Test
         fun `unrelated types remain ambiguous`() {
-            // f(Boolean) vs f(Int32) 鈥?鏃犲瓙绫诲瀷鍏崇郴
+            // f(Boolean) vs f(Int32)，两者不存在子类型关系
             val candidateBool = makeCandidate("f", listOf(ConePrimitiveType.BOOLEAN))
             val candidateInt = makeCandidate("f", listOf(ConePrimitiveType.INT32))
 
@@ -92,12 +93,12 @@ class CfirOverloadConflictResolverTest {
         fun `fewer defaults wins`() {
             val callInfo = buildCallInfo("f", listOf(buildTypedExpression(ConePrimitiveType.INT32)))
 
-            // f(Int32) 鈥?0 defaults
+            // f(Int32)，使用 0 个默认值参数
             val symbol1 = buildFunctionSymbol("f", parameterTypes = listOf(ConePrimitiveType.INT32))
             val candidate1 = buildCandidate(symbol1, callInfo)
             candidate1.numDefaults = 0
 
-            // f(Int32, Bool = true) 鈥?1 default
+            // f(Int32, Bool = true)，使用 1 个默认值参数
             val symbol2 = buildFunctionSymbol(
                 "f",
                 parameterTypes = listOf(ConePrimitiveType.INT32, ConePrimitiveType.BOOLEAN),
@@ -113,7 +114,7 @@ class CfirOverloadConflictResolverTest {
         }
     }
 
-    // ---- 杈呭姪鏂规硶 ----
+    // ---- 辅助方法 ----
 
     private fun makeCandidate(name: String, paramTypes: List<ConeCangjieType>): CfirCandidate {
         val symbol = buildFunctionSymbol(name, parameterTypes = paramTypes)
@@ -141,10 +142,11 @@ class CfirOverloadConflictResolverTest {
 }
 
 /**
- * TypeContext锛氭敮鎸?Child <: Parent锛堢敤浜庣壒鍖栧害姣旇緝娴嬭瘯锛夈€? */
+ * 测试用 `TypeContext`，支持 `Child <: Parent`。
+ */
 private class OverloadTestTypeContext : ConeTypeContext {
     override fun supertypes(type: ConeCangjieType): Collection<ConeCangjieType> {
-        // Child 鐨勮秴绫诲瀷鍖呭惈 Parent
+        // Child 的直接超类型包含 Parent
         if (type is ConeClassLikeType && type.classId == TYPE_CHILD.classId) {
             return listOf(TYPE_PARENT)
         }
@@ -158,7 +160,6 @@ private class OverloadTestTypeContext : ConeTypeContext {
     }
 }
 
-/** 娴嬭瘯鐢ㄧ被鍨嬶細Child <: Parent */
+/** 测试用类型：`Child <: Parent`。 */
 private val TYPE_PARENT = ConeClassLikeType(ConeClassLookupTagImpl(ClassId(FqName("test"), Name.identifier("Parent"))))
 private val TYPE_CHILD = ConeClassLikeType(ConeClassLookupTagImpl(ClassId(FqName("test"), Name.identifier("Child"))))
-

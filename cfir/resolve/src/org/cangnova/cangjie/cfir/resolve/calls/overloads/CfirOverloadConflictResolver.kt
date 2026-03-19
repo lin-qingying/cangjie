@@ -5,10 +5,13 @@ import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.types.ConeSubtypeChecker
 
 /**
- * 閲嶈浇鍐茬獊瑙ｆ瀽鍣ㄣ€? *
- * 鍥涜疆娑堟绠楁硶锛? * 1. filterOverrides 鈥?鍘婚櫎琚鐩栫殑鏂规硶锛堝亸搴忓叧绯伙級
- * 2. findMostSpecific 鈥?閫愬弬鏁颁綅缃瘮杈冨瓙绫诲瀷锛岄€夋嫨鏇寸壒瀹氱殑鍊欓€? * 3. discriminateGenerics 鈥?闈炴硾鍨嬩紭浜庢硾鍨? * 4. discriminateByDefaults 鈥?灏戦粯璁ゅ€煎弬鏁扮殑鍊欓€変紭鍏? *
- * 瀵归綈 K2 ConeOverloadConflictResolver銆? */
+ * 重载冲突解析器。
+ * 当前采用三轮消歧策略：
+ * 1. `findMostSpecific`：逐个参数比较特化程度，优先更具体的候选
+ * 2. `discriminateGenerics`：非泛型优先于泛型
+ * 3. `discriminateByDefaults`：使用默认值更少的候选优先
+ * 对齐 K2 `ConeOverloadConflictResolver` 的核心思路。
+ */
 class CfirOverloadConflictResolver(
     private val subtypeChecker: ConeSubtypeChecker,
 ) : CfirCallConflictResolver() {
@@ -20,23 +23,24 @@ class CfirOverloadConflictResolver(
 
         val signatures = candidates.map { CfirFlatSignature.create(it) }
 
-        // 绗?1 杞細鎸夊弬鏁扮壒鍖栧害閫夋嫨
+        // 第 1 轮：按参数特化程度选择
         val mostSpecific = findMostSpecific(signatures)
         if (mostSpecific.size <= 1) return mostSpecific.map { it.origin }.toSet()
 
-        // 绗?2 杞細闈炴硾鍨嬩紭浜庢硾鍨?
+        // 第 2 轮：非泛型优先于泛型
         val afterGenerics = discriminateGenerics(mostSpecific)
         if (afterGenerics.size <= 1) return afterGenerics.map { it.origin }.toSet()
 
-        // 绗?3 杞細灏戦粯璁ゅ€煎弬鏁颁紭鍏?
+        // 第 3 轮：默认值更少的候选优先
         val afterDefaults = discriminateByDefaults(afterGenerics)
         return afterDefaults.map { it.origin }.toSet()
     }
 
     /**
-     * 绗?1 杞細鎵惧埌鏈€鐗瑰畾鐨勫€欓€夐泦鍚堛€?     *
-     * 閫愬弬鏁颁綅缃瘮杈冿紝濡傛灉 A 鐨勬瘡涓弬鏁扮被鍨嬮兘鏄?B 鐨勫搴斿弬鏁扮被鍨嬬殑瀛愮被鍨嬶紝
-     * 鍒?A 姣?B 鏇寸壒瀹氥€傚幓闄ゆ墍鏈夎鏇寸壒瀹氬€欓€夎鐩栫殑鍊欓€夈€?     */
+     * 第 1 轮：找出最特定的候选集合。
+     * 如果 A 的每个参数类型都是 B 对应参数类型的子类型，
+     * 则认为 A 比 B 更特定，并去掉被覆盖的候选。
+     */
     private fun findMostSpecific(signatures: List<CfirFlatSignature>): List<CfirFlatSignature> {
         if (signatures.size <= 1) return signatures
 
@@ -57,8 +61,11 @@ class CfirOverloadConflictResolver(
     }
 
     /**
-     * 鍒ゆ柇 specific 鏄惁姣?general 鏇寸壒瀹氥€?     *
-     * 瑙勫垯锛歴pecific 鐨勬瘡涓弬鏁扮被鍨嬫槸 general 瀵瑰簲鍙傛暟绫诲瀷鐨勫瓙绫诲瀷锛?     * 涓旇嚦灏戞湁涓€涓弬鏁扮被鍨嬫槸涓ユ牸瀛愮被鍨嬨€?     */
+     * 判断 `specific` 是否比 `general` 更特定。
+     * 规则是：
+     * - `specific` 的每个参数类型都要是 `general` 对应参数类型的子类型
+     * - 且至少存在一个参数是严格子类型
+     */
     private fun isMoreSpecific(specific: CfirFlatSignature, general: CfirFlatSignature): Boolean {
         val specificTypes = specific.valueParameterTypes
         val generalTypes = general.valueParameterTypes
@@ -81,17 +88,17 @@ class CfirOverloadConflictResolver(
     }
 
     /**
-     * 绗?2 杞細闈炴硾鍨嬩紭浜庢硾鍨嬨€?     *
-     * 濡傛灉娣峰悎浜嗘硾鍨嬪拰闈炴硾鍨嬪€欓€夛紝浼樺厛閫夋嫨闈炴硾鍨嬨€?     */
+     * 第 2 轮：非泛型优先于泛型。
+     */
     private fun discriminateGenerics(signatures: List<CfirFlatSignature>): List<CfirFlatSignature> {
         val nonGeneric = signatures.filter { !it.isGeneric }
         return if (nonGeneric.isNotEmpty()) nonGeneric else signatures
     }
 
     /**
-     * 绗?3 杞細灏戦粯璁ゅ€煎弬鏁扮殑鍊欓€変紭鍏堛€?     *
-     * 鍦ㄥ弬鏁扮壒鍖栧害鍜屾硾鍨?闈炴硾鍨嬮兘鏃犳硶鍖哄垎鏃讹紝
-     * 閫夋嫨浣跨敤鏇村皯榛樿鍊煎弬鏁扮殑鍊欓€夛紙鏇寸簿纭尮閰嶏級銆?     */
+     * 第 3 轮：默认值更少的候选优先。
+     * 当前两轮仍无法区分时，优先选择更“精确匹配”的候选。
+     */
     private fun discriminateByDefaults(signatures: List<CfirFlatSignature>): List<CfirFlatSignature> {
         val minDefaults = signatures.minOf { it.numDefaults }
         val fewestDefaults = signatures.filter { it.numDefaults == minDefaults }

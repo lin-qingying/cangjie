@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 func choose(flag: Bool): Int32 {
     if (flag) {
         return 1
@@ -9,4 +10,5 @@ func choose(flag: Bool): Int32 {
 main(): Int32 {
     return choose(true)
 }
+
 

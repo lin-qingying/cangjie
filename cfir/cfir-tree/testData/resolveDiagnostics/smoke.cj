@@ -1,1 +1,3 @@
+// RUN_PIPELINE_TILL: FRONTEND
 main() {}
+

@@ -9,7 +9,10 @@ class CfirInferenceComponents(
     val subtypeChecker: ConeSubtypeChecker,
     val inferenceLogger: FirInferenceLogger? = null,
 ) {
-    fun createConstraintSystem(): CfirConstraintSystemImpl = CfirConstraintSystemImpl(inferenceLogger)
+    fun createConstraintSystem(): CfirConstraintSystemImpl = CfirConstraintSystemImpl(
+        subtypeChecker = subtypeChecker,
+        inferenceLogger = inferenceLogger,
+    )
 }
 
 

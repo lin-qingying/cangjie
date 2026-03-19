@@ -24,14 +24,103 @@
 
 ## 模块说明
 
+### 基础设施
+
 | 模块 | 职责 | 状态 |
 |------|------|------|
-| `cfir` | CFIR 数据模型：类型系统、IR 树、访问者 | 已实现 |
-| `cfir-build` | 阶段 6: PSI/LightTree → Raw CFIR | 计划中 |
-| `cfir-resolve` | 阶段 7: 多 Phase 语义解析 | 计划中 |
-| `cfir-serialization` | 阶段 10: .cjo 序列化 | 计划中 |
-| `chir` | 阶段 11: CHIR 定义和 CFIR→CHIR 转换 | 计划中 |
-| `tests:test-infrastructure` | Kotlin 风格测试基础设施（Directive/TestServices/配置DSL） | 进行中 |
+| `:common` | 编译器基础设施（名称系统、内置类型、描述符、消息收集） | ✅ 已实现 |
+| `:common:diagnostics` | 诊断框架核心（DiagnosticFactory、Reporter、Severity、Collector、PositioningStrategy） | ✅ 已实现 |
+| `:util` | 工具库（打印机、异常处理、集合扩展） | ✅ 已实现 |
+| `:generators` | 代码生成框架（树生成器、访问者生成器） | ✅ 已实现 |
+| `:compiler:config` | 编译器配置（CompilerConfiguration、ContentRoots、环境设置） | ✅ 已实现 |
+| `:compiler:phaser` | 编译阶段管理框架（CompilerPhase、PhaseSet、PhaserState） | ✅ 已实现 |
+| `:compiler:arguments` | 编译器命令行参数定义 | ✅ 已实现 |
+
+### 前端解析
+
+| 模块 | 职责 | 状态 |
+|------|------|------|
+| `:psi` | PSI 树（语法树）、词法分析、语言定义、注解器 | ✅ 已实现 |
+
+### CFIR 核心
+
+| 模块 | 职责 | 状态 |
+|------|------|------|
+| `:cfir:cfir-common` | CFIR 基础设施（CfirSession、CfirModuleData、CfirElement） | ✅ 已实现 |
+| `:cfir:cfir-cones` | 类型系统核心（ConeCangjieType、ConeClassLikeType、ConePrimitiveType） | ✅ 已实现 |
+| `:cfir:cfir-tree` | IR 树定义（声明、表达式、类型引用、访问者）— 生成式 | ✅ 已实现 |
+| `:cfir:symbols` | 符号提供者接口与实现、Scope 管理、内置符号 | ✅ 已实现 |
+| `:cfir:checkers` | 诊断检查器框架（Declaration/Expression/Type checkers） | ✅ 已实现 |
+| `:cfir:diagnostic-renderers` | 诊断渲染器 | ✅ 已实现 |
+
+### Raw CFIR 构建（阶段 6）
+
+| 模块 | 职责 | 状态 |
+|------|------|------|
+| `:cfir:raw-cfir:raw-cfir-common` | Raw CFIR 构建基础设施（AbstractRawCfirBuilder、RawCfirBuilderContext） | ✅ 已实现 |
+| `:cfir:raw-cfir:psi2cfir` | PSI → Raw CFIR 转换 | 🔄 进行中 |
+| `:cfir:raw-cfir:light-tree2cfir` | LightTree → Raw CFIR 转换 | ✅ 已实现 |
+
+### CFIR 语义解析（阶段 7）
+
+| 模块 | 职责 | 状态 |
+|------|------|------|
+| `:cfir:resolve` | 多 Phase 语义解析（类型推断、重载解析、诊断检查） | ✅ 已实现 |
+| `:cfir:entrypoint` | CFIR 前端入口（Session 工厂、Pipeline 配置） | ✅ 已实现 |
+
+### 序列化（阶段 10）
+
+| 模块 | 职责 | 状态 |
+|------|------|------|
+| `:cfir:cfir-serialization` | .cjo 文件反序列化、跨模块符号加载 | ✅ 已实现 |
+
+### CHIR 与代码生成（阶段 11-12）
+
+| 模块 | 职责 | 状态 |
+|------|------|------|
+| `:compiler:chir` | CHIR 定义、CFIR→CHIR 转换、数据流分析、验证 | ✅ 已实现 |
+| `:compiler:codegen` | CHIR → LLVM IR → 机器码、LLVM 后端集成 | ✅ 已实现 |
+| `:compiler:cli` | CLI 入口、编译管线协调 | ✅ 已实现 |
+
+### 分析 API
+
+| 模块 | 职责 | 状态 |
+|------|------|------|
+| `:analysis:analysis-api` | 分析 API 平台接口（Session、Lifetime、Permissions） | ✅ 已实现 |
+| `:analysis:analysis-api-impl-base` | 分析 API 基础实现 | ✅ 已实现 |
+| `:analysis:analysis-api-cfir` | 分析 API 的 CFIR 实现（对齐 Kotlin analysis-api-fir） | ✅ 已实现 |
+| `:analysis:analysis-test-framework` | 分析 API 测试框架 | ✅ 已实现 |
+
+### 测试框架
+
+| 模块 | 职责 | 状态 |
+|------|------|------|
+| `:tests:test-infrastructure` | Kotlin 风格测试基础设施（Directive/TestServices/配置 DSL） | ✅ 已实现 |
+| `:cfir:analysis-tests` | CFIR 分析测试套件 | ✅ 已实现 |
+
+### LLVM 互操作
+
+| 模块 | 职责 | 状态 |
+|------|------|------|
+| `:llvm-interop:llvm-interop-api` | LLVM JNI 接口定义 | ✅ 已实现 |
+| `:llvm-interop:llvm-interop-jni` | LLVM JNI 本地实现（C++） | ✅ 已实现 |
+
+## 编译管线实现进度
+
+| 阶段 | 标识 | 状态 | 模块 |
+|------|------|------|------|
+| 1 | LOAD_PLUGINS | 📋 计划中 | `:compiler:plugin` |
+| 2 | PARSE | ✅ 已实现 | `:psi` |
+| 3 | CONDITION_COMPILE | 📋 计划中 | — |
+| 4 | IMPORT_PACKAGE | 📋 计划中 | — |
+| 5 | MACRO_EXPAND | 📋 计划中 | — |
+| 6 | CFIR_BUILD | 🔄 进行中 | `:cfir:raw-cfir:psi2cfir` |
+| 7 | CFIR_RESOLVE | ✅ 已实现 | `:cfir:resolve` |
+| 8 | FINALIZE | 📋 计划中 | — |
+| 9 | MANGLING | 📋 计划中 | — |
+| 10 | SAVE_CJO | ✅ 已实现 | `:cfir:cfir-serialization` |
+| 11 | CFIR2CHIR | ✅ 已实现 | `:compiler:chir` |
+| 12 | CODEGEN | ✅ 已实现 | `:compiler:codegen` |
 
 ## 构建
 
@@ -45,76 +134,89 @@
 
 全项目测试实现与组织规范见：`TESTING_CONVENTIONS.md`。
 
-## 开发规范
-
-项目级开发规范与工程治理约定见：`DEVELOPMENT_CONVENTIONS.md`。
-
-## 测试框架进展
+### 测试框架进展
 
 - 已引入 Kotlin 风格的轻量测试配置模型：`TestConfigurationBuilder`、`TestFacade`、`AnalysisHandler`、`AbstractCangjieCompilerTest`。
 - 采用树形测试模块结构：测试基础设施归属 `:tests:test-infrastructure`。
-- 当前已确认并遵循规则：**testData 与测试代码按模块归属放置**（例如 `psi2cfir` 测试仍放在 `cfir/raw-cfir/psi2cfir` 模块内）。
+- testData 与测试代码按模块归属放置（例如 `psi2cfir` 测试仍放在 `cfir/raw-cfir/psi2cfir` 模块内）。
 - Raw CFIR 测试入口已对齐 Kotlin 风格为 **Generated 类**（模块内自洽，不依赖独立 `compiler-tests`）：
-  - 生成器：`cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/TestGeneratorForPsi2Cfir.kt`
-  - 产物：`cfir/raw-cfir/psi2cfir/tests-gen/org/cangjie/cfir/builder/RawCfirBuilderTestCaseGenerated.kt`
-  - 抽象基类：`cfir/raw-cfir/psi2cfir/testFixtures/org/cangjie/cfir/builder/AbstractRawCfirBuilderTestCase.kt`
+  - 生成器：`cfir/raw-cfir/psi2cfir/testFixtures/.../TestGeneratorForPsi2Cfir.kt`
+  - 产物：`cfir/raw-cfir/psi2cfir/tests-gen/.../RawCfirBuilderTestCaseGenerated.kt`
+  - 抽象基类：`cfir/raw-cfir/psi2cfir/testFixtures/.../AbstractRawCfirBuilderTestCase.kt`
 - Raw CFIR testData：`cfir/raw-cfir/psi2cfir/testData/rawBuilder`。
-- 已接入 `DUMP_CFIR` 指令与 golden file 对比；默认为严格比对模式（不自动改写期望），可通过 `-Dupdate.test.data=true` 显式更新期望文件。
-- `:cfir:raw-cfir:psi2cfir:test` 会自动先执行 `generateRawCfirBuilderTests`，因此新增 `.cj` 文件后可自动生成对应测试方法。
+- 已接入 `DUMP_CFIR` 指令与 golden file 对比；默认严格比对模式，可通过 `-Dupdate.test.data=true` 更新期望文件。
 - 已新增 4 类测试入口（对齐 Kotlin 分类）：
   - `RawCfirBuilderLazyBodiesByAstTestGenerated`
   - `RawCfirBuilderLazyBodiesByStubTestGenerated`
   - `RawCfirBuilderSourceElementMappingTestGenerated`
   - `RawCfirBuilderTestCaseGenerated`
-- 当前能力状态：`SourceElementMapping` 与 `LazyBodies(ByAst/ByStub)` 均已可执行，`PsiRawCfirBuilder` 已支持 `BodyBuildingMode`（`NORMAL`/`LAZY_BODIES`）。
-- 已新增 `CfirBasicTypeRef`，`CjBasicType` 在 RAW 阶段直接映射到基础类型引用，不再降级为 `Unsupported type element`。
-- 已新增 `CfirVArrayTypeRef`，`CjVArrayType` 在 RAW 阶段直接映射为专用定长数组类型引用，保留元素类型与 `$N` 尺寸字面量。
-- 当前测试发现范围：主 `RawBuilder` suite 与两个 `LazyBodies(ByAst/ByStub)` suite 现均扫描 `testData/rawBuilder` 根目录；`rawBuilder/expressions` 已补齐缺失表达式/错误恢复用例，并为 lazy 模式补齐同目录下的 `*.lazyBodies.txt` 基线。
+- `PsiRawCfirBuilder` 已支持 `BodyBuildingMode`（`NORMAL`/`LAZY_BODIES`）。
+- 已新增 `CfirBasicTypeRef`（基础类型引用）与 `CfirVArrayTypeRef`（定长数组类型引用）。
 - tests-gen 已加入 all-files-present 等效校验，新增 `.cj` 用例将被覆盖检查拦截漏测。
-- 下一步建议：在同一框架上补齐 `CfirResolveFacade` + `DiagnosticsHandler`，并接入多模块/诊断类 testdata。
-- 已完成诊断检查器框架对齐方案设计（计划补齐 Declaration/Expression/Type checkers 生成与运行入口）。
 
-## OpenSpec 变更进展
+## 源码输入约定
 
-- 已新增变更提案：`openspec/changes/fix-cfir-renderer-architecture/`。
-- 该提案聚焦 `CfirRenderer` 架构升级：在保持 golden file 兼容的前提下，引入可组合 renderer/profile 设计，避免“仅服务 golden 对比”的能力定位。
+编译器前端统一使用 `CONTENT_ROOTS` 作为源码输入入口（对齐 Kotlin 的 Content Roots 模型）。`CLI_SOURCE_FILE_PATHS` 已进入弃用周期，仅用于兼容历史脚本。
 
-### CfirRenderer profiles
+**弃用计划（`CLI_SOURCE_FILE_PATHS`）：**
+- 迁移步骤：将原有路径列表改为写入 `CONTENT_ROOTS`（`CangJieSourceRoot`）。
+- 兼容期：保留到 2026-06-30，之后移除兼容映射。
 
-- `CfirRenderer.withGoldenCompat()`：供 golden file 与回归测试使用，`CfirRenderer.render(element)` 兼容入口内部委托到该 profile。
-- `CfirRenderer.withDebug()`：供调试和开发期可视化使用，当前与 golden 兼容输出共享默认组件，但 API 语义独立。
-- `CfirRenderer.withReadability()`：供后续更偏可读性的文本输出使用，当前与默认组件共享实现。
-- `resolvePhaseRenderer` 扩展点已在框架中预留，但本次变更**不额外输出** resolve phase 文本。
-- 当前刻意**不引入** `CfirRendererOptions`：现有稳定需求可由离散 profile 覆盖，避免过早扩大配置面。
-- 已新增变更提案：`openspec/changes/add-cfir-varray-type-ref/`。
-- 该提案聚焦补齐 `CfirTypeRef` 对 `VArray<T, $N>` 的 Raw CFIR 建模缺口：在不改动 parser/PSI 与 cone 层既有设计的前提下，补充 `cfir-tree` 类型引用表示、`psi2cfir` lowering 与 rawBuilder 测试覆盖。
-- 已新增变更提案：`openspec/changes/add-rawbuilder-missing-expression-tests/`。
-- 该提案聚焦补齐 `cfir/raw-cfir/psi2cfir/testData/rawBuilder` 中对缺失表达式 / 错误恢复路径的测试覆盖，并参考 Kotlin `rawBuilder/expressions` 的目录组织方式收敛本仓库的套件发现范围。
-- 已推进变更实现：`openspec/changes/fix-rawbuilder-let-position-handling/`。
-- 本次实现保留现有具名 `CfirVariable(name)` 语义，同时新增 `CfirPatternVariable : CfirCallableDeclaration`（持有完整 `pattern`，并通过派生查询提供 `bindings` / `allPatternDeclarations`），避免再用具名变量或 property 语义掩盖 pattern variable。
-- `PsiRawCfirBuilder` 已补齐 `CjFieldVariable` 与 `CjPatternVariable` 的 declaration dispatch；类体字段不再统一退化为 `<error-declaration>`，`classWithMembers`、`classWithTypeParameters`、`structDeclaration` 及新增 `classMembersOrderStability` 用例均已更新 normal/lazyBodies 基线。
-- 已完成 `:cfir:raw-cfir:psi2cfir:test` 全量验证；为兼容 malformed-expression 的 by-stub 路径，测试基座补齐了最小 IntelliJ application/project 扩展点与同步 `AsyncExecutionService`，并同步更新 `sourceElementMapping` golden 以匹配修复后的真实表达式映射结果。
+## 开发规范
+
+项目级开发规范与工程治理约定见：`DEVELOPMENT_CONVENTIONS.md`。
 
 ## 目录结构
 
 ```
 cangjie/
-├── cfir/                      # CFIR 数据模型
-│   └── src/main/kotlin/org/cangjie/cfir/
-│       ├── CfirElement.kt     # IR 根节点
-│       ├── common/            # 基础类型（Name, Visibility）
-│       ├── types/             # 类型系统（Cone types + TypeRef）
-│       ├── declarations/      # 声明节点
-│       ├── expressions/       # 表达式节点
-│       ├── patterns/          # 模式匹配
-│       ├── references/        # 引用
-│       ├── symbols/           # 符号
-│       └── visitors/          # 访问者模式
+├── analysis/                  # 分析 API 模块
+│   ├── analysis-api/
+│   ├── analysis-api-impl-base/
+│   ├── analysis-api-cfir/
+│   └── analysis-test-framework/
+├── cfir/                      # CFIR 核心模块
+│   ├── cfir-common/
+│   ├── cfir-cones/
+│   ├── cfir-tree/
+│   ├── symbols/
+│   ├── checkers/
+│   ├── resolve/
+│   ├── entrypoint/
+│   ├── cfir-serialization/
+│   ├── diagnostic-renderers/
+│   └── raw-cfir/
+│       ├── raw-cfir-common/
+│       ├── psi2cfir/
+│       └── light-tree2cfir/
+├── compiler/                  # 编译器模块
+│   ├── config/
+│   ├── phaser/
+│   ├── arguments/
+│   ├── cli/
+│   ├── chir/
+│   └── codegen/
+├── common/                    # 基础设施
+│   ├── src/
+│   └── diagnostics/
+├── psi/                       # 前端解析（PSI 树）
+├── util/                      # 工具库
+├── generators/                # 代码生成框架
+├── tests/                     # 测试框架
+│   └── test-infrastructure/
+├── llvm-interop/              # LLVM 互操作
+│   ├── llvm-interop-api/
+│   └── llvm-interop-jni/
+├── flatbuffers-gen/           # FlatBuffers 生成（CHIR 序列化）
+├── openspec/                  # 变更提案
+│   └── changes/
 ├── external/                  # 外部参考源码（不参与构建）
 │   ├── cangjie_compiler/      # 仓颉语言编译器源码（C++ 参考实现）
 │   ├── intellij-cangjie/      # IntelliJ 仓颉插件（Kotlin K1）
 │   └── kotlin/                # Kotlin 编译器源代码（K2 架构参考）
 ├── cjfir-compiler-stages.md   # 编译器阶段设计文档
+├── DEVELOPMENT_CONVENTIONS.md # 开发规范
+├── TESTING_CONVENTIONS.md     # 测试规范
 └── gradle/                    # Gradle 配置
 ```
 
@@ -123,3 +225,5 @@ cangjie/
 - **语言**: Kotlin/JVM
 - **JDK**: 17
 - **构建工具**: Gradle (Kotlin DSL)
+- **测试框架**: JUnit 5（JUnitPlatform）
+- **代码生成**: FlatBuffers（CHIR 序列化）、LLVM（代码生成后端）

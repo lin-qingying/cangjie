@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 func specialExpressionsPreserve(lock: Int64): Unit {
     synchronized(lock) {
         let a = 1
@@ -10,3 +11,4 @@ func specialExpressionsPreserve(lock: Int64): Unit {
     let q = quote(hello $(lock))
     let m = @demo(foo)
 }
+

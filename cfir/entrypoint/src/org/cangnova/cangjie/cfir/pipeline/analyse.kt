@@ -1,13 +1,21 @@
 package org.cangnova.cangjie.cfir.pipeline
 
+import com.intellij.lang.PsiBuilderFactory
+import org.cangnova.cangjie.CjPsiSourceFile
+import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.analysis.CheckersComponent
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir
 import org.cangnova.cangjie.cfir.resolve.ScopeSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.diagnosticReporter
+import org.cangnova.cangjie.lexer.CangJieLexer
+import org.cangnova.cangjie.parsing.CangJieLightParser
+import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.psi.CjFile
 
 /**
@@ -29,6 +37,40 @@ fun CfirSession.buildCfirFromCjFiles(cjFiles: Collection<CjFile>): List<CfirFile
             firProvider.recordFile(cfirFile)
         }
     }
+}
+
+/**
+ * Builds raw CFIR via LightTree, mirroring Kotlin's `buildFirViaLightTree`.
+ */
+fun CfirSession.buildCfirViaLightTree(
+    lightTreeFiles: Collection<CjSourceFile>,
+    @Suppress("UNUSED_PARAMETER") diagnosticReporterForLightTree: DiagnosticReporter? = null,
+    reportFilesAndLines: ((String, Int) -> Unit)? = null,
+): List<CfirFile> {
+    val firProvider = cfirProvider as CfirProviderImpl
+    val parserDefinition = CangJieParserDefinition()
+
+    return lightTreeFiles.map { sourceFile ->
+        val sourceText = sourceFile.getContentsAsStream().bufferedReader().use { it.readText() }
+        val builder = PsiBuilderFactory.getInstance().createBuilder(
+            parserDefinition,
+            CangJieLexer(),
+            sourceText,
+        )
+        val lightTree = CangJieLightParser.parse(builder)
+        val cfirFile = LightTree2Cfir(
+            session = this,
+            source = sourceText,
+            fileName = sourceFile.name,
+        ).buildCfirFile(lightTree)
+        firProvider.recordFile(cfirFile)
+        reportFilesAndLines?.invoke(sourceFile.path ?: sourceFile.name, sourceText.lineSequence().count())
+        cfirFile
+    }
+}
+
+fun List<CjSourceFile>.asCjFilesList(): List<CjFile> {
+    return map { (it as CjPsiSourceFile).psiFile as CjFile }
 }
 
 /**

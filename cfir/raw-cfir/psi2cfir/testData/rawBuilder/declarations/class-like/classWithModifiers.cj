@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 abstract class Shape {
     abstract func area(): Float64
 }
@@ -12,3 +13,4 @@ class Counter {
         return count
     }
 }
+

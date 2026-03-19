@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 func castMain(): Float64 {
     let v: Float32 = Float32(3)
     return -Float64(v)
@@ -6,3 +7,4 @@ func castMain(): Float64 {
 main(): Int32 {
     return if (castMain() < 0.0) { 1 } else { 0 }
 }
+

@@ -9,7 +9,7 @@ dependencies {
     implementation(project(":cfir:cfir-cones"))
 
     implementation(project(":cfir:cfir-tree:tree-generator"))
-    implementation(project(":cfir:diagnostics"))
+    implementation(project(":common:diagnostics"))
     implementation(project(":psi"))
 
     implementation(kotlin("reflect"))

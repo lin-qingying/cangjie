@@ -5,8 +5,9 @@ import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
- * 璇婃柇鏀堕泦缂栨帓鍣紝鍒涘缓 visitor 骞堕┍鍔ㄩ亶鍘嗐€? *
- * 瀵归綈 K2 `AbstractDiagnosticCollector`銆? */
+ * 诊断收集编排器，负责创建 visitor 并驱动遍历。
+ * 对齐 K2 `AbstractDiagnosticCollector`。
+ */
 abstract class CfirAbstractDiagnosticCollector(
     val session: CfirSession,
     protected val createComponents: (PendingDiagnosticReporter) -> CfirDiagnosticCollectorComponents,

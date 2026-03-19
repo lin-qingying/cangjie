@@ -1,3 +1,3 @@
 ﻿package org.cangnova.cangjie.analysis.api.cfir.resolve
 
-// 棰勭暀锛欳FIR 瑙ｆ瀽澶栬鏈嶅姟瀹炵幇灏嗘斁缃簬姝ゆ枃浠朵腑銆?
+// 预留：CFIR 解析 facade 服务实现将放在此文件中。

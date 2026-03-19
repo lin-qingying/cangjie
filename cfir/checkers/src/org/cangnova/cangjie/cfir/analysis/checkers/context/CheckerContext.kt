@@ -13,8 +13,9 @@ import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
-import org.cangnova.cangjie.config.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettings
 
 abstract class CheckerContext : DiagnosticContext {
     abstract val file: CfirFile?
@@ -32,7 +33,7 @@ abstract class CheckerContext : DiagnosticContext {
     abstract val allErrorsSuppressed: Boolean
 
     override val languageVersionSettings: LanguageVersionSettings
-        get() = LanguageVersionSettings.DEFAULT
+        get() = session.languageVersionSettings
     abstract val containingFileSymbol: CfirFileSymbol?
 
     override val containingFilePath: String?
@@ -130,4 +131,3 @@ inline fun <reified T : CfirDeclaration> CheckerContext.findClosestDeclaration(n
     }
     return null
 }
-

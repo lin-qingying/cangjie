@@ -147,7 +147,7 @@
 | 文件 | 功能 | 行数 |
 |------|------|------|
 | CfirTypeCheckUtils.kt | 子类型检查工具（BasicConeTypeContext） | 35 |
-| CfirInitializerTypeMismatchChecker.kt | 变量初始化类型检查 | 33 |
+| CfirPatternVariableInitializerTypeMismatchChecker.kt | 变量初始化类型检查 | 33 |
 | CfirPropertyInitializerTypeMismatchChecker.kt | 属性初始化类型检查 | 33 |
 | CfirAssignmentTypeMismatchChecker.kt | 赋值类型检查 | 31 |
 | CfirReturnTypeMismatchChecker.kt | return 表达式类型检查 | 34 |

@@ -1,4 +1,5 @@
-﻿// STUB_FALLBACK_TO_AST:
+// RUN_PIPELINE_TILL: FRONTEND
+// STUB_FALLBACK_TO_AST:
 public enum EnumExtend<T> {
     | AA
 }

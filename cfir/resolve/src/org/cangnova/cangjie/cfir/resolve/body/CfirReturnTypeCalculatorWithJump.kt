@@ -1,9 +1,10 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -12,10 +13,12 @@ import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 
 /**
- * 璺宠浆寮忚繑鍥炵被鍨嬭绠楀櫒銆? *
- * 鐢ㄤ簬 IMPLICIT_TYPES 闃舵锛屽綋閬囧埌灏氭湭璁＄畻杩斿洖绫诲瀷鐨勫０鏄庢椂锛? * 浼?璺宠浆"鍒拌澹版槑杩涜 designated resolve锛岃绠楀叾杩斿洖绫诲瀷銆? *
- * 閫掑綊淇濇姢锛氶€氳繃 [implicitBodyResolveComputationSession] 鐨勭姸鎬佹満妫€娴嬮€掑綊锛? * Computing 鐘舵€佷笅杩斿洖 [ConeErrorType]銆? *
- * 鍙傝€?K2 ReturnTypeCalculatorWithJump銆? */
+ * 带 designated resolve“跳转”能力的返回类型计算器。
+ * 它服务于 IMPLICIT_TYPES 阶段：当目标声明尚未算出返回类型时，
+ * 会临时跳到该声明执行 designated resolve，再读取其返回类型。
+ * 通过 [implicitBodyResolveComputationSession] 的状态机避免递归依赖。
+ * 参考 K2 `ReturnTypeCalculatorWithJump`。
+ */
 class CfirReturnTypeCalculatorWithJump(
     private val session: org.cangnova.cangjie.cfir.session.CfirSession,
     private val scopeSession: CfirScopeSession,
@@ -23,25 +26,25 @@ class CfirReturnTypeCalculatorWithJump(
 ) : CfirReturnTypeCalculator {
 
     override fun tryCalculateReturnType(declaration: CfirCallableDeclaration): ConeCangjieType? {
-        // 1. 宸叉湁鏄惧紡瑙ｆ瀽绫诲瀷 鈫?鐩存帴杩斿洖
+        // 1. 已有显式解析类型，直接返回
         val typeRef = extractReturnTypeRef(declaration) ?: return null
         if (typeRef is CfirResolvedTypeRef) {
             return typeRef.coneType
         }
 
-        // 2. 闈為殣寮忕被鍨?鈫?鏃犳硶鎺ㄦ柇
+        // 2. 不是隐式类型，无法继续推断
         if (typeRef !is CfirImplicitTypeRef) {
             return null
         }
 
-        // 3. 闇€瑕佹帹鏂?鈥?妫€鏌ヨ绠楃姸鎬?
+        // 3. 需要推断，先检查当前计算状态
         val symbol = extractSymbol(declaration) ?: return null
         return when (val status = implicitBodyResolveComputationSession.getStatus(symbol)) {
             is CfirImplicitBodyResolveComputationStatus.Computed -> {
                 status.resolvedType
             }
             is CfirImplicitBodyResolveComputationStatus.Computing -> {
-                // 閫掑綊渚濊禆 鈫?杩斿洖閿欒绫诲瀷
+                // 递归依赖时返回错误类型
                 ConeErrorType("recursive implicit type")
             }
             is CfirImplicitBodyResolveComputationStatus.NotComputed -> {
@@ -51,7 +54,7 @@ class CfirReturnTypeCalculatorWithJump(
         }
     }
 
-    /** 瑙﹀彂 designated resolve 浠ヨ绠楀０鏄庣殑杩斿洖绫诲瀷 */
+    /** 触发 designated resolve，并计算目标声明的返回类型。 */
     private fun resolveDesignated(declaration: CfirCallableDeclaration): ConeCangjieType {
         val symbol = extractSymbol(declaration) ?: return ConeErrorType("no symbol for declaration")
 
@@ -64,7 +67,7 @@ class CfirReturnTypeCalculatorWithJump(
                 implicitBodyResolveComputationSession = implicitBodyResolveComputationSession,
                 returnTypeCalculator = this,
             )
-            // 鎵惧埌澹版槑鎵€鍦ㄧ殑鏂囦欢骞跺彉鎹?
+            // 找到声明所在文件并执行转换
             val file = findContainingFile(declaration)
             if (file != null) {
                 designatedTransformer.transformFile(
@@ -72,7 +75,7 @@ class CfirReturnTypeCalculatorWithJump(
                     org.cangnova.cangjie.cfir.resolve.CfirResolutionMode.ContextIndependent,
                 )
             }
-            // 杩斿洖鍙樻崲鍚庣殑澹版槑
+            // 返回转换后的声明
             declaration
         }
         return extractResolvedType(result) ?: ConeErrorType("failed to resolve implicit type")
@@ -81,7 +84,8 @@ class CfirReturnTypeCalculatorWithJump(
     private fun extractReturnTypeRef(declaration: CfirCallableDeclaration): CfirTypeRef? = when (declaration) {
         is CfirFunction -> declaration.returnTypeRef
         is CfirProperty -> declaration.returnTypeRef
-        is CfirVariable -> declaration.returnTypeRef
+        is CfirFieldVariable -> declaration.returnTypeRef
+        is CfirPatternVariable -> declaration.returnTypeRef
         else -> null
     }
 
@@ -93,10 +97,9 @@ class CfirReturnTypeCalculatorWithJump(
         return if (typeRef is CfirResolvedTypeRef) typeRef.coneType else null
     }
 
-    /** 鏌ユ壘澹版槑鎵€鍦ㄧ殑鏂囦欢锛堝悜涓婇亶鍘嗙鍙疯〃锛?*/
+    /** 查找声明所在文件。 */
     private fun findContainingFile(declaration: CfirCallableDeclaration): org.cangnova.cangjie.cfir.declarations.CfirFile? {
-        // Phase 3 绠€鍖栵細designated resolve 鐩存帴鍦?declaration 涓婃搷浣?        // 瀹屾暣瀹炵幇闇€瑕?file 鈫?(class)? 鈫?
-        // declaration 璺緞
+        // Phase 3 暂不实现完整的 file -> class -> declaration 路径查找
         return null
     }
 }

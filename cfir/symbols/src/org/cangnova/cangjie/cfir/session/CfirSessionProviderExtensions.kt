@@ -11,7 +11,7 @@ val CfirSession.cfirProvider: CfirProvider by CfirSession.sessionComponentAccess
 
 val CfirSession.extendProvider: CfirExtendProvider by CfirSession.sessionComponentAccessor()
 
-val CfirSession.kotlinScopeProvider: CfirCangJieScopeProvider by CfirSession.sessionComponentAccessor()
+val CfirSession.cangjieScopeProvider: CfirCangJieScopeProvider by CfirSession.sessionComponentAccessor()
 
 /** 仅包含依赖（不含源码）的符号提供器的注册 key。 */
 const val DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY: String =

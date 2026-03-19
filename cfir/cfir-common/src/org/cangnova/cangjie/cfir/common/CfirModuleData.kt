@@ -6,9 +6,10 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.utils.shouldNotBeCalled
 
 /**
- * CFIR 妯″潡鏁版嵁鎶借薄銆? *
- * 浠撻鍖?妯″潡绯荤粺浣跨敤鍥涚骇 AccessLevel锛圥RIVATE/INTERNAL/PROTECTED/PUBLIC锛夋帶鍒跺彲瑙佹€э紝
- * 涓嶅惈 Kotlin 鐨?friend module 姒傚康銆俰nternal 鍙鎬ч檺瀹氬湪鍚屼竴 package 鍐呫€? */
+ * CFIR 模块数据抽象。
+ * 仓颉模块系统使用四级 AccessLevel（PRIVATE / INTERNAL / PROTECTED / PUBLIC）控制可见性，
+ * 不包含 Kotlin 的 `friend module` 概念；`internal` 的可见性限制在同一 package 内。
+ */
 abstract class CfirModuleData : CfirSessionComponent {
     abstract val name: Name
     abstract val dependencies: List<CfirModuleData>
@@ -44,7 +45,8 @@ abstract class CfirModuleData : CfirSessionComponent {
 }
 
 /**
- * 婧愮爜妯″潡鏁版嵁銆? */
+ * 源码模块数据。
+ */
 class CfirSourceModuleData(
     override val name: Name,
     override val dependencies: List<CfirModuleData>,
@@ -63,7 +65,8 @@ class CfirSourceModuleData(
 }
 
 /**
- * 浜岃繘鍒朵緷璧栨ā鍧楁暟鎹€? */
+ * 二进制依赖模块数据。
+ */
 class CfirBinaryDependenciesModuleData(
     override val name: Name,
     override val capabilities: CfirModuleCapabilities = CfirModuleCapabilities.Empty,
@@ -106,8 +109,10 @@ val CfirSession.moduleData: CfirModuleData
     get() = nullableModuleData ?: error("Module data is not registered in $this")
 
 /**
- * 鍒ゆ柇褰撳墠妯″潡鏄惁鍙互鐪嬪埌 [otherModule] 鐨?internal 澹版槑銆? *
- * 浠撻鐨?internal 鍙鎬у熀浜庡寘绾у埆锛堝悓鍖呭彲瑙侊級锛屼笉渚濊禆 friend module 鏈哄埗銆? * 褰撲袱涓ā鍧楀睘浜庡悓涓€妯″潡鎴栧瓨鍦?dependsOn 鍏崇郴鏃跺彲瑙併€? */
+ * 判断当前模块是否可以看到 [otherModule] 的 `internal` 声明。
+ * 仓颉的 `internal` 可见性基于包级别，不依赖 `friend module` 机制；
+ * 当两个模块相同，或存在 `dependsOn` 关系时，也允许访问。
+ */
 fun CfirModuleData.canSeeInternalsOf(otherModule: CfirModuleData): Boolean {
     return this == otherModule ||
         otherModule in allRefinementDependencies ||

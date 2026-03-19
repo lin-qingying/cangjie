@@ -17,10 +17,9 @@ import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.name.Name
 
 /**
- * Scope 濉旇В鏋愬櫒锛岃礋璐ｅ湪 scope 濉斾腑鎸夊眰绾ф悳绱㈢鍙枫€? *
- * 鏀寔涓ょ妯″紡锛? * 1. 鏃х増 findFunctions/findVariables 鈥?绠€鍗曟寜鍚嶇О鏌ユ壘锛堝悜鍚庡吋瀹癸級
- * 2. runResolver 鈥?瀹屾暣鐨?Tower 閬嶅巻 + 鍊欓€夋敹闆嗭紙Phase 3 鏂板锛? *
- * 鍙傝€?K2 FirTowerResolver(components, resolutionStageRunner, collector)銆? */
+ * scope 塔解析器，负责在 scope 塔中按层级搜索符号。
+ * 既保留旧版按名称直接查找的接口，也支持 Phase 3 的完整 tower 遍历和候选收集。
+ */
 class CfirTowerResolver(
     private val components: CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
     private val resolutionStageRunner: CfirResolutionStageRunner,
@@ -30,17 +29,13 @@ class CfirTowerResolver(
 
     override val session: CfirSession get() = components.session
 
-    // ---- Phase 3: 瀹屾暣 Tower 閬嶅巻 ----
+    // ---- Phase 3: 完整 tower 遍历 ----
 
     /**
-     * 鎵ц瀹屾暣鐨?Tower 閬嶅巻瑙ｆ瀽銆?     *
-     * 閬嶅巻 towerDataContext.allScopesReversed() 鐨勬瘡涓€灞傦細
-     * - 涓烘瘡灞傚垎閰?CfirTowerGroup
-     * - 瀵规瘡涓尮閰嶅悕绉扮殑绗﹀彿鍒涘缓 CfirCandidate
-     * - 閫氳繃 collector 鏀堕泦鍜屾帓搴忓€欓€?     * - 鏍规嵁 shouldStopAtTheGroup 鍐冲畾鏄惁鎻愬墠缁堟
-     *
-     * @param callInfo 璋冪敤淇℃伅
-     * @param context 瑙ｆ瀽涓婁笅鏂?     */
+     * 执行完整的 tower 遍历解析。
+     * @param callInfo 调用信息
+     * @param context 解析上下文
+     */
     fun runResolver(callInfo: CfirCallInfo, context: CfirResolutionContext) {
         collector.newDataSet()
 
@@ -48,19 +43,19 @@ class CfirTowerResolver(
         var localDepth = 0
         var importedDepth = 0
 
-        // 浠庡唴鍒板閬嶅巻 scope 濉?
+        // 从内到外遍历 scope 塔
         for (element in towerDataElements.asReversed()) {
             val scope = element.scope
             val group = classifyScope(scope, element.isLocal, localDepth, importedDepth)
 
-            // 妫€鏌ユ槸鍚﹀簲鍦ㄦ灞傜骇鍋滄
+            // 检查是否应在此层级停止
             if (collector.shouldStopAtTheGroup(group)) break
 
-            // 鍦ㄦ scope 涓煡鎵惧尮閰嶅悕绉扮殑鍑芥暟绗﹀彿
+            // 在当前 scope 中查找同名函数符号
             val symbols = mutableListOf<CfirCallableSymbol<*>>()
             scope.processFunctionsByName(callInfo.name) { symbols.add(it) }
 
-            // 涓烘瘡涓尮閰嶇鍙峰垱寤哄€欓€夊苟鎻愪氦鏀堕泦
+            // 为每个匹配符号创建候选并提交收集
             for (symbol in symbols) {
                 val candidate = CfirCandidate(
                     symbol = symbol,
@@ -70,14 +65,15 @@ class CfirTowerResolver(
                 collector.consumeCandidate(group, candidate, context)
             }
 
-            // 鏇存柊娣卞害璁℃暟
+            // 更新深度计数
             if (element.isLocal) localDepth++
             if (scope is CfirImportScope) importedDepth++
         }
     }
 
     /**
-     * 鏍规嵁 scope 绫诲瀷鍜屽睘鎬у垎閰?TowerGroup銆?     */
+     * 根据 scope 类型和属性分配 [CfirTowerGroup]。
+     */
     private fun classifyScope(scope: CfirScope, isLocal: Boolean, localDepth: Int, importedDepth: Int): CfirTowerGroup {
         return when {
             scope is CfirClassDeclaredMemberScope -> CfirTowerGroup.MEMBER
@@ -86,27 +82,26 @@ class CfirTowerResolver(
             scope is CfirExtendMemberScope || scope is CfirExtendScope -> CfirTowerGroup.EXTEND
             scope is CfirImportScope -> CfirTowerGroup.imported(importedDepth)
             scope is CfirPackageMemberScope || scope is CfirPackageScope -> CfirTowerGroup.PACKAGE
-            else -> CfirTowerGroup.PACKAGE // 淇濆畧绛栫暐锛氭湭鐭?scope 瑙嗕负鏈€浣庝紭鍏堢骇
+            else -> CfirTowerGroup.PACKAGE // 保守策略：未知 scope 视为最低优先级
         }
     }
 
-    // ---- 鏃х増 API锛堝悜鍚庡吋瀹癸級 ----
+    // ---- 旧版 API（向后兼容）----
 
     /**
-     * 鎸夊悕绉版煡鎵惧彉閲?灞炴€х鍙枫€?     *
-     * 浼樺厛鏌ユ壘灞€閮ㄥ彉閲忥紙CfirLocalScope 鐨?processVariablesByName锛夛紝
-     * 鍐嶆煡鎵惧睘鎬э紙processPropertiesByName锛夈€?     * 杩斿洖绗竴涓尮閰嶅眰鐨勬墍鏈夌鍙枫€?     */
+     * 按名称查找变量或属性符号。
+     */
     fun findVariables(name: Name): List<CfirCallableSymbol<*>> {
         val scopes = components.towerDataContext.allScopesReversed()
         for (scope in scopes) {
             val result = mutableListOf<CfirCallableSymbol<*>>()
 
-            // 灞€閮?scope 浼樺厛鏌ユ壘灞€閮ㄥ彉閲?
+            // 局部 scope 优先查找局部变量
             if (scope is CfirLocalScopeImpl) {
                 scope.processVariablesByName(name) { result.add(it) }
             }
 
-            // 涔熸煡鎵惧睘鎬э紙绫绘垚鍛樺睘鎬х瓑锛?
+            // 同时查找属性
             scope.processPropertiesByName(name) { result.add(it) }
 
             if (result.isNotEmpty()) return result
@@ -114,7 +109,7 @@ class CfirTowerResolver(
         return emptyList()
     }
 
-    /** 鎸夊悕绉版煡鎵惧嚱鏁扮鍙凤紝杩斿洖绗竴涓尮閰嶅眰鐨勬墍鏈夌鍙?*/
+    /** 按名称查找函数符号，返回首个匹配层级中的全部结果。 */
     fun findFunctions(name: Name): List<CfirFunctionSymbol> {
         val scopes = components.towerDataContext.allScopesReversed()
         for (scope in scopes) {
@@ -125,7 +120,7 @@ class CfirTowerResolver(
         return emptyList()
     }
 
-    /** 鎸夊悕绉版煡鎵剧被绗﹀彿锛岃繑鍥炵涓€涓尮閰嶅眰鐨勬墍鏈夌鍙?*/
+    /** 按名称查找类符号，返回首个匹配层级中的全部结果。 */
     fun findClassifiers(name: Name): List<CfirClassSymbol> {
         val scopes = components.towerDataContext.allScopesReversed()
         for (scope in scopes) {
@@ -137,8 +132,8 @@ class CfirTowerResolver(
     }
 
     /**
-     * 鍦ㄦ寚瀹氱殑 scope 鍒楄〃涓煡鎵惧彉閲?灞炴€х鍙枫€?     *
-     * 鐢ㄤ簬甯︽帴鏀惰€呯殑灞炴€ц闂紙鍦ㄦ帴鏀惰€呯被鍨嬬殑鎴愬憳 scope 涓煡鎵撅級銆?     */
+     * 在指定 scope 列表中查找变量或属性符号。
+     */
     fun findVariablesInScopes(name: Name, scopes: List<CfirScope>): List<CfirCallableSymbol<*>> {
         for (scope in scopes) {
             val result = mutableListOf<CfirCallableSymbol<*>>()
@@ -149,8 +144,8 @@ class CfirTowerResolver(
     }
 
     /**
-     * 鍦ㄦ寚瀹氱殑 scope 鍒楄〃涓煡鎵惧嚱鏁扮鍙枫€?     *
-     * 鐢ㄤ簬甯︽帴鏀惰€呯殑鏂规硶璋冪敤銆?     */
+     * 在指定 scope 列表中查找函数符号。
+     */
     fun findFunctionsInScopes(name: Name, scopes: List<CfirScope>): List<CfirFunctionSymbol> {
         for (scope in scopes) {
             val result = mutableListOf<CfirFunctionSymbol>()
@@ -160,7 +155,7 @@ class CfirTowerResolver(
         return emptyList()
     }
 
-    /** 閲嶇疆鏀堕泦鍣ㄧ姸鎬?*/
+    /** 重置收集器状态。 */
     fun reset() {
         collector.newDataSet()
     }

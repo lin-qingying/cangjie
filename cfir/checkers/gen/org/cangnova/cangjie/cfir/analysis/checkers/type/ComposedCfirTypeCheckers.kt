@@ -1,4 +1,4 @@
-﻿
+
 
 package org.cangnova.cangjie.cfir.analysis.checkers.type
 
@@ -7,7 +7,8 @@ import org.cangnova.cangjie.cfir.analysis.checkers.CfirCheckerWithDispatchKind
 import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
 
 /*
- * 鏈枃浠剁敱鐢熸垚鍣ㄨ嚜鍔ㄧ敓鎴? * 璇峰嬁鎵嬪姩淇敼
+ * 本文件由生成器自动生成
+ * 请勿手动修改
  */
 
 class ComposedCfirTypeCheckers(val predicate: (CfirCheckerWithDispatchKind) -> Boolean) : CfirTypeCheckers() {
@@ -27,4 +28,3 @@ class ComposedCfirTypeCheckers(val predicate: (CfirCheckerWithDispatchKind) -> B
         checkers.resolvedTypeRefCheckers.filterTo(_resolvedTypeRefCheckers, predicate)
     }
 }
-

@@ -7,11 +7,11 @@ package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
-import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.source.CjSourceElement
 
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.forInExpression]
@@ -22,7 +22,7 @@ abstract class CfirForInExpression : CfirLoopExpression() {
     abstract override val coneTypeOrNull: ConeCangjieType?
     abstract override val condition: CfirExpression
     abstract override val isDoWhile: Boolean
-    abstract val variable: CfirVariable
+    abstract val variable: CfirPatternVariable
     abstract val iterable: CfirExpression
     abstract override val body: CfirBlock
 

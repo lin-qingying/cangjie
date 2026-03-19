@@ -15,9 +15,9 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPatternVariableImpl
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirPatternVariableBuilder {
@@ -28,11 +28,11 @@ class CfirPatternVariableBuilder {
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
     lateinit var status: CfirDeclarationStatus
+    var initializer: CfirExpression? = null
+    var isVar: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
     lateinit var pattern: CfirPattern
-    var initializer: CfirExpression? = null
-    var isVar: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirPatternVariable {
@@ -44,11 +44,11 @@ class CfirPatternVariableBuilder {
             origin,
             attributes,
             status,
+            initializer,
+            isVar,
             typeParameters,
             returnTypeRef,
             pattern,
-            initializer,
-            isVar,
         ).also {
             it.initDefaultResolveState()
         }
@@ -77,10 +77,10 @@ inline fun buildPatternVariableCopy(original: CfirPatternVariable, init: CfirPat
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes
     copyBuilder.status = original.status
+    copyBuilder.initializer = original.initializer
+    copyBuilder.isVar = original.isVar
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.pattern = original.pattern
-    copyBuilder.initializer = original.initializer
-    copyBuilder.isVar = original.isVar
     return copyBuilder.apply(init).build()
 }

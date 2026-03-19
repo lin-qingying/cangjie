@@ -1,4 +1,5 @@
-﻿func fib(n: Int64): Int64 {
+// RUN_PIPELINE_TILL: FRONTEND
+func fib(n: Int64): Int64 {
     if (n <= 1) {
         return n
     }
@@ -8,3 +9,4 @@
 main(): Int64 {
     return fib(6)
 }
+

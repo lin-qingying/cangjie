@@ -4,27 +4,24 @@ import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
 
 /**
- * Scope 濉斾腑鐨勫崟涓暟鎹厓绱犮€? *
- * 姣忎釜鍏冪礌灏佽涓€涓?scope 鍙婂叾鍏冩暟鎹紙鏄惁涓哄眬閮?scope锛夈€? * Phase 2 浠呮敮鎸?scope 绫诲瀷鐨勫厓绱狅紝鍚庣画灏嗘墿灞曚负鏀寔闅愬紡鎺ユ敹鑰呫€? *
- * 鍙傝€?K2 FirTowerDataElement銆? */
+ * scope 塔中的单个数据元素。
+ */
 class CfirTowerDataElement(
-    /** 璇ュ眰绾у搴旂殑 scope锛堥潪绌猴級 */
+    /** 该层级对应的 scope。 */
     val scope: CfirScope,
-    /** 鏄惁涓哄眬閮?scope锛堝潡/鍑芥暟浣撳唴鐨勫眬閮ㄥ彉閲?scope锛?*/
+    /** 是否为局部 scope。 */
     val isLocal: Boolean,
 )
 
 /**
- * Scope 濉斾笂涓嬫枃锛屾寔鏈夊綋鍓嶈В鏋愮偣鐨勫畬鏁?scope 鏍堛€? *
- * 浣跨敤 copy-on-write 璇箟锛堟瘡娆″彉鏇磋繑鍥炴柊 List锛夛紝
- * 杩涘叆/閫€鍑哄０鏄庝笂涓嬫枃鏃堕€氳繃鏂板缓 context 瀹炰緥绠＄悊 scope 鍙樺寲銆? *
- * 鍙傝€?K2 FirTowerDataContext銆? */
+ * scope 塔上下文，保存当前解析点可见的完整 scope 栈。
+ */
 data class CfirTowerDataContext private constructor(
-    /** 鎵€鏈?scope 鍏冪礌锛屼粠澶栧埌鍐呮帓鍒?*/
+    /** 所有 scope 元素，从外到内排列。 */
     val towerDataElements: List<CfirTowerDataElement>,
-    /** 灞€閮?scope 鍒楄〃锛堜粠澶栧埌鍐咃紝鏄?towerDataElements 涓?isLocal=true 鐨勫瓙闆嗭級 */
+    /** 局部 scope 列表。 */
     val localScopes: List<CfirLocalScopeImpl>,
-    /** 闈炲眬閮?scope 鍏冪礌鍒楄〃 */
+    /** 非局部 scope 元素列表。 */
     val nonLocalTowerDataElements: List<CfirTowerDataElement>,
 ) {
 
@@ -34,7 +31,7 @@ data class CfirTowerDataContext private constructor(
         nonLocalTowerDataElements = emptyList(),
     )
 
-    /** 娣诲姞灞€閮?scope锛堝嚱鏁颁綋/鍧楀唴鐨勫彉閲?scope锛?*/
+    /** 添加局部 scope。 */
     fun addLocalScope(localScope: CfirLocalScopeImpl): CfirTowerDataContext {
         val element = CfirTowerDataElement(localScope, isLocal = true)
         return copy(
@@ -43,7 +40,7 @@ data class CfirTowerDataContext private constructor(
         )
     }
 
-    /** 娣诲姞闈炲眬閮?scope锛堝寘銆佸鍏ャ€佺被鎴愬憳銆佺被鍨嬪弬鏁扮瓑锛?*/
+    /** 添加非局部 scope。 */
     fun addNonLocalScope(scope: CfirScope): CfirTowerDataContext {
         val element = CfirTowerDataElement(scope, isLocal = false)
         return copy(
@@ -52,7 +49,7 @@ data class CfirTowerDataContext private constructor(
         )
     }
 
-    /** 鎵归噺娣诲姞闈炲眬閮?scope */
+    /** 批量添加非局部 scope。 */
     fun addNonLocalScopes(scopes: List<CfirScope>): CfirTowerDataContext {
         if (scopes.isEmpty()) return this
         var ctx = this
@@ -62,7 +59,7 @@ data class CfirTowerDataContext private constructor(
         return ctx
     }
 
-    /** 鑾峰彇鎵€鏈?scope锛堜粠鍐呭埌澶栵級锛岀敤浜庡悕绉版煡鎵?*/
+    /** 获取从内到外的全部 scope，用于名称查找。 */
     fun allScopesReversed(): List<CfirScope> {
         return towerDataElements.asReversed().map { it.scope }
     }

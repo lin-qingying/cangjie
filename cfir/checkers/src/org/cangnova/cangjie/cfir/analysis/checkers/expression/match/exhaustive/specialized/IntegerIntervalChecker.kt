@@ -1,0 +1,140 @@
+package org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.specialized
+
+import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirConstantValue
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPattern
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPatternKind
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatrix
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.CheckSource
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.ExhaustivenessChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.ExhaustivenessResult
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+
+class IntegerIntervalChecker : ExhaustivenessChecker {
+    override val source: CheckSource = CheckSource.INTEGER_INTERVAL
+    override val priority: Int = 30
+
+    override fun isApplicable(
+        type: ConeCangjieType,
+        patterns: List<CfirMatchPattern>,
+        context: CheckerContext,
+    ): Boolean = type is ConePrimitiveType && type.kind.isInteger
+
+    override fun check(
+        matrix: CfirMatrix,
+        type: ConeCangjieType,
+        context: CheckerContext,
+    ): ExhaustivenessResult {
+        val primitive = type as? ConePrimitiveType ?: return ExhaustivenessResult.Skipped
+        if (!primitive.kind.isInteger) return ExhaustivenessResult.Skipped
+        val typeRange = getTypeRange(primitive.kind) ?: return ExhaustivenessResult.Skipped
+
+        val intervals = mutableListOf<LongRange>()
+        var hasWildcard = false
+
+        for (row in matrix) {
+            val pattern = row.firstOrNull() ?: continue
+            when (val kind = pattern.kind) {
+                CfirMatchPatternKind.Wild, is CfirMatchPatternKind.Binding -> hasWildcard = true
+                is CfirMatchPatternKind.Const -> {
+                    val longValue = toLong(kind.value)
+                    if (longValue != null) intervals += longValue..longValue
+                }
+                else -> Unit
+            }
+            if (hasWildcard) return ExhaustivenessResult.Exhaustive
+        }
+
+        if (hasWildcard) return ExhaustivenessResult.Exhaustive
+
+        val merged = mergeIntervals(intervals)
+        val gaps = findGaps(merged, typeRange)
+
+        return if (gaps.isEmpty()) {
+            ExhaustivenessResult.Exhaustive
+        } else {
+            val missing = gaps.take(3).flatMap { gap ->
+                if (gap.last - gap.first > 10) {
+                    listOf(createIntegerPattern(type, gap.first), createIntegerPattern(type, gap.last))
+                } else {
+                    (gap.first..gap.last).map { createIntegerPattern(type, it) }
+                }
+            }.take(5)
+            ExhaustivenessResult.NonExhaustive(missing, source)
+        }
+    }
+
+    private fun getTypeRange(kind: PrimitiveTypeKind): LongRange? = when (kind) {
+        PrimitiveTypeKind.INT8 -> Byte.MIN_VALUE.toLong()..Byte.MAX_VALUE.toLong()
+        PrimitiveTypeKind.INT16 -> Short.MIN_VALUE.toLong()..Short.MAX_VALUE.toLong()
+        PrimitiveTypeKind.INT32 -> Int.MIN_VALUE.toLong()..Int.MAX_VALUE.toLong()
+        PrimitiveTypeKind.INT64, PrimitiveTypeKind.INT_NATIVE -> Long.MIN_VALUE..Long.MAX_VALUE
+        PrimitiveTypeKind.UINT8 -> 0L..255L
+        PrimitiveTypeKind.UINT16 -> 0L..65535L
+        PrimitiveTypeKind.UINT32 -> 0L..4294967295L
+        PrimitiveTypeKind.UINT64, PrimitiveTypeKind.UINT_NATIVE -> 0L..Long.MAX_VALUE
+        PrimitiveTypeKind.IDEAL_INT -> Long.MIN_VALUE..Long.MAX_VALUE
+        else -> null
+    }
+
+    private fun toLong(value: CfirConstantValue): Long? = when (value) {
+        is CfirConstantValue.SignedIntConst -> value.value
+        is CfirConstantValue.UnsignedIntConst -> value.value.toLong()
+        else -> null
+    }
+
+    private fun mergeIntervals(intervals: List<LongRange>): List<LongRange> {
+        if (intervals.isEmpty()) return emptyList()
+        val sorted = intervals.sortedBy { it.first }
+        val result = mutableListOf<LongRange>()
+        var current = sorted[0]
+        for (i in 1 until sorted.size) {
+            val next = sorted[i]
+            if (next.first <= current.last + 1) {
+                current = current.first..maxOf(current.last, next.last)
+            } else {
+                result += current
+                current = next
+            }
+        }
+        result += current
+        return result
+    }
+
+    private fun findGaps(intervals: List<LongRange>, typeRange: LongRange): List<LongRange> {
+        if (intervals.isEmpty()) return listOf(typeRange)
+        val gaps = mutableListOf<LongRange>()
+        if (intervals.first().first > typeRange.first) {
+            gaps += typeRange.first until intervals.first().first
+        }
+        for (i in 0 until intervals.size - 1) {
+            val gapStart = intervals[i].last + 1
+            val gapEnd = intervals[i + 1].first - 1
+            if (gapStart <= gapEnd) gaps += gapStart..gapEnd
+        }
+        if (intervals.last().last < typeRange.last) {
+            gaps += (intervals.last().last + 1)..typeRange.last
+        }
+        return gaps
+    }
+
+    private fun createIntegerPattern(type: ConeCangjieType, value: Long): CfirMatchPattern {
+        val const = when ((type as? ConePrimitiveType)?.kind) {
+            PrimitiveTypeKind.UINT8,
+            PrimitiveTypeKind.UINT16,
+            PrimitiveTypeKind.UINT32,
+            PrimitiveTypeKind.UINT64,
+            PrimitiveTypeKind.UINT_NATIVE,
+            -> CfirConstantValue.UnsignedIntConst(value.toULong())
+            else -> CfirConstantValue.SignedIntConst(value)
+        }
+        return CfirMatchPattern(type, CfirMatchPatternKind.Const(const), null)
+    }
+
+    companion object {
+        val INSTANCE = IntegerIntervalChecker()
+    }
+}
+

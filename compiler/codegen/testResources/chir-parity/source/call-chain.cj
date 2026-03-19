@@ -1,4 +1,5 @@
-﻿func add(a: Int64, b: Int64): Int64 {
+// RUN_PIPELINE_TILL: FRONTEND
+func add(a: Int64, b: Int64): Int64 {
     return a + b
 }
 
@@ -13,3 +14,4 @@ func combine(x: Int64): Int64 {
 main(): Int64 {
     return combine(7)
 }
+

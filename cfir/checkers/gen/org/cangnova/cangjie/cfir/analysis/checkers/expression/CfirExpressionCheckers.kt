@@ -1,11 +1,12 @@
-﻿
+
 
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
 
 /*
- * 鏈枃浠剁敱鐢熸垚鍣ㄨ嚜鍔ㄧ敓鎴? * 璇峰嬁鎵嬪姩淇敼
+ * 本文件由生成器自动生成
+ * 请勿手动修改
  */
 
 @Suppress("UNCHECKED_CAST")
@@ -52,4 +53,3 @@ abstract class CfirExpressionCheckers {
     @CheckersComponentInternal internal val allSubscriptExpressionCheckers: Array<CfirSubscriptExpressionChecker> by lazy { (subscriptExpressionCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirSubscriptExpressionChecker> }
     @CheckersComponentInternal internal val allErrorExpressionCheckers: Array<CfirErrorExpressionChecker> by lazy { (errorExpressionCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirErrorExpressionChecker> }
 }
-

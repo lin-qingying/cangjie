@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 func badIfCondition(): Int64 {
     if (<!TYPE_MISMATCH!>1<!>) {
         return 1
@@ -20,3 +21,4 @@ func badDoWhileCondition(): Unit {
         i = i + 1
     } while (<!TYPE_MISMATCH!>i<!>)
 }
+

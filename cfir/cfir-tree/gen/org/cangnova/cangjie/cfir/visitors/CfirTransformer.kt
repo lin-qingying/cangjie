@@ -8,6 +8,7 @@ package org.cangnova.cangjie.cfir.visitors
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.CfirResolvable
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.*
@@ -47,6 +48,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitControlFlowGraphOwner(controlFlowGraphOwner: CfirControlFlowGraphOwner, data: D): CfirControlFlowGraphOwner {
         return transformControlFlowGraphOwner(controlFlowGraphOwner, data)
+    }
+
+    open fun transformResolvable(resolvable: CfirResolvable, data: D): CfirResolvable {
+        return transformElement(resolvable, data)
+    }
+
+    final override fun visitResolvable(resolvable: CfirResolvable, data: D): CfirResolvable {
+        return transformResolvable(resolvable, data)
     }
 
     open fun transformPackageDirective(packageDirective: CfirPackageDirective, data: D): CfirPackageDirective {
@@ -225,6 +234,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformVariable(variable, data)
     }
 
+    open fun transformFieldVariable(fieldVariable: CfirFieldVariable, data: D): CfirFieldVariable {
+        return transformElement(fieldVariable, data)
+    }
+
+    final override fun visitFieldVariable(fieldVariable: CfirFieldVariable, data: D): CfirFieldVariable {
+        return transformFieldVariable(fieldVariable, data)
+    }
+
     open fun transformPatternVariable(patternVariable: CfirPatternVariable, data: D): CfirPatternVariable {
         return transformElement(patternVariable, data)
     }
@@ -375,6 +392,22 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitMatchExpression(matchExpression: CfirMatchExpression, data: D): CfirExpression {
         return transformMatchExpression(matchExpression, data)
+    }
+
+    open fun transformOrPattern(orPattern: CfirOrPattern, data: D): CfirPattern {
+        return transformElement(orPattern, data)
+    }
+
+    final override fun visitOrPattern(orPattern: CfirOrPattern, data: D): CfirPattern {
+        return transformOrPattern(orPattern, data)
+    }
+
+    open fun transformExpressionPattern(expressionPattern: CfirExpressionPattern, data: D): CfirPattern {
+        return transformElement(expressionPattern, data)
+    }
+
+    final override fun visitExpressionPattern(expressionPattern: CfirExpressionPattern, data: D): CfirPattern {
+        return transformExpressionPattern(expressionPattern, data)
     }
 
     open fun transformMatchBranch(matchBranch: CfirMatchBranch, data: D): CfirExpression {

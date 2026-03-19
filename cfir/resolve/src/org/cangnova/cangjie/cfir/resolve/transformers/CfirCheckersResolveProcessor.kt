@@ -10,9 +10,11 @@ import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
- * CHECKERS 闃舵澶勭悊鍣ㄣ€? *
- * 閬嶅巻宸插畬鎴?BODY_RESOLVE 鐨?CFIR 鏍戯紝閫氳繃瀹屾暣鐨? * Collector 鈫?Visitor 鈫?Components 涓夊眰绠＄嚎鎵ц绫诲瀷妫€鏌ュ櫒锛屾敹闆嗚瘖鏂俊鎭€? *
- * 瀵归綈 K2 `FirCheckersResolveProcessor`銆? */
+ * CHECKERS 阶段处理器。
+ * 它遍历已经完成 `BODY_RESOLVE` 的 CFIR 树，
+ * 通过 Collector -> Visitor -> Components 三层管线执行检查器并收集诊断。
+ * 对齐 K2 `FirCheckersResolveProcessor`。
+ */
 internal class CfirCheckersResolveProcessor(
     private val diagnosticReporter: CfirDiagnosticReporter,
     session: CfirSession,

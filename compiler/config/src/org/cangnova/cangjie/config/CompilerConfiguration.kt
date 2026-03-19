@@ -1,6 +1,10 @@
 package org.cangnova.cangjie.config
 
-import org.cangnova.cangjie.common.messages.MessageCollector
+import org.cangnova.cangjie.cfir.diagnostics.impl.BaseDiagnosticsCollector
+import org.cangnova.cangjie.cfir.diagnostics.impl.DiagnosticsCollectorImpl
+import org.cangnova.cangjie.compiler.plugin.ExtensionStorage
+import org.cangnova.cangjie.compiler.plugin.extensionsStorage
+import org.cangnova.cangjie.messages.MessageCollector
 import java.util.Collections
 
 /**
@@ -20,12 +24,6 @@ class CompilerConfiguration {
                 is Collection<*> -> Collections.unmodifiableCollection(this)
                 else -> this
             } as T
-        }
-
-        @JvmStatic
-        @OptIn(CompilerConfiguration.Internals::class)
-        fun create(messageCollector: MessageCollector = MessageCollector.NONE): CompilerConfiguration {
-            return CompilerConfiguration().also { it.messageCollector = messageCollector }
         }
     }
 
@@ -174,4 +172,33 @@ class CompilerConfiguration {
     /** 内部 API 标记。 */
     @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
     annotation class Internals(val message: String)
+}
+
+fun CompilerConfiguration.Companion.create(
+    diagnosticsCollector: BaseDiagnosticsCollector? = null,
+    messageCollector: MessageCollector? = null,
+): CompilerConfiguration {
+    @OptIn(CompilerConfiguration.Internals::class)
+    return CompilerConfiguration().apply {
+        initializeDiagnosticFactoriesStorageForCli()
+        this.diagnosticsCollector = diagnosticsCollector ?: DiagnosticsCollectorImpl()
+        this.extensionsStorage = ExtensionStorage()
+        messageCollector?.let { this.messageCollector = it }
+    }
+}
+
+/**
+ * TODO: 实现 CLI 诊断工厂存储的初始化
+ * 当前此方法为空，诊断工厂注册逻辑尚未接入。
+ * 应完成以下步骤：
+ * 1. 创建 [CjRegisteredDiagnosticFactoriesStorage] 实例
+ * 2. 调用 storage.registerDiagnosticContainers(CliDiagnostics) 注册 CLI 专属诊断（如参数错误、插件错误等）
+ * 3. 将 storage 写入 this.diagnosticFactoriesStorage
+ * 待 CliDiagnostics 和 diagnosticFactoriesStorage 机制实现后解除注释。
+ */
+private fun CompilerConfiguration.initializeDiagnosticFactoriesStorageForCli() {
+    // TODO: 实现 CLI 诊断工厂存储初始化，参考 Kotlin 的 CliDiagnostics 注册方式
+    // val storage = CjRegisteredDiagnosticFactoriesStorage()
+    // storage.registerDiagnosticContainers(CliDiagnostics)
+    // this.diagnosticFactoriesStorage = storage
 }

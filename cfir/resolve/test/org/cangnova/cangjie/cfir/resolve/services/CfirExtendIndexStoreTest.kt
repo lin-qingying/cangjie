@@ -1,4 +1,4 @@
-﻿package org.cangnova.cangjie.cfir.resolve.services
+package org.cangnova.cangjie.cfir.resolve.services
 
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
 import org.cangnova.cangjie.cfir.resolve.ExtendTestFixtures
@@ -167,6 +167,21 @@ class CfirExtendIndexStoreTest {
 }
 
 private object NoopTypeResolver : CfirTypeResolver() {
+    override fun resolveType(
+        typeRef: org.cangnova.cangjie.cfir.types.CfirTypeRef,
+        configuration: org.cangnova.cangjie.cfir.resolve.TypeResolutionConfiguration,
+        areBareTypesAllowed: Boolean,
+        isOperandOfIsOperator: Boolean,
+        resolveDeprecations: Boolean,
+        supertypeSupplier: org.cangnova.cangjie.cfir.resolve.SupertypeSupplier,
+        expandTypeAliases: Boolean,
+    ): org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionResult {
+        return org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionResult(
+            type = org.cangnova.cangjie.cfir.types.ConeErrorType("NoopTypeResolver"),
+            diagnostic = null,
+        )
+    }
+
     override fun resolveClass(typeRef: org.cangnova.cangjie.cfir.types.CfirTypeRef): org.cangnova.cangjie.cfir.declarations.CfirClass? = null
 
     override fun resolveClass(classId: ClassId): org.cangnova.cangjie.cfir.declarations.CfirClass? = null

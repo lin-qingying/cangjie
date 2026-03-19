@@ -5,11 +5,10 @@ import org.cangnova.cangjie.test.TestInfrastructureInternals
 import org.cangnova.cangjie.test.builders.LanguageVersionSettingsBuilder
 import org.cangnova.cangjie.test.model.ArtifactKind
 import org.cangnova.cangjie.test.model.BackendKind
+import org.cangnova.cangjie.test.model.DependencyKind
 import org.cangnova.cangjie.test.model.FrontendKind
 
-enum class DependencyKind {
-    Regular,
-}
+
 
 class DefaultsProvider(
     val frontendKind: FrontendKind<*>,
@@ -18,6 +17,22 @@ class DefaultsProvider(
     val artifactKind: ArtifactKind<*>,
     val defaultDependencyKind: DependencyKind
 ) : TestService {
+    constructor(
+        frontendKind: FrontendKind<*>,
+        backendKind: BackendKind<*>,
+        defaultLanguageSettingsBuilder: LanguageVersionSettingsBuilder,
+        @Suppress("UNUSED_PARAMETER") targetPlatform: Any?,
+        artifactKind: ArtifactKind<*>,
+        @Suppress("UNUSED_PARAMETER") targetBackend: Any?,
+        defaultDependencyKind: DependencyKind,
+    ) : this(
+        frontendKind = frontendKind,
+        backendKind = backendKind,
+        defaultLanguageSettingsBuilder = defaultLanguageSettingsBuilder,
+        artifactKind = artifactKind,
+        defaultDependencyKind = defaultDependencyKind,
+    )
+
     fun newLanguageSettingsBuilder(): LanguageVersionSettingsBuilder {
         return LanguageVersionSettingsBuilder.fromExistingSettings(defaultLanguageSettingsBuilder)
     }

@@ -20,3 +20,17 @@ fun CfirSessionConfigurator.registerCommonCheckers() {
     useCheckers(CommonLanguageVersionSettingsCheckers)
     registerDiagnosticContainers(CfirErrors )
 }
+
+/**
+ * Hook that mirrors Kotlin FIR test infrastructure.
+ * Cangjie currently has no dedicated extra-common checker set.
+ */
+fun CfirSessionConfigurator.registerExtraCommonCheckers() {
+}
+
+/**
+ * Hook that mirrors Kotlin FIR test infrastructure.
+ * Cangjie currently has no dedicated experimental checker set.
+ */
+fun CfirSessionConfigurator.registerExperimentalCheckers() {
+}

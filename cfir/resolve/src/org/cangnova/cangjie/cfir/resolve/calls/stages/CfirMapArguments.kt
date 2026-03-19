@@ -10,11 +10,14 @@ import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 
 /**
- * 鍙傛暟鏄犲皠闃舵锛氬皢璋冪敤鐨勫疄鍙傛槧灏勫埌鍑芥暟鐨勫舰鍙傘€? *
- * 鏍稿績閫昏緫锛? * 1. 浣嶇疆鍙傛暟鎸夊簭鏄犲皠
- * 2. 甯﹂粯璁ゅ€肩殑褰㈠弬鍙烦杩囷紙璁″叆 numDefaults锛? * 3. 瀹炲弬鏁伴噺蹇呴』鍦?[minRequired, totalParams] 鑼冨洿鍐? *
- * Phase 3 浠呮敮鎸佷綅缃弬鏁帮紝涓嶆敮鎸佸懡鍚嶅弬鏁帮紙浠撻鏆傛棤鍛藉悕鍙傛暟璇硶锛夈€? *
- * 瀵归綈 K2 MapArguments + FirArgumentsToParametersMapper銆? */
+ * 参数映射阶段：把调用实参映射到函数形参。
+ * 核心逻辑：
+ * 1. 位置参数按顺序映射
+ * 2. 带默认值的形参可以跳过，并计入 `numDefaults`
+ * 3. 实参数量必须落在 `[minRequired, totalParams]` 范围内
+ * Phase 3 只支持位置参数，不支持命名参数。
+ * 对齐 K2 `MapArguments` + `FirArgumentsToParametersMapper`。
+ */
 object CfirMapArguments : CfirResolutionStage() {
 
     override fun check(
@@ -29,7 +32,7 @@ object CfirMapArguments : CfirResolutionStage() {
         val requiredParams = valueParameters.count { it.defaultValue == null }
         val actualArgs = arguments.size
 
-        // 妫€鏌ュ弬鏁版暟閲?
+        // 检查参数个数
         if (actualArgs < requiredParams || actualArgs > totalParams) {
             sink.reportDiagnostic(
                 WrongArgumentCount(
@@ -40,18 +43,18 @@ object CfirMapArguments : CfirResolutionStage() {
             return
         }
 
-        // 浣嶇疆鍙傛暟鏄犲皠锛歛rgIndex 鈫?paramIndex
+        // 位置参数映射：argIndex -> paramIndex
         val mapping = mutableMapOf<Int, Int>()
         for (i in 0 until actualArgs) {
             mapping[i] = i
         }
         candidate.argumentMapping = mapping
 
-        // 璁＄畻浣跨敤鐨勯粯璁ゅ€煎弬鏁版暟閲?
+        // 计算使用到的默认值参数个数
         candidate.numDefaults = totalParams - actualArgs
     }
 
-    /** 浠庡€欓€夌鍙蜂腑鎻愬彇鍊煎弬鏁板垪琛?*/
+    /** 从候选符号中提取值参数列表。 */
     private fun extractValueParameters(symbol: CfirCallableSymbol<*>): List<CfirValueParameter>? {
         if (!symbol.isBound) return null
         return when (val decl = symbol.cfir) {

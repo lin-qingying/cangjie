@@ -1,7 +1,9 @@
 package org.cangnova.cangjie.cfir.analysis.tests.services
 
-import org.cangnova.cangjie.cfir.analysis.tests.runners.CfirPhasedDiagnosticDirectives
 import org.cangnova.cangjie.test.WrappedException
+import org.cangnova.cangjie.test.config.TestPhaseDirectives
+import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
+import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives.SUPPRESS_NO_TYPE_ALIAS_EXPANSION_MODE
 import org.cangnova.cangjie.test.directives.model.DirectivesContainer
 import org.cangnova.cangjie.test.model.AfterAnalysisChecker
 import org.cangnova.cangjie.test.services.MetaTestConfigurator
@@ -18,19 +20,19 @@ class CfirWithoutAliasExpansionTestSuppressor(
     testServices: TestServices,
 ) : AfterAnalysisChecker(testServices) {
     override val directiveContainers: List<DirectivesContainer>
-        get() = listOf(CfirPhasedDiagnosticDirectives)
+        get() = listOf(TestPhaseDirectives)
 
     override val order: Order
         get() = Order.P5
 
     override fun suppressIfNeeded(failedAssertions: List<WrappedException>): List<WrappedException> {
-        if (CfirPhasedDiagnosticDirectives.SUPPRESS_NO_TYPE_ALIAS_EXPANSION_MODE !in testServices.moduleStructure.allDirectives) {
+        if (SUPPRESS_NO_TYPE_ALIAS_EXPANSION_MODE !in testServices.moduleStructure.allDirectives) {
             return failedAssertions
         }
 
         return when {
             failedAssertions.isEmpty() -> testServices.assertions.fail {
-                "Test is passing. Remove ${CfirPhasedDiagnosticDirectives.SUPPRESS_NO_TYPE_ALIAS_EXPANSION_MODE} directive"
+                "Test is passing. Remove ${CfirDiagnosticsDirectives.SUPPRESS_NO_TYPE_ALIAS_EXPANSION_MODE} directive"
             }
 
             else -> emptyList()

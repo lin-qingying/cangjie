@@ -1,12 +1,12 @@
 package org.cangnova.cangjie.cfir.expressions
 
-enum class CfirBinaryOpKind {
-    AND,
-    OR,
-    COALESCING,
-    PIPELINE,
+enum class CfirBinaryOpKind(val symbol: String) {
+    AND("&&"),
+    OR("||"),
+    COALESCING("??"),
+    PIPELINE("|>"),
 }
 
-enum class CfirComparisonOp {
-    LT, GT, LE, GE, EQ, NE,
+enum class CfirComparisonOp(val symbol: String) {
+    LT("<"), GT(">"), LE("<="), GE(">="), EQ("=="), NE("!="),
 }

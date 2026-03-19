@@ -4,15 +4,14 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
-import org.cangnova.cangjie.cfir.diagnostics.impl.PendingDiagnosticsReporterImpl
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
 
 /**
- * 姣忎釜鍏冪礌璁块棶鍚庢彁浜?pending 璇婃柇鍒版渶缁堢殑 DiagnosticCollector銆? *
- * 瀵归綈 K2 `ReportCommitterDiagnosticComponent`銆? *
- * 鎵ц鏃舵満锛? * - `visitElement()` 鈥?鍦ㄥ父瑙勭粍浠舵鏌ュ畬鎴愬悗璋冪敤锛屾彁浜ゅ綋鍓嶅厓绱犵殑 pending 璇婃柇
- * - `endOfFile()` 鈥?鏂囦欢閬嶅巻缁撴潫鏃惰皟鐢紝鎻愪氦鎵€鏈夊墿浣欑殑 pending 璇婃柇
+ * 在每个元素访问后，将 pending 诊断提交到最终的 diagnostic collector。
+ * 对齐 K2 `ReportCommitterDiagnosticComponent`。
+ * 执行时机：
+ * - `visitElement()`：常规组件检查完成后，提交当前元素上的 pending 诊断
+ * - `endOfFile()`：文件遍历结束时，提交剩余的全部 pending 诊断
  */
 class CfirReportCommitterDiagnosticComponent(
     session: CfirSession,

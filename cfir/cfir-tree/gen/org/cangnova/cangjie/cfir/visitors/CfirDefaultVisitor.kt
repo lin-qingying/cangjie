@@ -64,8 +64,11 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitVariable(variable: CfirVariable, data: D): R =
         visitCallableDeclaration(variable, data)
 
+    override fun visitFieldVariable(fieldVariable: CfirFieldVariable, data: D): R =
+        visitVariable(fieldVariable, data)
+
     override fun visitPatternVariable(patternVariable: CfirPatternVariable, data: D): R =
-        visitCallableDeclaration(patternVariable, data)
+        visitVariable(patternVariable, data)
 
     override fun visitValueParameter(valueParameter: CfirValueParameter, data: D): R =
         visitCallableDeclaration(valueParameter, data)
@@ -91,15 +94,6 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitStringInterpolation(stringInterpolation: CfirStringInterpolation, data: D): R =
         visitExpression(stringInterpolation, data)
 
-    override fun visitFunctionCall(functionCall: CfirFunctionCall, data: D): R =
-        visitExpression(functionCall, data)
-
-    override fun visitPropertyAccess(propertyAccess: CfirPropertyAccess, data: D): R =
-        visitExpression(propertyAccess, data)
-
-    override fun visitQualifiedAccess(qualifiedAccess: CfirQualifiedAccess, data: D): R =
-        visitExpression(qualifiedAccess, data)
-
     override fun visitAssignment(assignment: CfirAssignment, data: D): R =
         visitExpression(assignment, data)
 
@@ -117,6 +111,12 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitMatchExpression(matchExpression: CfirMatchExpression, data: D): R =
         visitExpression(matchExpression, data)
+
+    override fun visitOrPattern(orPattern: CfirOrPattern, data: D): R =
+        visitPattern(orPattern, data)
+
+    override fun visitExpressionPattern(expressionPattern: CfirExpressionPattern, data: D): R =
+        visitPattern(expressionPattern, data)
 
     override fun visitMatchBranch(matchBranch: CfirMatchBranch, data: D): R =
         visitExpression(matchBranch, data)

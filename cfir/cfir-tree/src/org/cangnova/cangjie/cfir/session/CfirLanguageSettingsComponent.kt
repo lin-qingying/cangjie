@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.cfir.session
 
-import org.cangnova.cangjie.config.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettings
 
 /**
  * 语言配置 session 组件。

@@ -26,7 +26,7 @@ package org.cangnova.cangjie.psi.psiUtil
 
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.*
-import org.cangnova.cangjie.renderer.render
+import org.cangnova.cangjie.render
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.SmartPointerManager

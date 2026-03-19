@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 interface Constraint {}
 
 class GenericClass<T> where T <: Constraint {

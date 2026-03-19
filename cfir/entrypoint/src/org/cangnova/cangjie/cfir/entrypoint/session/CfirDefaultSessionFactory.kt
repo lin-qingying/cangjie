@@ -12,7 +12,7 @@ import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.config.CompilerConfiguration
-import org.cangnova.cangjie.config.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -88,6 +88,7 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
                             CfirDeserializedSymbolProvider(
                                 session = session,
                                 cjoManager = manager,
+                                cangjieScopeProvider = cangjieScopeProvider,
                                 libraryModuleData = moduleDataProvider.regularDependenciesModuleData,
                             )
                         )

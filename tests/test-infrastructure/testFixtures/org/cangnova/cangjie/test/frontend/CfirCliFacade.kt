@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.test.frontend
 
 import org.cangnova.cangjie.cli.pipeline.ConfigurationPipelineArtifact
+import org.cangnova.cangjie.cli.pipeline.CheckCompilationErrors
 import org.cangnova.cangjie.cli.pipeline.FrontendPipelineArtifact
 import org.cangnova.cangjie.cli.pipeline.PipelinePhase
 import org.cangnova.cangjie.cfir.common.moduleData
@@ -83,18 +84,18 @@ fun org.cangnova.cangjie.cfir.pipeline.SingleModuleFrontendOutput.toTestOutputPa
         module = correspondingModule,
         session = session,
         scopeSession = scopeSession,
-        firAnalyzerFacade = null,
+        firAnalyzerFacade = CfirPipelineAnalyzerFacade(this),
         firFilesByTestFile = testFilePerFirFile.toMap()
     )
 }
 
 fun processErrorFromCliPhase(configuration: CompilerConfiguration, testServices: TestServices): Nothing? {
-    if (configuration.messageCollector.hasErrors()) {
+    if (CheckCompilationErrors.CheckDiagnosticCollector.checkHasErrorsAndReportToMessageCollector(configuration)) {
         if (CHECK_COMPILER_OUTPUT in testServices.moduleStructure.allDirectives) {
             return null
         }
     }
-    error("CLI phase returned null and there are no errors in the message collector ")
+    error("CLI phase returned null and there are no errors in diagnostic/message collectors")
 }
 
 private fun shouldRunFirFrontendFacade(@Suppress("UNUSED_PARAMETER") module: TestModule, @Suppress("UNUSED_PARAMETER") testServices: TestServices): Boolean = true

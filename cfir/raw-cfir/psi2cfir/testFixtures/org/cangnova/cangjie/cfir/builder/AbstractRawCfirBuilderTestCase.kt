@@ -23,7 +23,8 @@ import java.nio.file.Path
 import java.io.File
 
 /**
- * Raw CFIR 鏋勫缓娴嬭瘯鍏ュ彛鍩虹被銆? */
+ * Raw CFIR 构建测试入口基类。
+ */
 abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
     "",
     "cj",

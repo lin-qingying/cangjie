@@ -20,12 +20,9 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.ConeSubtypeChecker
 
 /**
- * Body 瑙ｆ瀽 transformer 鎶借薄鍩虹被銆? *
- * 瀹氫箟 body resolve 闃舵鐨勪笁涓牳蹇冩娊璞″睘鎬э細
- * - [context]锛欱ody 瑙ｆ瀽涓婁笅鏂囷紙scope 濉斻€佹枃浠躲€佸鍣ㄦ爤锛? * - [components]锛氬叡浜粍浠跺鍣紙session銆乧all resolver銆乼ower resolver 绛夛級
- *
- * session 缁熶竴浠?components 鑾峰彇锛岄伩鍏嶅悇瀛愮粍浠剁洿鎺ヤ簰鐩告寔鏈夊紩鐢ㄣ€? *
- * 鍙傝€?K2 FirAbstractBodyResolveTransformer銆? */
+ * Body resolve transformer 的抽象基类。
+ * 子类通过 `context` 与 `components` 协作，统一驱动 body resolve 流程。
+ */
 abstract class CfirAbstractBodyResolveTransformer(
     phase: CfirResolvePhase,
 ) : CfirAbstractPhaseTransformer<CfirResolutionMode>(phase) {
@@ -37,9 +34,8 @@ abstract class CfirAbstractBodyResolveTransformer(
     final override val session: CfirSession get() = components.session
 
     /**
-     * 鍏变韩缁勪欢瀹瑰櫒锛屾墍鏈?body resolve 瀛愮粍浠堕€氳繃姝ゅ鍣ㄥ崗浣溿€?     *
-     * 鎸佹湁 session銆乻copeSession銆乧ontext 寮曠敤锛?     * 浠ュ強鎳掑垵濮嬪寲鐨?callResolver銆乼owerResolver 绛夈€?     *
-     * 鍙傝€?K2 FirAbstractBodyResolveTransformer.BodyResolveTransformerComponents銆?     */
+     * 共享组件容器，集中持有 body resolve 所需的会话、上下文和服务。
+     */
     open class BodyResolveTransformerComponents(
         override val session: CfirSession,
         val scopeSession: CfirScopeSession,
@@ -47,61 +43,60 @@ abstract class CfirAbstractBodyResolveTransformer(
         val context: CfirBodyResolveContext,
     ) : CfirSessionHolder {
 
-        /** scope 濉斾笂涓嬫枃 鈥?濮旀墭鍒?context */
         val towerDataContext get() = context.towerDataContext
 
-        /** 杩斿洖绫诲瀷璁＄畻鍣?鈥?濮旀墭鍒?context */
         val returnTypeCalculator: CfirReturnTypeCalculator get() = context.returnTypeCalculator
 
-        /** 绗﹀彿鎻愪緵鍣?鈥?濮旀墭鍒?session */
         val symbolProvider get() = session.symbolProvider
 
-        /** 鍊欓€夐獙璇佺绾挎墽琛屽櫒 鈥?鍗虫椂鍒濆鍖栵紙鏃犵姸鎬侊紝杞婚噺锛?*/
         val resolutionStageRunner: CfirResolutionStageRunner = CfirResolutionStageRunner()
 
-        /** 瀛愮被鍨嬫鏌ュ櫒 鈥?鎳掑垵濮嬪寲 */
         val subtypeChecker: ConeSubtypeChecker by lazy(LazyThreadSafetyMode.NONE) {
             ConeSubtypeChecker(CfirTypeCheckerContext(session))
         }
 
-        /** 閲嶈浇鍐茬獊瑙ｆ瀽鍣?鈥?鎳掑垵濮嬪寲 */
         val conflictResolver: CfirCallConflictResolver by lazy(LazyThreadSafetyMode.NONE) {
             CfirOverloadConflictResolver(subtypeChecker)
         }
 
-        /** 鎺ㄦ柇缁勪欢 鈥?鎳掑垵濮嬪寲锛圥hase 4 娉涘瀷鎺ㄦ柇锛?*/
         val inferenceComponents: CfirInferenceComponents by lazy(LazyThreadSafetyMode.NONE) {
             CfirInferenceComponents(subtypeChecker, session.inferenceLogger)
         }
 
-        /** 瑙ｆ瀽涓婁笅鏂?鈥?鎳掑垵濮嬪寲锛堢敤浜?Phase 3 楠岃瘉闃舵绠＄嚎锛?*/
         val resolutionContext: CfirResolutionContext? by lazy(LazyThreadSafetyMode.NONE) {
-            try {
-                CfirResolutionContext(session, context, subtypeChecker, inferenceComponents)
+            createResolutionContext()
+        }
+
+        fun createResolutionContext(expectedType: org.cangnova.cangjie.cfir.types.ConeCangjieType? = null): CfirResolutionContext? {
+            return try {
+                CfirResolutionContext(
+                    session = session,
+                    bodyResolveContext = context,
+                    subtypeChecker = subtypeChecker,
+                    inferenceComponents = inferenceComponents,
+                    expectedType = expectedType,
+                    containingFilePath = context.file.sourceFile?.path,
+                    containingPackageFqName = context.file.packageDirective.packageFqName,
+                )
             } catch (_: Exception) {
-                // 濡傛灉 typeContext 涓嶅彲鐢紝鍥為€€鍒版棫鐗堣В鏋
                 null
             }
         }
 
-        /** Tower 瑙ｆ瀽鍣?鈥?鎳掑垵濮嬪寲 */
         val towerResolver: CfirTowerResolver by lazy(LazyThreadSafetyMode.NONE) {
             CfirTowerResolver(this, resolutionStageRunner)
         }
 
-        /** 璋冪敤瑙ｆ瀽鍣?鈥?鎳掑垵濮嬪寲 */
         val callResolver: CfirCallResolver by lazy(LazyThreadSafetyMode.NONE) {
             CfirCallResolver(this).also { resolver ->
                 resolver.conflictResolver = conflictResolver
             }
         }
 
-        /** Extend 澹版槑鎻愪緵鍣?鈥?鎳掑垵濮嬪寲锛圥hase 4 extend 鎴愬憳鏌ユ壘锛?*/
         val extendProvider: CfirExtendProvider? by lazy(LazyThreadSafetyMode.NONE) {
             try {
                 session.extendProvider
             } catch (_: Exception) {
-                // session 涓湭娉ㄥ唽 extendProvider 鏃跺洖閫€
                 null
             }
         }
@@ -109,12 +104,11 @@ abstract class CfirAbstractBodyResolveTransformer(
 }
 
 /**
- * Body 瑙ｆ瀽 dispatcher 鎶借薄鍩虹被銆? *
- * 浣滀负鍏蜂綋 dispatcher锛堝 [CfirBodyResolveTransformer]锛夌殑鍩虹被锛? * 鎸佹湁 context 鍜?components 鐨勬墍鏈夋潈銆? * 鎵€鏈?transformXxx 鏂规硶濮旀墭鍒板搴旂殑瀛?transformer銆? *
- * 鍙傝€?K2 FirAbstractBodyResolveTransformerDispatcher銆? */
+ * Body resolve dispatcher 的抽象基类。
+ * 具体 dispatcher 通过它把各种 `transformXxx` 分发给对应子 transformer。
+ */
 abstract class CfirAbstractBodyResolveTransformerDispatcher(
     phase: CfirResolvePhase,
-    /** 浠呮帹鏂殣寮忕被鍨嬶紙true = IMPLICIT_TYPES 闃舵锛宖alse = BODY_RESOLVE 闃舵锛?*/
     open val implicitTypeOnly: Boolean = false,
 ) : CfirAbstractBodyResolveTransformer(phase) {
 
@@ -122,16 +116,10 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
 
     abstract override val components: BodyResolveTransformerComponents
 
-    /** 琛ㄨ揪寮忓瓙 transformer */
     abstract val expressionsTransformer: CfirExpressionsResolveTransformer
 
-    /** 澹版槑瀛?transformer */
     abstract val declarationsTransformer: CfirDeclarationsResolveTransformer
 
-    /**
-     * 澹版槑鍐呭鍙樻崲閽╁瓙銆?     *
-     * 榛樿鐩存帴濮旀墭鍒?[declarationsTransformer]锛?     * 瀛愮被锛堝 [CfirDesignatedBodyResolveTransformer]锛夊彲瑕嗗啓浠ュ疄鐜版寚瀹氳矾寰勯亶鍘嗐€?     *
-     * 鍙傝€?K2 FirAbstractBodyResolveTransformerDispatcher.transformDeclarationContent銆?     */
     open fun transformDeclarationContent(
         declaration: CfirDeclaration,
         data: CfirResolutionMode,
@@ -139,15 +127,11 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return declaration.transform(this, data)
     }
 
-    // ---- 榛樿 transformElement ----
-
     override fun <E : CfirElement> transformElement(element: E, data: CfirResolutionMode): E {
         @Suppress("UNCHECKED_CAST")
         element.transformChildren(this, data)
         return element
     }
-
-    // ---- 澹版槑濮旀墭鍒 declarationsTransformer ----
 
     override fun transformFile(file: CfirFile, data: CfirResolutionMode): CfirFile {
         checkSessionConsistency(file)
@@ -181,13 +165,9 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return declarationsTransformer.transformDeclaration(declaration, data)
     }
 
-    // ---- block 濮旀墭鍒?declarationsTransformer锛堥渶瑕?scope 绠＄悊锛?----
-
     override fun transformBlock(block: CfirBlock, data: CfirResolutionMode): CfirExpression {
         return declarationsTransformer.transformBlock(block, data)
     }
-
-    // ---- 琛ㄨ揪寮忓鎵樺埌 expressionsTransformer ----
 
     override fun transformExpression(expression: CfirExpression, data: CfirResolutionMode): CfirExpression {
         return expressionsTransformer.transformExpression(expression, data) as CfirExpression
@@ -354,4 +334,3 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return expressionsTransformer.transformSpawnExpression(spawnExpression, data)
     }
 }
-

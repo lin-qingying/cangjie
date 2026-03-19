@@ -5,10 +5,11 @@ import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
- * Body 瑙ｆ瀽 transformer 鈥?鍏蜂綋 dispatcher銆? *
- * 钖勫３瀹炵幇锛屾寔鏈?context銆乧omponents 鍜屼袱涓瓙 transformer銆? * 鎵€鏈?transformXxx 鏂规硶閫氳繃 [CfirAbstractBodyResolveTransformerDispatcher]
- * 濮旀墭鍒板搴旂殑瀛?transformer銆? *
- * 鍙傝€?K2 FirBodyResolveTransformer銆? */
+ * Body resolve 的具体 dispatcher。
+ * 它持有 `context`、`components` 以及两个子 transformer，
+ * 所有 `transformXxx` 方法最终都会委托到对应子 transformer。
+ * 参考 K2 `FirBodyResolveTransformer`。
+ */
 open class CfirBodyResolveTransformer(
     session: CfirSession,
     scopeSession: CfirScopeSession,

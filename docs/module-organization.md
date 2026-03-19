@@ -233,58 +233,51 @@ K2 无对应模块，为仓颉语言独有的编译阶段。
 
 | # | 阶段 | 主要模块 | 状态 |
 |---|---|---|---|
-| 1 | LOAD_PLUGINS | `:compiler:cli` | 未实现 |
-| 2 | PARSE | `:psi` | 已实现 |
+| 1 | LOAD_PLUGINS | `:compiler:plugin` | 占位 |
+| 2 | PARSE | `:psi` | ✅ 已实现 |
 | 3 | CONDITION_COMPILE | `:compiler:condition-compile` | 未实现 |
-| 4 | IMPORT_PACKAGE | `:cfir:deserialization`, `:cfir:providers` | 未实现 |
+| 4 | IMPORT_PACKAGE | `:cfir:cfir-serialization` | ⚠️ 反序列化已实现 |
 | 5 | MACRO_EXPAND | `:compiler:macro` | 未实现 |
-| 6 | CFIR_BUILD | `:cfir:raw-cfir:psi2cfir`, `:cfir:raw-cfir:light-tree2cfir` | 开发中 |
-| 7 | CFIR_RESOLVE | `:cfir:resolve` + `:cfir:checkers` | 开发中 |
+| 6 | CFIR_BUILD | `:cfir:raw-cfir:psi2cfir`, `:cfir:raw-cfir:light-tree2cfir` | ✅ 已实现 |
+| 7 | CFIR_RESOLVE | `:cfir:resolve` + `:cfir:checkers` | ✅ 核心可用 |
 | 8 | FINALIZE | `:compiler:finalize` | 未实现 |
 | 9 | MANGLING | `:compiler:mangling` | 未实现 |
-| 10 | SAVE_CJO | `:cfir:serialization` | 未实现 |
-| 11 | CFIR2CHIR | `:compiler:chir` | 未实现 |
-| 12 | CODEGEN | `:compiler:codegen` | 未实现 |
+| 10 | SAVE_CJO | `:cfir:cfir-serialization` | ❌ 仅有反序列化 |
+| 11 | CFIR2CHIR | `:compiler:chir` | ⚠️ 数据模型已定义 |
+| 12 | CODEGEN | `:compiler:codegen` | ⚠️ JNI 绑定可用 |
 
 ---
 
 ## 与当前结构的差异
 
-### 需要新增的模块
+### 已完成的模块新增/拆分（截至 2026-03-19）
+
+| 模块 | 来源 | 状态 |
+|---|---|---|
+| `:common:diagnostics` | 从 `:cfir:cfir-common` 拆出诊断框架 | ✅ 已完成（34 个文件） |
+| `:cfir:symbols` | 从 `:cfir:cfir-tree` 拆出符号提供者 | ✅ 已完成 |
+| `:cfir:entrypoint` | 编排 CFIR 编译流程 | ✅ 已完成（15 个文件） |
+| `:cfir:cfir-serialization` | .cjo 反序列化 | ✅ 已完成（反序列化方向） |
+| `:compiler:chir` | CHIR 数据模型 | ✅ 已完成（39 个文件，接口层） |
+| `:compiler:codegen` | 代码生成 | ✅ 已完成（25 个文件） |
+| `:llvm-interop:*` | LLVM JNI 互操作 | ✅ 已完成 |
+| `:cfir:cfir-common-psi` | — | ✅ 已删除 |
+
+### 仍需新增的模块
 
 | 模块 | 来源 | 优先级 |
 |---|---|---|
-| `:cfir:diagnostics` | 从 `:cfir:cfir-common` 拆出诊断框架（~25 个文件） | **高** — 解决 cfir-common 职责过重 |
-| `:cfir:providers` | 从 `:cfir:cfir-tree` 拆出 BuiltinSymbolProvider 等 | **高** — 对齐 K2 `fir/providers` |
 | `:cfir:semantics` | 新建，放置语义工具纯函数 | 中 — resolve 复杂度上升时拆出 |
-| `:cfir:entrypoint` | 新建，编排 CFIR 编译流程 | 中 — 集成测试时需要 |
-| `:cfir:serialization` | 新建 | 低 — 阶段 10 开发时创建 |
-| `:cfir:deserialization` | 新建 | 低 — 阶段 4 开发时创建 |
 | `:compiler:condition-compile` | 新建 | 低 — 阶段 3 开发时创建 |
 | `:compiler:macro` | 新建 | 低 — 阶段 5 开发时创建 |
 | `:compiler:finalize` | 新建 | 低 — 阶段 8 开发时创建 |
 | `:compiler:mangling` | 新建 | 低 — 阶段 9 开发时创建 |
-| `:compiler:chir` | 新建 | 低 — 阶段 11 开发时创建 |
-| `:compiler:codegen` | 新建 | 低 — 阶段 12 开发时创建 |
-
-### 需要删除或合并的模块
-
-| 模块 | 操作 | 原因 |
-|---|---|---|
-| `:cfir:cfir-common-psi` | 删除 | 空模块，无源码，无依赖者 |
-| `:cfir:raw-cfir`（父模块） | 保留为聚合 | 不含源码，仅作子模块分组 |
 
 ### 需要修复的依赖方向
 
 | 当前依赖 | 修正为 | 原因 |
 |---|---|---|
 | `:cfir:resolve` → `:cfir:checkers` | `:cfir:checkers` → `:cfir:resolve` | checkers 在 resolve 之后运行，应该是 checkers 依赖 resolve |
-
-### 需要统一的包名
-
-| 当前包名 | 统一为 | 涉及模块 |
-|---|---|---|
-| `org.cangnova.cangjie.*` | `org.cangnova.cangjie.*` | `:common`, `:util`, `:psi`, `:compiler:cli` |
 
 ---
 

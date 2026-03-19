@@ -1,2 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // SUPER_SELF
 main() {}
+

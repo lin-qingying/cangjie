@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 class MembersOrder {
     func before(): Unit {}
 
@@ -11,3 +12,4 @@ class MembersOrder {
         return ()
     }
 }
+

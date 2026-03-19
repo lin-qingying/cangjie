@@ -5,7 +5,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * CfirTowerGroup 鍜?CfirCandidateCollector 鐨勪紭鍏堢骇姣旇緝娴嬭瘯銆? */
+ * `CfirTowerGroup` 与 `CfirCandidateCollector` 的优先级比较测试。
+ */
 class CfirTowerGroupTest {
 
     @Nested
@@ -48,7 +49,7 @@ class CfirTowerGroupTest {
 
         @Test
         fun `deeper local scope has higher priority`() {
-            // depth 1 (鏇村唴灞? 搴斾紭浜?depth 0 (鏇村灞?
+            // depth 1（更内层）应优于 depth 0（更外层）
             assertTrue(CfirTowerGroup.local(1) < CfirTowerGroup.local(0))
         }
 

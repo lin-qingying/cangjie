@@ -30,7 +30,6 @@ import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName.Companion.topLevel
 import org.cangnova.cangjie.name.Name.Companion.identifier
 
-import org.cangnova.cangjie.psi.CjImportDirective.Companion.fqNameFromExpression
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.psi.stubs.CangJieImportDirectiveStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
@@ -38,7 +37,7 @@ import org.cangnova.cangjie.psi.stubs.elements.CjTokenSets
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.util.ArrayFactory
+import org.cangnova.cangjie.ImportPath
 
 class CjImportDirective : CjDeclarationStub<CangJieImportDirectiveStub> {
     constructor(node: ASTNode) : super(node)

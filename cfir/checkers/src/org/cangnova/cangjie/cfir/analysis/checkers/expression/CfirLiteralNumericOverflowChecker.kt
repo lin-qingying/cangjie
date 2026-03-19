@@ -8,7 +8,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 object CfirLiteralNumericOverflowChecker : CfirLiteralExpressionChecker(CheckerDispatchKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)

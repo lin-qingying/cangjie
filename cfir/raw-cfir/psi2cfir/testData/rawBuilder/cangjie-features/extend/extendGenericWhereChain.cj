@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // STUB_FALLBACK_TO_AST:
 public interface Display {}
 public interface HashableLike {}
