@@ -27,8 +27,9 @@ import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
 import org.cangnova.cangjie.name.Name
 
 /**
- * Phase 3 璋冪敤瑙ｆ瀽鍗曞厓娴嬭瘯鍏变韩宸ュ叿銆? *
- * 鎻愪緵鏋勫缓 CfirFunction銆丆firValueParameter銆丆firCandidate 绛夋祴璇?fixture 鐨勫伐鍘傛柟娉曘€? */
+ * Phase 3 调用解析单元测试共享工具。
+ * 提供构建 `CfirFunction`、`CfirValueParameter`、`CfirCandidate` 等测试 fixture 的工厂方法。
+ */
 object CallResolutionTestFixtures {
 
     val TEST_MODULE_DATA: CfirModuleData = CfirSourceModuleData(
@@ -40,7 +41,7 @@ object CallResolutionTestFixtures {
         bindSession(StubCfirSession)
     }
 
-    /** 鏋勫缓涓€涓粦瀹氬埌鍑芥暟澹版槑鐨?CfirFunctionSymbol */
+    /** 构建一个绑定到函数声明上的 `CfirFunctionSymbol`。 */
     fun buildFunctionSymbol(
         name: String,
         returnType: ConeCangjieType = ConePrimitiveType.UNIT,
@@ -77,7 +78,7 @@ object CallResolutionTestFixtures {
         return symbol
     }
 
-    /** 鏋勫缓涓€涓?CfirValueParameter */
+    /** 构建一个 `CfirValueParameter`。 */
     fun buildValueParameter(
         name: String,
         type: ConeCangjieType,
@@ -105,12 +106,12 @@ object CallResolutionTestFixtures {
         return param
     }
 
-    /** 鏋勫缓涓€涓甫绫诲瀷鐨勮〃杈惧紡 stub锛堢敤浣滆皟鐢ㄥ弬鏁帮級 */
+    /** 构建一个带类型的表达式 stub，用作调用参数。 */
     fun buildTypedExpression(type: ConeCangjieType): CfirExpression {
         return CfirLiteralExpressionImpl(source = null, annotations = emptyList(), coneTypeOrNull = type, kind = CfirLiteralKind.INT, value = 0)
     }
 
-    /** 鏋勫缓涓€涓渶灏忕殑 CfirCallInfo锛堢敤浜庢祴璇曢獙璇侀樁娈碉級 */
+    /** 构建一个最小化的 `CfirCallInfo`，用于验证阶段测试。 */
     fun buildCallInfo(
         name: String,
         arguments: List<CfirExpression> = emptyList(),
@@ -127,7 +128,7 @@ object CallResolutionTestFixtures {
         )
     }
 
-    /** 鏋勫缓 CfirCandidate */
+    /** 构建 `CfirCandidate`。 */
     fun buildCandidate(
         functionSymbol: CfirFunctionSymbol,
         callInfo: CfirCallInfo,
@@ -140,7 +141,8 @@ object CallResolutionTestFixtures {
 }
 
 /**
- * 鏈€灏忓寲 CfirSession stub锛屼粎鐢ㄤ簬娴嬭瘯銆? */
+ * 最小化的 `CfirSession` stub，仅用于测试。
+ */
 private object StubCfirSession : org.cangnova.cangjie.cfir.session.CfirSession(Kind.Source) {
     override fun toString(): String = "StubCfirSession"
 }

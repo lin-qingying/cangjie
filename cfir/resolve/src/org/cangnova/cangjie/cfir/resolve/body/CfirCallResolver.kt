@@ -14,10 +14,13 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.name.Name
 
 /**
- * 璋冪敤瑙ｆ瀽鍣ㄣ€? *
- * Phase 3 鏀寔瀹屾暣鐨勪笁闃舵璋冪敤瑙ｆ瀽锛? * 1. Tower 閬嶅巻鏀堕泦鍊欓€夛紙閫氳繃 towerResolver.runResolver锛? * 2. 鍙栨渶浣冲€欓€夐泦锛堥€氳繃 collector.bestCandidates锛? * 3. 閲嶈浇娑堟锛堥€氳繃 conflictResolver.chooseMaximallySpecificCandidates锛? *
- * 鍚屾椂淇濈暀鏃х増 resolveCall 鏂规硶鍚戝悗鍏煎銆? *
- * 鍙傝€?K2 FirCallResolver(components, towerResolver)銆? */
+ * 调用解析器。
+ * Phase 3 的完整调用解析流程包括：
+ * 1. 通过 `towerResolver.runResolver` 收集候选
+ * 2. 从 collector 中取出最优候选集合
+ * 3. 通过 `conflictResolver` 做重载消歧
+ * 同时保留旧版 `resolveCall` API 以兼容早期代码。
+ */
 class CfirCallResolver(
     private val components: CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
     private val towerResolver: CfirTowerResolver =
@@ -26,32 +29,33 @@ class CfirCallResolver(
 
     override val session: CfirSession get() = components.session
 
-    /** 娉ㄥ叆鐨勫啿绐佽В鏋愬櫒 鈥?鐢?BodyResolveTransformerComponents 鎻愪緵 */
+    /** 注入的冲突解析器，由 `BodyResolveTransformerComponents` 提供。 */
     var conflictResolver: CfirCallConflictResolver? = null
 
     /**
-     * Phase 3 瀹屾暣璋冪敤瑙ｆ瀽娴佺▼銆?     *
-     * @param callInfo 璋冪敤淇℃伅
-     * @param context 瑙ｆ瀽涓婁笅鏂?     * @return 璋冪敤瑙ｆ瀽缁撴灉
+     * Phase 3 的完整调用解析流程。
+     * @param callInfo 调用信息
+     * @param context 解析上下文
+     * @return 调用解析结果
      */
     fun resolveCallAndSelectCandidate(
         callInfo: CfirCallInfo,
         context: CfirResolutionContext,
     ): CfirCallResolutionResult {
-        // 1. Tower 閬嶅巻鏀堕泦鍊欓€?
+        // 1. tower 遍历收集候选
         towerResolver.runResolver(callInfo, context)
 
-        // 2. 鍙栨渶浣冲€欓€夐泦
+        // 2. 取出最优候选集合
         val bestCandidates = towerResolver.collector.bestCandidates()
         if (bestCandidates.isEmpty()) {
             return CfirCallResolutionResult.NoCandidate
         }
 
-        // 杩囨护鍑烘垚鍔熷€欓€?
+        // 过滤出成功候选
         val successCandidates = bestCandidates.filter { it.isSuccessful }
 
         if (successCandidates.isEmpty()) {
-            // 鎵€鏈夊€欓€夐兘澶辫触 鈥?杩斿洖鏈€浣崇殑澶辫触鍊欓€夛紙鐢ㄤ簬閿欒鎶ュ憡锛?
+            // 所有候选都失败时，返回最好的失败候选用于报错
             return if (bestCandidates.size == 1) {
                 val candidate = bestCandidates.single()
                 CfirCallResolutionResult.ResolvedWithErrors(candidate)
@@ -64,7 +68,7 @@ class CfirCallResolver(
             return CfirCallResolutionResult.Success(successCandidates.single())
         }
 
-        // 3. 閲嶈浇娑堟
+        // 3. 重载消歧
         val resolver = conflictResolver
         if (resolver != null) {
             val disambiguated = resolver.chooseMaximallySpecificCandidates(successCandidates)
@@ -75,15 +79,16 @@ class CfirCallResolver(
             }
         }
 
-        // 鏃犳秷姝у櫒 鈥?鐩存帴杩斿洖姝т箟
+        // 没有消歧器时，直接返回歧义结果
         return CfirCallResolutionResult.Ambiguity(successCandidates)
     }
 
-    // ---- 鏃х増 API锛堝悜鍚庡吋瀹癸級 ----
+    // ---- 旧版 API（向后兼容）----
 
     /**
-     * 鏃х増璋冪敤瑙ｆ瀽锛圥hase 2 鍏煎锛夈€?     *
-     * @param name 鍑芥暟鍚?     * @param arguments 瀹炲弬鍒楄〃锛堜笉鍋氱被鍨嬪尮閰嶏級
+     * 旧版调用解析接口，用于兼容 Phase 2 风格调用。
+     * @param name 函数名
+     * @param arguments 实参列表，不做类型匹配
      */
     fun resolveCall(
         name: Name,
@@ -102,7 +107,7 @@ class CfirCallResolver(
         }
     }
 
-    /** 浠庡嚱鏁扮鍙蜂腑鎻愬彇杩斿洖绫诲瀷 */
+    /** 从函数符号中提取返回类型。 */
     private fun extractReturnType(symbol: CfirFunctionSymbol): ConeCangjieType {
         if (!symbol.isBound) return ConeErrorType("unbound function symbol")
         val function = symbol.cfir
@@ -115,36 +120,36 @@ class CfirCallResolver(
     }
 }
 
-/** 璋冪敤瑙ｆ瀽缁撴灉 */
+/** 调用解析结果。 */
 sealed class CfirCallResolutionResult {
 
-    /** Phase 3 瑙ｆ瀽鎴愬姛锛氬崟涓€鍊欓€夛紙鎼哄甫瀹屾暣 CfirCandidate锛?*/
+    /** Phase 3 解析成功，且只有一个候选。 */
     class Success(
         val candidate: CfirCandidate,
     ) : CfirCallResolutionResult()
 
-    /** 瑙ｆ瀽鎴愬姛浣嗘湁閿欒锛堝敮涓€鍊欓€変絾楠岃瘉鏈畬鍏ㄩ€氳繃锛?*/
+    /** 解析得到唯一候选，但该候选仍携带错误。 */
     class ResolvedWithErrors(
         val candidate: CfirCandidate,
     ) : CfirCallResolutionResult()
 
-    /** 澶氬€欓€夋涔夛紙Phase 3锛?*/
+    /** Phase 3 下的多候选歧义。 */
     class Ambiguity(
         val candidates: List<CfirCandidate>,
     ) : CfirCallResolutionResult()
 
-    /** 鏃犲€欓€?*/
+    /** 没有候选。 */
     data object NoCandidate : CfirCallResolutionResult()
 
-    // ---- 鏃х増缁撴灉绫诲瀷锛堝悜鍚庡吋瀹癸級 ----
+    // ---- 旧版结果类型（向后兼容）----
 
-    /** 鏃х増鍗曞€欓€夋垚鍔?*/
+    /** 旧版单候选成功结果。 */
     class LegacySuccess(
         val symbol: CfirFunctionSymbol,
         val returnType: ConeCangjieType,
     ) : CfirCallResolutionResult()
 
-    /** 鏃х増澶氬€欓€夋涔?*/
+    /** 旧版多候选歧义结果。 */
     class LegacyAmbiguity(
         val candidates: List<CfirFunctionSymbol>,
     ) : CfirCallResolutionResult()

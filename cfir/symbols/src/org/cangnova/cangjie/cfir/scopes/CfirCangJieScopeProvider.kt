@@ -2,8 +2,9 @@ package org.cangnova.cangjie.cfir.scopes
 
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.name.FqName
@@ -20,7 +21,7 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
         val classSymbol = klass.symbol as? org.cangnova.cangjie.cfir.symbols.CfirClassSymbol ?: return EMPTY_CLASS_SCOPE
         val key = UseSiteMemberScopeKey(classSymbol)
         return scopeSession.getOrBuild(key) {
-            CfirClassDeclaredMemberScope(classSymbol)
+            CfirClassUseSiteMemberScope(classSymbol, useSiteSession.symbolProvider)
         } as CfirClassScope
     }
 

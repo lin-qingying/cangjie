@@ -8,7 +8,7 @@ FILE: matchExpressionOfficial.cj
                 MATCH {
                     subject:
                         QUALIFIED_ACCESS(time)
-                    BRANCH(const(Year)) {
+                    BRANCH(Year(x)) {
                         QUALIFIED_ACCESS(x)
                     }
                 }

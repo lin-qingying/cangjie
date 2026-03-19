@@ -8,10 +8,11 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.session.builtinTypes
-import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 /**
- * `if` 鏉′欢绫诲瀷妫€鏌ワ細鏉′欢琛ㄨ揪寮忓繀椤讳负 Bool銆? */
+ * `if` 条件类型检查：条件表达式必须为 `Bool`。
+ */
 object CfirIfConditionTypeMismatchChecker : CfirIfExpressionChecker(CheckerDispatchKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirIfExpression) {

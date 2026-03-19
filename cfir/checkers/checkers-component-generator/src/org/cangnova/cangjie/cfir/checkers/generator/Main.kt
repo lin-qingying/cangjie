@@ -23,7 +23,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
@@ -162,7 +162,6 @@ fun main(args: Array<String>) {
                     visitAlso<CfirMacroDeclaration>(it)
                     visitAlso<CfirFinalizer>(it)
                     visitAlso<CfirConstructor>(it)
-                    visitAlso<CfirPatternVariable>(it)
                 }
                 alias<CfirClassLikeDeclaration>("ClassLikeChecker").let {
                     visitAlso<CfirExtend>(it)
@@ -172,7 +171,9 @@ fun main(args: Array<String>) {
                 alias<CfirFunction>("FunctionChecker")
                 alias<CfirMainFunction>("MainFunctionChecker")
                 alias<CfirProperty>("PropertyChecker")
-                alias<CfirVariable>("VariableChecker")
+                alias<CfirFieldVariable>("FieldVariableChecker")
+                alias<CfirPatternVariable>("PatternVariableChecker")
+
                 alias<CfirTypeAlias>("TypeAliasChecker")
                 alias<CfirTypeParameter>("TypeParameterChecker")
                 alias<CfirValueParameter>("ValueParameterChecker")
@@ -192,4 +193,3 @@ fun main(args: Array<String>) {
         generateNonSuppressibleErrorNamesFile(diagnosticsPath, packageName)
     }
 }
-

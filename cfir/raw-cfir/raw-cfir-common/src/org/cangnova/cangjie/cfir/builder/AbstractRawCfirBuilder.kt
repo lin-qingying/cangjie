@@ -3,8 +3,8 @@
 import com.intellij.psi.tree.IElementType
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
-import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
-import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus

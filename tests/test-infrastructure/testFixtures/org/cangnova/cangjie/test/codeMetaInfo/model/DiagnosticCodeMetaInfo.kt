@@ -6,19 +6,19 @@
 package org.cangnova.cangjie.test.codeMetaInfo.model
 
 import com.intellij.openapi.util.TextRange
-import org.cangnova.cangjie.cfir.diagnostics.Diagnostic
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.test.codeMetaInfo.renderConfigurations.DiagnosticCodeMetaInfoRenderConfiguration
 
 class DiagnosticCodeMetaInfo(
     override val start: Int,
     override val end: Int,
     renderConfiguration: DiagnosticCodeMetaInfoRenderConfiguration,
-    val diagnostic: Diagnostic
+    val diagnostic: CjDiagnostic
 ) : CodeMetaInfo {
     constructor(
         range: TextRange,
         renderConfiguration: DiagnosticCodeMetaInfoRenderConfiguration,
-        diagnostic: Diagnostic
+        diagnostic: CjDiagnostic
     ) : this(range.startOffset, range.endOffset, renderConfiguration, diagnostic)
 
     override var renderConfiguration: DiagnosticCodeMetaInfoRenderConfiguration = renderConfiguration

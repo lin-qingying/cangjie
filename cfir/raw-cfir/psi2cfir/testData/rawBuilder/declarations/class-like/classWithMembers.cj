@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 class WithMembers {
     var x: Int64 = 0
     let name: String = "hello"
@@ -8,3 +9,4 @@ class WithMembers {
 
     init() {}
 }
+

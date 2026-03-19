@@ -1,11 +1,14 @@
 package org.cangnova.cangjie.test.services.impl
 
+import org.cangnova.cangjie.test.Assertions
 import org.cangnova.cangjie.test.directives.model.*
+import kotlin.invoke
+import kotlin.text.get
 
-class RegisteredDirectivesParser(private val container: DirectivesContainer) {
+class RegisteredDirectivesParser(private val container: DirectivesContainer, private val assertions: Assertions) {
     companion object {
         private val DIRECTIVE_PATTERN = Regex("""^//\s*([A-Z0-9_]+)(:[ \t]*(.*))? *$""")
-        private val SPACES_PATTERN = Regex("""[,]?[ \t]+""")
+        val SPACES_PATTERN = Regex("""[,]?[ \t]+""")
         private const val NAME_GROUP = 1
         private const val VALUES_GROUP = 3
 
@@ -13,10 +16,7 @@ class RegisteredDirectivesParser(private val container: DirectivesContainer) {
             val result = DIRECTIVE_PATTERN.matchEntire(line)?.groupValues ?: return null
             val name = result.getOrNull(NAME_GROUP) ?: return null
             val rawValue = result.getOrNull(VALUES_GROUP)
-            val values = rawValue
-                ?.split(SPACES_PATTERN)
-                ?.filter { it.isNotBlank() }
-                ?.takeIf { it.isNotEmpty() }
+            val values = rawValue?.split(SPACES_PATTERN)?.filter { it.isNotBlank() }?.takeIf { it.isNotEmpty() }
             return RawDirective(name, values, rawValue)
         }
     }
@@ -29,7 +29,7 @@ class RegisteredDirectivesParser(private val container: DirectivesContainer) {
     private val valueDirectives = mutableMapOf<ValueDirective<*>, MutableList<Any>>()
 
     /**
-     * @return 若该行包含“已注册且可识别”的指令，则返回 true。
+     * returns true means that line contain directive
      */
     fun parse(line: String): Boolean {
         val rawDirective = parseDirective(line) ?: return false
@@ -47,7 +47,6 @@ class RegisteredDirectivesParser(private val container: DirectivesContainer) {
                 val list = stringValueDirectives.getOrPut(directive, ::mutableListOf)
                 list += values as List<String>
             }
-
             is ValueDirective<*> -> {
                 val list = valueDirectives.getOrPut(directive, ::mutableListOf)
                 @Suppress("UNCHECKED_CAST")
@@ -62,7 +61,11 @@ class RegisteredDirectivesParser(private val container: DirectivesContainer) {
 
         val values: List<*> = when (directive) {
             is SimpleDirective -> {
-                require(rawValues == null) { "指令 $directive 不应带参数，但实际传入：${rawValues?.joinToString(", ")}" }
+                if (rawValues != null) {
+                    assertions.fail {
+                        "Directive $directive should have no arguments, but ${rawValues.joinToString(", ")} are passed"
+                    }
+                }
                 emptyList<Any?>()
             }
 
@@ -74,17 +77,22 @@ class RegisteredDirectivesParser(private val container: DirectivesContainer) {
             }
 
             is ValueDirective<*> -> {
-                require(rawValues != null) { "指令 $directive 必须至少提供一个值" }
-                rawValues.map {
-                    directive.parser.invoke(it) ?: error("$it 不是 $directive 的合法值")
+                if (rawValues == null) {
+                    assertions.fail {
+                        "Directive $directive must have at least one value"
+                    }
                 }
+                rawValues.map { directive.extractValue(it) ?: assertions.fail { "$it is not valid value for $directive" } }
             }
         }
         return ParsedDirective(directive, values)
+    }
+
+    private fun <T : Any> ValueDirective<T>.extractValue(name: String): T? {
+        return parser.invoke(name)
     }
 
     fun build(): RegisteredDirectives {
         return RegisteredDirectivesImpl(simpleDirectives, stringValueDirectives, valueDirectives)
     }
 }
-

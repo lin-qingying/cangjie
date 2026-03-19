@@ -13,7 +13,7 @@ import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.SourcesToPathsMapper
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.diagnostics.CjRegisteredDiagnosticFactoriesStorage
-import org.cangnova.cangjie.cfir.diagnostics.registerDiagnosticFactoriesStorage
+import org.cangnova.cangjie.cfir.analysis.diagnostics.registerDiagnosticFactoriesStorage
 import org.cangnova.cangjie.cfir.nameConflictsTracker
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticCollector
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
@@ -26,14 +26,13 @@ import org.cangnova.cangjie.cfir.resolve.services.CfirExtendRuleQueryServiceImpl
 import org.cangnova.cangjie.cfir.session.services.CfirExtendRuleQueryService
 import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.sourcesToPathsMapper
-import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.analysis.CheckersComponent
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirNameConflictsTrackerImpl
 import org.cangnova.cangjie.cfir.analysis.nullableCheckersComponent
-import org.cangnova.cangjie.cfir.resolve.CfirExplicitTypeRefResolver
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolverImpl
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionService
-import org.cangnova.cangjie.config.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.incremental.components.EnumMatchTracker
 import org.cangnova.cangjie.incremental.components.ICFileMappingTracker
 import org.cangnova.cangjie.incremental.components.ImportTracker
@@ -228,7 +227,6 @@ fun CfirSession.registerModuleData(moduleData: CfirModuleData) {
  * | [CfirImportBindingStore] | 缓存 import 解析结果，供后续符号查找复用 |
  * | [CfirSuperTypeGraphStore] | 维护父类型图，支持继承关系查询和循环继承检测 |
  * | [CfirTypeResolver] | 将类型引用（FqName/FirTypeRef）解析为具体的 ConeType |
- * | [CfirExplicitTypeRefResolver] | 解析代码中显式写出的类型引用（如变量的类型标注） |
  *
  * @param diagnosticReporter 诊断上报器，部分服务在初始化时需要用于上报错误
  */
@@ -255,10 +253,4 @@ private fun CfirSession.registerCoreResolveServices(
     // 类型解析器：将 CFIR 树中的类型引用解析为 ConeType（CFIR 的内部类型表示）
     register(CfirTypeResolver::class, CfirTypeResolverImpl(this))
 
-    // 显式类型引用解析器：专门处理源码中明确标注的类型（区别于推断类型），
-    // 例如 `val x: MyClass` 中的 `MyClass`
-    register(
-        CfirExplicitTypeRefResolver::class,
-        CfirExplicitTypeRefResolver(this),
-    )
 }

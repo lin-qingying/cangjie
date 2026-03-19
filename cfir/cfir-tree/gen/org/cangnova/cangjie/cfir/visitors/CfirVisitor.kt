@@ -8,6 +8,7 @@ package org.cangnova.cangjie.cfir.visitors
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.CfirResolvable
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.*
@@ -29,6 +30,9 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitControlFlowGraphOwner(controlFlowGraphOwner: CfirControlFlowGraphOwner, data: D): R =
         visitElement(controlFlowGraphOwner, data)
+
+    open fun visitResolvable(resolvable: CfirResolvable, data: D): R =
+        visitElement(resolvable, data)
 
     open fun visitPackageDirective(packageDirective: CfirPackageDirective, data: D): R =
         visitElement(packageDirective, data)
@@ -96,6 +100,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitVariable(variable: CfirVariable, data: D): R =
         visitElement(variable, data)
 
+    open fun visitFieldVariable(fieldVariable: CfirFieldVariable, data: D): R =
+        visitElement(fieldVariable, data)
+
     open fun visitPatternVariable(patternVariable: CfirPatternVariable, data: D): R =
         visitElement(patternVariable, data)
 
@@ -152,6 +159,12 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitMatchExpression(matchExpression: CfirMatchExpression, data: D): R =
         visitElement(matchExpression, data)
+
+    open fun visitOrPattern(orPattern: CfirOrPattern, data: D): R =
+        visitElement(orPattern, data)
+
+    open fun visitExpressionPattern(expressionPattern: CfirExpressionPattern, data: D): R =
+        visitElement(expressionPattern, data)
 
     open fun visitMatchBranch(matchBranch: CfirMatchBranch, data: D): R =
         visitElement(matchBranch, data)

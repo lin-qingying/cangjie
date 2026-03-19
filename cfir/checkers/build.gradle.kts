@@ -5,7 +5,10 @@ plugins {
 dependencies {
     api(project(":cfir:cfir-common"))
     api(project(":cfir:cfir-tree"))
-    api(project(":cfir:diagnostics"))
+    api(project(":cfir:symbols"))
+    api(project(":cfir:diagnostic-renderers"))
+    api(project(":cfir:cfir-cones"))
+    api(project(":common:diagnostics"))
 //    api(project(":cfir:resolve"))
     compileOnly(intellijCore())
 }

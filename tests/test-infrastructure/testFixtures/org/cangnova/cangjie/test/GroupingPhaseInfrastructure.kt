@@ -1,7 +1,8 @@
 package org.cangnova.cangjie.test
 
-import org.cangnova.cangjie.common.messages.MessageCollector
+import org.cangnova.cangjie.messages.MessageCollector
 import org.cangnova.cangjie.config.CompilerConfiguration
+import org.cangnova.cangjie.config.create
 import org.cangnova.cangjie.test.model.ResultingArtifact
 import org.cangnova.cangjie.test.model.TestArtifactKind
 import org.cangnova.cangjie.test.services.TestService

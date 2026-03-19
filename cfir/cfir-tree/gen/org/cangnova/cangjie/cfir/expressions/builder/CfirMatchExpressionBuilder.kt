@@ -15,15 +15,15 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirMatchExpressionImpl
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirMatchExpressionBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangjieType? = null
-    lateinit var subject: CfirExpression
+    var subject: CfirExpression? = null
     val branches: MutableList<CfirMatchBranch> = mutableListOf()
 
     @OptIn(CfirImplementationDetail::class)
@@ -40,7 +40,7 @@ class CfirMatchExpressionBuilder {
 }
 
 @OptIn(ExperimentalContracts::class)
-inline fun buildMatchExpression(init: CfirMatchExpressionBuilder.() -> Unit): CfirMatchExpression {
+inline fun buildMatchExpression(init: CfirMatchExpressionBuilder.() -> Unit = {}): CfirMatchExpression {
     contract {
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }
@@ -48,7 +48,7 @@ inline fun buildMatchExpression(init: CfirMatchExpressionBuilder.() -> Unit): Cf
 }
 
 @OptIn(ExperimentalContracts::class)
-inline fun buildMatchExpressionCopy(original: CfirMatchExpression, init: CfirMatchExpressionBuilder.() -> Unit): CfirMatchExpression {
+inline fun buildMatchExpressionCopy(original: CfirMatchExpression, init: CfirMatchExpressionBuilder.() -> Unit = {}): CfirMatchExpression {
     contract {
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }

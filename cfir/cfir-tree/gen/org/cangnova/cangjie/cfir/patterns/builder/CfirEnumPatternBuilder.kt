@@ -14,7 +14,7 @@ import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.impl.CfirEnumPatternImpl
 import org.cangnova.cangjie.cfir.references.CfirReference
-import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirEnumPatternBuilder {

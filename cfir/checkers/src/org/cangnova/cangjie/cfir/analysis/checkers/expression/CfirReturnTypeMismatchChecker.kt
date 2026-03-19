@@ -10,12 +10,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
-import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 
 /**
- * 鍑芥暟杩斿洖绫诲瀷妫€鏌ュ櫒銆? *
- * 妫€鏌?`return expr` 涓?`expr` 鐨勭被鍨嬫槸鍚︿负鍖呭惈鍑芥暟澹版槑杩斿洖绫诲瀷鐨勫瓙绫诲瀷銆? */
+ * 函数返回类型检查器。
+ * 检查 `return expr` 中 `expr` 的类型是否为所在函数返回类型的子类型。
+ */
 object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker(CheckerDispatchKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirReturnExpression) {
@@ -35,4 +36,3 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker(CheckerDispat
         }
     }
 }
-

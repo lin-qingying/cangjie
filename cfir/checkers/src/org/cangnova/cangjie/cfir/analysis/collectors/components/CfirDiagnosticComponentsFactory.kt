@@ -9,8 +9,9 @@ import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
- * 璇婃柇缁勪欢宸ュ巶锛岀粍瑁呮墍鏈夎瘖鏂敹闆嗙粍浠跺苟鍒涘缓 Collector銆? *
- * 瀵归綈 K2 `DiagnosticComponentsFactory`銆? */
+ * 诊断组件工厂，负责组装所有诊断收集组件并创建 collector。
+ * 对齐 K2 `DiagnosticComponentsFactory`。
+ */
 object CfirDiagnosticComponentsFactory {
 
     private fun createAllComponents(

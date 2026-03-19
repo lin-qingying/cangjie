@@ -10,12 +10,12 @@ package org.cangnova.cangjie.cfir.declarations.impl
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.CjSourceElement
 
 @OptIn(CfirImplementationDetail::class)
 class CfirEnumConstructorImpl @CfirImplementationDetail constructor(

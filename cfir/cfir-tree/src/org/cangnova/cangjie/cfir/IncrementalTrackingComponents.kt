@@ -4,9 +4,9 @@ import com.intellij.lang.LighterASTNode
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
-import org.cangnova.cangjie.cfir.source.CjLightSourceElement
-import org.cangnova.cangjie.cfir.source.CjPsiSourceElement
-import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.source.CjLightSourceElement
+import org.cangnova.cangjie.source.CjPsiSourceElement
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType

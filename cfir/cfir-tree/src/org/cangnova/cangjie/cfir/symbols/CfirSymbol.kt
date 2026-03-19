@@ -83,9 +83,9 @@ class CfirPropertySymbol : CfirCallableSymbol<CfirProperty>() {
         if (isBound) "CfirPropertySymbol(${cfir.name})" else "CfirPropertySymbol(unbound)"
 }
 
-class CfirVariableSymbol : CfirCallableSymbol<CfirVariable>() {
+class CfirFieldVariableSymbol : CfirCallableSymbol<CfirFieldVariable>() {
     override fun toString(): String =
-        if (isBound) "CfirVariableSymbol(${cfir.name})" else "CfirVariableSymbol(unbound)"
+        if (isBound) "CfirFieldVariableSymbol(${cfir.name})" else "CfirFieldVariableSymbol(unbound)"
 }
 
 class CfirPatternVariableSymbol : CfirCallableSymbol<CfirPatternVariable>() {

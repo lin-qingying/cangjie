@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 func add(a: Int64, b: Int64): Int64 {
     return a + b
 }
@@ -5,3 +6,4 @@ func add(a: Int64, b: Int64): Int64 {
 func identity<T>(x: T): T {
     return x
 }
+

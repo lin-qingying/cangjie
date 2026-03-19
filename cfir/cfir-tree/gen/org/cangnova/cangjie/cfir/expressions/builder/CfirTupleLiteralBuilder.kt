@@ -14,8 +14,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
 import org.cangnova.cangjie.cfir.expressions.impl.CfirTupleLiteralImpl
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirTupleLiteralBuilder {

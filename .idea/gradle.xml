@@ -46,7 +46,6 @@
             <option value="$PROJECT_DIR$/cfir/checkers" />
             <option value="$PROJECT_DIR$/cfir/checkers/checkers-component-generator" />
             <option value="$PROJECT_DIR$/cfir/diagnostic-renderers" />
-            <option value="$PROJECT_DIR$/cfir/diagnostics" />
             <option value="$PROJECT_DIR$/cfir/entrypoint" />
             <option value="$PROJECT_DIR$/cfir/raw-cfir" />
             <option value="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir" />
@@ -55,6 +54,7 @@
             <option value="$PROJECT_DIR$/cfir/resolve" />
             <option value="$PROJECT_DIR$/cfir/symbols" />
             <option value="$PROJECT_DIR$/common" />
+            <option value="$PROJECT_DIR$/common/diagnostics" />
             <option value="$PROJECT_DIR$/compiler" />
             <option value="$PROJECT_DIR$/compiler/arguments" />
             <option value="$PROJECT_DIR$/compiler/chir" />
@@ -63,6 +63,7 @@
             <option value="$PROJECT_DIR$/compiler/codegen" />
             <option value="$PROJECT_DIR$/compiler/config" />
             <option value="$PROJECT_DIR$/compiler/phaser" />
+            <option value="$PROJECT_DIR$/compiler/plugin" />
             <option value="$PROJECT_DIR$/dependencies" />
             <option value="$PROJECT_DIR$/dependencies/intellij-core" />
             <option value="$PROJECT_DIR$/flatbuffers-gen" />

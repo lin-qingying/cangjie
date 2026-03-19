@@ -83,6 +83,7 @@
       <module name="cangjie.cfir.raw-cfir.light-tree2cfir" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.light-tree2cfir.main" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.light-tree2cfir.test" options="-proc:none" />
+      <module name="cangjie.cfir.raw-cfir.light-tree2cfir.testFixtures" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.psi2cfir" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.psi2cfir.main" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.psi2cfir.test" options="-proc:none" />
@@ -97,6 +98,9 @@
       <module name="cangjie.cfir.symbols.main" options="-proc:none" />
       <module name="cangjie.cfir.symbols.test" options="-proc:none" />
       <module name="cangjie.common" options="-proc:none" />
+      <module name="cangjie.common.diagnostics" options="-proc:none" />
+      <module name="cangjie.common.diagnostics.main" options="-proc:none" />
+      <module name="cangjie.common.diagnostics.test" options="-proc:none" />
       <module name="cangjie.common.main" options="-proc:none" />
       <module name="cangjie.common.test" options="-proc:none" />
       <module name="cangjie.compiler" options="-proc:none" />
@@ -129,6 +133,9 @@
       <module name="cangjie.compiler.phaser" options="-proc:none" />
       <module name="cangjie.compiler.phaser.main" options="-proc:none" />
       <module name="cangjie.compiler.phaser.test" options="-proc:none" />
+      <module name="cangjie.compiler.plugin" options="-proc:none" />
+      <module name="cangjie.compiler.plugin.main" options="-proc:none" />
+      <module name="cangjie.compiler.plugin.test" options="-proc:none" />
       <module name="cangjie.compiler.test" options="-proc:none" />
       <module name="cangjie.dependencies.intellij-core" options="-proc:none" />
       <module name="cangjie.dependencies.intellij-core.main" options="-proc:none" />

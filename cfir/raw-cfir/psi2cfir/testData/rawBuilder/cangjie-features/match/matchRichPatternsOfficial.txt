@@ -2,15 +2,13 @@ FILE: matchRichPatternsOfficial.cj
     internal? func classifyScore(score: R|Int64|): R|String| {
         RETURN {
             MATCH {
-                subject:
-                    ERROR_EXPR(Missing match subject)
-                BRANCH(const(<expr>)) {
+                BRANCH(expr(score < 60)) {
                     STRING("fail")
                 }
-                BRANCH(const(<expr>)) {
+                BRANCH(expr(score < 70)) {
                     STRING("pass")
                 }
-                BRANCH(const(<expr>)) {
+                BRANCH(expr(score < 90)) {
                     STRING("good")
                 }
                 BRANCH(_) {
@@ -24,10 +22,11 @@ FILE: matchRichPatternsOfficial.cj
             MATCH {
                 subject:
                     QUALIFIED_ACCESS(time)
-                BRANCH(const(Year)) {
+                BRANCH(Year(y) where 1 == 1) {
                     QUALIFIED_ACCESS(y)
                 }
-                BRANCH(const(Year)) {
+                BRANCH(Year(y) | Month(y, _)) {
+                    QUALIFIED_ACCESS(y)
                 }
             }
         }

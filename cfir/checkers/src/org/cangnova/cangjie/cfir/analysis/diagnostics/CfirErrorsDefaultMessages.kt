@@ -1,21 +1,23 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.diagnostics
 
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.ARGUMENT_TYPE_MISMATCH
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.ASSIGNMENT_TYPE_MISMATCH
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONST_EVAL_ARITHMETIC_OVERFLOW
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONST_EVAL_DIVIDE_BY_ZERO
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.LITERAL_NUMERIC_OVERFLOW
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.PATTERN_INITIALIZER_TYPE_MISMATCH
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.RETURN_TYPE_MISMATCH
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.TYPE_MISMATCH
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticRenderers.RENDER_TYPE
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactoryToRendererMap
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRenderers.NOT_RENDERED
 import org.cangnova.cangjie.cfir.diagnostics.rendering.BaseDiagnosticRendererFactory
-import org.cangnova.cangjie.cfir.diagnostics.rendering.CfirDiagnosticRenderers.RENDER_NAME
-import org.cangnova.cangjie.cfir.diagnostics.rendering.CfirDiagnosticRenderers.RENDER_NAME_LIST
-import org.cangnova.cangjie.cfir.diagnostics.rendering.CfirDiagnosticRenderers.RENDER_NULLABLE_FQNAME
-import org.cangnova.cangjie.cfir.diagnostics.rendering.CfirDiagnosticRenderers.RENDER_NULLABLE_NAME
-import org.cangnova.cangjie.cfir.diagnostics.rendering.CfirDiagnosticRenderers.RENDER_STRING
-import org.cangnova.cangjie.cfir.diagnostics.rendering.CfirDiagnosticRenderers.RENDER_STRING_LIST
-import org.cangnova.cangjie.cfir.diagnostics.rendering.CfirDiagnosticRenderers.RENDER_TYPE
+import org.cangnova.cangjie.cfir.diagnostics.rendering.CjDiagnosticRenderers.RENDER_NAME
+import org.cangnova.cangjie.cfir.diagnostics.rendering.CjDiagnosticRenderers.RENDER_NAME_LIST
+import org.cangnova.cangjie.cfir.diagnostics.rendering.CjDiagnosticRenderers.RENDER_NULLABLE_FQNAME
+import org.cangnova.cangjie.cfir.diagnostics.rendering.CjDiagnosticRenderers.RENDER_NULLABLE_NAME
+import org.cangnova.cangjie.cfir.diagnostics.rendering.CjDiagnosticRenderers.RENDER_STRING
+import org.cangnova.cangjie.cfir.diagnostics.rendering.CjDiagnosticRenderers.RENDER_STRING_LIST
 
 object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
 
@@ -72,6 +74,13 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             NOT_RENDERED,
         )
         map.put(
+            PATTERN_INITIALIZER_TYPE_MISMATCH,
+            "Initializer type mismatch: inferred type is ''{1}'', but ''{0}'' was expected for pattern variable.",
+            RENDER_TYPE,
+            RENDER_TYPE,
+            NOT_RENDERED,
+        )
+        map.put(
             ARGUMENT_TYPE_MISMATCH,
             "Argument type mismatch: actual type is ''{0}'', but ''{1}'' was expected.",
             RENDER_TYPE,
@@ -92,6 +101,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_TYPE,
             NOT_RENDERED,
         )
+
     }
 }
 

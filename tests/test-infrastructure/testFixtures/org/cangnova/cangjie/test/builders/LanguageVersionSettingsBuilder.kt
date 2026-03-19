@@ -1,12 +1,12 @@
 package org.cangnova.cangjie.test.builders
 
-import org.cangnova.cangjie.config.AnalysisFlag
-import org.cangnova.cangjie.config.AnalysisFlags
-import org.cangnova.cangjie.config.LanguageFeature
-import org.cangnova.cangjie.config.LanguageVersion
-import org.cangnova.cangjie.config.LanguageVersionSettings
-import org.cangnova.cangjie.config.LanguageVersions
-import org.cangnova.cangjie.config.WarningLevel
+import org.cangnova.cangjie.AnalysisFlag
+import org.cangnova.cangjie.AnalysisFlags
+import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.LanguageVersion
+import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersions
+import org.cangnova.cangjie.WarningLevel
 import org.cangnova.cangjie.test.directives.LanguageSettingsDirectives
 import org.cangnova.cangjie.test.directives.model.RegisteredDirectives
 import org.cangnova.cangjie.test.directives.model.singleOrZeroValue

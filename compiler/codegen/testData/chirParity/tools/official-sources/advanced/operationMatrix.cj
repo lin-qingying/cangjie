@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 func choose(c: Bool): Int32 {
     return if (c) { 5 } else { 6 }
 }
@@ -18,4 +19,5 @@ main(): Int32 {
     let fptosi: Int32 = Int32(Float32(7.0))
     return choose(true)
 }
+
 

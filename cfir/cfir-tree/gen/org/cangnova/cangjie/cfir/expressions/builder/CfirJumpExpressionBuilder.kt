@@ -14,8 +14,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirJumpExpression
 import org.cangnova.cangjie.cfir.expressions.CfirJumpKind
 import org.cangnova.cangjie.cfir.expressions.impl.CfirJumpExpressionImpl
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirJumpExpressionBuilder {

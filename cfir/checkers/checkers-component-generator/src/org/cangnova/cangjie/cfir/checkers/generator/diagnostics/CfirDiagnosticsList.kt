@@ -9,6 +9,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjImportItem
+import org.cangnova.cangjie.psi.CjNamedDeclaration
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.util.PrivateForInline
 
@@ -158,7 +159,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<ConeCangjieType>("actualType")  // 实际的类型
             parameter<Boolean>("isMismatchDueToNullability")  // 是否因为可空性导致不匹配
         }
-
+        // the type argument is CjNamedDeclaration because PSI of FirProperty can be KtParameter in 'for' loops
+        val PATTERN_INITIALIZER_TYPE_MISMATCH by  error<CjNamedDeclaration>(PositioningStrategy.PATTERN_VARIABLE_INITIALIZER) {
+            parameter<ConeCangjieType>("expectedType")
+            parameter<ConeCangjieType>("actualType")
+            parameter<Boolean>("isMismatchDueToNullability")
+        }
         // 返回类型不匹配：函数返回值的类型与声明的返回类型不符
         val RETURN_TYPE_MISMATCH by error<CjExpression> {
             parameter<ConeCangjieType>("expectedType")  // 期望的返回类型
@@ -181,11 +187,36 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             // PositioningStrategy.OPERATOR 表示将错误标记位置设置在赋值操作符处
         }
 
-        // 数字字面量溢出：数字字面值超出了目标类型的范围
-        val LITERAL_NUMERIC_OVERFLOW by error<PsiElement> {
-            parameter<String>("literalText")  // 数字字面量的文本表示
-            parameter<ConeCangjieType>("targetType")  // 目标类型（如Int32、Int64等）
+        // 可见性错误：成员在当前上下文不可见
+        val INVISIBLE_MEMBER by error<PsiElement> {
+            parameter<String>("member")
+            parameter<String>("visibility")
         }
+
+        // 可见性错误：引用在当前上下文不可见
+        val INVISIBLE_REFERENCE by error<PsiElement> {
+            parameter<String>("reference")
+            parameter<String>("visibility")
+        }
+
+        // override 返回类型不协变
+        val OVERRIDING_RETURN_TYPE_MISMATCH by error<PsiElement> {
+            parameter<ConeCangjieType>("actualType")
+            parameter<ConeCangjieType>("expectedType")
+            parameter<Name>("overriddenName")
+        }
+
+        // override 目标不可见
+        val CANNOT_OVERRIDE_INVISIBLE_MEMBER by error<PsiElement> {
+            parameter<Name>("memberName")
+        }
+
+        // 父类未开放继承
+        val CLASS_NOT_OPEN_FOR_INHERITANCE by error<PsiElement> {
+            parameter<Name>("className")
+        }
+
+
     }
 
     /**
@@ -193,6 +224,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
      * 处理编译期常量表达式求值时发生的错误
      */
     val CONST_EVAL by object : DiagnosticGroup("ConstEval") {
+        // 数字字面量溢出：数字字面值超出了目标类型的范围
+        val LITERAL_NUMERIC_OVERFLOW by error<PsiElement> {
+            parameter<String>("literalText")  // 数字字面量的文本表示
+            parameter<ConeCangjieType>("targetType")  // 目标类型（如Int32、Int64等）
+        }
         // 常量求值除以零：在编译期求值时，被除数为0
         val CONST_EVAL_DIVIDE_BY_ZERO by error<PsiElement> {
             parameter<String>("operatorName")  // 运算符名称（如 "div"、"rem"）
@@ -203,6 +239,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("operatorName")  // 导致溢出的运算符名称
         }
     }
+
 
     /**
      * 未解析（Unresolved）相关的诊断
@@ -217,4 +254,3 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
     }
 }
-

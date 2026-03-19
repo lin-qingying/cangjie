@@ -4,9 +4,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.AstLoadingFilter
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
-import org.cangnova.cangjie.cfir.source.CjRealPsiSourceElement
-import org.cangnova.cangjie.cfir.source.toCjPsiSourceElement
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjRealPsiSourceElement
+import org.cangnova.cangjie.source.toCjPsiSourceElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.builder.*
@@ -31,16 +31,19 @@ import org.cangnova.cangjie.psi.CjNodeTypes.RUNE_CONSTANT
 import org.cangnova.cangjie.psi.CjNodeTypes.UNIT_CONSTANT
 
 /**
- * PSI 鈫?Raw CFIR 鏋勫缓鍣紙瀵归綈 Kotlin 鐨?PsiRawFirBuilder锛夈€? *
- * 閬嶅巻 PSI 璇硶鏍戯紝鐢熸垚 Raw CFIR 涓棿琛ㄧず銆? *
- * 鍦?RAW_CFIR 闃舵锛? * - 鎵€鏈夌被鍨嬪紩鐢ㄤ负 CfirUserTypeRef锛堟湭瑙ｆ瀽锛? * - 鎵€鏈夌鍙峰紩鐢ㄤ负 CfirNamedReference锛堟湭缁戝畾锛? * - 涓嶅仛绫诲瀷鎺ㄦ柇銆侀噸杞借В鏋愶紙閭ｆ槸 CFIR_RESOLVE 鐨勫伐浣滐級
+ * `PSI -> Raw CFIR` 构建器，对齐 Kotlin 的 `PsiRawFirBuilder`。
+ * 遍历 PSI 语法树，生成 Raw CFIR 中间表示。
+ * 在 `RAW_CFIR` 阶段：
+ * - 所有类型引用都保持为 `CfirUserTypeRef`，尚未解析
+ * - 所有符号引用都保持为 `CfirNamedReference`，尚未绑定
+ * - 不做类型推断和重载解析，这些工作留给 `CFIR_RESOLVE`
  */
 class PsiRawCfirBuilder(
     session: CfirSession,
     private val bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
 ) : AbstractRawCfirBuilder<PsiElement>(session) {
 
-    // ===== AbstractRawCfirBuilder 鎶借薄鏂规硶瀹炵幇 =====
+    // ===== AbstractRawCfirBuilder 抽象方法实现 =====
 
     override fun PsiElement.toSourceElement(): AbstractCjSourceElement {
         return CjRealPsiSourceElement(this)
@@ -63,12 +66,13 @@ class PsiRawCfirBuilder(
     // ===== Public API =====
 
     /**
-     * 鏋勫缓 CfirFile锛堟枃浠剁骇鍏ュ彛鐐癸級銆?     */
+     * 构建 `CfirFile`，作为文件级入口点。
+     */
     fun buildCfirFile(file: CjFile): CfirFile {
         return runOnStubs { file.accept(Visitor(), null) as CfirFile }
     }
 
-    // ===== Visitor锛堝唴閮ㄧ被锛屽榻?Kotlin 鐨?PsiRawFirBuilder.Visitor锛?=====
+    // ===== Visitor（内部类，对齐 Kotlin 的 PsiRawFirBuilder.Visitor）=====
 
     private val visitor = Visitor()
     private val converter = Converter()
@@ -127,8 +131,8 @@ class PsiRawCfirBuilder(
     }
 
     /**
-     * Visitor 璐熻矗 PSI 鑺傜偣鍒?CFIR 鑺傜偣鐨勫垎鍙戣浆鎹€?     *
-     * 瀵归綈 Kotlin 鐨?PsiRawFirBuilder.Visitor : KtVisitor<FirElement, FirElement?>
+     * Visitor 负责把 PSI 节点分派转换为 CFIR 节点。
+     * 对齐 Kotlin 的 `PsiRawFirBuilder.Visitor : KtVisitor<FirElement, FirElement?>`。
      */
     protected open inner class Visitor : CjVisitor<CfirElement, Unit?>() {
         override fun visitCjFile(file: CjFile, data: Unit?): CfirElement = buildFile(file)
@@ -140,7 +144,7 @@ class PsiRawCfirBuilder(
 
     protected open inner class Converter {
 
-        // ===== 澹版槑杞崲 =====
+        // ===== 声明转换 =====
 
         fun convertDeclaration(psi: CjDeclaration): CfirDeclaration = when (psi) {
             is CjClass -> convertClass(psi, CfirClassKind.CLASS)
@@ -272,9 +276,9 @@ class PsiRawCfirBuilder(
             }
         }
 
-        private fun convertFieldVariable(psi: CjFieldVariable): CfirVariable {
-            return buildSourceDeclaration(CfirVariableSymbol()) { symbol ->
-                buildVariable {
+        private fun convertFieldVariable(psi: CjFieldVariable): CfirFieldVariable {
+            return buildSourceDeclaration(CfirFieldVariableSymbol()) { symbol ->
+                buildFieldVariable {
                     source = psi.toCjPsiSourceElement()
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
@@ -475,7 +479,7 @@ class PsiRawCfirBuilder(
             }
         }
 
-        // ===== 鍙傛暟杞崲 =====
+        // ===== 参数转换 =====
 
         fun convertValueParameter(psi: CjParameter): CfirValueParameter {
             return buildSourceDeclaration(CfirValueParameterSymbol()) { symbol ->
@@ -677,7 +681,7 @@ class PsiRawCfirBuilder(
                 }
             }
 
-            // 鍙噸杞借繍绠楃 鈫?鍑芥暟璋冪敤
+            // 可重载运算符转换为函数调用
             val operatorName = opToken.toBinaryName() ?: Name.identifier("<op:$opToken>")
             return buildFunctionCall {
                 source = psi.toCjPsiSourceElement()
@@ -734,10 +738,28 @@ class PsiRawCfirBuilder(
             }
 
             val callee = psi.calleeExpression
-            val arguments = psi.valueArguments.mapNotNull { it.getArgumentExpression()?.let { e -> convertExpression(e) } }
             val typeArgs = psi.typeArguments.map { convertTypeRef(it.typeReference) }
-            val lambdaArgs = psi.lambdaArguments.mapNotNull { it.getLambdaExpression()?.let { l -> convertLambda(l) } }
-            val allArgs = (arguments + lambdaArgs).toMutableList()
+
+            // callee 是 CALL_EXPRESSION（trailing lambda：f(1) {lambda}）
+            if (callee is CjCallExpression) {
+                val lambdaArgs = psi.lambdaArguments.mapNotNull { it.getLambdaExpression()?.let { l -> convertLambda(l) } }
+                val (receiver, reference) = resolveCalleeReference(callee)
+                return buildFunctionCall {
+                    source = psi.toCjPsiSourceElement()
+                    calleeReference = reference
+                    explicitReceiver = receiver
+                    this.arguments.addAll(lambdaArgs)
+                    typeArguments.addAll(typeArgs)
+                }
+            }
+
+            // valueArguments 已经包含了 lambdaArguments，不需要再单独处理
+            val allArgs = psi.valueArguments.mapNotNull { arg ->
+                when (arg) {
+                    is CjLambdaArgument -> arg.getLambdaExpression()?.let { convertLambda(it) }
+                    else -> arg.getArgumentExpression()?.let { convertExpression(it) }
+                }
+            }
 
             val (receiver, reference) = resolveCalleeReference(callee)
 
@@ -749,7 +771,6 @@ class PsiRawCfirBuilder(
                 typeArguments.addAll(typeArgs)
             }
         }
-
         private fun resolveCalleeReference(callee: CjExpression?): Pair<CfirExpression?, CfirNamedReference> {
             return when (callee) {
                 is CjNameReferenceExpression -> null to buildNamedReference(callee.referencedNameAsName)
@@ -830,38 +851,64 @@ class PsiRawCfirBuilder(
 
         private fun convertMatch(psi: CjMatchExpression): CfirMatchExpression {
             val subject = psi.subjectExpression?.let { convertExpression(it) }
-                ?: buildErrorExpression(psi.toSourceElement(), "Missing match subject")
+            val hasSubject = subject != null
+
             val branches = psi.entries.map { entry ->
-                val pattern = if (entry.isElse) {
-                    buildWildcardPattern {
-                        source = entry.toCjPsiSourceElement()
+                val (pattern, guard) = when {
+                    // ── case _ ────────────────────────────────────────────────────────
+                    entry.isElse -> {
+                        val p = buildWildcardPattern { source = entry.toCjPsiSourceElement() }
+                        val g = entry.patternGuard
+                            ?.children?.filterIsInstance<CjExpression>()?.firstOrNull()
+                            ?.let { convertExpression(it) }
+                        p to g
                     }
-                } else {
-                    val conditions = entry.conditions
-                    if (conditions.isEmpty()) {
-                        buildWildcardPattern {
-                            source = entry.toCjPsiSourceElement()
-                        }
-                    } else {
-                        val expr = conditions.first().children.filterIsInstance<CjExpression>().firstOrNull()
-                        if (expr != null) {
-                            buildConstPattern {
-                                source = expr.toCjPsiSourceElement()
-                                expression = convertExpression(expr)
-                            }
-                        } else {
-                            buildWildcardPattern {
+
+                    // ── 有主语：模式匹配，conditions 是 | 分隔的多个 pattern ──────────
+                    hasSubject -> {
+                        val conditions = entry.conditions.toList()
+                        val p = when {
+                            conditions.isEmpty() -> buildWildcardPattern {
                                 source = entry.toCjPsiSourceElement()
                             }
+                            conditions.size == 1 -> convertCasePattern(conditions.first())
+                            else -> buildOrPattern {
+                                source = entry.toCjPsiSourceElement()
+                                alternatives.addAll(conditions.map { convertCasePattern(it) })
+                            }
                         }
+                        val g = entry.patternGuard
+                            ?.children?.filterIsInstance<CjExpression>()?.firstOrNull()
+                            ?.let { convertExpression(it) }
+                        p to g
+                    }
+
+                    // ── 无主语：条件表达式包装成 ExpressionPattern ────────────────────
+                    else -> {
+                        val conditions = entry.conditions.toList()
+                        val p = if (conditions.isEmpty()) {
+                            buildWildcardPattern { source = entry.toCjPsiSourceElement() }
+                        } else {
+                            val expr = (conditions.first() as? CjMatchConditionWithExpression)?.expression
+                            if (expr != null) {
+                                buildExpressionPattern {
+                                    source = entry.toCjPsiSourceElement()
+                                    expression = convertExpression(expr)
+                                }
+                            } else {
+                                buildWildcardPattern { source = entry.toCjPsiSourceElement() }
+                            }
+                        }
+                        val g = entry.patternGuard
+                            ?.children?.filterIsInstance<CjExpression>()?.firstOrNull()
+                            ?.let { convertExpression(it) }
+                        p to g
                     }
                 }
-                val guard = entry.patternGuard?.children?.filterIsInstance<CjExpression>()?.firstOrNull()?.let { convertExpression(it) }
+
                 val body = entry.expression?.let { convertBlock(it) }
                     ?: entry.body?.let { convertBlock(it) }
-                    ?: buildBlock {
-                        source = entry.toCjPsiSourceElement()
-                    }
+                    ?: buildBlock { source = entry.toCjPsiSourceElement() }
 
                 buildMatchBranch {
                     source = entry.toCjPsiSourceElement()
@@ -877,13 +924,12 @@ class PsiRawCfirBuilder(
                 this.branches.addAll(branches)
             }
         }
-
         // ---- Loops ----
 
         private fun convertFor(psi: CjForExpression): CfirForInExpression {
             val loopParam = psi.loopParameter
-            val variable = buildSourceDeclaration(CfirVariableSymbol()) { symbol ->
-                buildVariable {
+            val variable = buildSourceDeclaration(CfirPatternVariableSymbol()) { symbol ->
+                buildPatternVariable {
                     source = (loopParam ?: psi).toCjPsiSourceElement()
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
@@ -892,7 +938,11 @@ class PsiRawCfirBuilder(
                     attributes = CfirDeclarationAttributes.EMPTY
                     status = CfirDeclarationStatusImpl.DEFAULT
                     returnTypeRef = if (loopParam != null) convertTypeRef(loopParam.typeReference) else buildImplicitTypeRef()
-                    name = loopParam?.nameAsSafeName ?: Name.special("<anonymous>")
+                    pattern = buildBindingPattern {
+                        source = (loopParam ?: psi).toCjPsiSourceElement()
+                        name = loopParam?.nameAsSafeName ?: Name.special("<anonymous>")
+                        typeRef = if (loopParam != null) convertTypeRef(loopParam.typeReference) else null
+                    }
                     isVar = false
                 }
             }
@@ -1131,7 +1181,10 @@ class PsiRawCfirBuilder(
                 }
                 is CjEnumPattern -> buildEnumPattern {
                     source = pattern.toCjPsiSourceElement()
-                    constructorReference = buildNamedReference(Name.special(pattern.expression?.text ?: "<enum-pattern>"))
+                    val refText = pattern.expression?.text ?: "<enum-pattern>"
+                    constructorReference = buildNamedReference(
+                        if (refText.startsWith("<")) Name.special(refText) else Name.identifier(refText)
+                    )
                     arguments.addAll(pattern.patterns.map { convertCasePattern(it) })
                 }
                 is CjConstantPattern -> buildConstPattern {
@@ -1144,7 +1197,7 @@ class PsiRawCfirBuilder(
             }
         }
 
-        // ===== 杈呭姪鏂规硶 =====
+        // ===== 辅助方法 =====
 
         private fun toBlock(psi: CjExpression): CfirBlock {
             if (psi is CjBlockExpression) return convertBlock(psi)
@@ -1227,7 +1280,7 @@ class PsiRawCfirBuilder(
         }
     }
 
-    // ===== 鏂囦欢绾ф瀯寤鸿緟鍔?=====
+    // ===== 文件级构建辅助 =====
 
     private fun buildPackageDirective(psi: CjPackageDirective?): CfirPackageDirective {
         val fqName = psi?.fqName ?: FqName.ROOT
@@ -1264,8 +1317,5 @@ class PsiRawCfirBuilder(
         return fqName
     }
 
-    companion object {}
+
 }
-
-
-

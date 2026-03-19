@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 func loopControl(): Unit {
     var i = 0
     while (i < 100) {
@@ -10,3 +11,4 @@ func loopControl(): Unit {
         }
     }
 }
+

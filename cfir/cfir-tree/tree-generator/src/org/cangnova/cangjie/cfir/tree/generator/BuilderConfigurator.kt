@@ -44,7 +44,7 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
 
         // -------- 声明节点 --------
         file, classDeclaration, enumConstructor, extend, typeAlias, function, mainFunction, macroDeclaration, finalizer,
-        invalidDeclaration, property, variable, patternVariable, valueParameter, typeParameter,
+        invalidDeclaration, property, fieldVariable, patternVariable, valueParameter, typeParameter,
 
         // -------- 语句 / 表达式节点 --------
         block,

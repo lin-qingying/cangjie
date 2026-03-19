@@ -16,7 +16,8 @@ class CjoManager(
     private val searchPath: CjoSearchPath,
 ) {
     /** 包头缓存：fullPkgName → CjoPackageHeader */
-    private val headerCache = ConcurrentHashMap<String, CjoPackageHeader?>()
+    private val headerCache = ConcurrentHashMap<String, CjoPackageHeader>()
+    private val missingPackages = ConcurrentHashMap.newKeySet<String>()
 
     /** 原始字节缓存：fullPkgName → ByteBuffer（保持引用防止 GC） */
     private val bufferCache = ConcurrentHashMap<String, ByteBuffer>()
@@ -32,13 +33,22 @@ class CjoManager(
      * @return 包头，未找到返回 null
      */
     fun loadPackageHeader(fullPkgName: String): CjoPackageHeader? {
-        return headerCache.getOrPut(fullPkgName) {
-            val file = searchPath.findCjoFile(fullPkgName) ?: return@getOrPut null
-            val buffer = readFileToByteBuffer(file)
-            bufferCache[fullPkgName] = buffer
-            val pkg = Package.getRootAsPackage(buffer)
-            CjoPackageHeader.fromPackage(pkg)
+        headerCache[fullPkgName]?.let { return it }
+        if (fullPkgName in missingPackages) return null
+
+        val file = searchPath.findCjoFile(fullPkgName)
+        if (file == null) {
+            missingPackages += fullPkgName
+            return null
         }
+
+        val buffer = readFileToByteBuffer(file)
+        bufferCache[fullPkgName] = buffer
+        val header = CjoPackageHeader.fromPackage(Package.getRootAsPackage(buffer))
+
+        missingPackages.remove(fullPkgName)
+        headerCache.putIfAbsent(fullPkgName, header)
+        return headerCache[fullPkgName] ?: header
     }
 
     /**

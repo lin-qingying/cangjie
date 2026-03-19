@@ -14,18 +14,24 @@ sourceSets {
 dependencies {
     testFixturesApi(project(":util"))
     testFixturesApi(project(":common"))
-    api(project(":cfir:diagnostics"))
+    api(project(":common:diagnostics"))
 
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
     testFixturesApi(project(":compiler:cli"))
     testFixturesApi(project(":cfir:entrypoint"))
     testFixturesApi(project(":cfir:cfir-cones"))
-    testFixturesApi(libs.junit.jupiter.api)
+
 
     testFixturesApi(project(":compiler:config"))
     testFixturesApi(project(":psi"))
     testFixturesApi(intellijCore())
     testFixturesApi(libs.junit4)
+
+
+    testFixturesApi(platform(libs.junit.bom))
+    testFixturesApi(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testFixturesApi(libs.junit.platform.launcher)
     // TestDataPath 注解仅编译期使用，compileOnly 避免运行时加载 JUnit5TestSessionListener
     testFixturesCompileOnly(intellijTestFramework()) { isTransitive = false }
 }

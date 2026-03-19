@@ -8,7 +8,8 @@ import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.cfir.pipeline.AllModulesFrontendOutput
 
 /**
- * 鍛戒护琛屽弬鏁颁骇鐗? */
+ * 命令行参数产物。
+ */
 data class ArgumentsPipelineArtifact<out A : CommonCompilerArguments>(
     val arguments: A,
     override val configuration: CompilerConfiguration,
@@ -20,7 +21,7 @@ data class ArgumentsPipelineArtifact<out A : CommonCompilerArguments>(
 }
 
 /**
- * 缂栬瘧閰嶇疆浜х墿
+ * 编译配置产物。
  */
 data class ConfigurationPipelineArtifact(
     override val configuration: CompilerConfiguration,

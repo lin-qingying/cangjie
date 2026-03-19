@@ -9,10 +9,10 @@ package org.cangnova.cangjie.cfir.declarations.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.CfirPackageDirective
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirPackageDirectiveImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,

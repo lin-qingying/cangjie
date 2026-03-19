@@ -11,17 +11,16 @@ dependencies {
     testFixturesApi(project(":cfir:resolve"))
     testFixturesApi(project(":cfir:entrypoint"))
     testFixturesApi(project(":cfir:checkers"))
-    testFixturesApi(project(":cfir:diagnostics"))
+    testFixturesApi(project(":common:diagnostics"))
     testFixturesApi(project(":cfir:raw-cfir:psi2cfir"))
     testFixturesApi(project(":cfir:raw-cfir:raw-cfir-common"))
     testFixturesApi(project(":psi"))
     testFixturesApi(testFixtures(project(":tests:test-infrastructure")))
-    testFixturesApi(libs.junit4)
 
     testImplementation(testFixtures(project(":cfir:analysis-tests")))
     testImplementation(testFixtures(project(":tests:test-infrastructure")))
     testCompileOnly(intellijTestFramework()) { isTransitive = false }
-    testRuntimeOnly(libs.junit.vintage.engine)
+    testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
 
 }
@@ -36,7 +35,7 @@ sourceSets {
 }
 
 projectTests {
-    testTask(jUnitMode = JUnitMode.JUnit4) {
+    testTask(jUnitMode = JUnitMode.JUnit5) {
         workingDir = rootDir
         val updateTestData = System.getProperty("update.test.data")
         if (updateTestData != null) {

@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirImport
@@ -16,7 +17,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
+
 import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
@@ -52,6 +53,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirUnsafeExpression
 import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
 import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
 import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
+import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
+import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
 import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
@@ -61,7 +64,7 @@ import org.cangnova.cangjie.cfir.references.CfirErrorReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirFunctionTypeRef
@@ -173,6 +176,7 @@ private class CfirDefaultTypeRenderer : CfirTypeRenderer {
             }
             append("|")
         }
+
         is CfirBasicTypeRef -> "R|${typeRef.name.asString()}|"
         is CfirImplicitTypeRef -> "<implicit>"
         is CfirResolvedTypeRef -> "R|${typeRef.coneType}|"
@@ -183,11 +187,13 @@ private class CfirDefaultTypeRenderer : CfirTypeRenderer {
             append(render(typeRef.returnTypeRef))
             append("|")
         }
+
         is CfirTupleTypeRef -> buildString {
             append("R|(")
             typeRef.elementTypeRefs.joinTo(this) { render(it) }
             append(")|")
         }
+
         is CfirVArrayTypeRef -> buildString {
             append("R|VArray<")
             append(render(typeRef.elementTypeRef))
@@ -195,6 +201,7 @@ private class CfirDefaultTypeRenderer : CfirTypeRenderer {
             append(typeRef.sizeLiteral)
             append(">|")
         }
+
         is CfirErrorTypeRef -> "R|ERROR: ${typeRef.reason}|"
     }
 }
@@ -232,8 +239,12 @@ private class CfirDefaultInlineExpressionRenderer(
             CfirLiteralKind.STRING -> "\"${expression.value}\""
             else -> "${expression.value}"
         }
+
         is CfirQualifiedAccess -> referenceRenderer.render(expression.calleeReference)
         is CfirPropertyAccess -> referenceRenderer.render(expression.calleeReference)
+        is CfirComparisonExpression -> "${render(expression.left)} ${expression.operation.symbol} ${render(expression.right)}"
+        is CfirBinaryOp -> "${render(expression.left)} ${expression.kind.symbol} ${render(expression.right)}"
+        is CfirFunctionCall -> "${referenceRenderer.render(expression.calleeReference)}(${expression.arguments.joinToString { render(it) }})"
         else -> "<expr>"
     }
 }
@@ -244,6 +255,8 @@ private class CfirDefaultPatternRenderer(
     private val inlineExpressionRenderer: CfirInlineExpressionRenderer,
 ) : CfirPatternRenderer {
     override fun render(pattern: CfirPattern): String = when (pattern) {
+        is CfirExpressionPattern -> "expr(${inlineExpressionRenderer.render(pattern.expression)})"
+        is CfirOrPattern -> pattern.alternatives.joinToString(" | ") { render(it) }
         is CfirWildcardPattern -> "_"
         is CfirConstPattern -> "const(${inlineExpressionRenderer.render(pattern.expression)})"
         is CfirBindingPattern -> buildString {
@@ -251,12 +264,21 @@ private class CfirDefaultPatternRenderer(
             pattern.typeRef?.let { append(": ${typeRenderer.render(it)}") }
             pattern.nestedPattern?.let { append(" @ ${render(it)}") }
         }
+
         is CfirTuplePattern -> "(${pattern.elements.joinToString { render(it) }})"
-        is CfirEnumPattern -> "${referenceRenderer.render(pattern.constructorReference)}(${pattern.arguments.joinToString { render(it) }})"
+        is CfirEnumPattern -> "${referenceRenderer.render(pattern.constructorReference)}(${
+            pattern.arguments.joinToString {
+                render(
+                    it
+                )
+            }
+        })"
+
         is CfirTypePattern -> buildString {
             append("is ${typeRenderer.render(pattern.typeRef)}")
             pattern.bindingName?.let { append(" ${it.asString()}") }
         }
+
         else -> "<unknown-pattern>"
     }
 }
@@ -281,8 +303,14 @@ class CfirRenderer(
     override val typeRenderer: CfirTypeRenderer = CfirDefaultTypeRenderer(),
     override val referenceRenderer: CfirReferenceRenderer = CfirDefaultReferenceRenderer(),
     override val statusRenderer: CfirStatusRenderer? = CfirDefaultStatusRenderer(),
-    override val inlineExpressionRenderer: CfirInlineExpressionRenderer? = CfirDefaultInlineExpressionRenderer(referenceRenderer),
-    override val patternRenderer: CfirPatternRenderer? = CfirDefaultPatternRenderer(typeRenderer, referenceRenderer, inlineExpressionRenderer!!),
+    override val inlineExpressionRenderer: CfirInlineExpressionRenderer? = CfirDefaultInlineExpressionRenderer(
+        referenceRenderer
+    ),
+    override val patternRenderer: CfirPatternRenderer? = CfirDefaultPatternRenderer(
+        typeRenderer,
+        referenceRenderer,
+        inlineExpressionRenderer!!
+    ),
 ) : CfirRendererComponents {
 
     override val visitor: Visitor = Visitor()
@@ -332,6 +360,11 @@ class CfirRenderer(
     }
 
     private fun renderPattern(pattern: CfirPattern): String = patternRenderer?.render(pattern) ?: "<pattern>"
+
+    private fun renderPatternVariableName(variable: CfirPatternVariable): String {
+        val pattern = variable.pattern
+        return if (pattern is CfirBindingPattern) pattern.name.asString() else "<anonymous>"
+    }
 
     inner class Visitor internal constructor() : CfirVisitor<Unit, Unit>() {
         override fun visitElement(element: CfirElement, data: Unit) {
@@ -411,7 +444,8 @@ class CfirRenderer(
             val params = function.valueParameters.joinToString {
                 "${it.name.asString()}: ${renderType(it.returnTypeRef)}"
             }
-            val signature = "${prefix}${mutPrefix}func ${function.name.asString()}$typeParams($params): ${renderType(function.returnTypeRef)}"
+            val signature =
+                "${prefix}${mutPrefix}func ${function.name.asString()}$typeParams($params): ${renderType(function.returnTypeRef)}"
             if (function.body != null) {
                 println("$signature {")
                 printer.pushIndent()
@@ -457,7 +491,7 @@ class CfirRenderer(
             }
         }
 
-        override fun visitVariable(variable: CfirVariable, data: Unit) {
+        override fun visitFieldVariable(variable: CfirFieldVariable, data: Unit) {
             declarationRenderer?.renderResolveInfo(variable)
             resolvePhaseRenderer?.render(variable)
             val prefix = renderStatus(variable.status, variable.source).let { if (it.isNotEmpty()) "$it " else "" }
@@ -522,6 +556,7 @@ class CfirRenderer(
                     val args = typeRef.elementTypeRefs.joinToString { renderType(it) }
                     "${enumConstructor.name.asString()}($args)"
                 }
+
                 else -> "${enumConstructor.name.asString()}(${renderType(typeRef)})"
             }
             println(rendered)
@@ -673,17 +708,24 @@ class CfirRenderer(
         override fun visitMatchExpression(matchExpression: CfirMatchExpression, data: Unit) {
             println("MATCH {")
             printer.pushIndent()
-            println("subject:")
-            printer.pushIndent()
-            matchExpression.subject.accept(this, data)
-            printer.popIndent()
+            matchExpression.subject?.let {
+                println("subject:")
+                printer.pushIndent()
+                it.accept(this, data)
+
+                printer.popIndent()
+            }
+
             matchExpression.branches.forEach { it.accept(this, data) }
             printer.popIndent()
             println("}")
         }
 
         override fun visitMatchBranch(matchBranch: CfirMatchBranch, data: Unit) {
-            println("BRANCH(${renderPattern(matchBranch.pattern)}) {")
+            val guardSuffix = matchBranch.guard
+                ?.let { " where ${inlineExpressionRenderer?.render(it) ?: "<guard>"}" }
+                ?: ""
+            println("BRANCH(${renderPattern(matchBranch.pattern)}$guardSuffix) {")
             printer.pushIndent()
             matchBranch.body.accept(this, data)
             printer.popIndent()
@@ -707,7 +749,8 @@ class CfirRenderer(
         }
 
         override fun visitForInExpression(forIn: CfirForInExpression, data: Unit) {
-            println("FOR_IN(${forIn.variable.name.asString()}: ${renderType(forIn.variable.returnTypeRef)}) {")
+            val variableName = renderPatternVariableName(forIn.variable)
+            println("FOR_IN($variableName: ${renderType(forIn.variable.returnTypeRef)}) {")
             printer.pushIndent()
             println("iterable:")
             printer.pushIndent()

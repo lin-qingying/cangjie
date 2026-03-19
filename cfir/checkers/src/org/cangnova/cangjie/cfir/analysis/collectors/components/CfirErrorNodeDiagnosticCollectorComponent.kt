@@ -13,9 +13,9 @@ import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
 import org.cangnova.cangjie.cfir.references.CfirErrorReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
-import org.cangnova.cangjie.cfir.source.CjFakeSourceElementKind
-import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangjieType

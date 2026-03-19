@@ -1,49 +1,52 @@
-package org.cangnova.cangjie.test.directives
+﻿package org.cangnova.cangjie.test.directives
 
 import org.cangnova.cangjie.test.directives.model.SimpleDirectivesContainer
 
 /**
- * Cangjie 测试的最小指令集（参考 Kotlin 编译器测试）。
+ * Minimal test directives for Cangjie test infrastructure.
  */
 object CangjieTestDirectives : SimpleDirectivesContainer() {
     val MODULE by stringDirective(
-        description = "开始一个新的模块段。可选参数支持依赖，例如 `main(dep1, dep2)`。",
+        description = "Start a new module section. Optional deps, e.g. `main(dep1, dep2)`.",
     )
 
     val FILE by stringDirective(
-        description = "在当前模块内开始一个新的文件段。",
+        description = "Start a new file section inside current module.",
+    )
+
+    val SNIPPET by directive(
+        description = "Start a snippet module and auto-generate snippet file.",
     )
 
     val DEPENDS_ON by stringDirective(
-        description = "为当前模块追加依赖（逗号/空格分隔）。",
+        description = "Add dependencies for current module (comma/space separated).",
     )
 
     val WITH_STDLIB by directive(
-        description = "编译测试时包含标准库。",
+        description = "Include stdlib in compilation.",
     )
 
     val IGNORE_ERRORS by directive(
-        description = "允许测试数据存在编译错误，用于错误恢复测试。",
+        description = "Allow test data with compile errors.",
     )
 
     val LANGUAGE_VERSION by stringDirective(
-        description = "指定语言版本，例如 `// LANGUAGE_VERSION: 1.0`。",
+        description = "Pin language version, e.g. `// LANGUAGE_VERSION: 1.0`.",
     )
 
     val EXPECT_COMPLETION_ITEM by stringDirective(
-        description = "声明期望出现的补全项。",
+        description = "Declare expected completion item.",
     )
 
     val FIX_NAME by stringDirective(
-        description = "声明期望快速修复名称。",
+        description = "Declare expected quick-fix name.",
     )
 
     val DUMP_CFIR by directive(
-        description = "启用 CFIR dump 并与期望文件对比。",
+        description = "Enable CFIR dump and compare with expected file.",
     )
 
     val DUMP_CHIR by directive(
-        description = "启用 CHIR dump 并与期望文件对比。",
+        description = "Enable CHIR dump and compare with expected file.",
     )
 }
-

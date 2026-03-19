@@ -22,9 +22,12 @@ import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 /**
- * 鍐呭缓鍘熷绫诲瀷绗﹀彿鎻愪緵鑰呫€? *
- * 涓轰粨棰夊唴寤哄師濮嬬被鍨嬶紙Int8, Bool, Float64 绛夛級鎻愪緵棰勬瀯寤虹殑鍚堟垚绫荤鍙枫€? * 杩欎簺绫诲瀷鐢?[PrimitiveTypeKind] 鏋氫妇瀹氫箟锛屼笉灞炰簬鏍囧噯搴?std.core 鐨勭被澹版槑锛? * 鑰屾槸缂栬瘧鍣ㄥ唴寤虹殑鍘熷绫诲瀷銆? *
- * 瀵归綈 Kotlin K2 鐨?FirBuiltinSymbolProvider锛堜粎鍐呭缓閮ㄥ垎锛夈€? */
+ * 内建原始类型符号提供器。
+ * 为仓颉的原始类型（如 `Int8`、`Bool`、`Float64`）提供预构建的合成类符号。
+ * 这些类型由 [PrimitiveTypeKind] 定义，不属于标准库 `std.core` 中的普通类声明，
+ * 而是编译器内建的原始类型。
+ * 对齐 Kotlin K2 的 `FirBuiltinSymbolProvider`（仅覆盖内建部分）。
+ */
 class CfirBuiltinSymbolProvider(
     session: CfirSession,
 ) : CfirSymbolProvider(session) {

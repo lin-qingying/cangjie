@@ -5,8 +5,9 @@ import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
- * CLI / 娴嬭瘯鐜鐨勮瘖鏂敹闆嗗櫒銆? *
- * 瀵归綈 K2 `CliDiagnosticsCollector`銆? */
+ * CLI / 测试环境下的诊断收集器。
+ * 对齐 K2 `CliDiagnosticsCollector`。
+ */
 class CfirCliDiagnosticsCollector(
     session: CfirSession,
     createComponents: (PendingDiagnosticReporter) -> CfirDiagnosticCollectorComponents,

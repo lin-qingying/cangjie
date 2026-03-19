@@ -5,8 +5,6 @@
 
 package org.cangnova.cangjie.test.codeMetaInfo.renderConfigurations
 
-import org.cangnova.cangjie.cfir.diagnostics.Diagnostic
-import org.cangnova.cangjie.cfir.diagnostics.rendering.DiagnosticRenderer
 import org.cangnova.cangjie.test.codeMetaInfo.model.CodeMetaInfo
 import org.cangnova.cangjie.test.codeMetaInfo.model.DiagnosticCodeMetaInfo
 
@@ -28,12 +26,9 @@ open class DiagnosticCodeMetaInfoRenderConfiguration(
         if (!renderParams) return ""
         val params = mutableListOf<String>()
 
-        @Suppress("UNCHECKED_CAST")
-        val renderer = codeMetaInfo.diagnostic.factory.defaultRenderer as? DiagnosticRenderer<Diagnostic>
-        if (renderer != null) {
-            renderer.renderParameters(codeMetaInfo.diagnostic).mapTo(params) {
-                it.toString().replace("\"", "\\\"")
-            }
+        val renderer = codeMetaInfo.diagnostic.factory.cjRenderer
+        renderer.renderParameters(codeMetaInfo.diagnostic).mapTo(params) {
+            it.toString().replace("\"", "\\\"")
         }
         if (renderSeverity)
             params.add("severity='${codeMetaInfo.diagnostic.severity}'")
@@ -44,6 +39,6 @@ open class DiagnosticCodeMetaInfoRenderConfiguration(
     }
 
     fun getTag(codeMetaInfo: DiagnosticCodeMetaInfo): String {
-        return codeMetaInfo.diagnostic.factory.name
+        return codeMetaInfo.diagnostic.factory.name.removePrefix("CFIR_")
     }
 }

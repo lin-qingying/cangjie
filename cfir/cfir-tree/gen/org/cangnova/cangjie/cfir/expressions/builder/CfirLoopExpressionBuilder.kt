@@ -15,8 +15,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirLoopExpressionImpl
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirLoopExpressionBuilder {

@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
 import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
@@ -142,8 +143,9 @@ open class CfirStatusResolveTransformer(
 }
 
 /**
- * 浠庡叿浣撳０鏄庣被鍨嬩腑鎻愬彇 [CfirDeclarationStatus]銆? *
- * `CfirMemberDeclaration` 涓嶇洿鎺ユ寔鏈?`status`锛? * 璇ュ睘鎬у垎鏁ｅ畾涔夊湪鍚勫叿浣撳瓙绫讳腑锛圕firClass銆丆firFunction 绛夛級銆? */
+ * 从具体声明类型中提取 [CfirDeclarationStatus]。
+ * `CfirMemberDeclaration` 本身不直接持有 `status`，因此这里按具体子类分发。
+ */
 private val CfirDeclaration.statusOrNull: CfirDeclarationStatus?
     get() = when (this) {
         is CfirClass -> status
@@ -160,7 +162,7 @@ private val CfirDeclaration.declarationNameOrNull: Name?
         is CfirClass -> name
         is CfirFunction -> name
         is CfirProperty -> name
-        is CfirVariable -> name
+        is CfirFieldVariable -> name
         is CfirTypeAlias -> name
         else -> null
     }

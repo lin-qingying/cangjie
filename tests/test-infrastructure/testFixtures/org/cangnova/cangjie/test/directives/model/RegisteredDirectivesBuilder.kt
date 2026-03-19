@@ -1,32 +1,78 @@
 package org.cangnova.cangjie.test.directives.model
 
-class RegisteredDirectivesBuilder {
-    private val simpleDirectives = linkedSetOf<SimpleDirective>()
-    private val stringDirectives = linkedMapOf<StringDirective, MutableList<String>>()
-    private val valueDirectives = linkedMapOf<ValueDirective<*>, MutableList<Any>>()
+import kotlin.collections.get
 
-    operator fun Directive.unaryPlus() {
-        when (this) {
-            is SimpleDirective -> simpleDirectives += this
-            is StringDirective -> stringDirectives.getOrPut(this) { mutableListOf() }
-            is ValueDirective<*> -> valueDirectives.getOrPut(this) { mutableListOf() }
+class RegisteredDirectivesBuilder private constructor(
+    private val simpleDirectives: MutableList<SimpleDirective>,
+    private val stringDirectives: MutableMap<StringDirective, List<String>>,
+    private val valueDirectives: MutableMap<ValueDirective<*>, List<Any>>
+) {
+    constructor() : this(mutableListOf(), mutableMapOf(), mutableMapOf())
+
+    constructor(old: RegisteredDirectives) : this() {
+        for (directive in old) {
+            when (directive) {
+                is SimpleDirective -> +directive
+                is StringDirective -> directive with old[directive]
+                is ValueDirective<*> -> {
+                    // no way to call with
+                    valueDirectives[directive] = old[directive]
+                }
+            }
         }
     }
 
-    fun put(directive: StringDirective, value: String) {
-        stringDirectives.getOrPut(directive) { mutableListOf() } += value
+    operator fun SimpleDirective.unaryPlus() {
+        simpleDirectives += this
     }
 
-    fun <T : Any> put(directive: ValueDirective<T>, value: T) {
-        @Suppress("UNCHECKED_CAST")
-        valueDirectives.getOrPut(directive) { mutableListOf() } += value as Any
+    operator fun SimpleDirective.unaryMinus() {
+        simpleDirectives.remove(this)
+    }
+
+    infix fun StringDirective.with(value: String) {
+        with(listOf(value))
+    }
+
+    infix fun StringDirective.with(values: List<String>) {
+        stringDirectives.putWithExistsCheck(this, values)
+    }
+
+    operator fun StringDirective.plus(value: String) {
+        val previous = stringDirectives[this] ?: listOf()
+        stringDirectives[this] = previous + value
+    }
+
+    operator fun StringDirective.unaryMinus() {
+        stringDirectives.remove(this)
+    }
+
+    infix fun <T : Any> ValueDirective<T>.with(value: T) {
+        with(listOf(value))
+    }
+
+    infix fun <T : Any> ValueDirective<T>.with(values: List<T>) {
+        valueDirectives.putWithExistsCheck(this, values)
+    }
+
+    operator fun ValueDirective<*>.unaryMinus() {
+        valueDirectives.remove(this)
+    }
+
+    private fun <K : Directive, V> MutableMap<K, V>.putWithExistsCheck(key: K, value: V) {
+        val alreadyRegistered = get(key)
+        if (alreadyRegistered == null) {
+            put(key, value)
+        } else if (alreadyRegistered is List<Any?> && value is List<Any?>) {
+            @Suppress("UNCHECKED_CAST")
+            put(key, (alreadyRegistered + value) as V)
+        } else {
+            error("Default values for $key directive already registered")
+        }
     }
 
     fun build(): RegisteredDirectives {
-        return RegisteredDirectivesImpl(
-            simpleDirectives = simpleDirectives.toList(),
-            stringDirectives = stringDirectives.mapValues { it.value.toList() },
-            valueDirectives = valueDirectives.mapValues { it.value.toList() },
-        )
+        return RegisteredDirectivesImpl(simpleDirectives, stringDirectives, valueDirectives)
     }
 }
+

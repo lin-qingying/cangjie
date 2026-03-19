@@ -10,7 +10,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 abstract class AbstractDiagnosticCollectorComponent(

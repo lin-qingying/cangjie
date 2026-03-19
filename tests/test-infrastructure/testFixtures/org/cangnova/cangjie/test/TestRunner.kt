@@ -2,6 +2,7 @@ package org.cangnova.cangjie.test
 
 import org.cangnova.cangjie.test.model.ResultingArtifact
 import org.cangnova.cangjie.test.services.*
+import org.cangnova.cangjie.utils.firstIsInstanceOrNull
 import java.io.IOException
 
 /**
@@ -35,6 +36,9 @@ TestRunner<Step : TestStep<*, *>, Configuration : TestConfiguration<Step>>(val t
 
     fun reportFailures() {
         val filteredFailedAssertions = filterFailedExceptions(allFailedExceptions)
+        filteredFailedAssertions.firstIsInstanceOrNull<WrappedException.FromFacade>()?.let {
+            throw it
+        }
         testServices.assertions.failAll(filteredFailedAssertions)
     }
 

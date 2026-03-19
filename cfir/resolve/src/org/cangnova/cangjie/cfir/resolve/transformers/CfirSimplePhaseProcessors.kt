@@ -12,11 +12,11 @@ import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
- * IMPLICIT_TYPES 闃舵 processor銆? *
- * 浣跨敤 [CfirImplicitAwareBodyResolveTransformer] 杩涜闅愬紡杩斿洖绫诲瀷鎺ㄦ柇锛? * - 鏃犳樉寮忚繑鍥炵被鍨嬬殑鍑芥暟 鈫?浠庡嚱鏁颁綋鏈€鍚庝竴涓〃杈惧紡鎺ㄦ柇
- * - 鏃犳樉寮忕被鍨嬬殑灞炴€?鍙橀噺 鈫?浠?initializer 鎺ㄦ柇
- * - 閫掑綊渚濊禆淇濇姢锛堢姸鎬佹満锛歂otComputed 鈫?Computing 鈫?Computed锛? *
- * 鍙傝€?K2 FirImplicitTypeBodyResolveProcessor銆? */
+ * IMPLICIT_TYPES 阶段处理器。
+ * 使用 [CfirImplicitAwareBodyResolveTransformer] 推断隐式返回类型和隐式声明类型，
+ * 并通过状态机避免递归依赖时重复计算。
+ * 参考 K2 `FirImplicitTypeBodyResolveProcessor`。
+ */
 internal class CfirImplicitTypesResolveProcessor(
     session: CfirSession,
     scopeSession: CfirScopeSession,
@@ -46,8 +46,9 @@ internal class CfirImplicitTypesResolveProcessor(
 }
 
 /**
- * BODY_RESOLVE 闃舵 processor銆? *
- * 浣跨敤 [CfirBodyResolveTransformer] 杩涜琛ㄨ揪寮忕骇鍒殑绫诲瀷鍚堟垚銆? * 瑕嗗啓 [processFile] 浠ヤ紶閫掓纭殑 [CfirResolutionMode] 鏁版嵁銆? */
+ * BODY_RESOLVE 阶段处理器。
+ * 使用 [CfirBodyResolveTransformer] 对表达式级别的类型进行合成与检查。
+ */
 internal class CfirBodyResolveProcessor(
     session: CfirSession,
     scopeSession: CfirScopeSession,

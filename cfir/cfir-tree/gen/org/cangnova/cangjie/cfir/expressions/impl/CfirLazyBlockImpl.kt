@@ -10,10 +10,10 @@ package org.cangnova.cangjie.cfir.expressions.impl
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirLazyBlockImpl : CfirLazyBlock() {
     override val source: CjSourceElement?

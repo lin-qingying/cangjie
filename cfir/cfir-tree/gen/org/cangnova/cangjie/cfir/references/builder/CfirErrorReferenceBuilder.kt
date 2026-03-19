@@ -12,7 +12,7 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.references.CfirErrorReference
 import org.cangnova.cangjie.cfir.references.impl.CfirErrorReferenceImpl
-import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirErrorReferenceBuilder {

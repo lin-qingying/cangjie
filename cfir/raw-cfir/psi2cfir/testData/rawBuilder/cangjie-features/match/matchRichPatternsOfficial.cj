@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // STUB_FALLBACK_TO_AST:
 func classifyScore(score: Int64): String {
     return match {
@@ -10,7 +11,7 @@ func classifyScore(score: Int64): String {
 
 func extractYear(time: TimeUnit): Int32 {
     return match (time) {
-        case Year(y) => y
+        case Year(y)  where 1 == 1 => y
         case Year(y) | Month(y, _) => y
     }
 }

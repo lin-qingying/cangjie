@@ -1,6 +1,6 @@
 ﻿package org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model
 
-import org.cangnova.cangjie.config.LanguageFeature
+import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.cfir.diagnostics.Severity
 import kotlin.reflect.KType
 
@@ -80,6 +80,8 @@ enum class PositioningStrategy {
     SUPERTYPES_LIST,
     RETURN_WITH_LABEL,
     VARIABLE_INITIALIZER,
+    PATTERN_VARIABLE_INITIALIZER,
+
     WHOLE_ELEMENT,
     LONG_LITERAL_SUFFIX,
     REIFIED_MODIFIER,

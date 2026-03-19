@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 class AccessControlMemberModifiers {
     private let privateValue: Int64 = 1
     protected var protectedValue: Int64 = 2
@@ -9,3 +10,4 @@ class AccessControlMemberModifiers {
     internal func internalFn(): Unit {}
     func implicitFn(): Unit {}
 }
+

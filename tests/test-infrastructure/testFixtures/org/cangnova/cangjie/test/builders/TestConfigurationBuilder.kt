@@ -31,7 +31,7 @@ import org.cangnova.cangjie.test.services.AssertionsService
 import org.cangnova.cangjie.test.services.CompilationStage
 import org.cangnova.cangjie.test.services.CompilerConfigurationProvider
 import org.cangnova.cangjie.test.services.DefaultsDsl
-import org.cangnova.cangjie.test.services.ModuleStructureExtractorImpl
+import org.cangnova.cangjie.test.services.impl.ModuleStructureExtractorImpl
 import org.cangnova.cangjie.test.services.ModuleStructureTransformer
 import org.cangnova.cangjie.test.services.PreAnalysisHandler
 import org.cangnova.cangjie.test.services.RuntimeClasspathProvider
@@ -39,7 +39,6 @@ import org.cangnova.cangjie.test.services.ServiceRegistrationData
 import org.cangnova.cangjie.test.services.SourceFilePreprocessor
 import org.cangnova.cangjie.test.services.TestService
 import org.cangnova.cangjie.test.services.TestServices
-import org.cangnova.cangjie.test.services.impl.DefaultAssertionsService
 import org.cangnova.cangjie.test.services.service
 import java.nio.file.Path
 
@@ -47,7 +46,7 @@ import java.nio.file.Path
 @OptIn(TestInfrastructureInternals::class)
 abstract class TestConfigurationBuilderBase<Self : TestConfigurationBuilderBase<Self, C>, C> {
     val defaultsProviderBuilder: DefaultsProviderBuilder = DefaultsProviderBuilder()
-    var assertions: AssertionsService = DefaultAssertionsService()
+    lateinit var assertions: AssertionsService
 
     protected val sourcePreprocessors = mutableListOf<Constructor<SourceFilePreprocessor>>()
     protected val additionalMetaInfoProcessors = mutableListOf<Constructor<AdditionalMetaInfoProcessor>>()

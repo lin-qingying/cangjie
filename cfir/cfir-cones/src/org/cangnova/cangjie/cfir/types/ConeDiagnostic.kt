@@ -47,3 +47,24 @@ data class ConeUnresolvedNameError(
         }
     }
 }
+
+/**
+ * 通用诊断，用于无法归类到具体诊断类型的错误。
+ * 对齐 K2 `ConeSimpleDiagnostic`。
+ */
+class ConeSimpleDiagnostic(override val reason: String, val kind: DiagnosticKind = DiagnosticKind.Other) : ConeDiagnostic
+
+/**
+ * 诊断分类，对齐 K2 `DiagnosticKind`。
+ */
+enum class DiagnosticKind {
+    IllegalConstExpression,
+    DeserializationError,
+    InferenceError,
+    RecursionInImplicitTypes,
+    ReturnNotAllowed,
+    UnresolvedSupertype,
+    CannotInferParameterType,
+    EnumInitializerError,
+    Other,
+}

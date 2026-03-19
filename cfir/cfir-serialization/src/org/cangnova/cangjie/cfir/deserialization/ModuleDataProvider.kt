@@ -51,6 +51,19 @@ class SingleModuleDataProvider(
 abstract class LibraryPathFilter {
     /** 判定是否接受给定路径。 */
     abstract fun accepts(path: Path?): Boolean
+
+    object TakeAll : LibraryPathFilter() {
+        override fun accepts(path: Path?): Boolean = true
+    }
+
+    class LibraryList(
+        private val paths: Set<Path>,
+    ) : LibraryPathFilter() {
+        override fun accepts(path: Path?): Boolean {
+            val normalizedPath = path?.normalize() ?: return false
+            return normalizedPath in paths
+        }
+    }
 }
 
 /**

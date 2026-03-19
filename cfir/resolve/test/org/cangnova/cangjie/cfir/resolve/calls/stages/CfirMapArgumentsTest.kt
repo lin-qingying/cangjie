@@ -14,7 +14,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * CfirMapArguments 鍙傛暟鏄犲皠闃舵娴嬭瘯銆? */
+ * `CfirMapArguments` 参数映射阶段测试。
+ */
 class CfirMapArgumentsTest {
 
     @Nested
@@ -146,7 +147,7 @@ class CfirMapArgumentsTest {
     }
 }
 
-// ---- 娴嬭瘯鐢?Stub 瀵硅薄 ----
+// ---- 测试用 Stub 对象 ----
 
 private object StubSessionForTest : org.cangnova.cangjie.cfir.session.CfirSession(Kind.Source) {
     override fun toString(): String = "StubSession"

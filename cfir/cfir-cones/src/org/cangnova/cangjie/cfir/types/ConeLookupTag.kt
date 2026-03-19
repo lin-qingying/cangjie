@@ -32,6 +32,8 @@ class ConeClassLookupTagImpl(override val classId: ClassId) : ConeClassLikeLooku
 class ConeTypeParameterLookupTag(
     override val name: String,
 ) : ConeLookupTag() {
-    override fun equals(other: Any?): Boolean = this === other
-    override fun hashCode(): Int = System.identityHashCode(this)
+    override fun equals(other: Any?): Boolean =
+        other is ConeTypeParameterLookupTag && name == other.name
+
+    override fun hashCode(): Int = name.hashCode()
 }

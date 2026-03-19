@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // STUB_FALLBACK_TO_AST:
 type Mapper = (Int64, String) -> Bool
 type Pair = (Int64, String)

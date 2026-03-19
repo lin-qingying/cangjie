@@ -60,7 +60,11 @@ class NonGroupingTestRunner(
         runSteps()
         reportFailures()
     }
-
+    override fun runTestPreprocessing() {
+        super.runTestPreprocessing()
+        val globalMetadataInfoHandler = testServices.globalMetadataInfoHandler
+        globalMetadataInfoHandler.parseExistingMetadataInfosFromAllSources()
+    }
     fun runSteps() {
         val services = testConfiguration.testServices
         val moduleStructure = services.moduleStructure
@@ -92,6 +96,7 @@ class NonGroupingTestRunner(
             }
         }
     }
+
 
     private fun processModule(
         module: TestModule,

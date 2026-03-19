@@ -11,7 +11,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.name.Name
 
 object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker(CheckerDispatchKind.Common) {

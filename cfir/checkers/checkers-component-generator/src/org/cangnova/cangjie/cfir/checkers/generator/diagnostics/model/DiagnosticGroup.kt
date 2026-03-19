@@ -2,7 +2,7 @@
 
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.cfir.diagnostics.Severity
-import org.cangnova.cangjie.config.LanguageFeature
+import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.util.PrivateForInline
 import kotlin.properties.PropertyDelegateProvider
 import kotlin.properties.ReadOnlyProperty

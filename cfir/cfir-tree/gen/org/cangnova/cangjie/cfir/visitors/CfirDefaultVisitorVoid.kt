@@ -78,8 +78,12 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitCallableDeclaration(variable)
     }
 
+    override fun visitFieldVariable(fieldVariable: CfirFieldVariable) {
+        visitVariable(fieldVariable)
+    }
+
     override fun visitPatternVariable(patternVariable: CfirPatternVariable) {
-        visitCallableDeclaration(patternVariable)
+        visitVariable(patternVariable)
     }
 
     override fun visitValueParameter(valueParameter: CfirValueParameter) {
@@ -114,18 +118,6 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitExpression(stringInterpolation)
     }
 
-    override fun visitFunctionCall(functionCall: CfirFunctionCall) {
-        visitExpression(functionCall)
-    }
-
-    override fun visitPropertyAccess(propertyAccess: CfirPropertyAccess) {
-        visitExpression(propertyAccess)
-    }
-
-    override fun visitQualifiedAccess(qualifiedAccess: CfirQualifiedAccess) {
-        visitExpression(qualifiedAccess)
-    }
-
     override fun visitAssignment(assignment: CfirAssignment) {
         visitExpression(assignment)
     }
@@ -148,6 +140,14 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
 
     override fun visitMatchExpression(matchExpression: CfirMatchExpression) {
         visitExpression(matchExpression)
+    }
+
+    override fun visitOrPattern(orPattern: CfirOrPattern) {
+        visitPattern(orPattern)
+    }
+
+    override fun visitExpressionPattern(expressionPattern: CfirExpressionPattern) {
+        visitPattern(expressionPattern)
     }
 
     override fun visitMatchBranch(matchBranch: CfirMatchBranch) {

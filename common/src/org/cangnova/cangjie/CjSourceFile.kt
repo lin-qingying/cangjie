@@ -1,5 +1,10 @@
 package org.cangnova.cangjie
 
+import com.intellij.openapi.util.io.FileUtilRt
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiFile
+import java.io.ByteArrayInputStream
+import java.io.File
 import java.io.InputStream
 
 /**
@@ -17,4 +22,42 @@ interface CjSourceFile {
 
     /** 获取源文件内容的输入流 */
     fun getContentsAsStream(): InputStream
+}
+
+class CjPsiSourceFile(val psiFile: PsiFile) : CjSourceFile {
+    override val name: String
+        get() = psiFile.name
+
+    override val path: String?
+        get() = psiFile.virtualFile?.path
+
+    override fun getContentsAsStream(): InputStream = psiFile.virtualFile.inputStream
+}
+
+class CjVirtualFileSourceFile(val virtualFile: VirtualFile) : CjSourceFile {
+    override val name: String
+        get() = virtualFile.name
+
+    override val path: String
+        get() = virtualFile.path
+
+    override fun getContentsAsStream(): InputStream = virtualFile.inputStream
+}
+
+class CjIoFileSourceFile(val file: File) : CjSourceFile {
+    override val name: String
+        get() = file.name
+
+    override val path: String
+        get() = FileUtilRt.toSystemIndependentName(file.path)
+
+    override fun getContentsAsStream(): InputStream = file.inputStream()
+}
+
+class CjInMemoryTextSourceFile(
+    override val name: String,
+    override val path: String?,
+    val text: CharSequence,
+) : CjSourceFile {
+    override fun getContentsAsStream(): InputStream = ByteArrayInputStream(text.toString().toByteArray())
 }

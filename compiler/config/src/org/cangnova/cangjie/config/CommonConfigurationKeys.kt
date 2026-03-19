@@ -1,6 +1,9 @@
 package org.cangnova.cangjie.config
 
-import org.cangnova.cangjie.common.messages.MessageCollector
+import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.cfir.diagnostics.impl.BaseDiagnosticsCollector
+import org.cangnova.cangjie.messages.MessageCollector
+import org.cangnova.cangjie.config.CommonConfigurationKeys.DIAGNOSTICS_COLLECTOR
 import org.cangnova.cangjie.incremental.components.EnumMatchTracker
 import org.cangnova.cangjie.incremental.components.ICFileMappingTracker
 import org.cangnova.cangjie.incremental.components.ImportTracker
@@ -31,6 +34,8 @@ object CommonConfigurationKeys {
     /** 文件映射跟踪器。对齐 Kotlin 键：`FILE_MAPPING_TRACKER`。 */
     @JvmField
     val FILE_MAPPING_TRACKER = CompilerConfigurationKey.create<ICFileMappingTracker>("FILE_MAPPING_TRACKER")
+    @JvmField
+    val DIAGNOSTICS_COLLECTOR = CompilerConfigurationKey.create<BaseDiagnosticsCollector>("DIAGNOSTICS_COLLECTOR")
 
     /** `when` 枚举跟踪器。对齐 Kotlin 键：`ENUM_WHEN_TRACKER`。 */
     @JvmField
@@ -113,6 +118,9 @@ var CompilerConfiguration.fileMappingTracker: ICFileMappingTracker?
     set(value) {
         putIfNotNull(CommonConfigurationKeys.FILE_MAPPING_TRACKER, value)
     }
+var CompilerConfiguration.diagnosticsCollector: BaseDiagnosticsCollector
+    get() = getOrDefault( DIAGNOSTICS_COLLECTOR) { error("diagnostic collector is not initialized") }
+    set(value) { put( DIAGNOSTICS_COLLECTOR, value) }
 
 /**
  * `when` 枚举跟踪器扩展属性。

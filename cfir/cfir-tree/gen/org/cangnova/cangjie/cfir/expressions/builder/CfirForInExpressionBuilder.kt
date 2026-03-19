@@ -11,13 +11,13 @@ import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirForInExpressionImpl
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirForInExpressionBuilder {
@@ -26,7 +26,7 @@ class CfirForInExpressionBuilder {
     var coneTypeOrNull: ConeCangjieType? = null
     lateinit var condition: CfirExpression
     var isDoWhile: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
-    lateinit var variable: CfirVariable
+    lateinit var variable: CfirPatternVariable
     lateinit var iterable: CfirExpression
     lateinit var body: CfirBlock
 

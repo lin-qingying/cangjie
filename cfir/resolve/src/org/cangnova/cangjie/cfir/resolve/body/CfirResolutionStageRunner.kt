@@ -6,16 +6,19 @@ import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckerSinkImpl
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
 
 /**
- * 鍊欓€夐獙璇佺绾挎墽琛屽櫒銆? *
- * 瀵硅皟鐢ㄨВ鏋愪腑鐨勬瘡涓€欓€夛紙CfirCandidate锛夋寜鍏?callKind 鐨?resolutionSequence
- * 椤哄簭鎵ц楠岃瘉闃舵锛岄€氳繃 CfirCheckerSinkImpl 鏀堕泦璇婃柇锛? * 鏀寔 stopOnFirstError 鎻愬墠閫€鍑恒€? *
- * 瀵归綈 K2 ResolutionStageRunner銆? */
+ * 候选验证管线执行器。
+ * 它会按 `callKind.resolutionSequence` 的顺序执行所有验证阶段，
+ * 通过 `CfirCheckerSinkImpl` 收集诊断，并支持 `stopOnFirstError` 提前退出。
+ * 对齐 K2 `ResolutionStageRunner`。
+ */
 class CfirResolutionStageRunner {
 
     /**
-     * 瀵瑰€欓€夋墽琛岄獙璇佺绾裤€?     *
-     * 閬嶅巻 candidate.callInfo.callKind.resolutionSequence 涓殑姣忎釜闃舵锛?     * 鍚勯樁娈甸€氳繃 sink 鎶ュ憡璇婃柇骞跺彲鑳借Е鍙戞彁鍓嶉€€鍑恒€?     *
-     * @return 鍊欓€夐€氳繃绠＄嚎鍚庣殑鏈€缁堥€傜敤鎬х瓑绾?     */
+     * 对候选执行验证管线。
+     * 它会依次遍历 `candidate.callInfo.callKind.resolutionSequence` 中的阶段，
+     * 并通过 sink 上报诊断。
+     * @return 候选通过管线后的最终适用性等级
+     */
     fun processCandidate(
         candidate: CfirCandidate,
         context: CfirResolutionContext,

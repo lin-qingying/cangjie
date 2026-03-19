@@ -6,7 +6,7 @@ dependencies {
     api(project(":cfir:cfir-tree"))
     api(project(":cfir:cfir-common"))
     api(project(":cfir:cfir-cones"))
-    api(project(":cfir:diagnostics"))
+    api(project(":common:diagnostics"))
     api(project(":cfir:checkers"))
     api(project(":cfir:symbols"))
     api(project(":common"))

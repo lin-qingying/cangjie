@@ -52,7 +52,7 @@
 
 | | Kotlin K2 | 仓颉 C++ | 当前 CFIR | 差距 |
 |---|---|---|---|---|
-| 显式类型解析 | `FirTypeResolveTransformer` + scope 栈管理 | `ResolveNames()` + `SetTypeTy()` | `CfirTypeRefResolver` + `CfirExplicitTypeRefResolver` | 有实现 |
+| 显式类型解析 | `FirTypeResolveTransformer` + scope 栈管理 | `ResolveNames()` + `SetTypeTy()` | `CfirTypeRefResolver` + `CfirSpecificTypeResolverTransformer` | 有实现 |
 | Scope 管理 | `PersistentList<FirScope>` 不可变栈 | `ScopeManager` 可变栈 | `CfirScopeSession` | 框架已有，缺具体 scope 类型 |
 | 类型参数 scope | `FirMemberTypeParameterScope` | 隐含在作用域层级中 | 缺失 | 需实现 |
 | 嵌套类 scope | `getNestedClassifierScope()` | 层级 scopeName 管理 | 缺失 | 需实现 |

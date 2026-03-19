@@ -23,6 +23,8 @@ jansi = { module = "org.fusesource.jansi:jansi", version.ref = "jansi" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 flatbuffers-java = { module = "com.google.flatbuffers:flatbuffers-java", version.ref = "flatbuffers" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit5" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit5" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit5" }
 
 [plugins]
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

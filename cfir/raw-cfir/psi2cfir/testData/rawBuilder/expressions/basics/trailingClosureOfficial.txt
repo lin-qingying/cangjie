@@ -30,24 +30,8 @@ FILE: trailingClosureOfficial.cj
                         QUALIFIED_ACCESS(i)
                 }
             }
-            LAMBDA(i: <implicit>) {
-                FUNCTION_CALL(times) {
-                    receiver:
-                        QUALIFIED_ACCESS(i)
-                    arguments:
-                        QUALIFIED_ACCESS(i)
-                }
-            }
         }
         FUNCTION_CALL(f2) {
-            LAMBDA(i: <implicit>) {
-                FUNCTION_CALL(times) {
-                    receiver:
-                        QUALIFIED_ACCESS(i)
-                    arguments:
-                        QUALIFIED_ACCESS(i)
-                }
-            }
             LAMBDA(i: <implicit>) {
                 FUNCTION_CALL(times) {
                     receiver:

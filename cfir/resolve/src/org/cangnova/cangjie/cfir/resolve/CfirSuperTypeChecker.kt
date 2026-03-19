@@ -1,6 +1,6 @@
 ﻿package org.cangnova.cangjie.cfir.resolve
 
-import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors

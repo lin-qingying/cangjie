@@ -4,8 +4,9 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory2
 import org.cangnova.cangjie.cfir.diagnostics.InternalDiagnosticFactoryMethod
-import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
+import org.cangnova.cangjie.cfir.types.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.types.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.types.ConeUnresolvedSymbolError
@@ -42,6 +43,8 @@ private fun ConeDiagnostic.mapToCfirDiagnostic(
 
         is ConeUnresolvedNameError ->
             CfirErrors.UNRESOLVED_REFERENCE.on(source, name.asString(), operator, context)
+
+        is ConeSimpleDiagnostic -> null // 通用诊断暂不映射到前端诊断
     }
 }
 

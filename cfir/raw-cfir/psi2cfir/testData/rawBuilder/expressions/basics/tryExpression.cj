@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // STUB_FALLBACK_TO_AST:
 func safeDivide(a: Int64, b: Int64): Int64 {
     try {
@@ -16,3 +17,4 @@ func tryCatchOnly(x: Int64): Int64 {
         return 0
     }
 }
+

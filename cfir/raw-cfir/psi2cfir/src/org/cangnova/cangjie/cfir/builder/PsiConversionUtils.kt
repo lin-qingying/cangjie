@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.cfir.builder
 
-import org.cangnova.cangjie.cfir.source.AbstractCjSourceElement
-import org.cangnova.cangjie.cfir.source.CjSourceElement
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildBasicTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef

@@ -1,4 +1,4 @@
-﻿package org.cangnova.cangjie.cfir.resolve.transformers
+package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
@@ -84,6 +84,21 @@ class CfirExtensionsResolveProcessorTest {
 }
 
 private object NoopTypeResolver : CfirTypeResolver() {
+    override fun resolveType(
+        typeRef: org.cangnova.cangjie.cfir.types.CfirTypeRef,
+        configuration: org.cangnova.cangjie.cfir.resolve.TypeResolutionConfiguration,
+        areBareTypesAllowed: Boolean,
+        isOperandOfIsOperator: Boolean,
+        resolveDeprecations: Boolean,
+        supertypeSupplier: org.cangnova.cangjie.cfir.resolve.SupertypeSupplier,
+        expandTypeAliases: Boolean,
+    ): org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionResult {
+        return org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionResult(
+            type = org.cangnova.cangjie.cfir.types.ConeErrorType("NoopTypeResolver"),
+            diagnostic = null,
+        )
+    }
+
     override fun resolveClass(typeRef: org.cangnova.cangjie.cfir.types.CfirTypeRef): org.cangnova.cangjie.cfir.declarations.CfirClass? = null
 
     override fun resolveClass(classId: ClassId): org.cangnova.cangjie.cfir.declarations.CfirClass? = null

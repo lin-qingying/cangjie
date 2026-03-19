@@ -12,11 +12,11 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
 import org.cangnova.cangjie.cfir.references.CfirReference
-import org.cangnova.cangjie.cfir.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirQualifiedAccessImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
@@ -42,6 +42,11 @@ class CfirQualifiedAccessImpl @CfirImplementationDetail constructor(
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
      {
         this.coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun replaceCalleeReference(newCalleeReference: CfirReference)
+     {
+        this.calleeReference = newCalleeReference
     }
 
     override fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>)

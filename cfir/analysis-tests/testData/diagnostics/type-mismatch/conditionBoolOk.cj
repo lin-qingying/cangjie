@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 func ifConditionOk(x: Int64): Int64 {
     if (x > 0) {
         return x
@@ -19,3 +20,4 @@ func doWhileConditionOk(): Unit {
         i = i + 1
     } while (i < 3)
 }
+

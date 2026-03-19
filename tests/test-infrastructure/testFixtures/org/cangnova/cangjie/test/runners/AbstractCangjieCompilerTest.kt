@@ -1,19 +1,37 @@
 package org.cangnova.cangjie.test.runners
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.TestInfo
+
 import com.intellij.testFramework.TestDataFile
-import com.intellij.testIntegration.TestFailedLineManager
 import org.cangnova.cangjie.test.CangJieTestInfo
+import org.cangnova.cangjie.test.Constructor
 import org.cangnova.cangjie.test.NonGroupingTestRunner
 import org.cangnova.cangjie.test.TestInfrastructureInternals
 import org.cangnova.cangjie.test.builders.TestConfigurationBuilder
 import org.cangnova.cangjie.test.builders.nonGroupingPhaseTestRunner
 import org.cangnova.cangjie.test.model.ResultingArtifact
+import org.cangnova.cangjie.test.services.MetaInfosCleanupPreprocessor
+import org.cangnova.cangjie.test.services.SourceFilePreprocessor
+import org.cangnova.cangjie.test.services.TemporaryDirectoryManager
+import org.cangnova.cangjie.test.services.impl.JUnit5Assertions
+import org.cangnova.cangjie.test.services.impl.TemporaryDirectoryManagerImpl
 import org.cangnova.cangjie.test.toCangJieTestInfo
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.TestInfo
 
 abstract class AbstractCangjieCompilerTest {
+
+    companion object {
+        val defaultPreprocessors: List<Constructor<SourceFilePreprocessor>> = listOf(
+            ::MetaInfosCleanupPreprocessor,
+
+            )
+    }
+
     @OptIn(TestInfrastructureInternals::class)
     protected open val configuration: TestConfigurationBuilder.() -> Unit = {
+        assertions = JUnit5Assertions
+        useSourcePreprocessor(*defaultPreprocessors.toTypedArray())
+
+        useAdditionalService<TemporaryDirectoryManager>(::TemporaryDirectoryManagerImpl)
         startingArtifactFactory = { ResultingArtifact.Source() }
         @OptIn(TestInfrastructureInternals::class)
         testInfo = this@AbstractCangjieCompilerTest.testInfo
@@ -27,6 +45,7 @@ abstract class AbstractCangjieCompilerTest {
     protected open fun configureInternal(builder: TestConfigurationBuilder) {
         configure(builder)
     }
+
     private lateinit var testInfo: CangJieTestInfo
 
     lateinit var testRunner: NonGroupingTestRunner
@@ -35,8 +54,9 @@ abstract class AbstractCangjieCompilerTest {
     open fun runTest(@TestDataFile filePath: String) {
         initTestRunner(filePath).runTest(filePath)
     }
+
     @BeforeEach
-    fun initTestInfo(testInfo:  TestInfo) {
+    fun initTestInfo(testInfo: TestInfo) {
         initTestInfo(testInfo.toCangJieTestInfo())
     }
 

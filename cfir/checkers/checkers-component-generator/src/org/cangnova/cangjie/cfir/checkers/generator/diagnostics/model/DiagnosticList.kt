@@ -1,6 +1,6 @@
 ﻿package org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model
 
-import org.cangnova.cangjie.config.LanguageFeature
+import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.cfir.diagnostics.Severity
 import org.cangnova.cangjie.util.PrivateForInline
 import kotlin.properties.ReadOnlyProperty

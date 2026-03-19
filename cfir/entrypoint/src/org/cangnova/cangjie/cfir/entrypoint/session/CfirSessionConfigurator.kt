@@ -9,8 +9,8 @@ import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirTypeCheckers
 import org.cangnova.cangjie.cfir.analysis.checkersComponent
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticsContainer
 import org.cangnova.cangjie.cfir.diagnostics.CjRegisteredDiagnosticFactoriesStorage
-import org.cangnova.cangjie.cfir.diagnostics.registerDiagnosticFactoriesStorage
-import org.cangnova.cangjie.cfir.diagnostics.registeredDiagnosticFactoriesStorageOrNull
+import org.cangnova.cangjie.cfir.analysis.diagnostics.registerDiagnosticFactoriesStorage
+import org.cangnova.cangjie.cfir.analysis.diagnostics.registeredDiagnosticFactoriesStorageOrNull
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionService
 import org.cangnova.cangjie.cfir.session.CfirSession
