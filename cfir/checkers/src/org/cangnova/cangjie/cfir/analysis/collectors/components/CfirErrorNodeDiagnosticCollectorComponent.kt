@@ -3,6 +3,8 @@
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.toCfirDiagnostics
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
@@ -18,13 +20,14 @@ import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
-import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeUnresolvedError
-import org.cangnova.cangjie.cfir.types.ConeUnresolvedNameError
-import org.cangnova.cangjie.cfir.types.ConeUnresolvedReferenceError
-import org.cangnova.cangjie.cfir.types.ConeUnresolvedSymbolError
+import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
+import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.psi.CjNodeTypes
 
 /**
@@ -122,15 +125,6 @@ class CfirErrorNodeDiagnosticCollectorComponent(
         if (source.elementType == CjNodeTypes.ANNOTATION && diagnostic is ConeUnresolvedNameError) return
         if (source.kind == CjFakeSourceElementKind.ArrayAccessNameReference && diagnostic is ConeUnresolvedNameError) return
 
-        if (source.kind == CjFakeSourceElementKind.ImplicitConstructor ||
-            source.kind == CjFakeSourceElementKind.DesugaredForLoop
-        ) return
-
-        if (source.kind is CjFakeSourceElementKind.DesugaredPrefixSecondGetReference) return
-        if (source.kind == CjFakeSourceElementKind.UnresolvedWhenConditionSubject) return
-
-        if (source.kind == CjFakeSourceElementKind.DelegatedPropertyAccessor && diagnostic is ConeUnresolvedError) return
-
         val key = ReportedConeDiagnosticKey(
             reason = diagnostic.reason,
             sourceStart = source.startOffset,
@@ -140,9 +134,7 @@ class CfirErrorNodeDiagnosticCollectorComponent(
         )
         if (!reportedConeDiagnostics.add(key)) return
 
-        for (cfirDiagnostic in diagnostic.toCfirDiagnostics(source, context, callOrAssignmentSource)) {
-            reporter.report(cfirDiagnostic, context)
-        }
+        reportCfirDiagnostic(diagnostic, source, context, callOrAssignmentSource)
     }
 
     private fun CfirElement.toReferenceOrNull(): CfirReference? {
@@ -180,5 +172,63 @@ class CfirErrorNodeDiagnosticCollectorComponent(
         val callEnd: Int?,
     )
 
-}
 
+
+    private fun reportCfirDiagnostic(
+        diagnostic: ConeDiagnostic,
+        source: CjSourceElement?,
+        context: CheckerContext,
+        callOrAssignmentSource: CjSourceElement? = null,
+    ) {
+        reportCfirDiagnostic(
+            diagnostic,
+            source,
+            context,
+            session,
+            reporter,
+            callOrAssignmentSource,
+            valueParameter = null
+        )
+    }
+
+    companion object {
+        internal fun reportCfirDiagnostic(
+            diagnostic: ConeDiagnostic,
+            source: CjSourceElement?,
+            context: CheckerContext,
+            session: CfirSession = context.session,
+            reporter: DiagnosticReporter,
+            callOrAssignmentSource: CjSourceElement? = null,
+            valueParameter: CfirValueParameter? = null,
+        ) {
+
+
+            // Will be handled by [FirDelegatedPropertyChecker]
+            if (source?.kind == CjFakeSourceElementKind.DelegatedPropertyAccessor &&
+                (diagnostic is ConeUnresolvedNameError || diagnostic is ConeAmbiguityError ||   diagnostic is ConeInapplicableCandidateError)
+            ) {
+                return
+            }
+
+            if (source?.kind == CjFakeSourceElementKind.ImplicitConstructor || source?.kind == CjFakeSourceElementKind.DesugaredForLoop) {
+                // See FirForLoopChecker
+                return
+            }
+
+            // Prefix inc/dec on array access will have two calls to .get(...), don't report for the second one.
+            if (source?.kind is CjFakeSourceElementKind.DesugaredPrefixSecondGetReference) {
+                return
+            }
+
+            // If something is wrong with the `when` subject access, then there's already an error on the `when` subject itself.
+            if (source?.kind is CjFakeSourceElementKind.UnresolvedWhenConditionSubject) {
+                return
+            }
+
+            for (coneDiagnostic in diagnostic.toCfirDiagnostics(session, source, callOrAssignmentSource, valueParameter)) {
+                reporter.report(coneDiagnostic, context)
+            }
+        }
+    }
+
+}

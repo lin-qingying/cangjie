@@ -24,6 +24,8 @@ import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
+import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -50,7 +52,7 @@ object CallResolutionTestFixtures {
         parameterDefaults: List<Boolean>? = null,
         typeParameters: List<CfirTypeParameter> = emptyList(),
     ): CfirFunctionSymbol {
-        val symbol = CfirFunctionSymbol()
+        val symbol = CfirFunctionSymbol(CallableId(FqName.ROOT, Name.identifier(name)))
         val params = parameterTypes.mapIndexed { index, type ->
             buildValueParameter(
                 name = parameterNames?.getOrNull(index) ?: "p$index",
@@ -84,7 +86,7 @@ object CallResolutionTestFixtures {
         type: ConeCangjieType,
         hasDefault: Boolean = false,
     ): CfirValueParameter {
-        val symbol = CfirValueParameterSymbol()
+        val symbol = CfirValueParameterSymbol(CallableId(Name.identifier(name)))
         val defaultExpr: CfirExpression? = if (hasDefault) {
             CfirLiteralExpressionImpl(source = null, annotations = emptyList(), coneTypeOrNull = null, kind = CfirLiteralKind.INT, value = 0)
         } else null

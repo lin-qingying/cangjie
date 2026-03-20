@@ -3,10 +3,12 @@
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.DiagnosticList
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.PositioningStrategy
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjImportItem
 import org.cangnova.cangjie.psi.CjNamedDeclaration
@@ -147,6 +149,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Collection<String>>("missingCases")  // 缺失的匹配分支列表
         }
     }
+    val CONSTRAINT by object : DiagnosticGroup("Constraint") {
+        val CANNOT_INFER_PARAMETER_TYPE by error<CjElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<CfirTypeParameterSymbol>("parameter")
+        }
+    }
 
     /**
      * 类型检查（TypeCheck）相关的诊断
@@ -159,12 +166,14 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<ConeCangjieType>("actualType")  // 实际的类型
             parameter<Boolean>("isMismatchDueToNullability")  // 是否因为可空性导致不匹配
         }
+
         // the type argument is CjNamedDeclaration because PSI of FirProperty can be KtParameter in 'for' loops
-        val PATTERN_INITIALIZER_TYPE_MISMATCH by  error<CjNamedDeclaration>(PositioningStrategy.PATTERN_VARIABLE_INITIALIZER) {
+        val PATTERN_INITIALIZER_TYPE_MISMATCH by error<CjNamedDeclaration>(PositioningStrategy.PATTERN_VARIABLE_INITIALIZER) {
             parameter<ConeCangjieType>("expectedType")
             parameter<ConeCangjieType>("actualType")
             parameter<Boolean>("isMismatchDueToNullability")
         }
+
         // 返回类型不匹配：函数返回值的类型与声明的返回类型不符
         val RETURN_TYPE_MISMATCH by error<CjExpression> {
             parameter<ConeCangjieType>("expectedType")  // 期望的返回类型
@@ -185,6 +194,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<ConeCangjieType>("actualType")  // 赋值表达式的实际类型
             parameter<Boolean>("isMismatchDueToNullability")  // 是否因为可空性导致不匹配
             // PositioningStrategy.OPERATOR 表示将错误标记位置设置在赋值操作符处
+        }
+
+        // 泛型类型在无法从上下文推断时必须显式提供类型参数
+        val GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<Name>("typeName")
         }
 
         // 可见性错误：成员在当前上下文不可见
@@ -229,6 +243,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("literalText")  // 数字字面量的文本表示
             parameter<ConeCangjieType>("targetType")  // 目标类型（如Int32、Int64等）
         }
+
         // 常量求值除以零：在编译期求值时，被除数为0
         val CONST_EVAL_DIVIDE_BY_ZERO by error<PsiElement> {
             parameter<String>("operatorName")  // 运算符名称（如 "div"、"rem"）

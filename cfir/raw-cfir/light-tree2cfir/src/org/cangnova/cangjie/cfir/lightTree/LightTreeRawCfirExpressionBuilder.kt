@@ -19,6 +19,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.toCjLightSourceElement
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjNodeTypes
 
@@ -35,6 +36,10 @@ class LightTreeRawCfirExpressionBuilder(
     context: Context<LighterASTNode>,
     private val declarationBuilder: LightTreeRawCfirDeclarationBuilder,
 ) : AbstractRawCfirBuilder<LighterASTNode>(session, context) {
+
+    private fun callableIdFor(name: Name): CallableId {
+        return if (context.inLocalContext) CallableId(name) else CallableId(packageFqName, name)
+    }
 
     // ===== AbstractRawCfirBuilder 抽象方法实现 =====
 
@@ -433,7 +438,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
         return when (calleeNode.tokenType) {
             CjNodeTypes.REFERENCE_EXPRESSION -> {
-                null to buildNamedReference(Name.identifier(calleeNode.asText()))
+                null to buildNamedReference(referenceNameFromText(calleeNode.asText()))
             }
             CjNodeTypes.DOT_QUALIFIED_EXPRESSION -> {
                 var receiverNode: LighterASTNode? = null
@@ -453,9 +458,9 @@ class LightTreeRawCfirExpressionBuilder(
                 } else {
                     selectorNode?.asText() ?: "<error>"
                 }
-                recv to buildNamedReference(Name.identifier(refName))
+                recv to buildNamedReference(referenceNameFromText(refName))
             }
-            else -> null to buildNamedReference(Name.identifier(calleeNode.asText()))
+            else -> null to buildNamedReference(referenceNameFromText(calleeNode.asText()))
         }
     }
 
@@ -524,9 +529,9 @@ class LightTreeRawCfirExpressionBuilder(
             }
 
             val ref = if (calleeRef?.tokenType == CjNodeTypes.REFERENCE_EXPRESSION) {
-                buildNamedReference(Name.identifier(calleeRef!!.asText()))
+                buildNamedReference(referenceNameFromText(calleeRef!!.asText()))
             } else {
-                buildNamedReference(Name.identifier(calleeRef?.asText() ?: "<error>"))
+                buildNamedReference(referenceNameFromText(calleeRef?.asText() ?: "<error>"))
             }
             val arguments = argNodes.map { convertExpression(it) }.toMutableList()
             val typeArgs = typeArgNodes.map { typeRefNode ->
@@ -551,7 +556,7 @@ class LightTreeRawCfirExpressionBuilder(
         if (selector.tokenType == CjNodeTypes.REFERENCE_EXPRESSION) {
             return buildPropertyAccess {
                 source = node.toSource()
-                calleeReference = buildNamedReference(Name.identifier(selector.asText()))
+                calleeReference = buildNamedReference(referenceNameFromText(selector.asText()))
                 explicitReceiver = receiver
             }
         }
@@ -562,7 +567,7 @@ class LightTreeRawCfirExpressionBuilder(
     private fun convertNameReference(node: LighterASTNode): CfirQualifiedAccess {
         return buildQualifiedAccess {
             source = node.toSource()
-            calleeReference = buildNamedReference(Name.identifier(node.asText()))
+            calleeReference = buildNamedReference(referenceNameFromText(node.asText()))
         }
     }
 
@@ -804,7 +809,8 @@ class LightTreeRawCfirExpressionBuilder(
             convertTypeReference(typeRef, tree, source) { n -> n.toCjLightSourceElement(tree) }
         } ?: buildImplicitTypeRef()
 
-        val variable = buildSourceDeclaration(CfirPatternVariableSymbol()) { symbol ->
+        val variableName = if (paramName != null) Name.identifier(paramName) else Name.special("<anonymous>")
+        val variable = buildSourceDeclaration(CfirPatternVariableSymbol(callableIdFor(variableName))) { symbol ->
             buildPatternVariable {
                 source = (paramNode ?: node).toSource()
                 this.symbol = symbol
@@ -815,7 +821,7 @@ class LightTreeRawCfirExpressionBuilder(
                 returnTypeRef = paramTypeRef
                 pattern = buildBindingPattern {
                     source = (paramNode ?: node).toSource()
-                    name = if (paramName != null) Name.identifier(paramName) else Name.special("<anonymous>")
+                    name = variableName
                     typeRef = paramTypeRef
                 }
                 isVar = false
@@ -935,7 +941,8 @@ class LightTreeRawCfirExpressionBuilder(
             // 对齐 PSI: CjCatchParameter.typeReference 硬编码返回 null
             val paramTypeRef = buildImplicitTypeRef()
 
-            val parameter = buildSourceDeclaration(CfirValueParameterSymbol()) { symbol ->
+            val catchParamName = if (paramName != null) Name.identifier(paramName) else Name.special("<error>")
+            val parameter = buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(catchParamName))) { symbol ->
                 buildValueParameter {
                     source = (catchParamNode ?: catchNode).toSource()
                     this.symbol = symbol
@@ -944,7 +951,7 @@ class LightTreeRawCfirExpressionBuilder(
                     attributes = CfirDeclarationAttributes.EMPTY
                     status = CfirDeclarationStatusImpl.DEFAULT
                     returnTypeRef = paramTypeRef
-                    name = if (paramName != null) Name.identifier(paramName) else Name.special("<error>")
+                    name = catchParamName
                 }
             }
             val body = catchBodyNode?.let { convertBlock(it) } ?: buildBlock { source = catchNode.toSource() }
@@ -992,7 +999,8 @@ class LightTreeRawCfirExpressionBuilder(
 
         val body = bodyNode?.let { convertBlock(it) }
 
-        val anonymousFunction = buildSourceDeclaration(CfirFunctionSymbol()) { symbol ->
+        val anonymousName = Name.special("<anonymous>")
+        val anonymousFunction = buildSourceDeclaration(CfirFunctionSymbol(callableIdFor(anonymousName))) { symbol ->
             buildFunction {
                 source = node.toSource()
                 this.symbol = symbol
@@ -1001,7 +1009,7 @@ class LightTreeRawCfirExpressionBuilder(
                 attributes = CfirDeclarationAttributes.EMPTY
                 status = CfirDeclarationStatusImpl.DEFAULT
                 returnTypeRef = buildImplicitTypeRef()
-                name = Name.special("<anonymous>")
+                name = anonymousName
                 this.valueParameters.addAll(valueParams)
                 this.body = body
                 isMut = false
@@ -1188,6 +1196,15 @@ class LightTreeRawCfirExpressionBuilder(
         val declaration = builder(symbol)
         symbol.bind(declaration)
         return declaration
+    }
+
+    private fun referenceNameFromText(text: String): Name {
+        val raw = text.trim()
+        if (raw.isEmpty()) return Name.identifier("<error>")
+        val ltIndex = raw.indexOf('<')
+        val base = if (ltIndex >= 0) raw.substring(0, ltIndex).trim() else raw
+        val safe = if (base.isNotEmpty()) base else raw
+        return Name.identifier(safe)
     }
 
     companion object {

@@ -52,6 +52,7 @@
             <option value="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir" />
             <option value="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common" />
             <option value="$PROJECT_DIR$/cfir/resolve" />
+            <option value="$PROJECT_DIR$/cfir/semantics" />
             <option value="$PROJECT_DIR$/cfir/symbols" />
             <option value="$PROJECT_DIR$/common" />
             <option value="$PROJECT_DIR$/common/diagnostics" />

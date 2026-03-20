@@ -10,7 +10,7 @@ import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostic.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 

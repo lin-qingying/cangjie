@@ -13,7 +13,6 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPropertyImpl
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
@@ -31,7 +30,6 @@ class CfirPropertyBuilder {
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
     lateinit var name: Name
-    var initializer: CfirExpression? = null
     var getter: CfirFunction? = null
     var setter: CfirFunction? = null
 
@@ -48,7 +46,6 @@ class CfirPropertyBuilder {
             typeParameters,
             returnTypeRef,
             name,
-            initializer,
             getter,
             setter,
         ).also {
@@ -82,7 +79,6 @@ inline fun buildPropertyCopy(original: CfirProperty, init: CfirPropertyBuilder.(
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.name = original.name
-    copyBuilder.initializer = original.initializer
     copyBuilder.getter = original.getter
     copyBuilder.setter = original.setter
     return copyBuilder.apply(init).build()

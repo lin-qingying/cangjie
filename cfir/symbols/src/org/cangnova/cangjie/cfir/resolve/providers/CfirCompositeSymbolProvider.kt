@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.providers
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -32,5 +33,21 @@ class CfirCompositeSymbolProvider(
 
     override fun hasPackage(fqName: FqName): Boolean {
         return providers.any { it.hasPackage(fqName) }
+    }
+
+    override fun getClassIdBySymbol(classSymbol: CfirClassSymbol): ClassId? {
+        for (provider in providers) {
+            val classId = provider.getClassIdBySymbol(classSymbol)
+            if (classId != null) return classId
+        }
+        return null
+    }
+
+    override fun getEnumConstructorOwnerClassId(symbol: CfirEnumConstructorSymbol): ClassId? {
+        for (provider in providers) {
+            val classId = provider.getEnumConstructorOwnerClassId(symbol)
+            if (classId != null) return classId
+        }
+        return null
     }
 }

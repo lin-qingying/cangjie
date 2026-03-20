@@ -216,10 +216,16 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/enum")
         }
 
-        @TestMetadata("simpleEnum.cj")
+        @TestMetadata("errorSimpleEnum.cj")
         @Test
-        fun testSimpleEnum() {
-            runTest("cfir/analysis-tests/testData/diagnostics/enum/simpleEnum.cj")
+        fun testErrorSimpleEnum() {
+            runTest("cfir/analysis-tests/testData/diagnostics/enum/errorSimpleEnum.cj")
+        }
+
+        @TestMetadata("noErrorSimpleEnum.cj")
+        @Test
+        fun testNoErrorSimpleEnum() {
+            runTest("cfir/analysis-tests/testData/diagnostics/enum/noErrorSimpleEnum.cj")
         }
     }
 

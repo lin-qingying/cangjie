@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.scopes.impl
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirImportScope
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -54,6 +55,16 @@ class CfirExplicitSimpleImportingScope(
             val packageFqName = fqName.parent()
             val callableName = fqName.shortName()
             symbolProvider.getTopLevelFunctionSymbols(packageFqName, callableName).forEach(processor)
+        }
+    }
+
+    override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
+        val imports = importsByName[name] ?: return
+        for (import in imports) {
+            val fqName = import.importedFqName ?: continue
+            val packageFqName = fqName.parent()
+            val callableName = fqName.shortName()
+            symbolProvider.getTopLevelCallableSymbols(packageFqName, callableName).forEach(processor)
         }
     }
 

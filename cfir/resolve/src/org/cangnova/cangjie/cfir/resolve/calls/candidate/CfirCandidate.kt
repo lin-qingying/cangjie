@@ -2,9 +2,15 @@
 
 import org.cangnova.cangjie.cfir.resolve.calls.CfirTypeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.inference.CfirConstraintSystem
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
+import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
+import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
 
 /**
  * 调用解析候选，面向 Phase 3。
@@ -65,6 +71,17 @@ class CfirCandidate(
             is org.cangnova.cangjie.cfir.declarations.CfirFunction -> decl.returnTypeRef
             is org.cangnova.cangjie.cfir.declarations.CfirProperty -> decl.returnTypeRef
             is org.cangnova.cangjie.cfir.declarations.CfirConstructor -> decl.returnTypeRef
+            is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> {
+                val enumSymbol = decl.symbol as? org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+                    ?: return null
+                val classId = callInfo.session.symbolProvider.getEnumConstructorOwnerClassId(enumSymbol)
+                    ?: callInfo.session.cfirProvider.getEnumConstructorOwnerClassId(enumSymbol)
+                    ?: return null
+                val typeArgs = decl.typeParameters.map {
+                    ConeTypeParameterType(ConeTypeParameterLookupTag(it.name.asString()))
+                }
+                return substitutor.substituteOrSelf(ConeEnumType(ConeClassLookupTagImpl(classId), typeArgs))
+            }
             else -> return null
         }
         val coneType = (typeRef as? org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef)?.coneType

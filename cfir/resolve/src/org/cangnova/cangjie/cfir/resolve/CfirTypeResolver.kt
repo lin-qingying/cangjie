@@ -21,13 +21,16 @@ import org.cangnova.cangjie.cfir.types.CfirVArrayTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
-import org.cangnova.cangjie.cfir.types.ConeDiagnostic
+
+import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
-import org.cangnova.cangjie.cfir.types.ConeUnresolvedSymbolError
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
+import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -178,11 +181,22 @@ class CfirTypeResolverImpl(
             ).type
         }
 
-        return ConeClassLikeType(
-            lookupTag = ConeClassLookupTagImpl(classId),
-            typeArguments = resolvedArguments,
-            isInterface = resolvedClass.classKind == CfirClassKind.INTERFACE,
-        )
+        val lookupTag = ConeClassLookupTagImpl(classId)
+        return when (resolvedClass.classKind) {
+            CfirClassKind.CLASS, CfirClassKind.INTERFACE -> ConeClassLikeType(
+                lookupTag = lookupTag,
+                typeArguments = resolvedArguments,
+                isInterface = resolvedClass.classKind == CfirClassKind.INTERFACE,
+            )
+            CfirClassKind.STRUCT -> ConeStructType(
+                lookupTag = lookupTag,
+                typeArguments = resolvedArguments,
+            )
+            CfirClassKind.ENUM -> ConeEnumType(
+                lookupTag = lookupTag,
+                typeArguments = resolvedArguments,
+            )
+        }
     }
 
     private fun resolveSimpleClassId(

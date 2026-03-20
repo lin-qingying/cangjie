@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.scopes.impl
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirClassScope
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -57,6 +58,13 @@ class CfirClassUseSiteMemberScope(
         }
         for (parent in parentScopes) {
             parent.processPropertiesByName(name, processor)
+        }
+    }
+
+    override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
+        declaredScope.processCallablesByName(name, processor)
+        for (parent in parentScopes) {
+            parent.processCallablesByName(name, processor)
         }
     }
 

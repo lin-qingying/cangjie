@@ -1,21 +1,17 @@
-﻿package org.cangnova.cangjie.cfir.resolve.calls.stages
+package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeTupleType
 
 /**
  * 参数类型检查阶段：逐个验证实参与形参的类型兼容性。
- * 遍历 `argumentMapping` 中的每对 `(实参, 形参)`，
- * 用 `ConeSubtypeChecker` 判断实参类型是否为形参类型的子类型。
- * `IdealInt` / `IdealFloat` 的兼容性也由 `ConeSubtypeChecker` 统一处理。
- * 对齐 K2 `CheckArguments`。
  */
 object CfirCheckArguments : CfirResolutionStage() {
 
@@ -24,52 +20,49 @@ object CfirCheckArguments : CfirResolutionStage() {
         sink: CfirCheckerSink,
         context: CfirResolutionContext,
     ) {
-        val valueParameters = extractValueParameters(candidate.symbol) ?: return
+        val parameterTypes = extractParameterTypes(candidate.symbol) ?: return
         val arguments = candidate.callInfo.arguments
-        val mapping = candidate.argumentMapping
 
-        for ((argIndex, paramIndex) in mapping) {
+        for ((argIndex, paramIndex) in candidate.argumentMapping) {
             if (sink.shouldStop) return
 
             val argument = arguments.getOrNull(argIndex) ?: continue
-            val parameter = valueParameters.getOrNull(paramIndex) ?: continue
-
             val argType = argument.coneTypeOrNull ?: continue
-            val paramType = extractParameterType(parameter) ?: continue
-
-            // 对形参类型应用候选上的类型替换
+            val paramType = parameterTypes.getOrNull(paramIndex) ?: continue
             val substitutedParamType = candidate.substitutor.substituteOrSelf(paramType)
 
-            // 错误类型不再继续检查，直接静默传播
             if (argType is ConeErrorType || substitutedParamType is ConeErrorType) continue
-
-            // 子类型检查
             if (!context.subtypeChecker.isSubtypeOf(argType, substitutedParamType)) {
                 sink.reportDiagnostic(
                     ArgumentTypeMismatch(
                         expectedType = substitutedParamType,
                         actualType = argType,
                         parameterIndex = paramIndex,
-                    )
+                    ),
                 )
             }
         }
     }
 
-    /** 从候选符号中提取值参数列表。 */
-    private fun extractValueParameters(symbol: org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>): List<CfirValueParameter>? {
+    private fun extractParameterTypes(symbol: CfirCallableSymbol<*>): List<ConeCangjieType>? {
         if (!symbol.isBound) return null
         return when (val decl = symbol.cfir) {
-            is CfirFunction -> decl.valueParameters
-            is CfirConstructor -> decl.valueParameters
+            is CfirFunction -> decl.valueParameters.mapNotNull {
+                (it.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+            }
+            is CfirConstructor -> decl.valueParameters.mapNotNull {
+                (it.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+            }
+            is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> {
+                val payloadType = (decl.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return emptyList()
+                when (payloadType) {
+                    is ConeTupleType -> payloadType.elementTypes
+                    is ConeErrorType -> emptyList()
+                    else -> listOf(payloadType)
+                }
+            }
             else -> null
         }
-    }
-
-    /** 从值参数声明中提取参数类型。 */
-    private fun extractParameterType(parameter: CfirValueParameter): ConeCangjieType? {
-        val typeRef = parameter.returnTypeRef
-        return (typeRef as? CfirResolvedTypeRef)?.coneType
     }
 }
 

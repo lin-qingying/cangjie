@@ -1,11 +1,14 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.scopes.CfirClassScope
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.Name
@@ -36,14 +39,22 @@ class CfirClassDeclaredMemberScope(
         memberIndex.properties[name]?.forEach(processor)
     }
 
+    override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
+        memberIndex.enumConstructors[name]?.forEach(processor)
+        memberIndex.functions[name]?.forEach(processor)
+        memberIndex.properties[name]?.forEach(processor)
+    }
+
     private class MemberIndex(
         val classifiers: Map<Name, List<CfirClassSymbol>>,
+        val enumConstructors: Map<Name, List<CfirEnumConstructorSymbol>>,
         val functions: Map<Name, List<CfirFunctionSymbol>>,
         val properties: Map<Name, List<CfirPropertySymbol>>,
     )
 
     private fun buildIndex(declarations: List<CfirDeclaration>): MemberIndex {
         val classifiers = HashMap<Name, MutableList<CfirClassSymbol>>()
+        val enumConstructors = HashMap<Name, MutableList<CfirEnumConstructorSymbol>>()
         val functions = HashMap<Name, MutableList<CfirFunctionSymbol>>()
         val properties = HashMap<Name, MutableList<CfirPropertySymbol>>()
 
@@ -57,6 +68,10 @@ class CfirClassDeclaredMemberScope(
                     val sym = decl.symbol as? CfirFunctionSymbol ?: continue
                     functions.getOrPut(decl.name) { mutableListOf() }.add(sym)
                 }
+                is CfirEnumConstructor -> {
+                    val sym = decl.symbol as? CfirEnumConstructorSymbol ?: continue
+                    enumConstructors.getOrPut(decl.name) { mutableListOf() }.add(sym)
+                }
                 is CfirProperty -> {
                     val sym = decl.symbol as? CfirPropertySymbol ?: continue
                     properties.getOrPut(decl.name) { mutableListOf() }.add(sym)
@@ -64,6 +79,6 @@ class CfirClassDeclaredMemberScope(
                 else -> { /* 忽略其他声明类型 */ }
             }
         }
-        return MemberIndex(classifiers, functions, properties)
+        return MemberIndex(classifiers, enumConstructors, functions, properties)
     }
 }

@@ -94,6 +94,9 @@
       <module name="cangjie.cfir.resolve" options="-proc:none" />
       <module name="cangjie.cfir.resolve.main" options="-proc:none" />
       <module name="cangjie.cfir.resolve.test" options="-proc:none" />
+      <module name="cangjie.cfir.semantics" options="-proc:none" />
+      <module name="cangjie.cfir.semantics.main" options="-proc:none" />
+      <module name="cangjie.cfir.semantics.test" options="-proc:none" />
       <module name="cangjie.cfir.symbols" options="-proc:none" />
       <module name="cangjie.cfir.symbols.main" options="-proc:none" />
       <module name="cangjie.cfir.symbols.test" options="-proc:none" />

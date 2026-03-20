@@ -2,6 +2,7 @@
 
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirFieldVariableImpl
+import org.cangnova.cangjie.cfir.declarations.impl.CfirEnumConstructorImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPatternVariableImpl
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
@@ -185,39 +186,41 @@ class CfirDeclarationsResolveTransformer(
         return constructor
     }
 
+    override fun transformEnumConstructor(
+        enumConstructor: CfirEnumConstructor,
+        data: CfirResolutionMode,
+    ): CfirEnumConstructor {
+        val savedContext = context.towerDataContext
+
+        context.withContainer(enumConstructor) {
+            val ownerEnum = context.containers.asReversed().filterIsInstance<CfirClass>().firstOrNull {
+                it.classKind == CfirClassKind.ENUM
+            }
+            if (ownerEnum != null && enumConstructor.typeParameters.isEmpty()) {
+                (enumConstructor as? CfirEnumConstructorImpl)?.typeParameters = ownerEnum.typeParameters
+            }
+
+            if (enumConstructor.typeParameters.isNotEmpty()) {
+                context.addNonLocalScope(CfirTypeParameterScopeImpl(enumConstructor.typeParameters))
+            }
+
+            if (enumConstructor.returnTypeRef !is CfirImplicitTypeRef) {
+                enumConstructor.replaceReturnTypeRef(
+                    resolveExplicitTypeRefIfNeeded(enumConstructor.returnTypeRef, enumConstructor.typeParameters),
+                )
+            }
+        }
+
+        context.withTowerDataContext(savedContext) {}
+        bumpPhase(enumConstructor)
+        return enumConstructor
+    }
+
     override fun transformProperty(property: CfirProperty, data: CfirResolutionMode): CfirProperty {
         val savedContext = context.towerDataContext
 
         context.withContainer(property) {
             property.replaceReturnTypeRef(resolveExplicitTypeRefIfNeeded(property.returnTypeRef, property.typeParameters))
-
-            val explicitTypeRef = property.returnTypeRef
-            val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
-                CfirResolutionMode.WithExpectedType(explicitTypeRef.coneType)
-            } else {
-                CfirResolutionMode.ContextIndependent
-            }
-
-            val initializer = property.initializer
-            if (initializer != null) {
-                (property as? org.cangnova.cangjie.cfir.declarations.impl.CfirPropertyImpl)?.initializer = initializer.transform<CfirExpression, CfirResolutionMode>(
-                    transformer, initializerMode
-                )
-            }
-
-            if (property.returnTypeRef is CfirImplicitTypeRef) {
-                val initType = property.initializer?.coneTypeOrNull
-                if (initType != null) {
-                    val resolvedType = IdealTypeResolver.resolveIfIdeal(initType)
-                    property.replaceReturnTypeRef(
-                        buildResolvedTypeRef {
-                            source = property.returnTypeRef.source
-                            coneType = resolvedType
-                            delegatedTypeRef = property.returnTypeRef
-                        },
-                    )
-                }
-            }
         }
 
         context.withTowerDataContext(savedContext) {}

@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.types
 
+
+
 /**
  * 错误类型，表示类型解析失败。
  * 对应仓颉编译器中的 InvalidTy。

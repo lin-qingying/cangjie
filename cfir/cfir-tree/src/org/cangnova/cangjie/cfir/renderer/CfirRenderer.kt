@@ -479,16 +479,7 @@ class CfirRenderer(
             resolvePhaseRenderer?.render(property)
             val prefix = renderStatus(property.status, property.source).let { if (it.isNotEmpty()) "$it " else "" }
             val keyword = "prop"
-            val init = if (property.initializer != null) " = ..." else ""
-            println("${prefix}$keyword ${property.name.asString()}: ${renderType(property.returnTypeRef)}$init")
-            property.initializer?.let {
-                printer.pushIndent()
-                println("initializer:")
-                printer.pushIndent()
-                it.accept(this, data)
-                printer.popIndent()
-                printer.popIndent()
-            }
+            println("${prefix}$keyword ${property.name.asString()}: ${renderType(property.returnTypeRef)}")
         }
 
         override fun visitFieldVariable(variable: CfirFieldVariable, data: Unit) {

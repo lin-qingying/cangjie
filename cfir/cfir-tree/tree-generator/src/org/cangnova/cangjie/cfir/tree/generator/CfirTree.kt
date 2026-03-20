@@ -294,7 +294,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +FieldSets.typeParameters
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("name", nameType)
-        +field("initializer", expression, nullable = true, withTransform = true)
+
         +field("getter", function, nullable = true, withTransform = true)
         +field("setter", function, nullable = true, withTransform = true)
     }

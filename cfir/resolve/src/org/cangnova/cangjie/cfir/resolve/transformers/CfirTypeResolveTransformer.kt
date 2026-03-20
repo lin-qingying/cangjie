@@ -37,6 +37,8 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
+import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.SpecialNames
 
 /**
  * TYPES 阶段处理器。
@@ -215,7 +217,7 @@ class CfirTypeResolveTransformer(
         if (klass.declarations.any { it is CfirConstructor }) return
 
         val classImpl = klass as? CfirClassImpl ?: return
-        val symbol = CfirConstructorSymbol()
+        val symbol = CfirConstructorSymbol(CallableId(SpecialNames.INIT))
         val constructor = buildConstructor {
             source = klass.source
             moduleData = klass.moduleData

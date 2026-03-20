@@ -8,9 +8,15 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirCallConflictResolver
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
+import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
+import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -113,6 +119,17 @@ class CfirCallResolver(
         val typeRef = when (val declaration = symbol.cfir) {
             is org.cangnova.cangjie.cfir.declarations.CfirFunction -> declaration.returnTypeRef
             is org.cangnova.cangjie.cfir.declarations.CfirConstructor -> declaration.returnTypeRef
+            is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> {
+                val enumSymbol = declaration.symbol as? org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+                    ?: return ConeErrorType("unsupported enum constructor symbol")
+                val classId = session.symbolProvider.getEnumConstructorOwnerClassId(enumSymbol)
+                    ?: session.cfirProvider.getEnumConstructorOwnerClassId(enumSymbol)
+                    ?: return ConeErrorType("unresolved enum constructor owner")
+                val typeArguments = declaration.typeParameters.map {
+                    ConeTypeParameterType(ConeTypeParameterLookupTag(it.name.asString()))
+                }
+                return ConeEnumType(ConeClassLookupTagImpl(classId), typeArguments)
+            }
             else -> return ConeErrorType("unsupported callable symbol")
         }
         return if (typeRef is CfirResolvedTypeRef) {

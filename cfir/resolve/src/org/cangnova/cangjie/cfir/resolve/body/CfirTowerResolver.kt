@@ -2,6 +2,8 @@
 
 import org.cangnova.cangjie.cfir.CfirSessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
@@ -177,13 +179,28 @@ class CfirTowerResolver(
         name: Name,
         sink: MutableList<CfirCallableSymbol<*>>,
     ) {
-        scope.processFunctionsByName(name) { sink.add(it) }
+        val unique = LinkedHashSet<CfirCallableSymbol<*>>()
+        scope.processCallablesByName(name) { symbol ->
+            if (symbol.isInvokableSymbol()) {
+                unique.add(symbol)
+            }
+        }
+        scope.processFunctionsByName(name) { unique.add(it) }
         scope.processClassifiersByName(name) { classSymbol ->
             classSymbol.cfir.declarations
                 .asSequence()
                 .filterIsInstance<CfirConstructor>()
                 .mapNotNull { it.symbol as? CfirCallableSymbol<*> }
-                .forEach(sink::add)
+                .forEach(unique::add)
+        }
+        sink.addAll(unique)
+    }
+
+    private fun CfirCallableSymbol<*>.isInvokableSymbol(): Boolean {
+        if (!isBound) return false
+        return when (cfir) {
+            is CfirFunction, is CfirConstructor, is CfirEnumConstructor -> true
+            else -> false
         }
     }
 }

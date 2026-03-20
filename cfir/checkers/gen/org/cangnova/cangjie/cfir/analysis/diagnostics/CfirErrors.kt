@@ -10,10 +10,12 @@ import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.cfir.analysis.diagnostics.*
 import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.diagnostics.rendering.BaseDiagnosticRendererFactory
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjImportItem
 import org.cangnova.cangjie.psi.CjNamedDeclaration
@@ -51,12 +53,16 @@ object CfirErrors : CjDiagnosticsContainer() {
     // Match
     val NON_EXHAUSTIVE_MATCH: CjDiagnosticFactory1<Collection<String>> = CjDiagnosticFactory1("CFIR_NON_EXHAUSTIVE_MATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
+    // Constraint
+    val CANNOT_INFER_PARAMETER_TYPE: CjDiagnosticFactory1<CfirTypeParameterSymbol> = CjDiagnosticFactory1("CFIR_CANNOT_INFER_PARAMETER_TYPE", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, CjElement::class, getRendererFactory())
+
     // TypeCheck
     val TYPE_MISMATCH: CjDiagnosticFactory3<ConeCangjieType, ConeCangjieType, Boolean> = CjDiagnosticFactory3("CFIR_TYPE_MISMATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val PATTERN_INITIALIZER_TYPE_MISMATCH: CjDiagnosticFactory3<ConeCangjieType, ConeCangjieType, Boolean> = CjDiagnosticFactory3("CFIR_PATTERN_INITIALIZER_TYPE_MISMATCH", Severity.ERROR, SourceElementPositioningStrategies.PATTERN_VARIABLE_INITIALIZER, CjNamedDeclaration::class, getRendererFactory())
     val RETURN_TYPE_MISMATCH: CjDiagnosticFactory3<ConeCangjieType, ConeCangjieType, Boolean> = CjDiagnosticFactory3("CFIR_RETURN_TYPE_MISMATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, CjExpression::class, getRendererFactory())
     val ARGUMENT_TYPE_MISMATCH: CjDiagnosticFactory3<ConeCangjieType, ConeCangjieType, Boolean> = CjDiagnosticFactory3("CFIR_ARGUMENT_TYPE_MISMATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ASSIGNMENT_TYPE_MISMATCH: CjDiagnosticFactory3<ConeCangjieType, ConeCangjieType, Boolean> = CjDiagnosticFactory3("CFIR_ASSIGNMENT_TYPE_MISMATCH", Severity.ERROR, SourceElementPositioningStrategies.OPERATOR, CjExpression::class, getRendererFactory())
+    val GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
     val INVISIBLE_MEMBER: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_INVISIBLE_MEMBER", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val INVISIBLE_REFERENCE: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_INVISIBLE_REFERENCE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val OVERRIDING_RETURN_TYPE_MISMATCH: CjDiagnosticFactory3<ConeCangjieType, ConeCangjieType, Name> = CjDiagnosticFactory3("CFIR_OVERRIDING_RETURN_TYPE_MISMATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())

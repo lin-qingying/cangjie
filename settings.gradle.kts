@@ -34,6 +34,7 @@ include(":psi")
 
 include(":cfir")
 include(":cfir:cfir-common")
+include(":cfir:semantics")
 include(":cfir:cfir-cones")
 include(":common:diagnostics")
 include(":cfir:symbols")

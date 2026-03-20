@@ -7,7 +7,6 @@ package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -31,7 +30,6 @@ abstract class CfirProperty : CfirCallableDeclaration(), CfirControlFlowGraphOwn
     abstract val typeParameters: List<CfirTypeParameter>
     abstract val returnTypeRef: CfirTypeRef
     abstract val name: Name
-    abstract val initializer: CfirExpression?
     abstract val getter: CfirFunction?
     abstract val setter: CfirFunction?
 
@@ -64,9 +62,6 @@ abstract class CfirProperty : CfirCallableDeclaration(), CfirControlFlowGraphOwn
 
 
     abstract fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirProperty
-
-
-    abstract fun <D> transformInitializer(transformer: CfirTransformer<D>, data: D): CfirProperty
 
 
     abstract fun <D> transformGetter(transformer: CfirTransformer<D>, data: D): CfirProperty
