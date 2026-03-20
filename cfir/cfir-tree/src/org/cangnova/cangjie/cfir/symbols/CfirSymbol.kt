@@ -3,6 +3,11 @@ package org.cangnova.cangjie.cfir.symbols
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.constant.EvaluatedConstTracker
+import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.SpecialNames
 
 /**
  * 符号基类。每个声明对应一个唯一的符号实例。
@@ -28,73 +33,156 @@ sealed class CfirSymbol<out D : CfirDeclaration> {
         check(_fir == null) { "Symbol is already bound" }
         _fir = declaration
     }
+
+    open val debugName: String
+        get() = toString()
 }
 
 // ---- 分类器符号 ----
 
 sealed class CfirClassifierSymbol<D : CfirDeclaration> : CfirSymbol<D>()
 
-class CfirClassSymbol : CfirClassifierSymbol<CfirClass>() {
+sealed class CfirClassLikeSymbol<D : CfirDeclaration>(
+    open val classId: ClassId = ClassId(FqName.ROOT, SpecialNames.NO_NAME_PROVIDED),
+) : CfirClassifierSymbol<D>() {
+    open val name: Name
+        get() = classId.shortClassName
+
+    override val debugName: String
+        get() = classId.asString()
+}
+
+class CfirClassSymbol(
+    override val classId: ClassId = ClassId(FqName.ROOT, SpecialNames.NO_NAME_PROVIDED),
+) : CfirClassLikeSymbol<CfirClass>(classId) {
+    override val name: Name
+        get() = if (isBound) cfir.name else super.name
+
     override fun toString(): String =
         if (isBound) "CfirClassSymbol(${cfir.name})" else "CfirClassSymbol(unbound)"
 }
 
-class CfirTypeAliasSymbol : CfirClassifierSymbol<CfirTypeAlias>() {
+class CfirTypeAliasSymbol(
+    override val classId: ClassId = ClassId(FqName.ROOT, SpecialNames.NO_NAME_PROVIDED),
+) : CfirClassLikeSymbol<CfirTypeAlias>(classId) {
+    override val name: Name
+        get() = if (isBound) cfir.name else super.name
+
     override fun toString(): String =
         if (isBound) "CfirTypeAliasSymbol(${cfir.name})" else "CfirTypeAliasSymbol(unbound)"
 }
 
 class CfirTypeParameterSymbol : CfirClassifierSymbol<CfirTypeParameter>() {
+    val name: Name
+        get() = if (isBound) cfir.name else SpecialNames.NO_NAME_PROVIDED
+
+    override val debugName: String
+        get() = name.asString()
+
     override fun toString(): String =
         if (isBound) "CfirTypeParameterSymbol(${cfir.name})" else "CfirTypeParameterSymbol(unbound)"
 }
 
 // ---- 可调用符号 ----
 
-sealed class CfirCallableSymbol<D : CfirCallableDeclaration> : CfirSymbol<D>()
+sealed class CfirCallableSymbol<D : CfirCallableDeclaration> : CfirSymbol<D>() {
+    abstract val callableId: CallableId
 
-class CfirFunctionSymbol : CfirCallableSymbol<CfirFunction>() {
+    abstract val name: Name
+
+    fun callableIdAsString(): String = callableId.toString()
+
+    override val debugName: String
+        get() = name.asString()
+}
+
+class CfirFunctionSymbol(
+    override val callableId: CallableId,
+) : CfirCallableSymbol<CfirFunction>() {
+    override val name: Name
+        get() = callableId.callableName
+
     override fun toString(): String =
         if (isBound) "CfirFunctionSymbol(${cfir.name})" else "CfirFunctionSymbol(unbound)"
 }
 
-class CfirMainFunctionSymbol : CfirCallableSymbol<CfirMainFunction>() {
+class CfirMainFunctionSymbol(
+    override val callableId: CallableId,
+) : CfirCallableSymbol<CfirMainFunction>() {
+    override val name: Name
+        get() = callableId.callableName
+
     override fun toString(): String =
         if (isBound) "CfirMainFunctionSymbol" else "CfirMainFunctionSymbol(unbound)"
 }
 
-class CfirMacroDeclarationSymbol : CfirCallableSymbol<CfirMacroDeclaration>() {
+class CfirMacroDeclarationSymbol(
+    override val callableId: CallableId,
+) : CfirCallableSymbol<CfirMacroDeclaration>() {
+    override val name: Name
+        get() = callableId.callableName
+
     override fun toString(): String =
         if (isBound) "CfirMacroDeclarationSymbol(${cfir.name})" else "CfirMacroDeclarationSymbol(unbound)"
 }
 
-class CfirFinalizerSymbol : CfirCallableSymbol<CfirFinalizer>() {
+class CfirFinalizerSymbol(
+    override val callableId: CallableId,
+) : CfirCallableSymbol<CfirFinalizer>() {
+    override val name: Name
+        get() = callableId.callableName
+
     override fun toString(): String =
         if (isBound) "CfirFinalizerSymbol" else "CfirFinalizerSymbol(unbound)"
 }
 
-class CfirConstructorSymbol : CfirCallableSymbol<CfirConstructor>() {
+class CfirConstructorSymbol(
+    override val callableId: CallableId,
+) : CfirCallableSymbol<CfirConstructor>() {
+    override val name: Name
+        get() = callableId.callableName
+
     override fun toString(): String =
         if (isBound) "CfirConstructorSymbol" else "CfirConstructorSymbol(unbound)"
 }
 
-class CfirPropertySymbol : CfirCallableSymbol<CfirProperty>() {
+class CfirPropertySymbol(
+    override val callableId: CallableId,
+) : CfirCallableSymbol<CfirProperty>() {
+    override val name: Name
+        get() = callableId.callableName
+
     override fun toString(): String =
         if (isBound) "CfirPropertySymbol(${cfir.name})" else "CfirPropertySymbol(unbound)"
 }
 
-class CfirFieldVariableSymbol : CfirCallableSymbol<CfirFieldVariable>() {
+class CfirFieldVariableSymbol(
+    override val callableId: CallableId,
+) : CfirCallableSymbol<CfirFieldVariable>() {
+    override val name: Name
+        get() = callableId.callableName
+
     override fun toString(): String =
         if (isBound) "CfirFieldVariableSymbol(${cfir.name})" else "CfirFieldVariableSymbol(unbound)"
 }
 
-class CfirPatternVariableSymbol : CfirCallableSymbol<CfirPatternVariable>() {
+class CfirPatternVariableSymbol(
+    override val callableId: CallableId,
+) : CfirCallableSymbol<CfirPatternVariable>() {
+    override val name: Name
+        get() = callableId.callableName
+
     override fun toString(): String =
         if (isBound) "CfirPatternVariableSymbol(${cfir.pattern::class.simpleName})"
         else "CfirPatternVariableSymbol(unbound)"
 }
 
-class CfirValueParameterSymbol : CfirCallableSymbol<CfirValueParameter>() {
+class CfirValueParameterSymbol(
+    override val callableId: CallableId,
+) : CfirCallableSymbol<CfirValueParameter>() {
+    override val name: Name
+        get() = callableId.callableName
+
     override fun toString(): String =
         if (isBound) "CfirValueParameterSymbol(${cfir.name})" else "CfirValueParameterSymbol(unbound)"
 }
@@ -118,7 +206,12 @@ class CfirExtendSymbol : CfirSymbol<CfirExtend>() {
     override fun toString(): String = "CfirExtendSymbol"
 }
 
-class CfirEnumConstructorSymbol : CfirSymbol<CfirEnumConstructor>() {
+class CfirEnumConstructorSymbol(
+    override val callableId: CallableId,
+) : CfirCallableSymbol<CfirEnumConstructor>() {
+    override val name: Name
+        get() = callableId.callableName
+
     override fun toString(): String =
         if (isBound) "CfirEnumConstructorSymbol(${cfir.name})" else "CfirEnumConstructorSymbol(unbound)"
 }

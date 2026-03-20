@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.scopes
 
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.Name
@@ -40,5 +41,9 @@ class CfirCompositeScope(private val scopes: List<CfirScope>) : CfirScope {
 
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
         for (scope in scopes) scope.processPropertiesByName(name, processor)
+    }
+
+    override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
+        for (scope in scopes) scope.processCallablesByName(name, processor)
     }
 }

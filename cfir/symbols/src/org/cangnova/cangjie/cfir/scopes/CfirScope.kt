@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.scopes
 
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.Name
@@ -21,4 +22,6 @@ interface CfirScope {
 
     /** 按名称处理属性符号 */
     fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {}
+
+    fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {}
 }

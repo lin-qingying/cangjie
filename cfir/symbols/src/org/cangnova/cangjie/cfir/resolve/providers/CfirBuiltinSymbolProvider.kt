@@ -42,6 +42,10 @@ class CfirBuiltinSymbolProvider(
         return builtinClassSymbols[classId]
     }
 
+    override fun getClassIdBySymbol(classSymbol: CfirClassSymbol): ClassId? {
+        return builtinClassSymbols.entries.firstOrNull { it.value == classSymbol }?.key
+    }
+
     override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> {
         // Builtin primitive types do not provide top-level callables.
         return emptyList()

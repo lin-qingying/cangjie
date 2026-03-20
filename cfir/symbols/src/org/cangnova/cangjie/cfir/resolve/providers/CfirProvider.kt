@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.name.ClassId
@@ -18,4 +20,8 @@ abstract class CfirProvider : CfirSessionComponent {
     abstract fun getClassByClassId(classId: ClassId): CfirClass?
 
     abstract fun getClassNamesInPackage(fqName: FqName): Set<Name>
+
+    open fun getClassIdBySymbol(classSymbol: CfirClassSymbol): ClassId? = null
+
+    open fun getEnumConstructorOwnerClassId(symbol: CfirEnumConstructorSymbol): ClassId? = null
 }

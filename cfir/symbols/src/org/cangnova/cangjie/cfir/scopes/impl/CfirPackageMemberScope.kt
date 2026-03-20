@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -22,6 +23,7 @@ class CfirPackageMemberScope(
 ) : CfirPackageScope {
 
     private val classifierCache = HashMap<Name, List<CfirClassSymbol>>()
+    private val callableCache = HashMap<Name, List<CfirCallableSymbol<*>>>()
     private val functionCache = HashMap<Name, List<CfirFunctionSymbol>>()
     private val propertyCache = HashMap<Name, List<CfirPropertySymbol>>()
 
@@ -36,6 +38,13 @@ class CfirPackageMemberScope(
     override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol) -> Unit) {
         val symbols = functionCache.getOrPut(name) {
             symbolProvider.getTopLevelFunctionSymbols(packageFqName, name)
+        }
+        symbols.forEach(processor)
+    }
+
+    override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
+        val symbols = callableCache.getOrPut(name) {
+            symbolProvider.getTopLevelCallableSymbols(packageFqName, name)
         }
         symbols.forEach(processor)
     }

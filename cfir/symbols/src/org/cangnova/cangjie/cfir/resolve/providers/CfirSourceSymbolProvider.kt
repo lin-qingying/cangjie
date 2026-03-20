@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.providers
 import org.cangnova.cangjie.cfir.nameConflictsTracker
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -28,6 +29,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -76,6 +78,12 @@ class CfirProviderImpl(
         return if (symbol.isBound) symbol.cfir else null
     }
 
+    override fun getClassIdBySymbol(classSymbol: CfirClassSymbol): ClassId? =
+        state.classIdBySymbol[classSymbol]
+
+    override fun getEnumConstructorOwnerClassId(symbol: CfirEnumConstructorSymbol): ClassId? =
+        state.enumConstructorOwnerClassIdMap[symbol]
+
     override fun getClassNamesInPackage(fqName: FqName): Set<Name> =
         state.classesInPackage[fqName].orEmpty()
 
@@ -92,6 +100,12 @@ class CfirProviderImpl(
 
         override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassSymbol? =
             state.classifierMap[classId]
+
+        override fun getClassIdBySymbol(classSymbol: CfirClassSymbol): ClassId? =
+            state.classIdBySymbol[classSymbol]
+
+        override fun getEnumConstructorOwnerClassId(symbol: CfirEnumConstructorSymbol): ClassId? =
+            state.enumConstructorOwnerClassIdMap[symbol]
 
         override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> =
             state.callableMap[CallableId(packageFqName, name)].orEmpty()
@@ -124,15 +138,24 @@ class CfirProviderImpl(
     ) {
         when (declaration) {
             is CfirClass -> {
+                val classId = computeClassId(packageFqName, declaration.name, containingClass)
+                val classSymbol = declaration.symbol as? CfirClassSymbol
                 recordClassLikeClassifier(
-                    symbol = declaration.symbol as? CfirClassSymbol,
+                    symbol = classSymbol,
                     packageFqName = packageFqName,
                     shortName = declaration.name,
                     containingClass = containingClass,
                     containingFile = containingFile,
                     isTopLevel = isTopLevel,
                 )
-                val classId = computeClassId(packageFqName, declaration.name, containingClass)
+
+                if (declaration.classKind == org.cangnova.cangjie.cfir.declarations.CfirClassKind.ENUM && isTopLevel) {
+                    recordTopLevelEnumConstructors(
+                        declaration = declaration,
+                        ownerClassId = classId,
+                    )
+                }
+
                 for (nested in declaration.declarations) {
                     recordDeclaration(
                         declaration = nested,
@@ -213,6 +236,7 @@ class CfirProviderImpl(
             val previousSymbol = state.classifierMap[classId]
             if (previousSymbol == null) {
                 state.classifierMap[classId] = symbol
+                state.classIdBySymbol[symbol] = classId
                 state.classifierContainerFileMap[classId] = containingFile
             } else if (previousSymbol != symbol) {
                 session.nameConflictsTracker?.registerClassifierRedeclaration(
@@ -257,14 +281,32 @@ class CfirProviderImpl(
         }
     }
 
+    private fun recordTopLevelEnumConstructors(
+        declaration: CfirClass,
+        ownerClassId: ClassId,
+    ) {
+        declaration.declarations.asSequence()
+            .filterIsInstance<CfirEnumConstructor>()
+            .forEach { enumConstructor ->
+                val symbol = enumConstructor.symbol as? CfirEnumConstructorSymbol ?: return@forEach
+                val callableId = CallableId(ownerClassId.packageFqName, enumConstructor.name)
+                state.callableMap.getOrPut(callableId, ::mutableListOf).add(symbol)
+                state.callableNamesInPackage.getOrPut(ownerClassId.packageFqName, ::mutableSetOf)
+                    .add(enumConstructor.name)
+                state.enumConstructorOwnerClassIdMap[symbol] = ownerClassId
+            }
+    }
+
     private class State {
         val fileMap: MutableMap<FqName, MutableList<CfirFile>> = hashMapOf()
         val allSubPackages: MutableSet<FqName> = hashSetOf()
 
         val classifierMap: MutableMap<ClassId, CfirClassSymbol> = hashMapOf()
+        val classIdBySymbol: MutableMap<CfirClassSymbol, ClassId> = hashMapOf()
         val classifierContainerFileMap: MutableMap<ClassId, CfirFile> = hashMapOf()
         val classifierInPackage: MutableMap<FqName, MutableSet<Name>> = hashMapOf()
         val classesInPackage: MutableMap<FqName, MutableSet<Name>> = hashMapOf()
+        val enumConstructorOwnerClassIdMap: MutableMap<CfirEnumConstructorSymbol, ClassId> = hashMapOf()
 
         val callableMap: MutableMap<CallableId, MutableList<CfirCallableSymbol<*>>> = hashMapOf()
         val functionMap: MutableMap<CallableId, MutableList<CfirFunctionSymbol>> = hashMapOf()

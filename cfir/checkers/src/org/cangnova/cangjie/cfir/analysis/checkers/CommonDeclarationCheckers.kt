@@ -15,7 +15,6 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirPatternVariab
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirPatternVariableChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirOverrideChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirPropertyChecker
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirPropertyInitializerTypeMismatchChecker
 
 object CommonDeclarationCheckers : CfirDeclarationCheckers() {
     override val invalidDeclarationCheckers: Set<CfirInvalidDeclarationChecker>
@@ -43,5 +42,5 @@ object CommonDeclarationCheckers : CfirDeclarationCheckers() {
         )
 
     override val propertyCheckers: Set<CfirPropertyChecker>
-        get() = setOf(CfirPropertyInitializerTypeMismatchChecker)
+        get() = emptySet()
 }

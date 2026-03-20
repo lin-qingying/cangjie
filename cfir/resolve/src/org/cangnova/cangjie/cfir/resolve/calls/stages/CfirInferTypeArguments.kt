@@ -3,6 +3,8 @@
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
 import org.cangnova.cangjie.cfir.resolve.calls.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.InferenceConstraintError
@@ -10,12 +12,20 @@ import org.cangnova.cangjie.cfir.resolve.inference.CfirConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.CfirTypeVariable
 import org.cangnova.cangjie.cfir.resolve.inference.collectTypeVariableNames
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceLogger
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferTypeParameterType
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
+import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 
 /**
  * 泛型类型参数推断阶段。
@@ -43,6 +53,10 @@ object CfirInferTypeArguments : CfirResolutionStage() {
             return
         }
 
+        if (bindEnumTypeParametersFromExpectedType(candidate, typeParameters, context.expectedType)) {
+            return
+        }
+
         // 需要推断：创建约束系统并收集约束
         inferTypeArguments(candidate, typeParameters, sink, context)
     }
@@ -53,6 +67,7 @@ object CfirInferTypeArguments : CfirResolutionStage() {
         return when (val decl = candidate.symbol.cfir) {
             is CfirFunction -> decl.typeParameters
             is CfirConstructor -> decl.typeParameters
+            is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> decl.typeParameters
             else -> null
         }
     }
@@ -75,6 +90,34 @@ object CfirInferTypeArguments : CfirResolutionStage() {
             substitution[paramName] = argType
         }
         candidate.substitutor = CfirTypeSubstitutorByMap(substitution)
+    }
+
+    private fun bindEnumTypeParametersFromExpectedType(
+        candidate: CfirCandidate,
+        typeParameters: List<CfirTypeParameter>,
+        expectedType: ConeCangjieType?,
+    ): Boolean {
+        if (!candidate.symbol.isBound) return false
+        val enumDecl = candidate.symbol.cfir as? org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor ?: return false
+        val enumSymbol = enumDecl.symbol as? org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol ?: return false
+        val ownerClassId = candidate.callInfo.session.symbolProvider.getEnumConstructorOwnerClassId(enumSymbol)
+            ?: candidate.callInfo.session.cfirProvider.getEnumConstructorOwnerClassId(enumSymbol)
+            ?: return false
+
+        val expectedArgs = when (expectedType) {
+            is ConeEnumType -> if (expectedType.classId == ownerClassId) expectedType.typeArguments else return false
+            is ConeClassLikeType -> if (expectedType.classId == ownerClassId) expectedType.typeArguments else return false
+            else -> return false
+        }
+        if (expectedArgs.size != typeParameters.size) return false
+
+        val substitution = buildMap {
+            for (i in typeParameters.indices) {
+                put(typeParameters[i].name.asString(), expectedArgs[i])
+            }
+        }
+        candidate.substitutor = CfirTypeSubstitutorByMap(substitution)
+        return true
     }
 
     /**
@@ -123,16 +166,14 @@ object CfirInferTypeArguments : CfirResolutionStage() {
         }
 
         // 2. 收集参数约束：对每对 (argType, paramType) 添加 argType <: substitute(paramType)
-        val valueParameters = extractValueParameters(candidate)
+        val parameterTypes = extractParameterTypes(candidate)
         val arguments = candidate.callInfo.arguments
         val mapping = candidate.argumentMapping
 
         for ((argIndex, paramIndex) in mapping) {
             val argument = arguments.getOrNull(argIndex) ?: continue
-            val parameter = valueParameters?.getOrNull(paramIndex) ?: continue
-
+            val paramType = parameterTypes?.getOrNull(paramIndex) ?: continue
             val argType = argument.coneTypeOrNull ?: continue
-            val paramType = extractParameterType(parameter) ?: continue
 
             if (argType is ConeErrorType || paramType is ConeErrorType) continue
 
@@ -169,23 +210,28 @@ object CfirInferTypeArguments : CfirResolutionStage() {
 
         // 4. 构建替换器
         candidate.substitutor = constraintSystem.buildResultingSubstitutor()
+        applyInferredTypeArgumentsToCallSite(candidate, typeParameters, typeVariableMap)
     }
 
-    private fun extractValueParameters(
-        candidate: CfirCandidate,
-    ): List<org.cangnova.cangjie.cfir.declarations.CfirValueParameter>? {
+    private fun extractParameterTypes(candidate: CfirCandidate): List<ConeCangjieType>? {
         if (!candidate.symbol.isBound) return null
         return when (val decl = candidate.symbol.cfir) {
-            is CfirFunction -> decl.valueParameters
-            is CfirConstructor -> decl.valueParameters
+            is CfirFunction -> decl.valueParameters.mapNotNull {
+                (it.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+            }
+            is CfirConstructor -> decl.valueParameters.mapNotNull {
+                (it.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+            }
+            is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> {
+                val payloadType = (decl.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return emptyList()
+                when (payloadType) {
+                    is ConeTupleType -> payloadType.elementTypes
+                    is ConeErrorType -> emptyList()
+                    else -> listOf(payloadType)
+                }
+            }
             else -> null
         }
-    }
-
-    private fun extractParameterType(
-        parameter: org.cangnova.cangjie.cfir.declarations.CfirValueParameter,
-    ): ConeCangjieType? {
-        return (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType
     }
 
     /** 从候选符号中提取返回类型。 */
@@ -194,6 +240,17 @@ object CfirInferTypeArguments : CfirResolutionStage() {
         val typeRef = when (val decl = candidate.symbol.cfir) {
             is CfirFunction -> decl.returnTypeRef
             is CfirConstructor -> decl.returnTypeRef
+            is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> {
+                val symbol = decl.symbol as? org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+                    ?: return null
+                val classId = candidate.callInfo.session.symbolProvider.getEnumConstructorOwnerClassId(symbol)
+                    ?: candidate.callInfo.session.cfirProvider.getEnumConstructorOwnerClassId(symbol)
+                    ?: return null
+                val typeArguments = decl.typeParameters.map {
+                    ConeTypeParameterType(ConeTypeParameterLookupTag(it.name.asString()))
+                }
+                return ConeEnumType(ConeClassLookupTagImpl(classId), typeArguments)
+            }
             else -> return null
         }
         return (typeRef as? CfirResolvedTypeRef)?.coneType
@@ -217,5 +274,51 @@ object CfirInferTypeArguments : CfirResolutionStage() {
             variable.lowerBounds.isNotEmpty()
         }
     }
-}
 
+    private fun applyInferredTypeArgumentsToCallSite(
+        candidate: CfirCandidate,
+        typeParameters: List<CfirTypeParameter>,
+        typeVariableMap: Map<String, CfirTypeVariable>,
+    ) {
+        if (candidate.callInfo.typeArguments.isNotEmpty()) return
+
+        val callSite = candidate.callInfo.callSite
+        val callSiteSource = callSite.source
+
+        val inferredTypeArguments = typeParameters.map { typeParameter ->
+            val parameterName = typeParameter.name.asString()
+            val parameterSymbol = typeParameter.symbol as? CfirTypeParameterSymbol
+            check(parameterSymbol != null) {
+                "Expected CfirTypeParameterSymbol for type parameter '$parameterName', got: ${typeParameter.symbol::class.simpleName}"
+            }
+            val variable = typeVariableMap[parameterName]
+            val inferredType = variable?.fixedType
+                ?: candidate.substitutor.substituteOrSelf(
+                    ConeTypeParameterType(ConeTypeParameterLookupTag(parameterName)),
+                )
+
+            val finalType = when {
+                variable?.fixedType == null ->
+                    ConeErrorType(ConeCannotInferTypeParameterType(parameterSymbol))
+
+                inferredType is ConeTypeParameterType &&
+                        inferredType.lookupTag.name == parameterName ->
+                    ConeErrorType(ConeCannotInferTypeParameterType(parameterSymbol))
+
+                else -> inferredType
+            }
+
+            buildResolvedTypeRef {
+                source = callSiteSource
+                coneType = finalType
+                delegatedTypeRef = null
+            }
+        }
+
+        when (callSite) {
+            is CfirFunctionCall -> callSite.replaceTypeArguments(inferredTypeArguments)
+            is CfirQualifiedAccess -> callSite.replaceTypeArguments(inferredTypeArguments)
+        }
+    }
+
+}

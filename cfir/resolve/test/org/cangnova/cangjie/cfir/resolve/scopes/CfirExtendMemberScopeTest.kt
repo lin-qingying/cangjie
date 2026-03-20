@@ -20,6 +20,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -93,7 +94,7 @@ private fun newClassDeclaration(moduleData: CfirModuleData, name: String): CfirC
 }
 
 private fun newFunctionDeclaration(moduleData: CfirModuleData, name: String): CfirFunctionImpl {
-    val symbol = CfirFunctionSymbol()
+    val symbol = CfirFunctionSymbol(CallableId(FqName.ROOT, Name.identifier(name)))
     return CfirFunctionImpl(
         source = null,
         moduleData = moduleData,
@@ -115,7 +116,7 @@ private fun newFunctionDeclaration(moduleData: CfirModuleData, name: String): Cf
 }
 
 private fun newPropertyDeclaration(moduleData: CfirModuleData, name: String): CfirPropertyImpl {
-    val symbol = CfirPropertySymbol()
+    val symbol = CfirPropertySymbol(CallableId(FqName.ROOT, Name.identifier(name)))
     return CfirPropertyImpl(
         source = null,
         moduleData = moduleData,

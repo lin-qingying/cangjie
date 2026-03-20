@@ -17,8 +17,10 @@ import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildTupleTypeRef
 import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.psi.CjNodeTypes
 
 /**
@@ -35,6 +37,10 @@ class LightTreeRawCfirDeclarationBuilder(
     private val fileName: String = "",
     val bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
 ) : AbstractRawCfirBuilder<LighterASTNode>(session, context) {
+
+    private fun callableIdFor(name: Name): CallableId {
+        return if (context.inLocalContext) CallableId(name) else CallableId(packageFqName, name)
+    }
 
     // ===== AbstractRawCfirBuilder 抽象方法实现 =====
 
@@ -125,6 +131,10 @@ class LightTreeRawCfirDeclarationBuilder(
         val superTypes = extractSuperTypeRefs(node)
         val classDeclarations = extractClassMembers(node).toMutableList()
 
+        if (classKind != CfirClassKind.INTERFACE && classDeclarations.none { it is CfirConstructor }) {
+            classDeclarations.add(0, buildImplicitPrimaryConstructor(node))
+        }
+
         // 枚举：将 ENUM_CONSTRUCTOR 放在声明列表前面
         if (classKind == CfirClassKind.ENUM) {
             val enumBody = tree.findChildByType(node, CjNodeTypes.ENUM_BODY)
@@ -148,6 +158,21 @@ class LightTreeRawCfirDeclarationBuilder(
                 this.declarations.addAll(classDeclarations)
                 this.name = name
                 this.classKind = classKind
+            }
+        }
+    }
+
+    private fun buildImplicitPrimaryConstructor(ownerNode: LighterASTNode): CfirConstructor {
+        return buildSourceDeclaration(CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))) { symbol ->
+            buildPrimaryConstructor {
+                source = ownerNode.toSource()
+                this.symbol = symbol
+                origin = CfirDeclarationOrigin.Source
+                moduleData = baseModuleData
+                attributes = CfirDeclarationAttributes.EMPTY
+                status = CfirDeclarationStatusImpl.DEFAULT
+                returnTypeRef = buildImplicitTypeRef()
+                body = null
             }
         }
     }
@@ -209,7 +234,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val valueParams = extractValueParameters(node)
         val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractBody(node)
 
-        return buildSourceDeclaration(CfirFunctionSymbol()) { symbol ->
+        return buildSourceDeclaration(CfirFunctionSymbol(callableIdFor(name))) { symbol ->
             buildFunction {
                 source = node.toSource()
                 this.symbol = symbol
@@ -233,7 +258,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val returnTypeRef = extractReturnTypeRef(node)
         val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractBody(node)
 
-        return buildSourceDeclaration(CfirMainFunctionSymbol()) { symbol ->
+        return buildSourceDeclaration(CfirMainFunctionSymbol(callableIdFor(Name.identifier("main")))) { symbol ->
             buildMainFunction {
                 source = node.toSource()
                 this.symbol = symbol
@@ -255,7 +280,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val returnTypeRef = extractReturnTypeRef(node)
         val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractBody(node)
 
-        return buildSourceDeclaration(CfirMacroDeclarationSymbol()) { symbol ->
+        return buildSourceDeclaration(CfirMacroDeclarationSymbol(callableIdFor(name))) { symbol ->
             buildMacroDeclaration {
                 source = node.toSource()
                 this.symbol = symbol
@@ -276,7 +301,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val valueParams = extractValueParameters(node)
         val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractBody(node)
 
-        return buildSourceDeclaration(CfirFinalizerSymbol()) { symbol ->
+        return buildSourceDeclaration(CfirFinalizerSymbol(callableIdFor(SpecialNames.END_INIT))) { symbol ->
             buildFinalizer {
                 source = node.toSource()
                 this.symbol = symbol
@@ -297,9 +322,8 @@ class LightTreeRawCfirDeclarationBuilder(
         val name = extractName(node)
         val modifiers = LightTreeModifierList.from(tree, node)
         val typeRef = extractReturnTypeRef(node)
-        val initializer = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractInitializer(node)
 
-        return buildSourceDeclaration(CfirPropertySymbol()) { symbol ->
+        return buildSourceDeclaration(CfirPropertySymbol(callableIdFor(name))) { symbol ->
             buildProperty {
                 source = node.toSource()
                 this.symbol = symbol
@@ -309,7 +333,6 @@ class LightTreeRawCfirDeclarationBuilder(
                 status = modifiers.toDeclarationStatus(context.inLocalContext)
                 this.returnTypeRef = typeRef
                 this.name = name
-                this.initializer = initializer
             }
         }
     }
@@ -321,7 +344,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val initializer = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractInitializer(node)
         val isVar = hasVarKeyword(node)
 
-        return buildSourceDeclaration(CfirFieldVariableSymbol()) { symbol ->
+        return buildSourceDeclaration(CfirFieldVariableSymbol(callableIdFor(name))) { symbol ->
             buildFieldVariable {
                 source = node.toSource()
                 this.symbol = symbol
@@ -346,7 +369,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val initializer = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractInitializer(node)
         val isVar = hasVarKeyword(node)
 
-        return buildSourceDeclaration(CfirPatternVariableSymbol()) { symbol ->
+        return buildSourceDeclaration(CfirPatternVariableSymbol(callableIdFor(Name.special("<pattern-variable>")))) { symbol ->
             buildPatternVariable {
                 source = node.toSource()
                 this.symbol = symbol
@@ -369,7 +392,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val valueParams = extractValueParameters(node)
         val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractBody(node)
 
-        return buildSourceDeclaration(CfirConstructorSymbol()) { symbol ->
+        return buildSourceDeclaration(CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))) { symbol ->
             if (isPrimary) {
                 buildPrimaryConstructor {
                     source = node.toSource()
@@ -448,7 +471,7 @@ class LightTreeRawCfirDeclarationBuilder(
             }
         }
 
-        return buildSourceDeclaration(CfirEnumConstructorSymbol()) { symbol ->
+        return buildSourceDeclaration(CfirEnumConstructorSymbol(callableIdFor(enumName))) { symbol ->
             buildEnumConstructor {
                 source = node.toSource()
                 this.symbol = symbol
@@ -478,7 +501,7 @@ class LightTreeRawCfirDeclarationBuilder(
             }
         }
 
-        return buildSourceDeclaration(CfirValueParameterSymbol()) { symbol ->
+        return buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(paramName))) { symbol ->
             buildValueParameter {
                 source = node.toSource()
                 this.symbol = symbol

@@ -53,4 +53,9 @@ class CfirLocalScopeImpl : CfirLocalScope {
     fun processVariablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
         variables[name]?.forEach(processor)
     }
+
+    override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
+        variables[name]?.forEach(processor)
+        functions[name]?.forEach(processor)
+    }
 }

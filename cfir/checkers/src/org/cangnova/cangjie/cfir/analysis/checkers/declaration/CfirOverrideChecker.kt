@@ -71,6 +71,7 @@ object CfirOverrideChecker : CfirDeclarationChecker<CfirClass>(CheckerDispatchKi
                 .getClassLikeSymbolByClassId(superType.lookupTag.classId) ?: continue
             if (!superSymbol.isBound) continue
             val superClass = superSymbol.cfir as? CfirClass ?: continue
+            if (superClass.symbol == declaration.symbol || superClass.name == declaration.name) continue
 
             // 只有 class 类型需要 open 检查（interface 不需要）
             if (superClass.classKind != CfirClassKind.CLASS) continue

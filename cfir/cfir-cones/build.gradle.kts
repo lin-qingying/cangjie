@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
     api(project(":cfir:cfir-common"))
+
     api(project(":common"))
 
     testImplementation(libs.junit.jupiter)
