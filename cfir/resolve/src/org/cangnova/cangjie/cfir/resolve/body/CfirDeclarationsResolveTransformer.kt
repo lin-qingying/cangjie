@@ -22,7 +22,14 @@ import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTr
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
+import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeStructType
+import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
+import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.name.ClassId
@@ -130,6 +137,52 @@ class CfirDeclarationsResolveTransformer(
         context.withTowerDataContext(savedContext) {}
         bumpPhase(function)
         return function
+    }
+
+    override fun transformConstructor(constructor: CfirConstructor, data: CfirResolutionMode): CfirConstructor {
+        val savedContext = context.towerDataContext
+
+        context.withContainer(constructor) {
+            if (constructor.typeParameters.isNotEmpty()) {
+                context.addNonLocalScope(CfirTypeParameterScopeImpl(constructor.typeParameters))
+            }
+
+            constructor.valueParameters.forEach { param ->
+                param.replaceReturnTypeRef(resolveExplicitTypeRefIfNeeded(param.returnTypeRef, constructor.typeParameters))
+            }
+
+            val returnTypeRef = constructor.returnTypeRef
+            if (returnTypeRef is CfirImplicitTypeRef) {
+                val ownerClass = context.containers.filterIsInstance<CfirClass>().lastOrNull()
+                val ownerType = ownerClass?.let(::buildConstructedTypeForClass) ?: ConeErrorType("constructor has no owning class")
+                constructor.replaceReturnTypeRef(
+                    buildResolvedTypeRef {
+                        source = returnTypeRef.source
+                        coneType = ownerType
+                        delegatedTypeRef = returnTypeRef
+                    },
+                )
+            } else {
+                constructor.replaceReturnTypeRef(resolveExplicitTypeRefIfNeeded(returnTypeRef, constructor.typeParameters))
+            }
+
+            val paramScope = CfirLocalScopeImpl()
+            for (param in constructor.valueParameters) {
+                val paramSymbol = param.symbol as? CfirCallableSymbol<*> ?: continue
+                paramScope.addVariable(param.name, paramSymbol)
+            }
+            context.addLocalScope(paramScope)
+
+            val body = constructor.body
+            if (body != null) {
+                (constructor as? org.cangnova.cangjie.cfir.declarations.impl.CfirConstructorImpl)?.body =
+                    body.transform<CfirBlock, CfirResolutionMode>(transformer, CfirResolutionMode.ContextIndependent)
+            }
+        }
+
+        context.withTowerDataContext(savedContext) {}
+        bumpPhase(constructor)
+        return constructor
     }
 
     override fun transformProperty(property: CfirProperty, data: CfirResolutionMode): CfirProperty {
@@ -397,5 +450,20 @@ class CfirDeclarationsResolveTransformer(
             .map(CfirClass::name)
             .toList()
         return classIdForClassNesting(packageFqName, classNesting) ?: ClassId(packageFqName, klass.name)
+    }
+
+    private fun buildConstructedTypeForClass(klass: CfirClass): ConeCangjieType {
+        val classId = resolveClassId(klass) ?: return ConeErrorType("cannot resolve class id for constructor owner")
+        val typeArguments = klass.typeParameters.map { ConeTypeParameterType(ConeTypeParameterLookupTag(it.name.asString())) }
+        val lookupTag = ConeClassLookupTagImpl(classId)
+        return when (klass.classKind) {
+            CfirClassKind.CLASS, CfirClassKind.INTERFACE -> ConeClassLikeType(
+                lookupTag = lookupTag,
+                typeArguments = typeArguments,
+                isInterface = klass.classKind == CfirClassKind.INTERFACE,
+            )
+            CfirClassKind.STRUCT -> ConeStructType(lookupTag, typeArguments)
+            CfirClassKind.ENUM -> ConeEnumType(lookupTag, typeArguments)
+        }
     }
 }

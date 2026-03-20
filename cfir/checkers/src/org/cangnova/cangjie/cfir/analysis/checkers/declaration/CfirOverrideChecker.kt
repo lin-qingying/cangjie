@@ -10,8 +10,12 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 /**
@@ -147,7 +151,7 @@ object CfirOverrideChecker : CfirDeclarationChecker<CfirClass>(CheckerDispatchKi
         val parentReturnType = (parentFunc.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
         if (ownReturnType is ConeErrorType || parentReturnType is ConeErrorType) return
 
-        if (!CfirTypeCheckUtils.isSubtypeOf(ownReturnType, parentReturnType)) {
+        if (!isSubtypeOfForOverride(ownReturnType, parentReturnType, context)) {
             val source = ownFunc.source as? AbstractCjSourceElement ?: return
             reporter.reportOn(
                 source,
@@ -176,5 +180,43 @@ object CfirOverrideChecker : CfirDeclarationChecker<CfirClass>(CheckerDispatchKi
             val source = ownFunc.source as? AbstractCjSourceElement ?: return
             reporter.reportOn(source, CfirErrors.CANNOT_OVERRIDE_INVISIBLE_MEMBER, parentFunc.name)
         }
+    }
+
+    private fun isSubtypeOfForOverride(
+        subType: ConeCangjieType,
+        superType: ConeCangjieType,
+        context: CheckerContext,
+    ): Boolean {
+        if (CfirTypeCheckUtils.isSubtypeOf(subType, superType)) return true
+
+        val subClassId = classIdOf(subType) ?: return false
+        val superClassId = classIdOf(superType) ?: return false
+        if (subClassId == superClassId) return true
+
+        val queue = ArrayDeque<ClassId>()
+        val visited = hashSetOf<ClassId>()
+        queue.add(subClassId)
+
+        while (queue.isNotEmpty()) {
+            val current = queue.removeFirst()
+            if (!visited.add(current)) continue
+            if (current == superClassId) return true
+
+            val currentClass = context.session.symbolProvider.getClassLikeSymbolByClassId(current)?.cfir as? CfirClass ?: continue
+            currentClass.superTypeRefs.asSequence()
+                .mapNotNull { (it as? CfirResolvedTypeRef)?.coneType }
+                .mapNotNull(::classIdOf)
+                .filterNot(visited::contains)
+                .forEach(queue::add)
+        }
+
+        return false
+    }
+
+    private fun classIdOf(type: ConeCangjieType): ClassId? = when (type) {
+        is ConeClassLikeType -> type.classId
+        is ConeStructType -> type.classId
+        is ConeEnumType -> type.classId
+        else -> null
     }
 }
