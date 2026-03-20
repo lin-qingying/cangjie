@@ -2,12 +2,12 @@
 
 import org.cangnova.cangjie.cfir.CfirSessionHolder
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirCallConflictResolver
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -94,7 +94,7 @@ class CfirCallResolver(
         name: Name,
         arguments: List<CfirExpression>,
     ): CfirCallResolutionResult {
-        val candidates = towerResolver.findFunctions(name)
+        val candidates = towerResolver.findCallables(name)
 
         return when {
             candidates.isEmpty() -> CfirCallResolutionResult.NoCandidate
@@ -107,11 +107,14 @@ class CfirCallResolver(
         }
     }
 
-    /** 从函数符号中提取返回类型。 */
-    private fun extractReturnType(symbol: CfirFunctionSymbol): ConeCangjieType {
+    /** 从可调用符号中提取返回类型。 */
+    private fun extractReturnType(symbol: CfirCallableSymbol<*>): ConeCangjieType {
         if (!symbol.isBound) return ConeErrorType("unbound function symbol")
-        val function = symbol.cfir
-        val typeRef = function.returnTypeRef
+        val typeRef = when (val declaration = symbol.cfir) {
+            is org.cangnova.cangjie.cfir.declarations.CfirFunction -> declaration.returnTypeRef
+            is org.cangnova.cangjie.cfir.declarations.CfirConstructor -> declaration.returnTypeRef
+            else -> return ConeErrorType("unsupported callable symbol")
+        }
         return if (typeRef is CfirResolvedTypeRef) {
             typeRef.coneType
         } else {
@@ -145,13 +148,13 @@ sealed class CfirCallResolutionResult {
 
     /** 旧版单候选成功结果。 */
     class LegacySuccess(
-        val symbol: CfirFunctionSymbol,
+        val symbol: CfirCallableSymbol<*>,
         val returnType: ConeCangjieType,
     ) : CfirCallResolutionResult()
 
     /** 旧版多候选歧义结果。 */
     class LegacyAmbiguity(
-        val candidates: List<CfirFunctionSymbol>,
+        val candidates: List<CfirCallableSymbol<*>>,
     ) : CfirCallResolutionResult()
 }
 

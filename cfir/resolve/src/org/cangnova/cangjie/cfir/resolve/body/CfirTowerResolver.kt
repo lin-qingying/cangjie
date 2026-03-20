@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.CfirSessionHolder
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
@@ -51,9 +52,9 @@ class CfirTowerResolver(
             // 检查是否应在此层级停止
             if (collector.shouldStopAtTheGroup(group)) break
 
-            // 在当前 scope 中查找同名函数符号
+            // 在当前 scope 中查找同名函数与构造器符号（对齐 Kotlin 的 functions+constructors 处理）。
             val symbols = mutableListOf<CfirCallableSymbol<*>>()
-            scope.processFunctionsByName(callInfo.name) { symbols.add(it) }
+            collectCallableSymbolsByName(scope, callInfo.name, symbols)
 
             // 为每个匹配符号创建候选并提交收集
             for (symbol in symbols) {
@@ -120,6 +121,17 @@ class CfirTowerResolver(
         return emptyList()
     }
 
+    /** 按名称查找可调用符号（函数 + 构造器），返回首个匹配层级中的全部结果。 */
+    fun findCallables(name: Name): List<CfirCallableSymbol<*>> {
+        val scopes = components.towerDataContext.allScopesReversed()
+        for (scope in scopes) {
+            val result = mutableListOf<CfirCallableSymbol<*>>()
+            collectCallableSymbolsByName(scope, name, result)
+            if (result.isNotEmpty()) return result
+        }
+        return emptyList()
+    }
+
     /** 按名称查找类符号，返回首个匹配层级中的全部结果。 */
     fun findClassifiers(name: Name): List<CfirClassSymbol> {
         val scopes = components.towerDataContext.allScopesReversed()
@@ -158,6 +170,21 @@ class CfirTowerResolver(
     /** 重置收集器状态。 */
     fun reset() {
         collector.newDataSet()
+    }
+
+    private fun collectCallableSymbolsByName(
+        scope: CfirScope,
+        name: Name,
+        sink: MutableList<CfirCallableSymbol<*>>,
+    ) {
+        scope.processFunctionsByName(name) { sink.add(it) }
+        scope.processClassifiersByName(name) { classSymbol ->
+            classSymbol.cfir.declarations
+                .asSequence()
+                .filterIsInstance<CfirConstructor>()
+                .mapNotNull { it.symbol as? CfirCallableSymbol<*> }
+                .forEach(sink::add)
+        }
     }
 }
 

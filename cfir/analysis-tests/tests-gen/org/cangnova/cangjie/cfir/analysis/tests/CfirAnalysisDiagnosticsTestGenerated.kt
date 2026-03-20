@@ -207,6 +207,22 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         }
     }
 
+    @TestMetadata("enum")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Enum : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/enum")
+        }
+
+        @TestMetadata("simpleEnum.cj")
+        @Test
+        fun testSimpleEnum() {
+            runTest("cfir/analysis-tests/testData/diagnostics/enum/simpleEnum.cj")
+        }
+    }
+
     @TestMetadata("function")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
