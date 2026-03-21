@@ -44,7 +44,7 @@ object CommonExpressionCheckers : CfirExpressionCheckers() {
 
     override val functionCallCheckers: Set<CfirFunctionCallChecker>
         get() = setOf(
-            CfirArgumentTypeMismatchChecker,
+//            CfirArgumentTypeMismatchChecker,
             CfirConstEvalArithmeticChecker,
         )
 }

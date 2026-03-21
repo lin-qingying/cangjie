@@ -13,7 +13,7 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirMacroExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirMacroExpressionImpl
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -21,7 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirMacroExpressionBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    var coneTypeOrNull: ConeCangjieType? = null
+    var coneTypeOrNull: ConeCangJieType? = null
     var name: Name? = null
     var inputText: String? = null
     var attrText: String? = null

@@ -3,17 +3,17 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPattern
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatrix
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 interface ExhaustivenessChecker {
     fun check(
         matrix: CfirMatrix,
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         context: CheckerContext,
     ): ExhaustivenessResult
 
     fun isApplicable(
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
         context: CheckerContext,
     ): Boolean

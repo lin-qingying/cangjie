@@ -1,6 +1,6 @@
 ﻿package org.cangnova.cangjie.cfir.resolve
 
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 /**
  * 表达式解析模式，用于控制类型合成方向。
@@ -15,6 +15,6 @@ sealed class CfirResolutionMode {
     object ContextIndependent : CfirResolutionMode()
 
     /** 自顶向下校验，带期望类型，用于类型检查和隐式转换。 */
-    class WithExpectedType(val expectedType: ConeCangjieType) : CfirResolutionMode()
+    class WithExpectedType(val expectedType: ConeCangJieType) : CfirResolutionMode()
 }
 

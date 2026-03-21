@@ -4,13 +4,13 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPat
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPatternKind
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatrix
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.isSameType
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 
 val CfirMatrix.firstColumn: List<CfirMatchPattern>
     get() = mapNotNull { row -> row.firstOrNull() }
 
-val CfirMatrix.firstColumnType: ConeCangjieType?
+val CfirMatrix.firstColumnType: ConeCangJieType?
     get() {
         val firstTypes = firstColumn.map { it.type }.takeIf { it.isNotEmpty() } ?: return null
         return firstTypes.customDistinct(::isSameType).singleOrNull()

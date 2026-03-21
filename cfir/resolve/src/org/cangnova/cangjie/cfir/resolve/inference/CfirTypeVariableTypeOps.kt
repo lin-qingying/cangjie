@@ -1,20 +1,8 @@
 package org.cangnova.cangjie.cfir.resolve.inference
 
-import org.cangnova.cangjie.cfir.types.ConeArrayType
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeFlexibleType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
-import org.cangnova.cangjie.cfir.types.ConeIntersectionType
-import org.cangnova.cangjie.cfir.types.ConeRigidType
-import org.cangnova.cangjie.cfir.types.ConeStructType
-import org.cangnova.cangjie.cfir.types.ConeTupleType
-import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
-import org.cangnova.cangjie.cfir.types.ConeUnionType
-import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.*
 
-internal fun ConeCangjieType.containsTypeVariableName(variableName: String): Boolean {
+internal fun ConeCangJieType.containsTypeVariableName(variableName: String): Boolean {
     return when (this) {
         is ConeTypeParameterType -> name == variableName
         is ConeClassLikeType -> typeArguments.any { it.containsTypeVariableName(variableName) }
@@ -27,12 +15,11 @@ internal fun ConeCangjieType.containsTypeVariableName(variableName: String): Boo
         is ConeVArrayType -> elementType.containsTypeVariableName(variableName)
         is ConeIntersectionType -> intersectedTypes.any { it.containsTypeVariableName(variableName) }
         is ConeUnionType -> unionTypes.any { it.containsTypeVariableName(variableName) }
-        is ConeFlexibleType -> lowerBound.containsTypeVariableName(variableName) || upperBound.containsTypeVariableName(variableName)
         else -> false
     }
 }
 
-internal fun ConeCangjieType.collectTypeVariableNames(into: MutableSet<String>) {
+internal fun ConeCangJieType.collectTypeVariableNames(into: MutableSet<String>) {
     when (this) {
         is ConeTypeParameterType -> into += name
         is ConeClassLikeType -> typeArguments.forEach { it.collectTypeVariableNames(into) }
@@ -47,18 +34,15 @@ internal fun ConeCangjieType.collectTypeVariableNames(into: MutableSet<String>) 
         is ConeVArrayType -> elementType.collectTypeVariableNames(into)
         is ConeIntersectionType -> intersectedTypes.forEach { it.collectTypeVariableNames(into) }
         is ConeUnionType -> unionTypes.forEach { it.collectTypeVariableNames(into) }
-        is ConeFlexibleType -> {
-            lowerBound.collectTypeVariableNames(into)
-            upperBound.collectTypeVariableNames(into)
-        }
+
         else -> Unit
     }
 }
 
-internal fun ConeCangjieType.substituteTypeVariableName(
+internal fun ConeCangJieType.substituteTypeVariableName(
     variableName: String,
-    replacement: ConeCangjieType,
-): ConeCangjieType {
+    replacement: ConeCangJieType,
+): ConeCangJieType {
     return when (this) {
         is ConeTypeParameterType -> if (name == variableName) replacement else this
         is ConeClassLikeType -> {
@@ -100,17 +84,7 @@ internal fun ConeCangjieType.substituteTypeVariableName(
             val newTypes = unionTypes.map { it.substituteTypeVariableName(variableName, replacement) }.toSet()
             if (newTypes == unionTypes) this else ConeUnionType(newTypes)
         }
-        is ConeFlexibleType -> {
-            val newLower = lowerBound.substituteTypeVariableName(variableName, replacement)
-            val newUpper = upperBound.substituteTypeVariableName(variableName, replacement)
-            if (newLower == lowerBound && newUpper == upperBound) {
-                this
-            } else if (newLower is ConeRigidType && newUpper is ConeRigidType) {
-                ConeFlexibleType(newLower, newUpper)
-            } else {
-                this
-            }
-        }
+
         else -> this
     }
 }

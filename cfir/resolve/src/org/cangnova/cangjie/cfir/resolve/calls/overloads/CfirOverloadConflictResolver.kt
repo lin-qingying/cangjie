@@ -1,7 +1,6 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.calls.overloads
 
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.types.ConeSubtypeChecker
 
 /**

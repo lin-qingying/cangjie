@@ -13,7 +13,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 
 /**
@@ -29,7 +29,7 @@ interface CfirReturnTypeCalculator {
      * 计算可调用声明的返回类型。
      * @return 已解析的返回类型；若无法计算则返回 `null`
      */
-    fun tryCalculateReturnType(declaration: CfirCallableDeclaration): ConeCangjieType?
+    fun tryCalculateReturnType(declaration: CfirCallableDeclaration): ConeCangJieType?
 
     /**
      * 计算可调用声明的返回类型引用。
@@ -51,7 +51,7 @@ interface CfirReturnTypeCalculator {
      * Phase 2 默认实现：不做推断，直接使用已有的显式类型。
      */
     object Default : CfirReturnTypeCalculator {
-        override fun tryCalculateReturnType(declaration: CfirCallableDeclaration): ConeCangjieType? = null
+        override fun tryCalculateReturnType(declaration: CfirCallableDeclaration): ConeCangJieType? = null
     }
 }
 

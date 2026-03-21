@@ -4,7 +4,7 @@ import PackageFormat.Package
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageHeader
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -21,8 +21,8 @@ class CfirDeserializationContext(
     /** 库模块元数据 */
     val moduleData: CfirModuleData,
 ) {
-    /** allTypes 索引 → ConeCangjieType 缓存 */
-    val typeCache = ConcurrentHashMap<Int, ConeCangjieType>()
+    /** allTypes 索引 → ConeCangJieType 缓存 */
+    val typeCache = ConcurrentHashMap<Int, ConeCangJieType>()
 
     /** allDecls 索引 → CfirDeclaration 缓存 */
     val declCache = ConcurrentHashMap<Int, CfirDeclaration>()

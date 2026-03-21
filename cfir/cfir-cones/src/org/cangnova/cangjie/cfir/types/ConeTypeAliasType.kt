@@ -9,8 +9,8 @@ import org.cangnova.cangjie.name.ClassId
 class ConeTypeAliasType(
     val classId: ClassId,
     /** 展开后的实际类型（解析后设置） */
-    val expandedType: ConeCangjieType? = null,
-    override val typeArguments: List<ConeCangjieType> = emptyList(),
+    val expandedType: ConeCangJieType? = null,
+    override val typeArguments: List<ConeCangJieType> = emptyList(),
     override val attributes: ConeAttributes = ConeAttributes.EMPTY,
 ) : ConeRigidType() {
 

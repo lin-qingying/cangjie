@@ -18,3 +18,4 @@ private val CfirSession.languageSettingsComponent: CfirLanguageSettingsComponent
 
 val CfirSession.languageVersionSettings: LanguageVersionSettings
     get() = languageSettingsComponent.languageVersionSettings
+

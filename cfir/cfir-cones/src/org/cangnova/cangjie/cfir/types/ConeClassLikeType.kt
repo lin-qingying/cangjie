@@ -10,7 +10,7 @@ import org.cangnova.cangjie.name.ClassId
  */
 class ConeClassLikeType(
     val lookupTag: ConeClassLikeLookupTag,
-    override val typeArguments: List<ConeCangjieType> = emptyList(),
+    override val typeArguments: List<ConeCangJieType> = emptyList(),
     override val attributes: ConeAttributes = ConeAttributes.EMPTY,
     val isInterface: Boolean = false,
     /** 是否为 This 类型引用（仓颉 class 内部引用自身类型，对应 ClassThisTy） */
@@ -47,7 +47,7 @@ class ConeClassLikeType(
  */
 class ConeStructType(
     val lookupTag: ConeClassLikeLookupTag,
-    override val typeArguments: List<ConeCangjieType> = emptyList(),
+    override val typeArguments: List<ConeCangJieType> = emptyList(),
     override val attributes: ConeAttributes = ConeAttributes.EMPTY,
 ) : ConeRigidType() {
 
@@ -82,7 +82,7 @@ class ConeStructType(
  */
 class ConeEnumType(
     val lookupTag: ConeClassLikeLookupTag,
-    override val typeArguments: List<ConeCangjieType> = emptyList(),
+    override val typeArguments: List<ConeCangJieType> = emptyList(),
     override val attributes: ConeAttributes = ConeAttributes.EMPTY,
     /** 是否为引用枚举类型（RefEnumTy） */
     val isRefEnum: Boolean = false,

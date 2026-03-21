@@ -14,9 +14,8 @@ import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeArrayType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeFlexibleType
 import org.cangnova.cangjie.cfir.types.ConeFuncType
 import org.cangnova.cangjie.cfir.types.ConeIntersectionType
 import org.cangnova.cangjie.cfir.types.ConePointerType
@@ -264,7 +263,7 @@ private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.containsTypeParameter(pa
     return coneType.containsTypeParameter(parameterName)
 }
 
-private fun ConeCangjieType.containsTypeParameter(parameterName: String): Boolean = when (this) {
+private fun ConeCangJieType.containsTypeParameter(parameterName: String): Boolean = when (this) {
     is ConeTypeParameterType -> lookupTag.name == parameterName
     is ConeClassLikeType -> typeArguments.any { it.containsTypeParameter(parameterName) }
     is ConeStructType -> typeArguments.any { it.containsTypeParameter(parameterName) }
@@ -279,7 +278,6 @@ private fun ConeCangjieType.containsTypeParameter(parameterName: String): Boolea
     is ConePointerType -> pointeeType.containsTypeParameter(parameterName)
     is ConeIntersectionType -> intersectedTypes.any { it.containsTypeParameter(parameterName) }
     is ConeUnionType -> unionTypes.any { it.containsTypeParameter(parameterName) }
-    is ConeFlexibleType -> lowerBound.containsTypeParameter(parameterName) || upperBound.containsTypeParameter(parameterName)
     else -> false
 }
 

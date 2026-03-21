@@ -8,9 +8,9 @@ package org.cangnova.cangjie.cfir.types
 class ConeTypeParameterType(
     val lookupTag: ConeTypeParameterLookupTag,
     /** 上界约束列表（通过 `<:` 约束） */
-    val upperBounds: List<ConeCangjieType> = emptyList(),
+    val upperBounds: List<ConeCangJieType> = emptyList(),
     /** 下界类型（内部使用） */
-    val lowerBound: ConeCangjieType? = null,
+    val lowerBound: ConeCangJieType? = null,
     /** 是否为类型别名参数 */
     val isAliasParam: Boolean = false,
     /** 是否为占位符类型变量 */

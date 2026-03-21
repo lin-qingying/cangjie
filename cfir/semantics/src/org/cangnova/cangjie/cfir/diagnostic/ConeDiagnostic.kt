@@ -9,9 +9,8 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
-import org.cangnova.cangjie.cfir.types.classId
 
 
 /**
@@ -62,7 +61,7 @@ class ConeInapplicableCandidateError(
 data class ConeUnresolvedNameError(
     val name: Name,
     val operator: String? = null,
-    val receiverType: ConeCangjieType? = null,
+    val receiverType: ConeCangJieType? = null,
 ) : ConeUnresolvedError {
     override val reason: String = buildString {
         append("unresolved name: ")

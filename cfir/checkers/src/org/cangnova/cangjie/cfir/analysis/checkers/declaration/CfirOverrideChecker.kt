@@ -10,7 +10,7 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeStructType
@@ -184,8 +184,8 @@ object CfirOverrideChecker : CfirDeclarationChecker<CfirClass>(CheckerDispatchKi
     }
 
     private fun isSubtypeOfForOverride(
-        subType: ConeCangjieType,
-        superType: ConeCangjieType,
+        subType: ConeCangJieType,
+        superType: ConeCangJieType,
         context: CheckerContext,
     ): Boolean {
         if (CfirTypeCheckUtils.isSubtypeOf(subType, superType)) return true
@@ -214,7 +214,7 @@ object CfirOverrideChecker : CfirDeclarationChecker<CfirClass>(CheckerDispatchKi
         return false
     }
 
-    private fun classIdOf(type: ConeCangjieType): ClassId? = when (type) {
+    private fun classIdOf(type: ConeCangJieType): ClassId? = when (type) {
         is ConeClassLikeType -> type.classId
         is ConeStructType -> type.classId
         is ConeEnumType -> type.classId

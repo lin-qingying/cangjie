@@ -3,7 +3,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirConstructor
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPattern
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPatternKind
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 
@@ -12,12 +12,12 @@ class Witness(val patterns: MutableList<CfirMatchPattern> = mutableListOf()) {
 
     fun clone(): Witness = Witness(patterns.toMutableList())
 
-    fun pushWildConstructor(constructor: CfirConstructor, type: ConeCangjieType): Witness {
+    fun pushWildConstructor(constructor: CfirConstructor, type: ConeCangJieType): Witness {
         constructor.subTypes(type).forEach { subType -> patterns.add(CfirMatchPattern.wild(subType)) }
         return applyConstructor(constructor, type)
     }
 
-    fun applyConstructor(constructor: CfirConstructor, type: ConeCangjieType): Witness {
+    fun applyConstructor(constructor: CfirConstructor, type: ConeCangJieType): Witness {
         val arity = constructor.arity(type)
         val len = patterns.size
         val oldPatterns = patterns.subList(len - arity, len)

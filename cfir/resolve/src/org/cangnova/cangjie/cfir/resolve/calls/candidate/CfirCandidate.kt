@@ -1,92 +1,381 @@
-﻿package org.cangnova.cangjie.cfir.resolve.calls.candidate
+package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
-import org.cangnova.cangjie.cfir.resolve.calls.CfirTypeSubstitutor
-import org.cangnova.cangjie.cfir.resolve.inference.CfirConstraintSystem
-import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.scopes.CfirScope
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
-import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
-import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
-import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
+import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
+import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 
-/**
- * 调用解析候选，面向 Phase 3。
- * 它封装一个候选符号以及该候选在验证管线中的状态，包括：
- * - 参数映射关系
- * - 使用到的默认值参数个数
- * - 类型参数替换器
- * - 适用性等级和诊断信息
- * 对齐 K2 `Candidate`，但去掉 postponed atoms、SAM 转换等 Kotlin 特有状态。
- */
+
 class CfirCandidate(
-    /** 候选符号。 */
-    val symbol: CfirCallableSymbol<*>,
-    /** 关联的调用信息。 */
-    val callInfo: CfirCallInfo,
-    /** 候选来源的 scope，可用于重载消歧中的 override 过滤。 */
-    val originScope: CfirScope? = null,
-) {
-    /** 实参到形参的映射，由 `MapArguments` 阶段填充。 */
-    var argumentMapping: Map<Int, Int> = emptyMap()
+    symbol:     CfirSymbol<*>,
+    // Here we may have an ExpressionReceiverValue
+    // - in case a use-site receiver is explicit
+    // - in some cases with static entities, no matter is a use-site receiver explicit or not
+    // OR we may have here a kind of ImplicitReceiverValue (non-statics only)
+    override var dispatchReceiver: ConeResolutionAtom?,
+    val givenExtensionReceiver: ConeResolutionAtom?,
+    override val explicitReceiverKind: ExplicitReceiverKind,
+    private val constraintSystemFactory: InferenceComponents.ConstraintSystemFactory,
+    private val baseSystem: ConstraintStorage,
+    override val callInfo: CallInfo,
+    val originScope: CfirScope?,
+    val isFromCompanionObjectTypeScope: Boolean = false,
+    // It's only true if we're in the member scope of smart cast receiver and this particular candidate came from original type
+    val isFromOriginalTypeInPresenceOfSmartCast: Boolean = false,
+    bodyResolveContext: BodyResolveContext,
+) : AbstractCallCandidate<ConeResolutionAtom>() {
 
-    /** 使用到的默认值参数个数。 */
+    // ---------------------------------------- Symbol ----------------------------------------
+
+    override var symbol: FirBasedSymbol<*> = symbol
+        private set
+
+    @UpdatingCandidateInvariants
+    fun updateSymbol(symbol: FirBasedSymbol<*>) {
+        this.symbol = symbol
+    }
+
+    // ---------------------------------------- Constraint system ----------------------------------------
+
+    override val usedOuterCs: Boolean get() = system.usesOuterCs
+
+    private var systemInitialized: Boolean = false
+    override val system: NewConstraintSystemImpl by lazy(LazyThreadSafetyMode.NONE) {
+        val system = constraintSystemFactory.createConstraintSystem()
+
+        val baseCSFromInferenceSession =
+            runUnless(baseSystem.usesOuterCs) {
+                bodyResolveContext.inferenceSession.baseConstraintStorageForCandidate(this, bodyResolveContext)
+            }
+        if (baseCSFromInferenceSession != null) {
+            system.setBaseSystem(baseCSFromInferenceSession)
+            system.addOtherSystem(baseSystem)
+        } else {
+            system.setBaseSystem(baseSystem)
+        }
+
+        systemInitialized = true
+        system
+    }
+
+    override val errors: List<ConstraintSystemError>
+        get() = system.errors
+
+    /**
+     * Substitutor from declared type parameters to type variables created for that candidate
+     */
+    lateinit var substitutor: ConeSubstitutor
+        private set
+    lateinit var freshVariables: List<ConeTypeVariable>
+        private set
+
+    fun initializeSubstitutorAndVariables(substitutor: ConeSubstitutor, freshVariables: List<ConeTypeVariable>) {
+        this.substitutor = substitutor
+        this.freshVariables = freshVariables
+    }
+
+    @UpdatingCandidateInvariants
+    fun updateSubstitutor(substitutor: ConeSubstitutor) {
+        this.substitutor = substitutor
+    }
+
+    // ---------------------------------------- Conversions ----------------------------------------
+
+    var resultingTypeForCallableReference: ConeKotlinType? = null
+        private set
+
+    internal var callableReferenceAdaptation: CallableReferenceAdaptation? = null
+        private set
+
+    internal fun initializeCallableReferenceAdaptation(
+        callableReferenceAdaptation: CallableReferenceAdaptation?,
+        resultingTypeForCallableReference: ConeKotlinType
+    ) {
+        require(this.callableReferenceAdaptation == null) { "callableReferenceAdaptation already initialized" }
+        this.callableReferenceAdaptation = callableReferenceAdaptation
+        this.resultingTypeForCallableReference = resultingTypeForCallableReference
+        if (callableReferenceAdaptation != null) {
+            numDefaults = callableReferenceAdaptation.defaults
+        }
+    }
+
+    /**
+     * Expressions in this set are arguments of the call that have function kind conversion applied (e.g., suspend conversion).
+     */
+    var argumentsWithFunctionKindConversion: HashSet<FirExpression>? = null
+        private set
+
+    fun addFunctionKindConversionOfArgument(element: FirExpression) {
+        val set = argumentsWithFunctionKindConversion ?: HashSet<FirExpression>().also { argumentsWithFunctionKindConversion = it }
+        set += element
+    }
+
+    var samConversionInfosOfArguments: HashMap<FirExpression, FirSamResolver.SamConversionInfo>? = null
+        private set
+
+    fun setSamConversionOfArgument(expression: FirExpression, conversionInfo: FirSamResolver.SamConversionInfo) {
+        val map = samConversionInfosOfArguments
+            ?: hashMapOf<FirExpression, FirSamResolver.SamConversionInfo>().also { samConversionInfosOfArguments = it }
+        map[expression] = conversionInfo
+    }
+
+    // Computed getters
+
+    val usesSamConversion: Boolean
+        get() = samConversionInfosOfArguments != null
+
+    val usesSamConversionOrSamConstructor: Boolean
+        get() = usesSamConversion || symbol.origin == FirDeclarationOrigin.SamConstructor
+
+    val usesFunctionKindConversion: Boolean
+        get() = argumentsWithFunctionKindConversion != null || callableReferenceAdaptation?.hasFunctionKindConversion() == true
+
+    // ---------------------------------------- Argument mapping ----------------------------------------
+
+    private var _arguments: List<ConeResolutionAtom>? = null
+    val arguments: List<ConeResolutionAtom>
+        get() = _arguments ?: error("Argument list is not initialized yet")
+
+    private var _argumentMapping: LinkedHashMap<ConeResolutionAtom, FirValueParameter>? = null
+    override val argumentMappingInitialized: Boolean
+        get() = _argumentMapping != null
+    override val argumentMapping: LinkedHashMap<ConeResolutionAtom, FirValueParameter>
+        get() = _argumentMapping ?: error("Argument mapping is not initialized yet")
+
+    fun initializeArgumentMapping(
+        arguments: List<ConeResolutionAtom>,
+        argumentMapping: LinkedHashMap<ConeResolutionAtom, FirValueParameter>,
+    ) {
+        require(_argumentMapping == null) { "Argument mapping already initialized" }
+        _argumentMapping = argumentMapping
+        _arguments = arguments
+    }
+
+    @UpdatingCandidateInvariants
+    fun updateArgumentMapping(argumentMapping: LinkedHashMap<ConeResolutionAtom, FirValueParameter>) {
+        _argumentMapping = argumentMapping
+    }
+
+    /**
+     * The arguments of a contextual implicit `invoke` candidate contain stub expressions for the implicitly passed
+     * context arguments between the [MapArguments] and [CheckContextArguments] stages.
+     *
+     * These expressions are always the first in the [arguments] list.
+     *
+     * This function replaces these stub arguments with the given [newArgumentPrefix] and updates the [argumentMapping] accordingly.
+     */
+    @UpdatingCandidateInvariants
+    fun replaceArgumentPrefix(newArgumentPrefix: List<ConeResolutionAtom>) {
+        val remainingArguments = arguments.subList(newArgumentPrefix.size, arguments.size)
+
+        val newArgumentMapping = LinkedHashMap<ConeResolutionAtom, FirValueParameter>()
+        for ((oldArgument, newArgument) in arguments.zip(newArgumentPrefix)) {
+            newArgumentMapping[newArgument] = argumentMapping.getValue(oldArgument)
+        }
+
+        for (argument in remainingArguments) {
+            argumentMapping[argument]?.let { newArgumentMapping[argument] = it }
+        }
+
+        val newArguments = newArgumentPrefix + remainingArguments
+
+        _arguments = newArguments
+        _argumentMapping = newArgumentMapping
+    }
+
     var numDefaults: Int = 0
 
-    /** 类型参数替换器。 */
-    var substitutor: CfirTypeSubstitutor = CfirTypeSubstitutor.Empty
+    // ---------------------------------------- Type argument mapping ----------------------------------------
 
-    /** 约束系统，泛型推断时使用。 */
-    var constraintSystem: CfirConstraintSystem? = null
+    lateinit var typeArgumentMapping: TypeArgumentMapping
 
-    /** 当前最低适用性等级，在各验证阶段中不断下调。 */
-    var lowestApplicability: CfirCandidateApplicability = CfirCandidateApplicability.RESOLVED
+    // ---------------------------------------- Postponed atoms ----------------------------------------
 
-    /** 候选上的诊断信息列表。 */
-    val diagnostics: MutableList<CfirResolutionDiagnostic> = mutableListOf()
+    val postponedAtoms: List<ConePostponedResolvedAtom>
+        field = mutableListOf()
 
-    /** 添加诊断，并同步更新 `lowestApplicability`。 */
-    fun addDiagnostic(diagnostic: CfirResolutionDiagnostic) {
-        diagnostics.add(diagnostic)
+    fun addPostponedAtom(atom: ConePostponedResolvedAtom) {
+        postponedAtoms += atom
+    }
+
+    // ------------------------ Context-sensitively resolved arguments ------------------------------------
+
+    private var _updatedArguments: MutableMap<FirElement, FirExpression>? =
+        null
+
+    private fun setUpdatedArgument(old: FirExpression, new: FirExpression) {
+        if (_updatedArguments == null) {
+            _updatedArguments = mutableMapOf()
+        }
+
+        val existingValue = _updatedArguments!!.put(old, new)
+        check(existingValue == null) {
+            "We shouldn't put the value for $old twice"
+        }
+    }
+
+    fun setUpdatedArgumentFromContextSensitiveResolution(old: FirPropertyAccessExpression, new: FirExpression) {
+        setUpdatedArgument(old, new)
+    }
+
+    fun setUpdatedCollectionLiteral(old: FirCollectionLiteral, new: FirExpression) {
+        setUpdatedArgument(old, new)
+    }
+
+    val argumentReplacements: Map<FirElement, FirExpression>?
+        get() = _updatedArguments
+
+    // ---------------------------------------- PCLA-related parts ----------------------------------------
+
+    val postponedPCLACalls: MutableList<ConeResolutionAtom> = mutableListOf()
+    val lambdasAnalyzedWithPCLA: MutableList<FirAnonymousFunction> = mutableListOf()
+
+    // Currently, it's only about completion results writing for property delegation inference info
+    // See the call sites of [FirDelegatedPropertyInferenceSession.completeSessionOrPostponeIfNonRoot]
+    val onPCLACompletionResultsWritingCallbacks: MutableList<(ConeSubstitutor) -> Unit> = mutableListOf()
+
+    // ---------------------------------------- Applicability ----------------------------------------
+
+    var lowestApplicability: CandidateApplicability = CandidateApplicability.RESOLVED
+        private set
+
+    override val applicability: CandidateApplicability
+        get() = lowestApplicability
+
+    override val diagnostics: List<ResolutionDiagnostic>
+        field = mutableListOf()
+
+    fun addDiagnostic(diagnostic: ResolutionDiagnostic) {
+        diagnostics += diagnostic
         if (diagnostic.applicability < lowestApplicability) {
             lowestApplicability = diagnostic.applicability
         }
     }
 
-    /** 当前候选是否仍可视为成功。 */
+    /**
+     * Note that [lowestApplicability]`.isSuccess == true` doesn't imply [isSuccessful].
+     *
+     * This is because [lowestApplicability] is equal to the lowest [ResolutionDiagnostic.applicability] of all [diagnostics],
+     * but in presence of more than one diagnostic, the lowest one can be successful while a higher one isn't, e.g., the combination
+     * of [CandidateApplicability.RESOLVED_NEED_PRESERVE_COMPATIBILITY] and [CandidateApplicability.RESOLVED_WITH_ERROR].
+     *
+     * Also see [org.jetbrains.kotlin.fir.resolve.transformers.FirCallCompletionResultsWriterTransformer.toResolvedReference]
+     * as it contains conditions that rely on subtle differences between the implementation of this property and
+     * [org.jetbrains.kotlin.resolve.calls.tower.isSuccess].
+     */
     val isSuccessful: Boolean
-        get() = lowestApplicability.isSuccess
+        get() = diagnostics.allSuccessful && (!systemInitialized || !system.hasContradiction)
+
+    // ---------------------------------------- Receivers ----------------------------------------
+
+    override var chosenExtensionReceiver: ConeResolutionAtom? = givenExtensionReceiver
+
+    override var contextArguments: List<ConeResolutionAtom>? = null
 
     /**
-     * 读取候选在应用类型替换之后的返回类型。
-     * 它会先从符号绑定的声明里提取返回类型，再通过 `substitutor`
-     * 替换其中的类型参数。
+     * In case `f: context(C..) (V) -> ..`, `f(e..)`, context values are still being introduced as a prefix of
+     * regular arguments for `invoke` function.
      */
-    fun resolvedReturnType(): ConeCangjieType? {
-        if (!symbol.isBound) return null
-        val decl = symbol.cfir
-        val typeRef = when (decl) {
-            is org.cangnova.cangjie.cfir.declarations.CfirFunction -> decl.returnTypeRef
-            is org.cangnova.cangjie.cfir.declarations.CfirProperty -> decl.returnTypeRef
-            is org.cangnova.cangjie.cfir.declarations.CfirConstructor -> decl.returnTypeRef
-            is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> {
-                val enumSymbol = decl.symbol as? org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
-                    ?: return null
-                val classId = callInfo.session.symbolProvider.getEnumConstructorOwnerClassId(enumSymbol)
-                    ?: callInfo.session.cfirProvider.getEnumConstructorOwnerClassId(enumSymbol)
-                    ?: return null
-                val typeArgs = decl.typeParameters.map {
-                    ConeTypeParameterType(ConeTypeParameterLookupTag(it.name.asString()))
+    var expectedContextParameterCountForInvoke: Int? = null
+
+    // FirExpressionStub can be located here in case of callable reference resolution
+    fun dispatchReceiverExpression(): FirExpression? {
+        return dispatchReceiver?.expression?.takeIf { it !is FirExpressionStub }
+    }
+
+    // FirExpressionStub can be located here in case of callable reference resolution
+    fun chosenExtensionReceiverExpression(): FirExpression? {
+        return chosenExtensionReceiver?.expression?.takeIf { it !is FirExpressionStub }
+    }
+
+    fun contextArguments(): List<FirExpression> {
+        return contextArguments?.map { it.expression.unwrapArgument() } ?: emptyList()
+    }
+
+    private var sourcesWereUpdated = false
+
+    // In case of implicit receivers we want to update corresponding sources to generate correct offset. This method must be called only
+    // once when candidate was selected and confirmed to be correct one.
+    fun updateSourcesOfReceivers() {
+        require(!sourcesWereUpdated)
+        sourcesWereUpdated = true
+
+        dispatchReceiver = dispatchReceiver?.tryToSetSourceForImplicitReceiver()
+        chosenExtensionReceiver = chosenExtensionReceiver?.tryToSetSourceForImplicitReceiver()
+        contextArguments = contextArguments?.map { it.tryToSetSourceForImplicitReceiver() }
+    }
+
+    private fun ConeResolutionAtom.tryToSetSourceForImplicitReceiver(): ConeResolutionAtom {
+        if (this !is ConeSimpleLeafResolutionAtom) return this
+
+        fun FirExpression.tryToSetSourceForImplicitReceiver(): FirExpression? {
+            return when (this) {
+                is FirSmartCastExpression -> {
+                    val newOriginal = this.originalExpression.tryToSetSourceForImplicitReceiver() ?: return null
+                    this.apply { replaceOriginalExpression(newOriginal) }
                 }
-                return substitutor.substituteOrSelf(ConeEnumType(ConeClassLookupTagImpl(classId), typeArgs))
+                is FirThisReceiverExpression if isImplicit -> {
+                    buildThisReceiverExpressionCopy(this) {
+                        source = callInfo.callSite.source?.fakeElement(KtFakeSourceElementKind.ImplicitReceiver)
+                    }
+                }
+                is FirPropertyAccessExpression if source?.kind == KtFakeSourceElementKind.ImplicitContextParameterArgument -> {
+                    buildPropertyAccessExpressionCopy(this) {
+                        source = callInfo.callSite.source?.fakeElement(KtFakeSourceElementKind.ImplicitContextParameterArgument)
+                    }
+                }
+                else -> null
             }
-            else -> return null
         }
-        val coneType = (typeRef as? org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef)?.coneType
-            ?: return null
-        return substitutor.substituteOrSelf(coneType)
+
+        val newExpression = this.expression.tryToSetSourceForImplicitReceiver() ?: return this
+        return ConeSimpleLeafResolutionAtom(newExpression, allowUnresolvedExpression = false)
+    }
+
+    // This thing is mostly for a common fast-path optimization and should not affect the semantics once it's set to `true`
+    var wasExpectedTypeAddedAsEqualityForSyntheticCall: Boolean = false
+        private set
+
+    fun markWasExpectedTypeAddedAsEqualityForSyntheticCall() {
+        wasExpectedTypeAddedAsEqualityForSyntheticCall = true
+    }
+
+    // ---------------------------------------- Backing field ----------------------------------------
+
+    var hasVisibleBackingField: Boolean = false
+
+    // ---------------------------------------- Util ----------------------------------------
+
+    var passedStages: Int = 0
+
+
+    /**
+     * Please avoid updating symbol in the candidate whenever it's possible.
+     * The only case when currently it seems to be unavoidable is at
+     * [org.jetbrains.kotlin.fir.resolve.transformers.FirCallCompletionResultsWriterTransformer.refineSubstitutedMemberIfReceiverContainsTypeVariable]
+     */
+    @RequiresOptIn
+    annotation class UpdatingCandidateInvariants
+
+    // ---------------------------------------- hashcode/equals/toString ----------------------------------------
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as CfirCandidate
+
+        if (symbol != other.symbol) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return symbol.hashCode()
+    }
+
+    override fun toString(): String {
+        val okOrFail = if (isSuccessful) "OK" else "FAIL"
+        val step = "$passedStages/${callInfo.callKind.resolutionSequence.size}"
+        return "$okOrFail($step): $symbol"
     }
 }
-

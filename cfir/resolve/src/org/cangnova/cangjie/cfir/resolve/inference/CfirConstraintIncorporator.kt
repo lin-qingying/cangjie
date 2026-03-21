@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.inference
 
 import org.cangnova.cangjie.cfir.types.ConeArrayType
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeFlexibleType
@@ -17,10 +17,10 @@ internal class CfirConstraintIncorporator(
     private val storage: CfirConstraintStorage,
 ) {
     fun processSubtypeConstraint(
-        subType: ConeCangjieType,
-        superType: ConeCangjieType,
-        onUpperBound: (CfirTypeVariable, ConeCangjieType) -> Unit,
-        onLowerBound: (CfirTypeVariable, ConeCangjieType) -> Unit,
+        subType: ConeCangJieType,
+        superType: ConeCangJieType,
+        onUpperBound: (CfirTypeVariable, ConeCangJieType) -> Unit,
+        onLowerBound: (CfirTypeVariable, ConeCangJieType) -> Unit,
     ) {
         val subVariable = storage.findTypeVariable(subType)
         val superVariable = storage.findTypeVariable(superType)
@@ -38,10 +38,10 @@ internal class CfirConstraintIncorporator(
     }
 
     private fun decomposeStructuralSubtypeConstraint(
-        subType: ConeCangjieType,
-        superType: ConeCangjieType,
-        onUpperBound: (CfirTypeVariable, ConeCangjieType) -> Unit,
-        onLowerBound: (CfirTypeVariable, ConeCangjieType) -> Unit,
+        subType: ConeCangJieType,
+        superType: ConeCangJieType,
+        onUpperBound: (CfirTypeVariable, ConeCangJieType) -> Unit,
+        onLowerBound: (CfirTypeVariable, ConeCangJieType) -> Unit,
     ) {
         val normalizedSub = normalizeFlexibleTypeForSubtype(subType, useLowerBound = true)
         val normalizedSuper = normalizeFlexibleTypeForSubtype(superType, useLowerBound = false)
@@ -117,16 +117,16 @@ internal class CfirConstraintIncorporator(
         }
     }
 
-    private fun normalizeFlexibleTypeForSubtype(type: ConeCangjieType, useLowerBound: Boolean): ConeCangjieType {
+    private fun normalizeFlexibleTypeForSubtype(type: ConeCangJieType, useLowerBound: Boolean): ConeCangJieType {
         if (type !is ConeFlexibleType) return type
         return if (useLowerBound) type.lowerBound else type.upperBound
     }
 
     private fun addUpperBound(
         variable: CfirTypeVariable,
-        type: ConeCangjieType,
-        onUpperBound: (CfirTypeVariable, ConeCangjieType) -> Unit,
-        onLowerBound: (CfirTypeVariable, ConeCangjieType) -> Unit,
+        type: ConeCangJieType,
+        onUpperBound: (CfirTypeVariable, ConeCangJieType) -> Unit,
+        onLowerBound: (CfirTypeVariable, ConeCangJieType) -> Unit,
     ) {
         if (!storage.addUpperBound(variable, type)) return
         onUpperBound(variable, type)
@@ -135,9 +135,9 @@ internal class CfirConstraintIncorporator(
 
     private fun addLowerBound(
         variable: CfirTypeVariable,
-        type: ConeCangjieType,
-        onUpperBound: (CfirTypeVariable, ConeCangjieType) -> Unit,
-        onLowerBound: (CfirTypeVariable, ConeCangjieType) -> Unit,
+        type: ConeCangJieType,
+        onUpperBound: (CfirTypeVariable, ConeCangJieType) -> Unit,
+        onLowerBound: (CfirTypeVariable, ConeCangJieType) -> Unit,
     ) {
         if (!storage.addLowerBound(variable, type)) return
         onLowerBound(variable, type)
@@ -146,9 +146,9 @@ internal class CfirConstraintIncorporator(
 
     private fun propagateBoundThroughOtherVariables(
         sourceVariableName: String,
-        sourceBound: ConeCangjieType,
-        onUpperBound: (CfirTypeVariable, ConeCangjieType) -> Unit,
-        onLowerBound: (CfirTypeVariable, ConeCangjieType) -> Unit,
+        sourceBound: ConeCangJieType,
+        onUpperBound: (CfirTypeVariable, ConeCangJieType) -> Unit,
+        onLowerBound: (CfirTypeVariable, ConeCangJieType) -> Unit,
     ) {
         if (sourceBound is ConeTypeParameterType) return
 

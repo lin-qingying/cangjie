@@ -11,8 +11,10 @@ plugins {
 allprojects {
     tasks.withType<KotlinCompile>().configureEach {
         compilerOptions {
+            freeCompilerArgs.add("-Xskip-prerelease-check")
             freeCompilerArgs.add("-Xjvm-default=all")
             freeCompilerArgs.add("-XXLanguage:+ExplicitBackingFields")
+            freeCompilerArgs.add("-Xcontext-parameters")
         }
     }
     pluginManager.apply("common-configuration")

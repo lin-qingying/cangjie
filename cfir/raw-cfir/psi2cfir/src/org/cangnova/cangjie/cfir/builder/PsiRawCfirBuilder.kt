@@ -183,6 +183,7 @@ class PsiRawCfirBuilder(
 
         private fun convertClass(psi: CjClassLikeDeclaration, classKind: CfirClassKind): CfirClass {
             val name = psi.nameAsSafeName
+            val classTypeParameters = convertTypeParameters(psi)
             val classDeclarations = convertClassMembers(psi).toMutableList()
 
             if (classKind != CfirClassKind.INTERFACE && classDeclarations.none { it is CfirConstructor }) {
@@ -190,7 +191,7 @@ class PsiRawCfirBuilder(
             }
 
             if (psi is CjEnum) {
-                classDeclarations.addAll(0, psi.constructor.map { convertEnumConstructor(it) })
+                classDeclarations.addAll(0, psi.constructor.map { convertEnumConstructor(it, classTypeParameters) })
             }
             return buildSourceDeclaration(CfirClassSymbol()) { symbol ->
                 buildClass {
@@ -201,7 +202,7 @@ class PsiRawCfirBuilder(
 
                     attributes = CfirDeclarationAttributes.EMPTY
                     status = convertDeclarationStatus(psi)
-                    typeParameters.addAll(convertTypeParameters(psi))
+                    typeParameters.addAll(classTypeParameters)
                     superTypeRefs.addAll(convertSuperTypeRefs(psi))
                     declarations.addAll(classDeclarations)
                     this.name = name
@@ -459,7 +460,10 @@ class PsiRawCfirBuilder(
             }
         }
 
-        private fun convertEnumConstructor(psi: CjEnumConstructor): CfirEnumConstructor {
+        private fun convertEnumConstructor(
+            psi: CjEnumConstructor,
+            ownerTypeParameters: List<CfirTypeParameter>,
+        ): CfirEnumConstructor {
             val enumConstructorName = psi.name?.let { Name.identifier(it) } ?: Name.special("<anonymous-enum-constructor>")
             val valueTypeRefs = psi.typeReferences.map { convertTypeRef(it) }
             val enumConstructorTypeRef = when (valueTypeRefs.size) {
@@ -479,6 +483,7 @@ class PsiRawCfirBuilder(
 
                     attributes = CfirDeclarationAttributes.EMPTY
                     status = CfirDeclarationStatusImpl.DEFAULT
+                    typeParameters.addAll(ownerTypeParameters)
                     returnTypeRef = enumConstructorTypeRef
                     name = enumConstructorName
                 }
@@ -835,6 +840,15 @@ class PsiRawCfirBuilder(
             }
 
             if (selector is CjSimpleNameExpression) {
+                val typeArgs = selector.getTypeArguments().map { convertTypeRef(it.typeReference) }
+                if (typeArgs.isNotEmpty()) {
+                    return buildQualifiedAccess {
+                        source = psi.toCjPsiSourceElement()
+                        calleeReference = buildNamedReference(selector.referencedNameAsName)
+                        explicitReceiver = receiver
+                        typeArguments.addAll(typeArgs)
+                    }
+                }
                 return buildPropertyAccess {
                     source = psi.toCjPsiSourceElement()
                     calleeReference = buildNamedReference(selector.referencedNameAsName)
@@ -849,6 +863,7 @@ class PsiRawCfirBuilder(
             return buildQualifiedAccess {
                 source = psi.toCjPsiSourceElement()
                 calleeReference = buildNamedReference(psi.referencedNameAsName)
+                typeArguments.addAll(psi.typeArguments.map { convertTypeRef(it.typeReference) })
             }
         }
 

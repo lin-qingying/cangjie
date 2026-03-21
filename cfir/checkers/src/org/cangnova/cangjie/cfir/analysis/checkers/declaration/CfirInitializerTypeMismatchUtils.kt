@@ -5,15 +5,15 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory3
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 context(context: CheckerContext, reporter: DiagnosticReporter)
 fun checkTypeMismatch(
-    expectedType: ConeCangjieType,
-    actualType: ConeCangjieType,
+    expectedType: ConeCangJieType,
+    actualType: ConeCangJieType,
     source: AbstractCjSourceElement,
-    diagnosticFactory: CjDiagnosticFactory3<ConeCangjieType, ConeCangjieType, Boolean>,
+    diagnosticFactory: CjDiagnosticFactory3<ConeCangJieType, ConeCangJieType, Boolean>,
 ) {
     if (CfirTypeCheckUtils.isSubtypeOf(actualType, expectedType)) return
     reporter.reportOn(

@@ -2,7 +2,8 @@ package org.cangnova.cangjie.cfir.resolve.inference
 
 import org.cangnova.cangjie.cfir.resolve.calls.CfirTypeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.calls.CfirTypeSubstitutorByMap
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.semantics.CfirConstraintSystemError
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
 
 internal class CfirConstraintStorage {
@@ -17,15 +18,15 @@ internal class CfirConstraintStorage {
         val constraintsCount: Int,
         val errorsCount: Int,
         val nextFreshId: Int,
-        val fixedTypes: Map<String, ConeCangjieType>,
-        val variableBounds: Map<String, Pair<List<ConeCangjieType>, List<ConeCangjieType>>>,
+        val fixedTypes: Map<String, ConeCangJieType>,
+        val variableBounds: Map<String, Pair<List<ConeCangJieType>, List<ConeCangJieType>>>,
         val dependencies: Map<String, Set<String>>,
     )
 
     private val _typeVariables: MutableList<CfirTypeVariable> = mutableListOf()
     private val _constraints: MutableList<CfirConstraint> = mutableListOf()
-    private val _errors: MutableList<String> = mutableListOf()
-    private val _fixedTypeVariables: MutableMap<String, ConeCangjieType> = linkedMapOf()
+    private val _errors: MutableList<CfirConstraintSystemError> = mutableListOf()
+    private val _fixedTypeVariables: MutableMap<String, ConeCangJieType> = linkedMapOf()
     private val variableByName: MutableMap<String, CfirTypeVariable> = mutableMapOf()
     private val typeVariableDependencies: MutableMap<String, MutableSet<String>> = linkedMapOf()
     private val transactions: MutableList<TransactionSnapshot> = mutableListOf()
@@ -35,7 +36,7 @@ internal class CfirConstraintStorage {
 
     val typeVariables: List<CfirTypeVariable> get() = _typeVariables
     val constraints: List<CfirConstraint> get() = _constraints
-    val errors: List<String> get() = _errors
+    val errors: List<CfirConstraintSystemError> get() = _errors
     val hasErrors: Boolean get() = _errors.isNotEmpty()
 
     fun nextFreshTypeId(): Int = nextFreshId++
@@ -52,12 +53,12 @@ internal class CfirConstraintStorage {
         _constraints.add(constraint)
     }
 
-    fun findTypeVariable(type: ConeCangjieType): CfirTypeVariable? {
+    fun findTypeVariable(type: ConeCangJieType): CfirTypeVariable? {
         if (type !is ConeTypeParameterType) return null
         return variableByName[type.lookupTag.name]
     }
 
-    fun addUpperBound(variable: CfirTypeVariable, type: ConeCangjieType): Boolean {
+    fun addUpperBound(variable: CfirTypeVariable, type: ConeCangJieType): Boolean {
         checkState(State.BUILDING, State.COMPLETION, State.TRANSACTION)
         if (variable.upperBounds.contains(type)) return false
         variable.upperBounds.add(type)
@@ -65,7 +66,7 @@ internal class CfirConstraintStorage {
         return true
     }
 
-    fun addLowerBound(variable: CfirTypeVariable, type: ConeCangjieType): Boolean {
+    fun addLowerBound(variable: CfirTypeVariable, type: ConeCangJieType): Boolean {
         checkState(State.BUILDING, State.COMPLETION, State.TRANSACTION)
         if (variable.lowerBounds.contains(type)) return false
         variable.lowerBounds.add(type)
@@ -83,7 +84,7 @@ internal class CfirConstraintStorage {
         typeVariableDependencies.remove(referencedVariableName)
     }
 
-    fun markFixed(variable: CfirTypeVariable, fixedType: ConeCangjieType) {
+    fun markFixed(variable: CfirTypeVariable, fixedType: ConeCangJieType) {
         checkState(State.BUILDING, State.COMPLETION, State.TRANSACTION)
         _fixedTypeVariables[variable.name] = fixedType
     }
@@ -124,7 +125,7 @@ internal class CfirConstraintStorage {
         _fixedTypeVariables.putAll(snapshot.fixedTypes)
 
         for (variable in _typeVariables) {
-            val (lower, upper) = snapshot.variableBounds[variable.name] ?: (emptyList<ConeCangjieType>() to emptyList())
+            val (lower, upper) = snapshot.variableBounds[variable.name] ?: (emptyList<ConeCangJieType>() to emptyList())
             variable.lowerBounds.clear()
             variable.lowerBounds.addAll(lower)
             variable.upperBounds.clear()
@@ -153,14 +154,14 @@ internal class CfirConstraintStorage {
         state = State.FREEZED
     }
 
-    fun reportError(message: String): Boolean {
-        if (message in _errors) return false
-        _errors.add(message)
+    fun reportError(error: CfirConstraintSystemError): Boolean {
+        if (error in _errors) return false
+        _errors.add(error)
         return true
     }
 
     fun buildCurrentSubstitutor(): CfirTypeSubstitutor {
-        val substitution = buildMap<String, ConeCangjieType> {
+        val substitution = buildMap<String, ConeCangJieType> {
             for ((name, fixedType) in _fixedTypeVariables) {
                 put(name, fixedType)
             }
@@ -174,7 +175,7 @@ internal class CfirConstraintStorage {
         return if (substitution.isEmpty()) CfirTypeSubstitutor.Empty else CfirTypeSubstitutorByMap(substitution)
     }
 
-    private fun recordTypeVariableDependencies(owner: CfirTypeVariable, bound: ConeCangjieType) {
+    private fun recordTypeVariableDependencies(owner: CfirTypeVariable, bound: ConeCangJieType) {
         val referencedVariables = mutableSetOf<String>()
         bound.collectTypeVariableNames(referencedVariables)
         for (referencedVariable in referencedVariables) {

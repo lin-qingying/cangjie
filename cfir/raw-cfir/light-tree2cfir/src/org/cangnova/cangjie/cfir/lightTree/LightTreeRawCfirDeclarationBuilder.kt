@@ -140,7 +140,7 @@ class LightTreeRawCfirDeclarationBuilder(
             val enumBody = tree.findChildByType(node, CjNodeTypes.ENUM_BODY)
             if (enumBody != null) {
                 val enumCtors = tree.getChildrenByType(enumBody, CjNodeTypes.ENUM_CONSTRUCTOR)
-                    .map { convertEnumConstructor(it) }
+                    .map { convertEnumConstructor(it, typeParams) }
                 classDeclarations.addAll(0, enumCtors)
             }
         }
@@ -446,7 +446,10 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== 枚举构造器 =====
 
-    private fun convertEnumConstructor(node: LighterASTNode): CfirEnumConstructor {
+    private fun convertEnumConstructor(
+        node: LighterASTNode,
+        ownerTypeParameters: List<CfirTypeParameter> = emptyList(),
+    ): CfirEnumConstructor {
         val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
             ?: tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION)
         val enumName = if (nameNode != null) {
@@ -479,6 +482,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
                 status = CfirDeclarationStatusImpl.DEFAULT
+                typeParameters.addAll(ownerTypeParameters)
                 returnTypeRef = enumCtorTypeRef
                 name = enumName
             }

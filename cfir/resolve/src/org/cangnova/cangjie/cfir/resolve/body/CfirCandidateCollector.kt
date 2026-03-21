@@ -1,9 +1,9 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateApplicability
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
+import org.cangnova.cangjie.cfir.semantics.CandidateApplicability
 
 /**
  * 候选收集器，负责在 scope 塔遍历过程中收集并排序候选。
@@ -17,7 +17,7 @@ class CfirCandidateCollector(
 
     private val candidates = mutableListOf<CfirCandidate>()
 
-    var currentApplicability: CfirCandidateApplicability = CfirCandidateApplicability.HIDDEN
+    var currentApplicability: CandidateApplicability = CandidateApplicability.HIDDEN
         private set
 
     /** 当前最优候选所在的 tower 层级。 */
@@ -34,7 +34,7 @@ class CfirCandidateCollector(
         group: CfirTowerGroup,
         candidate: CfirCandidate,
         context: CfirResolutionContext,
-    ): CfirCandidateApplicability {
+    ): CandidateApplicability {
         val applicability = resolutionStageRunner.processCandidate(candidate, context)
 
         val currentBest = bestGroup
@@ -78,7 +78,7 @@ class CfirCandidateCollector(
     /** 重置内部状态，用于新一轮收集。 */
     fun newDataSet() {
         candidates.clear()
-        currentApplicability = CfirCandidateApplicability.HIDDEN
+        currentApplicability = CandidateApplicability.HIDDEN
         bestGroup = null
     }
 }

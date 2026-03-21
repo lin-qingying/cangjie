@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.test.frontend
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.test.model.FrontendKinds
 import org.cangnova.cangjie.test.model.ResultingArtifact

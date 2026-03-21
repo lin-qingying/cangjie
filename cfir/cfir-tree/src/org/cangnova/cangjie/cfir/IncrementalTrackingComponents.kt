@@ -8,7 +8,7 @@ import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.incremental.components.EnumMatchTracker
 import org.cangnova.cangjie.incremental.components.ICFileMappingTracker
@@ -91,7 +91,7 @@ abstract class CfirEnumMatchTrackerComponent : CfirSessionComponent {
 
 val CfirSession.enumMatchTracker: CfirEnumMatchTrackerComponent? by CfirSession.nullableSessionComponentAccessor()
 
-fun CfirEnumMatchTrackerComponent.reportEnumUsageInMatch(path: String?, subjectType: ConeCangjieType?) {
+fun CfirEnumMatchTrackerComponent.reportEnumUsageInMatch(path: String?, subjectType: ConeCangJieType?) {
     if (path == null || subjectType !is ConeEnumType) return
     val fqName = subjectType.classId.asString().replace(".", "$").replace("/", ".")
     report(path, fqName)

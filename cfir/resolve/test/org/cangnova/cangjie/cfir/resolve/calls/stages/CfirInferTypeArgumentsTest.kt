@@ -18,12 +18,11 @@ import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildC
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildFunctionSymbol
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildTypedExpression
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateApplicability
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.InferenceConstraintError
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceComponents
+import org.cangnova.cangjie.cfir.semantics.CandidateApplicability
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
@@ -69,9 +68,12 @@ class CfirInferTypeArgumentsTest {
         val argType = ConeClassLikeType(ConeClassLookupTagImpl(boxId), listOf(ConePrimitiveType.INT32))
         val callInfo = buildCallInfo("id", arguments = listOf(buildTypedExpression(argType)))
         val candidate = buildCandidate(symbol, callInfo)
+        val sink = CfirCheckerSinkImpl(candidate)
 
-        CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
-        CfirInferTypeArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
+        CfirCreateFreshTypeVariableSubstitutorStage.check(candidate, sink, context)
+        CfirMapArguments.check(candidate, sink, context)
+        CfirCheckArguments.check(candidate, sink, context)
+        CfirInferTypeArguments.check(candidate, sink, context)
 
         assertEquals(ConePrimitiveType.INT32, candidate.resolvedReturnType())
         assertTrue(candidate.constraintSystem?.errors?.isEmpty() == true)
@@ -94,9 +96,12 @@ class CfirInferTypeArgumentsTest {
         )
         val callInfo = buildCallInfo("pick", arguments = listOf(buildTypedExpression(childType)))
         val candidate = buildCandidate(symbol, callInfo)
+        val sink = CfirCheckerSinkImpl(candidate)
 
-        CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
-        CfirInferTypeArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
+        CfirCreateFreshTypeVariableSubstitutorStage.check(candidate, sink, context)
+        CfirMapArguments.check(candidate, sink, context)
+        CfirCheckArguments.check(candidate, sink, context)
+        CfirInferTypeArguments.check(candidate, sink, context)
 
         assertEquals(childType, candidate.resolvedReturnType())
         assertTrue(candidate.constraintSystem?.errors?.isEmpty() == true)
@@ -117,12 +122,15 @@ class CfirInferTypeArgumentsTest {
         )
         val callInfo = buildCallInfo("bad", arguments = listOf(buildTypedExpression(ConePrimitiveType.BOOLEAN)))
         val candidate = buildCandidate(symbol, callInfo)
+        val sink = CfirCheckerSinkImpl(candidate)
 
-        CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
-        CfirInferTypeArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
+        CfirCreateFreshTypeVariableSubstitutorStage.check(candidate, sink, context)
+        CfirMapArguments.check(candidate, sink, context)
+        CfirCheckArguments.check(candidate, sink, context)
+        CfirInferTypeArguments.check(candidate, sink, context)
 
-        assertEquals(CfirCandidateApplicability.INAPPLICABLE, candidate.lowestApplicability)
-        assertTrue(candidate.diagnostics.any { it is InferenceConstraintError })
+        assertEquals(CandidateApplicability.INAPPLICABLE, candidate.lowestApplicability)
+        assertTrue(candidate.diagnostics.any { it is ArgumentTypeMismatch })
     }
 
     @Test
@@ -148,9 +156,12 @@ class CfirInferTypeArgumentsTest {
             inferenceComponents = context.inferenceComponents,
             expectedType = boxOfInt,
         )
+        val sink = CfirCheckerSinkImpl(candidate)
 
-        CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), returnConstrainedContext)
-        CfirInferTypeArguments.check(candidate, CfirCheckerSinkImpl(candidate), returnConstrainedContext)
+        CfirCreateFreshTypeVariableSubstitutorStage.check(candidate, sink, returnConstrainedContext)
+        CfirMapArguments.check(candidate, sink, returnConstrainedContext)
+        CfirCheckArguments.check(candidate, sink, returnConstrainedContext)
+        CfirInferTypeArguments.check(candidate, sink, returnConstrainedContext)
 
         assertEquals(boxOfInt, candidate.resolvedReturnType())
         assertTrue(candidate.constraintSystem?.errors?.isEmpty() == true)
@@ -169,9 +180,12 @@ class CfirInferTypeArgumentsTest {
         )
         val callInfo = buildCallInfo("identity", arguments = listOf(buildTypedExpression(ConePrimitiveType.INT64)))
         val candidate = buildCandidate(symbol, callInfo)
+        val sink = CfirCheckerSinkImpl(candidate)
 
-        CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
-        CfirInferTypeArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
+        CfirCreateFreshTypeVariableSubstitutorStage.check(candidate, sink, context)
+        CfirMapArguments.check(candidate, sink, context)
+        CfirCheckArguments.check(candidate, sink, context)
+        CfirInferTypeArguments.check(candidate, sink, context)
 
         assertEquals(ConePrimitiveType.INT64, candidate.resolvedReturnType())
         assertTrue(candidate.constraintSystem?.errors?.isEmpty() == true)
@@ -179,7 +193,7 @@ class CfirInferTypeArgumentsTest {
 
     private fun makeTypeParameter(
         name: String,
-        bounds: List<ConeCangjieType> = emptyList(),
+        bounds: List<ConeCangJieType> = emptyList(),
     ): CfirTypeParameterImpl {
         val symbol = CfirTypeParameterSymbol()
         val boundRefs = bounds.map { boundType ->
@@ -215,14 +229,14 @@ private class InferenceStageTypeContext : ConeTypeContext {
         lookupTag = ConeClassLookupTagImpl(ClassId(FqName("test"), Name.identifier("Parent"))),
     )
 
-    override fun supertypes(type: ConeCangjieType): Collection<ConeCangjieType> {
+    override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> {
         if (type is ConeClassLikeType && type.classId.shortClassName.asString() == "Child") {
             return listOf(parent)
         }
         return emptyList()
     }
 
-    override fun isSameTypeConstructor(a: ConeCangjieType, b: ConeCangjieType): Boolean {
+    override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean {
         if (a is ConePrimitiveType && b is ConePrimitiveType) return a.kind == b.kind
         if (a is ConeClassLikeType && b is ConeClassLikeType) return a.classId == b.classId
         return a == b

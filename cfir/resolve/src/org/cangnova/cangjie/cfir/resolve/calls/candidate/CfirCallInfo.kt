@@ -2,6 +2,7 @@
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.semantics.AbstractCallInfo
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
@@ -13,18 +14,20 @@ import org.cangnova.cangjie.name.Name
  */
 class CfirCallInfo(
     /** 调用站点对应的 AST 节点。 */
-    val callSite: CfirElement,
+    override val callSite: CfirElement,
     /** 调用种类，如函数、变量访问或构造器调用。 */
     val callKind: CfirCallKind,
     /** 被调用的名称。 */
-    val name: Name,
+    override val name: Name,
     /** 显式接收者表达式，可为空。 */
-    val explicitReceiver: CfirExpression?,
+    override val explicitReceiver: CfirExpression?,
     /** 实参列表。 */
-    val arguments: List<CfirExpression>,
+    override val arguments: List<CfirExpression>,
     /** 显式类型实参列表。 */
     val typeArguments: List<CfirTypeRef>,
     /** 编译器会话。 */
     val session: CfirSession,
-)
+) : AbstractCallInfo() {
+    override val isImplicitInvoke: Boolean = false
+}
 

@@ -15,14 +15,14 @@ import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonOp
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirComparisonExpressionImpl
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirComparisonExpressionBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    var coneTypeOrNull: ConeCangjieType? = null
+    var coneTypeOrNull: ConeCangJieType? = null
     lateinit var operation: CfirComparisonOp
     lateinit var left: CfirExpression
     lateinit var right: CfirExpression

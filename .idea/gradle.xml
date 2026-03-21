@@ -47,6 +47,7 @@
             <option value="$PROJECT_DIR$/cfir/checkers/checkers-component-generator" />
             <option value="$PROJECT_DIR$/cfir/diagnostic-renderers" />
             <option value="$PROJECT_DIR$/cfir/entrypoint" />
+            <option value="$PROJECT_DIR$/cfir/providers" />
             <option value="$PROJECT_DIR$/cfir/raw-cfir" />
             <option value="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir" />
             <option value="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir" />

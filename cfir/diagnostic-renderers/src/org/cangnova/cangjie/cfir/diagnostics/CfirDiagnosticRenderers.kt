@@ -6,11 +6,11 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 object CfirDiagnosticRenderers {
 
-    val RENDER_TYPE = ContextDependentRenderer { type: ConeCangjieType, _ ->
+    val RENDER_TYPE = ContextDependentRenderer { type: ConeCangJieType, _ ->
         type.toString()
     }
 

@@ -21,4 +21,7 @@ func name():Unit {
     let a :Option1<Int64> = None1
     let b  = Some1(1)
     let d = Option1<Int64>.Some1(1)
+    let e = Option<Int64>.Some(1)
+    let f = Some (1)
+    let g = None<Int64>
 }

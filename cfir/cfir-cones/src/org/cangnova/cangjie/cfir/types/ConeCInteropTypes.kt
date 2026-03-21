@@ -5,11 +5,11 @@ package org.cangnova.cangjie.cfir.types
  * 用于 C 互操作。
  */
 class ConePointerType(
-    val pointeeType: ConeCangjieType,
+    val pointeeType: ConeCangJieType,
     override val attributes: ConeAttributes = ConeAttributes.EMPTY,
 ) : ConeRigidType() {
 
-    override val typeArguments: List<ConeCangjieType> get() = listOf(pointeeType)
+    override val typeArguments: List<ConeCangJieType> get() = listOf(pointeeType)
 
     override fun equals(other: Any?): Boolean =
         other is ConePointerType && pointeeType == other.pointeeType

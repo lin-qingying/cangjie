@@ -16,14 +16,14 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.impl.CfirFunctionCallImpl
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirFunctionCallBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    var coneTypeOrNull: ConeCangjieType? = null
+    var coneTypeOrNull: ConeCangJieType? = null
     lateinit var calleeReference: CfirReference
     var explicitReceiver: CfirExpression? = null
     val arguments: MutableList<CfirExpression> = mutableListOf()

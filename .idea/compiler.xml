@@ -80,6 +80,9 @@
       <module name="cangjie.cfir.entrypoint" options="-proc:none" />
       <module name="cangjie.cfir.entrypoint.main" options="-proc:none" />
       <module name="cangjie.cfir.entrypoint.test" options="-proc:none" />
+      <module name="cangjie.cfir.providers" options="-proc:none" />
+      <module name="cangjie.cfir.providers.main" options="-proc:none" />
+      <module name="cangjie.cfir.providers.test" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.light-tree2cfir" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.light-tree2cfir.main" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.light-tree2cfir.test" options="-proc:none" />

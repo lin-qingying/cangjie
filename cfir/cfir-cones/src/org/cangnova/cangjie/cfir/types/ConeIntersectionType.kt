@@ -5,7 +5,7 @@ package org.cangnova.cangjie.cfir.types
  * 内部类型检查使用，表示多个类型的交叉。
  */
 class ConeIntersectionType(
-    val intersectedTypes: List<ConeCangjieType>,
+    val intersectedTypes: List<ConeCangJieType>,
     override val attributes: ConeAttributes = ConeAttributes.EMPTY,
 ) : ConeRigidType() {
 
@@ -23,7 +23,7 @@ class ConeIntersectionType(
  * 内部类型检查使用，表示多个类型的联合。
  */
 class ConeUnionType(
-    val unionTypes: Set<ConeCangjieType>,
+    val unionTypes: Set<ConeCangJieType>,
     override val attributes: ConeAttributes = ConeAttributes.EMPTY,
 ) : ConeRigidType() {
 

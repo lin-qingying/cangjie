@@ -6,7 +6,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 /**
  * BODY_RESOLVE 阶段的返回类型计算器。
@@ -16,7 +16,7 @@ import org.cangnova.cangjie.cfir.types.ConeCangjieType
  */
 class CfirReturnTypeCalculatorForFullBodyResolve : CfirReturnTypeCalculator {
 
-    override fun tryCalculateReturnType(declaration: CfirCallableDeclaration): ConeCangjieType? {
+    override fun tryCalculateReturnType(declaration: CfirCallableDeclaration): ConeCangJieType? {
         val typeRef = extractReturnTypeRef(declaration)
         return if (typeRef is CfirResolvedTypeRef) typeRef.coneType else null
     }
