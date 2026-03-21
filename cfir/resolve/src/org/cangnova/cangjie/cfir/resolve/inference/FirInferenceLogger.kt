@@ -3,9 +3,11 @@
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
+import org.cangnova.cangjie.cfir.semantics.CfirConstraintSystemError
+import org.cangnova.cangjie.cfir.semantics.CfirConstraintSystemMarker
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 open class FirInferenceLogger : InferenceLogger(), CfirSessionComponent {
     sealed class LoggingElement
@@ -214,7 +216,7 @@ open class FirInferenceLogger : InferenceLogger(), CfirSessionComponent {
 
     override fun logFixVariable(
         variable: CfirTypeVariable,
-        resultType: ConeCangjieType,
+        resultType: ConeCangJieType,
         system: CfirConstraintSystemMarker,
     ) {
         prepareProperBlock(system)

@@ -31,9 +31,9 @@ object CfirBuiltinOperatorResolver {
      */
     fun tryResolveBuiltinOperator(
         name: Name,
-        receiverType: ConeCangjieType?,
-        argumentTypes: List<ConeCangjieType>,
-    ): ConeCangjieType? {
+        receiverType: ConeCangJieType?,
+        argumentTypes: List<ConeCangJieType>,
+    ): ConeCangJieType? {
         if (receiverType == null) return null
         val opName = name.asString()
 
@@ -71,32 +71,32 @@ object CfirBuiltinOperatorResolver {
     }
 
     private fun resolveArithmeticOp(
-        receiverType: ConeCangjieType,
-        argType: ConeCangjieType,
-    ): ConeCangjieType? {
+        receiverType: ConeCangJieType,
+        argType: ConeCangJieType,
+    ): ConeCangJieType? {
         if (!receiverType.isNumericType || !argType.isNumericType) return null
         return resolveNumericPromotion(receiverType, argType)
     }
 
     private fun resolveBitwiseOp(
-        receiverType: ConeCangjieType,
-        argType: ConeCangjieType,
-    ): ConeCangjieType? {
+        receiverType: ConeCangJieType,
+        argType: ConeCangJieType,
+    ): ConeCangJieType? {
         if (!receiverType.isIntegerType || !argType.isIntegerType) return null
         return resolveNumericPromotion(receiverType, argType)
     }
 
-    private fun resolveShiftOp(receiverType: ConeCangjieType): ConeCangjieType? {
+    private fun resolveShiftOp(receiverType: ConeCangJieType): ConeCangJieType? {
         if (!receiverType.isIntegerType) return null
         return receiverType
     }
 
-    private fun resolveUnaryNumericOp(receiverType: ConeCangjieType): ConeCangjieType? {
+    private fun resolveUnaryNumericOp(receiverType: ConeCangJieType): ConeCangJieType? {
         if (!receiverType.isNumericType) return null
         return receiverType
     }
 
-    private fun resolveUnaryIntegerOp(receiverType: ConeCangjieType): ConeCangjieType? {
+    private fun resolveUnaryIntegerOp(receiverType: ConeCangJieType): ConeCangJieType? {
         if (!receiverType.isIntegerType) return null
         return receiverType
     }
@@ -105,9 +105,9 @@ object CfirBuiltinOperatorResolver {
      * 比较操作符的解析。
      */
     private fun resolveComparisonOp(
-        receiverType: ConeCangjieType,
-        argType: ConeCangjieType,
-    ): ConeCangjieType? {
+        receiverType: ConeCangJieType,
+        argType: ConeCangJieType,
+    ): ConeCangJieType? {
         // 两端都是数值类型
         if (receiverType.isNumericType && argType.isNumericType) {
             return ConePrimitiveType.BOOLEAN
@@ -132,7 +132,7 @@ object CfirBuiltinOperatorResolver {
         return null
     }
 
-    private fun resolveNotOp(receiverType: ConeCangjieType): ConeCangjieType? {
+    private fun resolveNotOp(receiverType: ConeCangJieType): ConeCangJieType? {
         if (!receiverType.isBoolean) return null
         return ConePrimitiveType.BOOLEAN
     }
@@ -141,9 +141,9 @@ object CfirBuiltinOperatorResolver {
      * 数值类型提升与拓宽规则。
      */
     private fun resolveNumericPromotion(
-        receiverType: ConeCangjieType,
-        argType: ConeCangjieType,
-    ): ConeCangjieType {
+        receiverType: ConeCangJieType,
+        argType: ConeCangJieType,
+    ): ConeCangJieType {
         val receiverIsIdeal = receiverType.isIdealType
         val argIsIdeal = argType.isIdealType
 

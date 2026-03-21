@@ -8,7 +8,7 @@ import org.cangnova.cangjie.cfir.pipeline.SingleModuleFrontendOutput
 import org.cangnova.cangjie.cfir.pipeline.buildCfirFromCjFiles
 import org.cangnova.cangjie.cfir.pipeline.buildCfirViaLightTree
 import org.cangnova.cangjie.cfir.pipeline.runResolution
-import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.CfirParser

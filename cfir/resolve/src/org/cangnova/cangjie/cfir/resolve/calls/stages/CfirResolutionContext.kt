@@ -4,7 +4,7 @@ import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveContext
 import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceComponents
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeSubtypeChecker
 import org.cangnova.cangjie.name.FqName
 
@@ -22,7 +22,7 @@ class CfirResolutionContext(
     /** 泛型推断组件，主要供后续阶段使用。 */
     val inferenceComponents: CfirInferenceComponents? = null,
     /** 调用处的期望返回类型，用于泛型返回类型约束收集。 */
-    val expectedType: ConeCangjieType? = null,
+    val expectedType: ConeCangJieType? = null,
     /** 使用点所属文件路径，用于可见性检查。 */
     val containingFilePath: String? = null,
     /** 使用点所属包名，用于可见性检查。 */

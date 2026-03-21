@@ -9,7 +9,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.i
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 object ExhaustivenessAnalyzer {
     private val dispatcher = HybridDispatcher.DEFAULT
@@ -49,7 +49,7 @@ object ExhaustivenessAnalyzer {
 
     fun checkMatrix(
         matrix: CfirMatrix,
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         context: CheckerContext,
     ): ExhaustivenessResult {
         if (!matrix.isWellTyped()) {

@@ -1,7 +1,6 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateApplicability
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirResolutionDiagnostic
 
 /**

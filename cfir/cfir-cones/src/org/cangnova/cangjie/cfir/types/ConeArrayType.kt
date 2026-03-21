@@ -6,13 +6,13 @@ package org.cangnova.cangjie.cfir.types
  * RawArray 是仓颉中的低级数组类型。
  */
 class ConeArrayType(
-    val elementType: ConeCangjieType,
+    val elementType: ConeCangJieType,
     /** 数组维度 */
     val dims: Int = 1,
     override val attributes: ConeAttributes = ConeAttributes.EMPTY,
 ) : ConeRigidType() {
 
-    override val typeArguments: List<ConeCangjieType> get() = listOf(elementType)
+    override val typeArguments: List<ConeCangJieType> get() = listOf(elementType)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -35,13 +35,13 @@ class ConeArrayType(
  * VArray<T, $N> 是编译时确定大小的数组。
  */
 class ConeVArrayType(
-    val elementType: ConeCangjieType,
+    val elementType: ConeCangJieType,
     /** 数组大小（编译时常量） */
     val size: Long,
     override val attributes: ConeAttributes = ConeAttributes.EMPTY,
 ) : ConeRigidType() {
 
-    override val typeArguments: List<ConeCangjieType> get() = listOf(elementType)
+    override val typeArguments: List<ConeCangJieType> get() = listOf(elementType)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

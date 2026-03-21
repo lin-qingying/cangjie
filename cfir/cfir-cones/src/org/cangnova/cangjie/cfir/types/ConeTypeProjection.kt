@@ -7,7 +7,7 @@ package org.cangnova.cangjie.cfir.types
  * 也没有星号投影。所有泛型实参都必须是具体类型。
  */
 class ConeTypeProjection(
-    val type: ConeCangjieType,
+    val type: ConeCangJieType,
 ) {
     override fun equals(other: Any?): Boolean =
         other is ConeTypeProjection && type == other.type

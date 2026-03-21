@@ -11,7 +11,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -114,7 +114,7 @@ class CfirCallResolver(
     }
 
     /** 从可调用符号中提取返回类型。 */
-    private fun extractReturnType(symbol: CfirCallableSymbol<*>): ConeCangjieType {
+    private fun extractReturnType(symbol: CfirCallableSymbol<*>): ConeCangJieType {
         if (!symbol.isBound) return ConeErrorType("unbound function symbol")
         val typeRef = when (val declaration = symbol.cfir) {
             is org.cangnova.cangjie.cfir.declarations.CfirFunction -> declaration.returnTypeRef
@@ -166,7 +166,7 @@ sealed class CfirCallResolutionResult {
     /** 旧版单候选成功结果。 */
     class LegacySuccess(
         val symbol: CfirCallableSymbol<*>,
-        val returnType: ConeCangjieType,
+        val returnType: ConeCangJieType,
     ) : CfirCallResolutionResult()
 
     /** 旧版多候选歧义结果。 */

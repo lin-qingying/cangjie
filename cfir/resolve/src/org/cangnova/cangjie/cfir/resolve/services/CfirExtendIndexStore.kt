@@ -175,7 +175,7 @@ private fun CfirTypeRef.containsAnyTypeParameter(parameterNames: Set<String>): B
     return coneType.containsAnyTypeParameter(parameterNames)
 }
 
-private fun org.cangnova.cangjie.cfir.types.ConeCangjieType.containsAnyTypeParameter(parameterNames: Set<String>): Boolean = when (this) {
+private fun org.cangnova.cangjie.cfir.types.ConeCangJieType.containsAnyTypeParameter(parameterNames: Set<String>): Boolean = when (this) {
     is org.cangnova.cangjie.cfir.types.ConeTypeParameterType -> lookupTag.name in parameterNames
     is org.cangnova.cangjie.cfir.types.ConeClassLikeType -> typeArguments.any { it.containsAnyTypeParameter(parameterNames) }
     is org.cangnova.cangjie.cfir.types.ConeStructType -> typeArguments.any { it.containsAnyTypeParameter(parameterNames) }

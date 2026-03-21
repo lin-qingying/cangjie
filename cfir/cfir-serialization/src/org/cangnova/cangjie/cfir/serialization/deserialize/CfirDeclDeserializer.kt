@@ -11,7 +11,7 @@ import org.cangnova.cangjie.cfir.patterns.builder.buildWildcardPattern
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
@@ -595,7 +595,7 @@ class CfirDeclDeserializer(
     private fun buildEnumConstructorPayloadTypeRef(decl: Decl): CfirTypeRef {
         val funcInfo = decl.info(FuncInfo()) as? FuncInfo ?: return buildImplicitTypeRef()
         val funcBody = funcInfo.funcBody ?: return buildImplicitTypeRef()
-        val payloadTypes = mutableListOf<ConeCangjieType>()
+        val payloadTypes = mutableListOf<ConeCangJieType>()
 
         for (i in 0 until funcBody.paramListsLength) {
             val paramList = funcBody.paramLists(i) ?: continue

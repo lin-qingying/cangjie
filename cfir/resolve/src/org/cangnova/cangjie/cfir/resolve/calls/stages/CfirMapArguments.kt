@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.stages
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.WrongArgumentCount
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -20,6 +21,10 @@ object CfirMapArguments : CfirResolutionStage() {
         sink: CfirCheckerSink,
         context: CfirResolutionContext,
     ) {
+        val atomArguments = candidate.callInfo.arguments.map { CfirResolutionAtom(it) }
+        val mapping = LinkedHashMap<CfirResolutionAtom, org.cangnova.cangjie.cfir.declarations.CfirValueParameter>()
+        candidate.initializeArgumentMapping(atomArguments, mapping)
+
         val totalParams = extractParameterCount(candidate.symbol) ?: return
         val requiredParams = extractRequiredParameterCount(candidate.symbol) ?: return
         val actualArgs = candidate.callInfo.arguments.size
@@ -34,11 +39,12 @@ object CfirMapArguments : CfirResolutionStage() {
             return
         }
 
-        val mapping = mutableMapOf<Int, Int>()
+        val parameterList = candidate.declaredParametersForMapping()
         for (i in 0 until actualArgs) {
-            mapping[i] = i
+            val atom = atomArguments.getOrNull(i) ?: continue
+            val parameter = parameterList.getOrNull(i) ?: continue
+            mapping[atom] = parameter
         }
-        candidate.argumentMapping = mapping
         candidate.numDefaults = totalParams - actualArgs
     }
 
@@ -71,4 +77,3 @@ object CfirMapArguments : CfirResolutionStage() {
         }
     }
 }
-

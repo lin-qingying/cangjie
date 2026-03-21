@@ -5,8 +5,8 @@ package org.cangnova.cangjie.cfir.types
  * 仓颉中函数是一等公民，函数类型表示 (P1, P2, ...) -> R。
  */
 class ConeFuncType(
-    val parameterTypes: List<ConeCangjieType>,
-    val returnType: ConeCangjieType,
+    val parameterTypes: List<ConeCangJieType>,
+    val returnType: ConeCangJieType,
     /** 是否为 CFunc（C 互操作函数类型），对应 FuncTy::isC */
     val isCFunc: Boolean = false,
     /** 是否为闭包类型，对应 FuncTy::isClosureTy */

@@ -12,7 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.asResolveState
 import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
 import org.cangnova.cangjie.cfir.types.ConeFuncType
@@ -141,9 +141,9 @@ class CfirConstraintSystemImplTest {
 }
 
 private class ConstraintTestTypeContext : ConeTypeContext {
-    override fun supertypes(type: ConeCangjieType): Collection<ConeCangjieType> = emptyList()
+    override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> = emptyList()
 
-    override fun isSameTypeConstructor(a: ConeCangjieType, b: ConeCangjieType): Boolean {
+    override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean {
         if (a is ConePrimitiveType && b is ConePrimitiveType) return a.kind == b.kind
         if (a is ConeClassLikeType && b is ConeClassLikeType) return a.classId == b.classId
         return a == b

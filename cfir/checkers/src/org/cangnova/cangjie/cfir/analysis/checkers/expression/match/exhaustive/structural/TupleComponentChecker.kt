@@ -10,7 +10,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.E
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.specialized.BooleanChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.specialized.SmallEnumBitVectorChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.trivial.TrivialChecker
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 
 class TupleComponentChecker(
@@ -20,7 +20,7 @@ class TupleComponentChecker(
     override val priority: Int = 40
 
     override fun isApplicable(
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
         context: CheckerContext,
     ): Boolean {
@@ -36,7 +36,7 @@ class TupleComponentChecker(
 
     override fun check(
         matrix: CfirMatrix,
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         context: CheckerContext,
     ): ExhaustivenessResult {
         val tupleType = type as? ConeTupleType ?: return ExhaustivenessResult.Skipped
@@ -69,7 +69,7 @@ class TupleComponentChecker(
     private fun extractColumnPatterns(
         matrix: CfirMatrix,
         columnIndex: Int,
-        elementType: ConeCangjieType,
+        elementType: ConeCangJieType,
     ): List<CfirMatchPattern> {
         return matrix.mapNotNull { row ->
             val first = row.firstOrNull() ?: return@mapNotNull null
@@ -86,7 +86,7 @@ class TupleComponentChecker(
 
     private fun checkColumn(
         columnMatrix: CfirMatrix,
-        columnType: ConeCangjieType,
+        columnType: ConeCangJieType,
         context: CheckerContext,
     ): ExhaustivenessResult {
         val patterns = columnMatrix.flatten()
@@ -101,8 +101,8 @@ class TupleComponentChecker(
 
     private fun combineResults(
         columnResults: List<ExhaustivenessResult>,
-        elementTypes: List<ConeCangjieType>,
-        tupleType: ConeCangjieType,
+        elementTypes: List<ConeCangJieType>,
+        tupleType: ConeCangJieType,
     ): ExhaustivenessResult {
         if (columnResults.any { it is ExhaustivenessResult.Skipped }) return ExhaustivenessResult.Skipped
         val error = columnResults.filterIsInstance<ExhaustivenessResult.Error>().firstOrNull()

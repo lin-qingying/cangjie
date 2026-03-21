@@ -18,10 +18,9 @@ import org.cangnova.cangjie.cfir.expressions.impl.CfirLiteralExpressionImpl
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionStage
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
 import org.cangnova.cangjie.name.CallableId
@@ -46,8 +45,8 @@ object CallResolutionTestFixtures {
     /** 构建一个绑定到函数声明上的 `CfirFunctionSymbol`。 */
     fun buildFunctionSymbol(
         name: String,
-        returnType: ConeCangjieType = ConePrimitiveType.UNIT,
-        parameterTypes: List<ConeCangjieType> = emptyList(),
+        returnType: ConeCangJieType = ConePrimitiveType.UNIT,
+        parameterTypes: List<ConeCangJieType> = emptyList(),
         parameterNames: List<String>? = null,
         parameterDefaults: List<Boolean>? = null,
         typeParameters: List<CfirTypeParameter> = emptyList(),
@@ -83,7 +82,7 @@ object CallResolutionTestFixtures {
     /** 构建一个 `CfirValueParameter`。 */
     fun buildValueParameter(
         name: String,
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         hasDefault: Boolean = false,
     ): CfirValueParameter {
         val symbol = CfirValueParameterSymbol(CallableId(Name.identifier(name)))
@@ -109,7 +108,7 @@ object CallResolutionTestFixtures {
     }
 
     /** 构建一个带类型的表达式 stub，用作调用参数。 */
-    fun buildTypedExpression(type: ConeCangjieType): CfirExpression {
+    fun buildTypedExpression(type: ConeCangJieType): CfirExpression {
         return CfirLiteralExpressionImpl(source = null, annotations = emptyList(), coneTypeOrNull = type, kind = CfirLiteralKind.INT, value = 0)
     }
 
@@ -117,11 +116,11 @@ object CallResolutionTestFixtures {
     fun buildCallInfo(
         name: String,
         arguments: List<CfirExpression> = emptyList(),
-        stages: List<CfirResolutionStage> = emptyList(),
+        callKind: CfirCallKind = CfirCallKind.Function,
     ): CfirCallInfo {
         return CfirCallInfo(
             callSite = CfirLiteralExpressionImpl(source = null, annotations = emptyList(), coneTypeOrNull = null, kind = CfirLiteralKind.UNIT, value = null),
-            callKind = CfirCallKind.Function(stages),
+            callKind = callKind,
             name = Name.identifier(name),
             explicitReceiver = null,
             arguments = arguments,

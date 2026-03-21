@@ -10,7 +10,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.s
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.structural.NestedFlattenChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.structural.TupleComponentChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.trivial.TrivialChecker
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
@@ -21,7 +21,7 @@ class HybridDispatcher private constructor(
 ) {
     fun check(
         matrix: CfirMatrix,
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         context: CheckerContext,
     ): ExhaustivenessResult {
         val patterns = matrix.mapNotNull { it.firstOrNull() }
@@ -35,12 +35,12 @@ class HybridDispatcher private constructor(
     }
 
     fun selectChecker(
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         patterns: List<org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPattern>,
         context: CheckerContext,
     ): ExhaustivenessChecker? = checkers.find { it.isApplicable(type, patterns, context) }
 
-    fun getRecommendedSource(type: ConeCangjieType): CheckSource {
+    fun getRecommendedSource(type: ConeCangJieType): CheckSource {
         return when {
             type is ConePrimitiveType && type.kind == PrimitiveTypeKind.BOOLEAN -> CheckSource.BOOLEAN_FLAG
             type is ConeEnumType -> CheckSource.ENUM_BITVECTOR
@@ -88,7 +88,7 @@ data class DispatchAnalysis(
 class AnalyzingDispatcher(private val delegate: HybridDispatcher) {
     fun checkWithAnalysis(
         matrix: CfirMatrix,
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         context: CheckerContext,
     ): DispatchAnalysis {
         val patterns = matrix.mapNotNull { it.firstOrNull() }

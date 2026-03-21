@@ -78,3 +78,5 @@ include(":cfir:analysis-tests")
 include("cfir:diagnostic-renderers")
 
 include("compiler:plugin")
+
+include("cfir:providers")

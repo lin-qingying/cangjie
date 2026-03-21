@@ -6,16 +6,16 @@ import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 
 /**
- * [ConeTypeContext] 的实现，负责连接子类型检查算法与符号系统。
+ * [org.cangnova.cangjie.cfir.types.ConeTypeContext] 的实现，负责连接子类型检查算法与符号系统。
  * 它通过 [CfirSession] 的 `symbolProvider` 查询类的直接超类型信息，
- * 并将 CFIR 声明中的 `superTypeRefs` 转换为子类型检查器可用的 [ConeCangjieType] 列表。
+ * 并将 CFIR 声明中的 `superTypeRefs` 转换为子类型检查器可用的 [ConeCangJieType] 列表。
  * 参考 K2 `ConeTypeCheckerContext`。
  */
 class CfirTypeCheckerContext(
     private val session: CfirSession,
 ) : ConeTypeContext {
 
-    override fun supertypes(type: ConeCangjieType): Collection<ConeCangjieType> {
+    override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> {
         return when (type) {
             is ConeClassLikeType -> classLikeSupertypes(type.classId)
             is ConeStructType -> classLikeSupertypes(type.classId)
@@ -29,7 +29,7 @@ class CfirTypeCheckerContext(
         }
     }
 
-    override fun isSameTypeConstructor(a: ConeCangjieType, b: ConeCangjieType): Boolean {
+    override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean {
         return when {
             a is ConeClassLikeType && b is ConeClassLikeType -> a.classId == b.classId
             a is ConeStructType && b is ConeStructType -> a.classId == b.classId
@@ -46,7 +46,7 @@ class CfirTypeCheckerContext(
     }
 
     /** 通过 symbolProvider 查找类、结构体或枚举的直接超类型。 */
-    private fun classLikeSupertypes(classId: ClassId): List<ConeCangjieType> {
+    private fun classLikeSupertypes(classId: ClassId): List<ConeCangJieType> {
         val classSymbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return emptyList()
         if (!classSymbol.isBound) return emptyList()
         val classDecl = classSymbol.cfir

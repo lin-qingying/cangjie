@@ -20,7 +20,7 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
@@ -31,7 +31,7 @@ import org.cangnova.cangjie.name.ClassId
 typealias CfirMatrix = List<List<CfirMatchPattern>>
 
 data class CfirMatchPattern(
-    val type: ConeCangjieType,
+    val type: ConeCangJieType,
     val kind: CfirMatchPatternKind,
     val cfirPattern: CfirPattern? = null,
 ) {
@@ -59,12 +59,12 @@ data class CfirMatchPattern(
             )
         }
 
-    val ergonomicType: ConeCangjieType get() = type
+    val ergonomicType: ConeCangJieType get() = type
 
     companion object {
         val Error = CfirMatchPattern(ConeErrorType("pattern error"), CfirMatchPatternKind.Error, null)
 
-        fun wild(type: ConeCangjieType = ConeErrorType("unknown")): CfirMatchPattern =
+        fun wild(type: ConeCangJieType = ConeErrorType("unknown")): CfirMatchPattern =
             CfirMatchPattern(type, CfirMatchPatternKind.Wild, null)
     }
 }
@@ -73,7 +73,7 @@ sealed class CfirMatchPatternKind {
     data object Error : CfirMatchPatternKind()
     data object Wild : CfirMatchPatternKind()
     data class Binding(val name: String) : CfirMatchPatternKind()
-    data class Type(val type: ConeCangjieType, val name: String?) : CfirMatchPatternKind()
+    data class Type(val type: ConeCangJieType, val name: String?) : CfirMatchPatternKind()
     data class Const(val value: CfirConstantValue) : CfirMatchPatternKind()
     data class Tuple(val subPatterns: List<CfirMatchPattern>) : CfirMatchPatternKind()
     data class Enum(
@@ -135,7 +135,7 @@ sealed class CfirConstantValue : Comparable<CfirConstantValue> {
     }
 
     companion object {
-        fun fromLiteral(literal: CfirLiteralExpression, fallbackType: ConeCangjieType?): CfirConstantValue? {
+        fun fromLiteral(literal: CfirLiteralExpression, fallbackType: ConeCangJieType?): CfirConstantValue? {
             return when (literal.kind) {
                 CfirLiteralKind.BOOLEAN -> (literal.value as? Boolean)?.let(::BooleanConst)
                 CfirLiteralKind.INT -> fromIntLiteral(literal.value, fallbackType)
@@ -156,7 +156,7 @@ sealed class CfirConstantValue : Comparable<CfirConstantValue> {
             return RuneConst(codePoint)
         }
 
-        private fun fromIntLiteral(value: Any?, fallbackType: ConeCangjieType?): CfirConstantValue? {
+        private fun fromIntLiteral(value: Any?, fallbackType: ConeCangJieType?): CfirConstantValue? {
             val primitive = fallbackType as? ConePrimitiveType
             val unsigned = primitive?.kind in setOf(
                 PrimitiveTypeKind.UINT8,
@@ -195,13 +195,13 @@ sealed class CfirConstantValue : Comparable<CfirConstantValue> {
 }
 
 sealed class CfirConstructor {
-    open fun arity(type: ConeCangjieType): Int = when (type) {
+    open fun arity(type: ConeCangJieType): Int = when (type) {
         is ConeTupleType if this is Single -> type.elementTypes.size
         is ConeEnumType if this is Enum -> arityHint
         else -> 0
     }
 
-    open fun subTypes(type: ConeCangjieType): List<ConeCangjieType> = when (type) {
+    open fun subTypes(type: ConeCangJieType): List<ConeCangJieType> = when (type) {
         is ConeTupleType if this is Single -> type.elementTypes
         is ConeEnumType if this is Enum -> List(arityHint) { ConeErrorType("enum constructor argument") }
         else -> emptyList()
@@ -214,7 +214,7 @@ sealed class CfirConstructor {
     ): Boolean = false
 
     data class Enum(val enumClassId: ClassId, val entryName: String, val arityHint: Int = 0) : CfirConstructor()
-    data class Type(val type: ConeCangjieType) : CfirConstructor()
+    data class Type(val type: ConeCangJieType) : CfirConstructor()
 
     data object Single : CfirConstructor() {
         override fun coveredByRange(from: CfirConstantValue, to: CfirConstantValue, included: Boolean): Boolean = true
@@ -227,7 +227,7 @@ sealed class CfirConstructor {
     }
 
     companion object {
-        fun allConstructors(type: ConeCangjieType, session: CfirSession): List<CfirConstructor> = when (type) {
+        fun allConstructors(type: ConeCangJieType, session: CfirSession): List<CfirConstructor> = when (type) {
             is ConePrimitiveType -> when (type.kind) {
                 PrimitiveTypeKind.BOOLEAN -> listOf(
                     ConstantValue(CfirConstantValue.BooleanConst(true)),
@@ -250,16 +250,16 @@ sealed class CfirConstructor {
     }
 }
 
-fun CfirMatchExpression.calculateMatrix(subjectType: ConeCangjieType): CfirMatrix {
+fun CfirMatchExpression.calculateMatrix(subjectType: ConeCangJieType): CfirMatrix {
     return branches.flatMap { branch ->
         convertPattern(branch.pattern, subjectType).map { listOf(it) }
     }
 }
 
-fun CfirPattern.calculateMatrix(expectedType: ConeCangjieType): CfirMatrix =
+fun CfirPattern.calculateMatrix(expectedType: ConeCangJieType): CfirMatrix =
     convertPattern(this, expectedType).map { listOf(it) }
 
-fun convertPattern(pattern: CfirPattern, expectedType: ConeCangjieType): List<CfirMatchPattern> {
+fun convertPattern(pattern: CfirPattern, expectedType: ConeCangJieType): List<CfirMatchPattern> {
     return when (pattern) {
         is CfirOrPattern -> pattern.alternatives.flatMap { convertPattern(it, expectedType) }
         is CfirWildcardPattern -> listOf(CfirMatchPattern.wild(expectedType))
@@ -344,12 +344,12 @@ fun convertPattern(pattern: CfirPattern, expectedType: ConeCangjieType): List<Cf
     }
 }
 
-fun isSameType(a: ConeCangjieType, b: ConeCangjieType): Boolean {
+fun isSameType(a: ConeCangJieType, b: ConeCangJieType): Boolean {
     if (a == b) return true
     return CfirTypeCheckUtils.isSubtypeOf(a, b) && CfirTypeCheckUtils.isSubtypeOf(b, a)
 }
 
-fun inferExpressionType(expression: CfirExpression?, fallback: ConeCangjieType = ConeErrorType("unknown")): ConeCangjieType {
+fun inferExpressionType(expression: CfirExpression?, fallback: ConeCangJieType = ConeErrorType("unknown")): ConeCangJieType {
     return expression?.coneTypeOrNull ?: fallback
 }
 

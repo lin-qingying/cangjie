@@ -4,13 +4,13 @@ import org.cangnova.cangjie.cfir.analysis.checkers.CfirTypeCheckUtils
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirConstructor
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPattern
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPatternKind
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 object RowSpecializer {
     fun specializeRow(
         row: List<CfirMatchPattern>,
         constructor: CfirConstructor,
-        type: ConeCangjieType,
+        type: ConeCangJieType,
     ): List<CfirMatchPattern>? {
         val firstPattern = row.firstOrNull() ?: return emptyList()
 

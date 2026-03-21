@@ -1,6 +1,5 @@
 package org.cangnova.cangjie.cfir.session
 
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 

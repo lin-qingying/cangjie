@@ -101,11 +101,19 @@ class CfirTowerResolver(
 
             // 局部 scope 优先查找局部变量
             if (scope is CfirLocalScopeImpl) {
-                scope.processVariablesByName(name) { result.add(it) }
+                scope.processVariablesByName(name) {
+                    if (!it.isInvokableSymbol()) {
+                        result.add(it)
+                    }
+                }
             }
 
             // 同时查找属性
-            scope.processPropertiesByName(name) { result.add(it) }
+            scope.processPropertiesByName(name) {
+                if (!it.isInvokableSymbol()) {
+                    result.add(it)
+                }
+            }
 
             if (result.isNotEmpty()) return result
         }
@@ -151,7 +159,11 @@ class CfirTowerResolver(
     fun findVariablesInScopes(name: Name, scopes: List<CfirScope>): List<CfirCallableSymbol<*>> {
         for (scope in scopes) {
             val result = mutableListOf<CfirCallableSymbol<*>>()
-            scope.processPropertiesByName(name) { result.add(it) }
+            scope.processPropertiesByName(name) {
+                if (!it.isInvokableSymbol()) {
+                    result.add(it)
+                }
+            }
             if (result.isNotEmpty()) return result
         }
         return emptyList()

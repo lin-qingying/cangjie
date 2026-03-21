@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.inference
 
 import org.cangnova.cangjie.cfir.types.ConeArrayType
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeFlexibleType
@@ -36,7 +36,7 @@ internal class CfirResultTypeResolver(
         return lowers.any { lower -> uppers.any { upper -> !checker.isSubtypeOf(lower, upper) } }
     }
 
-    fun computeResultType(variable: CfirTypeVariable): ConeCangjieType? {
+    fun computeResultType(variable: CfirTypeVariable): ConeCangJieType? {
         val substitutor = storage.buildCurrentSubstitutor()
         val unresolvedNames = storage.typeVariables.filterNot { it.isFixed }.mapTo(mutableSetOf()) { it.name }
         val selfName = variable.name
@@ -63,7 +63,7 @@ internal class CfirResultTypeResolver(
         }
     }
 
-    private fun combineLowerBounds(lowers: List<ConeCangjieType>): ConeCangjieType? {
+    private fun combineLowerBounds(lowers: List<ConeCangJieType>): ConeCangJieType? {
         if (lowers.isEmpty()) return null
         if (lowers.size == 1) return lowers.single()
 
@@ -84,7 +84,7 @@ internal class CfirResultTypeResolver(
         return lowers.firstOrNull()
     }
 
-    private fun combineUpperBounds(uppers: List<ConeCangjieType>): ConeCangjieType? {
+    private fun combineUpperBounds(uppers: List<ConeCangJieType>): ConeCangJieType? {
         if (uppers.isEmpty()) return null
         if (uppers.size == 1) return uppers.single()
 
@@ -106,9 +106,9 @@ internal class CfirResultTypeResolver(
     }
 
     private fun isCompatibleCandidate(
-        candidate: ConeCangjieType,
-        lowers: List<ConeCangjieType>,
-        uppers: List<ConeCangjieType>,
+        candidate: ConeCangJieType,
+        lowers: List<ConeCangJieType>,
+        uppers: List<ConeCangJieType>,
     ): Boolean {
         val checker = subtypeChecker ?: return true
         if (lowers.any { !checker.isSubtypeOf(it, candidate) }) return false
@@ -116,7 +116,7 @@ internal class CfirResultTypeResolver(
         return true
     }
 
-    private fun materializeIdealType(type: ConeCangjieType): ConeCangjieType {
+    private fun materializeIdealType(type: ConeCangJieType): ConeCangJieType {
         if (type !is ConePrimitiveType) return type
         return when (type.kind) {
             PrimitiveTypeKind.IDEAL_INT -> ConePrimitiveType.INT64
@@ -126,7 +126,7 @@ internal class CfirResultTypeResolver(
     }
 
     private fun containsUnresolvedTypeVariable(
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         unresolvedNames: Set<String>,
         selfName: String,
     ): Boolean {

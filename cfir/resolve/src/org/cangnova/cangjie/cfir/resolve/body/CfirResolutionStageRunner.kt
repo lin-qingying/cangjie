@@ -1,9 +1,9 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateApplicability
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckerSinkImpl
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
+import org.cangnova.cangjie.cfir.semantics.CandidateApplicability
 
 /**
  * 候选验证管线执行器。
@@ -23,7 +23,7 @@ class CfirResolutionStageRunner {
         candidate: CfirCandidate,
         context: CfirResolutionContext,
         stopOnFirstError: Boolean = true,
-    ): CfirCandidateApplicability {
+    ): CandidateApplicability {
         val sink = CfirCheckerSinkImpl(candidate, stopOnFirstError)
         val stages = candidate.callInfo.callKind.resolutionSequence
 

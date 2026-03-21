@@ -8,7 +8,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatrix
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.CheckSource
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.ExhaustivenessChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.ExhaustivenessResult
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 
@@ -17,14 +17,14 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
     override val priority: Int = 30
 
     override fun isApplicable(
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
         context: CheckerContext,
     ): Boolean = type is ConePrimitiveType && type.kind.isInteger
 
     override fun check(
         matrix: CfirMatrix,
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         context: CheckerContext,
     ): ExhaustivenessResult {
         val primitive = type as? ConePrimitiveType ?: return ExhaustivenessResult.Skipped
@@ -125,7 +125,7 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
     }
 
     private fun collectMissingPatterns(
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         gaps: List<LongRange>,
         maxPatterns: Int,
     ): List<CfirMatchPattern> {
@@ -169,7 +169,7 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
         return span
     }
 
-    private fun createIntegerPattern(type: ConeCangjieType, value: Long): CfirMatchPattern {
+    private fun createIntegerPattern(type: ConeCangJieType, value: Long): CfirMatchPattern {
         val const = when ((type as? ConePrimitiveType)?.kind) {
             PrimitiveTypeKind.UINT8,
             PrimitiveTypeKind.UINT16,

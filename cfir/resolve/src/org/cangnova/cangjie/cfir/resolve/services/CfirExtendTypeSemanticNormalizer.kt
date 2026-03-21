@@ -4,7 +4,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.resolve.calls.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.renderSemanticKey
@@ -23,7 +23,7 @@ internal class CfirExtendTypeSemanticNormalizer(
         return canonicalize(coneType).renderSemanticKey()
     }
 
-    private fun canonicalize(type: ConeCangjieType): ConeCangjieType {
+    private fun canonicalize(type: ConeCangJieType): ConeCangJieType {
         return substitutor.substituteOrSelf(type)
     }
 }

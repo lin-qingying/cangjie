@@ -5,7 +5,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 /**
  * 扁平化函数签名，用于重载消歧时的特化程度比较。
@@ -18,7 +18,7 @@ class CfirFlatSignature(
     /** 类型参数列表。 */
     val typeParameters: List<CfirTypeParameter>,
     /** 值参数类型列表。 */
-    val valueParameterTypes: List<ConeCangjieType?>,
+    val valueParameterTypes: List<ConeCangJieType?>,
     /** 使用的默认值参数个数。 */
     val numDefaults: Int,
 ) {
@@ -35,7 +35,7 @@ class CfirFlatSignature(
 
             val decl = symbol.cfir
             val typeParams: List<CfirTypeParameter>
-            val paramTypes: List<ConeCangjieType?>
+            val paramTypes: List<ConeCangJieType?>
 
             when (decl) {
                 is CfirFunction -> {

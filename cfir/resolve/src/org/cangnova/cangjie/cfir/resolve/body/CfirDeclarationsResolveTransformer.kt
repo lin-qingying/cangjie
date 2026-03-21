@@ -2,7 +2,6 @@
 
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirFieldVariableImpl
-import org.cangnova.cangjie.cfir.declarations.impl.CfirEnumConstructorImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPatternVariableImpl
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
@@ -23,7 +22,7 @@ import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTr
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
 import org.cangnova.cangjie.cfir.types.ConeEnumType
@@ -193,13 +192,6 @@ class CfirDeclarationsResolveTransformer(
         val savedContext = context.towerDataContext
 
         context.withContainer(enumConstructor) {
-            val ownerEnum = context.containers.asReversed().filterIsInstance<CfirClass>().firstOrNull {
-                it.classKind == CfirClassKind.ENUM
-            }
-            if (ownerEnum != null && enumConstructor.typeParameters.isEmpty()) {
-                (enumConstructor as? CfirEnumConstructorImpl)?.typeParameters = ownerEnum.typeParameters
-            }
-
             if (enumConstructor.typeParameters.isNotEmpty()) {
                 context.addNonLocalScope(CfirTypeParameterScopeImpl(enumConstructor.typeParameters))
             }
@@ -455,7 +447,7 @@ class CfirDeclarationsResolveTransformer(
         return classIdForClassNesting(packageFqName, classNesting) ?: ClassId(packageFqName, klass.name)
     }
 
-    private fun buildConstructedTypeForClass(klass: CfirClass): ConeCangjieType {
+    private fun buildConstructedTypeForClass(klass: CfirClass): ConeCangJieType {
         val classId = resolveClassId(klass) ?: return ConeErrorType("cannot resolve class id for constructor owner")
         val typeArguments = klass.typeParameters.map { ConeTypeParameterType(ConeTypeParameterLookupTag(it.name.asString())) }
         val lookupTag = ConeClassLookupTagImpl(classId)

@@ -1,6 +1,6 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.inference
 
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 /**
  * 类型推断中的约束。
@@ -17,8 +17,8 @@ sealed class CfirConstraint {
  * 若两端包含类型变量，约束系统会据此收集上下界信息。
  */
 class CfirSubtypeConstraint(
-    val subType: ConeCangjieType,
-    val superType: ConeCangjieType,
+    val subType: ConeCangJieType,
+    val superType: ConeCangJieType,
     override val position: CfirConstraintPosition,
 ) : CfirConstraint() {
     override fun toString(): String = "$subType <: $superType @ $position"
@@ -29,8 +29,8 @@ class CfirSubtypeConstraint(
  * 一般用于要求两个类型完全相等的场景。
  */
 class CfirEqualityConstraint(
-    val left: ConeCangjieType,
-    val right: ConeCangjieType,
+    val left: ConeCangJieType,
+    val right: ConeCangJieType,
     override val position: CfirConstraintPosition,
 ) : CfirConstraint() {
     override fun toString(): String = "$left == $right @ $position"

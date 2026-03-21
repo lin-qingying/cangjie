@@ -554,6 +554,15 @@ class LightTreeRawCfirExpressionBuilder(
 
         // selector 为简单名称引用
         if (selector.tokenType == CjNodeTypes.REFERENCE_EXPRESSION) {
+            val typeArgs = collectReferenceTypeArguments(selector)
+            if (typeArgs.isNotEmpty()) {
+                return buildQualifiedAccess {
+                    source = node.toSource()
+                    calleeReference = buildNamedReference(referenceNameFromText(selector.asText()))
+                    explicitReceiver = receiver
+                    this.typeArguments.addAll(typeArgs)
+                }
+            }
             return buildPropertyAccess {
                 source = node.toSource()
                 calleeReference = buildNamedReference(referenceNameFromText(selector.asText()))
@@ -568,6 +577,28 @@ class LightTreeRawCfirExpressionBuilder(
         return buildQualifiedAccess {
             source = node.toSource()
             calleeReference = buildNamedReference(referenceNameFromText(node.asText()))
+            typeArguments.addAll(collectReferenceTypeArguments(node))
+        }
+    }
+
+    private fun collectReferenceTypeArguments(node: LighterASTNode): List<org.cangnova.cangjie.cfir.types.CfirTypeRef> {
+        if (node.tokenType != CjNodeTypes.REFERENCE_EXPRESSION) return emptyList()
+
+        val typeArgNodes = mutableListOf<LighterASTNode>()
+        tree.forEachChildren(node) { child ->
+            if (child.tokenType != CjNodeTypes.TYPE_ARGUMENT_LIST) return@forEachChildren
+            tree.forEachChildren(child) { typeArg ->
+                if (typeArg.tokenType == CjNodeTypes.TYPE_PROJECTION) {
+                    val typeRef = tree.findChildByType(typeArg, CjNodeTypes.TYPE_REFERENCE)
+                    if (typeRef != null) {
+                        typeArgNodes.add(typeRef)
+                    }
+                }
+            }
+        }
+
+        return typeArgNodes.map { typeRefNode ->
+            convertTypeReference(typeRefNode, tree, source) { it.toCjLightSourceElement(tree) }
         }
     }
 

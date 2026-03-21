@@ -9,7 +9,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatrix
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.CheckSource
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.ExhaustivenessChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.ExhaustivenessResult
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 
@@ -18,14 +18,14 @@ class MarangetChecker : ExhaustivenessChecker {
     override val priority: Int = 100
 
     override fun isApplicable(
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
         context: CheckerContext,
     ): Boolean = true
 
     override fun check(
         matrix: CfirMatrix,
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         context: CheckerContext,
     ): ExhaustivenessResult {
         if (!matrix.isWellTyped()) return ExhaustivenessResult.Error("matrix is not well typed")
@@ -56,7 +56,7 @@ class MarangetChecker : ExhaustivenessChecker {
         context: CheckerContext,
         isTopLevel: Boolean,
     ): Usefulness {
-        fun expandConstructors(constructors: List<CfirConstructor>, type: ConeCangjieType): Usefulness {
+        fun expandConstructors(constructors: List<CfirConstructor>, type: ConeCangJieType): Usefulness {
             for (constructor in constructors) {
                 val result = isUsefulSpecialized(matrix, patterns, constructor, type, withWitness, context)
                 if (result.isUseful) return result
@@ -125,7 +125,7 @@ class MarangetChecker : ExhaustivenessChecker {
         matrix: CfirMatrix,
         patterns: List<CfirMatchPattern>,
         constructor: CfirConstructor,
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         withWitness: Boolean,
         context: CheckerContext,
     ): Usefulness {
@@ -139,15 +139,15 @@ class MarangetChecker : ExhaustivenessChecker {
         }
     }
 
-    private fun hasNonExhaustiveAttribute(type: ConeCangjieType): Boolean = false
+    private fun hasNonExhaustiveAttribute(type: ConeCangJieType): Boolean = false
 
     companion object {
         val INSTANCE = MarangetChecker()
     }
 }
 
-private fun ConeCangjieType.isTyAdt(): Boolean = this is ConeEnumType || this is ConeStructType
+private fun ConeCangJieType.isTyAdt(): Boolean = this is ConeEnumType || this is ConeStructType
 
-private fun ConeCangjieType.isIntegerLike(): Boolean =
+private fun ConeCangJieType.isIntegerLike(): Boolean =
     this is org.cangnova.cangjie.cfir.types.ConePrimitiveType && kind.isInteger
 

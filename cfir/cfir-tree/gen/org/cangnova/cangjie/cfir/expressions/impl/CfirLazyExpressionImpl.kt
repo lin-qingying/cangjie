@@ -9,7 +9,7 @@ package org.cangnova.cangjie.cfir.expressions.impl
 
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -19,7 +19,7 @@ class CfirLazyExpressionImpl : CfirLazyExpression() {
         get() = error("CfirLazyExpression should be resolved before accessing")
     override val annotations: List<CfirAnnotation>
         get() = error("CfirLazyExpression should be resolved before accessing")
-    override val coneTypeOrNull: ConeCangjieType?
+    override val coneTypeOrNull: ConeCangJieType?
         get() = error("CfirLazyExpression should be resolved before accessing")
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -29,7 +29,7 @@ class CfirLazyExpressionImpl : CfirLazyExpression() {
      {
     }
 
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
      {
     }
 

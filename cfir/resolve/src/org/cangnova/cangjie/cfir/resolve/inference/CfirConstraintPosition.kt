@@ -27,6 +27,11 @@ sealed class CfirConstraintPosition {
         override fun toString(): String = "upper bound"
     }
 
+    /** 来自显式类型实参的约束。 */
+    data class ExplicitTypeArgument(val index: Int) : CfirConstraintPosition() {
+        override fun toString(): String = "explicit type argument[$index]"
+    }
+
     /** 来自类型变量固定阶段的约束。 */
     data class FixVariable(val variableName: String) : CfirConstraintPosition() {
         override fun toString(): String = "fix variable[$variableName]"

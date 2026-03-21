@@ -67,7 +67,7 @@ abstract class CfirAbstractBodyResolveTransformer(
             createResolutionContext()
         }
 
-        fun createResolutionContext(expectedType: org.cangnova.cangjie.cfir.types.ConeCangjieType? = null): CfirResolutionContext? {
+        fun createResolutionContext(expectedType: org.cangnova.cangjie.cfir.types.ConeCangJieType? = null): CfirResolutionContext? {
             return try {
                 CfirResolutionContext(
                     session = session,

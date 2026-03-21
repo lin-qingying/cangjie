@@ -21,7 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
@@ -90,7 +90,7 @@ class CfirErrorNodeDiagnosticCollectorComponent(
 
     private fun processConeTypeDiagnostic(
         owner: CfirElement,
-        coneType: ConeCangjieType?,
+        coneType: ConeCangJieType?,
         source: AbstractCjSourceElement?,
         context: CheckerContext,
     ) {

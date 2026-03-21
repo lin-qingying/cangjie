@@ -1,11 +1,8 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.inference
 
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
-
-/**
- * Marker for identifying a single constraint system in inference logs.
- */
-interface CfirConstraintSystemMarker
+import org.cangnova.cangjie.cfir.semantics.CfirConstraintSystemError
+import org.cangnova.cangjie.cfir.semantics.CfirConstraintSystemMarker
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 enum class CfirConstraintKind {
     UPPER,
@@ -14,19 +11,15 @@ enum class CfirConstraintKind {
 }
 
 data class CfirInitialConstraint(
-    val a: ConeCangjieType,
-    val b: ConeCangjieType,
+    val a: ConeCangJieType,
+    val b: ConeCangJieType,
     val constraintKind: CfirConstraintKind,
     val position: CfirConstraintPosition,
 )
 
 data class CfirVariableConstraint(
     val kind: CfirConstraintKind,
-    val type: ConeCangjieType,
-)
-
-data class CfirConstraintSystemError(
-    val message: String,
+    val type: ConeCangJieType,
 )
 
 interface CfirFixationReadiness {
@@ -54,7 +47,7 @@ abstract class InferenceLogger {
         val map: Map<CfirTypeVariable, FixationLogVariableInfo<*>>,
         val chosen: CfirTypeVariable?,
     ) {
-        var fixedTo: ConeCangjieType? = null
+        var fixedTo: ConeCangJieType? = null
             set(value) {
                 field = value
                 map.values.forEach { it.freezeConstraintsAfterFixation() }
@@ -104,7 +97,7 @@ abstract class InferenceLogger {
 
     abstract fun logFixVariable(
         variable: CfirTypeVariable,
-        resultType: ConeCangjieType,
+        resultType: ConeCangJieType,
         system: CfirConstraintSystemMarker,
     )
 
@@ -152,7 +145,7 @@ abstract class InferenceLogger {
 
         override fun logFixVariable(
             variable: CfirTypeVariable,
-            resultType: ConeCangjieType,
+            resultType: ConeCangJieType,
             system: CfirConstraintSystemMarker,
         ): Nothing {
             error("Should never be called")

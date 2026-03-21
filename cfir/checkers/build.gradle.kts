@@ -11,7 +11,7 @@ dependencies {
     api(project(":cfir:diagnostic-renderers"))
     api(project(":cfir:cfir-cones"))
     api(project(":common:diagnostics"))
-//    api(project(":cfir:resolve"))
+    api(project(":cfir:providers"))
     compileOnly(intellijCore())
 }
 

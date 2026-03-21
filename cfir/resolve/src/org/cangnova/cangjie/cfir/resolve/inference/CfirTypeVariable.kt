@@ -1,7 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.inference
 
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
 
 /**
@@ -22,13 +22,13 @@ data class CfirTypeVariable(
     val name: String get() = lookupTag.name
 
     /** 收集到的上界约束。 */
-    val upperBounds: MutableList<ConeCangjieType> = mutableListOf()
+    val upperBounds: MutableList<ConeCangJieType> = mutableListOf()
 
     /** 收集到的下界约束。 */
-    val lowerBounds: MutableList<ConeCangjieType> = mutableListOf()
+    val lowerBounds: MutableList<ConeCangJieType> = mutableListOf()
 
     /** 已固定的具体类型；`null` 表示尚未固定。 */
-    var fixedType: ConeCangjieType? = null
+    var fixedType: ConeCangJieType? = null
 
     /** 是否已经固定。 */
     val isFixed: Boolean get() = fixedType != null

@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.cfir.types
 
-fun ConeCangjieType.renderSemanticKey(): String = when (this) {
+fun ConeCangJieType.renderSemanticKey(): String = when (this) {
     is ConePrimitiveType -> "primitive:${kind.name}"
     is ConeClassLikeType -> "class:${classId.asString()}<${typeArguments.renderTypeArgsKey()}>:this=$isThisType"
     is ConeStructType -> "struct:${classId.asString()}<${typeArguments.renderTypeArgsKey()}>"
@@ -15,10 +15,12 @@ fun ConeCangjieType.renderSemanticKey(): String = when (this) {
     is ConeCStringType -> "cstring"
     is ConeIntersectionType -> "intersection:[${intersectedTypes.map { it.renderSemanticKey() }.sorted().joinToString(",")}]"
     is ConeUnionType -> "union:[${unionTypes.map { it.renderSemanticKey() }.sorted().joinToString(",")}]"
-    is ConeFlexibleType -> "flexible:${lowerBound.renderSemanticKey()}..${upperBound.renderSemanticKey()}"
     is ConeQuestType -> "quest"
     is ConeErrorType -> "cone-error:$reason"
+    is ConeCapturedType -> "captured:${constructor.name}:${status.name}"
+    is ConeStubType -> "stub:${constructor.name}:${kind.name}"
+    is ConeTypeVariableType -> "typevar:${typeVariableConstructor.name}"
     ConeAnyType -> "any"
 }
 
-private fun List<ConeCangjieType>.renderTypeArgsKey(): String = joinToString(",") { it.renderSemanticKey() }
+private fun List<ConeCangJieType>.renderTypeArgsKey(): String = joinToString(",") { it.renderSemanticKey() }

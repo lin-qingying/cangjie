@@ -18,7 +18,7 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTupleTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.CfirVArrayTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
 
@@ -55,7 +55,7 @@ abstract class CfirTypeResolver : CfirSessionComponent {
 }
 
 data class CfirTypeResolutionResult(
-    val type: ConeCangjieType,
+    val type: ConeCangJieType,
     val diagnostic: ConeDiagnostic?,
 )
 
@@ -63,7 +63,7 @@ data class CfirTypeResolutionResult(
  * Supertype supplier hook used by the SUPER_TYPES phase.
  */
 fun interface SupertypeSupplier {
-    fun getSupertypes(classId: ClassId): List<ConeCangjieType>
+    fun getSupertypes(classId: ClassId): List<ConeCangJieType>
 
     companion object {
         val Default: SupertypeSupplier = SupertypeSupplier { emptyList() }
@@ -134,7 +134,7 @@ class CfirTypeResolverImpl(
     private fun resolveBasicType(
         typeRef: CfirBasicTypeRef,
         configuration: TypeResolutionConfiguration,
-    ): ConeCangjieType {
+    ): ConeCangJieType {
         val typeName = typeRef.name.asString()
         if (configuration.scopeTypeParameters.containsKey(typeName)) {
             return ConeTypeParameterType(ConeTypeParameterLookupTag(typeName))
@@ -147,7 +147,7 @@ class CfirTypeResolverImpl(
     private fun resolveUserType(
         typeRef: CfirUserTypeRef,
         configuration: TypeResolutionConfiguration,
-    ): ConeCangjieType {
+    ): ConeCangJieType {
         if (typeRef.qualifier.isEmpty()) {
             return ConeErrorType("Empty user type")
         }

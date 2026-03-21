@@ -2,7 +2,7 @@
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 /**
  * 隐式返回类型推断的计算状态。
@@ -17,7 +17,7 @@ sealed class CfirImplicitBodyResolveComputationStatus {
 
     /** 已完成计算，并缓存解析后的类型与声明。 */
     class Computed(
-        val resolvedType: ConeCangjieType,
+        val resolvedType: ConeCangJieType,
         val transformedDeclaration: CfirCallableDeclaration,
     ) : CfirImplicitBodyResolveComputationStatus()
 }
@@ -61,7 +61,7 @@ class CfirImplicitBodyResolveComputationSession {
     }
 
     /** 从变换后的声明中提取已解析的返回类型。 */
-    private fun extractResolvedType(declaration: CfirCallableDeclaration): ConeCangjieType {
+    private fun extractResolvedType(declaration: CfirCallableDeclaration): ConeCangJieType {
         val typeRef = when (declaration) {
             is org.cangnova.cangjie.cfir.declarations.CfirFunction -> declaration.returnTypeRef
             is org.cangnova.cangjie.cfir.declarations.CfirProperty -> declaration.returnTypeRef

@@ -63,7 +63,7 @@ internal object ExtendTestFixtures {
 
     fun classTypeRef(
         classId: ClassId,
-        typeArguments: List<org.cangnova.cangjie.cfir.types.ConeCangjieType>,
+        typeArguments: List<org.cangnova.cangjie.cfir.types.ConeCangJieType>,
         isInterface: Boolean = false,
     ): CfirResolvedTypeRefImpl {
         return CfirResolvedTypeRefImpl(
