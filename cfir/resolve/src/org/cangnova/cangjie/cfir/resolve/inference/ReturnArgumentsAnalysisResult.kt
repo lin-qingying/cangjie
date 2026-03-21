@@ -3,7 +3,6 @@ package org.cangnova.cangjie.cfir.resolve.inference
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedLambdaAtom
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.resolve.calls.ConstraintStorage
 
 data class ReturnArgumentsAnalysisResult(
     val returnArguments: Collection<ConeResolutionAtom>,

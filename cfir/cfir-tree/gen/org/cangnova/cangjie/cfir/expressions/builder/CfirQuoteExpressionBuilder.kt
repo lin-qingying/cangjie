@@ -14,14 +14,14 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQuoteExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirQuoteExpressionImpl
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirQuoteExpressionBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    var coneTypeOrNull: ConeCangJieType? = null
+    var coneTypeOrNull: ConeCangjieType? = null
     lateinit var rawText: String
     val interpolations: MutableList<CfirExpression> = mutableListOf()
 

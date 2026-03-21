@@ -11,7 +11,7 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirJumpExpression
 import org.cangnova.cangjie.cfir.expressions.CfirJumpKind
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -19,7 +19,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirJumpExpressionImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: List<CfirAnnotation>,
-    override var coneTypeOrNull: ConeCangJieType?,
+    override var coneTypeOrNull: ConeCangjieType?,
     override val kind: CfirJumpKind,
 ) : CfirJumpExpression() {
 
@@ -32,7 +32,7 @@ class CfirJumpExpressionImpl @CfirImplementationDetail constructor(
         this.annotations = newAnnotations
     }
 
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
      {
         this.coneTypeOrNull = newConeTypeOrNull
     }

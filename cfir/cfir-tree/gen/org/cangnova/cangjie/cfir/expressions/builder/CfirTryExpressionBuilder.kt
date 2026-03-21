@@ -15,14 +15,14 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirCatch
 import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirTryExpressionImpl
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirTryExpressionBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    var coneTypeOrNull: ConeCangJieType? = null
+    var coneTypeOrNull: ConeCangjieType? = null
     lateinit var tryBlock: CfirBlock
     val catches: MutableList<CfirCatch> = mutableListOf()
     var finallyBlock: CfirBlock? = null

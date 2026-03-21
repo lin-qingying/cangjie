@@ -16,14 +16,14 @@ import org.cangnova.cangjie.cfir.expressions.CfirTypeOperationKind
 import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
 import org.cangnova.cangjie.cfir.expressions.impl.CfirTypeOperatorImpl
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirTypeOperatorBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    var coneTypeOrNull: ConeCangJieType? = null
+    var coneTypeOrNull: ConeCangjieType? = null
     lateinit var operation: CfirTypeOperationKind
     lateinit var argument: CfirExpression
     lateinit var typeRef: CfirTypeRef

@@ -1,26 +1,18 @@
-package org.cangnova.cangjie.resolve.calls
+package org.cangnova.cangjie.cfir.resolve.calls
 
 import org.cangnova.cangjie.type.model.CangJieTypeMarker
 
 interface PostponedResolvedAtomMarker {
     /**
-     * Generally, it's a collection of types that need to be "proper" to start the analysis of the atom (unless PCLA).
-     * Used mostly to define if the atom is ready and to define the order among other atoms.
-     *
-     * Usually, it's just a list of receiver/value parameter types, but might be an expected type variable.
-     * (see [org.jetbrains.kotlin.fir.resolve.calls.ConeLambdaWithTypeVariableAsExpectedTypeAtom])
+     * Types that should become proper before atom analysis can proceed (outside PCLA).
      */
     val inputTypes: Collection<CangJieTypeMarker>
 
     /**
-     * Type that might be refined after analysis of the given atom, i.e., some new type variable constraints found.
-     * Currently, used to define dependencies between variables.
-     * (see TypeVariableDependencyInformationProvider.computePostponeArgumentsEdges)
-     *
-     * Usually, it's a return type of lambda/reference.
-     * Might be `null` if the return type is unknown or irrelevant.
+     * Type that may be refined after analyzing this atom.
      */
     val outputType: CangJieTypeMarker?
+
     val expectedType: CangJieTypeMarker?
     val analyzed: Boolean
 }

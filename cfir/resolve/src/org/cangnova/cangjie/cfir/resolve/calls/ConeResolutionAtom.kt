@@ -6,7 +6,6 @@ import org.cangnova.cangjie.cfir.semantics.AbstractConeResolutionAtom
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.resolve.calls.PostponedResolvedAtomMarker
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.model.CangJieTypeMarker
 

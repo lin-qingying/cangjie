@@ -4,32 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="feat: implement complete constraint system for enums and diagnostics">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+    <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="feat: add TypeVariableReplacement enum and enhance type handling across various components">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics/enum/errorSimpleEnum.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics/enum/errorSimpleEnum.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics/enum/noErrorSimpleEnum.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics/enum/noErrorSimpleEnum.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeArrayType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeArrayType.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeBuiltinTypeUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeBuiltinTypeUtils.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeCInteropTypes.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeCInteropTypes.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeCangjieType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeCangJieType.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeClassLikeType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeClassLikeType.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeFuncType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeFuncType.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeIntersectionType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeIntersectionType.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeLookupTag.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeLookupTag.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeSubtypeChecker.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeTupleType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeTupleType.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeTypeAliasType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeTypeAliasType.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeTypeContext.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeTypeParameterType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeTypeParameterType.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeTypeProjection.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeTypeProjection.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/IdealTypeResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/IdealTypeResolver.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/test/org/cangnova/cangjie/cfir/types/ConeSubtypeCheckerTest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirDeclDeserializer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirDeclDeserializer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirDeserializationContext.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirDeserializationContext.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirTypeDeserializer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirTypeDeserializer.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirArrayLiteral.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirArrayLiteral.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirAssignment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirAssignment.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirBinaryOp.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirBinaryOp.kt" afterDir="false" />
@@ -130,112 +106,21 @@
       <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/CfirResolvedTypeRef.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/CfirResolvedTypeRef.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/builder/CfirResolvedTypeRefBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/builder/CfirResolvedTypeRefBuilder.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/impl/CfirResolvedTypeRefImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/impl/CfirResolvedTypeRefImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/IncrementalTrackingComponents.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/IncrementalTrackingComponents.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/references/impl/CfirResolvedAppliedCallableReference.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/references/impl/CfirResolvedAppliedCallableReference.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/session/CfirBuiltinTypes.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/session/CfirBuiltinTypes.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/session/CfirLanguageSettingsComponent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/session/CfirLanguageSettingsComponent.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/types/ConeTypeSemanticKey.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/types/ConeTypeSemanticKey.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangnova/cangjie/cfir/checkers/generator/diagnostics/CfirDiagnosticsList.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangnova/cangjie/cfir/checkers/generator/diagnostics/CfirDiagnosticsList.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirErrors.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/gen/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirErrors.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CfirTypeCheckUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CfirTypeCheckUtils.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonExpressionCheckers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonExpressionCheckers.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirExtendCheckers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirExtendCheckers.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInitializerTypeMismatchUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInitializerTypeMismatchUtils.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirOverrideChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirOverrideChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirArgumentTypeMismatchChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirArgumentTypeMismatchChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirIntConstantEvalUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirIntConstantEvalUtils.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/CfirMatchPatternModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/CfirMatchPatternModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/ExhaustivenessAnalyzer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/ExhaustivenessAnalyzer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/ExhaustivenessChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/ExhaustivenessChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/HybridDispatcher.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/HybridDispatcher.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/inria/MarangetChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/inria/MarangetChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/inria/MatrixUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/inria/MatrixUtils.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/inria/RowSpecializer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/inria/RowSpecializer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/inria/Witness.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/inria/Witness.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/specialized/BooleanChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/specialized/BooleanChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/specialized/CharIntervalChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/specialized/CharIntervalChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/specialized/IntegerIntervalChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/specialized/IntegerIntervalChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/specialized/SmallEnumBitVectorChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/specialized/SmallEnumBitVectorChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/structural/NestedFlattenChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/structural/NestedFlattenChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/structural/TupleComponentChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/structural/TupleComponentChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/trivial/TrivialChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/match/exhaustive/trivial/TrivialChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/collectors/CfirHelpers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/collectors/CfirHelpers.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/collectors/components/CfirErrorNodeDiagnosticCollectorComponent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/collectors/components/CfirErrorNodeDiagnosticCollectorComponent.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/diagnostic-renderers/src/org/cangnova/cangjie/cfir/diagnostics/CfirDiagnosticRenderers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/diagnostic-renderers/src/org/cangnova/cangjie/cfir/diagnostics/CfirDiagnosticRenderers.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/entrypoint/src/org/cangnova/cangjie/cfir/pipeline/CfirTotalResolveProcessor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/entrypoint/src/org/cangnova/cangjie/cfir/pipeline/CfirTotalResolveProcessor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/entrypoint/src/org/cangnova/cangjie/cfir/pipeline/FrontendOutput.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/entrypoint/src/org/cangnova/cangjie/cfir/pipeline/FrontendOutput.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/entrypoint/src/org/cangnova/cangjie/cfir/pipeline/analyse.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/entrypoint/src/org/cangnova/cangjie/cfir/pipeline/analyse.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirDeclarationBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirDeclarationBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirExpressionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirExpressionBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirResolutionMode.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirResolutionMode.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeCheckerContext.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeCheckerContext.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeResolver.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirAbstractBodyResolveTransformer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirAbstractBodyResolveTransformer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirAppliedCallReferenceFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirAppliedCallReferenceFactory.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirBuiltinOperatorResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirBuiltinOperatorResolver.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCandidateCollector.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCandidateCollector.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirDeclarationsResolveTransformer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirDeclarationsResolveTransformer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirImplicitBodyResolveComputationSession.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirImplicitBodyResolveComputationSession.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirResolutionStageRunner.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirResolutionStageRunner.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirReturnTypeCalculator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirReturnTypeCalculator.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirReturnTypeCalculatorForFullBodyResolve.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirReturnTypeCalculatorForFullBodyResolve.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirReturnTypeCalculatorWithJump.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirReturnTypeCalculatorWithJump.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirTowerResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirTowerResolver.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/CfirTypeSubstitutor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/CfirTypeSubstitutor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CfirCallInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CfirCallInfo.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CfirCallKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CfirCallKind.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CfirCandidate.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CfirCandidateApplicability.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CfirResolutionDiagnostic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CfirResolutionDiagnostic.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/overloads/CfirFlatSignature.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/overloads/CfirFlatSignature.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/overloads/CfirOverloadConflictResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/overloads/CfirOverloadConflictResolver.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirCheckArguments.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirCheckArguments.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirCheckerSink.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirCheckerSink.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirInferTypeArguments.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirInferTypeArguments.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapArguments.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapArguments.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirResolutionContext.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirResolutionContext.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirConstraint.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirConstraint.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirConstraintIncorporator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirConstraintIncorporator.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirConstraintPosition.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirConstraintPosition.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirConstraintStorage.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirConstraintStorage.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirConstraintSystem.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirConstraintSystemImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirResultTypeResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirResultTypeResolver.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirTypeVariable.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirTypeVariable.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirTypeVariableTypeOps.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirTypeVariableTypeOps.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirVariableFixationFinder.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/FirInferenceLogger.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/FirInferenceLogger.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/InferenceLogger.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/InferenceLogger.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/services/CfirExtendIndexStore.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/services/CfirExtendIndexStore.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/services/CfirExtendTypeSemanticNormalizer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/services/CfirExtendTypeSemanticNormalizer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/ExtendTestFixtures.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/ExtendTestFixtures.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/calls/CallResolutionTestFixtures.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/calls/CallResolutionTestFixtures.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/calls/overloads/CfirOverloadConflictResolverTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/calls/overloads/CfirOverloadConflictResolverTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirCheckArgumentsTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirCheckArgumentsTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirInferTypeArgumentsTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirInferTypeArgumentsTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapArgumentsTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapArgumentsTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/inference/CfirConstraintSystemImplTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/inference/CfirConstraintSystemImplTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/semantics/src/org/cangnova/cangjie/cfir/diagnostic/ConeDiagnostic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/semantics/src/org/cangnova/cangjie/cfir/diagnostic/ConeDiagnostic.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/semantics/src/org/cangnova/cangjie/cfir/semantics/AbstractCallCandidate.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/semantics/src/org/cangnova/cangjie/cfir/semantics/AbstractCallCandidate.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/semantics/src/org/cangnova/cangjie/cfir/semantics/CandidateAbstractions.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/symbols/src/org/cangnova/cangjie/cfir/resolve/ScopeSession.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/ScopeSession.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/common/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/ConeResolutionAtom.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/ConeResolutionAtom.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CfirCandidate.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CfirCandidate.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirConstraint.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirConstraintStorage.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirInferenceComponents.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirTypeVariable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/ReturnArgumentsAnalysisResult.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/ReturnArgumentsAnalysisResult.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/src/org/cangnova/cangjie/resolve/calls/ForkPointData.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/src/org/cangnova/cangjie/resolve/calls/PostponedResolvedAtomMarker.kt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/external/kotlin" beforeDir="false" afterPath="$PROJECT_DIR$/external/kotlin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/align-cfir-source-roots-with-kotlin/.openspec.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/align-cfir-source-roots-with-kotlin/design.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/align-cfir-source-roots-with-kotlin/proposal.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/align-cfir-source-roots-with-kotlin/specs/cfir-content-roots-input/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/align-cfir-source-roots-with-kotlin/specs/cfir-source-collection-alignment/spec.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/align-cfir-source-roots-with-kotlin/tasks.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test-infrastructure/testFixtures/org/cangnova/cangjie/test/frontend/CfirAnalyzerFacade.kt" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test-infrastructure/testFixtures/org/cangnova/cangjie/test/frontend/CfirAnalyzerFacade.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test-infrastructure/testFixtures/org/cangnova/cangjie/test/frontend/CfirOutputArtifact.kt" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test-infrastructure/testFixtures/org/cangnova/cangjie/test/frontend/CfirOutputArtifact.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/util/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/port-cfir-call-completer-full-impl/design.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/port-cfir-call-completer-full-impl/design.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/port-cfir-call-completer-full-impl/proposal.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/port-cfir-call-completer-full-impl/proposal.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/port-cfir-call-completer-full-impl/specs/cfir-call-completer-port/spec.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/port-cfir-call-completer-full-impl/specs/cfir-call-completer-port/spec.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/port-cfir-call-completer-full-impl/specs/cfir-call-completion-dependency-closure/spec.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/port-cfir-call-completer-full-impl/specs/cfir-call-completion-dependency-closure/spec.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/port-cfir-call-completer-full-impl/tasks.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/port-cfir-call-completer-full-impl/tasks.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -428,100 +313,100 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Gradle.CfirAnalysisDiagnosticsTestGenerated.executor": "Run",
-    "Gradle.CfirAnalysisDiagnosticsTestGenerated.testArgumentTypeMismatch.executor": "Debug",
-    "Gradle.CfirAnalysisDiagnosticsTestGenerated.testAssignmentTypeMismatch.executor": "Run",
-    "Gradle.CfirAnalysisDiagnosticsTestGenerated.testMultipleDiagnostics.executor": "Run",
-    "Gradle.CfirAnalysisDiagnosticsTestGenerated.testUnresolvedSymbolType.executor": "Debug",
-    "Gradle.CfirAnalysisResolveTestGenerated.executor": "Run",
-    "Gradle.CfirMapArgumentsTest.executor": "Run",
-    "Gradle.CfirMinimalResolvePipelineTest.executor": "Run",
-    "Gradle.CfirOverloadConflictResolverTest.executor": "Run",
-    "Gradle.ChirBuilderTest.executor": "Run",
-    "Gradle.CjoSdkDeserializationIntegrationTest.executor": "Run",
-    "Gradle.CjoSdkDeserializationIntegrationTest.sdk cjo fixtures can be deserialized with expected version.executor": "Debug",
-    "Gradle.CjoSearchPathTest.executor": "Debug",
-    "Gradle.ConeSubtypeCheckerTest.executor": "Run",
-    "Gradle.ConstEval.testConstEvalDivideByZero.executor": "Run",
-    "Gradle.Declarations.testClassWithMembers.executor": "Run",
-    "Gradle.Declarations.testEmptyClass.executor": "Debug",
-    "Gradle.Enum.testErrorSimpleEnum.executor": "Run",
-    "Gradle.Enum.testSimpleEnum.executor": "Run",
-    "Gradle.Function.testFuncArg.executor": "Run",
-    "Gradle.LightTree2CfirConverterTest.executor": "Run",
-    "Gradle.LightTree2CfirConverterTestGenerated.executor": "Run",
-    "Gradle.LlvmBackendFactoryTest.returns in-memory backend when configured as in-memory.executor": "Debug",
-    "Gradle.LlvmNativeIntegrationTest.can generate llvm ir file through JNI bridge.executor": "Debug",
-    "Gradle.LlvmNativeIntegrationTest.executor": "Run",
-    "Gradle.Match.executor": "Run",
-    "Gradle.Match.testMatchRichPatternsOfficial.executor": "Debug",
-    "Gradle.Match.testNonExhaustiveMatchRich.executor": "Run",
-    "Gradle.OfficialCompilerChirComparisonTest.executor": "Run",
-    "Gradle.OfficialCompilerLlvmIrComparisonTest.executor": "Run",
-    "Gradle.RawCfirBuilderLazyBodiesByAstTestGenerated.executor": "Run",
-    "Gradle.RawCfirBuilderTestCase.executor": "Run",
-    "Gradle.RawCfirBuilderTestCaseGenerated (1).executor": "Run",
-    "Gradle.RawCfirBuilderTestCaseGenerated.executor": "Run",
-    "Gradle.TypeMismatch.executor": "Run",
-    "Gradle.TypeMismatch.testGenericReturnTypeInference.executor": "Run",
-    "Gradle.Unresolved.testStdCore.executor": "Run",
-    "Gradle.cangjie [:cfir:analysis-tests:build].executor": "Run",
-    "Gradle.cangjie [:cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests].executor": "Run",
-    "Gradle.cangjie [:cfir:cfir-tree:generateTree].executor": "Run",
-    "Gradle.cangjie [:cfir:cfir-tree:tree-generator:assemble].executor": "Run",
-    "Gradle.cangjie [:cfir:cfir-tree:tree-generator:org.cangjie.cfir.tree.generator.MainKt.main()].executor": "Run",
-    "Gradle.cangjie [:cfir:cfir-tree:tree-generator:org.cangnova.cangjie.cfir.tree.generator.MainKt.main()].executor": "Run",
-    "Gradle.cangjie [:cfir:cfir-tree:tree-generator:run].executor": "Run",
-    "Gradle.cangjie [:cfir:checkers:checkers-component-generator:org.cangnova.cangjie.cfir.checkers.generator.MainKt.main()].executor": "Run",
-    "Gradle.cangjie [:cfir:raw-cfir:psi2cfir:org.cangjie.cfir.builder.TestGeneratorForPsi2Cfir.main()].executor": "Run",
-    "Gradle.cangjie [:compiler:cli-arguments-generator:org.cangnova.cangjie.cli.arguments.generator.MainKt.main()].executor": "Run",
-    "Gradle.cangjie [:compiler:cli:generateCliArguments].executor": "Run",
-    "Gradle.cangjie [:psi build].executor": "Run",
-    "Gradle.cangjie [:psi:build].executor": "Run",
-    "Gradle.cangjie [build].executor": "Run",
-    "Gradle.cangjie [cfir:cfir-tree:generateTree].executor": "Run",
-    "Gradle.cangjie [cfir:raw-cfir:psi2cfir:test].executor": "Run",
-    "Gradle.cangjie [classes].executor": "Run",
-    "Gradle.cangjie [clean].executor": "Run",
-    "Gradle.cangjie [generateCfirDiagnostics].executor": "Run",
-    "Gradle.cangjie [gradle-build-conventions:build].executor": "Run",
-    "Gradle.cangjie [nativeCompile].executor": "Run",
-    "Gradle.cangjie [psi build].executor": "Run",
-    "Gradle.cangjie [test].executor": "Run",
-    "Gradle.下载源代码.executor": "Run",
-    "Gradle.加载 Gradle 依赖项.executor": "Run",
-    "Gradle.构建 cangjie.executor": "Run",
-    "JUnit.AbstractCfirAnalysisResolveTest.executor": "Run",
-    "JUnit.RawCfirBuilderDeclarationTest 和其他 2 个.executor": "Run",
-    "JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Atomic 和其他 33 个.executor": "Run",
-    "JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics 和其他 57 个.executor": "Run",
-    "JUnit.RawCfirBuilderLazyBodiesByStubTestGenerated.executor": "Run",
-    "JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 4 个.executor": "Run",
-    "JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 9 个.executor": "Run",
-    "JUnit.RawCfirBuilderTestCaseGenerated$Declarations.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "codex/enum-implement-complete-constraint-system",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/code/intellij/cangjie/flatbuffers-gen/src/org/cangnova/cangjie/metadata",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "模块",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.5724138",
-    "settings.editor.selected.configurable": "reference.settingsdialog.project.gradle",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.CfirAnalysisDiagnosticsTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirAnalysisDiagnosticsTestGenerated.testArgumentTypeMismatch.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.CfirAnalysisDiagnosticsTestGenerated.testAssignmentTypeMismatch.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirAnalysisDiagnosticsTestGenerated.testMultipleDiagnostics.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirAnalysisDiagnosticsTestGenerated.testUnresolvedSymbolType.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.CfirAnalysisResolveTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirMapArgumentsTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirMinimalResolvePipelineTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirOverloadConflictResolverTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ChirBuilderTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CjoSdkDeserializationIntegrationTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CjoSdkDeserializationIntegrationTest.sdk cjo fixtures can be deserialized with expected version.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.CjoSearchPathTest.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.ConeSubtypeCheckerTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ConstEval.testConstEvalDivideByZero.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Declarations.testClassWithMembers.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Declarations.testEmptyClass.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.Enum.testErrorSimpleEnum.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Enum.testSimpleEnum.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Function.testFuncArg.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.LightTree2CfirConverterTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.LightTree2CfirConverterTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.LlvmBackendFactoryTest.returns in-memory backend when configured as in-memory.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.LlvmNativeIntegrationTest.can generate llvm ir file through JNI bridge.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.LlvmNativeIntegrationTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Match.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Match.testMatchRichPatternsOfficial.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.Match.testNonExhaustiveMatchRich.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.OfficialCompilerChirComparisonTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.OfficialCompilerLlvmIrComparisonTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.RawCfirBuilderLazyBodiesByAstTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.RawCfirBuilderTestCase.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.RawCfirBuilderTestCaseGenerated (1).executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.RawCfirBuilderTestCaseGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.TypeMismatch.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.TypeMismatch.testGenericReturnTypeInference.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Unresolved.testStdCore.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:analysis-tests:build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:cfir-tree:generateTree].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:cfir-tree:tree-generator:assemble].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:cfir-tree:tree-generator:org.cangjie.cfir.tree.generator.MainKt.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:cfir-tree:tree-generator:org.cangnova.cangjie.cfir.tree.generator.MainKt.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:cfir-tree:tree-generator:run].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:checkers:checkers-component-generator:org.cangnova.cangjie.cfir.checkers.generator.MainKt.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:cfir:raw-cfir:psi2cfir:org.cangjie.cfir.builder.TestGeneratorForPsi2Cfir.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:compiler:cli-arguments-generator:org.cangnova.cangjie.cli.arguments.generator.MainKt.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:compiler:cli:generateCliArguments].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:psi build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:psi:build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [cfir:cfir-tree:generateTree].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [cfir:raw-cfir:psi2cfir:test].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [classes].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [clean].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [generateCfirDiagnostics].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [gradle-build-conventions:build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [nativeCompile].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [psi build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [test].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.下载源代码.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.加载 Gradle 依赖项.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.构建 cangjie.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.AbstractCfirAnalysisResolveTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderDeclarationTest 和其他 2 个.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Atomic 和其他 33 个.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics 和其他 57 个.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderLazyBodiesByStubTestGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 4 个.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 9 个.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.RawCfirBuilderTestCaseGenerated$Declarations.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;codex/enum-implement-complete-constraint-system&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/code/intellij/cangjie/flatbuffers-gen/src/org/cangnova/cangjie/metadata&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;模块&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.5724138&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settingsdialog.project.gradle&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\code\intellij\cangjie\flatbuffers-gen\src\org\cangnova\cangjie\metadata" />
@@ -744,7 +629,8 @@
       <workItem from="1773933705784" duration="7721000" />
       <workItem from="1773977075034" duration="20240000" />
       <workItem from="1774021645379" duration="10594000" />
-      <workItem from="1774066306641" duration="14337000" />
+      <workItem from="1774066306641" duration="19300000" />
+      <workItem from="1774088126122" duration="1370000" />
     </task>
     <task id="LOCAL-00001" summary="add: implement generic functions and type declarations">
       <option name="closed" value="true" />
@@ -762,7 +648,15 @@
       <option name="project" value="LOCAL" />
       <updated>1773995324437</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="feat: add TypeVariableReplacement enum and enhance type handling across various components">
+      <option name="closed" value="true" />
+      <created>1774081072754</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1774081072755</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -816,7 +710,8 @@
     <MESSAGE value="add: flatbuffers gen files" />
     <MESSAGE value="add: implement generic functions and type declarations" />
     <MESSAGE value="feat: implement complete constraint system for enums and diagnostics" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: implement complete constraint system for enums and diagnostics" />
+    <MESSAGE value="feat: add TypeVariableReplacement enum and enhance type handling across various components" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: add TypeVariableReplacement enum and enhance type handling across various components" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

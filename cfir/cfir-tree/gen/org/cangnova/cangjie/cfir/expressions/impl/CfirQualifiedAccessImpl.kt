@@ -13,7 +13,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -21,7 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirQualifiedAccessImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: List<CfirAnnotation>,
-    override var coneTypeOrNull: ConeCangJieType?,
+    override var coneTypeOrNull: ConeCangjieType?,
     override var calleeReference: CfirReference,
     override var explicitReceiver: CfirExpression?,
     override var typeArguments: List<CfirTypeRef>,
@@ -39,7 +39,7 @@ class CfirQualifiedAccessImpl @CfirImplementationDetail constructor(
         this.annotations = newAnnotations
     }
 
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
      {
         this.coneTypeOrNull = newConeTypeOrNull
     }

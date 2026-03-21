@@ -14,14 +14,14 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.expressions.CfirLambdaExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirLambdaExpressionImpl
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirLambdaExpressionBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    var coneTypeOrNull: ConeCangJieType? = null
+    var coneTypeOrNull: ConeCangjieType? = null
     lateinit var anonymousFunction: CfirFunction
 
     @OptIn(CfirImplementationDetail::class)
