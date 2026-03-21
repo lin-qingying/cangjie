@@ -12,7 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirCatch
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -20,7 +20,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirCatchImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: List<CfirAnnotation>,
-    override var coneTypeOrNull: ConeCangJieType?,
+    override var coneTypeOrNull: ConeCangjieType?,
     override var parameter: CfirValueParameter,
     override var body: CfirBlock,
 ) : CfirCatch() {
@@ -36,7 +36,7 @@ class CfirCatchImpl @CfirImplementationDetail constructor(
         this.annotations = newAnnotations
     }
 
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
      {
         this.coneTypeOrNull = newConeTypeOrNull
     }

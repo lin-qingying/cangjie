@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
+import org.cangnova.cangjie.cfir.resolve.inference.ConstraintStorage
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 

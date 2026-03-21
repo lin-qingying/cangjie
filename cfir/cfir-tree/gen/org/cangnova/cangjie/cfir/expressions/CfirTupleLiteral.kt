@@ -7,7 +7,7 @@ package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -18,7 +18,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 abstract class CfirTupleLiteral : CfirExpression() {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
-    abstract override val coneTypeOrNull: ConeCangJieType?
+    abstract override val coneTypeOrNull: ConeCangjieType?
     abstract val elements: List<CfirExpression>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
@@ -31,7 +31,7 @@ abstract class CfirTupleLiteral : CfirExpression() {
     override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
 
-    override abstract fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+    override abstract fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
 
 
     override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirTupleLiteral

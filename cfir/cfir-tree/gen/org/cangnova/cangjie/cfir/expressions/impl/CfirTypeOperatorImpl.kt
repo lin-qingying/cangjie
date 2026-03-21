@@ -13,7 +13,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTypeOperationKind
 import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -21,7 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirTypeOperatorImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: List<CfirAnnotation>,
-    override var coneTypeOrNull: ConeCangJieType?,
+    override var coneTypeOrNull: ConeCangjieType?,
     override val operation: CfirTypeOperationKind,
     override var argument: CfirExpression,
     override var typeRef: CfirTypeRef,
@@ -38,7 +38,7 @@ class CfirTypeOperatorImpl @CfirImplementationDetail constructor(
         this.annotations = newAnnotations
     }
 
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
      {
         this.coneTypeOrNull = newConeTypeOrNull
     }

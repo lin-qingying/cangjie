@@ -10,7 +10,7 @@ package org.cangnova.cangjie.cfir.expressions.impl
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -21,7 +21,7 @@ class CfirErrorExpressionImpl @CfirImplementationDetail constructor(
     override var annotations: List<CfirAnnotation>,
     override val reason: String,
 ) : CfirErrorExpression() {
-    override val coneTypeOrNull: ConeCangJieType?
+    override val coneTypeOrNull: ConeCangjieType?
         get() = ConeErrorType(reason)
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -33,7 +33,7 @@ class CfirErrorExpressionImpl @CfirImplementationDetail constructor(
         this.annotations = newAnnotations
     }
 
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
      {
     }
 

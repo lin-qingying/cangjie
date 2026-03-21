@@ -9,7 +9,7 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirResolvable
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.references.CfirReference
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeCangjieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -20,7 +20,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 abstract class CfirPropertyAccess : CfirExpression(), CfirResolvable {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
-    abstract override val coneTypeOrNull: ConeCangJieType?
+    abstract override val coneTypeOrNull: ConeCangjieType?
     abstract override val calleeReference: CfirReference
     abstract val explicitReceiver: CfirExpression?
 
@@ -34,7 +34,7 @@ abstract class CfirPropertyAccess : CfirExpression(), CfirResolvable {
     override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
 
-    override abstract fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+    override abstract fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
 
 
     override abstract fun replaceCalleeReference(newCalleeReference: CfirReference)
