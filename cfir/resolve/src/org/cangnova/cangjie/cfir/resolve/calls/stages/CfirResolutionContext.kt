@@ -1,11 +1,11 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveContext
-import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceComponents
+import org.cangnova.cangjie.cfir.resolve.CfirInferenceComponents
+import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeSubtypeChecker
 import org.cangnova.cangjie.name.FqName
 
 /**
@@ -17,8 +17,8 @@ class CfirResolutionContext(
     val session: CfirSession,
     /** Body resolve 上下文。 */
     val bodyResolveContext: CfirBodyResolveContext,
-    /** 子类型检查器。 */
-    val subtypeChecker: ConeSubtypeChecker,
+    /** 类型关系查询入口。 */
+    val typeRelations: CfirTypeRelations,
     /** 泛型推断组件，主要供后续阶段使用。 */
     val inferenceComponents: CfirInferenceComponents? = null,
     /** 调用处的期望返回类型，用于泛型返回类型约束收集。 */
@@ -30,4 +30,3 @@ class CfirResolutionContext(
     /** 使用点所属类符号，用于可见性检查。 */
     val containingClassSymbol: CfirClassSymbol? = null,
 )
-

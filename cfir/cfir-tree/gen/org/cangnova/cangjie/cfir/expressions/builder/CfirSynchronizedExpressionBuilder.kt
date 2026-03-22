@@ -15,14 +15,14 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSynchronizedExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirSynchronizedExpressionImpl
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirSynchronizedExpressionBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    var coneTypeOrNull: ConeCangjieType? = null
+    var coneTypeOrNull: ConeCangJieType? = null
     lateinit var monitor: CfirExpression
     lateinit var body: CfirBlock
 

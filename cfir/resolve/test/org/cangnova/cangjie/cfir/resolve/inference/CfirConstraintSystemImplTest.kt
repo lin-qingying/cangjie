@@ -5,11 +5,15 @@
 
 package org.cangnova.cangjie.cfir.resolve.inference
 
+import org.cangnova.cangjie.cfir.constraints.CfirConstraintPosition
+import org.cangnova.cangjie.cfir.constraints.CfirTypeVariable
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.asResolveState
 import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
+import org.cangnova.cangjie.cfir.resolve.CfirConstraintSystemImpl
+import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -17,7 +21,6 @@ import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
 import org.cangnova.cangjie.cfir.types.ConeFuncType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.ConeSubtypeChecker
 import org.cangnova.cangjie.cfir.types.ConeTypeContext
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
@@ -30,11 +33,11 @@ import org.junit.jupiter.api.Test
 
 class CfirConstraintSystemImplTest {
 
-    private val subtypeChecker = ConeSubtypeChecker(ConstraintTestTypeContext())
+    private val typeRelations = CfirTypeRelations(ConstraintTestTypeContext())
 
     @Test
     fun `decompose invariant class type arguments and infer type variable`() {
-        val system = CfirConstraintSystemImpl(subtypeChecker = subtypeChecker)
+        val system = CfirConstraintSystemImpl(typeRelations)
         val t = newTypeVariable(system, "T")
         val boxId = ClassId(FqName("test"), Name.identifier("Box"))
 
@@ -50,7 +53,7 @@ class CfirConstraintSystemImplTest {
 
     @Test
     fun `function subtype constraints should infer from contravariant parameter`() {
-        val system = CfirConstraintSystemImpl(subtypeChecker = subtypeChecker)
+        val system = CfirConstraintSystemImpl(typeRelations)
         val t = newTypeVariable(system, "T")
 
         val sub = ConeFuncType(
@@ -71,7 +74,7 @@ class CfirConstraintSystemImplTest {
 
     @Test
     fun `fixation should respect variable dependency order`() {
-        val system = CfirConstraintSystemImpl(subtypeChecker = subtypeChecker)
+        val system = CfirConstraintSystemImpl(typeRelations)
         val t = newTypeVariable(system, "T")
         val u = newTypeVariable(system, "U")
 
@@ -89,7 +92,7 @@ class CfirConstraintSystemImplTest {
 
     @Test
     fun `bound should be propagated through other variable bounds`() {
-        val system = CfirConstraintSystemImpl(subtypeChecker = subtypeChecker)
+        val system = CfirConstraintSystemImpl(typeRelations)
         val t = newTypeVariable(system, "T")
         val u = newTypeVariable(system, "U")
         val boxId = ClassId(FqName("test"), Name.identifier("Box"))
@@ -107,7 +110,7 @@ class CfirConstraintSystemImplTest {
 
     @Test
     fun `conflicting constraints should be reported`() {
-        val system = CfirConstraintSystemImpl(subtypeChecker = subtypeChecker)
+        val system = CfirConstraintSystemImpl(typeRelations)
         val t = newTypeVariable(system, "T")
         val tType = ConeTypeParameterType(t.lookupTag)
 

@@ -26,7 +26,6 @@ package org.cangnova.cangjie.lexer
 import org.jetbrains.annotations.NonNls
 
 class CjModifierKeywordToken : CjKeywordToken {
-    @Deprecated("")
     private constructor(debugName: String, value: String, isSoft: Boolean) : super(
         debugName,
         value,

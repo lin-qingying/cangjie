@@ -4,12 +4,14 @@ import org.cangnova.cangjie.AnalysisFlag
 import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.CompilerConfigurationKey
+import org.cangnova.cangjie.config.CommonConfigurationKeys
 import org.cangnova.cangjie.config.addClasspathRoot
 import org.cangnova.cangjie.config.useLightTree
 import org.cangnova.cangjie.test.CfirParser
 import org.cangnova.cangjie.test.config.TestPhaseDirectives
 import org.cangnova.cangjie.test.config.addSourcesForDependsOnClosure
 import org.cangnova.cangjie.test.directives.CangjieTestDirectives.WITH_STDLIB
+import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives.CFIR_PARSER
 import org.cangnova.cangjie.test.directives.model.RegisteredDirectives
 import org.cangnova.cangjie.test.directives.model.SimpleDirective
@@ -56,6 +58,10 @@ abstract class EnvironmentConfigurator(protected val testServices: TestServices)
 }
 
 class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigurator(testServices) {
+    override fun DirectiveToConfigurationKeyExtractor.provideConfigurationKeys() {
+        register(CfirDiagnosticsDirectives.DUMP_INFERENCE_LOGS, CommonConfigurationKeys.DUMP_INFERENCE_LOGS)
+    }
+
     override fun configureCompilerConfiguration(configuration: CompilerConfiguration, module: TestModule) {
         addRuntimeClasspathRoots(configuration, module)
         if (WITH_STDLIB in module.directives) {

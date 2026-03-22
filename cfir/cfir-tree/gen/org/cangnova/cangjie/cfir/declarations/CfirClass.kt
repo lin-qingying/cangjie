@@ -8,7 +8,7 @@ package org.cangnova.cangjie.cfir.declarations
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -22,12 +22,12 @@ abstract class CfirClass : CfirClassLikeDeclaration(), CfirControlFlowGraphOwner
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>
-    abstract override val symbol: CfirSymbol<*>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
     abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
     abstract val status: CfirDeclarationStatus
     abstract val typeParameters: List<CfirTypeParameter>
+    abstract override val symbol: CfirClassSymbol
     abstract val superTypeRefs: List<CfirTypeRef>
     abstract val declarations: List<CfirDeclaration>
     abstract val name: Name

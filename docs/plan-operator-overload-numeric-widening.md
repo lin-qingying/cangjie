@@ -177,9 +177,9 @@ fun CfirComparisonOp.toFunctionName(): String = when (this) {
 
 ```kotlin
 private fun resolveNumericPromotion(
-    receiverType: ConeCangjieType,
-    argType: ConeCangjieType,
-): ConeCangjieType {
+    receiverType: ConeCangJieType,
+    argType: ConeCangJieType,
+): ConeCangJieType {
     val receiverIsIdeal = receiverType.isIdealType
     val argIsIdeal = argType.isIdealType
 

@@ -11,7 +11,7 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -19,7 +19,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirSubscriptExpressionImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: List<CfirAnnotation>,
-    override var coneTypeOrNull: ConeCangjieType?,
+    override var coneTypeOrNull: ConeCangJieType?,
     override var receiver: CfirExpression,
     override var indices: List<CfirExpression>,
 ) : CfirSubscriptExpression() {
@@ -35,7 +35,7 @@ class CfirSubscriptExpressionImpl @CfirImplementationDetail constructor(
         this.annotations = newAnnotations
     }
 
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
      {
         this.coneTypeOrNull = newConeTypeOrNull
     }

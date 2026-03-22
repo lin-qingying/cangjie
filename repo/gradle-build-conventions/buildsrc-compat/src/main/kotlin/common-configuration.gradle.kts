@@ -21,6 +21,8 @@ plugins.withId("org.jetbrains.kotlin.jvm") {
         compilerOptions {
             freeCompilerArgs.add("-Xjvm-default=all")
             freeCompilerArgs.add("-XXLanguage:+ExplicitBackingFields")
+            freeCompilerArgs.add("-Xskip-prerelease-check")  // 补上这行
+            freeCompilerArgs.add("-Xcontext-parameters")     // 这个也建议加上
         }
     }
 

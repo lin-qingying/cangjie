@@ -23,7 +23,7 @@ import org.cangnova.cangjie.name.Name
  */
 class CfirClassDeclaredMemberScope(
     private val classSymbol: CfirClassSymbol,
-) : CfirClassScope {
+) : CfirClassScope() {
 
     private val memberIndex: MemberIndex by lazy { buildIndex(classSymbol.cfir.declarations) }
 

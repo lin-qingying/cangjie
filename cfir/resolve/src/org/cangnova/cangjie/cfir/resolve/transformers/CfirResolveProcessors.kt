@@ -2,14 +2,14 @@
 
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 fun registerResolveProcessors(
     registry: CfirPhaseResolverRegistry,
     diagnosticReporter: CfirDiagnosticReporter,
     session: CfirSession,
-    scopeSession: CfirScopeSession = CfirScopeSession(),
+    scopeSession: ScopeSession = ScopeSession(),
 ) {
     registry.registerProcessor(
         CfirResolvePhase.IMPORTS,

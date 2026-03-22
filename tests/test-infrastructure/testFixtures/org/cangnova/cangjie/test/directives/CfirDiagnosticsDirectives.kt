@@ -35,6 +35,26 @@ object CfirDiagnosticsDirectives : SimpleDirectivesContainer(){
         description = "Enables experimental CFIR checkers in tests."
     )
 
+    val DUMP_INFERENCE_LOGS by directive(
+        description = "Enables CFIR inference logger collection and dumps it to a side file.",
+    )
+
+    val DUMP_SCOPE by directive(
+        description = "Dumps basic CFIR scope information for the current test file.",
+    )
+
+    val SCOPE_DUMP by stringDirective(
+        description = "Dump scope information for the specified class FQNs. Syntax: SCOPE_DUMP: pkg.Class:foo;bar",
+    )
+
+    val IGNORE_LEAKED_INTERNAL_TYPES by stringDirective(
+        description = "Ignore failures in CfirResolvedTypesVerifier and document why.",
+    )
+
+    val VERIFY_RESOLVED_TYPES by directive(
+        description = "Fails the test when resolved CFIR expressions or type refs still contain unresolved types.",
+    )
+
 
 
     val RENDER_DIAGNOSTIC_ARGUMENTS by directive(

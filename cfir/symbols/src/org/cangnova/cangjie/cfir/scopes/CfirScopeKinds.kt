@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.scopes
 
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
@@ -7,27 +9,39 @@ import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.Name
 
 /** 包级 scope，解析包内的顶级声明 */
-interface CfirPackageScope : CfirScope
+abstract class CfirPackageScope : CfirScope() {
+    override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirScope? = null
+}
 
 /** 类级 scope，解析类内部的成员声明 */
-interface CfirClassScope : CfirScope
+abstract class CfirClassScope : CfirScope() {
+    override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirScope? = null
+}
 
 /** import scope，解析通过 import 引入的声明 */
-interface CfirImportScope : CfirScope
+abstract class CfirImportScope : CfirScope() {
+    override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirScope? = null
+}
 
 /** 局部 scope，解析函数体/代码块内的局部声明 */
-interface CfirLocalScope : CfirScope
+abstract class CfirLocalScope : CfirScope() {
+    override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirScope? = null
+}
 
 /** extend scope，解析 extend 声明引入的成员 */
-interface CfirExtendScope : CfirScope
+abstract class CfirExtendScope : CfirScope() {
+    override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirScope? = null
+}
 
 /** 类型参数 scope，解析泛型类/函数中的类型参数名称 */
-interface CfirTypeParameterScope : CfirScope
+abstract class CfirTypeParameterScope : CfirScope() {
+    override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirScope? = null
+}
 
 /**
  * 组合 scope，将多个 scope 合并为一个。
  */
-class CfirCompositeScope(private val scopes: List<CfirScope>) : CfirScope {
+class CfirCompositeScope(private val scopes: List<CfirScope>) : CfirScope() {
 
     constructor(vararg scopes: CfirScope) : this(scopes.toList())
 
@@ -45,5 +59,10 @@ class CfirCompositeScope(private val scopes: List<CfirScope>) : CfirScope {
 
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
         for (scope in scopes) scope.processCallablesByName(name, processor)
+    }
+
+    override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirScope? {
+        val newScopes = scopes.mapNotNull { it.withReplacedSessionOrNull(newSession, newScopeSession) }
+        return if (newScopes.size == scopes.size) CfirCompositeScope(newScopes) else null
     }
 }

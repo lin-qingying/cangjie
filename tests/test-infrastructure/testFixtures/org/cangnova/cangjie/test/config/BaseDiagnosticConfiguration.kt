@@ -19,7 +19,10 @@ import org.cangnova.cangjie.test.directives.model.DirectivesContainer
 import org.cangnova.cangjie.test.directives.model.singleOrZeroValue
 import org.cangnova.cangjie.test.frontend.CfirDiagnosticsHandler
 import org.cangnova.cangjie.test.frontend.CfirFrontendFacade
+import org.cangnova.cangjie.test.frontend.CfirInferenceLogsHandler
 import org.cangnova.cangjie.test.frontend.CfirOutputArtifact
+import org.cangnova.cangjie.test.frontend.CfirResolvedTypesVerifier
+import org.cangnova.cangjie.test.frontend.CfirScopeDumpHandler
 import org.cangnova.cangjie.test.frontend.PsiLightTreeMetaInfoProcessor
 import org.cangnova.cangjie.test.model.AfterAnalysisChecker
 import org.cangnova.cangjie.test.model.DependencyKind
@@ -98,10 +101,10 @@ fun TestStepBuilder.HandlersStepBuilder.NonGroupingPhase<CfirOutputArtifact, Fro
 //        ::CfirDumpHandler,
 //        ::CfirCfgDumpHandler,
 //        ::CfirVFirDumpHandler,
-//        ::CfirInferenceLogsHandler,
+        ::CfirInferenceLogsHandler,
 //        ::CfirCfgConsistencyHandler,
-//        ::CfirResolvedTypesVerifier,
-//        ::CfirScopeDumpHandler,
+        ::CfirResolvedTypesVerifier,
+        ::CfirScopeDumpHandler,
     )
 }
 /**

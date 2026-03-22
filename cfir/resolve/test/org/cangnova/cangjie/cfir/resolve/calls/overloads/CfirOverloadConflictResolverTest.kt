@@ -3,6 +3,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.overloads
 
 import org.cangnova.cangjie.cfir.declarations.asResolveState
+import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildFunctionSymbol
@@ -26,8 +27,7 @@ class CfirOverloadConflictResolverTest {
 
     @BeforeEach
     fun setUp() {
-        val subtypeChecker = ConeSubtypeChecker(OverloadTestTypeContext())
-        resolver = CfirOverloadConflictResolver(subtypeChecker)
+        resolver = CfirOverloadConflictResolver(CfirTypeRelations(OverloadTestTypeContext()))
     }
 
     @Nested

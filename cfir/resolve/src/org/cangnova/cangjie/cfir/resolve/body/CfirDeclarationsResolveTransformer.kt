@@ -235,7 +235,7 @@ class CfirDeclarationsResolveTransformer(
 
         val explicitTypeRef = fieldVariable.returnTypeRef
         val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
-            CfirResolutionMode.WithExpectedType(explicitTypeRef.coneType)
+            CfirResolutionMode.WithExpectedType(explicitTypeRef )
         } else {
             CfirResolutionMode.ContextIndependent
         }
@@ -292,7 +292,7 @@ class CfirDeclarationsResolveTransformer(
 
         val explicitTypeRef = patternVariable.returnTypeRef
         val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
-            CfirResolutionMode.WithExpectedType(explicitTypeRef.coneType)
+            CfirResolutionMode.WithExpectedType(explicitTypeRef)
         } else {
             CfirResolutionMode.ContextIndependent
         }

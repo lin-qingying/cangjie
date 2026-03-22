@@ -190,8 +190,6 @@ private fun org.cangnova.cangjie.cfir.types.ConeCangJieType.containsAnyTypeParam
     is org.cangnova.cangjie.cfir.types.ConePointerType -> pointeeType.containsAnyTypeParameter(parameterNames)
     is org.cangnova.cangjie.cfir.types.ConeIntersectionType -> intersectedTypes.any { it.containsAnyTypeParameter(parameterNames) }
     is org.cangnova.cangjie.cfir.types.ConeUnionType -> unionTypes.any { it.containsAnyTypeParameter(parameterNames) }
-    is org.cangnova.cangjie.cfir.types.ConeFlexibleType -> lowerBound.containsAnyTypeParameter(parameterNames) ||
-        upperBound.containsAnyTypeParameter(parameterNames)
     else -> false
 }
 

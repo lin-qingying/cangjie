@@ -15,7 +15,7 @@ import org.cangnova.cangjie.name.Name
  *
  * 参考 K2 FirLocalScope。
  */
-class CfirLocalScopeImpl : CfirLocalScope {
+class CfirLocalScopeImpl : CfirLocalScope() {
 
     private val variables = HashMap<Name, MutableList<CfirCallableSymbol<*>>>()
     private val functions = HashMap<Name, MutableList<CfirFunctionSymbol>>()

@@ -7,5 +7,4 @@ enum class CfirLiteralKind {
     RUNE,
     STRING,
     UNIT,
-    NULL,
 }

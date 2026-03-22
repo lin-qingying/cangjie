@@ -21,7 +21,7 @@ import org.cangnova.cangjie.name.Name
  */
 class CfirTypeParameterScopeImpl(
     typeParameters: List<CfirTypeParameter>,
-) : CfirTypeParameterScope {
+) : CfirTypeParameterScope() {
 
     private val typeParametersByName: Map<Name, List<CfirTypeParameterSymbol>>
 

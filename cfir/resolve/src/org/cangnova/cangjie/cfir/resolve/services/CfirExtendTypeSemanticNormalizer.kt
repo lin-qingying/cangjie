@@ -1,7 +1,7 @@
-﻿package org.cangnova.cangjie.cfir.resolve.services
+package org.cangnova.cangjie.cfir.resolve.services
 
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.resolve.calls.CfirTypeSubstitutorByMap
+import org.cangnova.cangjie.cfir.constraints.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -27,4 +27,3 @@ internal class CfirExtendTypeSemanticNormalizer(
         return substitutor.substituteOrSelf(type)
     }
 }
-

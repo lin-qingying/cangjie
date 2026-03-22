@@ -2,6 +2,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildFunctionSymbol
@@ -9,6 +10,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildT
 import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculator
+import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
 import org.cangnova.cangjie.cfir.semantics.CandidateApplicability
 import org.cangnova.cangjie.cfir.types.*
 import org.junit.jupiter.api.Assertions.*
@@ -28,7 +30,7 @@ class CfirCheckArgumentsTest {
         context = CfirResolutionContext(
             session = StubSession,
             bodyResolveContext = CfirBodyResolveContext(CfirReturnTypeCalculator.Default, CfirDataFlowAnalyzerContext()),
-            subtypeChecker = ConeSubtypeChecker(TestTypeContext()),
+            typeRelations = CfirTypeRelations(TestTypeContext()),
         )
     }
 
@@ -87,7 +89,7 @@ class CfirCheckArgumentsTest {
 
             assertEquals(CandidateApplicability.INAPPLICABLE, candidate.lowestApplicability)
             assertTrue(candidate.diagnostics.any {
-                it is org.cangnova.cangjie.cfir.resolve.calls.candidate.ArgumentTypeMismatch
+                it is ArgumentTypeMismatch
             })
         }
 
@@ -156,4 +158,3 @@ private class TestTypeContext : ConeTypeContext {
         return a == b
     }
 }
-

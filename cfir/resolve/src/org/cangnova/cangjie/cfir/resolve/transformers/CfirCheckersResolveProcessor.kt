@@ -6,7 +6,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.diagnostics.impl.PendingDiagnosticsReporterImpl
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
@@ -18,7 +18,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 internal class CfirCheckersResolveProcessor(
     private val diagnosticReporter: CfirDiagnosticReporter,
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
 ) : CfirGlobalResolveProcessor(
     session = session,
     scopeSession = scopeSession,

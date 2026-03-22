@@ -47,3 +47,25 @@ abstract class CfirSession(
         Library,
     }
 }
+
+enum class ProcessorAction {
+    STOP,
+    NEXT,
+    NONE;
+
+    operator fun not(): Boolean {
+        return when (this) {
+            STOP -> true
+            NEXT -> false
+            NONE -> false
+        }
+    }
+
+    fun stop(): Boolean = this == STOP
+    fun next(): Boolean = this != STOP
+
+    operator fun plus(other: ProcessorAction): ProcessorAction {
+        if (this == NEXT || other == NEXT) return NEXT
+        return this
+    }
+}

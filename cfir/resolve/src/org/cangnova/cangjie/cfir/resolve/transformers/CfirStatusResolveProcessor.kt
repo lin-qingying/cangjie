@@ -17,14 +17,14 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.diagnosticReporter
 import org.cangnova.cangjie.name.Name
 
 internal class CfirStatusResolveProcessor(
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
 ) : CfirTransformerBasedResolveProcessor(
     session = session,
     scopeSession = scopeSession,
@@ -38,7 +38,7 @@ internal class CfirStatusResolveProcessor(
 
 class CfirStatusComputationSession(
     val useSiteSession: CfirSession,
-    val useSiteScopeSession: CfirScopeSession,
+    val useSiteScopeSession: ScopeSession,
 ) {
     private val statusMap: MutableMap<CfirDeclaration, StatusComputationStatus> =
         hashMapOf<CfirDeclaration, StatusComputationStatus>()

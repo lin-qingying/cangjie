@@ -120,7 +120,7 @@
 | `CfirResolveProcessor` 层次 | Transformer-based / Global 双模式 |
 | `CfirSession` + `ComponentArrayOwner` | O(1) 组件注册/查找 |
 | `CfirSymbol` 体系 | 25 种符号类型，覆盖全部声明 |
-| `ConeCangjieType` 体系 | 14 种类型（Primitive、Class、Func、Tuple、Array、TypeParam、Error 等） |
+| `ConeCangJieType` 体系 | 14 种类型（Primitive、Class、Func、Tuple、Array、TypeParam、Error 等） |
 | `CfirSymbolProvider` 抽象 | 类查找、顶层可调用查找、包存在性 |
 | `CfirScope` 抽象 | processClassifiers/Functions/Properties 处理器模式 |
 | 诊断全链路 | Factory(0-4) → Reporter → Collector → Renderer |

@@ -45,6 +45,8 @@
             <option value="$PROJECT_DIR$/cfir/cfir-tree/tree-generator" />
             <option value="$PROJECT_DIR$/cfir/checkers" />
             <option value="$PROJECT_DIR$/cfir/checkers/checkers-component-generator" />
+            <option value="$PROJECT_DIR$/cfir/constraint" />
+            <option value="$PROJECT_DIR$/cfir/constraint-system" />
             <option value="$PROJECT_DIR$/cfir/diagnostic-renderers" />
             <option value="$PROJECT_DIR$/cfir/entrypoint" />
             <option value="$PROJECT_DIR$/cfir/providers" />
@@ -83,6 +85,7 @@
             <option value="$PROJECT_DIR$/repo/gradle-build-conventions/utilities" />
             <option value="$PROJECT_DIR$/repo/gradle-settings-conventions" />
             <option value="$PROJECT_DIR$/repo/gradle-settings-conventions/jvm-toolchain-provisioning" />
+            <option value="$PROJECT_DIR$/resolution.common" />
             <option value="$PROJECT_DIR$/tests" />
             <option value="$PROJECT_DIR$/tests/test-infrastructure" />
             <option value="$PROJECT_DIR$/util" />

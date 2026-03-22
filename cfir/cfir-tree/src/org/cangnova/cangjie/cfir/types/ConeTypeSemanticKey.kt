@@ -17,6 +17,9 @@ fun ConeCangJieType.renderSemanticKey(): String = when (this) {
     is ConeUnionType -> "union:[${unionTypes.map { it.renderSemanticKey() }.sorted().joinToString(",")}]"
     is ConeQuestType -> "quest"
     is ConeErrorType -> "cone-error:$reason"
+    is ConePlaceholderType -> "placeholder:${id.name}#${id.freshId}"
+    is ConeDeferredType -> "deferred:${id.name}#${id.freshId}"
+    is ConeTypeVariableRef -> "typevar-ref:${state.id.name}#${state.id.freshId}"
     is ConeCapturedType -> "captured:${constructor.name}:${status.name}"
     is ConeStubType -> "stub:${constructor.name}:${kind.name}"
     is ConeTypeVariableType -> "typevar:${typeVariableConstructor.name}"
@@ -24,3 +27,5 @@ fun ConeCangJieType.renderSemanticKey(): String = when (this) {
 }
 
 private fun List<ConeCangJieType>.renderTypeArgsKey(): String = joinToString(",") { it.renderSemanticKey() }
+
+

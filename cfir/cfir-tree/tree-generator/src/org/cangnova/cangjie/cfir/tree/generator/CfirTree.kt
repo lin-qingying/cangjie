@@ -28,7 +28,9 @@ object CfirTree : AbstractCfirTreeBuilder() {
     private val resolveStateType = type("declarations", "CfirResolveState", kind = TypeKind.Class)
     private val resolveStateAccessType = type("declarations", "ResolveStateAccess", kind = TypeKind.Class)
     private val symbolType = type("symbols", "CfirSymbol").withArgs(TreeTypeRef.Star)
-    private val coneTypeType = type("types", "ConeCangjieType")
+    val classSymbolType = type("symbols", "CfirClassSymbol")
+
+    private val coneTypeType = type("types", "ConeCangJieType")
     private val nameType = type("org.cangnova.cangjie.name", "Name", exactPackage = true, kind = TypeKind.Class)
     private val fqNameType = type("org.cangnova.cangjie.name", "FqName", exactPackage = true, kind = TypeKind.Class)
     private val classKindType = generatedType("declarations", "CfirClassKind", TypeKind.Class)
@@ -191,6 +193,8 @@ object CfirTree : AbstractCfirTreeBuilder() {
         parent(controlFlowGraphOwner)
         +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +FieldSets.typeParameters
+        +field("symbol", classSymbolType)
+
         +listField("superTypeRefs", typeRef, withTransform = true)
         +FieldSets.declarations
         +field("name", nameType)

@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory3
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -15,7 +16,8 @@ fun checkTypeMismatch(
     source: AbstractCjSourceElement,
     diagnosticFactory: CjDiagnosticFactory3<ConeCangJieType, ConeCangJieType, Boolean>,
 ) {
-    if (CfirTypeCheckUtils.isSubtypeOf(actualType, expectedType)) return
+    if (actualType is ConeErrorType || expectedType is ConeErrorType) return
+    if (CfirTypeCheckUtils.isSubtypeOf(actualType, expectedType, context.session)) return
     reporter.reportOn(
         source,
         diagnosticFactory,

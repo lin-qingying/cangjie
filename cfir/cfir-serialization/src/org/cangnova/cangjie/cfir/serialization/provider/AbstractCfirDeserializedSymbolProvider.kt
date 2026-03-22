@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.serialization.provider
 
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -8,7 +9,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageHeader
 import org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeclDeserializer
 import org.cangnova.cangjie.cfir.serialization.deserialize.CfirTypeDeserializer
@@ -50,7 +50,7 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     private val enumCtorOwnerClassIdCache = ConcurrentHashMap<CfirEnumConstructorSymbol, ClassId>()
     private val promotedEnumCallableCache = ConcurrentHashMap<CallableId, List<CfirCallableSymbol<*>>>()
 
-    private val scopeSession = CfirScopeSession()
+    private val scopeSession = ScopeSession()
     private val initializedPackageScopes = ConcurrentHashMap.newKeySet<FqName>()
 
     protected abstract fun loadPackageDeserializers(packageFqName: String): PackageDeserializers?

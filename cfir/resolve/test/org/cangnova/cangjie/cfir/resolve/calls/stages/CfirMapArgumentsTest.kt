@@ -2,6 +2,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildFunctionSymbol
@@ -141,7 +142,7 @@ class CfirMapArgumentsTest {
         return CfirResolutionContext(
             session = StubSessionForTest,
             bodyResolveContext = StubBodyResolveContext,
-            subtypeChecker = StubSubtypeChecker,
+            typeRelations = StubTypeRelations,
         )
     }
 }
@@ -157,10 +158,9 @@ private val StubBodyResolveContext = org.cangnova.cangjie.cfir.resolve.body.Cfir
     org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext(),
 )
 
-private val StubSubtypeChecker = org.cangnova.cangjie.cfir.types.ConeSubtypeChecker(
+private val StubTypeRelations = CfirTypeRelations(
     object : org.cangnova.cangjie.cfir.types.ConeTypeContext {
         override fun supertypes(type: org.cangnova.cangjie.cfir.types.ConeCangJieType) = emptyList<org.cangnova.cangjie.cfir.types.ConeCangJieType>()
         override fun isSameTypeConstructor(a: org.cangnova.cangjie.cfir.types.ConeCangJieType, b: org.cangnova.cangjie.cfir.types.ConeCangJieType) = a == b
-    }
+    },
 )
-

@@ -11,7 +11,7 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -23,11 +23,11 @@ class CfirClassImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override val moduleData: CfirModuleData,
     override var annotations: List<CfirAnnotation>,
-    override val symbol: CfirSymbol<*>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
     override var status: CfirDeclarationStatus,
     override var typeParameters: List<CfirTypeParameter>,
+    override val symbol: CfirClassSymbol,
     override var superTypeRefs: List<CfirTypeRef>,
     override var declarations: List<CfirDeclaration>,
     override val name: Name,

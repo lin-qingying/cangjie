@@ -1,7 +1,7 @@
-﻿package org.cangnova.cangjie.cfir.resolve.calls.overloads
+package org.cangnova.cangjie.cfir.resolve.calls.overloads
 
+import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
-import org.cangnova.cangjie.cfir.types.ConeSubtypeChecker
 
 /**
  * 重载冲突解析器。
@@ -12,7 +12,7 @@ import org.cangnova.cangjie.cfir.types.ConeSubtypeChecker
  * 对齐 K2 `ConeOverloadConflictResolver` 的核心思路。
  */
 class CfirOverloadConflictResolver(
-    private val subtypeChecker: ConeSubtypeChecker,
+    private val typeRelations: CfirTypeRelations,
 ) : CfirCallConflictResolver() {
 
     override fun chooseMaximallySpecificCandidates(
@@ -32,7 +32,16 @@ class CfirOverloadConflictResolver(
 
         // 第 3 轮：默认值更少的候选优先
         val afterDefaults = discriminateByDefaults(afterGenerics)
-        return afterDefaults.map { it.origin }.toSet()
+        if (afterDefaults.size <= 1) return afterDefaults.map { it.origin }.toSet()
+
+        val afterQuestFallback = discriminateByQuestFallback(afterDefaults)
+        if (afterQuestFallback.size <= 1) return afterQuestFallback.map { it.origin }.toSet()
+
+        val afterIdealNumeric = discriminateByIdealNumericCompatibility(afterQuestFallback)
+        if (afterIdealNumeric.size <= 1) return afterIdealNumeric.map { it.origin }.toSet()
+
+        val afterExtendParticipation = discriminateByExtendParticipation(afterIdealNumeric)
+        return afterExtendParticipation.map { it.origin }.toSet()
     }
 
     /**
@@ -77,8 +86,8 @@ class CfirOverloadConflictResolver(
             val specType = specificTypes[i] ?: return false
             val genType = generalTypes[i] ?: return false
 
-            if (!subtypeChecker.isSubtypeOf(specType, genType)) return false
-            if (!subtypeChecker.isSubtypeOf(genType, specType)) {
+            if (!typeRelations.isSubtype(specType, genType)) return false
+            if (!typeRelations.isSubtype(genType, specType)) {
                 hasStrictSubtype = true
             }
         }
@@ -102,6 +111,21 @@ class CfirOverloadConflictResolver(
         val minDefaults = signatures.minOf { it.numDefaults }
         val fewestDefaults = signatures.filter { it.numDefaults == minDefaults }
         return fewestDefaults.ifEmpty { signatures }
+    }
+
+    private fun discriminateByQuestFallback(signatures: List<CfirFlatSignature>): List<CfirFlatSignature> {
+        val withoutFallback = signatures.filter { !it.usedQuestFallback }
+        return if (withoutFallback.isNotEmpty()) withoutFallback else signatures
+    }
+
+    private fun discriminateByIdealNumericCompatibility(signatures: List<CfirFlatSignature>): List<CfirFlatSignature> {
+        val withoutIdealNumeric = signatures.filter { !it.usedIdealNumericCompatibility }
+        return if (withoutIdealNumeric.isNotEmpty()) withoutIdealNumeric else signatures
+    }
+
+    private fun discriminateByExtendParticipation(signatures: List<CfirFlatSignature>): List<CfirFlatSignature> {
+        val withoutExtend = signatures.filter { !it.usedExtendParticipation }
+        return if (withoutExtend.isNotEmpty()) withoutExtend else signatures
     }
 }
 

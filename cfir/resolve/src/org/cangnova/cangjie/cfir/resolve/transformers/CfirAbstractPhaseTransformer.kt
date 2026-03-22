@@ -6,14 +6,14 @@ package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.CfirSessionHolder
+import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultTransformer
 
 abstract class CfirAbstractPhaseTransformer<D>(
     val baseTransformerPhase: CfirResolvePhase,
-) : CfirDefaultTransformer<D>(), CfirSessionHolder {
+) : CfirDefaultTransformer<D>(), SessionHolder {
     abstract override val session: CfirSession
 
     init {

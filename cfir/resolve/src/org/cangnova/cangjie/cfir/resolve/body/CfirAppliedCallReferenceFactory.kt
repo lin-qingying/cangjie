@@ -17,6 +17,7 @@ import org.cangnova.cangjie.name.Name
 internal fun buildAppliedCallableReference(
     name: Name,
     candidate: CfirCandidate,
+    components: CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
 ): CfirResolvedNamedReference {
     if (!candidate.symbol.isBound) {
         return CfirResolvedNamedReferenceImpl(null, name, candidate.symbol)
@@ -33,11 +34,14 @@ internal fun buildAppliedCallableReference(
         else -> emptyList()
     }
 
+    // 返回类型：直接从 candidate 获取代入后类型（不再调用 completeCandidate）
+    val substitutedReturnType = candidate.substitutedReturnType()
+
     return CfirResolvedAppliedCallableReference(
         source = null,
         name = name,
         resolvedSymbol = candidate.symbol,
-        substitutedReturnType = candidate.resolvedReturnType(),
+        substitutedReturnType = substitutedReturnType,
         substitutedParameterTypes = substitutedParameterTypes,
     )
 }

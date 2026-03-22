@@ -15,13 +15,21 @@ import org.cangnova.cangjie.cfir.declarations.impl.CfirValueParameterImpl
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.impl.CfirLiteralExpressionImpl
+import org.cangnova.cangjie.cfir.constraints.ExplicitReceiverKind
+import org.cangnova.cangjie.cfir.resolve.CfirConstraintSystemImpl
+import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
+import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveContext
+import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
+import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeTypeContext
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
@@ -32,6 +40,23 @@ import org.cangnova.cangjie.name.Name
  * 提供构建 `CfirFunction`、`CfirValueParameter`、`CfirCandidate` 等测试 fixture 的工厂方法。
  */
 object CallResolutionTestFixtures {
+    private val STUB_BODY_RESOLVE_CONTEXT = CfirBodyResolveContext(
+        CfirReturnTypeCalculator.Default,
+        CfirDataFlowAnalyzerContext(),
+    )
+
+    private val STUB_TYPE_RELATIONS = CfirTypeRelations(object : ConeTypeContext {
+        override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> = emptyList()
+
+        override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean = a == b
+    })
+
+    private val STUB_RESOLUTION_CONTEXT = CfirResolutionContext(
+        session = StubCfirSession,
+        bodyResolveContext = STUB_BODY_RESOLVE_CONTEXT,
+        typeRelations = STUB_TYPE_RELATIONS,
+    )
+
 
     val TEST_MODULE_DATA: CfirModuleData = CfirSourceModuleData(
         name = Name.identifier("test-module"),
@@ -136,7 +161,13 @@ object CallResolutionTestFixtures {
     ): CfirCandidate {
         return CfirCandidate(
             symbol = functionSymbol,
+            dispatchReceiver = null,
+            givenExtensionReceiver = null,
+            explicitReceiverKind = ExplicitReceiverKind.NO_EXPLICIT_RECEIVER,
             callInfo = callInfo,
+            originScope = null,
+            resolutionContext = STUB_RESOLUTION_CONTEXT,
+            constraintSystem = CfirConstraintSystemImpl(STUB_TYPE_RELATIONS),
         )
     }
 }
@@ -147,5 +178,4 @@ object CallResolutionTestFixtures {
 private object StubCfirSession : org.cangnova.cangjie.cfir.session.CfirSession(Kind.Source) {
     override fun toString(): String = "StubCfirSession"
 }
-
 

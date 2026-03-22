@@ -1,28 +1,30 @@
 package org.cangnova.cangjie.cfir.types
 
-import org.cangnova.cangjie.type.model.StubTypeMarker
-import org.cangnova.cangjie.type.model.TypeVariableTypeConstructorMarker
 
 /**
- * 存根类型，类型推断中间状态的占位类型。
+ * 存根类型，推断过程中的过渡类型。
  *
- * 对应 K2 中的 ConeStubType，在推断尚未完成时临时代表某个类型变量。
- * 推断完成后，所有存根类型将被替换为实际求解结果。
+ * 它用于表达“某个类型位置暂时不能稳定落为最终类型，但已经需要在类型图中占位”。
+ * 与 [ConePlaceholderType] 的区别在于：
+ * - `ConePlaceholderType` 主要强调稳定身份；
+ * - `ConeStubType` 主要强调该位置仍处在推断过渡阶段。
+ *
+ * 当前 `Kind` 仍保留旧枚举形状，但后续应继续收敛，不再服务 Kotlin Builder 推断语义。
  *
  * @param constructor 关联的类型变量构造器
- * @param kind 存根类型种类（用于子类型检查 / Builder 推断）
+ * @param kind 存根类型种类
  */
 class ConeStubType(
     val constructor: ConeTypeVariableTypeConstructor,
     val kind: Kind,
     override val attributes: ConeAttributes = ConeAttributes.EMPTY,
-) : ConeRigidType(), StubTypeMarker {
+) : ConeRigidType()   {
 
     /** 存根类型种类 */
     enum class Kind {
-        /** 用于子类型检查中的类型变量 */
+        /** 用于子类型相关推断过渡 */
         FOR_SUBTYPING,
-        /** 用于 Builder 推断 */
+        /** 保留的过渡分支，后续将重新命名/整理职责 */
         FOR_BUILDER_INFERENCE,
     }
 

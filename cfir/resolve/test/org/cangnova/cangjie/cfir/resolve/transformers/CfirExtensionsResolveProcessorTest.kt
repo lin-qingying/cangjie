@@ -9,7 +9,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
 import org.cangnova.cangjie.cfir.resolve.services.CfirLazyDeclarationResolver
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -48,7 +48,7 @@ class CfirExtensionsResolveProcessorTest {
         session.register(CfirTypeResolver::class, NoopTypeResolver)
         session.register(CfirExtendIndexStore::class, indexStore)
 
-        val processor = CfirExtensionsResolveProcessor(session, CfirScopeSession())
+        val processor = CfirExtensionsResolveProcessor(session, ScopeSession())
         processor.beforePhase()
         processor.afterPhase()
 

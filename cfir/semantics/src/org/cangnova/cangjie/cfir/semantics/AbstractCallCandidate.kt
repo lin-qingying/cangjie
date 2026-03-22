@@ -1,5 +1,8 @@
 package org.cangnova.cangjie.cfir.semantics
 
+import org.cangnova.cangjie.cfir.constraints.CfirConstraintIssue
+import org.cangnova.cangjie.cfir.constraints.CfirConstraintSystem
+import org.cangnova.cangjie.cfir.constraints.ExplicitReceiverKind
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 
 /**
@@ -14,7 +17,6 @@ abstract class AbstractCallCandidate<P : AbstractConeResolutionAtom> : AbstractC
     abstract val contextArguments: List<P>?
     abstract val callInfo: AbstractCallInfo
     abstract val diagnostics: List<ResolutionDiagnostic>
-    abstract val errors: List<CfirConstraintSystemError>
-    abstract val system: CfirNewConstraintSystem
-    abstract val usedOuterCs: Boolean
+    abstract val errors: List<CfirConstraintIssue>
+    abstract val system: CfirConstraintSystem
 }

@@ -7,7 +7,6 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirBasicExpressio
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirConstEvalArithmeticChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirErrorExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirFunctionCallChecker
-import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirArgumentTypeMismatchChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirIfExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirIfConditionTypeMismatchChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirLiteralExpressionChecker

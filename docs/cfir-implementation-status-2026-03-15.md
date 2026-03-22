@@ -95,7 +95,7 @@
 | 3 | CfirResolveProcessor 层次 | ✅ | resolve/src/.../CfirResolveProcessor.kt | ~200 |
 | 4 | CfirSession + ComponentArrayOwner | ✅ | cfir-common/src/.../CfirSession.kt | ~300 |
 | 5 | CfirSymbol 体系 | ✅ | cfir-tree/src/.../CfirSymbol.kt（25 种） | ~500 gen |
-| 6 | ConeCangjieType 体系 | ✅ | cfir-cones/src/.../Cone*.kt（14 种） | ~1000 |
+| 6 | ConeCangJieType 体系 | ✅ | cfir-cones/src/.../Cone*.kt（14 种） | ~1000 |
 | 7 | CfirSymbolProvider 抽象 | ✅ | symbols/src/.../CfirSymbolProvider.kt | ~200 |
 | 8 | CfirScope 抽象 | ✅ | symbols/src/.../CfirScope.kt | ~100 |
 | 9 | 诊断全链路 | ✅ | diagnostics/src + gen（Factory→Reporter→Collector→Renderer） | ~2100 |

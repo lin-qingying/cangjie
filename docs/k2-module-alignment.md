@@ -20,7 +20,7 @@
 | 仓颉模块 | Kotlin K2 模块 | 关系 | 说明 |
 |---|---|---|---|
 | `:cfir:cfir-common` | `compiler/fir/cones`（session 部分） | 部分对应 | K2 的 `cones` 既包含 Session/SessionComponent 又包含 ConeKotlinType。仓颉把 Session 部分放在 `cfir-common`，类型部分放在 `cfir-cones` |
-| `:cfir:cfir-cones` | `compiler/fir/cones`（类型部分） | 部分对应 | ConeCangjieType ↔ ConeKotlinType。K2 的 `cones` 还含 `symbols/`、`diagnostics/`、`resolve/`、`renderer/`、`util/`，仓颉拆得更细 |
+| `:cfir:cfir-cones` | `compiler/fir/cones`（类型部分） | 部分对应 | ConeCangJieType ↔ ConeKotlinType。K2 的 `cones` 还含 `symbols/`、`diagnostics/`、`resolve/`、`renderer/`、`util/`，仓颉拆得更细 |
 | `:cfir:cfir-tree` | `compiler/fir/tree` | 1:1 | IR 节点、访问者、Transformer。结构高度对齐 |
 | `:cfir:cfir-tree:tree-generator` | `compiler/fir/tree/tree-generator` | 1:1 | 代码生成器 |
 | — | `core/descriptors` | 无对应 | K1 遗留的描述符系统，K2 通过 FIR 符号替代，仓颉无此历史包袱 |

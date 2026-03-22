@@ -13,20 +13,20 @@ import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
 import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculator
+import org.cangnova.cangjie.cfir.resolve.CfirInferenceComponents
+import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.TEST_MODULE_DATA
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildFunctionSymbol
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildTypedExpression
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.ArgumentTypeMismatch
-import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceComponents
+import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.semantics.CandidateApplicability
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.ConeSubtypeChecker
 import org.cangnova.cangjie.cfir.types.ConeTypeContext
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
@@ -41,15 +41,15 @@ import org.junit.jupiter.api.Test
 
 class CfirInferTypeArgumentsTest {
     private lateinit var context: CfirResolutionContext
+    private val inferenceTypeContext = InferenceStageTypeContext()
 
     @BeforeEach
     fun setUp() {
-        val subtypeChecker = ConeSubtypeChecker(InferenceStageTypeContext())
         context = CfirResolutionContext(
             session = InferStubSession,
             bodyResolveContext = CfirBodyResolveContext(CfirReturnTypeCalculator.Default, CfirDataFlowAnalyzerContext()),
-            subtypeChecker = subtypeChecker,
-            inferenceComponents = CfirInferenceComponents(subtypeChecker),
+            typeRelations = CfirTypeRelations(inferenceTypeContext),
+            inferenceComponents = CfirInferenceComponents(InferStubSession, inferenceTypeContext),
         )
     }
 
@@ -75,7 +75,7 @@ class CfirInferTypeArgumentsTest {
         CfirCheckArguments.check(candidate, sink, context)
         CfirInferTypeArguments.check(candidate, sink, context)
 
-        assertEquals(ConePrimitiveType.INT32, candidate.resolvedReturnType())
+        assertEquals(ConePrimitiveType.INT32, candidate.substitutedReturnType())
         assertTrue(candidate.constraintSystem?.errors?.isEmpty() == true)
     }
 
@@ -103,7 +103,7 @@ class CfirInferTypeArgumentsTest {
         CfirCheckArguments.check(candidate, sink, context)
         CfirInferTypeArguments.check(candidate, sink, context)
 
-        assertEquals(childType, candidate.resolvedReturnType())
+        assertEquals(childType, candidate.substitutedReturnType())
         assertTrue(candidate.constraintSystem?.errors?.isEmpty() == true)
     }
 
@@ -152,7 +152,7 @@ class CfirInferTypeArgumentsTest {
         val returnConstrainedContext = CfirResolutionContext(
             session = context.session,
             bodyResolveContext = context.bodyResolveContext,
-            subtypeChecker = context.subtypeChecker,
+            typeRelations = context.typeRelations,
             inferenceComponents = context.inferenceComponents,
             expectedType = boxOfInt,
         )
@@ -163,8 +163,9 @@ class CfirInferTypeArgumentsTest {
         CfirCheckArguments.check(candidate, sink, returnConstrainedContext)
         CfirInferTypeArguments.check(candidate, sink, returnConstrainedContext)
 
-        assertEquals(boxOfInt, candidate.resolvedReturnType())
+        assertEquals(boxOfInt, candidate.substitutedReturnType())
         assertTrue(candidate.constraintSystem?.errors?.isEmpty() == true)
+        assertTrue(candidate.constraintSystem?.buildResult()?.isFullyResolved == true)
     }
 
     @Test
@@ -187,7 +188,7 @@ class CfirInferTypeArgumentsTest {
         CfirCheckArguments.check(candidate, sink, context)
         CfirInferTypeArguments.check(candidate, sink, context)
 
-        assertEquals(ConePrimitiveType.INT64, candidate.resolvedReturnType())
+        assertEquals(ConePrimitiveType.INT64, candidate.substitutedReturnType())
         assertTrue(candidate.constraintSystem?.errors?.isEmpty() == true)
     }
 

@@ -79,5 +79,5 @@ class CfirBodyResolveContext(
             if (oldFile != null) this.file = oldFile
         }
     }
-}
 
+}

@@ -1,23 +1,33 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.CfirSessionHolder
+
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.CfirResolutionMode
 import org.cangnova.cangjie.cfir.resolve.CfirTypeCheckerContext
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirCallConflictResolver
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirOverloadConflictResolver
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
-import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceComponents
-import org.cangnova.cangjie.cfir.resolve.inference.inferenceLogger
+import org.cangnova.cangjie.cfir.resolve.CfirInferenceComponents
+import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
+import org.cangnova.cangjie.cfir.resolve.inference.CfirCallCompleter
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirAbstractPhaseTransformer
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
+import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitSimpleImportingScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitStarImportingScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.types.ConeSubtypeChecker
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
+import org.cangnova.cangjie.cfir.declarations.builder.buildImport
+import kotlinx.collections.immutable.toPersistentList
 
 /**
  * Body resolve transformer 的抽象基类。
@@ -38,30 +48,52 @@ abstract class CfirAbstractBodyResolveTransformer(
      */
     open class BodyResolveTransformerComponents(
         override val session: CfirSession,
-        val scopeSession: CfirScopeSession,
+        override val scopeSession: ScopeSession,
         val transformer: CfirAbstractBodyResolveTransformerDispatcher,
         val context: CfirBodyResolveContext,
-    ) : CfirSessionHolder {
+    ) : BodyResolveComponents() {
+        override val containingDeclarations: List<CfirDeclaration>
+            get() = context.containers.toList()
+        override val fileImportsScope: List<CfirScope>
+            get() = createImportingScopes(context.file)
+        override val towerDataElements: List<CfirTowerDataElement>
+            get() = context.towerDataContext.towerDataElements
 
-        val towerDataContext get() = context.towerDataContext
+        override val towerDataContext get() = context.towerDataContext
+        override val localScopes: CfirLocalScopes
+            get() = context.towerDataContext.localScopes.toPersistentList()
+        override val noExpectedType: CfirTypeRef
+            get() = buildErrorTypeRef { reason = "No expected type" }
 
         val returnTypeCalculator: CfirReturnTypeCalculator get() = context.returnTypeCalculator
 
-        val symbolProvider get() = session.symbolProvider
+        override val symbolProvider get() = session.symbolProvider
+        override val file: CfirFile
+            get() = context.file
+        override val container: CfirDeclaration
+            get() = context.containerIfAny ?: context.file
 
         val resolutionStageRunner: CfirResolutionStageRunner = CfirResolutionStageRunner()
 
-        val subtypeChecker: ConeSubtypeChecker by lazy(LazyThreadSafetyMode.NONE) {
-            ConeSubtypeChecker(CfirTypeCheckerContext(session))
+        private val typeCheckerContext: CfirTypeCheckerContext by lazy(LazyThreadSafetyMode.NONE) {
+            CfirTypeCheckerContext(session)
+        }
+
+        val typeRelations: CfirTypeRelations by lazy(LazyThreadSafetyMode.NONE) {
+            CfirTypeRelations(typeCheckerContext)
         }
 
         val conflictResolver: CfirCallConflictResolver by lazy(LazyThreadSafetyMode.NONE) {
-            CfirOverloadConflictResolver(subtypeChecker)
+            CfirOverloadConflictResolver(typeRelations)
         }
 
         val inferenceComponents: CfirInferenceComponents by lazy(LazyThreadSafetyMode.NONE) {
-            CfirInferenceComponents(subtypeChecker, session.inferenceLogger)
+            CfirInferenceComponents(session, typeCheckerContext)
         }
+        override val callCompleter: CfirCallCompleter by lazy(LazyThreadSafetyMode.NONE) { CfirCallCompleter(transformer, this) }
+        override val inlineFunction: CfirFunction?
+            get() = context.containers.lastOrNull() as? CfirFunction
+
 
         val resolutionContext: CfirResolutionContext? by lazy(LazyThreadSafetyMode.NONE) {
             createResolutionContext()
@@ -72,13 +104,15 @@ abstract class CfirAbstractBodyResolveTransformer(
                 CfirResolutionContext(
                     session = session,
                     bodyResolveContext = context,
-                    subtypeChecker = subtypeChecker,
+                    typeRelations = typeRelations,
                     inferenceComponents = inferenceComponents,
                     expectedType = expectedType,
                     containingFilePath = context.file.sourceFile?.path,
                     containingPackageFqName = context.file.packageDirective.packageFqName,
                 )
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                // 记录异常信息以便诊断，但不阻止编译继续
+                System.err.println("[CFIR] createResolutionContext failed: ${e::class.simpleName}: ${e.message}")
                 null
             }
         }
@@ -87,7 +121,7 @@ abstract class CfirAbstractBodyResolveTransformer(
             CfirTowerResolver(this, resolutionStageRunner)
         }
 
-        val callResolver: CfirCallResolver by lazy(LazyThreadSafetyMode.NONE) {
+        override val callResolver: CfirCallResolver by lazy(LazyThreadSafetyMode.NONE) {
             CfirCallResolver(this).also { resolver ->
                 resolver.conflictResolver = conflictResolver
             }
@@ -98,6 +132,30 @@ abstract class CfirAbstractBodyResolveTransformer(
                 session.extendProvider
             } catch (_: Exception) {
                 null
+            }
+        }
+
+        private fun createImportingScopes(file: CfirFile): List<CfirScope> {
+            val imports = file.imports
+            val defaultImportsProvider = session.defaultImportsProvider
+            val defaultImports = defaultImportsProvider.getDefaultImports(includeLowPriorityImports = true)
+                .filter { it.fqName !in defaultImportsProvider.excludedImports }
+                .map { importPath ->
+                    buildImport {
+                        source = null
+                        importedFqName = importPath.fqName
+                        isAllUnder = importPath.isAllUnder
+                        aliasName = importPath.alias
+                        aliasSource = null
+                    }
+                }
+
+            return buildList {
+                add(CfirPackageMemberScope(file.packageDirective.packageFqName, symbolProvider))
+                add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
+                add(CfirExplicitStarImportingScope(imports, symbolProvider))
+                add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
+                add(CfirExplicitStarImportingScope(defaultImports, symbolProvider))
             }
         }
     }

@@ -2,7 +2,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.VisibilityError
+import org.cangnova.cangjie.cfir.diagnostic.VisibilityError
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.name.FqName
