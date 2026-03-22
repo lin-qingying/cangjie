@@ -1,4 +1,4 @@
-﻿package org.cangnova.cangjie.cfir.resolve
+package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -6,10 +6,10 @@ import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 
 /**
- * [org.cangnova.cangjie.cfir.types.ConeTypeContext] 的实现，负责连接子类型检查算法与符号系统。
- * 它通过 [CfirSession] 的 `symbolProvider` 查询类的直接超类型信息，
- * 并将 CFIR 声明中的 `superTypeRefs` 转换为子类型检查器可用的 [ConeCangJieType] 列表。
- * 参考 K2 `ConeTypeCheckerContext`。
+ * 当前 CFIR 类型关系层使用的本地类型上下文。
+ *
+ * 这不是 Kotlin marker/type-system context 的镜像，而是仓颉新类型关系层
+ * 在 resolve 中查询直接超类型与比较类型构造器所需的最小语义上下文。
  */
 class CfirTypeCheckerContext(
     private val session: CfirSession,
@@ -56,4 +56,3 @@ class CfirTypeCheckerContext(
         }
     }
 }
-

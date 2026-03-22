@@ -4,16 +4,18 @@ import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.constraints.CfirConstraintPosition
+import org.cangnova.cangjie.cfir.constraints.CfirConstraintSystem
+import org.cangnova.cangjie.cfir.constraints.CfirTypeSubstitutor
+import org.cangnova.cangjie.cfir.constraints.CfirTypeVariable
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
+import org.cangnova.cangjie.cfir.resolve.CfirConstraintSystemImpl
 import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
-import org.cangnova.cangjie.cfir.resolve.calls.CfirTypeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.InferenceConstraintError
-import org.cangnova.cangjie.cfir.resolve.inference.CfirConstraintPosition
-import org.cangnova.cangjie.cfir.resolve.inference.CfirConstraintSystem
-import org.cangnova.cangjie.cfir.resolve.inference.CfirConstraintSystemImpl
-import org.cangnova.cangjie.cfir.resolve.inference.CfirTypeVariable
+import org.cangnova.cangjie.cfir.diagnostic.InferenceConstraintError
+import org.cangnova.cangjie.cfir.resolve.inference.inferenceLogger
 import org.cangnova.cangjie.cfir.session.cfirProvider
+
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
@@ -57,6 +59,10 @@ object CfirCreateFreshTypeVariableSubstitutorStage : CfirResolutionStage() {
         val inferenceComponents = context.inferenceComponents ?: return
         val constraintSystem = inferenceComponents.createConstraintSystem()
         candidate.constraintSystem = constraintSystem
+        candidate.callInfo.session.inferenceLogger?.apply {
+            logCandidate(candidate)
+            logStage("CreateFreshTypeVariableSubstitutor", constraintSystem)
+        }
 
         val freshVariables = buildFreshVariables(typeParameters, constraintSystem)
         candidate.initializeSubstitutorAndVariables(CfirTypeSubstitutor.Empty, freshVariables)
@@ -66,6 +72,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : CfirResolutionStage() {
 
         if (constraintSystem.hasErrors) {
             constraintSystem.errors.forEach { error ->
+                candidate.callInfo.session.inferenceLogger?.logError(error, constraintSystem)
                 sink.reportDiagnostic(InferenceConstraintError(error.message))
             }
         }

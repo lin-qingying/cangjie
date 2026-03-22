@@ -4,6 +4,8 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
 import org.cangnova.cangjie.cfir.semantics.CandidateApplicability
+import org.cangnova.cangjie.cfir.semantics.isSuccess
+import org.cangnova.cangjie.cfir.semantics.shouldStopResolve
 
 /**
  * 候选收集器，负责在 scope 塔遍历过程中收集并排序候选。

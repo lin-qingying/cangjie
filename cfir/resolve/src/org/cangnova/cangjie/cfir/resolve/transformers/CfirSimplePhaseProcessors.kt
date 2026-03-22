@@ -8,7 +8,7 @@ import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitAwareBodyResolveTransf
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSession
 import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculatorForFullBodyResolve
 import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculatorWithJump
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
@@ -19,7 +19,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
  */
 internal class CfirImplicitTypesResolveProcessor(
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
 ) : CfirTransformerBasedResolveProcessor(
     session = session,
     scopeSession = scopeSession,
@@ -51,7 +51,7 @@ internal class CfirImplicitTypesResolveProcessor(
  */
 internal class CfirBodyResolveProcessor(
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
 ) : CfirTransformerBasedResolveProcessor(
     session = session,
     scopeSession = scopeSession,

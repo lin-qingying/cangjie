@@ -5,12 +5,15 @@ plugins {
 dependencies {
     api(project(":cfir:cfir-tree"))
     api(project(":cfir:cfir-common"))
+    api(project(":cfir:constraint-system"))
     api(project(":cfir:cfir-cones"))
     api(project(":common:diagnostics"))
     api(project(":cfir:checkers"))
     api(project(":cfir:symbols"))
     api(project(":common"))
     api(project(":util"))
+    api(project(":cfir:semantics"))
+    implementation(libs.kotlinx.collections.immutable)
 
     compileOnly(intellijCore())
 

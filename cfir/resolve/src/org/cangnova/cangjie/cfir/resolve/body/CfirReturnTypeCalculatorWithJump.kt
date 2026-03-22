@@ -5,7 +5,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -21,7 +21,7 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
  */
 class CfirReturnTypeCalculatorWithJump(
     private val session: org.cangnova.cangjie.cfir.session.CfirSession,
-    private val scopeSession: CfirScopeSession,
+    private val scopeSession: ScopeSession,
     private val implicitBodyResolveComputationSession: CfirImplicitBodyResolveComputationSession,
 ) : CfirReturnTypeCalculator {
 

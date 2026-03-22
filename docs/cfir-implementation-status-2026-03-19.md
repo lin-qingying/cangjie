@@ -256,7 +256,7 @@
 | 组件 | 实现质量 | 说明 |
 |------|---------|------|
 | `CfirDeclDeserializer` (447 行) | ✅ | 11 种声明类型，FlatBuffers 零拷贝读取 |
-| `CfirTypeDeserializer` | ✅ | SemaTy → ConeCangjieType |
+| `CfirTypeDeserializer` | ✅ | SemaTy → ConeCangJieType |
 | `CjoManager` | ✅ | .cjo 缓存加载，并发安全 |
 | `CfirDeserializedSymbolProvider` | ✅ | 按 ClassId/Name 查找 |
 | **序列化（写入方向）** | ❌ | **完全不存在** |

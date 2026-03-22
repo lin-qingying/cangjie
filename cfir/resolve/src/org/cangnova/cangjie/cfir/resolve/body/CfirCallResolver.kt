@@ -1,6 +1,6 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.body
 
-import org.cangnova.cangjie.cfir.CfirSessionHolder
+import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallInfo
@@ -31,7 +31,7 @@ class CfirCallResolver(
     private val components: CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
     private val towerResolver: CfirTowerResolver =
         CfirTowerResolver(components, components.resolutionStageRunner),
-) : CfirSessionHolder {
+) : SessionHolder {
 
     override val session: CfirSession get() = components.session
 

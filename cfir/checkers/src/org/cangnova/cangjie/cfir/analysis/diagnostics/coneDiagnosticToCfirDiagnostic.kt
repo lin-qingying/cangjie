@@ -17,9 +17,10 @@ import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory3
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.InternalDiagnosticFactoryMethod
 import org.cangnova.cangjie.cfir.expressions.CfirLambdaExpression
+import org.cangnova.cangjie.cfir.constraints.CfirTypeSubstitutorByMap
+import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.resovle.calls.TypeVariableReplacement
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
-import org.cangnova.cangjie.cfir.semantics.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
@@ -27,7 +28,6 @@ import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
-import org.cangnova.cangjie.cfir.types.ConeTypeContext
 
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
@@ -60,11 +60,12 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
         when (rootCause) {
             is ArgumentTypeMismatch -> {
                 val expectedType = rootCause.expectedType.substituteTypeVariableTypes(candidate)
-                val actualType = if (rootCause.argument is CfirLambdaExpression && rootCause.argument.coneTypeOrNull?.isError == false) {
-                    rootCause.argument.coneTypeOrNull!!
-                } else {
-                    rootCause.actualType.substituteTypeVariableTypes(candidate)
-                }
+                val actualType =
+                    if (rootCause.argument is CfirLambdaExpression && rootCause.argument.coneTypeOrNull?.isError == false) {
+                        rootCause.argument.coneTypeOrNull!!
+                    } else {
+                        rootCause.actualType.substituteTypeVariableTypes(candidate)
+                    }
                 argumentTypeMismatch(
                     source = rootCause.argument.source ?: source,
                     expectedType = expectedType,
@@ -74,6 +75,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                     session = session,
                 )
             }
+
             else -> genericDiagnostic
         }
     }
@@ -123,12 +125,16 @@ private fun argumentTypeMismatch(
  */
 private fun ConeCangJieType.substituteTypeVariableTypes(
     candidate: AbstractCallCandidate<*>,
-    typeContext: ConeTypeContext,
 ): ConeCangJieType {
-    val nonErrorSubstitutionMap = candidate.system.asReadOnlyStorage().fixedTypeVariables.filterValues { it !is ConeErrorType }
-    val substitutor = typeContext.typeSubstitutorByTypeConstructor(nonErrorSubstitutionMap).asCone()
+    val result = runCatching { candidate.system.buildResult() }.getOrNull() ?: return this
+    val nonErrorSubstitutionMap = result.fixedVariables
+        .mapNotNull { variable ->
+            variable.fixedType?.takeUnless { it is ConeErrorType }?.let { variable.lookupTag.name to it }
+        }
+        .toMap()
+    val substitutor = CfirTypeSubstitutorByMap(nonErrorSubstitutionMap)
 
-    return substitutor.substituteOrSelf(this).removeTypeVariableTypes(typeContext, TypeVariableReplacement.ErrorType)
+    return substitutor.substituteOrSelf(this)
 }
 
 
@@ -173,9 +179,28 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
 
             else -> null
         }
-        is ConeUnresolvedNameError -> CfirErrors.UNRESOLVED_REFERENCE.on(diagnosticSource, name.asString(), operator, session)
-        is ConeUnresolvedReferenceError -> CfirErrors.UNRESOLVED_REFERENCE.on(diagnosticSource, name.asString(), null, session)
-        is ConeUnresolvedSymbolError -> CfirErrors.UNRESOLVED_REFERENCE.on(diagnosticSource, classId.asString(), null, session)
+
+        is ConeUnresolvedNameError -> CfirErrors.UNRESOLVED_REFERENCE.on(
+            diagnosticSource,
+            name.asString(),
+            operator,
+            session
+        )
+
+        is ConeUnresolvedReferenceError -> CfirErrors.UNRESOLVED_REFERENCE.on(
+            diagnosticSource,
+            name.asString(),
+            null,
+            session
+        )
+
+        is ConeUnresolvedSymbolError -> CfirErrors.UNRESOLVED_REFERENCE.on(
+            diagnosticSource,
+            classId.asString(),
+            null,
+            session
+        )
+
         else -> null
     }
 }

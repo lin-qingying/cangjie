@@ -1,28 +1,28 @@
 package org.cangnova.cangjie.cfir.resolve.calls
 
-import org.cangnova.cangjie.type.model.CangJieTypeMarker
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 interface PostponedResolvedAtomMarker {
     /**
      * Types that should become proper before atom analysis can proceed (outside PCLA).
      */
-    val inputTypes: Collection<CangJieTypeMarker>
+    val inputTypes: Collection<ConeCangJieType>
 
     /**
      * Type that may be refined after analyzing this atom.
      */
-    val outputType: CangJieTypeMarker?
+    val outputType: ConeCangJieType?
 
-    val expectedType: CangJieTypeMarker?
+    val expectedType: ConeCangJieType?
     val analyzed: Boolean
 }
 
 interface CollectionLiteralAtomMarker : PostponedResolvedAtomMarker
 
 interface PostponedAtomWithRevisableExpectedType : PostponedResolvedAtomMarker {
-    val revisedExpectedType: CangJieTypeMarker?
+    val revisedExpectedType: ConeCangJieType?
 
-    fun reviseExpectedType(expectedType: CangJieTypeMarker)
+    fun reviseExpectedType(expectedType: ConeCangJieType)
 }
 
 interface PostponedCallableReferenceMarker : PostponedAtomWithRevisableExpectedType {
@@ -30,7 +30,7 @@ interface PostponedCallableReferenceMarker : PostponedAtomWithRevisableExpectedT
 }
 
 interface LambdaWithTypeVariableAsExpectedTypeMarker : PostponedAtomWithRevisableExpectedType {
-    val parameterTypesFromDeclaration: List<CangJieTypeMarker?>?
+    val parameterTypesFromDeclaration: List<ConeCangJieType?>?
 
-    fun updateParameterTypesFromDeclaration(types: List<CangJieTypeMarker?>?)
+    fun updateParameterTypesFromDeclaration(types: List<ConeCangJieType?>?)
 }

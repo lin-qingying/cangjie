@@ -1,7 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
@@ -12,7 +12,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
  */
 open class CfirBodyResolveTransformer(
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
     returnTypeCalculator: CfirReturnTypeCalculator = CfirReturnTypeCalculator.Default,
     outerBodyResolveContext: CfirBodyResolveContext? = null,
     phase: CfirResolvePhase = CfirResolvePhase.BODY_RESOLVE,

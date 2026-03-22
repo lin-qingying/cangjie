@@ -103,7 +103,7 @@
 |---|---|---|---|
 | `:cfir:cfir-common` | CFIR 基础设施：CfirSession、CfirSessionComponent、CfirModuleData、SourceElement | `fir/cones`（session 部分） | `:common`, `:compiler:config`, `:util` |
 | `:cfir:diagnostics` | 诊断框架：DiagnosticFactory、DiagnosticReporter、Severity、Renderer、DiagnosticsCollector | K2 诊断分散在多模块，此处集中管理 | `:cfir:cfir-common` |
-| `:cfir:cfir-cones` | 类型系统核心：ConeCangjieType 及其子类层级 | `fir/cones` | `:cfir:cfir-common`, `:common` |
+| `:cfir:cfir-cones` | 类型系统核心：ConeCangJieType 及其子类层级 | `fir/cones` | `:cfir:cfir-common`, `:common` |
 | `:cfir:cfir-tree` | IR 节点：声明、表达式、类型引用、模式匹配、引用、访问者 | `fir/tree` | `:cfir:cfir-common`, `:cfir:cfir-cones`, `:common`, `:util` |
 | `:cfir:cfir-tree:tree-generator` | cfir-tree 的代码生成器 | `fir/tree/tree-generator` | 构建时工具 |
 

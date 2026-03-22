@@ -24,7 +24,7 @@ import org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendRuleQueryServiceImpl
 import org.cangnova.cangjie.cfir.session.services.CfirExtendRuleQueryService
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.sourcesToPathsMapper
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.analysis.CheckersComponent
@@ -178,7 +178,7 @@ fun CfirSession.registerResolveComponents(
     // ── Step 6：将各 resolve 阶段的 Processor 注册到 registry ─────────────
     // registerResolveProcessors 会依次注册 IMPORTS、SUPER_TYPES、TYPES 等
     // 各阶段对应的 Processor，完成 resolve 流水线的装配
-    registerResolveProcessors(registry, diagnosticReporter, this, CfirScopeSession())
+    registerResolveProcessors(registry, diagnosticReporter, this, ScopeSession())
 }
 
 /**

@@ -22,7 +22,7 @@ import org.cangnova.cangjie.name.Name
 class CfirExplicitSimpleImportingScope(
     imports: List<CfirImport>,
     private val symbolProvider: CfirSymbolProvider,
-) : CfirImportScope {
+) : CfirImportScope() {
 
     /** 按有效名称（别名或短名称）索引的导入条目 */
     private val importsByName: Map<Name, List<CfirImport>>

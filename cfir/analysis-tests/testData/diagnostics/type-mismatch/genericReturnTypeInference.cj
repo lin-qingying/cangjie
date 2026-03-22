@@ -1,4 +1,5 @@
 // RUN_PIPELINE_TILL: FRONTEND
+// DUMP_INFERENCE_LOGS
 // 泛型返回类型约束推断测试
 func identity<T>(x: T): T {
     return x

@@ -3,6 +3,7 @@
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -21,6 +22,12 @@ class CfirFlatSignature(
     val valueParameterTypes: List<ConeCangJieType?>,
     /** 使用的默认值参数个数。 */
     val numDefaults: Int,
+    /** 是否使用了 QuestTy 回退。 */
+    val usedQuestFallback: Boolean,
+    /** 是否使用了理想数值类型兼容。 */
+    val usedIdealNumericCompatibility: Boolean,
+    /** 是否依赖了 extend 参与。 */
+    val usedExtendParticipation: Boolean,
 ) {
     /** 是否为泛型函数。 */
     val isGeneric: Boolean get() = typeParameters.isNotEmpty()
@@ -30,25 +37,28 @@ class CfirFlatSignature(
         fun create(candidate: CfirCandidate): CfirFlatSignature {
             val symbol = candidate.symbol
             if (!symbol.isBound) {
-                return CfirFlatSignature(candidate, emptyList(), emptyList(), 0)
+                return CfirFlatSignature(candidate, emptyList(), emptyList(), 0, false, false, false)
             }
 
             val decl = symbol.cfir
             val typeParams: List<CfirTypeParameter>
             val paramTypes: List<ConeCangJieType?>
 
+            fun parametersOf(parameters: List<CfirValueParameter>): List<ConeCangJieType?> {
+                return parameters.map { vp ->
+                    val declared = (vp.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+                    declared?.let { candidate.substitutor.substituteOrSelf(it) }
+                }
+            }
+
             when (decl) {
                 is CfirFunction -> {
                     typeParams = decl.typeParameters
-                    paramTypes = decl.valueParameters.map { vp ->
-                        (vp.returnTypeRef as? CfirResolvedTypeRef)?.coneType
-                    }
+                    paramTypes = parametersOf(decl.valueParameters)
                 }
                 is CfirConstructor -> {
                     typeParams = decl.typeParameters
-                    paramTypes = decl.valueParameters.map { vp ->
-                        (vp.returnTypeRef as? CfirResolvedTypeRef)?.coneType
-                    }
+                    paramTypes = parametersOf(decl.valueParameters)
                 }
                 else -> {
                     typeParams = emptyList()
@@ -56,8 +66,15 @@ class CfirFlatSignature(
                 }
             }
 
-            return CfirFlatSignature(candidate, typeParams, paramTypes, candidate.numDefaults)
+            return CfirFlatSignature(
+                candidate,
+                typeParams,
+                paramTypes,
+                candidate.numDefaults,
+                candidate.usedQuestFallback,
+                candidate.usedIdealNumericCompatibility,
+                candidate.usedExtendParticipation,
+            )
         }
     }
 }
-

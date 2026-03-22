@@ -11,7 +11,7 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -19,7 +19,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirResolvedTypeRefImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: List<CfirAnnotation>,
-    override val coneType: ConeCangjieType,
+    override val coneType: ConeCangJieType,
     override var delegatedTypeRef: CfirTypeRef?,
 ) : CfirResolvedTypeRef() {
 

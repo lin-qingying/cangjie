@@ -12,7 +12,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
 import org.cangnova.cangjie.cfir.resolve.CfirSuperTypeChecker
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.superTypeGraphStoreOrNull
 import org.cangnova.cangjie.cfir.session.typeResolver
@@ -20,7 +20,7 @@ import org.cangnova.cangjie.cfir.session.typeResolver
 internal class CfirSupertypeResolverProcessor(
     private val diagnosticReporter: CfirDiagnosticReporter,
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
 ) : CfirTransformerBasedResolveProcessor(
     session = session,
     scopeSession = scopeSession,

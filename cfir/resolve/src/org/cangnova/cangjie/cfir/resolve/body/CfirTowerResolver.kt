@@ -1,6 +1,6 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.body
 
-import org.cangnova.cangjie.cfir.CfirSessionHolder
+import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -28,7 +28,7 @@ class CfirTowerResolver(
     private val resolutionStageRunner: CfirResolutionStageRunner,
     internal val collector: CfirCandidateCollector =
         CfirCandidateCollector(components, resolutionStageRunner),
-) : CfirSessionHolder {
+) : SessionHolder {
 
     override val session: CfirSession get() = components.session
 
@@ -62,8 +62,13 @@ class CfirTowerResolver(
             for (symbol in symbols) {
                 val candidate = CfirCandidate(
                     symbol = symbol,
+                    dispatchReceiver = null,
+                    givenExtensionReceiver = null,
+                    explicitReceiverKind = org.cangnova.cangjie.cfir.constraints.ExplicitReceiverKind.NO_EXPLICIT_RECEIVER,
                     callInfo = callInfo,
                     originScope = scope,
+                    resolutionContext = context,
+                    constraintSystem = components.inferenceComponents.createConstraintSystem(),
                 )
                 collector.consumeCandidate(group, candidate, context)
             }

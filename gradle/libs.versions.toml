@@ -10,7 +10,7 @@ vavr = "0.10.4"
 jansi = "2.4.1"
 flatbuffers = "25.2.10"
 junit5 = "5.12.2"
-
+kotlinx-collections-immutable = "0.4.0"
 [libraries]
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 foojay-resolver = { module = "org.gradle.toolchains:foojay-resolver", version.ref = "gradle-toolchains-foojay-resolver" }
@@ -25,6 +25,7 @@ flatbuffers-java = { module = "com.google.flatbuffers:flatbuffers-java", version
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit5" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit5" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit5" }
+kotlinx-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinx-collections-immutable" }
 
 [plugins]
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

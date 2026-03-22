@@ -26,7 +26,7 @@ import org.cangnova.cangjie.name.Name
 class CfirExtendMemberScope(
     private val targetClassId: ClassId,
     private val extendProvider: CfirExtendProvider,
-) : CfirExtendScope {
+) : CfirExtendScope() {
 
     private val memberIndex: MemberIndex by lazy { buildIndex() }
 

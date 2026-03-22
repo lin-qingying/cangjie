@@ -4,15 +4,14 @@ import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.constraints.CfirConstraintPosition
+import org.cangnova.cangjie.cfir.constraints.CfirConstraintSystem
+import org.cangnova.cangjie.cfir.constraints.CfirTypeVariable
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.InferenceConstraintError
-import org.cangnova.cangjie.cfir.resolve.inference.CfirConstraintPosition
-import org.cangnova.cangjie.cfir.resolve.inference.CfirTypeVariable
-import org.cangnova.cangjie.cfir.resolve.inference.collectTypeVariableNames
-import org.cangnova.cangjie.cfir.resolve.inference.inferenceLogger
+import org.cangnova.cangjie.cfir.diagnostic.InferenceConstraintError
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
@@ -26,6 +25,9 @@ import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferTypeParameterType
+import org.cangnova.cangjie.cfir.resolve.collectTypeVariableNames
+import org.cangnova.cangjie.cfir.resolve.inference.inferenceLogger
+
 
 /**
  * Completes the candidate constraint system after fresh variables have been created.
@@ -49,9 +51,8 @@ object CfirInferTypeArguments : CfirResolutionStage() {
         if (typeParameters.isEmpty()) return
 
         val constraintSystem = candidate.constraintSystem ?: return
-        val typeVariableMap = candidate.freshVariables.associateBy { it.name }
-
-        context.session.inferenceLogger?.apply {
+        val typeVariableMap = candidate.freshVariables.associateBy { it.lookupTag.name }
+        candidate.callInfo.session.inferenceLogger?.apply {
             logCandidate(candidate)
             logStage("InferTypeArguments", constraintSystem)
         }
@@ -64,13 +65,15 @@ object CfirInferTypeArguments : CfirResolutionStage() {
         collectReturnTypeConstraint(candidate, typeVariableMap, constraintSystem, context.expectedType)
 
         constraintSystem.fixAllVariables()
+        val result = constraintSystem.buildResult()
         if (constraintSystem.hasErrors) {
             constraintSystem.errors.forEach { error ->
+                candidate.callInfo.session.inferenceLogger?.logError(error, constraintSystem)
                 sink.reportDiagnostic(InferenceConstraintError(error.message))
             }
         }
 
-        candidate.updateSubstitutor(constraintSystem.buildResultingSubstitutor())
+        candidate.updateSubstitutor(result.substitutor)
         applyInferredTypeArgumentsToCallSite(candidate, typeParameters, typeVariableMap)
     }
 
@@ -108,7 +111,7 @@ object CfirInferTypeArguments : CfirResolutionStage() {
     private fun collectReturnTypeConstraint(
         candidate: CfirCandidate,
         typeVariableMap: Map<String, CfirTypeVariable>,
-        constraintSystem: org.cangnova.cangjie.cfir.resolve.inference.CfirConstraintSystem,
+        constraintSystem: CfirConstraintSystem,
         expectedReturnType: ConeCangJieType?,
     ) {
         if (expectedReturnType == null) return

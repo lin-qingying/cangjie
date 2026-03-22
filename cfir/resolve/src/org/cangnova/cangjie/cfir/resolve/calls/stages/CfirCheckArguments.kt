@@ -1,8 +1,9 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.ArgumentTypeMismatch
+import org.cangnova.cangjie.cfir.constraints.CfirConstraintPosition
+import org.cangnova.cangjie.cfir.constraints.CfirConstraintSystem
+import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
-import org.cangnova.cangjie.cfir.resolve.inference.CfirConstraintPosition
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 
@@ -35,7 +36,7 @@ object CfirCheckArguments : CfirResolutionStage() {
     private fun checkWithConstraintSystem(
         candidate: CfirCandidate,
         sink: CfirCheckerSink,
-        constraintSystem: org.cangnova.cangjie.cfir.resolve.inference.CfirConstraintSystem,
+        constraintSystem: CfirConstraintSystem,
     ) {
         for ((argumentAtom, parameter) in candidate.argumentMapping) {
             if (sink.shouldStop) return
@@ -51,9 +52,10 @@ object CfirCheckArguments : CfirResolutionStage() {
             if (!constraintSystem.addSubtypeConstraintIfCompatible(argType, paramType, position)) {
                 sink.reportDiagnostic(
                     ArgumentTypeMismatch(
+                        argument = argumentAtom.expression,
                         expectedType = paramType,
                         actualType = argType,
-                        parameterIndex = candidate.argumentMapping.keys.indexOf(argumentAtom),
+                        isMismatchDueToNullability = false,
                     ),
                 )
             }
@@ -77,12 +79,13 @@ object CfirCheckArguments : CfirResolutionStage() {
             val substitutedParamType = candidate.substitutor.substituteOrSelf(paramType)
 
             if (argType is ConeErrorType || substitutedParamType is ConeErrorType) continue
-            if (!context.subtypeChecker.isSubtypeOf(argType, substitutedParamType)) {
+            if (!context.typeRelations.isSubtype(argType, substitutedParamType)) {
                 sink.reportDiagnostic(
                     ArgumentTypeMismatch(
+                        argument = argument,
                         expectedType = substitutedParamType,
                         actualType = argType,
-                        parameterIndex = candidate.argumentMapping.keys.indexOf(argumentAtom),
+                        isMismatchDueToNullability = false,
                     ),
                 )
             }

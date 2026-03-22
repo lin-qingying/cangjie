@@ -20,7 +20,7 @@ import org.cangnova.cangjie.name.Name
 class CfirPackageMemberScope(
     private val packageFqName: FqName,
     private val symbolProvider: CfirSymbolProvider,
-) : CfirPackageScope {
+) : CfirPackageScope() {
 
     private val classifierCache = HashMap<Name, List<CfirClassSymbol>>()
     private val callableCache = HashMap<Name, List<CfirCallableSymbol<*>>>()

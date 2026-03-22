@@ -21,7 +21,7 @@ import org.cangnova.cangjie.name.Name
 class CfirExplicitStarImportingScope(
     imports: List<CfirImport>,
     private val symbolProvider: CfirSymbolProvider,
-) : CfirImportScope {
+) : CfirImportScope() {
 
     /** 所有星号导入的目标包名 */
     private val starImportPackages: List<FqName>

@@ -34,6 +34,7 @@ include(":psi")
 
 include(":cfir")
 include(":cfir:cfir-common")
+include(":cfir:constraint-system")
 include(":cfir:semantics")
 include(":cfir:cfir-cones")
 include(":common:diagnostics")
@@ -80,3 +81,5 @@ include("cfir:diagnostic-renderers")
 include("compiler:plugin")
 
 include("cfir:providers")
+include("resolution.common")
+include("cfir:constraint")

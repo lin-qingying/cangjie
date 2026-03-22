@@ -3,7 +3,7 @@
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.CfirResolutionMode
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
@@ -14,7 +14,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 class CfirDesignatedBodyResolveTransformer(
     private val designation: CfirCallableDeclaration,
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
     implicitBodyResolveComputationSession: CfirImplicitBodyResolveComputationSession,
     returnTypeCalculator: CfirReturnTypeCalculator,
 ) : CfirImplicitAwareBodyResolveTransformer(

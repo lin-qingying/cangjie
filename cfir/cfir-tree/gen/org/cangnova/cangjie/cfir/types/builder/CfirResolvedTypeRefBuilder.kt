@@ -13,7 +13,7 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -21,7 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirResolvedTypeRefBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    lateinit var coneType: ConeCangjieType
+    lateinit var coneType: ConeCangJieType
     var delegatedTypeRef: CfirTypeRef? = null
 
     @OptIn(CfirImplementationDetail::class)

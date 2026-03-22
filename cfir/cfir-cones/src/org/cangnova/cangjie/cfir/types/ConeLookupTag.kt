@@ -1,8 +1,6 @@
 package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.type.model.TypeConstructorMarker
-import org.cangnova.cangjie.type.model.TypeParameterMarker
 
 /**
  * 类型查找标签，用于延迟解析和缓存类型查找结果。
@@ -10,7 +8,7 @@ import org.cangnova.cangjie.type.model.TypeParameterMarker
  * 同时实现 [TypeConstructorMarker]：ConeLookupTag 在抽象类型系统中
  * 充当类型构造器角色，对应 class/struct/interface 等类型头部。
  */
-abstract class ConeLookupTag : TypeConstructorMarker {
+abstract class ConeLookupTag  {
     abstract val name: String
     override fun toString(): String = name
 }
@@ -39,7 +37,7 @@ class ConeClassLookupTagImpl(override val classId: ClassId) : ConeClassLikeLooku
  */
 class ConeTypeParameterLookupTag(
     override val name: String,
-) : ConeLookupTag(), TypeParameterMarker {
+) : ConeLookupTag()  {
     override fun equals(other: Any?): Boolean =
         other is ConeTypeParameterLookupTag && name == other.name
 

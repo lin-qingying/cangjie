@@ -128,7 +128,6 @@ private fun newPropertyDeclaration(moduleData: CfirModuleData, name: String): Cf
         typeParameters = emptyList(),
         returnTypeRef = org.cangnova.cangjie.cfir.types.impl.CfirImplicitTypeRefImpl(emptyList()),
         name = Name.identifier(name),
-        initializer = null,
         getter = null,
         setter = null,
     ).also {

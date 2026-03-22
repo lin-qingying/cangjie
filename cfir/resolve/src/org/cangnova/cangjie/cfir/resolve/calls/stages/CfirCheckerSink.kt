@@ -1,7 +1,7 @@
-﻿package org.cangnova.cangjie.cfir.resolve.calls.stages
+package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirResolutionDiagnostic
+import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 
 /**
  * 诊断接收器接口。
@@ -12,7 +12,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirResolutionDiagnosti
 interface CfirCheckerSink {
 
     /** 上报一个诊断。 */
-    fun reportDiagnostic(diagnostic: CfirResolutionDiagnostic)
+    fun reportDiagnostic(diagnostic: ResolutionDiagnostic)
 
     /** 是否应停止后续验证阶段。 */
     val shouldStop: Boolean
@@ -28,7 +28,7 @@ class CfirCheckerSinkImpl(
     private val stopOnFirstError: Boolean = true,
 ) : CfirCheckerSink {
 
-    override fun reportDiagnostic(diagnostic: CfirResolutionDiagnostic) {
+    override fun reportDiagnostic(diagnostic: ResolutionDiagnostic) {
         candidate.addDiagnostic(diagnostic)
     }
 

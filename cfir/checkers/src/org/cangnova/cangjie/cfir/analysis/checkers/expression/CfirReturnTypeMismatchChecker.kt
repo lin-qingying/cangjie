@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 
 /**
  * 函数返回类型检查器。
@@ -23,10 +24,12 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker(CheckerDispat
         val result = expression.result ?: return
         val source = result.source as? AbstractCjSourceElement ?: return
         val actualType = result.coneTypeOrNull ?: return
+        if (actualType is ConeErrorType) return
         val containingFunction = context.findClosestDeclaration<CfirFunction>() ?: return
         val expectedTypeRef = containingFunction.returnTypeRef as? CfirResolvedTypeRef ?: return
         val expectedType = expectedTypeRef.coneType
-        if (!CfirTypeCheckUtils.isSubtypeOf(actualType, expectedType)) {
+        if (expectedType is ConeErrorType) return
+        if (!CfirTypeCheckUtils.isSubtypeOf(actualType, expectedType, context.session)) {
             reporter.reportOn(
                 source, CfirErrors.RETURN_TYPE_MISMATCH,
                 expectedType,

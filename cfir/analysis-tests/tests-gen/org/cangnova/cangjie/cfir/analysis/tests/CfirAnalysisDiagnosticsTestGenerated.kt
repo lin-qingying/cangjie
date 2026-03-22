@@ -19,6 +19,16 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics")
     }
 
+    @TestMetadata(".cache")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Cache : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/.cache")
+        }
+    }
+
     @TestMetadata("const-eval")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
@@ -374,6 +384,12 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         @Test
         fun testReturnTypeMismatch() {
             runTest("cfir/analysis-tests/testData/diagnostics/type-mismatch/returnTypeMismatch.cj")
+        }
+
+        @TestMetadata("simple.cj")
+        @Test
+        fun testSimple() {
+            runTest("cfir/analysis-tests/testData/diagnostics/type-mismatch/simple.cj")
         }
     }
 

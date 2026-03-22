@@ -11,7 +11,7 @@ import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
 import org.cangnova.cangjie.cfir.resolve.CfirImportBindingResolver
 import org.cangnova.cangjie.cfir.resolve.CfirImportConflictReporter
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 
@@ -22,7 +22,7 @@ import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 internal class CfirImportResolveProcessor(
     private val diagnosticReporter: CfirDiagnosticReporter,
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
 ) : CfirTransformerBasedResolveProcessor(
     session = session,
     scopeSession = scopeSession,

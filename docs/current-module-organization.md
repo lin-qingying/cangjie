@@ -168,7 +168,7 @@ Analysis API
 |---|---|---|---|
 | `:cfir` | 聚合模块 | `cfir` 命名空间父模块 | 无 |
 | `:cfir:cfir-common` | 实装模块 | CFIR session、module data、source element 抽象 | `:common`, `:compiler:config`, `:util` |
-| `:cfir:cfir-cones` | 实装模块 | CFIR 类型系统核心（ConeCangjieType 及子类） | `:cfir:cfir-common`, `:common` |
+| `:cfir:cfir-cones` | 实装模块 | CFIR 类型系统核心（ConeCangJieType 及子类） | `:cfir:cfir-common`, `:common` |
 | `:cfir:cfir-tree` | 实装模块 | CFIR 节点、visitors、Transformer、部分 resolve/provider 抽象 | `:cfir:cfir-common`, `:cfir:cfir-cones`, `:common`, `:util` |
 | `:cfir:cfir-tree:tree-generator` | 实装模块 | CFIR tree 代码生成器 | 无 |
 | `:cfir:symbols` | 实装模块 | 符号提供者接口与实现、Scope 管理、内置符号 | `:cfir:cfir-tree`, `:cfir:cfir-cones` |

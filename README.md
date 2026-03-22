@@ -47,7 +47,7 @@
 | 模块 | 职责 | 状态 |
 |------|------|------|
 | `:cfir:cfir-common` | CFIR 基础设施（CfirSession、CfirModuleData、CfirElement） | ✅ 已实现 |
-| `:cfir:cfir-cones` | 类型系统核心（ConeCangjieType、ConeClassLikeType、ConePrimitiveType） | ✅ 已实现 |
+| `:cfir:cfir-cones` | 类型系统核心（ConeCangJieType、ConeClassLikeType、ConePrimitiveType） | ✅ 已实现 |
 | `:cfir:cfir-tree` | IR 树定义（声明、表达式、类型引用、访问者）— 生成式 | ✅ 已实现 |
 | `:cfir:symbols` | 符号提供者接口与实现、Scope 管理、内置符号 | ✅ 已实现 |
 | `:cfir:checkers` | 诊断检查器框架（Declaration/Expression/Type checkers） | ✅ 已实现 |
@@ -67,6 +67,10 @@
 |------|------|------|
 | `:cfir:resolve` | 多 Phase 语义解析（类型推断、重载解析、诊断检查） | ✅ 已实现 |
 | `:cfir:entrypoint` | CFIR 前端入口（Session 工厂、Pipeline 配置） | ✅ 已实现 |
+
+- `BodyResolveTransformerComponents` 已补齐对 `CfirBodyResolveContext` 的关键转发实现，包括容器链、tower data、局部作用域、文件导入作用域及调用解析依赖装配。
+- `:cfir:resolve` 测试基建已对齐当前调用解析/推断 API：测试 `CfirCandidate` 构造补齐了解析上下文、约束系统与显式接收者参数，旧的 `subtypeChecker` 入口迁移为 `CfirTypeRelations`，并同步修复了约束系统与 extend scope 测试中的过期构造参数。
+- `:cfir:resolve` 已修复 `CfirResolutionMode.WithExpectedType` 的 API 漂移：body resolve 与 call completer 统一改为通过 `expectedTypeRef.coneType` 读取期望类型，并在 lambda 期望类型传播时补齐 `CfirResolvedTypeRef` 包装，恢复模块编译通过。
 
 ### 序列化（阶段 10）
 
@@ -153,6 +157,7 @@
 - `PsiRawCfirBuilder` 已支持 `BodyBuildingMode`（`NORMAL`/`LAZY_BODIES`）。
 - 已新增 `CfirBasicTypeRef`（基础类型引用）与 `CfirVArrayTypeRef`（定长数组类型引用）。
 - tests-gen 已加入 all-files-present 等效校验，新增 `.cj` 用例将被覆盖检查拦截漏测。
+- `CfirInferenceLogsHandler`、`CfirResolvedTypesVerifier`、`CfirScopeDumpHandler` 已按 Kotlin FIR 测试 handler 模式重写：移除了本地 force-write/probe 旁路逻辑，保留 directive 驱动的 side-file/golden 验证，并将 scope dump 收敛为类/成员级 dump + 现有 `DUMP_SCOPE` 文本契约兼容层。
 
 ## 源码输入约定
 
@@ -165,6 +170,10 @@
 ## 开发规范
 
 项目级开发规范与工程治理约定见：`DEVELOPMENT_CONVENTIONS.md`。
+
+## 设计与对照文档
+
+- 四套类型推断 / 约束系统对照：`docs/type-inference-four-systems-comparison.md`
 
 ## 目录结构
 

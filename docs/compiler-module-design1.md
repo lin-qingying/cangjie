@@ -92,7 +92,7 @@ graph TD
 
 | 模块 | 职责 | 依赖 |
 |---|---|---|
-| `:cfir:types` | ConeCangjieType 层级（ClassLikeType、FuncType、TupleType、TypeParameterType、IntersectionType、ErrorType...）、类型投影（ConeTypeProjection）、类型属性（ConeAttributes）、标准库类型 ID | `:cfir:session`, `:core:model` |
+| `:cfir:types` | ConeCangJieType 层级（ClassLikeType、FuncType、TupleType、TypeParameterType、IntersectionType、ErrorType...）、类型投影（ConeTypeProjection）、类型属性（ConeAttributes）、标准库类型 ID | `:cfir:session`, `:core:model` |
 
 类型系统定义仓颉的全部类型形态。此模块**只定义类型是什么**，不做类型推断、子类型判断等计算——那些属于语义解析。
 
