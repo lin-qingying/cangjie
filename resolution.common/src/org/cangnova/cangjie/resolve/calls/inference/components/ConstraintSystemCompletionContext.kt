@@ -105,7 +105,6 @@ abstract class ConstraintSystemCompletionContext : VariableFixationFinder.Contex
      * @see [org.cangnova.cangjie.resolve.calls.inference.components.VariableFixationFinder.Context.typeVariablesThatAreCountedAsProperTypes]
      * @see [org.cangnova.cangjie.fir.resolve.transformers.body.resolve.FirDeclarationsResolveTransformer.fixInnerVariablesForProvideDelegateIfNeeded]
      */
-    @K2Only
     abstract fun <R> withTypeVariablesThatAreCountedAsProperTypes(
         typeVariables: Set<TypeConstructorMarker>, allowSemiFixationToOtherTypeVariables: Boolean = false, block: () -> R
     ): R

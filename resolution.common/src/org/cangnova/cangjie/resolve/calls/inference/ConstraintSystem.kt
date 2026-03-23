@@ -13,7 +13,7 @@ import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemError
 import org.cangnova.cangjie.resolve.checkers.EmptyIntersectionTypeInfo
 import org.cangnova.cangjie.type.model.*
 
-interface NewConstraintSystem {
+interface ConstraintSystem {
     val hasContradiction: Boolean
     val errors: List<ConstraintSystemError>
 

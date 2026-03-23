@@ -5,38 +5,37 @@
 
 package org.cangnova.cangjie.resolve.calls.inference.model
 
-import org.cangnova.cangjie.K1Deprecation
-import org.cangnova.cangjie.config.LanguageFeature
-import org.cangnova.cangjie.config.LanguageVersionSettings
 import org.cangnova.cangjie.resolve.calls.components.PostponedArgumentsAnalyzerContext
 import org.cangnova.cangjie.resolve.calls.inference.*
 import org.cangnova.cangjie.resolve.calls.inference.components.*
 import org.cangnova.cangjie.resolve.checkers.EmptyIntersectionTypeInfo
+import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
+import org.cangnova.cangjie.type.model.*
 import org.cangnova.cangjie.types.AbstractTypeApproximator
-import org.cangnova.cangjie.types.AbstractTypeChecker
 import org.cangnova.cangjie.types.TypeApproximatorCachesPerConfiguration
 import org.cangnova.cangjie.types.TypeApproximatorConfiguration
-import org.cangnova.cangjie.types.model.*
 import org.cangnova.cangjie.utils.SmartList
 import org.cangnova.cangjie.utils.SmartSet
-import org.cangnova.cangjie.utils.addToStdlib.trimToSize
+import org.cangnova.cangjie.utils.trimToSize
 import kotlin.math.max
 import kotlin.reflect.KFunction
 
-class NewConstraintSystemImpl(
+class ConstraintSystemImpl(
     private val constraintInjector: ConstraintInjector,
     val typeSystemContext: TypeSystemInferenceExtensionContext,
     private val languageVersionSettings: LanguageVersionSettings,
 ) : ConstraintSystemCompletionContext(),
     TypeSystemInferenceExtensionContext by typeSystemContext,
-    NewConstraintSystem,
+    ConstraintSystem,
     ConstraintSystemBuilder,
     ConstraintSystemMarker,
     ConstraintInjector.Context,
     ResultTypeResolver.Context,
     PostponedArgumentsAnalyzerContext {
     private val utilContext = constraintInjector.constraintIncorporator.utilContext
-    private val inferenceLogger = constraintInjector.inferenceLogger
+    private val inferenceLogger = constraintInjector.constraintIncorporator.inferenceLogger
 
     private val postponedComputationsAfterAllVariablesAreFixed = mutableListOf<() -> Unit>()
 
@@ -62,7 +61,6 @@ class NewConstraintSystemImpl(
      * @see [org.cangnova.cangjie.resolve.calls.inference.components.VariableFixationFinder.Context.typeVariablesThatAreNotCountedAsProperTypes]
      * @see [org.cangnova.cangjie.fir.resolve.transformers.body.resolve.FirDeclarationsResolveTransformer.fixInnerVariablesForProvideDelegateIfNeeded]
      */
-    @K2Only
     override fun <R> withTypeVariablesThatAreCountedAsProperTypes(
         typeVariables: Set<TypeConstructorMarker>,
         allowSemiFixationToOtherTypeVariables: Boolean,
@@ -138,7 +136,7 @@ class NewConstraintSystemImpl(
     override fun asReadOnlyStorage(): ConstraintStorage {
         checkState(State.BUILDING, State.FREEZED)
 
-        if (languageVersionSettings.supportsFeature(LanguageFeature.ConsiderForkPointsWhenCheckingContradictions) && areThereContradictionsInForks()) {
+        if (areThereContradictionsInForks()) {
             // If there are contradictions already, we might apply all the forks because CS is anyway already failed
             resolveForkPointsConstraints()
         }
@@ -224,8 +222,7 @@ class NewConstraintSystemImpl(
         constraintInjector.addInitialEqualityConstraint(a, b, position)
     }
 
-    @K1Deprecation
-    override fun getProperSuperTypeConstructors(type: CangJieTypeMarker): List<TypeConstructorMarker> {
+    fun getProperSuperTypeConstructors(type: CangJieTypeMarker): List<TypeConstructorMarker> {
         checkState(State.BUILDING, State.COMPLETION, State.TRANSACTION)
         val variableWithConstraints = notFixedTypeVariables[type.typeConstructor()] ?: return listOf(type.typeConstructor())
 
@@ -322,10 +319,8 @@ class NewConstraintSystemImpl(
 
             if (storage.hasContradiction) return true
 
-            if (!languageVersionSettings.supportsFeature(LanguageFeature.ConsiderForkPointsWhenCheckingContradictions)) return false
-
-            // Since 2.2 at each hasContradiction check, we make sure that all forks might be successfully resolved, too
-            return areThereContradictionsInForks()
+        // Since 2.2 at each hasContradiction check, we make sure that all forks might be successfully resolved, too
+        return areThereContradictionsInForks()
         }
 
     fun addOuterSystem(outerSystem: ConstraintStorage) {
@@ -342,7 +337,6 @@ class NewConstraintSystemImpl(
         doAddOtherSystem(outerSystem, mergeMode = false)
     }
 
-    @K2Only
     fun setBaseSystem(baseSystem: ConstraintStorage) {
         require(storage.allTypeVariables.isEmpty())
         storage.usesOuterCs = baseSystem.usesOuterCs
@@ -365,7 +359,6 @@ class NewConstraintSystemImpl(
         doAddOtherSystem(otherSystem, mergeMode = false)
     }
 
-    @K2Only
     @UnstableSystemMergeMode
     override fun mergeOtherSystem(otherSystem: ConstraintStorage) {
         @OptIn(AssertionsOnly::class)
@@ -493,7 +486,7 @@ class NewConstraintSystemImpl(
 
     private fun isProperTypeImpl(type: CangJieTypeMarker): Boolean =
         !type.contains {
-            val capturedType = it.asRigidType()?.asCapturedTypeUnwrappingDnn()
+            val capturedType = it.asRigidType()?.asCapturedType()
 
             val typeToCheck = if (capturedType is CapturedTypeMarker && capturedType.captureStatus() == CaptureStatus.FROM_EXPRESSION)
                 capturedType.typeConstructorProjection().getType()
@@ -609,7 +602,7 @@ class NewConstraintSystemImpl(
      */
     fun areThereContradictionsInForks(): Boolean {
         // Before freezing, we guarantee to apply contradictions to the regular storage if there are any
-        // (see NewConstraintSystemImpl.asReadOnlyStorage)
+        // (see ConstraintSystemImpl.asReadOnlyStorage)
         if (state == State.FREEZED) return false
 
         if (constraintsFromAllForkPoints.isEmpty()) return false
@@ -677,7 +670,7 @@ class NewConstraintSystemImpl(
     override fun addError(error: ConstraintSystemError) {
         checkState(State.BUILDING, State.COMPLETION, State.TRANSACTION)
         storage.errors.add(error)
-        inferenceLogger?.logError(error, this)
+        inferenceLogger?.logReadiness(InferenceLogger.FixationLogRecord(emptyMap(), null), this)
     }
 
     // KotlinConstraintSystemCompleter.Context
@@ -707,7 +700,7 @@ class NewConstraintSystemImpl(
         }
 
         storage.fixedTypeVariables[freshTypeConstructor] = resultType
-        inferenceLogger?.logFixVariable(variable, resultType, this@NewConstraintSystemImpl)
+        inferenceLogger?.logReadiness(InferenceLogger.FixationLogRecord(emptyMap(), variable), this@ConstraintSystemImpl)
 
         postponeOnlyInputTypesCheck(variableWithConstraints, resultType)
 
@@ -736,8 +729,7 @@ class NewConstraintSystemImpl(
         // Remove existing errors from the resolution stage because a completion stage error is always more precise
         storage.errors.removeIf { it is InferredEmptyIntersection }
 
-        val isInferredEmptyIntersectionForbidden =
-            languageVersionSettings.supportsFeature(LanguageFeature.ForbidInferringTypeVariablesIntoEmptyIntersection)
+        val isInferredEmptyIntersectionForbidden = true
         val errorFactory = if (emptyIntersectionTypeInfo.kind.isDefinitelyEmpty && isInferredEmptyIntersectionForbidden)
             ::InferredEmptyIntersectionError
         else ::InferredEmptyIntersectionWarning
@@ -857,7 +849,6 @@ class NewConstraintSystemImpl(
         return storage
     }
 
-    @K2Only
     val usesOuterCs: Boolean get() = storage.usesOuterCs
 
     // PostponedArgumentsAnalyzer.Context
@@ -866,7 +857,7 @@ class NewConstraintSystemImpl(
         val constraints = storage.notFixedTypeVariables[type.typeConstructor()]?.constraints ?: return false
         return constraints.any {
             (it.kind == ConstraintKind.UPPER || it.kind == ConstraintKind.EQUALITY) && !it.isNoInfer &&
-                    it.type.lowerBoundIfFlexible().isUnit()
+                    it.type.isUnit()
         }
     }
 

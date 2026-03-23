@@ -27,7 +27,7 @@ class TrivialConstraintTypeInferenceOracle private constructor(context: TypeSyst
     fun isSuitableResultedType(
         resultType: CangJieTypeMarker
     ): Boolean {
-        return !resultType.typeConstructor().isNothingConstructor() || (isK2 && resultType.isDynamic())
+        return !resultType.typeConstructor().isNothingConstructor() && !resultType.isError() && !resultType.isSpecial()
     }
 
     // It's possible to generate Nothing-like constraints inside incorporation mechanism:
@@ -41,8 +41,8 @@ class TrivialConstraintTypeInferenceOracle private constructor(context: TypeSyst
         generatedConstraintType: CangJieTypeMarker,
         isSubtype: Boolean
     ): Boolean {
-        if (isSubtype && (generatedConstraintType.isNothing() || generatedConstraintType.isFlexibleNothing())) return true
-        if (!isSubtype && generatedConstraintType.isNullableAny()) return true
+        if (isSubtype && generatedConstraintType.isNothing()) return true
+        if (!isSubtype && generatedConstraintType.typeConstructor().isAnyConstructor()) return true
 
         // If types from constraints that will be used to generate new constraint already contains `Nothing(?)`,
         // then we can't decide that resulting constraint will be useless
@@ -50,7 +50,7 @@ class TrivialConstraintTypeInferenceOracle private constructor(context: TypeSyst
         if (otherConstraint.type.contains { it.isNothingOrNullableNothing() }) return false
 
         // It's important to preserve constraints with nullable Nothing: `Nothing? <: T` (see implicitNothingConstraintFromReturn.kt test)
-        if (generatedConstraintType.containsOnlyNonNullableNothing()) return true
+        if (generatedConstraintType.containsOnlyNothing()) return true
 
         return false
     }
@@ -60,10 +60,9 @@ class TrivialConstraintTypeInferenceOracle private constructor(context: TypeSyst
         typeConstructor().isNothingConstructor()
 
 
-    private fun CangJieTypeMarker.containsOnlyNonNullableNothing(): Boolean =
+    private fun CangJieTypeMarker.containsOnlyNothing(): Boolean =
         contains {
-            (it.isNothing() || it.isFlexibleNothing()) &&
-                    !(it is SimpleTypeMarker && it.typeConstructor().isNothingConstructor() && it.isMarkedNullable())
+            it.isNothing()
         }
 
 

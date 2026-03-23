@@ -8,7 +8,6 @@ package org.cangnova.cangjie.resolve.calls.inference.model
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability.*
 import org.cangnova.cangjie.resolve.checkers.EmptyIntersectionTypeKind
-import org.cangnova.cangjie.type.EmptyIntersectionTypeKind
 import org.cangnova.cangjie.type.model.*
 
 interface OnlyInputTypeConstraintPosition
@@ -111,28 +110,28 @@ object SimpleConstraintSystemConstraintPosition : ConstraintPosition()
 
 sealed class ConstraintSystemError(val applicability: CandidateApplicability)
 
-sealed interface NewConstraintMismatch {
+sealed interface  ConstraintMismatch {
     val lowerType: CangJieTypeMarker
     val upperType: CangJieTypeMarker
     val position: IncorporationConstraintPosition
 }
 
-class NewConstraintError(
+class  ConstraintError(
     override val lowerType: CangJieTypeMarker,
     override val upperType: CangJieTypeMarker,
     override val position: IncorporationConstraintPosition,
 ) : ConstraintSystemError(if (position.from is ReceiverConstraintPosition<*>) INAPPLICABLE_WRONG_RECEIVER else INAPPLICABLE),
-    NewConstraintMismatch {
+    ConstraintMismatch {
     override fun toString(): String {
         return "$lowerType <: $upperType"
     }
 }
 
-class NewConstraintWarning(
+class ConstraintWarning(
     override val lowerType: CangJieTypeMarker,
     override val upperType: CangJieTypeMarker,
     override val position: IncorporationConstraintPosition,
-) : ConstraintSystemError(RESOLVED), NewConstraintMismatch
+) : ConstraintSystemError(RESOLVED), ConstraintMismatch
 
 class CapturedTypeFromSubtyping(
     val typeVariable: TypeVariableMarker,
@@ -188,4 +187,4 @@ open class MultiLambdaBuilderInferenceRestriction<T>(
 fun Constraint.isExpectedTypePosition() =
     position.from is ExpectedTypeConstraintPosition<*> || position.from is DelegatedPropertyConstraintPosition<*>
 
-fun NewConstraintError.transformToWarning() = NewConstraintWarning(lowerType, upperType, position)
+fun ConstraintError.transformToWarning() = ConstraintWarning(lowerType, upperType, position)

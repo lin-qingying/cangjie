@@ -7,7 +7,7 @@ package org.cangnova.cangjie.resolve.calls.inference
 
 import org.cangnova.cangjie.resolve.calls.inference.components.extractProjectionsForAllCapturedTypes
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
-import org.cangnova.cangjie.resolve.calls.inference.model.NewConstraintSystemImpl
+import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
 import org.cangnova.cangjie.type.model.*
 
 fun ConstraintStorage.buildCurrentSubstitutor(
@@ -26,12 +26,12 @@ fun ConstraintStorage.buildAbstractResultingSubstitutor(
     val uninferredSubstitutorMap = if (transformTypeVariablesToErrorTypes) {
         notFixedTypeVariables.entries.associate { (freshTypeConstructor, typeVariable) ->
             freshTypeConstructor to context.createUninferredType(
-                (typeVariable.typeVariable).freshTypeConstructor()
+                with(context) { typeVariable.typeVariable.freshTypeConstructor() }
             )
         }
     } else {
         notFixedTypeVariables.entries.associate { (freshTypeConstructor, typeVariable) ->
-            freshTypeConstructor to typeVariable.typeVariable.defaultType(this)
+            freshTypeConstructor to with(context) { typeVariable.typeVariable.defaultType() }
         }
     }
     return context.typeSubstitutorByTypeConstructor(fixedTypeVariables + uninferredSubstitutorMap)
@@ -41,14 +41,15 @@ fun ConstraintStorage.buildNotFixedVariablesToNonSubtypableTypesSubstitutor(
     context: TypeSystemInferenceExtensionContext
 ): TypeSubstitutorMarker {
     return context.typeSubstitutorByTypeConstructor(
-        notFixedTypeVariables.mapValues { context.createStubTypeForTypeVariablesInSubtyping(it.value.typeVariable) }
+        notFixedTypeVariables.entries.associate { (freshTypeConstructor, variableWithConstraints) ->
+            freshTypeConstructor to context.createStubTypeForTypeVariablesInSubtyping(variableWithConstraints.typeVariable)
+        }
     )
 }
 
 context(c: TypeSystemInferenceExtensionContext)
 fun TypeConstructorMarker.hasRecursiveTypeParametersWithGivenSelfType(): Boolean {
     if (getParameters().any { it.hasRecursiveBounds(this) }) return true
-    if (!c.isK2) return false
 
     if (this is CapturedTypeConstructorMarker || this.isIntersection()) {
         return supertypes().any {
@@ -80,11 +81,11 @@ fun CangJieTypeMarker.extractTypeForGivenRecursiveTypeParameter(typeParameter: T
     return null
 }
 
-fun NewConstraintSystemImpl.registerTypeVariableIfNotPresent(
+fun ConstraintSystemImpl.registerTypeVariableIfNotPresent(
     typeVariable: TypeVariableMarker
 ) {
     val builder = getBuilder()
-    if (typeVariable.freshTypeConstructor(this) !in builder.currentStorage().allTypeVariables.keys) {
+    if (with(this) { typeVariable.freshTypeConstructor() } !in builder.currentStorage().allTypeVariables.keys) {
         builder.registerVariable(typeVariable)
     }
 }

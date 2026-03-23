@@ -6,13 +6,14 @@
 package org.cangnova.cangjie.resolve.calls.inference.components
 
 import org.cangnova.cangjie.LanguageVersionSettings
-import org.cangnova.cangjie.resolve.calls.NewCommonSuperTypeCalculator
+import org.cangnova.cangjie.resolve.calls.CommonSuperTypeCalculator
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemBuilder
 import org.cangnova.cangjie.resolve.calls.inference.components.TypeVariableDirectionCalculator.ResolveDirection
 import org.cangnova.cangjie.resolve.calls.inference.extractTypeForGivenRecursiveTypeParameter
 import org.cangnova.cangjie.resolve.calls.inference.hasRecursiveTypeParametersWithGivenSelfType
 import org.cangnova.cangjie.resolve.calls.inference.isEqualityConstraintCompatible
 import org.cangnova.cangjie.resolve.calls.inference.model.*
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.*
 import org.cangnova.cangjie.types.AbstractTypeApproximator
 import org.cangnova.cangjie.types.TypeApproximatorConfiguration
@@ -46,7 +47,7 @@ class ResultTypeResolver(
     private fun TypeVariableMarker.getDefaultType(direction: ResolveDirection, constraints: List<Constraint>): CangJieTypeMarker {
         getDefaultTypeForSelfType(constraints)?.let { return it }
 
-        return if (direction == ResolveDirection.TO_SUBTYPE) c.nothingType() else c.nullableAnyType()
+        return if (direction == ResolveDirection.TO_SUBTYPE) c.nothingType() else c.anyType()
     }
 
     context(c: Context)
@@ -77,12 +78,6 @@ class ResultTypeResolver(
         return typeApproximator.approximateToSubType(this, TypeApproximatorConfiguration.InternalTypesApproximation) ?: this
     }
 
-    private val useImprovedCapturedTypeApproximation: Boolean =
-        languageVersionSettings.supportsFeature(LanguageFeature.ImprovedCapturedTypeApproximationInInference)
-
-    private val discriminateNothingAsNullabilityConstraintInInference: Boolean =
-        languageVersionSettings.supportsFeature(LanguageFeature.DiscriminateNothingAsNullabilityConstraintInInference)
-
     context(c: Context)
     fun findResultTypeOrNull(
         variableWithConstraints: VariableWithConstraints,
@@ -94,11 +89,7 @@ class ResultTypeResolver(
         val subType = variableWithConstraints.findSubType()
         val superType = variableWithConstraints.findSuperType()
 
-        val (preparedSubType, preparedSuperType) = if (c.isK2 && useImprovedCapturedTypeApproximation) {
-            variableWithConstraints.prepareSubAndSuperTypes(subType, superType)
-        } else {
-            variableWithConstraints.prepareSubAndSuperTypesLegacy(subType, superType)
-        }
+        val (preparedSubType, preparedSuperType) = variableWithConstraints.prepareSubAndSuperTypes(subType, superType)
 
         val resultTypeFromDirection = if (direction == ResolveDirection.TO_SUBTYPE || direction == ResolveDirection.UNKNOWN) {
             variableWithConstraints.resultType(preparedSubType, preparedSuperType)
@@ -123,9 +114,6 @@ class ResultTypeResolver(
 
     context(c: Context)
     private fun CangJieTypeMarker.isAppropriateResultTypeFromEqualityConstraints(): Boolean {
-        if (!c.isK2) return true
-
-        // In K2, we don't allow fixing to a result type from EQ constraints if they contain ILTs
         return !contains { type ->
             type.typeConstructor().isIntegerLiteralConstantTypeConstructor()
         }
@@ -166,7 +154,7 @@ class ResultTypeResolver(
             superType.typeConstructor().hasRecursiveTypeParametersWithGivenSelfType() -> superType
             else -> approximatedSuperType
             // Super type should be the most flexible, sub type should be the least one
-        }.makeFlexibleIfNecessary(constraints)
+        }
 
         return preparedSubType to preparedSuperType
     }
@@ -191,75 +179,7 @@ class ResultTypeResolver(
         // compiler/testData/diagnostics/tests/unsignedTypes/conversions/inferenceForSignedAndUnsignedTypes.kt
         if (resultType.typeConstructor().isIntegerLiteralTypeConstructor()) return false
 
-        return !c.isEqualityConstraintCompatible(approximatedResultType, variableWithConstraints.typeVariable.defaultType(c))
-    }
-
-    context(c: Context)
-    private fun VariableWithConstraints.prepareSubAndSuperTypesLegacy(
-        subType: CangJieTypeMarker?,
-        superType: CangJieTypeMarker?,
-    ): Pair<CangJieTypeMarker?, CangJieTypeMarker?> {
-        val similarCapturedTypesInK2 = c.isK2 && similarOrCloselyBoundCapturedTypes(subType, superType)
-
-        val preparedSubType = when {
-            subType == null -> null
-            similarCapturedTypesInK2 -> subType
-            else -> typeApproximator.approximateToSuperType(subType, TypeApproximatorConfiguration.InternalTypesApproximation) ?: subType
-        }
-
-        val preparedSuperType = when {
-            superType == null -> null
-            similarCapturedTypesInK2 -> superType
-            c.isK2 && superType.typeConstructor().hasRecursiveTypeParametersWithGivenSelfType() -> superType
-            else -> typeApproximator.approximateToSubType(superType, TypeApproximatorConfiguration.InternalTypesApproximation) ?: superType
-            // Super type should be the most flexible, sub type should be the least one
-        }.makeFlexibleIfNecessary(constraints)
-
-        return preparedSubType to preparedSuperType
-    }
-
-    /**
-     * Old heuristic used to determine when result types from lower/upper constraints should be approximated or not.
-     *
-     * Becomes obsolete after [LanguageFeature.ImprovedCapturedTypeApproximationInInference] is enabled.
-     */
-    context(c: Context)
-    private fun similarOrCloselyBoundCapturedTypes(subType: CangJieTypeMarker?, superType: CangJieTypeMarker?): Boolean {
-        if (subType == null) return false
-        if (superType == null) return false
-        val subTypeLowerConstructor = subType.lowerBoundIfFlexible().typeConstructor()
-        if (!subTypeLowerConstructor.isCapturedTypeConstructor()) return false
-
-        if (superType in subTypeLowerConstructor.supertypes() && superType.contains { it.typeConstructor().isCapturedTypeConstructor() }) {
-            return true
-        }
-
-        return subTypeLowerConstructor == subType.upperBoundIfFlexible().typeConstructor() &&
-                subTypeLowerConstructor == superType.lowerBoundIfFlexible().typeConstructor() &&
-                subTypeLowerConstructor == superType.upperBoundIfFlexible().typeConstructor()
-    }
-
-    /*
-     * We propagate nullness flexibility into the result type from type variables in other constraints
-     * to prevent variable fixation into less flexible type.
-     *  Constraints:
-     *      UPPER(TypeVariable(T)..TypeVariable(T)?)
-     *      UPPER(Foo?)
-     *  Result type = makeFlexibleIfNecessary(Foo?) = Foo!
-     *
-     * We don't propagate nullness flexibility in depth as it's non-determined for now (see KT-35534):
-     *  CST(Bar<Foo>, Bar<Foo!>) = Bar<Foo!>
-     *  CST(Bar<Foo!>, Bar<Foo>) = Bar<Foo>
-     * But: CST(Foo, Foo!) = CST(Foo!, Foo) = Foo!
-     */
-    context(c: Context)
-    private fun CangJieTypeMarker?.makeFlexibleIfNecessary(constraints: List<Constraint>) = when (val type = this@makeFlexibleIfNecessary) {
-        is RigidTypeMarker -> {
-            if (constraints.any { it.type.typeConstructor().isTypeVariable() && it.type.hasFlexibleNullability() }) {
-                c.createTrivialFlexibleTypeOrSelf(type.makeDefinitelyNotNullOrNotNull())
-            } else type
-        }
-        else -> type
+        return !c.isEqualityConstraintCompatible(approximatedResultType, variableWithConstraints.typeVariable.defaultType())
     }
 
     context(c: Context)
@@ -313,67 +233,7 @@ class ResultTypeResolver(
         // Nothing and Nothing? is not allowed for reified parameters
         if (c.isReified(variableWithConstraints.typeVariable)) return false
 
-        return if (!resultType.isNullableType()) {
-            mayNothingBeConsideredAsSuitableResultType(filteredConstraints)
-        } else {
-            mayNullableNothingBeConsideredAsSuitableResultType(filteredConstraints)
-        }
-    }
-
-    context(c: Context)
-    private fun mayNullableNothingBeConsideredAsSuitableResultType(constraints: List<Constraint>): Boolean = when {
-        c.isK2 ->
-            // There might be an assertion for green code that if `allUpperConstraintsAreFromBounds(constraints) == true` then
-            // the single `Nothing?` lower bound constraint has Constraint::isNullabilityConstraint is set to false
-            // because otherwise we would not start fixing the variable since it has no proper constraints.
-            allUpperConstraintsAreFromBounds(constraints)
-        else -> !isThereSingleLowerNullabilityConstraint(constraints)
-    }
-
-    context(c: Context)
-    private fun mayNothingBeConsideredAsSuitableResultType(constraints: List<Constraint>): Boolean = when {
-        // Nothing <: T can't be used to infer T = Nothing in case it's a nullability constraint,
-        // in this case an upper constraint should be preferred. See also comments to KT-81948.
-        discriminateNothingAsNullabilityConstraintInInference -> !isThereSingleLowerNullabilityConstraint(constraints)
-        // This (potentially legacy) code is in use only for language versions 2.3 and earlier
-        // It's ok to fix result to non-nullable Nothing and parameter is not reified
-        else -> true
-    }
-
-    private fun allUpperConstraintsAreFromBounds(constraints: List<Constraint>): Boolean =
-        constraints.all {
-            // Actually, at least for green code that should be an assertion that lower constraints (!isUpper) has `Nothing?` type
-            // Because otherwise if we had `Nothing? <: T` and `SomethingElse <: T` than it would end with `SomethingElse? <: T`
-            !it.kind.isUpper() || isFromTypeParameterUpperBound(it)
-        }
-
-    private fun isFromTypeParameterUpperBound(constraint: Constraint): Boolean =
-        constraint.position.isFromDeclaredUpperBound || constraint.position.from is DeclaredUpperBoundConstraintPosition<*>
-
-    /**
-     * This function determines if [constraints] contain a single lower constraint which is a nullability constraint.
-     *
-     * The function has two separate use-sites:
-     * - for K1 (legacy code soon to be deleted) we use it to determine if we can use a constraint like `Nothing? <: T`
-     * for a type fixation. This influences quite old OI->NI issues: KT-32106, KT-33166.
-     * - for K2 (new code used from LV 2.4) we use it to determine if we can use a constraint like `Nothing <: T`
-     * for a type fixation. If it's a nullability constraint, we in fact shouldn't.
-     * This allows us to prioritize proper upper constraints like T <: SomeType thus fixing KT-81948.
-     *
-     * In both cases, the result of true means that we shouldn't use a lower constraint like `Nothing(?) <: T` for a type fixation.
-     *
-     * Note: it's likely that the code like below (it covers the current K2 case more obviously)
-     *
-     * ```
-     * constraints.any { it.kind.isLower() && it.type.isNothing() && !it.isNullabilityConstraint }
-     * ```
-     *
-     * is equivalent to `!isThereSingleLowerNullabilityConstraint(constraints)`,
-     * because if there are some other non-Nothing lower constraints, the resulting subtype would be different (less concrete than `Nothing`),
-     * at the same time there should not be two `Nothing` constraints for the same variable (they should be merged).
-     */
-    private fun isThereSingleLowerNullabilityConstraint(constraints: List<Constraint>): Boolean {
-        return constraints.singleOrNull { it.kind.isLower() }?.isNullabilityConstraint ?: false
+        return filteredConstraints.any { it.kind.isUpper() }
     }
 
     context(c: Context)
@@ -381,9 +241,12 @@ class ResultTypeResolver(
         val lowerConstraintTypes = prepareLowerConstraints(constraints)
 
         if (lowerConstraintTypes.isNotEmpty()) {
-            // CST for a set of type variables is not defined
             if (lowerConstraintTypes.size > 1 &&
-                lowerConstraintTypes.all { it.unwrapToSimpleTypeUsingLowerBound().isStubTypeForVariableInSubtypingOrCaptured() }
+                lowerConstraintTypes.all { type ->
+                    type.asRigidType()?.let { rigidType ->
+                        rigidType.isStubTypeForVariableInSubtyping() || rigidType.isCapturedType()
+                    } == true
+                }
             ) {
                 // This situation is only allowed to happen when semi-fixing for input types for OverloadResolutionByLambdaReturnType
                 check(c.allowSemiFixationToOtherTypeVariables) {
@@ -392,7 +255,7 @@ class ResultTypeResolver(
                 return null
             }
             val types = sinkIntegerLiteralTypes(lowerConstraintTypes)
-            var commonSuperType = NewCommonSuperTypeCalculator.commonSuperType(types)
+            var commonSuperType = CommonSuperTypeCalculator.commonSuperType(types)
 
             if (commonSuperType.contains { it.asRigidType()?.isStubTypeForVariableInSubtyping() == true }) {
                 val typesWithoutStubs = types.filter { lowerType ->
@@ -401,15 +264,13 @@ class ResultTypeResolver(
 
                 when {
                     typesWithoutStubs.isNotEmpty() -> {
-                        commonSuperType = NewCommonSuperTypeCalculator.commonSuperType(typesWithoutStubs)
+                        commonSuperType = CommonSuperTypeCalculator.commonSuperType(typesWithoutStubs)
                     }
                     // `typesWithoutStubs.isEmpty()` means that there are no lower constraints without type variables.
                     // It's only possible for the PCLA case, because otherwise none of the constraints would be considered as proper.
                     // So, we just get currently computed `commonSuperType` and substitute all local stub types
                     // with corresponding type variables.
                     c.outerSystemVariablesPrefixSize > 0 -> {
-                        // outerSystemVariablesPrefixSize > 0 only for PCLA (K2)
-                        @OptIn(K2Only::class)
                         commonSuperType = c.createSubstitutionFromSubtypingStubTypesToTypeVariables().safeSubstitute(commonSuperType)
                     }
                 }
@@ -469,55 +330,18 @@ class ResultTypeResolver(
 
     context(c: Context)
     private fun computeUpperType(upperConstraints: List<Constraint>): CangJieTypeMarker {
-        return if (languageVersionSettings.supportsFeature(LanguageFeature.AllowEmptyIntersectionsInResultTypeResolver)) {
-            c.intersectTypes(upperConstraints.map { it.type })
-        } else {
-            val intersectionUpperType = c.intersectTypes(upperConstraints.map { it.type })
-            val resultIsActuallyIntersection = intersectionUpperType.typeConstructor().isIntersection()
-
-            val isThereUnwantedIntersectedTypes = if (resultIsActuallyIntersection) {
-                val intersectionSupertypes = intersectionUpperType.typeConstructor().supertypes()
-                val intersectionClasses = intersectionSupertypes.count {
-                    it.typeConstructor().isClassTypeConstructor() && !it.typeConstructor().isInterface()
-                }
-                val areThereIntersectionFinalClasses = intersectionSupertypes.any { it.typeConstructor().isCommonFinalClassConstructor() }
-                intersectionClasses > 1 || areThereIntersectionFinalClasses
-            } else false
-
-            val upperType = if (isThereUnwantedIntersectedTypes) {
-                /*
-                 * We shouldn't infer a type variable into the intersection type if there is an explicit expected type,
-                 * otherwise it can lead to something like this:
-                 *
-                 * fun <T : String> materialize(): T = null as T
-                 * val bar: Int = materialize() // no errors, T is inferred into String & Int
-                 */
-                val filteredUpperConstraints = upperConstraints.filterNot { it.isExpectedTypePosition() }.map { it.type }
-                if (filteredUpperConstraints.isNotEmpty()) c.intersectTypes(filteredUpperConstraints) else intersectionUpperType
-            } else intersectionUpperType
-            upperType
-        }
+        return c.intersectTypes(upperConstraints.map { it.type })
     }
 
     context(c: Context)
     private fun VariableWithConstraints.findSuperType(): CangJieTypeMarker? {
-        var hasNotNull = false
         val upperConstraints = constraints.filter {
             if (it.kind != ConstraintKind.UPPER) return@filter false
-            if (it.isProperConstraint()) return@filter true
-            // Non-proper constraints like recursive upper bounds can still contribute nullability information
-            if (!it.type.isNullableType()) hasNotNull = true
-            false
+            it.isProperConstraint()
         }
 
         if (upperConstraints.isNotEmpty()) {
-            return computeUpperType(upperConstraints).let {
-                if (hasNotNull && it.isNullableType() && languageVersionSettings.supportsFeature(LanguageFeature.InferenceEnhancementsIn23)) {
-                    it.makeDefinitelyNotNullOrNotNull()
-                } else {
-                    it
-                }
-            }
+            return computeUpperType(upperConstraints)
         }
 
         return null
@@ -571,28 +395,7 @@ class ResultTypeResolver(
         // If there's a contradiction, it's best if we fix the variable to exactly
         // the type argument the user has provided for it, so that the diagnostics
         // remain accurate.
-        return LanguageFeature.ReportUpperBoundViolatedInCallArgumentInteractions.chooseType(
-            createFutureType = { properEqualityConstraints.findExplicitTypeArgumentConstraintFor(typeVariable)?.type },
-            createFallbackType = { constraintTypes.first() },
-        )
-    }
-
-    /**
-     * Returns the future type if the language feature is enabled, or
-     * the fallback with a `TypeWillChangeAttribute` containing the future type.
-     * If the future one is `null`, returns the fallback.
-     */
-    context(c: Context)
-    private inline fun LanguageFeature.chooseType(
-        createFutureType: () -> CangJieTypeMarker?,
-        createFallbackType: () -> CangJieTypeMarker,
-    ): CangJieTypeMarker = when (val futureType = createFutureType()) {
-        null -> createFallbackType()
-        else if languageVersionSettings.supportsFeature(this) -> futureType
-        else -> when (val fallbackType = createFallbackType()) {
-            futureType -> futureType
-            else -> fallbackType.withNewTypeSince(this, futureType)
-        }
+        return properEqualityConstraints.findExplicitTypeArgumentConstraintFor(typeVariable)?.type ?: constraintTypes.first()
     }
 
     /**

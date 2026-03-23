@@ -71,6 +71,10 @@
 - `BodyResolveTransformerComponents` 已补齐对 `CfirBodyResolveContext` 的关键转发实现，包括容器链、tower data、局部作用域、文件导入作用域及调用解析依赖装配。
 - `:cfir:resolve` 测试基建已对齐当前调用解析/推断 API：测试 `CfirCandidate` 构造补齐了解析上下文、约束系统与显式接收者参数，旧的 `subtypeChecker` 入口迁移为 `CfirTypeRelations`，并同步修复了约束系统与 extend scope 测试中的过期构造参数。
 - `:cfir:resolve` 已修复 `CfirResolutionMode.WithExpectedType` 的 API 漂移：body resolve 与 call completer 统一改为通过 `expectedTypeRef.coneType` 读取期望类型，并在 lambda 期望类型传播时补齐 `CfirResolvedTypeRef` 包装，恢复模块编译通过。
+- `:resolution.common` 的类型系统对齐已完成主要迁移：`AbstractTypeChecker.RUN_SLOW_ASSERTIONS` 与 `prepareType` 契约入口已补齐，`NewCommonSuperTypeCalculator`、`TypeApproximatorConfiguration`、`AbstractTypeApproximator`、`TypeCheckerStateForConstraintSystem`、`ConstraintInjector`、`ConstraintIncorporator`、`ResultTypeResolver`、`TrivialConstraintTypeInferenceOracle`、`PostponedArgumentInputTypesResolver` 等核心文件已切换到仓颉刚性类型模型。
+- `:resolution.common` 当前可通过定向编译（`./gradlew.bat :resolution.common:compileKotlin`），并新增了 `resolution.common/src/.../type/model/TypeSystemContextBridge.kt` 作为显式 context-argument 桥接层，用于消除历史 Kotlin 风格扩展调用在仓颉 `TypeSystemInferenceExtensionContext` 下的歧义。
+- 编译器测试入口 `AbstractCangjieCompilerTest` 已接入 `-Dcangjie.slow.assertions=true` 的 slow assertions 开关：默认关闭，不影响正常编译路径；测试/调试时可显式开启，以执行 `resolution.common` 中已迁移的 guarded invariants。
+- 当前遗留主要从“模块不可编译”转为“后续精修/验证”性质：仍建议补齐更细粒度的定向测试、进一步审视桥接层是否可以继续内联回核心 API，以及继续清理少量历史日志/兼容调用以降低长期维护成本。
 
 ### 序列化（阶段 10）
 

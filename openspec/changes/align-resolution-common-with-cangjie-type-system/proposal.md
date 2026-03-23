@@ -31,7 +31,7 @@
 - 主要影响模块：`resolution.common`、`common`。
 - 重点影响文件族：
   - `resolution.common/src/org/cangnova/cangjie/types/*`
-  - `resolution.common/src/org/cangnova/cangjie/resolve/calls/NewCommonSuperTypeCalculator.kt`
+  - `resolution.common/src/org/cangnova/cangjie/resolve/calls/CommonSuperTypeCalculator.kt`
   - `resolution.common/src/org/cangnova/cangjie/resolve/calls/inference/components/*`
   - `resolution.common/src/org/cangnova/cangjie/resolve/calls/inference/model/*`
   - `common/src/org/cangnova/cangjie/type/model/TypeSystemContext*.kt`

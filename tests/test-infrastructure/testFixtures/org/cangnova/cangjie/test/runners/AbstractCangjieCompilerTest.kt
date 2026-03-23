@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.test.runners
 
 import com.intellij.testFramework.TestDataFile
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.test.CangJieTestInfo
 import org.cangnova.cangjie.test.Constructor
 import org.cangnova.cangjie.test.NonGroupingTestRunner
@@ -15,9 +16,12 @@ import org.cangnova.cangjie.test.services.impl.JUnit5Assertions
 import org.cangnova.cangjie.test.services.impl.TemporaryDirectoryManagerImpl
 import org.cangnova.cangjie.test.toCangJieTestInfo
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.TestInfo
 
 abstract class AbstractCangjieCompilerTest {
+
+    private var previousSlowAssertions: Boolean = false
 
     companion object {
         val defaultPreprocessors: List<Constructor<SourceFilePreprocessor>> = listOf(
@@ -57,7 +61,14 @@ abstract class AbstractCangjieCompilerTest {
 
     @BeforeEach
     fun initTestInfo(testInfo: TestInfo) {
+        previousSlowAssertions = AbstractTypeChecker.RUN_SLOW_ASSERTIONS
+        AbstractTypeChecker.RUN_SLOW_ASSERTIONS = java.lang.Boolean.getBoolean("cangjie.slow.assertions")
         initTestInfo(testInfo.toCangJieTestInfo())
+    }
+
+    @AfterEach
+    fun restoreSlowAssertionsFlag() {
+        AbstractTypeChecker.RUN_SLOW_ASSERTIONS = previousSlowAssertions
     }
 
     fun initTestInfo(testInfo: CangJieTestInfo) {
