@@ -5,8 +5,8 @@
 一方面，`common/src/org/cangnova/cangjie/type/model/TypeSystemContext.kt`、`TypeSystemContextContextual.kt`、`TypeSystemInferenceExtensionContextContextual.kt` 已经把仓颉类型系统公共契约收敛为“刚性类型 + 泛型参数 + captured/stub 等内部推断中间态”的模型，并明确删除了 Kotlin 风格的 flexible type、`isMarkedNullable`/`withNullability`、显式 variance、star projection、raw/dynamic type 等 API。`common/src/org/cangnova/cangjie/type/AbstractTypeChecker.kt` 也已经按仓颉语义重写了核心子类型算法，说明公共契约的目标形状已基本稳定。
 
 另一方面，`resolution.common` 仍大量保留 Kotlin 移植残留：
-- `AbstractTypeApproximator.kt`、`NewCommonSuperTypeCalculator.kt`、`TypeCheckerStateForConstraintSystem.kt`、`ConstraintInjector.kt` 等文件持续依赖 flexible/nullability/variance/star projection/DefinitelyNotNull/raw/dynamic 等概念；
-- `TypeApproximatorConfiguration.kt`、`NewConstraintSystemImpl.kt`、`ConstraintSystemUtilContext.kt`、`VariableFixationFinder.kt` 等文件仍保留 K1/K2 兼容分支、`@K1Deprecation`、Legacy 实现和仅为 Kotlin 迁移存在的配置；
+- `AbstractTypeApproximator.kt`、`CommonSuperTypeCalculator.kt`、`TypeCheckerStateForConstraintSystem.kt`、`ConstraintInjector.kt` 等文件持续依赖 flexible/nullability/variance/star projection/DefinitelyNotNull/raw/dynamic 等概念；
+- `TypeApproximatorConfiguration.kt`、`ConstraintSystemImpl.kt`、`ConstraintSystemUtilContext.kt`、`VariableFixationFinder.kt` 等文件仍保留 K1/K2 兼容分支、`@K1Deprecation`、Legacy 实现和仅为 Kotlin 迁移存在的配置；
 - `LanguageVersionSettings.kt` 中当前只保留极少数仓颉侧语言特性，但 `resolution.common` 仍引用 Kotlin 风格语言特性，造成公共配置与实际消费点不一致。
 
 本地参考实现进一步给出了概念边界：

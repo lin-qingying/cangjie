@@ -31,7 +31,6 @@ interface PostponedArgumentsAnalyzerContext : TypeSystemInferenceExtensionContex
     // mutable operations
     fun addOtherSystem(otherSystem: ConstraintStorage)
 
-    @K2Only
     @UnstableSystemMergeMode
     fun mergeOtherSystem(otherSystem: ConstraintStorage)
 

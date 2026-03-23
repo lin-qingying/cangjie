@@ -5,7 +5,6 @@
 
 package org.cangnova.cangjie.resolve.calls.inference.components
 
-import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.resolve.calls.inference.ForkPointData
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionMode.PARTIAL
@@ -22,23 +21,10 @@ import org.cangnova.cangjie.type.model.*
 import kotlin.collections.component1
 import kotlin.collections.component2
 
-/**
- * For the K1's DI to properly instantiate it with [LegacyVariableReadinessCalculator], this class must be `abstract`.
- */
-@DefaultImplementation(VariableFixationFinder.DefaultForK1DependencyInjection::class)
-abstract class VariableFixationFinder(
+class VariableFixationFinder(
     private val languageVersionSettings: LanguageVersionSettings,
     private val variableReadinessCalculator: AbstractVariableReadinessCalculator<*>,
 ) {
-
-
-    class Default(
-        languageVersionSettings: LanguageVersionSettings,
-        variableReadinessCalculator: AbstractVariableReadinessCalculator<*>,
-    ) : VariableFixationFinder(
-        languageVersionSettings,
-        variableReadinessCalculator,
-    )
 
     interface Context : TypeSystemInferenceExtensionContext, ConstraintSystemMarker {
         val notFixedTypeVariables: Map<TypeConstructorMarker, VariableWithConstraints>
@@ -126,7 +112,7 @@ abstract class VariableFixationFinder(
 abstract class AbstractVariableReadinessCalculator<Readiness : Comparable<Readiness>>(
     private val trivialConstraintTypeInferenceOracle: TrivialConstraintTypeInferenceOracle,
     private val languageVersionSettings: LanguageVersionSettings,
-    inferenceLoggerParameter: InferenceLogger? = null,
+    private val inferenceLogger: InferenceLogger? = null,
 ) {
 
     context(c: Context)
@@ -145,7 +131,7 @@ abstract class AbstractVariableReadinessCalculator<Readiness : Comparable<Readin
     ): Boolean
 
     protected val fixationEnhancementsIn22: Boolean
-        get() = languageVersionSettings.supportsFeature(LanguageFeature.FixationEnhancementsIn22)
+        get() = true
 
     context(c: Context)
     protected fun TypeConstructorMarker.hasDirectConstraintToNotFixedRelevantVariable(): Boolean {
@@ -180,12 +166,11 @@ abstract class AbstractVariableReadinessCalculator<Readiness : Comparable<Readin
         val constraints = c.notFixedTypeVariables[this]?.constraints ?: return false
 
         fun Constraint.isTrivial() = kind == ConstraintKind.LOWER && type.isNothing()
-                || kind == ConstraintKind.UPPER && type.isNullableAny()
+                || kind == ConstraintKind.UPPER && type.typeConstructor().isAnyConstructor()
 
         return constraints.filter { it.isProperArgumentConstraint() && !it.isTrivial() }.all { it.position.isFromDeclaredUpperBound }
     }
 
-    @OptIn(K2Only::class)
     context(c: Context)
     fun chooseBestTypeVariableCandidateWithLogging(
         allTypeVariables: List<TypeConstructorMarker>,
@@ -201,7 +186,7 @@ abstract class AbstractVariableReadinessCalculator<Readiness : Comparable<Readin
                 c.notFixedTypeVariables[it]?.constraints.orEmpty()
             )
         }
-        val chosen = readinessPerVariable.entries.maxByOrNull { (_, value) -> value.readiness }?.key
+        val chosen = readinessPerVariable.maxByOrNull { (_, value) -> value.readiness.toString() }?.key
         val newRecord = FixationLogRecord(
             readinessPerVariable.mapKeys { (key, _) -> c.allTypeVariables[key]!! }, c.allTypeVariables[chosen]
         )
@@ -218,7 +203,7 @@ abstract class AbstractVariableReadinessCalculator<Readiness : Comparable<Readin
 
     context(c: Context)
     private fun Constraint.hasDependencyToOtherTypeVariable(ownerTypeVariable: TypeConstructorMarker): Boolean {
-        return type.lowerBoundIfFlexible().argumentsCount() != 0 &&
+        return type.argumentsCount() != 0 &&
                 type.contains { it.typeConstructor() != ownerTypeVariable && c.notFixedTypeVariables.containsKey(it.typeConstructor()) }
     }
 
@@ -274,7 +259,7 @@ abstract class AbstractVariableReadinessCalculator<Readiness : Comparable<Readin
         // NB: All proper constraints are LOWER here.
         // As a resulting type for such a type variable is the common supertype of all lower constraints, which is undefined
         // for a case when all the constraints are type variables _and_ there are more than one of them.
-        // For details, see [NewCommonSuperTypeCalculator.commonSuperTypeForNotNullTypes]
+        // For details, see [CommonSuperTypeCalculator.commonSuperTypeForNotNullTypes]
         val commonSupertypeIsUndefined = properConstraints.size > 1 && properConstraints.all {
             it.type.typeConstructor() in c.notFixedTypeVariables
         }
@@ -286,7 +271,6 @@ abstract class AbstractVariableReadinessCalculator<Readiness : Comparable<Readin
     protected fun Constraint.isProperArgumentConstraint() =
         type.isProperType()
                 && position.initialConstraint.position !is DeclaredUpperBoundConstraintPosition<*>
-                && !isNullabilityConstraint
                 && !isNoInfer
 
     context(c: Context)
@@ -367,15 +351,7 @@ fun CangJieTypeMarker.extractProjectionsForAllCapturedTypes(): Set<CangJieTypeMa
 
 context(c: TypeSystemInferenceExtensionContext)
 private fun CangJieTypeMarker.extractProjectionsForAllCapturedTypesInternal(result: MutableSet<CangJieTypeMarker>) {
-    if (isFlexible()) {
-        val flexibleType = asFlexibleType()!!
-        flexibleType.lowerBound().extractProjectionsForAllCapturedTypesInternal(result)
-        if (!c.isTriviallyFlexible(flexibleType)) {
-            flexibleType.upperBound().extractProjectionsForAllCapturedTypesInternal(result)
-        }
-        return
-    }
-    val simpleBaseType = asRigidType()?.asCapturedTypeUnwrappingDnn()
+    val simpleBaseType = asRigidType()?.asCapturedType()
 
     val projectionType = if (simpleBaseType != null) {
         val argumentType = simpleBaseType.typeConstructorProjection().getType() ?: return

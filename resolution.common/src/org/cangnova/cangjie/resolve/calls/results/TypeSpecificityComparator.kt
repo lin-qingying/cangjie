@@ -8,8 +8,7 @@ package org.cangnova.cangjie.resolve.calls.results
 import org.cangnova.cangjie.type.model.*
 
 
-@DefaultImplementation(impl = TypeSpecificityComparator.NONE::class)
-interface TypeSpecificityComparator : PlatformSpecificExtension<TypeSpecificityComparator> {
+interface TypeSpecificityComparator {
     fun isDefinitelyLessSpecific(specific: CangJieTypeMarker, general: CangJieTypeMarker): Boolean
 
     object NONE : TypeSpecificityComparator {

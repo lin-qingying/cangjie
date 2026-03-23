@@ -20,6 +20,12 @@ import org.cangnova.cangjie.type.model.*
 object AbstractTypeChecker {
 
     /**
+     * 是否启用仅用于调试/一致性校验的慢断言。
+     * 默认关闭，避免影响正常编译路径性能与行为。
+     */
+    var RUN_SLOW_ASSERTIONS: Boolean = false
+
+    /**
      * 仓颉无弹性类型，超类型遍历时直接将类型转为刚性类型。
      */
     private val RIGID_SUPERTYPES_POLICY = TypeCheckerState.SupertypesPolicy.RigidOnly
@@ -79,6 +85,21 @@ object AbstractTypeChecker {
     ): Boolean {
         if (a === b) return true
         return isSubtypeOf(state, a, b) && isSubtypeOf(state, b, a)
+    }
+
+    /**
+     * 对外暴露与旧调用点兼容的预处理入口。
+     * 仓颉语义下仅执行当前上下文定义的 prepare/refine 流程，不引入额外类型语义。
+     */
+    fun prepareType(
+        context: TypeCheckerProviderContext,
+        type: CangJieTypeMarker,
+    ): CangJieTypeMarker {
+        val state = context.newTypeCheckerState(
+            errorTypesEqualToAnything = false,
+            stubTypesEqualToAnything = false,
+        )
+        return state.refineType(state.prepareType(type))
     }
 
     /**

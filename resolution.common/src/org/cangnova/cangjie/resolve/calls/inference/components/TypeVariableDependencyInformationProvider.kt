@@ -5,10 +5,12 @@
 
 package org.cangnova.cangjie.resolve.calls.inference.components
 
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.resolve.calls.inference.model.VariableWithConstraints
 import org.cangnova.cangjie.resolve.calls.model.CollectionLiteralAtomMarker
 import org.cangnova.cangjie.resolve.calls.model.PostponedResolvedAtomMarker
 import org.cangnova.cangjie.type.model.*
+import org.cangnova.cangjie.utils.SmartSet
 
 class TypeVariableDependencyInformationProvider(
     private val notFixedTypeVariables: Map<TypeConstructorMarker, VariableWithConstraints>,
@@ -57,10 +59,7 @@ class TypeVariableDependencyInformationProvider(
         relatedToCollectionLiteral.contains(variable)
 
     fun isRelatedToOuterTypeVariable(variable: TypeConstructorMarker): Boolean =
-        if (languageVersionSettings.supportsFeature(LanguageFeature.PCLAEnhancementsIn21))
-            relatedToOuterTypeVariables?.contains(variable) == true
-        else
-            oldIsRelatedToOuterTypeVariable(variable)
+        relatedToOuterTypeVariables?.contains(variable) == true
 
     // This one shall be removed together with LV 2.0.
     // The problem with this definition is that it doesn't consider Xv ~ Yv related if one of them is used inside an input type of
@@ -97,10 +96,10 @@ class TypeVariableDependencyInformationProvider(
         }
 
         for (variableWithConstraints in notFixedTypeVariables.values) {
-            val from = variableWithConstraints.typeVariable.freshTypeConstructor(typeSystemContext)
+            val from = with(typeSystemContext) { variableWithConstraints.typeVariable.freshTypeConstructor() }
 
             for (constraint in variableWithConstraints.constraints) {
-                val constraintTypeConstructor = constraint.type.typeConstructor(typeSystemContext)
+                val constraintTypeConstructor = with(typeSystemContext) { constraint.type.typeConstructor() }
 
                 constraint.type.forAllMyTypeVariables {
                     if (isMyTypeVariable(it)) {
@@ -156,7 +155,7 @@ class TypeVariableDependencyInformationProvider(
         for (argument in postponedKtPrimitives) {
             if (argument.analyzed || argument !is CollectionLiteralAtomMarker) continue
             val expectedType = argument.expectedType ?: continue
-            val expectedTypeConstructor = expectedType.typeConstructor(typeSystemContext)
+            val expectedTypeConstructor = with(typeSystemContext) { expectedType.typeConstructor() }
             if (isMyTypeVariable(expectedTypeConstructor)) {
                 addAllRelatedNodes(relatedToCollectionLiteral, expectedTypeConstructor, includePostponedEdges = true)
             }

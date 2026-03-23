@@ -75,14 +75,17 @@ class FlatSignatureComparisonState(
     fun isLessSpecific(specificType: CangJieTypeMarker, generalType: CangJieTypeMarker): Boolean {
         if (specificityComparator.isDefinitelyLessSpecific(specificType, generalType)) {
             return true
-        } else if (typeParameters.isEmpty() || !generalType.dependsOnTypeParameters(cs.context, typeParameters)) {
+        } else if (typeParameters.isEmpty() || with(cs.context) {
+                val parameterConstructors = typeParameters.map { parameter -> parameter.getTypeConstructor() }.toSet()
+                !generalType.contains { it.typeConstructor() in parameterConstructors }
+            }) {
             if (!AbstractTypeChecker.isSubtypeOf(cs.context, specificType, generalType)) {
                 if (!callbacks.isNonSubtypeEquallyOrMoreSpecific(specificType, generalType)) {
                     return true
                 }
             }
         } else {
-            val substitutedGeneralType = typeSubstitutor.safeSubstitute(cs.context, generalType)
+            val substitutedGeneralType = with(cs.context) { typeSubstitutor.safeSubstitute(generalType) }
 
             /**
              * Example:

@@ -25,11 +25,13 @@ interface ConstraintSystemUtilContext {
     fun CangJieTypeMarker.unCapture(): CangJieTypeMarker
     fun TypeVariableMarker.isReified(): Boolean
     fun CangJieTypeMarker.refineType(): CangJieTypeMarker
+    fun CangJieTypeMarker.isBuiltinFunctionType(): Boolean
+    fun CangJieTypeMarker.extractBuiltinFunctionArgumentTypes(): List<CangJieTypeMarker>
+    fun getBuiltinFunctionTypeConstructor(parametersNumber: Int): TypeConstructorMarker
 
     // PostponedArgumentInputTypesResolver
     fun createArgumentConstraintPosition(argument: PostponedAtomWithRevisableExpectedType): ConstraintPosition
 
-    @K1Deprecation
     fun <T> createFixVariableConstraintPosition(variable: TypeVariableMarker, atom: T): FixVariableConstraintPosition<T>
     fun extractLambdaParameterTypesFromDeclaration(declaration: PostponedAtomWithRevisableExpectedType): List<CangJieTypeMarker?>?
     fun PostponedAtomWithRevisableExpectedType.isFunctionExpression(): Boolean

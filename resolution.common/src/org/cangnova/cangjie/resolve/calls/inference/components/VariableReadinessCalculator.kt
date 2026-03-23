@@ -136,8 +136,7 @@ class VariableReadinessCalculator(
         readiness[Q.HAS_PROPER_NON_TRIVIAL_CONSTRAINTS_OTHER_THAN_INCORPORATED_FROM_DECLARED_UPPER_BOUND] =
             !hasOnlyIncorporatedConstraintsFromDeclaredUpperBound()
 
-        readiness[Q.HAS_PROPER_FLEXIBLE_LOWER_CONSTRAINT] = constraints
-            .any { it.kind.isLower() && it.isProperArgumentConstraint() && it.type.isFlexible() }
+        readiness[Q.HAS_PROPER_FLEXIBLE_LOWER_CONSTRAINT] = false
 
         val (_, hasProperNonIltConstraint) = computeIltConstraintsRelatedFlags()
         readiness[Q.HAS_PROPER_NON_ILT_CONSTRAINT] = hasProperNonIltConstraint
