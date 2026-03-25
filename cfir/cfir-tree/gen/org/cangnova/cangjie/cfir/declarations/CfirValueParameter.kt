@@ -8,7 +8,8 @@ package org.cangnova.cangjie.cfir.declarations
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
+import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -18,14 +19,17 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.valueParameter]
  */
-abstract class CfirValueParameter : CfirCallableDeclaration() {
+abstract class CfirValueParameter : CfirVariable(), CfirControlFlowGraphOwner {
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>
-    abstract override val symbol: CfirSymbol<*>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
-    abstract val status: CfirDeclarationStatus
+    abstract override val initializer: CfirExpression?
+    abstract override val isVar: Boolean
+    abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
+    abstract override val symbol: CfirValueParameterSymbol
+    abstract override val status: CfirDeclarationStatus
     abstract val typeParameters: List<CfirTypeParameter>
     abstract val returnTypeRef: CfirTypeRef
     abstract val name: Name
@@ -41,7 +45,10 @@ abstract class CfirValueParameter : CfirCallableDeclaration() {
     override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
 
-    abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
+    override abstract fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
+
+
+    override abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
 
 
     abstract fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
@@ -50,7 +57,10 @@ abstract class CfirValueParameter : CfirCallableDeclaration() {
     override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirValueParameter
 
 
-    abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirValueParameter
+    override abstract fun <D> transformInitializer(transformer: CfirTransformer<D>, data: D): CfirValueParameter
+
+
+    override abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirValueParameter
 
 
     abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirValueParameter

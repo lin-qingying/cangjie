@@ -124,7 +124,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== 类/接口/结构体/枚举 =====
 
-    private fun convertClass(node: LighterASTNode, classKind: CfirClassKind): CfirClass {
+    private fun convertClass(node: LighterASTNode, classKind: CfirClassKind): CfirDeclaration {
         val name = extractName(node)
         val modifiers = LightTreeModifierList.from(tree, node)
         val typeParams = extractTypeParameters(node)
@@ -145,19 +145,63 @@ class LightTreeRawCfirDeclarationBuilder(
             }
         }
 
-        return buildSourceDeclaration(CfirClassSymbol()) { symbol ->
-            buildClass {
-                source = node.toSource()
-                this.symbol = symbol
-                origin = CfirDeclarationOrigin.Source
-                moduleData = baseModuleData
-                attributes = CfirDeclarationAttributes.EMPTY
-                status = modifiers.toDeclarationStatus(context.inLocalContext)
-                this.typeParameters.addAll(typeParams)
-                this.superTypeRefs.addAll(superTypes)
-                this.declarations.addAll(classDeclarations)
-                this.name = name
-                this.classKind = classKind
+        return when (classKind) {
+            CfirClassKind.CLASS -> buildSourceDeclaration(CfirClassSymbol()) { symbol ->
+                buildClass {
+                    source = node.toSource()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    status = modifiers.toDeclarationStatus(context.inLocalContext)
+                    this.typeParameters.addAll(typeParams)
+                    this.superTypeRefs.addAll(superTypes)
+                    this.declarations.addAll(classDeclarations)
+                    this.name = name
+                }
+            }
+            CfirClassKind.INTERFACE -> buildSourceDeclaration(CfirInterfaceSymbol()) { symbol ->
+                buildInterface {
+                    source = node.toSource()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    status = modifiers.toDeclarationStatus(context.inLocalContext)
+                    this.typeParameters.addAll(typeParams)
+                    this.superTypeRefs.addAll(superTypes)
+                    this.declarations.addAll(classDeclarations)
+                    this.name = name
+                }
+            }
+            CfirClassKind.STRUCT -> buildSourceDeclaration(CfirStructSymbol()) { symbol ->
+                buildStruct {
+                    source = node.toSource()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    status = modifiers.toDeclarationStatus(context.inLocalContext)
+                    this.typeParameters.addAll(typeParams)
+                    this.superTypeRefs.addAll(superTypes)
+                    this.declarations.addAll(classDeclarations)
+                    this.name = name
+                }
+            }
+            CfirClassKind.ENUM -> buildSourceDeclaration(CfirEnumSymbol()) { symbol ->
+                buildEnum {
+                    source = node.toSource()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    status = modifiers.toDeclarationStatus(context.inLocalContext)
+                    this.typeParameters.addAll(typeParams)
+                    this.superTypeRefs.addAll(superTypes)
+                    this.declarations.addAll(classDeclarations)
+                    this.name = name
+                    this.isRefEnum = false
+                }
             }
         }
     }
@@ -234,8 +278,8 @@ class LightTreeRawCfirDeclarationBuilder(
         val valueParams = extractValueParameters(node)
         val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractBody(node)
 
-        return buildSourceDeclaration(CfirFunctionSymbol(callableIdFor(name))) { symbol ->
-            buildFunction {
+        return buildSourceDeclaration(CfirNamedFunctionSymbol(callableIdFor(name))) { symbol ->
+            buildNamedFunction {
                 source = node.toSource()
                 this.symbol = symbol
                 origin = CfirDeclarationOrigin.Source

@@ -13,7 +13,7 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPropertyImpl
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
@@ -23,9 +23,9 @@ class CfirPropertyBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    lateinit var symbol: CfirSymbol<*>
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
+    lateinit var symbol: CfirPropertySymbol
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
@@ -39,9 +39,9 @@ class CfirPropertyBuilder {
             source,
             moduleData,
             annotations,
-            symbol,
             origin,
             attributes,
+            symbol,
             status,
             typeParameters,
             returnTypeRef,
@@ -72,7 +72,6 @@ inline fun buildPropertyCopy(original: CfirProperty, init: CfirPropertyBuilder.(
     copyBuilder.source = original.source
     copyBuilder.moduleData = original.moduleData
     copyBuilder.annotations.addAll(original.annotations)
-    copyBuilder.symbol = original.symbol
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes
     copyBuilder.status = original.status

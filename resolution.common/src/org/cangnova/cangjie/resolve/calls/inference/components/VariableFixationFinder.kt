@@ -55,7 +55,6 @@ class VariableFixationFinder(
          */
         val typeVariablesThatAreCountedAsProperTypes: Set<TypeConstructorMarker>?
 
-        fun isReified(variable: TypeVariableMarker): Boolean
     }
 
     class VariableForFixation(
@@ -287,9 +286,6 @@ abstract class AbstractVariableReadinessCalculator<Readiness : Comparable<Readin
         return true
     }
 
-    context(c: Context)
-    protected fun TypeConstructorMarker.isReified(): Boolean =
-        c.notFixedTypeVariables[this]?.typeVariable?.let { c.isReified(it) } ?: false
 
     context(c: Context)
     private fun Constraint.isProperSelfTypeConstraint(ownerTypeVariable: TypeConstructorMarker): Boolean {

@@ -31,7 +31,6 @@ class CfirClassBuilder {
     val superTypeRefs: MutableList<CfirTypeRef> = mutableListOf()
     val declarations: MutableList<CfirDeclaration> = mutableListOf()
     lateinit var name: Name
-    lateinit var classKind: CfirClassKind
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirClass {
@@ -47,7 +46,6 @@ class CfirClassBuilder {
             superTypeRefs,
             declarations,
             name,
-            classKind,
         ).also {
             it.initDefaultResolveState()
         }
@@ -76,10 +74,8 @@ inline fun buildClassCopy(original: CfirClass, init: CfirClassBuilder.() -> Unit
     copyBuilder.attributes = original.attributes
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
-    copyBuilder.symbol = original.symbol
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)
     copyBuilder.declarations.addAll(original.declarations)
     copyBuilder.name = original.name
-    copyBuilder.classKind = original.classKind
     return copyBuilder.apply(init).build()
 }

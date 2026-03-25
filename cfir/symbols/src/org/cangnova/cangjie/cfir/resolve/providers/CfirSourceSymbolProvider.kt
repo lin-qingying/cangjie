@@ -2,15 +2,20 @@ package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.nameConflictsTracker
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
 import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
 import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
@@ -23,6 +28,7 @@ import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
@@ -30,6 +36,9 @@ import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -73,9 +82,9 @@ class CfirProviderImpl(
     override fun getCfirFilesByPackage(fqName: FqName): List<CfirFile> =
         state.fileMap[fqName].orEmpty()
 
-    override fun getClassByClassId(classId: ClassId): CfirClass? {
+    override fun getClassByClassId(classId: ClassId): CfirClassLikeDeclaration? {
         val symbol = state.classifierMap[classId] ?: return null
-        return if (symbol.isBound) symbol.cfir else null
+        return if (symbol.isBound) symbol.cfir as? CfirClassLikeDeclaration else null
     }
 
     override fun getClassIdBySymbol(classSymbol: CfirClassSymbol): ClassId? =
@@ -98,7 +107,7 @@ class CfirProviderImpl(
                 state.callableNamesInPackage[packageFqName].orEmpty()
         }
 
-        override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassSymbol? =
+        override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
             state.classifierMap[classId]
 
         override fun getClassIdBySymbol(classSymbol: CfirClassSymbol): ClassId? =
@@ -110,7 +119,7 @@ class CfirProviderImpl(
         override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> =
             state.callableMap[CallableId(packageFqName, name)].orEmpty()
 
-        override fun getTopLevelFunctionSymbols(packageFqName: FqName, name: Name): List<CfirFunctionSymbol> =
+        override fun getTopLevelFunctionSymbols(packageFqName: FqName, name: Name): List<CfirFunctionSymbol<*>> =
             state.functionMap[CallableId(packageFqName, name)].orEmpty()
 
         override fun getTopLevelPropertySymbols(packageFqName: FqName, name: Name): List<CfirPropertySymbol> =
@@ -137,25 +146,89 @@ class CfirProviderImpl(
         isTopLevel: Boolean,
     ) {
         when (declaration) {
+            // ---- 具名分类器类型 ----
+
             is CfirClass -> {
                 val classId = computeClassId(packageFqName, declaration.name, containingClass)
-                val classSymbol = declaration.symbol as? CfirClassSymbol
                 recordClassLikeClassifier(
-                    symbol = classSymbol,
+                    symbol = declaration.symbol as? CfirClassSymbol,
                     packageFqName = packageFqName,
                     shortName = declaration.name,
                     containingClass = containingClass,
                     containingFile = containingFile,
                     isTopLevel = isTopLevel,
                 )
+                for (nested in declaration.declarations) {
+                    recordDeclaration(
+                        declaration = nested,
+                        packageFqName = packageFqName,
+                        containingClass = classId,
+                        containingFile = containingFile,
+                        isTopLevel = false,
+                    )
+                }
+            }
 
-                if (declaration.classKind == org.cangnova.cangjie.cfir.declarations.CfirClassKind.ENUM && isTopLevel) {
+            is CfirInterface -> {
+                val classId = computeClassId(packageFqName, declaration.name, containingClass)
+                recordClassLikeClassifier(
+                    symbol = declaration.symbol as? CfirInterfaceSymbol,
+                    packageFqName = packageFqName,
+                    shortName = declaration.name,
+                    containingClass = containingClass,
+                    containingFile = containingFile,
+                    isTopLevel = isTopLevel,
+                )
+                // 接口成员只有 property 和 function，分别遍历
+                for (nested in declaration.properties + declaration.functions) {
+                    recordDeclaration(
+                        declaration = nested,
+                        packageFqName = packageFqName,
+                        containingClass = classId,
+                        containingFile = containingFile,
+                        isTopLevel = false,
+                    )
+                }
+            }
+
+            is CfirStruct -> {
+                val classId = computeClassId(packageFqName, declaration.name, containingClass)
+                recordClassLikeClassifier(
+                    symbol = declaration.symbol as? CfirStructSymbol,
+                    packageFqName = packageFqName,
+                    shortName = declaration.name,
+                    containingClass = containingClass,
+                    containingFile = containingFile,
+                    isTopLevel = isTopLevel,
+                )
+                for (nested in declaration.declarations) {
+                    recordDeclaration(
+                        declaration = nested,
+                        packageFqName = packageFqName,
+                        containingClass = classId,
+                        containingFile = containingFile,
+                        isTopLevel = false,
+                    )
+                }
+            }
+
+            is CfirEnum -> {
+                val classId = computeClassId(packageFqName, declaration.name, containingClass)
+                recordClassLikeClassifier(
+                    symbol = declaration.symbol as? CfirEnumSymbol,
+                    packageFqName = packageFqName,
+                    shortName = declaration.name,
+                    containingClass = containingClass,
+                    containingFile = containingFile,
+                    isTopLevel = isTopLevel,
+                )
+                // 顶层枚举需要额外注册其构造器（枚举构造器在包级别可见）
+                if (isTopLevel) {
                     recordTopLevelEnumConstructors(
                         declaration = declaration,
                         ownerClassId = classId,
                     )
                 }
-
                 for (nested in declaration.declarations) {
                     recordDeclaration(
                         declaration = nested,
@@ -170,17 +243,22 @@ class CfirProviderImpl(
             is CfirTypeAlias -> {
                 val classId = computeClassId(packageFqName, declaration.name, containingClass)
                 if (isTopLevel) {
-                    state.classifierInPackage.getOrPut(packageFqName, ::mutableSetOf).add(classId.shortClassName)
+                    state.classifierInPackage
+                        .getOrPut(packageFqName, ::mutableSetOf)
+                        .add(classId.shortClassName)
                 }
             }
 
+            // ---- 可调用声明（仅顶层注册）----
+
             is CfirFunction -> {
                 if (!isTopLevel) return
-                val symbol = declaration.symbol as? CfirFunctionSymbol ?: return
-                val callableId = CallableId(packageFqName, declaration.name)
+                val symbol = declaration.symbol as? CfirFunctionSymbol<*> ?: return
+                val callableName = declaration.callableNameOrNull() ?: return
+                val callableId = CallableId(packageFqName, callableName)
                 state.functionMap.getOrPut(callableId, ::mutableListOf).add(symbol)
                 state.callableMap.getOrPut(callableId, ::mutableListOf).add(symbol)
-                state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(declaration.name)
+                state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(callableName)
             }
 
             is CfirProperty -> {
@@ -195,8 +273,7 @@ class CfirProviderImpl(
             is CfirPatternVariable -> {
                 if (!isTopLevel) return
                 val symbol = declaration.symbol as? CfirPatternVariableSymbol ?: return
-                val bindingNames = collectBindingNames(declaration.pattern)
-                for (name in bindingNames) {
+                for (name in collectBindingNames(declaration.pattern)) {
                     val callableId = CallableId(packageFqName, name)
                     state.callableMap.getOrPut(callableId, ::mutableListOf).add(symbol)
                     state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(name)
@@ -224,7 +301,7 @@ class CfirProviderImpl(
     }
 
     private fun recordClassLikeClassifier(
-        symbol: CfirClassSymbol?,
+        symbol: CfirClassLikeSymbol<*>?,
         packageFqName: FqName,
         shortName: Name,
         containingClass: ClassId?,
@@ -282,7 +359,7 @@ class CfirProviderImpl(
     }
 
     private fun recordTopLevelEnumConstructors(
-        declaration: CfirClass,
+        declaration: CfirEnum,
         ownerClassId: ClassId,
     ) {
         declaration.declarations.asSequence()
@@ -301,15 +378,15 @@ class CfirProviderImpl(
         val fileMap: MutableMap<FqName, MutableList<CfirFile>> = hashMapOf()
         val allSubPackages: MutableSet<FqName> = hashSetOf()
 
-        val classifierMap: MutableMap<ClassId, CfirClassSymbol> = hashMapOf()
-        val classIdBySymbol: MutableMap<CfirClassSymbol, ClassId> = hashMapOf()
+        val classifierMap: MutableMap<ClassId, CfirClassLikeSymbol<*>> = hashMapOf()
+        val classIdBySymbol: MutableMap<CfirClassLikeSymbol<*>, ClassId> = hashMapOf()
         val classifierContainerFileMap: MutableMap<ClassId, CfirFile> = hashMapOf()
         val classifierInPackage: MutableMap<FqName, MutableSet<Name>> = hashMapOf()
         val classesInPackage: MutableMap<FqName, MutableSet<Name>> = hashMapOf()
         val enumConstructorOwnerClassIdMap: MutableMap<CfirEnumConstructorSymbol, ClassId> = hashMapOf()
 
         val callableMap: MutableMap<CallableId, MutableList<CfirCallableSymbol<*>>> = hashMapOf()
-        val functionMap: MutableMap<CallableId, MutableList<CfirFunctionSymbol>> = hashMapOf()
+        val functionMap: MutableMap<CallableId, MutableList<CfirFunctionSymbol<*>>> = hashMapOf()
         val propertyMap: MutableMap<CallableId, MutableList<CfirPropertySymbol>> = hashMapOf()
         val callableNamesInPackage: MutableMap<FqName, MutableSet<Name>> = hashMapOf()
     }

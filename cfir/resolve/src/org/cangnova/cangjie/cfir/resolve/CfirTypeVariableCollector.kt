@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve
 
-import org.cangnova.cangjie.cfir.types.ConeArrayType
+import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
@@ -11,13 +11,14 @@ import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
-import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.types.ConeTypeProjection
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.ConeUnionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 
 internal fun ConeCangJieType.collectTypeVariableNames(result: MutableSet<String>) {
     when (this) {
-        is ConeTypeParameterType -> result += lookupTag.name
+        is ConeTypeParameterType -> result += lookupTag.name.asString()
         is ConeClassLikeType -> typeArguments.forEach { it.collectTypeVariableNames(result) }
         is ConeStructType -> typeArguments.forEach { it.collectTypeVariableNames(result) }
         is ConeEnumType -> typeArguments.forEach { it.collectTypeVariableNames(result) }
@@ -26,7 +27,6 @@ internal fun ConeCangJieType.collectTypeVariableNames(result: MutableSet<String>
             returnType.collectTypeVariableNames(result)
         }
         is ConeTupleType -> elementTypes.forEach { it.collectTypeVariableNames(result) }
-        is ConeArrayType -> elementType.collectTypeVariableNames(result)
         is ConeVArrayType -> elementType.collectTypeVariableNames(result)
         is ConePointerType -> pointeeType.collectTypeVariableNames(result)
         is ConeTypeAliasType -> {
@@ -35,7 +35,10 @@ internal fun ConeCangJieType.collectTypeVariableNames(result: MutableSet<String>
         }
         is ConeIntersectionType -> intersectedTypes.forEach { it.collectTypeVariableNames(result) }
         is ConeUnionType -> unionTypes.forEach { it.collectTypeVariableNames(result) }
-
-        else -> Unit
+        else -> arrayElementType?.collectTypeVariableNames(result)
     }
+}
+
+private fun ConeTypeProjection.collectTypeVariableNames(result: MutableSet<String>) {
+    type.collectTypeVariableNames(result)
 }

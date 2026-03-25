@@ -31,7 +31,6 @@ class CfirClassImpl @CfirImplementationDetail constructor(
     override var superTypeRefs: List<CfirTypeRef>,
     override var declarations: List<CfirDeclaration>,
     override val name: Name,
-    override val classKind: CfirClassKind,
 ) : CfirClass() {
     override var controlFlowGraphReference: CfirControlFlowGraphReference? = null
 

@@ -11,5 +11,11 @@
  */
 class CfirDataFlowAnalyzerContext {
     // Phase 2: 仅提供骨架，暂不承载实际状态
+
+    fun reset() {
+        // The Kotlin architecture expects the body context to be able to clear
+        // data-flow state between nested resolution runs. The concrete state
+        // will be filled in later, so reset is currently a structural no-op.
+    }
 }
 

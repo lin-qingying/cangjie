@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultTransformer
+import org.cangnova.cangjie.cfir.withFileAnalysisExceptionWrapping
 
 abstract class CfirAbstractPhaseTransformer<D>(
     val baseTransformerPhase: CfirResolvePhase,
@@ -27,8 +28,11 @@ abstract class CfirAbstractPhaseTransformer<D>(
 
     override fun transformFile(file: CfirFile, data: D): CfirFile {
         checkSessionConsistency(file)
-        return super.transformFile(file, data) as CfirFile
+        return withFileAnalysisExceptionWrapping(file) {
+            super.transformFile(file, data)
+        }
     }
+
 
     protected fun checkSessionConsistency(file: CfirFile) {
         require(session.moduleData == file.moduleData) {

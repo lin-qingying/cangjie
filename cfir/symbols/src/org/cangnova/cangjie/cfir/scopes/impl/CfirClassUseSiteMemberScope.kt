@@ -2,18 +2,21 @@ package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeStructType
+import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -25,7 +28,7 @@ import org.cangnova.cangjie.name.Name
  * 继承 [CfirTypeScope] 以支持 override 追踪（对标 K2 FirClassUseSiteMemberScope）。
  */
 class CfirClassUseSiteMemberScope(
-    private val classSymbol: CfirClassSymbol,
+    private val classSymbol: CfirClassLikeSymbol<*>,
     private val symbolProvider: CfirSymbolProvider,
 ) : CfirTypeScope() {
 
@@ -37,7 +40,7 @@ class CfirClassUseSiteMemberScope(
         // 收集本类和父类中的所有 callable 名称
         for (decl in classSymbol.cfir.declarations) {
             when (decl) {
-                is org.cangnova.cangjie.cfir.declarations.CfirFunction -> names += decl.name
+                is CfirFunction -> decl.callableNameOrNull()?.let(names::add)
                 is org.cangnova.cangjie.cfir.declarations.CfirProperty -> names += decl.name
                 is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> names += decl.name
                 else -> {}
@@ -55,12 +58,12 @@ class CfirClassUseSiteMemberScope(
     }
 
     override fun processDirectOverriddenFunctionsWithBaseScope(
-        functionSymbol: CfirFunctionSymbol,
-        processor: (CfirFunctionSymbol, CfirTypeScope) -> ProcessorAction,
+        functionSymbol: CfirFunctionSymbol<*>,
+        processor: (CfirFunctionSymbol<*>, CfirTypeScope) -> ProcessorAction,
     ): ProcessorAction {
         // 在父类 scope 中查找同名函数作为被 override 的候选
         for (parent in parentScopes) {
-            val candidates = mutableListOf<CfirFunctionSymbol>()
+            val candidates = mutableListOf<CfirFunctionSymbol<*>>()
             parent.processFunctionsByName(functionSymbol.name) { candidates += it }
             for (candidate in candidates) {
                 if (processor(candidate, this) == ProcessorAction.STOP) {
@@ -92,8 +95,8 @@ class CfirClassUseSiteMemberScope(
         newScopeSession: ScopeSession,
     ): CfirTypeScope? = null
 
-    override fun processClassifiersByName(name: Name, processor: (CfirClassSymbol) -> Unit) {
-        val found = mutableListOf<CfirClassSymbol>()
+    override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
+        val found = mutableListOf<CfirClassLikeSymbol<*>>()
         declaredScope.processClassifiersByName(name) { found += it }
         if (found.isNotEmpty()) {
             found.forEach(processor)
@@ -104,7 +107,7 @@ class CfirClassUseSiteMemberScope(
         }
     }
 
-    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol) -> Unit) {
+    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol<*>) -> Unit) {
         // 函数不遮蔽：本类和父类均可能有同名重载
         declaredScope.processFunctionsByName(name, processor)
         for (parent in parentScopes) {
@@ -136,11 +139,11 @@ class CfirClassUseSiteMemberScope(
     }
 
     private fun buildParentScopesRecursive(
-        symbol: CfirClassSymbol,
+        symbol: CfirClassLikeSymbol<*>,
         depth: Int,
     ): List<CfirClassDeclaredMemberScope> {
         if (depth >= MAX_DEPTH) return emptyList()
-        val klass = symbol.cfir
+        val klass = symbol.cfir as CfirClassLikeDeclaration
         val result = mutableListOf<CfirClassDeclaredMemberScope>()
 
         for (superTypeRef in klass.superTypeRefs) {

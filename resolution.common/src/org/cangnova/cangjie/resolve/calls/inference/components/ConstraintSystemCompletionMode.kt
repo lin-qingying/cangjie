@@ -52,7 +52,12 @@ enum class ConstraintSystemCompletionMode(
         shouldForkPointConstraintsBeResolved = true,
         fixNotInferredTypeVariablesToErrorType = true,
     ),
-
+    PCLA_POSTPONED_CALL(
+        allPostponedAtomsShouldBeAnalyzed = false,
+        allLambdasShouldBeAnalyzed = true,
+        shouldForkPointConstraintsBeResolved = false,
+        fixNotInferredTypeVariablesToErrorType = false,
+    ),
     /**
      * 部分完成模式
      *

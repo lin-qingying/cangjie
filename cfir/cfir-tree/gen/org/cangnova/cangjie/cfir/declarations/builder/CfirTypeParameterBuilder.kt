@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
@@ -23,9 +24,10 @@ class CfirTypeParameterBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    lateinit var symbol: CfirSymbol<*>
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
+    lateinit var containingDeclarationSymbol: CfirSymbol<*>
+    lateinit var symbol: CfirTypeParameterSymbol
     lateinit var name: Name
     val bounds: MutableList<CfirTypeRef> = mutableListOf()
 
@@ -35,9 +37,10 @@ class CfirTypeParameterBuilder {
             source,
             moduleData,
             annotations,
-            symbol,
             origin,
             attributes,
+            containingDeclarationSymbol,
+            symbol,
             name,
             bounds,
         ).also {
@@ -64,9 +67,9 @@ inline fun buildTypeParameterCopy(original: CfirTypeParameter, init: CfirTypePar
     copyBuilder.source = original.source
     copyBuilder.moduleData = original.moduleData
     copyBuilder.annotations.addAll(original.annotations)
-    copyBuilder.symbol = original.symbol
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes
+    copyBuilder.containingDeclarationSymbol = original.containingDeclarationSymbol
     copyBuilder.name = original.name
     copyBuilder.bounds.addAll(original.bounds)
     return copyBuilder.apply(init).build()

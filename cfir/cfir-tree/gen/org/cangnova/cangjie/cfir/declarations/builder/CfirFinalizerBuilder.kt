@@ -14,7 +14,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirFinalizerImpl
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFinalizerSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -23,7 +23,6 @@ class CfirFinalizerBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    lateinit var symbol: CfirSymbol<*>
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
     lateinit var status: CfirDeclarationStatus
@@ -31,6 +30,7 @@ class CfirFinalizerBuilder {
     lateinit var returnTypeRef: CfirTypeRef
     val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
     var body: CfirBlock? = null
+    lateinit var symbol: CfirFinalizerSymbol
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirFinalizer {
@@ -38,7 +38,6 @@ class CfirFinalizerBuilder {
             source,
             moduleData,
             annotations,
-            symbol,
             origin,
             attributes,
             status,
@@ -46,6 +45,7 @@ class CfirFinalizerBuilder {
             returnTypeRef,
             valueParameters,
             body,
+            symbol,
         ).also {
             it.initDefaultResolveState()
         }
@@ -70,7 +70,6 @@ inline fun buildFinalizerCopy(original: CfirFinalizer, init: CfirFinalizerBuilde
     copyBuilder.source = original.source
     copyBuilder.moduleData = original.moduleData
     copyBuilder.annotations.addAll(original.annotations)
-    copyBuilder.symbol = original.symbol
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes
     copyBuilder.status = original.status

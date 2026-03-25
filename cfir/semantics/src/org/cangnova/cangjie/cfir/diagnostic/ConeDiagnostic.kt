@@ -4,13 +4,14 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
-import org.cangnova.cangjie.cfir.semantics.CandidateApplicability
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
+import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 
 
 /**
@@ -58,6 +59,18 @@ class ConeInapplicableCandidateError(
     override val reason: String get() = "Inapplicable($applicability): ${describeSymbol(candidateSymbol)}"
 }
 
+class ConeHiddenCandidateError(
+    override val candidate: AbstractCallCandidate<*>,
+) : ConeDiagnosticWithSingleCandidate {
+    override val reason: String get() = "Hidden candidate: ${describeSymbol(candidateSymbol)}"
+}
+
+class ConeVisibilityError(
+    val symbol: CfirSymbol<*>,
+) : ConeDiagnostic {
+    override val reason: String get() = "Cannot access: ${describeSymbol(symbol)}"
+}
+
 data class ConeUnresolvedNameError(
     val name: Name,
     val operator: String? = null,
@@ -75,6 +88,40 @@ data class ConeUnresolvedNameError(
             append(receiverType)
         }
     }
+}
+
+// 函数调用期望错误：一个变量被当作函数调用，但实际是变量访问
+data class ConeFunctionCallExpectedError(
+    val name: Name,
+    val hasValueParameters: Boolean,
+    override val candidates: Collection<AbstractCallCandidate<*>>,
+) : ConeDiagnosticWithCandidates {
+    override val reason: String
+        get() = "Function call expected: $name(${if (hasValueParameters) "..." else ""})"
+}
+
+// 函数期望错误：某个表达式不是函数类型，但被当作函数调用
+data class ConeFunctionExpectedError(
+    val expressionName: String,
+    val type: ConeCangJieType,
+) : ConeDiagnostic {
+    override val reason: String = "Expression '$expressionName' of type '$type' cannot be invoked as a function"
+}
+
+// 解析到分类器（类/接口等）的错误
+data class ConeResolutionToClassifierError(
+    override val candidate: AbstractCallCandidate<*>,
+    val classifier: CfirClassLikeSymbol<*>,
+) : ConeDiagnosticWithSingleCandidate {
+    override val reason: String = "Resolution to classifier: ${describeSymbol(classifier)}"
+}
+
+object ConeNoConstructorError : ConeDiagnostic {
+    override val reason: String = "No constructor found"
+}
+
+object ConeNoImplicitDefaultConstructorOnExpectClass : ConeDiagnostic {
+    override val reason: String = "No implicit default constructor on expect-like declaration"
 }
 
 private fun describeSymbol(symbol: CfirSymbol<*>): String {
@@ -103,20 +150,16 @@ class ConeCannotInferTypeParameterType(
 
 abstract class ConeCannotInferType : ConeDiagnostic
 
-class ConeSimpleDiagnostic(override val reason: String, val kind: DiagnosticKind = DiagnosticKind.Other) :
-    ConeDiagnostic
-
-/**
- * 诊断分类，对齐 K2 `DiagnosticKind`。
- */
-enum class DiagnosticKind {
-    IllegalConstExpression,
-    DeserializationError,
-    InferenceError,
-    RecursionInImplicitTypes,
-    ReturnNotAllowed,
-    UnresolvedSupertype,
-    CannotInferParameterType,
-    EnumInitializerError,
-    Other,
+class ConeCannotInferValueParameterType(
+    val valueParameter: CfirValueParameterSymbol?,
+    reason: String? = null,
+    val isTopLevelLambda: Boolean = false,
+) : ConeCannotInferType() {
+    private val _reason: String? = reason
+    override val reason: String
+        get() = _reason
+            ?: ("Cannot infer type for parameter " + (valueParameter?.let { "${it.name}" } ?: "it"))
 }
+
+
+

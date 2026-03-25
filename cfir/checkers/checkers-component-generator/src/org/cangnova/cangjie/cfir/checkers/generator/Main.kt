@@ -36,7 +36,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirJumpExpression
-import org.cangnova.cangjie.cfir.expressions.CfirLambdaExpression
+import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
 import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
@@ -120,7 +120,7 @@ fun main(args: Array<String>) {
                     visitAlso<CfirCatch>(it)
                     visitAlso<CfirLoopExpression>(it)
                     visitAlso<CfirForInExpression>(it)
-                    visitAlso<CfirLambdaExpression>(it)
+                    visitAlso<CfirAnonymousFunctionExpression>(it)
                     visitAlso<CfirArrayLiteral>(it)
                     visitAlso<CfirTupleLiteral>(it)
                     visitAlso<CfirSpawnExpression>(it)

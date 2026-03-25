@@ -12,7 +12,7 @@ import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
-import org.cangnova.cangjie.utils.exceptions.withFirEntry
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 /*
  * 本文件由生成器自动生成
@@ -83,7 +83,7 @@ class CfirTypeCheckersDiagnosticComponent(
                 }
             } catch (e: Exception) {
                 rethrowExceptionWithDetails("Exception in type checkers", e) {
-                    withFirEntry("element", element)
+                    withCfirEntry("element", element)
                     context.containingFilePath?.let { withEntry("file", it) }
                 }
             }

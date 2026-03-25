@@ -26,6 +26,7 @@ class CfirFunctionCallBuilder {
     var coneTypeOrNull: ConeCangJieType? = null
     lateinit var calleeReference: CfirReference
     var explicitReceiver: CfirExpression? = null
+    var dispatchReceiver: CfirExpression? = null
     val arguments: MutableList<CfirExpression> = mutableListOf()
     val typeArguments: MutableList<CfirTypeRef> = mutableListOf()
 
@@ -37,6 +38,7 @@ class CfirFunctionCallBuilder {
             coneTypeOrNull,
             calleeReference,
             explicitReceiver,
+            dispatchReceiver,
             arguments,
             typeArguments,
         )
@@ -63,6 +65,7 @@ inline fun buildFunctionCallCopy(original: CfirFunctionCall, init: CfirFunctionC
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.calleeReference = original.calleeReference
     copyBuilder.explicitReceiver = original.explicitReceiver
+    copyBuilder.dispatchReceiver = original.dispatchReceiver
     copyBuilder.arguments.addAll(original.arguments)
     copyBuilder.typeArguments.addAll(original.typeArguments)
     return copyBuilder.apply(init).build()

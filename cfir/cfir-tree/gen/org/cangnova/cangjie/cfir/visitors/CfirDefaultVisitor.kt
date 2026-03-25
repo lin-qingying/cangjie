@@ -8,10 +8,7 @@ package org.cangnova.cangjie.cfir.visitors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.*
-import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
-import org.cangnova.cangjie.cfir.references.CfirErrorReference
-import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.*
 import org.cangnova.cangjie.cfir.types.*
 
 /**
@@ -35,7 +32,7 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
         visitCallableDeclaration(enumConstructor, data)
 
     override fun visitExtend(extend: CfirExtend, data: D): R =
-        visitClassLikeDeclaration(extend, data)
+        visitMemberDeclaration(extend, data)
 
     override fun visitTypeAlias(typeAlias: CfirTypeAlias, data: D): R =
         visitClassLikeDeclaration(typeAlias, data)
@@ -43,17 +40,20 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitFunction(function: CfirFunction, data: D): R =
         visitCallableDeclaration(function, data)
 
+    override fun visitNamedFunction(namedFunction: CfirNamedFunction, data: D): R =
+        visitFunction(namedFunction, data)
+
     override fun visitMainFunction(mainFunction: CfirMainFunction, data: D): R =
-        visitCallableDeclaration(mainFunction, data)
+        visitFunction(mainFunction, data)
 
     override fun visitMacroDeclaration(macroDeclaration: CfirMacroDeclaration, data: D): R =
-        visitCallableDeclaration(macroDeclaration, data)
+        visitFunction(macroDeclaration, data)
 
     override fun visitFinalizer(finalizer: CfirFinalizer, data: D): R =
-        visitCallableDeclaration(finalizer, data)
+        visitFunction(finalizer, data)
 
     override fun visitConstructor(constructor: CfirConstructor, data: D): R =
-        visitCallableDeclaration(constructor, data)
+        visitFunction(constructor, data)
 
     override fun visitInvalidDeclaration(invalidDeclaration: CfirInvalidDeclaration, data: D): R =
         visitDeclaration(invalidDeclaration, data)
@@ -69,9 +69,6 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitPatternVariable(patternVariable: CfirPatternVariable, data: D): R =
         visitVariable(patternVariable, data)
-
-    override fun visitValueParameter(valueParameter: CfirValueParameter, data: D): R =
-        visitCallableDeclaration(valueParameter, data)
 
     override fun visitTypeParameter(typeParameter: CfirTypeParameter, data: D): R =
         visitDeclaration(typeParameter, data)
@@ -93,6 +90,12 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitStringInterpolation(stringInterpolation: CfirStringInterpolation, data: D): R =
         visitExpression(stringInterpolation, data)
+
+    override fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase, data: D): R =
+        visitNamedReference(namedReferenceWithCandidateBase, data)
+
+    override fun visitThisReference(thisReference: CfirThisReference, data: D): R =
+        visitReference(thisReference, data)
 
     override fun visitAssignment(assignment: CfirAssignment, data: D): R =
         visitExpression(assignment, data)
@@ -142,8 +145,11 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitJumpExpression(jumpExpression: CfirJumpExpression, data: D): R =
         visitExpression(jumpExpression, data)
 
-    override fun visitLambdaExpression(lambdaExpression: CfirLambdaExpression, data: D): R =
-        visitExpression(lambdaExpression, data)
+    override fun visitAnonymousFunction(anonymousFunction: CfirAnonymousFunction, data: D): R =
+        visitFunction(anonymousFunction, data)
+
+    override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression, data: D): R =
+        visitExpression(anonymousFunctionExpression, data)
 
     override fun visitRangeExpression(rangeExpression: CfirRangeExpression, data: D): R =
         visitExpression(rangeExpression, data)
@@ -171,9 +177,6 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitSubscriptExpression(subscriptExpression: CfirSubscriptExpression, data: D): R =
         visitExpression(subscriptExpression, data)
-
-    override fun visitErrorExpression(errorExpression: CfirErrorExpression, data: D): R =
-        visitExpression(errorExpression, data)
 
     override fun visitConstPattern(constPattern: CfirConstPattern, data: D): R =
         visitPattern(constPattern, data)
@@ -214,9 +217,6 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitVArrayTypeRef(vArrayTypeRef: CfirVArrayTypeRef, data: D): R =
         visitTypeRef(vArrayTypeRef, data)
 
-    override fun visitErrorTypeRef(errorTypeRef: CfirErrorTypeRef, data: D): R =
-        visitTypeRef(errorTypeRef, data)
-
     override fun visitControlFlowGraphReference(controlFlowGraphReference: CfirControlFlowGraphReference, data: D): R =
         visitReference(controlFlowGraphReference, data)
 
@@ -224,7 +224,7 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
         visitReference(namedReference, data)
 
     override fun visitResolvedNamedReference(resolvedNamedReference: CfirResolvedNamedReference, data: D): R =
-        visitReference(resolvedNamedReference, data)
+        visitNamedReference(resolvedNamedReference, data)
 
     override fun visitErrorReference(errorReference: CfirErrorReference, data: D): R =
         visitReference(errorReference, data)

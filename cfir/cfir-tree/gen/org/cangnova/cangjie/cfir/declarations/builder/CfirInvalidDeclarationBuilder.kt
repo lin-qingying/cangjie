@@ -60,7 +60,6 @@ inline fun buildInvalidDeclarationCopy(original: CfirInvalidDeclaration, init: C
     copyBuilder.source = original.source
     copyBuilder.moduleData = original.moduleData
     copyBuilder.annotations.addAll(original.annotations)
-    copyBuilder.symbol = original.symbol
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes
     copyBuilder.reason = original.reason

@@ -24,8 +24,8 @@ abstract class CfirTypeScope : CfirContainingNamesAwareScope() {
     // - It may return the same overridden symbols more than once in case of substitution or intersection
     //     (but with different base scope)
     abstract fun processDirectOverriddenFunctionsWithBaseScope(
-        functionSymbol: CfirFunctionSymbol,
-        processor: (CfirFunctionSymbol, CfirTypeScope) -> ProcessorAction
+        functionSymbol: CfirFunctionSymbol<*>,
+        processor: (CfirFunctionSymbol<*>, CfirTypeScope) -> ProcessorAction
     ): ProcessorAction
 
     // ------------------------------------------------------------------------------------
@@ -44,8 +44,8 @@ abstract class CfirTypeScope : CfirContainingNamesAwareScope() {
 
     object Empty : CfirTypeScope() {
         override fun processDirectOverriddenFunctionsWithBaseScope(
-            functionSymbol: CfirFunctionSymbol,
-            processor: (CfirFunctionSymbol, CfirTypeScope) -> ProcessorAction
+            functionSymbol: CfirFunctionSymbol<*>,
+            processor: (CfirFunctionSymbol<*>, CfirTypeScope) -> ProcessorAction
         ): ProcessorAction = ProcessorAction.NEXT
 
         override fun processDirectOverriddenPropertiesWithBaseScope(

@@ -24,6 +24,7 @@ class CfirFunctionCallImpl @CfirImplementationDetail constructor(
     override var coneTypeOrNull: ConeCangJieType?,
     override var calleeReference: CfirReference,
     override var explicitReceiver: CfirExpression?,
+    override var dispatchReceiver: CfirExpression?,
     override var arguments: List<CfirExpression>,
     override var typeArguments: List<CfirTypeRef>,
 ) : CfirFunctionCall() {
@@ -32,6 +33,7 @@ class CfirFunctionCallImpl @CfirImplementationDetail constructor(
         annotations.forEach { it.accept(visitor, data) }
         calleeReference.accept(visitor, data)
         explicitReceiver?.accept(visitor, data)
+        dispatchReceiver?.accept(visitor, data)
         arguments.forEach { it.accept(visitor, data) }
         typeArguments.forEach { it.accept(visitor, data) }
     }
@@ -49,6 +51,16 @@ class CfirFunctionCallImpl @CfirImplementationDetail constructor(
     override fun replaceCalleeReference(newCalleeReference: CfirReference)
      {
         this.calleeReference = newCalleeReference
+    }
+
+    override fun replaceExplicitReceiver(newExplicitReceiver: CfirExpression?)
+     {
+        this.explicitReceiver = newExplicitReceiver
+    }
+
+    override fun replaceDispatchReceiver(newDispatchReceiver: CfirExpression?)
+     {
+        this.dispatchReceiver = newDispatchReceiver
     }
 
     override fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>)
@@ -74,6 +86,12 @@ class CfirFunctionCallImpl @CfirImplementationDetail constructor(
         return this
     }
 
+    override fun <D> transformDispatchReceiver(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
+     {
+        this.dispatchReceiver = dispatchReceiver?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression?
+        return this
+    }
+
     override fun <D> transformArguments(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
      {
         this.arguments = arguments.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression }
@@ -90,6 +108,7 @@ class CfirFunctionCallImpl @CfirImplementationDetail constructor(
         transformAnnotations(transformer, data)
         transformCalleeReference(transformer, data)
         transformExplicitReceiver(transformer, data)
+        transformDispatchReceiver(transformer, data)
         transformArguments(transformer, data)
         transformTypeArguments(transformer, data)
         return this

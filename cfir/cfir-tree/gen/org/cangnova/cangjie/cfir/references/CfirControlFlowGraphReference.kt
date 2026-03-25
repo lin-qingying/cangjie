@@ -6,6 +6,7 @@
 package org.cangnova.cangjie.cfir.references
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirPureAbstractElement
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -13,7 +14,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.controlFlowGraphReference]
  */
-abstract class CfirControlFlowGraphReference : CfirReference() {
+abstract class CfirControlFlowGraphReference : CfirPureAbstractElement(), CfirReference {
     abstract override val source: CjSourceElement?
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =

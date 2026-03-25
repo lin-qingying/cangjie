@@ -6,8 +6,10 @@ package org.cangnova.cangjie.cfir.types
  */
 class ConeIntersectionType(
     val intersectedTypes: List<ConeCangJieType>,
-    override val attributes: ConeAttributes = ConeAttributes.EMPTY,
-) : ConeRigidType() {
+    override val attributes: ConeAttributes = ConeAttributes.Empty,
+) : ConeRigidType(), ConeTypeConstructorMarker {
+    override val typeArguments: List<ConeTypeProjection>
+        get() = intersectedTypes.map(::ConeTypeProjection)
 
     override fun equals(other: Any?): Boolean =
         other is ConeIntersectionType && intersectedTypes == other.intersectedTypes
@@ -24,8 +26,10 @@ class ConeIntersectionType(
  */
 class ConeUnionType(
     val unionTypes: Set<ConeCangJieType>,
-    override val attributes: ConeAttributes = ConeAttributes.EMPTY,
-) : ConeRigidType() {
+    override val attributes: ConeAttributes = ConeAttributes.Empty,
+) : ConeRigidType(), ConeTypeConstructorMarker {
+    override val typeArguments: List<ConeTypeProjection>
+        get() = unionTypes.map(::ConeTypeProjection)
 
     override fun equals(other: Any?): Boolean =
         other is ConeUnionType && unionTypes == other.unionTypes

@@ -28,10 +28,9 @@ abstract class CfirClass : CfirClassLikeDeclaration(), CfirControlFlowGraphOwner
     abstract val status: CfirDeclarationStatus
     abstract val typeParameters: List<CfirTypeParameter>
     abstract override val symbol: CfirClassSymbol
-    abstract val superTypeRefs: List<CfirTypeRef>
-    abstract val declarations: List<CfirDeclaration>
+    abstract override val superTypeRefs: List<CfirTypeRef>
+    abstract override val declarations: List<CfirDeclaration>
     abstract val name: Name
-    abstract val classKind: CfirClassKind
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitClass(this, data)
@@ -58,9 +57,9 @@ abstract class CfirClass : CfirClassLikeDeclaration(), CfirControlFlowGraphOwner
     abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirClass
 
 
-    abstract fun <D> transformSuperTypeRefs(transformer: CfirTransformer<D>, data: D): CfirClass
+    override abstract fun <D> transformSuperTypeRefs(transformer: CfirTransformer<D>, data: D): CfirClass
 
 
-    abstract fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirClass
+    override abstract fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirClass
 
 }

@@ -1,11 +1,17 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
-import org.cangnova.cangjie.cfir.constraints.CfirConstraintPosition
-import org.cangnova.cangjie.cfir.constraints.CfirConstraintSystem
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
+import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * 参数类型检查阶段：逐个验证实参与形参的类型兼容性。
@@ -15,80 +21,65 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
  *   失败时报 `ArgumentTypeMismatch`。
  * - 非泛型调用：直接使用 `isSubtypeOf` 检查。
  */
-object CfirCheckArguments : CfirResolutionStage() {
+object CfirCheckArguments :  ResolutionStage() {
+    context(sink: CheckerSink, context: ResolutionContext)
+    override suspend fun check(candidate: Candidate) {
+        if (!candidate.argumentMappingInitialized) return
 
-    override fun check(
-        candidate: CfirCandidate,
-        sink: CfirCheckerSink,
-        context: CfirResolutionContext,
-    ) {
-        val constraintSystem = candidate.constraintSystem
-        if (constraintSystem != null) {
-            checkWithConstraintSystem(candidate, sink, constraintSystem)
-        } else {
-            checkWithoutConstraintSystem(candidate, sink, context)
-        }
-    }
-
-    /**
-     * 泛型调用：通过约束系统事务性添加约束。
-     */
-    private fun checkWithConstraintSystem(
-        candidate: CfirCandidate,
-        sink: CfirCheckerSink,
-        constraintSystem: CfirConstraintSystem,
-    ) {
-        for ((argumentAtom, parameter) in candidate.argumentMapping) {
-            if (sink.shouldStop) return
-
-            val argType = argumentAtom.expression.coneTypeOrNull ?: continue
-            val paramType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
-            if (argType is ConeErrorType || paramType is ConeErrorType) continue
-
-            val position = CfirConstraintPosition.ArgumentPosition(
-                candidate.argumentMapping.keys.indexOf(argumentAtom)
-            )
-
-            if (!constraintSystem.addSubtypeConstraintIfCompatible(argType, paramType, position)) {
-                sink.reportDiagnostic(
-                    ArgumentTypeMismatch(
-                        argument = argumentAtom.expression,
-                        expectedType = paramType,
-                        actualType = argType,
-                        isMismatchDueToNullability = false,
-                    ),
-                )
-            }
-        }
-    }
-
-    /**
-     * 非泛型调用：直接使用 isSubtypeOf 检查（保留原有逻辑）。
-     */
-    private fun checkWithoutConstraintSystem(
-        candidate: CfirCandidate,
-        sink: CfirCheckerSink,
-        context: CfirResolutionContext,
-    ) {
-        for ((argumentAtom, parameter) in candidate.argumentMapping) {
-            if (sink.shouldStop) return
-
+        candidate.argumentMapping.entries.forEach { (argumentAtom, parameter) ->
             val argument = argumentAtom.expression
-            val argType = argument.coneTypeOrNull ?: continue
-            val paramType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
-            val substitutedParamType = candidate.substitutor.substituteOrSelf(paramType)
+            val actualType = argument.resolvedType() ?: return@forEach
+            val expectedType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return@forEach
 
-            if (argType is ConeErrorType || substitutedParamType is ConeErrorType) continue
-            if (!context.typeRelations.isSubtype(argType, substitutedParamType)) {
+            if (actualType is ConeErrorType || expectedType is ConeErrorType) return@forEach
+
+            if (shouldUseConstraintSystem(actualType, expectedType, candidate)) {
+                candidate.constraintSystem.addSubtypeConstraint(
+                    actualType,
+                    expectedType,
+                    ConeArgumentConstraintPosition(argument),
+                )
+
+                if (candidate.constraintSystem.hasContradiction) {
+                    sink.reportDiagnostic(
+                        ArgumentTypeMismatch(
+                            expectedType = expectedType,
+                            actualType = actualType,
+                            argument = argument,
+                            isMismatchDueToNullability = false,
+                            systemHadContradiction = true,
+                        )
+                    )
+                }
+                return@forEach
+            }
+
+            if (!AbstractTypeChecker.isSubtypeOf(context.typeContext, actualType, expectedType)) {
                 sink.reportDiagnostic(
                     ArgumentTypeMismatch(
+                        expectedType = expectedType,
+                        actualType = actualType,
                         argument = argument,
-                        expectedType = substitutedParamType,
-                        actualType = argType,
                         isMismatchDueToNullability = false,
-                    ),
+                    )
                 )
             }
         }
     }
+
+    private fun shouldUseConstraintSystem(
+        actualType: ConeCangJieType,
+        expectedType: ConeCangJieType,
+        candidate: Candidate,
+    ): Boolean {
+        return candidate.hasFreshTypeVariables() ||
+            actualType is ConeTypeParameterType ||
+            expectedType is ConeTypeParameterType
+    }
+
+    private fun Candidate.hasFreshTypeVariables(): Boolean =
+        freshVariables.isNotEmpty()
+
+    private fun CfirExpression.resolvedType(): ConeCangJieType? =
+        coneTypeOrNull
 }

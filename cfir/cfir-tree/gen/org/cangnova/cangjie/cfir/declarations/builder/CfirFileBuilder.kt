@@ -14,7 +14,7 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirFileImpl
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
@@ -22,9 +22,9 @@ class CfirFileBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    lateinit var symbol: CfirSymbol<*>
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
+    lateinit var symbol: CfirFileSymbol
     lateinit var name: String
     var sourceFile: CjSourceFile? = null
     lateinit var packageDirective: CfirPackageDirective
@@ -37,9 +37,9 @@ class CfirFileBuilder {
             source,
             moduleData,
             annotations,
-            symbol,
             origin,
             attributes,
+            symbol,
             name,
             sourceFile,
             packageDirective,
@@ -69,7 +69,6 @@ inline fun buildFileCopy(original: CfirFile, init: CfirFileBuilder.() -> Unit): 
     copyBuilder.source = original.source
     copyBuilder.moduleData = original.moduleData
     copyBuilder.annotations.addAll(original.annotations)
-    copyBuilder.symbol = original.symbol
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes
     copyBuilder.name = original.name

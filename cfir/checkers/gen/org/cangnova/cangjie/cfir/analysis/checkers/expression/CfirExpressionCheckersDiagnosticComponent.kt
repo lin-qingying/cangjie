@@ -12,7 +12,7 @@ import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
-import org.cangnova.cangjie.utils.exceptions.withFirEntry
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 /*
  * 本文件由生成器自动生成
@@ -144,8 +144,8 @@ class CfirExpressionCheckersDiagnosticComponent(
         checkers.allBasicExpressionCheckers.check(forInExpression, data)
     }
 
-    override fun visitLambdaExpression(lambdaExpression: CfirLambdaExpression, data: CheckerContext) {
-        checkers.allBasicExpressionCheckers.check(lambdaExpression, data)
+    override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(anonymousFunctionExpression, data)
     }
 
     override fun visitArrayLiteral(arrayLiteral: CfirArrayLiteral, data: CheckerContext) {
@@ -187,7 +187,7 @@ class CfirExpressionCheckersDiagnosticComponent(
                 }
             } catch (e: Exception) {
                 rethrowExceptionWithDetails("Exception in expression checkers", e) {
-                    withFirEntry("element", element)
+                    withCfirEntry("element", element)
                     context.containingFilePath?.let { withEntry("file", it) }
                 }
             }

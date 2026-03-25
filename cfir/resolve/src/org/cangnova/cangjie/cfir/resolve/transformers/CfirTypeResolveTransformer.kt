@@ -6,7 +6,6 @@ package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirClassKind
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
@@ -213,7 +212,6 @@ class CfirTypeResolveTransformer(
     }
 
     private fun ensureImplicitDefaultConstructorIfNeeded(klass: CfirClass) {
-        if (klass.classKind == CfirClassKind.INTERFACE) return
         if (klass.declarations.any { it is CfirConstructor }) return
 
         val classImpl = klass as? CfirClassImpl ?: return
@@ -232,5 +230,4 @@ class CfirTypeResolveTransformer(
         classImpl.declarations = classImpl.declarations + constructor
     }
 }
-
 

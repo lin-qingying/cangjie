@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
@@ -22,7 +23,7 @@ class CfirCompositeProvider(
     override fun getCfirFilesByPackage(fqName: FqName): List<CfirFile> =
         providers.flatMap { it.getCfirFilesByPackage(fqName) }
 
-    override fun getClassByClassId(classId: ClassId): CfirClass? {
+    override fun getClassByClassId(classId: ClassId): CfirClassLikeDeclaration? {
         for (provider in providers) {
             val result = provider.getClassByClassId(classId)
             if (result != null) return result

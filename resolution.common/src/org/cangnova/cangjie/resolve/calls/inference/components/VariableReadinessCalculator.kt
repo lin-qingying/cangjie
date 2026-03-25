@@ -127,7 +127,7 @@ class VariableReadinessCalculator(
 
         readiness[Q.HAS_CAPTURED_UPPER_BOUND_WITH_SELF_TYPES] = areAllProperConstraintsSelfTypeBased
                 && fixationEnhancementsIn22
-                && !isReified() && hasDirectConstraintToNotFixedRelevantVariable()
+                 && hasDirectConstraintToNotFixedRelevantVariable()
 
         readiness[Q.HAS_PROPER_NON_SELF_TYPE_BASED_CONSTRAINT] =
             readiness[Q.HAS_PROPER_CONSTRAINTS] && !areAllProperConstraintsSelfTypeBased

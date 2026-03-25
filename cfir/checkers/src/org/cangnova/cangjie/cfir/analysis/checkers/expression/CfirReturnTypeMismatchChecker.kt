@@ -1,6 +1,5 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CfirTypeCheckUtils
 import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
@@ -13,6 +12,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * 函数返回类型检查器。
@@ -29,7 +30,7 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker(CheckerDispat
         val expectedTypeRef = containingFunction.returnTypeRef as? CfirResolvedTypeRef ?: return
         val expectedType = expectedTypeRef.coneType
         if (expectedType is ConeErrorType) return
-        if (!CfirTypeCheckUtils.isSubtypeOf(actualType, expectedType, context.session)) {
+        if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, actualType, expectedType) != true) {
             reporter.reportOn(
                 source, CfirErrors.RETURN_TYPE_MISMATCH,
                 expectedType,

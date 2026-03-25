@@ -63,11 +63,25 @@
  *
  * 注意：
  * - jumping phase 不等于一定允许“同阶段”请求。
+ * - 本枚举不再使用 isJumpingPhase 等结构性标记。
+ * - 哪些阶段属于 jumping phase，由文档约定与 resolver 行为共同定义。
  * - 是否允许同阶段请求，由 [isItAllowedToCallLazyResolveToTheSamePhase] 决定。
  *
- * 当前定义中：
- * - [SUPER_TYPES]、[STATUS]、[IMPLICIT_TYPES]、[BODY_RESOLVE] 被标记为 jumping phase。
- * - 仅 [IMPLICIT_TYPES]、[BODY_RESOLVE] 允许同阶段请求。
+ * 当前定义中，下列阶段被视为 jumping phase：
+ * - [SUPER_TYPES]
+ * - [STATUS]
+ * - [EXTENSIONS]
+ * - [IMPLICIT_TYPES]
+ * - [BODY_RESOLVE]
+ *
+ * 其中当前允许 same-phase lazy resolve 的阶段为：
+ * - [SUPER_TYPES]
+ * - [STATUS]
+ * - [IMPLICIT_TYPES]
+ * - [BODY_RESOLVE]
+ *
+ * [EXTENSIONS] 当前仍视为 jumping phase，但不允许 same-phase lazy resolve，
+ * 以避免扩展链递归在尚无稳定收敛策略时引入死循环风险。
  *
  * -----------------------------------------------------------------------------
  * 四、非本枚举职责
@@ -126,6 +140,10 @@ enum class CfirResolvePhase(
      *
      * 输出：
      * - 父类/父接口关系可用于继承层次检查与后续类型解析。
+     *
+     * 说明：
+     * - 该阶段被视为 jumping phase。
+     * - 该阶段通常需要沿继承链递归推进其他声明的 [SUPER_TYPES]。
      */
     SUPER_TYPES,
 
@@ -148,6 +166,11 @@ enum class CfirResolvePhase(
      *
      * 输出：
      * - 可见性、修饰符、状态约束完成校验并标准化。
+     *
+     * 说明：
+     * - 该阶段被视为 jumping phase。
+     * - 当成员需要对其父声明进行 override / abstract / final 等判定时，
+     *   当前阶段可能需要请求父声明的 [STATUS]。
      */
     STATUS,
 
@@ -159,6 +182,11 @@ enum class CfirResolvePhase(
      *
      * 输出：
      * - `extend Type <: Interface` 约束完成绑定，可供后续推断与体解析使用。
+     *
+     * 说明：
+     * - 该阶段被视为 jumping phase。
+     * - 该阶段可能需要跳转查询被扩展目标或相关扩展声明。
+     * - 当前实现默认不开放 same-phase 请求，避免在扩展链尚未建立完整收敛策略前引入递归复杂度。
      */
     EXTENSIONS,
 
@@ -171,6 +199,9 @@ enum class CfirResolvePhase(
      * 输出：
      * - 省略的声明级类型完成推断（或诊断）。
      * - 为 [BODY_RESOLVE] 提供稳定的声明边界类型。
+     *
+     * 说明：
+     * - 该阶段被视为 jumping phase。
      */
     IMPLICIT_TYPES,
 
@@ -182,24 +213,12 @@ enum class CfirResolvePhase(
      *
      * 输出：
      * - 表达式类型、调用绑定、控制流相关语义信息可用。
+     *
+     * 说明：
+     * - 该阶段被视为 jumping phase。
      */
-    BODY_RESOLVE,
+    BODY_RESOLVE;
 
-    /**
-     * resolve 范围最终诊断阶段。
-     *
-     * 输入：
-     * - [BODY_RESOLVE] 完成。
-     *
-     * 输出：
-     * - resolve 范围诊断产出完成。
-     * - 声明达到 resolve 语义终态。
-     *
-     * 边界：
-     * - 仅承载 resolve 范围检查。
-     * - 不应隐式承载 FINALIZE 或后端阶段职责。
-     */
-    CHECKERS;
 
     /**
      * 返回下一个阶段；若当前已是末阶段，则返回自身。
@@ -222,20 +241,6 @@ enum class CfirResolvePhase(
 }
 
 /**
- * 是否为 jumping phase。
- *
- * jumping phase 允许在处理当前声明时，按需请求其他声明的阶段信息。
- */
-val CfirResolvePhase.isJumpingPhase: Boolean
-    get() = when (this) {
-        CfirResolvePhase.SUPER_TYPES,
-        CfirResolvePhase.STATUS,
-        CfirResolvePhase.IMPLICIT_TYPES,
-        CfirResolvePhase.BODY_RESOLVE -> true
-        else -> false
-    }
-
-/**
  * 判定当前阶段是否允许请求到 [requestedPhase]。
  *
  * 规则：
@@ -254,11 +259,16 @@ fun CfirResolvePhase.isItAllowedToCallLazyResolveTo(requestedPhase: CfirResolveP
  *
  * 说明：
  * - 并非所有 jumping phase 都允许同阶段请求。
- * - 当前仅对 [IMPLICIT_TYPES] 与 [BODY_RESOLVE] 开放，
+ * - [SUPER_TYPES] 允许同阶段请求，以支持继承链递归展开与父类型图构建。
+ * - [STATUS] 允许同阶段请求，以支持 override / modality / visibility 在父声明上的联动判定。
+ * - [IMPLICIT_TYPES] 与 [BODY_RESOLVE] 允许同阶段请求，
  *   以支持隐式类型与函数体推断中的相互依赖场景。
+ * - [EXTENSIONS] 当前仍不开放 same-phase 请求，避免扩展链递归在尚无稳定收敛策略时引入死循环风险。
  */
 val CfirResolvePhase.isItAllowedToCallLazyResolveToTheSamePhase: Boolean
     get() = when (this) {
+        CfirResolvePhase.SUPER_TYPES,
+        CfirResolvePhase.STATUS,
         CfirResolvePhase.IMPLICIT_TYPES,
         CfirResolvePhase.BODY_RESOLVE -> true
         else -> false

@@ -50,6 +50,7 @@ interface TypeVariableTypeConstructorMarker : TypeConstructorMarker
 
 /** 捕获类型对应的类型构造器标记接口 */
 interface CapturedTypeConstructorMarker : TypeConstructorMarker
+
 /**
  * 捕获类型：类型推断过程中由泛型实参捕获产生的中间类型
  * 仓颉无通配符投影，捕获类型仅在编译器内部推断阶段使用（参考 Kotlin K2 推断机制）
@@ -162,7 +163,8 @@ interface TypeCheckerProviderContext {
  * 公共父类型计算扩展上下文
  * 在类型推断需要合并多个候选类型时使用（如 if/when 分支的结果类型）
  */
-interface TypeSystemCommonSuperTypesContext : TypeSystemContext, TypeSystemTypeFactoryContext, TypeCheckerProviderContext {
+interface TypeSystemCommonSuperTypesContext : TypeSystemContext, TypeSystemTypeFactoryContext,
+    TypeCheckerProviderContext {
 
     /**
      * 判断当前类型是否存在满足给定谓词的父类型构造器
@@ -175,9 +177,6 @@ interface TypeSystemCommonSuperTypesContext : TypeSystemContext, TypeSystemTypeF
                 { predicate(it) },
                 { TypeCheckerState.SupertypesPolicy.Direct }
             )
-
-    /** 判断该刚性类型是否是扩展函数类型 */
-    fun RigidTypeMarker.isExtensionFunction(): Boolean
 
     /** 获取类型的深度（嵌套泛型层数），用于公共父类型计算的复杂度控制 */
     fun RigidTypeMarker.typeDepth(): Int
@@ -219,7 +218,8 @@ interface TypeSystemInferenceExtensionContextDelegate : TypeSystemInferenceExten
  * 类型推断专用扩展上下文
  * 定义了类型推断算法所需的全部操作
  */
-interface TypeSystemInferenceExtensionContext : TypeSystemContext, TypeSystemBuiltInsContext, TypeSystemCommonSuperTypesContext {
+interface TypeSystemInferenceExtensionContext : TypeSystemContext, TypeSystemBuiltInsContext,
+    TypeSystemCommonSuperTypesContext {
 
     /**
      * 判断类型（递归地）是否包含满足谓词的子类型
@@ -402,9 +402,9 @@ interface TypeSystemInferenceExtensionContext : TypeSystemContext, TypeSystemBui
 
     /**
      * 为自引用（递归）类型参数创建捕获的自引用投影
-     * 处理如 class Tree<T <: Tree<T>> 这类递归泛型约束
+     * 处理如 class Tree<T > where T <: Tree<T> 这类递归泛型约束
      */
-    fun createCapturedStarProjectionForSelfType(
+    fun createCapturedPlaceholderTypeForSelfType(
         typeVariable: TypeVariableTypeConstructorMarker,
         typesForRecursiveTypeParameters: List<CangJieTypeMarker>,
     ): SimpleTypeMarker? {
@@ -421,6 +421,7 @@ interface TypeSystemInferenceExtensionContext : TypeSystemContext, TypeSystemBui
                         is TypeVariableTypeConstructorMarker -> createTypeArgument(
                             createUninferredType(typeConstructor)
                         )
+
                         else -> it
                     }
                 }
@@ -523,8 +524,6 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
     // 捕获类型属性访问
     // ------------------------------------------------------------------
 
-    /** 判断是否是旧版捕获类型（遗留兼容） */
-    fun CapturedTypeMarker.isOldCapturedType(): Boolean
 
     /** 获取捕获类型的构造器 */
     fun CapturedTypeMarker.typeConstructor(): CapturedTypeConstructorMarker
@@ -727,7 +726,7 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
     operator fun TypeArgumentListMarker.get(index: Int): TypeArgumentMarker {
         return when (this) {
             is SimpleTypeMarker -> getArgument(index)
-            is ArgumentList     -> get(index)
+            is ArgumentList -> get(index)
             else -> error("未知的泛型实参列表类型: $this, ${this::class}")
         }
     }
@@ -736,7 +735,7 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
     fun TypeArgumentListMarker.size(): Int {
         return when (this) {
             is RigidTypeMarker -> argumentsCount()
-            is ArgumentList    -> size
+            is ArgumentList -> size
             else -> error("未知的泛型实参列表类型: $this, ${this::class}")
         }
     }
@@ -836,8 +835,10 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
 enum class CaptureStatus {
     /** 用于子类型检查阶段的捕获 */
     FOR_SUBTYPING,
+
     /** 用于约束合并阶段的捕获 */
     FOR_INCORPORATION,
+
     /** 用于表达式类型推断阶段的捕获 */
     FROM_EXPRESSION
 }

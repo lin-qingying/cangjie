@@ -6,11 +6,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 
 /**
  * 带 designated resolve“跳转”能力的返回类型计算器。
@@ -23,13 +25,13 @@ class CfirReturnTypeCalculatorWithJump(
     private val session: org.cangnova.cangjie.cfir.session.CfirSession,
     private val scopeSession: ScopeSession,
     private val implicitBodyResolveComputationSession: CfirImplicitBodyResolveComputationSession,
-) : CfirReturnTypeCalculator {
+) : CfirReturnTypeCalculator() {
 
-    override fun tryCalculateReturnType(declaration: CfirCallableDeclaration): ConeCangJieType? {
+    override fun tryCalculateReturnTypeOrNull(declaration: CfirCallableDeclaration): CfirResolvedTypeRef? {
         // 1. 已有显式解析类型，直接返回
         val typeRef = extractReturnTypeRef(declaration) ?: return null
         if (typeRef is CfirResolvedTypeRef) {
-            return typeRef.coneType
+            return typeRef
         }
 
         // 2. 不是隐式类型，无法继续推断
@@ -41,11 +43,12 @@ class CfirReturnTypeCalculatorWithJump(
         val symbol = extractSymbol(declaration) ?: return null
         return when (val status = implicitBodyResolveComputationSession.getStatus(symbol)) {
             is CfirImplicitBodyResolveComputationStatus.Computed -> {
-                status.resolvedType
+                extractResolvedTypeRef(status.transformedDeclaration)
+                    ?: resolvedTypeRefFromType(typeRef, status.resolvedType)
             }
             is CfirImplicitBodyResolveComputationStatus.Computing -> {
                 // 递归依赖时返回错误类型
-                ConeErrorType("recursive implicit type")
+                resolvedTypeRefFromType(typeRef, ConeErrorType(ConeSimpleDiagnostic("recursive implicit type")))
             }
             is CfirImplicitBodyResolveComputationStatus.NotComputed -> {
                 // 瑙﹀彂 designated resolve
@@ -55,8 +58,10 @@ class CfirReturnTypeCalculatorWithJump(
     }
 
     /** 触发 designated resolve，并计算目标声明的返回类型。 */
-    private fun resolveDesignated(declaration: CfirCallableDeclaration): ConeCangJieType {
-        val symbol = extractSymbol(declaration) ?: return ConeErrorType("no symbol for declaration")
+    private fun resolveDesignated(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
+        val typeRef = extractReturnTypeRef(declaration)
+        val symbol = extractSymbol(declaration)
+            ?: return resolvedTypeRefFromType(typeRef, ConeErrorType(ConeSimpleDiagnostic("no symbol for declaration")))
 
         val result = implicitBodyResolveComputationSession.compute(symbol) {
             // 鍒涘缓 designated transformer 瑙ｆ瀽姝ゅ０鏄?
@@ -72,13 +77,14 @@ class CfirReturnTypeCalculatorWithJump(
             if (file != null) {
                 designatedTransformer.transformFile(
                     file,
-                    org.cangnova.cangjie.cfir.resolve.CfirResolutionMode.ContextIndependent,
+                    org.cangnova.cangjie.cfir.resolve.ResolutionMode.ContextIndependent,
                 )
             }
             // 返回转换后的声明
             declaration
         }
-        return extractResolvedType(result) ?: ConeErrorType("failed to resolve implicit type")
+        return extractResolvedTypeRef(result)
+            ?: resolvedTypeRefFromType(typeRef, ConeErrorType(ConeSimpleDiagnostic("failed to resolve implicit type")))
     }
 
     private fun extractReturnTypeRef(declaration: CfirCallableDeclaration): CfirTypeRef? = when (declaration) {
@@ -92,9 +98,17 @@ class CfirReturnTypeCalculatorWithJump(
     private fun extractSymbol(declaration: CfirCallableDeclaration) =
         declaration.symbol as? org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>
 
-    private fun extractResolvedType(declaration: CfirCallableDeclaration): ConeCangJieType? {
+    private fun extractResolvedTypeRef(declaration: CfirCallableDeclaration): CfirResolvedTypeRef? {
         val typeRef = extractReturnTypeRef(declaration)
-        return if (typeRef is CfirResolvedTypeRef) typeRef.coneType else null
+        return typeRef as? CfirResolvedTypeRef
+    }
+
+    private fun resolvedTypeRefFromType(prototype: CfirTypeRef?, type: ConeCangJieType): CfirResolvedTypeRef {
+        return buildResolvedTypeRef {
+            source = prototype?.source
+            coneType = type
+            delegatedTypeRef = prototype
+        }
     }
 
     /** 查找声明所在文件。 */
@@ -103,4 +117,3 @@ class CfirReturnTypeCalculatorWithJump(
         return null
     }
 }
-

@@ -14,7 +14,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPrimaryConstructor
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -23,7 +23,6 @@ class CfirPrimaryConstructorBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    lateinit var symbol: CfirSymbol<*>
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
     lateinit var status: CfirDeclarationStatus
@@ -31,6 +30,7 @@ class CfirPrimaryConstructorBuilder {
     lateinit var returnTypeRef: CfirTypeRef
     val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
     var body: CfirBlock? = null
+    lateinit var symbol: CfirConstructorSymbol
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirConstructor {
@@ -38,7 +38,6 @@ class CfirPrimaryConstructorBuilder {
             source,
             moduleData,
             annotations,
-            symbol,
             origin,
             attributes,
             status,
@@ -46,6 +45,7 @@ class CfirPrimaryConstructorBuilder {
             returnTypeRef,
             valueParameters,
             body,
+            symbol,
         ).also {
             it.initDefaultResolveState()
         }
@@ -70,7 +70,6 @@ inline fun buildPrimaryConstructorCopy(original: CfirConstructor, init: CfirPrim
     copyBuilder.source = original.source
     copyBuilder.moduleData = original.moduleData
     copyBuilder.annotations.addAll(original.annotations)
-    copyBuilder.symbol = original.symbol
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes
     copyBuilder.status = original.status

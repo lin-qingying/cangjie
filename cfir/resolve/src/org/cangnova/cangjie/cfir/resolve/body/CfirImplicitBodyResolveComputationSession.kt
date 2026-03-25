@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
@@ -67,13 +68,16 @@ class CfirImplicitBodyResolveComputationSession {
             is org.cangnova.cangjie.cfir.declarations.CfirProperty -> declaration.returnTypeRef
             is org.cangnova.cangjie.cfir.declarations.CfirFieldVariable -> declaration.returnTypeRef
             is org.cangnova.cangjie.cfir.declarations.CfirPatternVariable -> declaration.returnTypeRef
-            else -> return org.cangnova.cangjie.cfir.types.ConeErrorType("unsupported declaration for implicit type")
+            else -> return org.cangnova.cangjie.cfir.types.ConeErrorType(
+                ConeSimpleDiagnostic("unsupported declaration for implicit type")
+            )
         }
         return if (typeRef is org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef) {
             typeRef.coneType
         } else {
-            org.cangnova.cangjie.cfir.types.ConeErrorType("type not resolved after transformation")
+            org.cangnova.cangjie.cfir.types.ConeErrorType(
+                ConeSimpleDiagnostic("type not resolved after transformation")
+            )
         }
     }
 }
-

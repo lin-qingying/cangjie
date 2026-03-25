@@ -43,23 +43,23 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
         // constructor 已单独配置为两个具名实现
 
         // -------- 声明节点 --------
-        file, classDeclaration, enumConstructor, extend, typeAlias, function, mainFunction, macroDeclaration, finalizer,
+        file, classDeclaration, interfaceDeclaration,structDeclaration,enumDeclaration,  enumConstructor, extend, typeAlias, namedFunction, anonymousFunction, mainFunction, macroDeclaration, finalizer,
         invalidDeclaration, property, fieldVariable, patternVariable, valueParameter, typeParameter,
 
         // -------- 语句 / 表达式节点 --------
         block,
         literalExpression, stringInterpolation, functionCall, propertyAccess, qualifiedAccess, assignment, binaryOp,
         comparisonExpression, typeOperator, ifExpression, matchExpression, matchBranch, catchClause, loopExpression, forInExpression, tryExpression,
-        throwExpression, returnExpression, jumpExpression, lambdaExpression, rangeExpression, arrayLiteral, tupleLiteral,
+        throwExpression, returnExpression, jumpExpression, anonymousFunctionExpression, rangeExpression, arrayLiteral, tupleLiteral,
         spawnExpression, synchronizedExpression, unsafeExpression, quoteExpression, macroExpression, subscriptExpression, errorExpression,
 
         // -------- 模式节点 --------
         constPattern, wildcardPattern, bindingPattern, tuplePattern, enumPattern, typePattern,
 
         // -------- 类型引用节点 --------
-        resolvedTypeRef, userTypeRef, basicTypeRef, implicitTypeRef, functionTypeRef, tupleTypeRef, varrayTypeRef, errorTypeRef,
+        resolvedTypeRef, userTypeRef, basicTypeRef, implicitTypeRef, functionTypeRef, tupleTypeRef, varrayTypeRef,
 
         // -------- 引用节点 --------
-        namedReference, resolvedNamedReference, errorReference,
+        namedReference, resolvedNamedReference, errorReference, thisReference,
     )
 }

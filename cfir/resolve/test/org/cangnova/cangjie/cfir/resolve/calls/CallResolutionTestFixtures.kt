@@ -25,7 +25,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
@@ -76,7 +76,7 @@ object CallResolutionTestFixtures {
         parameterDefaults: List<Boolean>? = null,
         typeParameters: List<CfirTypeParameter> = emptyList(),
     ): CfirFunctionSymbol {
-        val symbol = CfirFunctionSymbol(CallableId(FqName.ROOT, Name.identifier(name)))
+        val symbol = CfirNamedFunctionSymbol(CallableId(FqName.ROOT, Name.identifier(name)))
         val params = parameterTypes.mapIndexed { index, type ->
             buildValueParameter(
                 name = parameterNames?.getOrNull(index) ?: "p$index",

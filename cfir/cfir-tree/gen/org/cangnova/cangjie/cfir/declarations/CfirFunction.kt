@@ -9,31 +9,28 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
-import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.function]
  */
-abstract class CfirFunction : CfirCallableDeclaration(), CfirControlFlowGraphOwner {
+sealed class CfirFunction : CfirCallableDeclaration(), CfirControlFlowGraphOwner {
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>
-    abstract override val symbol: CfirSymbol<*>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
     abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
+    abstract override val symbol: CfirFunctionSymbol<*>
     abstract val status: CfirDeclarationStatus
     abstract val typeParameters: List<CfirTypeParameter>
     abstract val returnTypeRef: CfirTypeRef
-    abstract val name: Name
     abstract val valueParameters: List<CfirValueParameter>
     abstract val body: CfirBlock?
-    abstract val isMut: Boolean
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitFunction(this, data)

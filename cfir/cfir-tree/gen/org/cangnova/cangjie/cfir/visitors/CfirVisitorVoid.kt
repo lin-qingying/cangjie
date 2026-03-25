@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.CfirResolvable
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.references.*
@@ -146,6 +147,30 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(klass)
     }
 
+    final override fun visitInterface(`interface`: CfirInterface, data: Nothing?) {
+        visitInterface(`interface`)
+    }
+
+    open fun visitInterface(`interface`: CfirInterface) {
+        visitElement(`interface`)
+    }
+
+    final override fun visitStruct(struct: CfirStruct, data: Nothing?) {
+        visitStruct(struct)
+    }
+
+    open fun visitStruct(struct: CfirStruct) {
+        visitElement(struct)
+    }
+
+    final override fun visitEnum(enum: CfirEnum, data: Nothing?) {
+        visitEnum(enum)
+    }
+
+    open fun visitEnum(enum: CfirEnum) {
+        visitElement(enum)
+    }
+
     final override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: Nothing?) {
         visitEnumConstructor(enumConstructor)
     }
@@ -176,6 +201,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitFunction(function: CfirFunction) {
         visitElement(function)
+    }
+
+    final override fun visitNamedFunction(namedFunction: CfirNamedFunction, data: Nothing?) {
+        visitNamedFunction(namedFunction)
+    }
+
+    open fun visitNamedFunction(namedFunction: CfirNamedFunction) {
+        visitElement(namedFunction)
     }
 
     final override fun visitMainFunction(mainFunction: CfirMainFunction, data: Nothing?) {
@@ -322,12 +355,36 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(stringInterpolation)
     }
 
+    final override fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase, data: Nothing?) {
+        visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase)
+    }
+
+    open fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase) {
+        visitElement(namedReferenceWithCandidateBase)
+    }
+
     final override fun visitFunctionCall(functionCall: CfirFunctionCall, data: Nothing?) {
         visitFunctionCall(functionCall)
     }
 
     open fun visitFunctionCall(functionCall: CfirFunctionCall) {
         visitElement(functionCall)
+    }
+
+    final override fun visitErrorNamedReference(errorNamedReference: CfirErrorNamedReference, data: Nothing?) {
+        visitErrorNamedReference(errorNamedReference)
+    }
+
+    open fun visitErrorNamedReference(errorNamedReference: CfirErrorNamedReference) {
+        visitElement(errorNamedReference)
+    }
+
+    final override fun visitThisReference(thisReference: CfirThisReference, data: Nothing?) {
+        visitThisReference(thisReference)
+    }
+
+    open fun visitThisReference(thisReference: CfirThisReference) {
+        visitElement(thisReference)
     }
 
     final override fun visitPropertyAccess(propertyAccess: CfirPropertyAccess, data: Nothing?) {
@@ -474,12 +531,20 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(jumpExpression)
     }
 
-    final override fun visitLambdaExpression(lambdaExpression: CfirLambdaExpression, data: Nothing?) {
-        visitLambdaExpression(lambdaExpression)
+    final override fun visitAnonymousFunction(anonymousFunction: CfirAnonymousFunction, data: Nothing?) {
+        visitAnonymousFunction(anonymousFunction)
     }
 
-    open fun visitLambdaExpression(lambdaExpression: CfirLambdaExpression) {
-        visitElement(lambdaExpression)
+    open fun visitAnonymousFunction(anonymousFunction: CfirAnonymousFunction) {
+        visitElement(anonymousFunction)
+    }
+
+    final override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression, data: Nothing?) {
+        visitAnonymousFunctionExpression(anonymousFunctionExpression)
+    }
+
+    open fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) {
+        visitElement(anonymousFunctionExpression)
     }
 
     final override fun visitRangeExpression(rangeExpression: CfirRangeExpression, data: Nothing?) {
@@ -552,6 +617,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitSubscriptExpression(subscriptExpression: CfirSubscriptExpression) {
         visitElement(subscriptExpression)
+    }
+
+    final override fun visitDiagnosticHolder(diagnosticHolder: CfirDiagnosticHolder, data: Nothing?) {
+        visitDiagnosticHolder(diagnosticHolder)
+    }
+
+    open fun visitDiagnosticHolder(diagnosticHolder: CfirDiagnosticHolder) {
+        visitElement(diagnosticHolder)
     }
 
     final override fun visitErrorExpression(errorExpression: CfirErrorExpression, data: Nothing?) {

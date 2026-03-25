@@ -5,28 +5,28 @@ import org.cangnova.cangjie.test.directives.model.SimpleDirectivesContainer
 object AdditionalFilesDirectives : SimpleDirectivesContainer() {
     val CHECK_TYPE by directive(
         description = """
-            Adds util functions for type checking
+            Adds utils functions for type checking
             See file ./compiler/testData/diagnostics/helpers/types/checkType.kt
         """.trimIndent()
     )
 
     val CHECK_TYPE_WITH_EXACT by directive(
         description = """
-            Adds util functions for type checking that use @kotlin.internal.Exact annotation
+            Adds utils functions for type checking that use @kotlin.internal.Exact annotation
             See file ./compiler/testData/diagnostics/helpers/types/checkTypeWithExact.kt
         """.trimIndent()
     )
 
     val WITH_COROUTINES by directive(
         description = """
-            Adds util functions for checking coroutines
+            Adds utils functions for checking coroutines
             See file ./compiler/testData/diagnostics/helpers/coroutines/CoroutineHelpers.kt
         """.trimIndent()
     )
 
     val CHECK_STATE_MACHINE by directive(
         description = """
-            Adds util functions for checking state machines
+            Adds utils functions for checking state machines
             May be enabled only with $WITH_COROUTINES directive
             See file ./compiler/testData/diagnostics/helpers/coroutines/StateMachineChecker.kt
         """.trimIndent()
@@ -34,7 +34,7 @@ object AdditionalFilesDirectives : SimpleDirectivesContainer() {
 
     val CHECK_TAIL_CALL_OPTIMIZATION by directive(
         description = """
-            Adds util functions for checking tail call optimizations
+            Adds utils functions for checking tail call optimizations
             May be enabled only with $WITH_COROUTINES directive
             See file ./compiler/testData/diagnostics/helpers/coroutines/TailCallOptimizationChecker.kt
         """.trimIndent()
@@ -42,14 +42,14 @@ object AdditionalFilesDirectives : SimpleDirectivesContainer() {
 
     val SPEC_HELPERS by directive(
         description = """
-            Adds util functions from `test-spec` modules
+            Adds utils functions from `test-spec` modules
             See directory ./compiler/tests-spec/helpers/
         """.trimIndent()
     )
 
     val INFERENCE_HELPERS by directive(
         description = """
-            Adds util functions for type checking
+            Adds utils functions for type checking
             See file ./compiler/testData/diagnostics/helpers/inference/inferenceUtils.kt
         """.trimIndent()
     )

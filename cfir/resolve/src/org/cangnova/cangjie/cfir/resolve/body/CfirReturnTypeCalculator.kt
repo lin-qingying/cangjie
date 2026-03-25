@@ -12,9 +12,12 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 /**
  * 声明返回类型计算器。
@@ -23,35 +26,26 @@ import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
  * Phase 3 再补全完整的隐式返回类型推断。
  * 参考 K2 `ReturnTypeCalculator` / `ReturnTypeCalculatorForFullBodyResolve`。
  */
-interface CfirReturnTypeCalculator {
+abstract class CfirReturnTypeCalculator {
+//    abstract val callableCopyTypeCalculator: CallableCopyTypeCalculator
 
     /**
      * 计算可调用声明的返回类型。
      * @return 已解析的返回类型；若无法计算则返回 `null`
      */
-    fun tryCalculateReturnType(declaration: CfirCallableDeclaration): ConeCangJieType?
 
-    /**
-     * 计算可调用声明的返回类型引用。
-     * 默认实现基于 [tryCalculateReturnType] 构建 [CfirResolvedTypeRef]，
-     * 子类可以覆写它以提供更高效的实现。
-     * @return 已解析的类型引用；若无法计算则返回 `null`
-     */
-    fun tryCalculateReturnTypeRef(declaration: CfirCallableDeclaration): CfirTypeRef? {
-        val type = tryCalculateReturnType(declaration) ?: return null
-        val delegatedTypeRef = declaration.returnTypeRefOrNull
-        return buildResolvedTypeRef {
-            source = delegatedTypeRef?.source
-            coneType = type
-            this.delegatedTypeRef = delegatedTypeRef
-        }
+    abstract fun tryCalculateReturnTypeOrNull(declaration: CfirCallableDeclaration): CfirResolvedTypeRef?
+
+
+    fun tryCalculateReturnType(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
+        return tryCalculateReturnTypeOrNull(declaration)
+            ?: errorWithAttachment("${this::class.simpleName}: Return type cannot be calculated for ${declaration::class.simpleName}") {
+                withCfirEntry("declaration", declaration)
+            }
     }
 
-    /**
-     * Phase 2 默认实现：不做推断，直接使用已有的显式类型。
-     */
-    object Default : CfirReturnTypeCalculator {
-        override fun tryCalculateReturnType(declaration: CfirCallableDeclaration): ConeCangJieType? = null
+    companion object {
+        val Default: CfirReturnTypeCalculator = CfirReturnTypeCalculatorForFullBodyResolve.Default
     }
 }
 
@@ -69,4 +63,3 @@ private val CfirCallableDeclaration.returnTypeRefOrNull: CfirTypeRef?
         is CfirVariable -> null
         is CfirValueParameter -> returnTypeRef
     }
-

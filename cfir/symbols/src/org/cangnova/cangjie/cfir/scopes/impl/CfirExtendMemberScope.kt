@@ -4,8 +4,10 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.scopes.CfirExtendScope
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -30,11 +32,11 @@ class CfirExtendMemberScope(
 
     private val memberIndex: MemberIndex by lazy { buildIndex() }
 
-    override fun processClassifiersByName(name: Name, processor: (CfirClassSymbol) -> Unit) {
+    override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         memberIndex.classifiers[name]?.forEach(processor)
     }
 
-    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol) -> Unit) {
+    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol<*>) -> Unit) {
         memberIndex.functions[name]?.forEach(processor)
     }
 
@@ -44,13 +46,13 @@ class CfirExtendMemberScope(
 
     private class MemberIndex(
         val classifiers: Map<Name, List<CfirClassSymbol>>,
-        val functions: Map<Name, List<CfirFunctionSymbol>>,
+        val functions: Map<Name, List<CfirFunctionSymbol<*>>>,
         val properties: Map<Name, List<CfirPropertySymbol>>,
     )
 
     private fun buildIndex(): MemberIndex {
         val classifiers = HashMap<Name, MutableList<CfirClassSymbol>>()
-        val functions = HashMap<Name, MutableList<CfirFunctionSymbol>>()
+        val functions = HashMap<Name, MutableList<CfirFunctionSymbol<*>>>()
         val properties = HashMap<Name, MutableList<CfirPropertySymbol>>()
 
         val extends = extendProvider.getExtendsForClass(targetClassId)
@@ -65,7 +67,7 @@ class CfirExtendMemberScope(
     private fun indexDeclaration(
         decl: CfirDeclaration,
         classifiers: HashMap<Name, MutableList<CfirClassSymbol>>,
-        functions: HashMap<Name, MutableList<CfirFunctionSymbol>>,
+        functions: HashMap<Name, MutableList<CfirFunctionSymbol<*>>>,
         properties: HashMap<Name, MutableList<CfirPropertySymbol>>,
     ) {
         when (decl) {
@@ -74,8 +76,9 @@ class CfirExtendMemberScope(
                 classifiers.getOrPut(decl.name) { mutableListOf() }.add(sym)
             }
             is CfirFunction -> {
-                val sym = decl.symbol as? CfirFunctionSymbol ?: return
-                functions.getOrPut(decl.name) { mutableListOf() }.add(sym)
+                val sym = decl.symbol as? CfirFunctionSymbol<*> ?: return
+                val callableName = decl.callableNameOrNull() ?: return
+                functions.getOrPut(callableName) { mutableListOf() }.add(sym)
             }
             is CfirProperty -> {
                 val sym = decl.symbol as? CfirPropertySymbol ?: return

@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.CfirResolvable
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.references.*
@@ -67,6 +68,15 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitClass(klass: CfirClass, data: D): R =
         visitElement(klass, data)
 
+    open fun visitInterface(`interface`: CfirInterface, data: D): R =
+        visitElement(`interface`, data)
+
+    open fun visitStruct(struct: CfirStruct, data: D): R =
+        visitElement(struct, data)
+
+    open fun visitEnum(enum: CfirEnum, data: D): R =
+        visitElement(enum, data)
+
     open fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: D): R =
         visitElement(enumConstructor, data)
 
@@ -78,6 +88,9 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitFunction(function: CfirFunction, data: D): R =
         visitElement(function, data)
+
+    open fun visitNamedFunction(namedFunction: CfirNamedFunction, data: D): R =
+        visitElement(namedFunction, data)
 
     open fun visitMainFunction(mainFunction: CfirMainFunction, data: D): R =
         visitElement(mainFunction, data)
@@ -133,8 +146,17 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitStringInterpolation(stringInterpolation: CfirStringInterpolation, data: D): R =
         visitElement(stringInterpolation, data)
 
+    open fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase, data: D): R =
+        visitElement(namedReferenceWithCandidateBase, data)
+
     open fun visitFunctionCall(functionCall: CfirFunctionCall, data: D): R =
         visitElement(functionCall, data)
+
+    open fun visitErrorNamedReference(errorNamedReference: CfirErrorNamedReference, data: D): R =
+        visitElement(errorNamedReference, data)
+
+    open fun visitThisReference(thisReference: CfirThisReference, data: D): R =
+        visitElement(thisReference, data)
 
     open fun visitPropertyAccess(propertyAccess: CfirPropertyAccess, data: D): R =
         visitElement(propertyAccess, data)
@@ -190,8 +212,11 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitJumpExpression(jumpExpression: CfirJumpExpression, data: D): R =
         visitElement(jumpExpression, data)
 
-    open fun visitLambdaExpression(lambdaExpression: CfirLambdaExpression, data: D): R =
-        visitElement(lambdaExpression, data)
+    open fun visitAnonymousFunction(anonymousFunction: CfirAnonymousFunction, data: D): R =
+        visitElement(anonymousFunction, data)
+
+    open fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression, data: D): R =
+        visitElement(anonymousFunctionExpression, data)
 
     open fun visitRangeExpression(rangeExpression: CfirRangeExpression, data: D): R =
         visitElement(rangeExpression, data)
@@ -219,6 +244,9 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitSubscriptExpression(subscriptExpression: CfirSubscriptExpression, data: D): R =
         visitElement(subscriptExpression, data)
+
+    open fun visitDiagnosticHolder(diagnosticHolder: CfirDiagnosticHolder, data: D): R =
+        visitElement(diagnosticHolder, data)
 
     open fun visitErrorExpression(errorExpression: CfirErrorExpression, data: D): R =
         visitElement(errorExpression, data)

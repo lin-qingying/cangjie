@@ -17,7 +17,7 @@ fun registerResolveProcessors(
     )
     registry.registerProcessor(
         CfirResolvePhase.SUPER_TYPES,
-        CfirSupertypeResolverProcessor(diagnosticReporter, session, scopeSession),
+        CfirSupertypeResolverProcessor(session, scopeSession),
     )
     registry.registerProcessor(CfirResolvePhase.TYPES, CfirTypeResolveProcessor(session, scopeSession))
     registry.registerProcessor(
@@ -33,9 +33,5 @@ fun registerResolveProcessors(
         CfirImplicitTypesResolveProcessor(session, scopeSession),
     )
     registry.registerProcessor(CfirResolvePhase.BODY_RESOLVE, CfirBodyResolveProcessor(session, scopeSession))
-    registry.registerProcessor(
-        CfirResolvePhase.CHECKERS,
-        CfirCheckersResolveProcessor(diagnosticReporter, session, scopeSession),
-    )
-}
 
+}

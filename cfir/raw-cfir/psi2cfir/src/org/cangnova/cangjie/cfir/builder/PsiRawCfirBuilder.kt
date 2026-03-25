@@ -181,7 +181,7 @@ class PsiRawCfirBuilder(
             }
         }
 
-        private fun convertClass(psi: CjClassLikeDeclaration, classKind: CfirClassKind): CfirClass {
+        private fun convertClass(psi: CjClassLikeDeclaration, classKind: CfirClassKind): CfirDeclaration {
             val name = psi.nameAsSafeName
             val classTypeParameters = convertTypeParameters(psi)
             val classDeclarations = convertClassMembers(psi).toMutableList()
@@ -193,20 +193,64 @@ class PsiRawCfirBuilder(
             if (psi is CjEnum) {
                 classDeclarations.addAll(0, psi.constructor.map { convertEnumConstructor(it, classTypeParameters) })
             }
-            return buildSourceDeclaration(CfirClassSymbol()) { symbol ->
-                buildClass {
-                    source = psi.toCjPsiSourceElement()
-                    this.symbol = symbol
-                    origin = CfirDeclarationOrigin.Source
-                    moduleData = baseModuleData
 
-                    attributes = CfirDeclarationAttributes.EMPTY
-                    status = convertDeclarationStatus(psi)
-                    typeParameters.addAll(classTypeParameters)
-                    superTypeRefs.addAll(convertSuperTypeRefs(psi))
-                    declarations.addAll(classDeclarations)
-                    this.name = name
-                    this.classKind = classKind
+            return when (classKind) {
+                CfirClassKind.CLASS -> buildSourceDeclaration(CfirClassSymbol()) { symbol ->
+                    buildClass {
+                        source = psi.toCjPsiSourceElement()
+                        this.symbol = symbol
+                        origin = CfirDeclarationOrigin.Source
+                        moduleData = baseModuleData
+                        attributes = CfirDeclarationAttributes.EMPTY
+                        status = convertDeclarationStatus(psi)
+                        typeParameters.addAll(classTypeParameters)
+                        superTypeRefs.addAll(convertSuperTypeRefs(psi))
+                        declarations.addAll(classDeclarations)
+                        this.name = name
+                    }
+                }
+                CfirClassKind.INTERFACE -> buildSourceDeclaration(CfirInterfaceSymbol()) { symbol ->
+                    buildInterface {
+                        source = psi.toCjPsiSourceElement()
+                        this.symbol = symbol
+                        origin = CfirDeclarationOrigin.Source
+                        moduleData = baseModuleData
+                        attributes = CfirDeclarationAttributes.EMPTY
+                        status = convertDeclarationStatus(psi)
+                        typeParameters.addAll(classTypeParameters)
+                        superTypeRefs.addAll(convertSuperTypeRefs(psi))
+                        declarations.addAll(classDeclarations)
+                        this.name = name
+                    }
+                }
+                CfirClassKind.STRUCT -> buildSourceDeclaration(CfirStructSymbol()) { symbol ->
+                    buildStruct {
+                        source = psi.toCjPsiSourceElement()
+                        this.symbol = symbol
+                        origin = CfirDeclarationOrigin.Source
+                        moduleData = baseModuleData
+                        attributes = CfirDeclarationAttributes.EMPTY
+                        status = convertDeclarationStatus(psi)
+                        typeParameters.addAll(classTypeParameters)
+                        superTypeRefs.addAll(convertSuperTypeRefs(psi))
+                        declarations.addAll(classDeclarations)
+                        this.name = name
+                    }
+                }
+                CfirClassKind.ENUM -> buildSourceDeclaration(CfirEnumSymbol()) { symbol ->
+                    buildEnum {
+                        source = psi.toCjPsiSourceElement()
+                        this.symbol = symbol
+                        origin = CfirDeclarationOrigin.Source
+                        moduleData = baseModuleData
+                        attributes = CfirDeclarationAttributes.EMPTY
+                        status = convertDeclarationStatus(psi)
+                        typeParameters.addAll(classTypeParameters)
+                        superTypeRefs.addAll(convertSuperTypeRefs(psi))
+                        declarations.addAll(classDeclarations)
+                        this.name = name
+                        this.isRefEnum = false
+                    }
                 }
             }
         }
@@ -243,8 +287,8 @@ class PsiRawCfirBuilder(
                 psi.bodyBlockExpression?.let { convertBlock(it) }
             }
 
-            return buildSourceDeclaration(CfirFunctionSymbol(callableIdFor(name))) { symbol ->
-                buildFunction {
+            return buildSourceDeclaration(CfirNamedFunctionSymbol(callableIdFor(name))) { symbol ->
+                buildNamedFunction {
                     source = psi.toCjPsiSourceElement()
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
@@ -1088,17 +1132,17 @@ class PsiRawCfirBuilder(
 
         // ---- Lambda ----
 
-        private fun convertLambda(psi: CjLambdaExpression): CfirLambdaExpression {
+        private fun convertLambda(psi: CjLambdaExpression): CfirAnonymousFunctionExpression {
             val valueParams = psi.valueParameters.map { convertValueParameter(it) }
+            val hasExplicitParameterList = psi.valueParameters.isNotEmpty()
             val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) {
                 null
             } else {
                 psi.bodyExpression?.let { convertBlock(it) }
             }
 
-            val anonymousCallableName = Name.special("<anonymous>")
-            val anonymousFunction = buildSourceDeclaration(CfirFunctionSymbol(callableIdFor(anonymousCallableName))) { symbol ->
-                buildFunction {
+            val anonymousFunction = buildSourceDeclaration(CfirAnonymousFunctionSymbol()) { symbol ->
+                buildAnonymousFunction {
                     source = psi.toCjPsiSourceElement()
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
@@ -1107,15 +1151,17 @@ class PsiRawCfirBuilder(
                     attributes = CfirDeclarationAttributes.EMPTY
                     status = CfirDeclarationStatusImpl.DEFAULT
                     returnTypeRef = buildImplicitTypeRef()
-                    name = anonymousCallableName
                     valueParameters.addAll(valueParams)
                     this.body = body
-                    isMut = false
+                    this.hasExplicitParameterList = hasExplicitParameterList
+                    isLambda = true
+                    typeRef = buildImplicitTypeRef()
                 }
             }
-            return buildLambdaExpression {
+            return buildAnonymousFunctionExpression {
                 source = psi.toCjPsiSourceElement()
                 this.anonymousFunction = anonymousFunction
+                isTrailingLambda = false
             }
         }
 
@@ -1146,7 +1192,7 @@ class PsiRawCfirBuilder(
         }
 
         private fun convertTypeCheck(psi: CjIsExpression): CfirTypeOperator {
-            val argument = psi.leftHandSide?.let { convertExpression(it) }
+            val argument = psi.leftHandSide.let { convertExpression(it) }
                 ?: buildErrorExpression(psi.toSourceElement(), "Missing is-check operand")
             return buildTypeOperator {
                 source = psi.toCjPsiSourceElement()

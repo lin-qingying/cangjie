@@ -5,21 +5,19 @@ import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferTypeParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
-import org.cangnova.cangjie.cfir.diagnostic.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
-import org.cangnova.cangjie.cfir.diagnostic.DiagnosticKind
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory1
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory2
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory3
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.InternalDiagnosticFactoryMethod
-import org.cangnova.cangjie.cfir.expressions.CfirLambdaExpression
-import org.cangnova.cangjie.cfir.constraints.CfirTypeSubstitutorByMap
+import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
-import org.cangnova.cangjie.cfir.resovle.calls.TypeVariableReplacement
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -61,7 +59,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
             is ArgumentTypeMismatch -> {
                 val expectedType = rootCause.expectedType.substituteTypeVariableTypes(candidate)
                 val actualType =
-                    if (rootCause.argument is CfirLambdaExpression && rootCause.argument.coneTypeOrNull?.isError == false) {
+                    if (rootCause.argument is CfirAnonymousFunctionExpression && rootCause.argument.coneTypeOrNull?.isError == false) {
                         rootCause.argument.coneTypeOrNull!!
                     } else {
                         rootCause.actualType.substituteTypeVariableTypes(candidate)
@@ -121,20 +119,13 @@ private fun argumentTypeMismatch(
 // region substituteTypeVariableTypes — 对齐 K2 第 957-965 行
 
 /**
- * 通过约束系统替换类型变量为已固定的类型，残留未固定的类型变量替换为 ConeErrorType。
+ * 当前仓库的 checkers 模块不再直接依赖旧的 constraint-result/substitutor API。
+ * 在这些 API 完整对齐前，这里保守地返回原类型，避免把过期 inference 结果结构硬编码进 checkers。
  */
 private fun ConeCangJieType.substituteTypeVariableTypes(
     candidate: AbstractCallCandidate<*>,
 ): ConeCangJieType {
-    val result = runCatching { candidate.system.buildResult() }.getOrNull() ?: return this
-    val nonErrorSubstitutionMap = result.fixedVariables
-        .mapNotNull { variable ->
-            variable.fixedType?.takeUnless { it is ConeErrorType }?.let { variable.lookupTag.name to it }
-        }
-        .toMap()
-    val substitutor = CfirTypeSubstitutorByMap(nonErrorSubstitutionMap)
-
-    return substitutor.substituteOrSelf(this)
+    return this
 }
 
 

@@ -53,13 +53,17 @@ val ConeCangJieType.isPrimitiveType: Boolean
 // ---- IdealType 判断（仓颉特有，编译期字面量推断） ----
 
 val ConeCangJieType.isIdealInt: Boolean
-    get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.IDEAL_INT
+    get() = this is ConeIdealIntLiteralType || (this is ConePrimitiveType && kind == PrimitiveTypeKind.IDEAL_INT)
 
 val ConeCangJieType.isIdealFloat: Boolean
-    get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.IDEAL_FLOAT
+    get() = this is ConeIdealFloatLiteralType || (this is ConePrimitiveType && kind == PrimitiveTypeKind.IDEAL_FLOAT)
 
 val ConeCangJieType.isIdealType: Boolean
-    get() = this is ConePrimitiveType && kind.isIdeal
+    get() = this is ConeIdealLiteralType || (this is ConePrimitiveType && kind.isIdeal)
+
+/** 是否为理想字面量类型（[ConeIdealLiteralType] 形式） */
+val ConeCangJieType.isIdealLiteralType: Boolean
+    get() = this is ConeIdealLiteralType
 
 // ============================================================
 // 标准库类型判断（基于 ClassId）
@@ -81,6 +85,21 @@ val ConeCangJieType.isString: Boolean
 
 val ConeCangJieType.isArray: Boolean
     get() = classId == StdlibClassIds.Array
+
+/**
+ * 提取标准库 `Array<T>` 的元素类型。
+ *
+ * 这里故意只识别名义 `Array<T>`，不再依赖已经被移除的 `ConeArrayType`。
+ */
+val ConeCangJieType.arrayElementType: ConeCangJieType?
+    get() = when (this) {
+        is ConeClassLikeType ->
+            if (classId == StdlibClassIds.Array) typeArguments.singleOrNull()?.type else null
+        is ConeStructType ->
+            if (classId == StdlibClassIds.Array) typeArguments.singleOrNull()?.type else null
+        is ConeTypeAliasType -> expandedType?.arrayElementType
+        else -> null
+    }
 
 val ConeCangJieType.isOption: Boolean
     get() = classId == StdlibClassIds.Option

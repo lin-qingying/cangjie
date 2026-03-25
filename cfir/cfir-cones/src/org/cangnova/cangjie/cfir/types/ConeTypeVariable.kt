@@ -1,41 +1,41 @@
 package org.cangnova.cangjie.cfir.types
 
- /**
- * 类型变量的类型构造器。
- *
- * 在约束系统中标识一个类型变量，使其可与其他类型构造器统一处理。
- */
-class ConeTypeVariableTypeConstructor(
-    override val name: String,
-) : ConeLookupTag() {
+import org.cangnova.cangjie.type.model.TypeParameterMarker
+import org.cangnova.cangjie.type.model.TypeVariableMarker
+import kotlin.hashCode
+import kotlin.toString
 
-    override fun equals(other: Any?): Boolean =
-        this === other // 类型变量构造器使用引用相等
+open class ConeTypeVariable(name: String, originalTypeParameter: TypeParameterMarker? = null) : TypeVariableMarker {
+    val typeConstructor:  ConeTypeVariableTypeConstructor = ConeTypeVariableTypeConstructor(name, originalTypeParameter)
+    val defaultType:ConeTypeVariableType = ConeTypeVariableType(  typeConstructor)
 
-    override fun hashCode(): Int = System.identityHashCode(this)
+    override fun toString(): String {
+        return defaultType.toString()
+    }
 }
-
 /**
- * 类型变量的过渡兼容类型。
+ * 类型变量在类型图中的兼容引用壳。
  *
- * 它保留旧有 `ConeTypeVariableType` 的二进制/源码兼容角色，
- * 但新的状态承载应转移到 [ConeTypeVariableState]，
- * 新的类型图引用应优先使用 [ConeTypeVariableRef]。
+ * 语义上它仍然是“一个待求解的类型变量”，
+ * 但为了兼容现有调用点和测试，这一层继续保留。
  */
 class ConeTypeVariableType(
-    val typeVariableConstructor: ConeTypeVariableTypeConstructor,
-    override val attributes: ConeAttributes = ConeAttributes.EMPTY,
-) : ConeRigidType() {
-
-    override val isError: Boolean get() = false
-
+    val typeConstructor: ConeTypeVariableTypeConstructor,
+    override val attributes: ConeAttributes = ConeAttributes.Empty,
+) : ConeSimpleCangJieType() {
+    override val typeArguments: List<  ConeTypeProjection> get() = emptyList()
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ConeTypeVariableType) return false
-        return typeVariableConstructor === other.typeVariableConstructor
+
+        if (typeConstructor != other.typeConstructor) return false
+
+        return true
     }
 
-    override fun hashCode(): Int = typeVariableConstructor.hashCode()
-
-    override fun toString(): String = typeVariableConstructor.name
+    override fun hashCode(): Int {
+        var result = 0
+        result = 31 * result + typeConstructor.hashCode()
+        return result
+    }
 }

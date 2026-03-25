@@ -325,7 +325,7 @@ PSI ──→ RawCfirBuilder ──→ CFIR 树
 | `CfirCallResolver.kt` | 162 |
 | `CfirInferTypeArguments.kt` | 163 |
 | `CfirMatchExhaustivenessChecker.kt` | 161 |
-| `CfirOverloadConflictResolver.kt` | 115 |
+| `ConeOverloadConflictResolver.kt` | 115 |
 
 ---
 

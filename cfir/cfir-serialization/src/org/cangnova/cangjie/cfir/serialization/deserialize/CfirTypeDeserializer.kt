@@ -7,11 +7,18 @@ import PackageFormat.FuncTyInfo
 import PackageFormat.GenericTyInfo
 import PackageFormat.SemaTy
 import PackageFormat.TypeKind
-import org.cangnova.cangjie.cfir.types.ConeArrayType
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeCStringType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
+import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFuncType
@@ -19,16 +26,25 @@ import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
-import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
-import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
+private fun simpleDiagnostic(reason: String): ConeDiagnostic = object : ConeDiagnostic {
+    override val reason: String = reason
+}
+
+private fun errorType(reason: String, delegatedType: ConeCangJieType? = null): ConeErrorType =
+    ConeErrorType(simpleDiagnostic(reason), delegatedType = delegatedType)
+
 /**
  * Deserializes flatbuffer SemaTy into ConeCangJieType.
  */
+@OptIn(CfirImplementationDetail::class)
 class CfirTypeDeserializer(
     private val context: CfirDeserializationContext,
 ) {
@@ -44,7 +60,7 @@ class CfirTypeDeserializer(
         }
 
         val semaTy = context.pkg.allTypes(typeIndex)
-            ?: return ConeErrorType("Cannot read type index $typeIndex")
+            ?: return errorType("Cannot read type index $typeIndex")
 
         return try {
             val result = convertSemaTy(semaTy)
@@ -99,15 +115,17 @@ class CfirTypeDeserializer(
 
             TypeKind.Generic -> convertGenericType(semaTy)
 
-            TypeKind.Type -> ConeErrorType("Unsupported type kind: Type")
-            else -> ConeErrorType("Unknown TypeKind: ${semaTy.kind}")
+            TypeKind.Type -> errorType("Unsupported type kind: Type")
+            else -> errorType("Unknown TypeKind: ${semaTy.kind}")
         }
     }
 
-    private fun deserializeTypeArgs(semaTy: SemaTy): List<ConeCangJieType> {
+    private fun deserializeTypeArgs(semaTy: SemaTy): List<ConeTypeProjection> {
         val len = semaTy.typeArgsLength
         if (len == 0) return emptyList()
-        return (0 until len).map { deserializeTypeFromField(semaTy.typeArgs(it)) }
+        return (0 until len).map { index ->
+            ConeTypeProjection(deserializeTypeFromField(semaTy.typeArgs(index)))
+        }
     }
 
     private fun resolveClassId(fullId: FullId): ClassId {
@@ -123,14 +141,13 @@ class CfirTypeDeserializer(
 
     private fun convertClassType(semaTy: SemaTy, isInterface: Boolean): ConeCangJieType {
         val info = semaTy.info(CompositeTyInfo()) as? CompositeTyInfo
-            ?: return ConeErrorType("Class/Interface missing CompositeTyInfo")
+            ?: return errorType("Class/Interface missing CompositeTyInfo")
         val fullId = info.declPtr
-            ?: return ConeErrorType("CompositeTyInfo missing declPtr")
+            ?: return errorType("CompositeTyInfo missing declPtr")
         val classId = resolveClassId(fullId)
-        val typeArgs = deserializeTypeArgs(semaTy)
         return ConeClassLikeType(
-            lookupTag = ConeClassLookupTagImpl(classId),
-            typeArguments = typeArgs,
+            lookupTag = ConeClassLikeLookupTagImpl(classId),
+            typeArguments = deserializeTypeArgs(semaTy),
             isInterface = isInterface,
             isThisType = info.isThisTy,
         )
@@ -138,34 +155,32 @@ class CfirTypeDeserializer(
 
     private fun convertStructType(semaTy: SemaTy): ConeCangJieType {
         val info = semaTy.info(CompositeTyInfo()) as? CompositeTyInfo
-            ?: return ConeErrorType("Struct missing CompositeTyInfo")
+            ?: return errorType("Struct missing CompositeTyInfo")
         val fullId = info.declPtr
-            ?: return ConeErrorType("CompositeTyInfo missing declPtr")
+            ?: return errorType("CompositeTyInfo missing declPtr")
         val classId = resolveClassId(fullId)
-        val typeArgs = deserializeTypeArgs(semaTy)
         return ConeStructType(
-            lookupTag = ConeClassLookupTagImpl(classId),
-            typeArguments = typeArgs,
+            lookupTag = ConeClassLikeLookupTagImpl(classId),
+            typeArguments = deserializeTypeArgs(semaTy),
         )
     }
 
     private fun convertEnumType(semaTy: SemaTy): ConeCangJieType {
         val info = semaTy.info(CompositeTyInfo()) as? CompositeTyInfo
-            ?: return ConeErrorType("Enum missing CompositeTyInfo")
+            ?: return errorType("Enum missing CompositeTyInfo")
         val fullId = info.declPtr
-            ?: return ConeErrorType("CompositeTyInfo missing declPtr")
+            ?: return errorType("CompositeTyInfo missing declPtr")
         val classId = resolveClassId(fullId)
-        val typeArgs = deserializeTypeArgs(semaTy)
         return ConeEnumType(
-            lookupTag = ConeClassLookupTagImpl(classId),
-            typeArguments = typeArgs,
+            lookupTag = ConeClassLikeLookupTagImpl(classId),
+            typeArguments = deserializeTypeArgs(semaTy),
         )
     }
 
     private fun convertFuncType(semaTy: SemaTy): ConeCangJieType {
         val info = semaTy.info(FuncTyInfo()) as? FuncTyInfo
-            ?: return ConeErrorType("Func missing FuncTyInfo")
-        val paramTypes = deserializeTypeArgs(semaTy)
+            ?: return errorType("Func missing FuncTyInfo")
+        val paramTypes = deserializeTypeArgs(semaTy).map { it.type }
         val returnType = deserializeTypeFromField(info.retType)
         return ConeFuncType(
             parameterTypes = paramTypes,
@@ -176,64 +191,77 @@ class CfirTypeDeserializer(
     }
 
     private fun convertTupleType(semaTy: SemaTy): ConeCangJieType {
-        return ConeTupleType(elementTypes = deserializeTypeArgs(semaTy))
+        return ConeTupleType(elementTypes = deserializeTypeArgs(semaTy).map { it.type })
     }
 
     private fun convertArrayType(semaTy: SemaTy): ConeCangJieType {
-        val elementType = if (semaTy.typeArgsLength > 0) {
-            deserializeTypeFromField(semaTy.typeArgs(0))
-        } else {
-            ConeErrorType("Array missing element type")
-        }
-        val info = semaTy.info(ArrayTyInfo()) as? ArrayTyInfo
-        val dims = info?.dimsOrSize?.toInt() ?: 1
-        return ConeArrayType(elementType = elementType, dims = dims)
+        val elementProjection = deserializeTypeArgs(semaTy).singleOrNull()
+            ?: ConeTypeProjection(errorType("Array missing element type"))
+        return ConeStructType(
+            lookupTag = ConeClassLikeLookupTagImpl(StdlibClassIds.Array),
+            typeArguments = listOf(elementProjection),
+        )
     }
 
     private fun convertVArrayType(semaTy: SemaTy): ConeCangJieType {
-        val elementType = if (semaTy.typeArgsLength > 0) {
-            deserializeTypeFromField(semaTy.typeArgs(0))
-        } else {
-            ConeErrorType("VArray missing element type")
-        }
+        val elementType = deserializeTypeArgs(semaTy).singleOrNull()?.type
+            ?: errorType("VArray missing element type")
         val info = semaTy.info(ArrayTyInfo()) as? ArrayTyInfo
         val size = info?.dimsOrSize ?: 0L
         return ConeVArrayType(elementType = elementType, size = size)
     }
 
     private fun convertPointerType(semaTy: SemaTy): ConeCangJieType {
-        val pointeeType = if (semaTy.typeArgsLength > 0) {
-            deserializeTypeFromField(semaTy.typeArgs(0))
-        } else {
-            ConePrimitiveType.UNIT
-        }
+        val pointeeType = deserializeTypeArgs(semaTy).singleOrNull()?.type ?: ConePrimitiveType.UNIT
         return ConePointerType(pointeeType = pointeeType)
     }
 
     private fun convertGenericType(semaTy: SemaTy): ConeCangJieType {
         val info = semaTy.info(GenericTyInfo()) as? GenericTyInfo
-            ?: return ConeErrorType("Generic missing GenericTyInfo")
-        val name = info.declPtr?.decl ?: "T"
+            ?: return errorType("Generic missing GenericTyInfo")
+        val name = Name.identifier(info.declPtr?.decl ?: "T")
         val upperBounds = (0 until info.upperBoundsLength).map {
             deserializeTypeFromField(info.upperBounds(it))
         }
-        return ConeTypeParameterType(
-            lookupTag = ConeTypeParameterLookupTag(name),
-            upperBounds = upperBounds,
-        )
+        return ConeTypeParameterTypeImpl(createSyntheticTypeParameterSymbol(name, upperBounds).toLookupTag())
     }
 
     private fun createRecursiveTypeFallback(typeIndex: Int): ConeCangJieType {
         val semaTy = context.pkg.allTypes(typeIndex)
-            ?: return ConeErrorType("Recursive type reference: $typeIndex")
+            ?: return errorType("Recursive type reference: $typeIndex")
         if (semaTy.kind == TypeKind.Generic) {
             val info = semaTy.info(GenericTyInfo()) as? GenericTyInfo
-            val name = info?.declPtr?.decl ?: "T$typeIndex"
-            return ConeTypeParameterType(
-                lookupTag = ConeTypeParameterLookupTag(name),
-                upperBounds = emptyList(),
+            val name = Name.identifier(info?.declPtr?.decl ?: "T$typeIndex")
+            return ConeTypeParameterTypeImpl(createSyntheticTypeParameterSymbol(name, emptyList()).toLookupTag())
+        }
+        return errorType("Recursive type reference: $typeIndex")
+    }
+
+    private fun createSyntheticTypeParameterSymbol(
+        name: Name,
+        upperBounds: List<ConeCangJieType>,
+    ): CfirTypeParameterSymbol {
+        val symbol = CfirTypeParameterSymbol()
+        val boundRefs = upperBounds.map { upperBound ->
+            CfirResolvedTypeRefImpl(
+                source = null,
+                annotations = emptyList(),
+                coneType = upperBound,
+                delegatedTypeRef = null,
             )
         }
-        return ConeErrorType("Recursive type reference: $typeIndex")
+        val declaration = CfirTypeParameterImpl(
+            source = null,
+            moduleData = context.moduleData,
+            annotations = emptyList(),
+            origin = CfirDeclarationOrigin.Library,
+            attributes = CfirDeclarationAttributes.EMPTY,
+            containingDeclarationSymbol = symbol,
+            symbol = symbol,
+            name = name,
+            bounds = boundRefs as List<CfirResolvedTypeRef>,
+        )
+        symbol.bind(declaration)
+        return symbol
     }
 }

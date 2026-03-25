@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     implementation(project(":cfir:cfir-common"))
+    implementation(project(":cfir:cfir-cones"))
 
     implementation(project(":generators"))
     implementation(project(":util"))

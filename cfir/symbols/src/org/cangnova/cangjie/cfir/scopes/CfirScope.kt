@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.Name
@@ -17,10 +18,10 @@ import org.cangnova.cangjie.name.Name
 abstract class  CfirScope {
 
     /** 按名称处理类/接口/结构体/枚举符号 */
-    open fun processClassifiersByName(name: Name, processor: (CfirClassSymbol) -> Unit) {}
+    open fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {}
 
     /** 按名称处理函数符号 */
-    open fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol) -> Unit) {}
+    open fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol<*>) -> Unit) {}
 
     /** 按名称处理属性符号 */
     open fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {}

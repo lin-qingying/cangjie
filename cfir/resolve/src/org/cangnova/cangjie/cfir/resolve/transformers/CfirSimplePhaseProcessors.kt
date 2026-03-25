@@ -2,7 +2,7 @@
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.resolve.CfirResolutionMode
+import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitAwareBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSession
@@ -41,7 +41,7 @@ internal class CfirImplicitTypesResolveProcessor(
     override val transformer get() = implicitTypesTransformer as org.cangnova.cangjie.cfir.visitors.CfirTransformer<Nothing?>
 
     override fun processFile(file: CfirFile) {
-        implicitTypesTransformer.transformFile(file, CfirResolutionMode.ContextIndependent)
+        implicitTypesTransformer.transformFile(file, ResolutionMode.ContextIndependent)
     }
 }
 
@@ -67,7 +67,7 @@ internal class CfirBodyResolveProcessor(
     override val transformer get() = bodyResolveTransformer as org.cangnova.cangjie.cfir.visitors.CfirTransformer<Nothing?>
 
     override fun processFile(file: CfirFile) {
-        bodyResolveTransformer.transformFile(file, CfirResolutionMode.ContextIndependent)
+        bodyResolveTransformer.transformFile(file, ResolutionMode.ContextIndependent)
     }
 }
 

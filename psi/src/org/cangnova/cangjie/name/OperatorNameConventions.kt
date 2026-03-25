@@ -159,6 +159,52 @@ object OperatorNameConventions {
     @JvmField
     val ITERATOR = Name.identifier("iterator")
 
+    @JvmField
+    val TOKENS_BY_OPERATOR_NAME: Map<Name, String> = mapOf(
+        INVOKE to "()",
+        GET to "[]",
+        SET to "[]",
+        NOT to "!",
+        NOT_EQUALS to "!=",
+        EXPONENTIATION to "**",
+        EQUALS to "==",
+        TIMES to "*",
+        DIV to "/",
+        REM to "%",
+        MINUS to "-",
+        PLUS to "+",
+        LEFT_SHIFT to "<<",
+        RIGHT_SHIFT to ">>",
+        COMPARE_GT to ">",
+        COMPARE_LTEQ to "<=",
+        COMPARE_LT to "<",
+        COMPARE_GTEQ to ">=",
+        AND to "&",
+        XOR to "^",
+        OR to "|",
+        TIMES_ASSIGN to "*=",
+        DIV_ASSIGN to "/=",
+        EXPONENTIATION_ASSIGN to "**=",
+        OROREQ_ASSIGN to "||=",
+        ANDANDEQ_ASSIGN to "&&=",
+        OREQ_ASSIGN to "|=",
+        ANDEQ_ASSIGN to "&=",
+        XOREQ_ASSIGN to "^=",
+        GTGTEQ_ASSIGN to ">>=",
+        LTLTEQ_ASSIGN to "<<=",
+        PIPELINE to "|>",
+        COMPOSITION to "~>",
+        REM_ASSIGN to "%=",
+        PLUS_ASSIGN to "+=",
+        MINUS_ASSIGN to "-=",
+        ANDAND to "&&",
+        OROR to "||",
+        INC to "++",
+        DEC to "--",
+        UNARY_MINUS to "-",
+        UNARY_PLUS to "+",
+    )
+
     fun Name.asOperatorString(): String {
         return when (this) {
             INVOKE -> "()"
