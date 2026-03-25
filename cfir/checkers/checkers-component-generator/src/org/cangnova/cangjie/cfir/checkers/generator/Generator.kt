@@ -34,7 +34,7 @@ private const val CHECKER_CONTEXT_FQN = "org.cangnova.cangjie.cfir.analysis.chec
 private const val FIR_FQN = "org.cangnova.cangjie.cfir"
 private const val CHECKERS_COMPONENT_FQN = "org.cangnova.cangjie.cfir.analysis.checkersComponent"
 private const val FIR_ELEMENT_FQN = "org.cangnova.cangjie.cfir.CfirElement"
-private const val WITH_ENTRY_FQN = "org.cangnova.cangjie.utils.exceptions.withFirEntry"
+private const val WITH_ENTRY_FQN = "org.cangnova.cangjie.utils.exceptions.withCfirEntry"
 private const val RETHROW_FQN = "org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails"
 
 class Generator(
@@ -313,7 +313,7 @@ class Generator(
                 withIndent {
                     println("rethrowExceptionWithDetails(\"Exception in $checkersTypeInErrorMsg checkers\", e) {")
                     withIndent {
-                        println("withFirEntry(\"element\", element)")
+                        println("withCfirEntry(\"element\", element)")
                         println("context.containingFilePath?.let { withEntry(\"file\", it) }")
                     }
                     println("}")

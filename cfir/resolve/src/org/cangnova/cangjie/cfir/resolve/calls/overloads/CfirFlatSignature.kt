@@ -4,7 +4,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
@@ -15,7 +15,7 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
  */
 class CfirFlatSignature(
     /** 原始候选。 */
-    val origin: CfirCandidate,
+    val origin: Candidate,
     /** 类型参数列表。 */
     val typeParameters: List<CfirTypeParameter>,
     /** 值参数类型列表。 */
@@ -34,7 +34,7 @@ class CfirFlatSignature(
 
     companion object {
         /** 从候选构建 `FlatSignature`。 */
-        fun create(candidate: CfirCandidate): CfirFlatSignature {
+        fun create(candidate: Candidate): CfirFlatSignature {
             val symbol = candidate.symbol
             if (!symbol.isBound) {
                 return CfirFlatSignature(candidate, emptyList(), emptyList(), 0, false, false, false)

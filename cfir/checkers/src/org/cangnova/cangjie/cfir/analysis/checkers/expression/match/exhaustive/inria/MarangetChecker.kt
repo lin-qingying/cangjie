@@ -1,6 +1,5 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.inria
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CfirTypeCheckUtils
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirConstructor
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPattern
@@ -92,7 +91,7 @@ class MarangetChecker : ExhaustivenessChecker {
         val wildcardRows = matrix.filter { row ->
             when (val kind = row.firstOrNull()?.kind) {
                 CfirMatchPatternKind.Wild, is CfirMatchPatternKind.Binding -> true
-                is CfirMatchPatternKind.Type -> kind.type == type || CfirTypeCheckUtils.isSubtypeOf(type, kind.type)
+                is CfirMatchPatternKind.Type -> kind.type == type
                 else -> false
             }
         }
@@ -150,4 +149,3 @@ private fun ConeCangJieType.isTyAdt(): Boolean = this is ConeEnumType || this is
 
 private fun ConeCangJieType.isIntegerLike(): Boolean =
     this is org.cangnova.cangjie.cfir.types.ConePrimitiveType && kind.isInteger
-

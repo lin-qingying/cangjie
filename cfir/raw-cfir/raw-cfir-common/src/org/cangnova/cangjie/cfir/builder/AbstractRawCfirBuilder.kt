@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression as bui
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference as buildNamedReferenceNode
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef as buildImplicitTypeRefNode
 import org.cangnova.cangjie.descriptors.Visibility
@@ -105,7 +106,9 @@ abstract class AbstractRawCfirBuilder<T : Any>(
     protected fun buildErrorExpression(source: AbstractCjSourceElement? = null, reason: String): CfirErrorExpression {
         return buildErrorExpressionNode {
             this.source = source as? CjSourceElement
-            this.reason = reason
+            this.diagnostic = object : ConeDiagnostic {
+                override val reason: String = reason
+            }
         }
     }
 

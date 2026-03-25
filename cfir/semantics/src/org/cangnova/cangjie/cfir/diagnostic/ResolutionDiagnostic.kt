@@ -2,10 +2,10 @@ package org.cangnova.cangjie.cfir.diagnostic
 
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.semantics.CandidateApplicability
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 
 class  ArgumentTypeMismatch(
     val expectedType: ConeCangJieType,
@@ -33,3 +33,6 @@ class VisibilityError(
 class InferenceConstraintError(
     val message: String,
 ) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+
+object ResolutionResultOverridesOtherToPreserveCompatibility :
+    ResolutionDiagnostic(CandidateApplicability.RESOLVED_NEED_PRESERVE_COMPATIBILITY)

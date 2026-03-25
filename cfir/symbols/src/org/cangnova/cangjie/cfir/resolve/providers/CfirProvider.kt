@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -17,7 +18,7 @@ abstract class CfirProvider : CfirSessionComponent {
 
     abstract fun getCfirFilesByPackage(fqName: FqName): List<CfirFile>
 
-    abstract fun getClassByClassId(classId: ClassId): CfirClass?
+    abstract fun getClassByClassId(classId: ClassId): CfirClassLikeDeclaration?
 
     abstract fun getClassNamesInPackage(fqName: FqName): Set<Name>
 

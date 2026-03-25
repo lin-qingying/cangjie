@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.Name
@@ -45,11 +46,11 @@ class CfirCompositeScope(private val scopes: List<CfirScope>) : CfirScope() {
 
     constructor(vararg scopes: CfirScope) : this(scopes.toList())
 
-    override fun processClassifiersByName(name: Name, processor: (CfirClassSymbol) -> Unit) {
+    override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         for (scope in scopes) scope.processClassifiersByName(name, processor)
     }
 
-    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol) -> Unit) {
+    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol<*>) -> Unit) {
         for (scope in scopes) scope.processFunctionsByName(name, processor)
     }
 

@@ -13,7 +13,6 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFieldVariable
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInvalidDeclarationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirPatternVariableInitializerTypeMismatchChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirPatternVariableChecker
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirOverrideChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirPropertyChecker
 
 object CommonDeclarationCheckers : CfirDeclarationCheckers() {
@@ -26,11 +25,7 @@ object CommonDeclarationCheckers : CfirDeclarationCheckers() {
     override val fieldVariableCheckers: Set<CfirFieldVariableChecker>
         get() = setOf(CfirFieldVariableInitializerTypeMismatchChecker)
 
-
-    override val classCheckers
-        get() = setOf(CfirOverrideChecker)
-
-    override val classLikeCheckers
+    override val memberDeclarationCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirMemberDeclarationChecker>
         get() = setOf(
             CfirExtendTargetLegalityChecker,
             CfirExtendInterfaceKindChecker,
@@ -40,6 +35,13 @@ object CommonDeclarationCheckers : CfirDeclarationCheckers() {
             CfirExtendSpecializationConflictChecker,
             CfirExtendDefaultImplementationConflictChecker,
         )
+
+
+    override val classCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirDeclarationChecker<org.cangnova.cangjie.cfir.declarations.CfirClass>>
+        get() = emptySet()
+
+    override val classLikeCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirClassLikeChecker>
+        get() = emptySet()
 
     override val propertyCheckers: Set<CfirPropertyChecker>
         get() = emptySet()

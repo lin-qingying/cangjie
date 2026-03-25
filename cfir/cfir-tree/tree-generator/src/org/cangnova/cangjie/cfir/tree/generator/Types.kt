@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.tree.generator
 
 import org.cangnova.cangjie.cfir.tree.generator.util.generatedType
 import org.cangnova.cangjie.cfir.tree.generator.util.type
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.generators.tree.TypeKind
 
 val cfirVisitorType = generatedType("visitors", "CfirVisitor")
@@ -14,3 +15,9 @@ val cfirElementType = generatedType("CfirElement")
 val pureAbstractElementType = generatedType("CfirPureAbstractElement")
 val cfirImplementationDetailType = generatedType("CfirImplementationDetail", kind = TypeKind.Class)
 val cfirBuilderDslAnnotation = generatedType("builder", "CfirBuilderDsl", kind = TypeKind.Class)
+val coneDiagnosticType = generatedType("types", "ConeDiagnostic", kind = TypeKind.Interface)
+val coneErrorTypeType = type<ConeErrorType>()
+val coneUnreportedDuplicateDiagnosticType = generatedType("types", "ConeUnreportedDuplicateDiagnostic")
+val cfirSymbolType = type("symbols", "CfirSymbol")
+val cfirThisOwnerSymbolType = type("symbols", "CfirThisOwnerSymbol")
+val coneTypeOrNull = type("types","coneTypeOrNull")

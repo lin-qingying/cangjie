@@ -6,10 +6,10 @@ package org.cangnova.cangjie.cfir.types
  */
 class ConePointerType(
     val pointeeType: ConeCangJieType,
-    override val attributes: ConeAttributes = ConeAttributes.EMPTY,
-) : ConeRigidType() {
+    override val attributes: ConeAttributes = ConeAttributes.Empty,
+) : ConeRigidType(), ConeTypeConstructorMarker {
 
-    override val typeArguments: List<ConeCangJieType> get() = listOf(pointeeType)
+    override val typeArguments: List<ConeTypeProjection> get() = listOf(ConeTypeProjection(pointeeType))
 
     override fun equals(other: Any?): Boolean =
         other is ConePointerType && pointeeType == other.pointeeType
@@ -24,8 +24,8 @@ class ConePointerType(
  * 用于 C 互操作的 char* 字符串。
  */
 class ConeCStringType(
-    override val attributes: ConeAttributes = ConeAttributes.EMPTY,
-) : ConeRigidType() {
+    override val attributes: ConeAttributes = ConeAttributes.Empty,
+) : ConeRigidType(), ConeTypeConstructorMarker {
 
     override fun equals(other: Any?): Boolean = other is ConeCStringType
 
@@ -38,7 +38,7 @@ class ConeCStringType(
  * Any 顶类型，对应仓颉编译器中的 AnyTy。
  * 类型检查期间内部使用的临时顶类型。
  */
-object ConeAnyType : ConeRigidType() {
-    override val attributes: ConeAttributes get() = ConeAttributes.EMPTY
+object ConeAnyType : ConeRigidType(), ConeTypeConstructorMarker {
+    override val attributes: ConeAttributes get() = ConeAttributes.Empty
     override fun toString(): String = "Any"
 }

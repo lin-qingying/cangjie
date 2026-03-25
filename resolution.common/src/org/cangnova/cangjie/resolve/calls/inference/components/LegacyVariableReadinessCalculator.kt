@@ -75,7 +75,7 @@ class LegacyVariableReadinessCalculator(
             // For reified variables we keep old behavior, as captured types aren't usable for their substitutions (see KT-49838, KT-51040)
             // See other comments for READY_FOR_FIXATION_CAPTURED_UPPER_BOUND_WITH_SELF_TYPES itself
             areAllProperConstraintsSelfTypeBased() -> {
-                if (fixationEnhancementsIn22 && !isReified() && hasDirectConstraintToNotFixedRelevantVariable()) {
+                if (fixationEnhancementsIn22   && hasDirectConstraintToNotFixedRelevantVariable()) {
                     TypeVariableFixationReadiness.READY_FOR_FIXATION_CAPTURED_UPPER_BOUND_WITH_SELF_TYPES
                 } else {
                     TypeVariableFixationReadiness.READY_FOR_FIXATION_DECLARED_UPPER_BOUND_WITH_SELF_TYPES
@@ -94,7 +94,6 @@ class LegacyVariableReadinessCalculator(
             dependencyProvider.isVariableRelatedToAnyOutputType(this) -> TypeVariableFixationReadiness.RELATED_TO_ANY_OUTPUT_TYPE
             hasOnlyIncorporatedConstraintsFromDeclaredUpperBoundLegacyVersion() ->
                 TypeVariableFixationReadiness.FROM_INCORPORATION_OF_DECLARED_UPPER_BOUND
-            isReified() -> TypeVariableFixationReadiness.READY_FOR_FIXATION_REIFIED
 
             // 1.5+ (questionable) logic: we prefer LOWER constraints to UPPER constraints, mostly because of KT-41934
             // TODO: try to reconsider (see KT-76518)

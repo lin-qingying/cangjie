@@ -53,6 +53,12 @@
 | `:cfir:checkers` | 诊断检查器框架（Declaration/Expression/Type checkers） | ✅ 已实现 |
 | `:cfir:diagnostic-renderers` | 诊断渲染器 | ✅ 已实现 |
 
+- `:cfir:checkers` 已完成一轮针对 Kotlin/K2 API 漂移的主代码收敛：移除了已失配的 `CfirOverrideChecker` 与本地冗余的 `CfirTypeCheckUtils`，统一改为复用项目现有 `AbstractTypeChecker`/`typeContext` 入口，修复了 extend checker 的声明分派层级，并清理了 match/diagnostics 适配层中的过期调用；当前可通过定向编译（`./gradlew.bat :cfir:checkers:compileKotlin`）。
+- `CfirErrorTypeRef` 的错误类型引用接管已进一步对齐 Kotlin FIR：`CfirErrorTypeRefBuilder` 与 `CfirErrorTypeRefImpl` 现均为手写实现，生成器已不再为 `ErrorTypeRef` 产出同名 builder/impl；当前手写版本位于 `cfir/cfir-tree/src/org/cangnova/cangjie/cfir/types/builder/CfirErrorTypeRefBuilder.kt` 与 `cfir/cfir-tree/src/org/cangnova/cangjie/cfir/types/impl/CfirErrorTypeRefImpl.kt`，并已通过 `./gradlew.bat :cfir:cfir-tree:generateTree`、`./gradlew.bat :cfir:cfir-tree:compileKotlin` 与 `./gradlew.bat :cfir:raw-cfir:psi2cfir:compileKotlin` 验证不会被重新生成覆盖，且 `buildErrorTypeRef { diagnostic = ConeSimpleDiagnostic(...) }` 调用链可编译通过。
+- 与上述迁移配套，`CfirErrorTypeRef` 的主要消费点也已从旧的 `reason` 读取切换到 `diagnostic.reason` / `diagnostic` 模型（如 `CfirTypeResolver`、`CfirTypeRefExtensions`、`CfirResolvedTypesVerifier`），当前 `:cfir:cfir-tree` 与 `:cfir:raw-cfir:psi2cfir` 均可定向编译通过。
+- 经过全仓扫尾，剩余 `.reason` 读取点主要已限定在其他错误节点模型（如 `CfirErrorReference`、`CfirInvalidDeclaration`、`CfirErrorExpression`），不再属于 `CfirErrorTypeRef` 迁移残留；`CfirErrorTypeRef` 主链现已统一到 `diagnostic` / `diagnostic.reason`。
+- `LightTreeTypeConverter` 中对 `buildErrorTypeRef` 的旧 `reason = ...` 写法也已迁移到 `diagnostic = ConeSimpleDiagnostic(...)`，并已通过 `./gradlew.bat :cfir:raw-cfir:light-tree2cfir:compileKotlin` 复验；其中一次失败来自 Kotlin daemon 增量缓存冲突，清理该模块 `build/kotlin` 缓存后 fresh 编译通过，说明源码层迁移正确。
+
 ### Raw CFIR 构建（阶段 6）
 
 | 模块 | 职责 | 状态 |

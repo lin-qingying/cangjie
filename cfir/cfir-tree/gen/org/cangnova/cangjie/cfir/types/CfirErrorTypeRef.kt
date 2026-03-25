@@ -7,6 +7,7 @@ package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -14,10 +15,13 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.errorTypeRef]
  */
-abstract class CfirErrorTypeRef : CfirTypeRef() {
+abstract class CfirErrorTypeRef : CfirResolvedTypeRef(), CfirDiagnosticHolder {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
-    abstract val reason: String
+    abstract override val coneType: ConeCangJieType
+    abstract override val delegatedTypeRef: CfirTypeRef?
+    abstract override val diagnostic: ConeDiagnostic
+    abstract val partiallyResolvedTypeRef: CfirTypeRef?
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitErrorTypeRef(this, data)
@@ -30,5 +34,8 @@ abstract class CfirErrorTypeRef : CfirTypeRef() {
 
 
     override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirErrorTypeRef
+
+
+    abstract fun <D> transformPartiallyResolvedTypeRef(transformer: CfirTransformer<D>, data: D): CfirErrorTypeRef
 
 }

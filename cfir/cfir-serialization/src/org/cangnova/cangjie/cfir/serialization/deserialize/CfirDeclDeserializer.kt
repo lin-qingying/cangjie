@@ -21,6 +21,7 @@ import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.metadata.model.Attribute
 import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
@@ -65,10 +66,10 @@ class CfirDeclDeserializer(
 
     private fun convertDecl(decl: Decl): CfirDeclaration? {
         return when (decl.kind) {
-            DeclKind.ClassDecl -> convertClass(decl, CfirClassKind.CLASS)
-            DeclKind.InterfaceDecl -> convertClass(decl, CfirClassKind.INTERFACE)
-            DeclKind.StructDecl -> convertClass(decl, CfirClassKind.STRUCT)
-            DeclKind.EnumDecl -> convertClass(decl, CfirClassKind.ENUM)
+            DeclKind.ClassDecl -> convertClass(decl)
+            DeclKind.InterfaceDecl -> convertInterface(decl)
+            DeclKind.StructDecl -> convertStruct(decl)
+            DeclKind.EnumDecl -> convertEnum(decl)
             DeclKind.FuncDecl -> convertFunctionOrEnumConstructor(decl)
             DeclKind.PropDecl -> convertProperty(decl)
             DeclKind.VarDecl -> convertVariableOrEnumConstructor(decl)
@@ -210,65 +211,120 @@ class CfirDeclDeserializer(
 
     // ---- 声明转换方法 ----
 
-    /** Class/Interface/Struct/Enum → CfirClass */
-    private fun convertClass(decl: Decl, classKind: CfirClassKind): CfirClass {
+    /** ClassDecl → CfirClass */
+    private fun convertClass(decl: Decl): CfirClass {
         val name = Name.identifier(decl.identifier ?: "???")
-        val symbol = CfirClassSymbol()
+        val symbol = CfirClassSymbol(ClassId(packageFqName, name))
         val status = buildStatus(decl)
         val typeParams = deserializeTypeParameters(decl)
-
-        // 根据 DeclInfo 类型获取继承类型和成员
-        val superTypeRefs: List<CfirResolvedTypeRef>
-        val members: List<CfirDeclaration>
-
-        when (decl.infoType) {
-            DeclInfo.ClassInfo -> {
-                val info = decl.info(ClassInfo()) as ClassInfo
-                superTypeRefs = deserializeInheritedTypes(info::inheritedTypes, info.inheritedTypesLength)
-                members = deserializeBody(info::body, info.bodyLength)
-            }
-
-            DeclInfo.InterfaceInfo -> {
-                val info = decl.info(InterfaceInfo()) as InterfaceInfo
-                superTypeRefs = deserializeInheritedTypes(info::inheritedTypes, info.inheritedTypesLength)
-                members = deserializeBody(info::body, info.bodyLength)
-            }
-
-            DeclInfo.StructInfo -> {
-                val info = decl.info(StructInfo()) as StructInfo
-                superTypeRefs = deserializeInheritedTypes(info::inheritedTypes, info.inheritedTypesLength)
-                members = deserializeBody(info::body, info.bodyLength)
-            }
-
-            DeclInfo.EnumInfo -> {
-                val info = decl.info(EnumInfo()) as EnumInfo
-                superTypeRefs = deserializeInheritedTypes(info::inheritedTypes, info.inheritedTypesLength)
-                members = deserializeBody(info::body, info.bodyLength)
-            }
-
-            else -> {
-                superTypeRefs = emptyList()
-                members = emptyList()
-            }
-        }
+        val info = decl.info(ClassInfo()) as? ClassInfo
+        val superTypeRefs = info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) }.orEmpty()
+        val members = info?.let { deserializeBody(it::body, it.bodyLength) }.orEmpty()
 
         val cfirClass = CfirClassImpl(
             source = null,
             moduleData = context.moduleData,
             annotations = emptyList(),
-            symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             status = status,
             typeParameters = typeParams,
+            symbol = symbol,
             superTypeRefs = superTypeRefs,
             declarations = members,
             name = name,
-            classKind = classKind,
         )
         symbol.bind(cfirClass)
         cfirClass.markResolved()
         return cfirClass
+    }
+
+    /** InterfaceDecl → CfirInterface */
+    private fun convertInterface(decl: Decl): CfirInterface {
+        val name = Name.identifier(decl.identifier ?: "???")
+        val symbol = CfirInterfaceSymbol(ClassId(packageFqName, name))
+        val status = buildStatus(decl)
+        val typeParams = deserializeTypeParameters(decl)
+        val info = decl.info(InterfaceInfo()) as? InterfaceInfo
+        val superTypeRefs = info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) }.orEmpty()
+        val members = info?.let { deserializeBody(it::body, it.bodyLength) }.orEmpty()
+
+        val cfirInterface = CfirInterfaceImpl(
+            source = null,
+            moduleData = context.moduleData,
+            annotations = emptyList(),
+            origin = CfirDeclarationOrigin.Library,
+            attributes = CfirDeclarationAttributes.EMPTY,
+            declarations = members,
+            status = status,
+            typeParameters = typeParams,
+            symbol = symbol,
+            superTypeRefs = superTypeRefs,
+            properties = members.filterIsInstance<CfirProperty>(),
+            functions = members.filterIsInstance<CfirFunction>(),
+            name = name,
+        )
+        symbol.bind(cfirInterface)
+        cfirInterface.markResolved()
+        return cfirInterface
+    }
+
+    /** StructDecl → CfirStruct */
+    private fun convertStruct(decl: Decl): CfirStruct {
+        val name = Name.identifier(decl.identifier ?: "???")
+        val symbol = CfirStructSymbol(ClassId(packageFqName, name))
+        val status = buildStatus(decl)
+        val typeParams = deserializeTypeParameters(decl)
+        val info = decl.info(StructInfo()) as? StructInfo
+        val superTypeRefs = info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) }.orEmpty()
+        val members = info?.let { deserializeBody(it::body, it.bodyLength) }.orEmpty()
+
+        val cfirStruct = CfirStructImpl(
+            source = null,
+            moduleData = context.moduleData,
+            annotations = emptyList(),
+            origin = CfirDeclarationOrigin.Library,
+            attributes = CfirDeclarationAttributes.EMPTY,
+            status = status,
+            typeParameters = typeParams,
+            symbol = symbol,
+            superTypeRefs = superTypeRefs,
+            declarations = members,
+            name = name,
+        )
+        symbol.bind(cfirStruct)
+        cfirStruct.markResolved()
+        return cfirStruct
+    }
+
+    /** EnumDecl → CfirEnum */
+    private fun convertEnum(decl: Decl): CfirEnum {
+        val name = Name.identifier(decl.identifier ?: "???")
+        val isRefEnum = false
+        val symbol = CfirEnumSymbol(ClassId(packageFqName, name), isRefEnum)
+        val status = buildStatus(decl)
+        val typeParams = deserializeTypeParameters(decl)
+        val info = decl.info(EnumInfo()) as? EnumInfo
+        val superTypeRefs = info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) }.orEmpty()
+        val members = info?.let { deserializeBody(it::body, it.bodyLength) }.orEmpty()
+
+        val cfirEnum = CfirEnumImpl(
+            source = null,
+            moduleData = context.moduleData,
+            annotations = emptyList(),
+            origin = CfirDeclarationOrigin.Library,
+            attributes = CfirDeclarationAttributes.EMPTY,
+            status = status,
+            typeParameters = typeParams,
+            symbol = symbol,
+            superTypeRefs = superTypeRefs,
+            declarations = members,
+            name = name,
+            isRefEnum = isRefEnum,
+        )
+        symbol.bind(cfirEnum)
+        cfirEnum.markResolved()
+        return cfirEnum
     }
 
     /** FuncDecl → CfirFunction */
@@ -278,7 +334,7 @@ class CfirDeclDeserializer(
         }
 
         val name = Name.identifier(decl.identifier ?: "???")
-        val symbol = CfirFunctionSymbol(CallableId(packageFqName, name))
+        val symbol = CfirNamedFunctionSymbol(CallableId(packageFqName, name))
         val status = buildStatus(decl)
         val typeParams = deserializeTypeParameters(decl)
         val returnTypeRef = buildTypeRef(decl.type)
@@ -298,7 +354,7 @@ class CfirDeclDeserializer(
             }
         }
 
-        val cfirFunc = CfirFunctionImpl(
+        val cfirFunc = CfirNamedFunctionImpl(
             source = null,
             moduleData = context.moduleData,
             annotations = emptyList(),
@@ -503,6 +559,8 @@ class CfirDeclDeserializer(
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            declarations = emptyList(),
+            superTypeRefs = emptyList(),
             status = status,
             typeParameters = typeParams,
             name = name,
@@ -533,9 +591,10 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             annotations = emptyList(),
-            symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            containingDeclarationSymbol = symbol,
+            symbol = symbol,
             name = name,
             bounds = bounds,
         )
@@ -628,6 +687,8 @@ class CfirDeclDeserializer(
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            initializer = null,
+            isVar = false,
             status = status,
             typeParameters = typeParams,
             returnTypeRef = returnTypeRef,

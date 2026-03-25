@@ -27,7 +27,6 @@ class ResultTypeResolver(
         val notFixedTypeVariables: Map<TypeConstructorMarker, VariableWithConstraints>
         val outerSystemVariablesPrefixSize: Int
         fun buildNotFixedVariablesToStubTypesSubstitutor(): TypeSubstitutorMarker
-        fun isReified(variable: TypeVariableMarker): Boolean
     }
 
     context(c: Context)
@@ -40,7 +39,7 @@ class ResultTypeResolver(
             constraint.type.extractTypeForGivenRecursiveTypeParameter(typeParameter)
         }.takeIf { it.isNotEmpty() } ?: return null
 
-        return c.createCapturedStarProjectionForSelfType(typeVariableConstructor, typesForRecursiveTypeParameters)
+        return c.createCapturedPlaceholderTypeForSelfType(typeVariableConstructor, typesForRecursiveTypeParameters)
     }
 
     context(c: Context)
@@ -230,8 +229,6 @@ class ResultTypeResolver(
         // if resultType is not Nothing
         if (trivialConstraintTypeInferenceOracle.isSuitableResultedType(resultType)) return true
 
-        // Nothing and Nothing? is not allowed for reified parameters
-        if (c.isReified(variableWithConstraints.typeVariable)) return false
 
         return filteredConstraints.any { it.kind.isUpper() }
     }

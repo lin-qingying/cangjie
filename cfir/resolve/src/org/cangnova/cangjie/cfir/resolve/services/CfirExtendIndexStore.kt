@@ -1,11 +1,18 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.services
 
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirClassKind
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.services.CfirExtendInheritedInterfaceSemantic
@@ -14,6 +21,8 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeStructType
+import org.cangnova.cangjie.cfir.types.ConeTypeProjection
+import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -80,7 +89,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
             fileName = file.name,
             declarationIndexInFile = declarationIndexInFile,
             targetClassId = extendedTypeRef.toClassIdOrNull(),
-            targetClassKind = targetClass?.classKind,
+            targetClassKind = targetClass?.classKindOrNull(),
             inheritedInterfaces = inheritedInterfaces,
             inheritedInterfaceClassIds = inheritedInterfaceClassIds,
             inheritedInterfaceSemanticKeys = inheritedInterfaceSemanticKeys,
@@ -109,8 +118,8 @@ class CfirExtendIndexStore : CfirSessionComponent {
         val result = linkedMapOf<ClassId, List<Name>>()
         for (interfaceId in interfaceIds) {
             val interfaceDeclaration = resolver.resolveClass(interfaceId) ?: continue
-            if (interfaceDeclaration.classKind != CfirClassKind.INTERFACE) continue
-            val typeParameters = interfaceDeclaration.typeParameters
+            if (interfaceDeclaration.classKindOrNull() != CfirClassKind.INTERFACE) continue
+            val typeParameters = interfaceDeclaration.typeParametersOrEmpty()
             if (typeParameters.isEmpty()) continue
 
             val members = interfaceDeclaration.declarations
@@ -144,7 +153,7 @@ private fun org.cangnova.cangjie.cfir.declarations.CfirDeclaration.hasDefaultImp
 }
 
 private fun org.cangnova.cangjie.cfir.declarations.CfirDeclaration.memberNameOrNull(): Name? = when (this) {
-    is CfirFunction -> name
+    is CfirFunction -> callableNameOrNull()
     is CfirProperty -> name
     else -> null
 }
@@ -176,20 +185,38 @@ private fun CfirTypeRef.containsAnyTypeParameter(parameterNames: Set<String>): B
 }
 
 private fun org.cangnova.cangjie.cfir.types.ConeCangJieType.containsAnyTypeParameter(parameterNames: Set<String>): Boolean = when (this) {
-    is org.cangnova.cangjie.cfir.types.ConeTypeParameterType -> lookupTag.name in parameterNames
-    is org.cangnova.cangjie.cfir.types.ConeClassLikeType -> typeArguments.any { it.containsAnyTypeParameter(parameterNames) }
-    is org.cangnova.cangjie.cfir.types.ConeStructType -> typeArguments.any { it.containsAnyTypeParameter(parameterNames) }
-    is org.cangnova.cangjie.cfir.types.ConeEnumType -> typeArguments.any { it.containsAnyTypeParameter(parameterNames) }
+    is ConeTypeParameterType -> lookupTag.name in parameterNames
+    is ConeClassLikeType -> typeArguments.any { it.containsAnyTypeParameter(parameterNames) }
+    is ConeStructType -> typeArguments.any { it.containsAnyTypeParameter(parameterNames) }
+    is ConeEnumType -> typeArguments.any { it.containsAnyTypeParameter(parameterNames) }
     is org.cangnova.cangjie.cfir.types.ConeTypeAliasType -> typeArguments.any { it.containsAnyTypeParameter(parameterNames) } ||
         (expandedType?.containsAnyTypeParameter(parameterNames) == true)
     is org.cangnova.cangjie.cfir.types.ConeFuncType -> parameterTypes.any { it.containsAnyTypeParameter(parameterNames) } ||
         returnType.containsAnyTypeParameter(parameterNames)
     is org.cangnova.cangjie.cfir.types.ConeTupleType -> elementTypes.any { it.containsAnyTypeParameter(parameterNames) }
-    is org.cangnova.cangjie.cfir.types.ConeArrayType -> elementType.containsAnyTypeParameter(parameterNames)
     is org.cangnova.cangjie.cfir.types.ConeVArrayType -> elementType.containsAnyTypeParameter(parameterNames)
     is org.cangnova.cangjie.cfir.types.ConePointerType -> pointeeType.containsAnyTypeParameter(parameterNames)
     is org.cangnova.cangjie.cfir.types.ConeIntersectionType -> intersectedTypes.any { it.containsAnyTypeParameter(parameterNames) }
     is org.cangnova.cangjie.cfir.types.ConeUnionType -> unionTypes.any { it.containsAnyTypeParameter(parameterNames) }
-    else -> false
+    else -> arrayElementType?.containsAnyTypeParameter(parameterNames) == true
 }
 
+private fun ConeTypeProjection.containsAnyTypeParameter(parameterNames: Set<String>): Boolean {
+    return type.containsAnyTypeParameter(parameterNames)
+}
+
+private fun CfirClassLikeDeclaration.classKindOrNull(): CfirClassKind? = when (this) {
+    is CfirClass -> CfirClassKind.CLASS
+    is CfirInterface -> CfirClassKind.INTERFACE
+    is CfirStruct -> CfirClassKind.STRUCT
+    is CfirEnum -> CfirClassKind.ENUM
+    else -> null
+}
+
+private fun CfirClassLikeDeclaration.typeParametersOrEmpty(): List<CfirTypeParameter> = when (this) {
+    is CfirClass -> typeParameters
+    is CfirInterface -> typeParameters
+    is CfirStruct -> typeParameters
+    is CfirEnum -> typeParameters
+    else -> emptyList()
+}

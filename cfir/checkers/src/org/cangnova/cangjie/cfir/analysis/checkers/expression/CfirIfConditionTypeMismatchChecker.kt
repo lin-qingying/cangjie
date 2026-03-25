@@ -1,6 +1,5 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CfirTypeCheckUtils
 import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -8,7 +7,9 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.session.builtinTypes
+import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * `if` 条件类型检查：条件表达式必须为 `Bool`。
@@ -21,7 +22,7 @@ object CfirIfConditionTypeMismatchChecker : CfirIfExpressionChecker(CheckerDispa
         val actualType = condition.coneTypeOrNull ?: return
         val expectedType = context.session.builtinTypes.boolType
 
-        if (!CfirTypeCheckUtils.isSubtypeOf(actualType, expectedType)) {
+        if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, actualType, expectedType) != true) {
             reporter.reportOn(
                 source,
                 CfirErrors.TYPE_MISMATCH,
@@ -32,4 +33,3 @@ object CfirIfConditionTypeMismatchChecker : CfirIfExpressionChecker(CheckerDispa
         }
     }
 }
-

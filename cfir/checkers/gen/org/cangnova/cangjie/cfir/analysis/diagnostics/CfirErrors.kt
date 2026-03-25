@@ -6,6 +6,8 @@ import com.intellij.psi.PsiElement
 import kotlin.Boolean
 import kotlin.String
 import kotlin.collections.Collection
+import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.cfir.analysis.diagnostics.*
 import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.diagnostics.rendering.BaseDiagnosticRendererFactory
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol

@@ -6,8 +6,13 @@ package org.cangnova.cangjie.cfir.types
  */
 class ConeTupleType(
     val elementTypes: List<ConeCangJieType>,
-    override val attributes: ConeAttributes = ConeAttributes.EMPTY,
-) : ConeRigidType() {
+    override val attributes: ConeAttributes = ConeAttributes.Empty,
+) : ConeRigidType(), ConeTypeConstructorMarker {
+    /**
+     * 元组是结构化类型，元素类型本身就是它的组成部分。
+     */
+    override val typeArguments: List<ConeTypeProjection>
+        get() = elementTypes.map(::ConeTypeProjection)
 
     override fun equals(other: Any?): Boolean =
         other is ConeTupleType && elementTypes == other.elementTypes

@@ -80,7 +80,7 @@ open class CfirDefaultTransformer<in D> : CfirTransformer<D>() {
     }
 
     override fun transformExtend(extend: CfirExtend, data: D): CfirExtend {
-        return transformClassLikeDeclaration(extend, data) as CfirExtend
+        return transformMemberDeclaration(extend, data) as CfirExtend
     }
 
     override fun transformTypeAlias(typeAlias: CfirTypeAlias, data: D): CfirTypeAlias {
@@ -227,9 +227,11 @@ open class CfirDefaultTransformer<in D> : CfirTransformer<D>() {
         return transformExpression(jumpExpression, data)
     }
 
-    override fun transformLambdaExpression(lambdaExpression: CfirLambdaExpression, data: D): CfirExpression {
-        return transformExpression(lambdaExpression, data)
+    override fun transformAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression, data: D): CfirExpression {
+        return transformExpression(anonymousFunctionExpression, data)
     }
+
+
 
     override fun transformRangeExpression(rangeExpression: CfirRangeExpression, data: D): CfirExpression {
         return transformExpression(rangeExpression, data)

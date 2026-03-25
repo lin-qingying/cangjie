@@ -17,7 +17,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirSessionExtendProvider
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.CallableId
@@ -94,7 +94,7 @@ private fun newClassDeclaration(moduleData: CfirModuleData, name: String): CfirC
 }
 
 private fun newFunctionDeclaration(moduleData: CfirModuleData, name: String): CfirFunctionImpl {
-    val symbol = CfirFunctionSymbol(CallableId(FqName.ROOT, Name.identifier(name)))
+    val symbol = CfirNamedFunctionSymbol(CallableId(FqName.ROOT, Name.identifier(name)))
     return CfirFunctionImpl(
         source = null,
         moduleData = moduleData,

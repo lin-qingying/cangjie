@@ -3,7 +3,7 @@
 import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -12,7 +12,6 @@ import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeArrayType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
@@ -22,17 +21,17 @@ import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
-import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.ConeUnionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
-import org.cangnova.cangjie.cfir.types.renderSemanticKey
+import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.name.Name
 
 abstract class CfirExtendChecker(
     dispatchKind: CheckerDispatchKind,
-) : CfirClassLikeChecker(dispatchKind) {
+) : CfirMemberDeclarationChecker(dispatchKind) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    final override fun check(declaration: CfirClassLikeDeclaration) {
+    final override fun check(declaration: CfirMemberDeclaration) {
         val extend = declaration as? CfirExtend ?: return
         checkExtend(extend)
     }
@@ -255,7 +254,7 @@ private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.toClassIdOrNull(): org.c
 
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.toSemanticStableKey(): String {
     val coneType = (this as? CfirResolvedTypeRef)?.coneType
-    return coneType?.renderSemanticKey() ?: toString()
+    return coneType?.toString() ?: toString()
 }
 
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.containsTypeParameter(parameterName: String): Boolean {
@@ -264,21 +263,20 @@ private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.containsTypeParameter(pa
 }
 
 private fun ConeCangJieType.containsTypeParameter(parameterName: String): Boolean = when (this) {
-    is ConeTypeParameterType -> lookupTag.name == parameterName
-    is ConeClassLikeType -> typeArguments.any { it.containsTypeParameter(parameterName) }
-    is ConeStructType -> typeArguments.any { it.containsTypeParameter(parameterName) }
-    is ConeEnumType -> typeArguments.any { it.containsTypeParameter(parameterName) }
-    is ConeTypeAliasType -> typeArguments.any { it.containsTypeParameter(parameterName) } ||
+    is ConeTypeParameterType -> lookupTag.name.asString() == parameterName
+    is ConeClassLikeType -> typeArguments.any { it.type.containsTypeParameter(parameterName) }
+    is ConeStructType -> typeArguments.any { it.type.containsTypeParameter(parameterName) }
+    is ConeEnumType -> typeArguments.any { it.type.containsTypeParameter(parameterName) }
+    is ConeTypeAliasType -> typeArguments.any { it.type.containsTypeParameter(parameterName) } ||
         (expandedType?.containsTypeParameter(parameterName) == true)
     is ConeFuncType -> parameterTypes.any { it.containsTypeParameter(parameterName) } ||
         returnType.containsTypeParameter(parameterName)
     is ConeTupleType -> elementTypes.any { it.containsTypeParameter(parameterName) }
-    is ConeArrayType -> elementType.containsTypeParameter(parameterName)
     is ConeVArrayType -> elementType.containsTypeParameter(parameterName)
     is ConePointerType -> pointeeType.containsTypeParameter(parameterName)
     is ConeIntersectionType -> intersectedTypes.any { it.containsTypeParameter(parameterName) }
     is ConeUnionType -> unionTypes.any { it.containsTypeParameter(parameterName) }
-    else -> false
+    else -> arrayElementType?.containsTypeParameter(parameterName) == true
 }
 
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.toApproxName(): Name {
@@ -287,4 +285,3 @@ private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.toApproxName(): Name {
     val raw = toString().substringAfterLast('.').substringBefore('<')
     return Name.identifierIfValid(raw) ?: Name.ERROR_NAME
 }
-

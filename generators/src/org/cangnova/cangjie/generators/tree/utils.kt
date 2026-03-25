@@ -86,6 +86,7 @@ operator fun <K, V, U> Map<K, Map<V, U>>.get(k1: K, k2: V): U {
 
 val AbstractElement<*, *, *>.safeDecapitalizedName: String
     get() = when (name) {
+        "Interface" -> "`interface`"
         "Class" -> "klass"
         else -> name.replaceFirstChar(Char::lowercaseChar)
     }

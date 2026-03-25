@@ -702,7 +702,6 @@ class ConstraintSystemImpl(
         storage.fixedTypeVariables[freshTypeConstructor] = resultType
         inferenceLogger?.logReadiness(InferenceLogger.FixationLogRecord(emptyMap(), variable), this@ConstraintSystemImpl)
 
-        postponeOnlyInputTypesCheck(variableWithConstraints, resultType)
 
         doPostponedComputationsIfAllVariablesAreFixed()
     }
@@ -739,14 +738,6 @@ class ConstraintSystemImpl(
         )
     }
 
-    private fun ConstraintSystemUtilContext.postponeOnlyInputTypesCheck(
-        variableWithConstraints: MutableVariableWithConstraints?,
-        resultType: CangJieTypeMarker,
-    ) {
-        if (variableWithConstraints != null && variableWithConstraints.typeVariable.hasOnlyInputTypesAttribute()) {
-            postponedComputationsAfterAllVariablesAreFixed.add { checkOnlyInputTypesAnnotation(variableWithConstraints, resultType) }
-        }
-    }
 
     private fun doPostponedComputationsIfAllVariablesAreFixed() {
         if (notFixedTypeVariables.isEmpty()) {
@@ -833,10 +824,7 @@ class ConstraintSystemImpl(
         return storage.buildNotFixedVariablesToNonSubtypableTypesSubstitutor(this)
     }
 
-    // ResultTypeResolver.Context, VariableFixationFinder.Context
-    override fun isReified(variable: TypeVariableMarker): Boolean {
-        return with(utilContext) { variable.isReified() }
-    }
+
 
     override fun bindingStubsForPostponedVariables(): Map<TypeVariableMarker, StubTypeMarker> {
         checkState(State.BUILDING, State.COMPLETION)

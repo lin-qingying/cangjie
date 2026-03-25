@@ -359,8 +359,6 @@ class ConstraintInjector(
         fun runIsSubtypeOf(
             lowerType: CangJieTypeMarker,
             upperType: CangJieTypeMarker,
-            shouldTryUseDifferentFlexibilityForUpperType: Boolean = false,
-            isFromNullabilityConstraint: Boolean = false
         ) {
             fun isSubtypeOf(upperType: CangJieTypeMarker) =
                 AbstractTypeChecker.isSubtypeOf(
@@ -434,11 +432,10 @@ class ConstraintInjector(
         override fun processNewInitialConstraintFromIncorporation(
             lowerType: CangJieTypeMarker,
             upperType: CangJieTypeMarker,
-            shouldTryUseDifferentFlexibilityForUpperType: Boolean,
             newDerivedFrom: Set<TypeVariableMarker>,
             isFromDeclaredUpperBound: Boolean,
-            isNoInfer: Boolean,
-        ): Unit = with(c) {
+            isNoInfer: Boolean
+        ) = with(c) {
             // Avoid checking trivial incorporated constraints
             if (lowerType == upperType) return
             if (!useMaxTypeDepthFromInitialConstraints || (lowerType.isAllowedType() && upperType.isAllowedType())) {
@@ -447,7 +444,7 @@ class ConstraintInjector(
                     isFromDeclaredUpperBound = isFromDeclaredUpperBound,
                     isNoInfer = isNoInfer,
                 ) {
-                    runIsSubtypeOf(lowerType, upperType, shouldTryUseDifferentFlexibilityForUpperType, false)
+                    runIsSubtypeOf(lowerType, upperType, )
                 }
             }
         }

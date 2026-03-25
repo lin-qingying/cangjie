@@ -1,25 +1,21 @@
-﻿package org.cangnova.cangjie.cfir.resolve.transformers
+package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
-import org.cangnova.cangjie.cfir.declarations.resolvePhase
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
-import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
-import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
-import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
+import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
+import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.diagnosticReporter
 import org.cangnova.cangjie.name.Name
 
 internal class CfirStatusResolveProcessor(
@@ -77,9 +73,6 @@ open class AbstractCfirStatusResolveTransformer(
     override val session: CfirSession
         get() = statusComputationSession.useSiteSession
 
-    private val diagnosticReporter: CfirDiagnosticReporter
-        get() = statusComputationSession.useSiteSession.diagnosticReporter
-
     override fun <E : CfirElement> transformElement(element: E, data: Nothing?): E {
         if (element is CfirDeclaration) {
             @Suppress("UNCHECKED_CAST")
@@ -105,24 +98,6 @@ open class AbstractCfirStatusResolveTransformer(
     }
 
     protected open fun transformDeclaration(target: CfirDeclaration) {}
-
-    protected fun reportStaticCannotBeOpenAbstractOverride(target: CfirDeclaration) {
-        diagnosticReporter.reportOn(
-            source = target.source,
-            factory = CfirErrors.STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE,
-            a = target.declarationNameOrNull,
-            context = DiagnosticContext.Default,
-        )
-    }
-
-    protected fun reportMutOnlyOnFunction(target: CfirDeclaration) {
-        diagnosticReporter.reportOn(
-            source = target.source,
-            factory = CfirErrors.MUT_ONLY_ON_FUNCTION,
-            a = target.declarationNameOrNull,
-            context = DiagnosticContext.Default,
-        )
-    }
 }
 
 open class CfirStatusResolveTransformer(
@@ -130,16 +105,7 @@ open class CfirStatusResolveTransformer(
 ) : AbstractCfirStatusResolveTransformer(
     statusComputationSession = statusComputationSession,
 ) {
-    override fun transformDeclaration(target: CfirDeclaration) {
-        val status = target.statusOrNull ?: return
-
-        if (status.isStatic && (status.isOpen || status.isAbstract || status.isOverride)) {
-            reportStaticCannotBeOpenAbstractOverride(target)
-        }
-        if (status.isMut && target !is CfirFunction) {
-            reportMutOnlyOnFunction(target)
-        }
-    }
+    override fun transformDeclaration(target: CfirDeclaration) = Unit
 }
 
 /**
@@ -160,10 +126,9 @@ private val CfirDeclaration.statusOrNull: CfirDeclarationStatus?
 private val CfirDeclaration.declarationNameOrNull: Name?
     get() = when (this) {
         is CfirClass -> name
-        is CfirFunction -> name
+        is CfirFunction -> callableNameOrNull()
         is CfirProperty -> name
         is CfirFieldVariable -> name
         is CfirTypeAlias -> name
         else -> null
     }
-

@@ -76,7 +76,7 @@ class CfirResolvedTypesVerifier(
                     is CfirExpression -> checkExpression(element, collector)
                     is CfirImplicitTypeRef -> Unit
                     is CfirResolvedTypeRef -> checkResolvedTypeRef(element, collector)
-                    is CfirErrorTypeRef -> collector.errorTypeRefs += "${element.renderOwner()}: ${element.reason}"
+                    is CfirErrorTypeRef -> collector.errorTypeRefs += "${element.renderOwner()}: ${element.diagnostic.reason}"
                 }
                 element.acceptChildren(this)
             }

@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.types
 
+import org.cangnova.cangjie.type.model.StubTypeMarker
+
 
 /**
  * 存根类型，推断过程中的过渡类型。
@@ -17,8 +19,8 @@ package org.cangnova.cangjie.cfir.types
 class ConeStubType(
     val constructor: ConeTypeVariableTypeConstructor,
     val kind: Kind,
-    override val attributes: ConeAttributes = ConeAttributes.EMPTY,
-) : ConeRigidType()   {
+    override val attributes: ConeAttributes = ConeAttributes.Empty,
+) : ConeRigidType()  , StubTypeMarker {
 
     /** 存根类型种类 */
     enum class Kind {

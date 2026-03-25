@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.name.ClassId
@@ -19,7 +20,7 @@ class CfirCompositeSymbolProvider(
     val providers: List<CfirSymbolProvider>,
 ) : CfirSymbolProvider(session) {
 
-    override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassSymbol? {
+    override fun getClassLikeSymbolByClassId(classId: ClassId):  CfirClassLikeSymbol<*>? {
         for (provider in providers) {
             val symbol = provider.getClassLikeSymbolByClassId(classId)
             if (symbol != null) return symbol

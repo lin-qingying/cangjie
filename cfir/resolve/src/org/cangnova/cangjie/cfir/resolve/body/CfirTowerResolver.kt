@@ -4,9 +4,10 @@ import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallInfo
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateCollector
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
 import org.cangnova.cangjie.cfir.scopes.*
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
@@ -15,7 +16,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.name.Name
 
@@ -25,7 +26,7 @@ import org.cangnova.cangjie.name.Name
  */
 class CfirTowerResolver(
     private val components: CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
-    private val resolutionStageRunner: CfirResolutionStageRunner,
+    private val resolutionStageRunner: ResolutionStageRunner,
     internal val collector: CfirCandidateCollector =
         CfirCandidateCollector(components, resolutionStageRunner),
 ) : SessionHolder {
@@ -39,58 +40,26 @@ class CfirTowerResolver(
      * @param callInfo 调用信息
      * @param context 解析上下文
      */
-    fun runResolver(callInfo: CfirCallInfo, context: CfirResolutionContext) {
+    fun runResolver(callInfo: CallInfo, context: ResolutionContext) {
         collector.newDataSet()
+        val candidateFactory = CandidateFactory(context)
 
-        val towerDataElements = components.towerDataContext.towerDataElements
-        var localDepth = 0
-        var importedDepth = 0
+        for (groupedScopes in buildTowerScopeGroups(components.towerDataContext.towerDataElements)) {
+            if (collector.shouldStopAtTheGroup(groupedScopes.group)) break
 
-        // 从内到外遍历 scope 塔
-        for (element in towerDataElements.asReversed()) {
-            val scope = element.scope
-            val group = classifyScope(scope, element.isLocal, localDepth, importedDepth)
+            for (scope in groupedScopes.scopes) {
+                val symbols = mutableListOf<CfirCallableSymbol<*>>()
+                collectCallableSymbolsByName(scope, callInfo.name, symbols)
 
-            // 检查是否应在此层级停止
-            if (collector.shouldStopAtTheGroup(group)) break
-
-            // 在当前 scope 中查找同名函数与构造器符号（对齐 Kotlin 的 functions+constructors 处理）。
-            val symbols = mutableListOf<CfirCallableSymbol<*>>()
-            collectCallableSymbolsByName(scope, callInfo.name, symbols)
-
-            // 为每个匹配符号创建候选并提交收集
-            for (symbol in symbols) {
-                val candidate = CfirCandidate(
-                    symbol = symbol,
-                    dispatchReceiver = null,
-                    givenExtensionReceiver = null,
-                    explicitReceiverKind = org.cangnova.cangjie.cfir.constraints.ExplicitReceiverKind.NO_EXPLICIT_RECEIVER,
-                    callInfo = callInfo,
-                    originScope = scope,
-                    resolutionContext = context,
-                    constraintSystem = components.inferenceComponents.createConstraintSystem(),
-                )
-                collector.consumeCandidate(group, candidate, context)
+                for (symbol in symbols) {
+                    val candidate = candidateFactory.createCandidate(
+                        callInfo = callInfo,
+                        symbol = symbol,
+                        originScope = scope,
+                    )
+                    collector.consumeCandidate(groupedScopes.group, candidate, context)
+                }
             }
-
-            // 更新深度计数
-            if (element.isLocal) localDepth++
-            if (scope is CfirImportScope) importedDepth++
-        }
-    }
-
-    /**
-     * 根据 scope 类型和属性分配 [CfirTowerGroup]。
-     */
-    private fun classifyScope(scope: CfirScope, isLocal: Boolean, localDepth: Int, importedDepth: Int): CfirTowerGroup {
-        return when {
-            scope is CfirClassDeclaredMemberScope -> CfirTowerGroup.MEMBER
-            scope is CfirClassScope -> CfirTowerGroup.MEMBER
-            isLocal || scope is CfirLocalScopeImpl || scope is CfirLocalScope -> CfirTowerGroup.local(localDepth)
-            scope is CfirExtendMemberScope || scope is CfirExtendScope -> CfirTowerGroup.EXTEND
-            scope is CfirImportScope -> CfirTowerGroup.imported(importedDepth)
-            scope is CfirPackageMemberScope || scope is CfirPackageScope -> CfirTowerGroup.PACKAGE
-            else -> CfirTowerGroup.PACKAGE // 保守策略：未知 scope 视为最低优先级
         }
     }
 
@@ -100,7 +69,7 @@ class CfirTowerResolver(
      * 按名称查找变量或属性符号。
      */
     fun findVariables(name: Name): List<CfirCallableSymbol<*>> {
-        val scopes = components.towerDataContext.allScopesReversed()
+        val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
         for (scope in scopes) {
             val result = mutableListOf<CfirCallableSymbol<*>>()
 
@@ -126,10 +95,10 @@ class CfirTowerResolver(
     }
 
     /** 按名称查找函数符号，返回首个匹配层级中的全部结果。 */
-    fun findFunctions(name: Name): List<CfirFunctionSymbol> {
-        val scopes = components.towerDataContext.allScopesReversed()
+    fun findFunctions(name: Name): List<CfirFunctionSymbol<*>> {
+        val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
         for (scope in scopes) {
-            val result = mutableListOf<CfirFunctionSymbol>()
+            val result = mutableListOf<CfirFunctionSymbol<*>>()
             scope.processFunctionsByName(name) { result.add(it) }
             if (result.isNotEmpty()) return result
         }
@@ -138,7 +107,7 @@ class CfirTowerResolver(
 
     /** 按名称查找可调用符号（函数 + 构造器），返回首个匹配层级中的全部结果。 */
     fun findCallables(name: Name): List<CfirCallableSymbol<*>> {
-        val scopes = components.towerDataContext.allScopesReversed()
+        val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
         for (scope in scopes) {
             val result = mutableListOf<CfirCallableSymbol<*>>()
             collectCallableSymbolsByName(scope, name, result)
@@ -148,10 +117,10 @@ class CfirTowerResolver(
     }
 
     /** 按名称查找类符号，返回首个匹配层级中的全部结果。 */
-    fun findClassifiers(name: Name): List<CfirClassSymbol> {
-        val scopes = components.towerDataContext.allScopesReversed()
+    fun findClassifiers(name: Name): List<CfirClassLikeSymbol<*>> {
+        val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
         for (scope in scopes) {
-            val result = mutableListOf<CfirClassSymbol>()
+            val result = mutableListOf<CfirClassLikeSymbol<*>>()
             scope.processClassifiersByName(name) { result.add(it) }
             if (result.isNotEmpty()) return result
         }
@@ -177,9 +146,9 @@ class CfirTowerResolver(
     /**
      * 在指定 scope 列表中查找函数符号。
      */
-    fun findFunctionsInScopes(name: Name, scopes: List<CfirScope>): List<CfirFunctionSymbol> {
+    fun findFunctionsInScopes(name: Name, scopes: List<CfirScope>): List<CfirFunctionSymbol<*>> {
         for (scope in scopes) {
-            val result = mutableListOf<CfirFunctionSymbol>()
+            val result = mutableListOf<CfirFunctionSymbol<*>>()
             scope.processFunctionsByName(name) { result.add(it) }
             if (result.isNotEmpty()) return result
         }
@@ -222,3 +191,51 @@ class CfirTowerResolver(
     }
 }
 
+internal data class TowerScopeGroup(
+    val group: CfirTowerGroup,
+    val scopes: List<CfirScope>,
+)
+
+internal fun buildTowerScopeGroups(towerDataElements: List<CfirTowerDataElement>): List<TowerScopeGroup> {
+    val groupedScopes = mutableListOf<TowerScopeGroup>()
+    var localDepth = 0
+    var importedDepth = 0
+
+    fun appendScope(scope: CfirScope, group: CfirTowerGroup) {
+        val previousGroup = groupedScopes.lastOrNull()
+        if (previousGroup != null && previousGroup.group == group) {
+            groupedScopes[groupedScopes.lastIndex] = previousGroup.copy(scopes = previousGroup.scopes + scope)
+        } else {
+            groupedScopes += TowerScopeGroup(group, listOf(scope))
+        }
+    }
+
+    for (element in towerDataElements.asReversed()) {
+        for (scope in element.getAvailableScopes().asReversed()) {
+            val group = classifyScope(scope, element.isLocal, localDepth, importedDepth)
+            appendScope(scope, group)
+
+            if (scope is CfirImportScope) {
+                importedDepth++
+            }
+        }
+
+        if (element.isLocal) {
+            localDepth++
+        }
+    }
+
+    return groupedScopes
+}
+
+private fun classifyScope(scope: CfirScope, isLocal: Boolean, localDepth: Int, importedDepth: Int): CfirTowerGroup {
+    return when {
+        scope is CfirClassDeclaredMemberScope -> CfirTowerGroup.MEMBER
+        scope is CfirClassScope -> CfirTowerGroup.MEMBER
+        isLocal || scope is CfirLocalScopeImpl || scope is CfirLocalScope -> CfirTowerGroup.local(localDepth)
+        scope is CfirExtendMemberScope || scope is CfirExtendScope -> CfirTowerGroup.EXTEND
+        scope is CfirImportScope -> CfirTowerGroup.imported(importedDepth)
+        scope is CfirPackageMemberScope || scope is CfirPackageScope -> CfirTowerGroup.PACKAGE
+        else -> CfirTowerGroup.PACKAGE
+    }
+}

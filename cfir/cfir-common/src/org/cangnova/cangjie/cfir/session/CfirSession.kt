@@ -21,7 +21,11 @@ abstract class CfirSession(
         inline fun <reified T : CfirSessionComponent> sessionComponentAccessor(): ArrayMapAccessor<CfirSessionComponent, CfirSessionComponent, T> {
             return generateAccessor(T::class)
         }
-
+        inline fun <reified T : CfirSessionComponent> sessionComponentAccessorWithDefault(
+            defaultImplementation:  T
+        ): ArrayMapAccessor<CfirSessionComponent, CfirSessionComponent, T> {
+            return generateAccessor(T::class, defaultImplementation)
+        }
         inline fun <reified T : CfirSessionComponent> sessionComponentAccessor(id: String): ArrayMapAccessor<CfirSessionComponent, CfirSessionComponent, T> {
             return generateAccessor(id)
         }

@@ -6,7 +6,7 @@ dependencies {
     api(project(":cfir:cfir-common"))
     api(project(":cfir:cfir-tree"))
     api(project(":cfir:symbols"))
-    api(project(":cfir:constraint-system"))
+
     api(project(":cfir:semantics"))
 
     api(project(":cfir:diagnostic-renderers"))

@@ -1,5 +1,9 @@
 package org.cangnova.cangjie.cfir.types
 
+import org.cangnova.cangjie.type.model.CangJieTypeMarker
+import org.cangnova.cangjie.type.model.RigidTypeMarker
+import org.cangnova.cangjie.type.model.SimpleTypeMarker
+
 
 /**
  * 仓颉类型体系的根类。
@@ -22,7 +26,6 @@ package org.cangnova.cangjie.cfir.types
  *   │   │   ├── ConeEnumType（enum 代数数据类型）
  *   │   │   ├── ConeFuncType（函数类型）
  *   │   │   ├── ConeTupleType（元组类型）
- *   │   │   ├── ConeArrayType（RawArray 数组类型）
  *   │   │   ├── ConeVArrayType（VArray 定长数组类型）
  *   │   │   ├── ConePointerType（CPointer 指针类型）
  *   │   │   ├── ConeCStringType（CString 类型）
@@ -31,6 +34,9 @@ package org.cangnova.cangjie.cfir.types
  *   │   │   ├── ConeUnionType（联合类型，内部使用）
  *   │   │   ├── ConeAnyType（Any 顶类型，内部使用）
  *   │   │   └── ConeErrorType（错误类型）
+ *   │   ├── 理想字面量类型（推断阶段的值追踪）
+ *   │   │   ├── ConeIdealIntLiteralType（理想整数：常量 / 运算）
+ *   │   │   └── ConeIdealFloatLiteralType（理想浮点：常量 / 运算）
  *   │   ├── 类型变量引用
  *   │   │   ├── ConeTypeVariableRef（新的变量引用视图）
  *   │   │   └── ConeTypeVariableType（过渡兼容类型）
@@ -48,7 +54,6 @@ package org.cangnova.cangjie.cfir.types
  * - ConeEnumType
  * - ConeFuncType
  * - ConeTupleType
- * - ConeArrayType
  * - ConeVArrayType
  * - ConePointerType
  * - ConeCStringType
@@ -59,23 +64,27 @@ package org.cangnova.cangjie.cfir.types
  * - ConeQuestType
  * - ConeErrorType
  */
-sealed class ConeCangJieType    {
+sealed class ConeCangJieType : CangJieTypeMarker {
     /** 泛型类型实参。仓颉泛型是不变的，类型实参只能是具体类型。 */
-    abstract val typeArguments: List<ConeCangJieType>
+    abstract val typeArguments: List<ConeTypeProjection>
     abstract val attributes: ConeAttributes
 
     open val isUnit: Boolean get() = false
     open val isNothing: Boolean get() = false
     open val isError: Boolean get() = false
 }
+sealed class ConeSimpleCangJieType : ConeRigidType(), SimpleTypeMarker
 
 /**
  * 确定的（rigid）类型，代表一个具体已知的类型。
  *
- * 同时实现 [SimpleTypeMarker]：仓颉不区分简单类型和刚性类型，
- * 所有刚性类型都是简单类型。
+ * 在本项目里，仓颉没有 Kotlin 的 flexible/simple 双层结构，
+ * 因此所有刚性类型也都直接视为 simple type。
  */
-sealed class ConeRigidType : ConeCangJieType() {
+sealed class ConeRigidType : ConeCangJieType(), RigidTypeMarker, SimpleTypeMarker {
     /** 默认无泛型实参，子类按需覆盖 */
-    override val typeArguments: List<ConeCangJieType> get() = emptyList()
+    override val typeArguments: List<ConeTypeProjection> get() = emptyList()
 }
+
+/** 将抽象类型系统中的 marker 还原为当前 CFIR 使用的 Cone 类型。 */
+inline fun CangJieTypeMarker.asCone(): ConeCangJieType = this as ConeCangJieType

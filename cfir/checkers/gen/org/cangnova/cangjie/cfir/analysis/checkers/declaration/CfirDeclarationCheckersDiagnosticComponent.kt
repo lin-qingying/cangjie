@@ -12,7 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
-import org.cangnova.cangjie.utils.exceptions.withFirEntry
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 /*
  * 本文件由生成器自动生成
@@ -117,7 +117,7 @@ class CfirDeclarationCheckersDiagnosticComponent(
     }
 
     override fun visitExtend(extend: CfirExtend, data: CheckerContext) {
-        checkers.allClassLikeCheckers.check(extend, data)
+        checkers.allMemberDeclarationCheckers.check(extend, data)
     }
 
     private inline fun <reified E : CfirDeclaration> Array<CfirDeclarationChecker<E>>.check(
@@ -131,7 +131,7 @@ class CfirDeclarationCheckersDiagnosticComponent(
                 }
             } catch (e: Exception) {
                 rethrowExceptionWithDetails("Exception in declaration checkers", e) {
-                    withFirEntry("element", element)
+                    withCfirEntry("element", element)
                     context.containingFilePath?.let { withEntry("file", it) }
                 }
             }

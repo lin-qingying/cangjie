@@ -1,30 +1,34 @@
-﻿package org.cangnova.cangjie.cfir.resolve
+package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirClassKind
-import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
-import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphEdge
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.name.Name
 
 internal data class CfirSuperTypeCheckResult(
-    val classLikeSupers: List<CfirClass>,
+    val classLikeSupers: List<CfirClassLikeDeclaration>,
     val graphEdges: List<CfirSuperTypeGraphEdge>,
+    val duplicateTypes: List<Name>,
+    val selfReferencedTypes: List<Name>,
 )
 
 internal class CfirSuperTypeChecker(
-    private val diagnosticReporter: CfirDiagnosticReporter,
     private val resolver: CfirTypeResolver,
 ) {
     fun collectAndCheck(target: CfirClass): CfirSuperTypeCheckResult {
         val seen = linkedMapOf<String, CjSourceElement?>()
         val seenResolvedInterfaceSymbols = linkedSetOf<CfirClassSymbol>()
         val firstSourceByInterfaceSymbol = linkedMapOf<CfirClassSymbol, CjSourceElement?>()
-        val classLikeSupers = mutableListOf<CfirClass>()
+        val classLikeSupers = mutableListOf<CfirClassLikeDeclaration>()
         val graphEdges = mutableListOf<CfirSuperTypeGraphEdge>()
+        val duplicateTypes = linkedSetOf<Name>()
+        val selfReferencedTypes = linkedSetOf<Name>()
 
         for (superTypeRef in target.superTypeRefs) {
             val key = superTypeRef.renderStableKey()
@@ -37,29 +41,21 @@ internal class CfirSuperTypeChecker(
             val firstSourceByKey = seen.putIfAbsent(key, superTypeRef.source)
             val duplicateByKey = firstSourceByKey != null
             if (duplicateByKey) {
-                reportDuplicate(target, firstSourceByKey, key, resolvedClass?.name)
+                duplicateTypes += resolvedClass?.classLikeNameOrNull() ?: key.toApproxName()
             }
-            val interfaceSymbol = resolvedClass?.takeIf { it.classKind == CfirClassKind.INTERFACE }?.symbol as? CfirClassSymbol
+
+            val interfaceSymbol = (resolvedClass as? CfirInterface)?.symbol as? CfirClassSymbol
             if (interfaceSymbol != null) {
                 firstSourceByInterfaceSymbol.putIfAbsent(interfaceSymbol, superTypeRef.source)
                 val duplicateBySymbol = !seenResolvedInterfaceSymbols.add(interfaceSymbol)
                 if (duplicateBySymbol && !duplicateByKey) {
-                    reportDuplicate(
-                        target,
-                        firstSourceByInterfaceSymbol[interfaceSymbol] ?: superTypeRef.source,
-                        key,
-                        resolvedClass.name,
-                    )
+                    duplicateTypes += resolvedClass.classLikeNameOrNull() ?: key.toApproxName()
                 }
             }
+
             val approximateTypeName = key.toApproxName()
-            if (approximateTypeName == target.name || resolvedClass?.name == target.name) {
-                diagnosticReporter.reportOn(
-                    source = superTypeRef.source,
-                    factory = CfirErrors.SUPER_TYPES_SELF_REFERENCE,
-                    a = target.name,
-                    context = DiagnosticContext.Default,
-                )
+            if (approximateTypeName == target.name || resolvedClass?.classLikeNameOrNull() == target.name) {
+                selfReferencedTypes += target.name
             }
             resolvedClass?.let { classLikeSupers += it }
         }
@@ -67,15 +63,8 @@ internal class CfirSuperTypeChecker(
         return CfirSuperTypeCheckResult(
             classLikeSupers = classLikeSupers,
             graphEdges = graphEdges,
-        )
-    }
-
-    private fun reportDuplicate(target: CfirClass, source: CjSourceElement?, key: String, resolvedName: Name?) {
-        diagnosticReporter.reportOn(
-            source = source,
-            factory = CfirErrors.SUPER_TYPES_DUPLICATE,
-            a = resolvedName ?: key.toApproxName(),
-            context = DiagnosticContext.Default,
+            duplicateTypes = duplicateTypes.toList(),
+            selfReferencedTypes = selfReferencedTypes.toList(),
         )
     }
 }
@@ -85,3 +74,10 @@ private fun String.toApproxName(): Name {
     return Name.identifierIfValid(raw) ?: Name.ERROR_NAME
 }
 
+private fun CfirClassLikeDeclaration.classLikeNameOrNull(): Name? = when (this) {
+    is CfirClass -> name
+    is CfirInterface -> name
+    is CfirStruct -> name
+    is CfirEnum -> name
+    is CfirTypeAlias -> name
+}

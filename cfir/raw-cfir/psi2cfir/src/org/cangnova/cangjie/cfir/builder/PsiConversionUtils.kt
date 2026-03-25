@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.builder
 
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.*
@@ -43,7 +44,7 @@ private fun CjTypeElement.toFirTypeRef(
     is CjVArrayType -> toFirVArrayTypeRef(ref, toSource)
     else -> buildErrorTypeRef {
         source = ref.toCjSourceElementOrNull(toSource)
-        reason = "Unsupported type element: ${javaClass.simpleName}"
+        diagnostic =  ConeSimpleDiagnostic("Unsupported type element: ${javaClass.simpleName}")
     }
 }
 
@@ -114,17 +115,17 @@ private fun CjVArrayType.toFirVArrayTypeRef(
     val elementTypeReference = typeReference
         ?: return buildErrorTypeRef {
             source = ref.toCjSourceElementOrNull(toSource)
-            reason = "Malformed VArray type: missing element type"
+            diagnostic = ConeSimpleDiagnostic("Malformed VArray type: missing element type")
         }
     val elementTypeElement = elementTypeReference.typeElement
         ?: return buildErrorTypeRef {
             source = ref.toCjSourceElementOrNull(toSource)
-            reason = "Malformed VArray type: missing element type"
+            diagnostic =ConeSimpleDiagnostic("Malformed VArray type: missing element type")
         }
     val sizeLiteral = literal?.text
         ?: return buildErrorTypeRef {
             source = ref.toCjSourceElementOrNull(toSource)
-            reason = "Malformed VArray type: missing size literal"
+            diagnostic = ConeSimpleDiagnostic("Malformed VArray type: missing size literal")
         }
     return buildVArrayTypeRef {
         source = ref.toCjSourceElementOrNull(toSource)

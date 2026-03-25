@@ -1,8 +1,8 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression.match
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CfirTypeCheckUtils
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
@@ -62,9 +62,9 @@ data class CfirMatchPattern(
     val ergonomicType: ConeCangJieType get() = type
 
     companion object {
-        val Error = CfirMatchPattern(ConeErrorType("pattern error"), CfirMatchPatternKind.Error, null)
+        val Error = CfirMatchPattern(ConeErrorType(ConeSimpleDiagnostic("pattern error")), CfirMatchPatternKind.Error, null)
 
-        fun wild(type: ConeCangJieType = ConeErrorType("unknown")): CfirMatchPattern =
+        fun wild(type: ConeCangJieType = ConeErrorType(ConeSimpleDiagnostic("unknown"))): CfirMatchPattern =
             CfirMatchPattern(type, CfirMatchPatternKind.Wild, null)
     }
 }
@@ -203,7 +203,7 @@ sealed class CfirConstructor {
 
     open fun subTypes(type: ConeCangJieType): List<ConeCangJieType> = when (type) {
         is ConeTupleType if this is Single -> type.elementTypes
-        is ConeEnumType if this is Enum -> List(arityHint) { ConeErrorType("enum constructor argument") }
+        is ConeEnumType if this is Enum -> List(arityHint) { ConeErrorType(ConeSimpleDiagnostic("enum constructor argument")) }
         else -> emptyList()
     }
 
@@ -296,7 +296,7 @@ fun convertPattern(pattern: CfirPattern, expectedType: ConeCangJieType): List<Cf
                 listOf(CfirMatchPattern.Error.copy(cfirPattern = pattern))
             } else {
                 val subPatterns = pattern.arguments.mapIndexed { index, sub ->
-                    val subType = ConeErrorType("enum arg[$index]")
+                    val subType = ConeErrorType(ConeSimpleDiagnostic("enum arg[$index]"))
                     convertPattern(sub, subType).firstOrNull() ?: CfirMatchPattern.wild(subType)
                 }
                 listOf(
@@ -313,7 +313,7 @@ fun convertPattern(pattern: CfirPattern, expectedType: ConeCangJieType): List<Cf
             val tupleType = expectedType as? ConeTupleType
             val subPatterns = pattern.elements.mapIndexed { index, sub ->
                 val elementType = tupleType?.elementTypes?.getOrNull(index)
-                    ?: ConeErrorType("tuple element[$index]")
+                    ?: ConeErrorType(ConeSimpleDiagnostic("tuple element[$index]"))
                 convertPattern(sub, elementType).firstOrNull() ?: CfirMatchPattern.wild(elementType)
             }
             listOf(CfirMatchPattern(expectedType, CfirMatchPatternKind.Tuple(subPatterns), pattern))
@@ -345,11 +345,10 @@ fun convertPattern(pattern: CfirPattern, expectedType: ConeCangJieType): List<Cf
 }
 
 fun isSameType(a: ConeCangJieType, b: ConeCangJieType): Boolean {
-    if (a == b) return true
-    return CfirTypeCheckUtils.isSubtypeOf(a, b) && CfirTypeCheckUtils.isSubtypeOf(b, a)
+    return a == b
 }
 
-fun inferExpressionType(expression: CfirExpression?, fallback: ConeCangJieType = ConeErrorType("unknown")): ConeCangJieType {
+fun inferExpressionType(expression: CfirExpression?, fallback: ConeCangJieType = ConeErrorType(ConeSimpleDiagnostic("unknown"))): ConeCangJieType {
     return expression?.coneTypeOrNull ?: fallback
 }
 

@@ -7,7 +7,7 @@ import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.*
-import org.cangnova.cangjie.cfir.resolve.CfirResolutionMode
+import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.*
@@ -24,14 +24,15 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeStructType
-import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
-import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -49,21 +50,21 @@ class CfirDeclarationsResolveTransformer(
 ) : CfirPartialBodyResolveTransformer(transformer) {
     private val specificTypeResolverTransformer = CfirSpecificTypeResolverTransformer(session)
 
-    override fun transformFile(file: CfirFile, data: CfirResolutionMode): CfirFile {
+    override fun transformFile(file: CfirFile, data: ResolutionMode): CfirFile {
         val savedContext = context.towerDataContext
         context.withFile(file) {
             val importScopes = createImportingScopes(file)
             context.addNonLocalScopes(importScopes)
 
             (file as? org.cangnova.cangjie.cfir.declarations.impl.CfirFileImpl)?.declarations = file.declarations.map { decl ->
-                decl.transform<CfirDeclaration, CfirResolutionMode>(transformer, CfirResolutionMode.ContextIndependent)
+                decl.transform<CfirDeclaration, ResolutionMode>(transformer, ResolutionMode.ContextIndependent)
             }
         }
         context.withTowerDataContext(savedContext) {}
         return file
     }
 
-    override fun transformClass(klass: CfirClass, data: CfirResolutionMode): CfirClass {
+    override fun transformClass(klass: CfirClass, data: ResolutionMode): CfirClass {
         val savedContext = context.towerDataContext
 
         context.withContainer(klass) {
@@ -85,7 +86,7 @@ class CfirDeclarationsResolveTransformer(
             }
 
             (klass as? org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl)?.declarations = klass.declarations.map { decl ->
-                decl.transform<CfirDeclaration, CfirResolutionMode>(transformer, CfirResolutionMode.ContextIndependent)
+                decl.transform<CfirDeclaration, ResolutionMode>(transformer, ResolutionMode.ContextIndependent)
             }
         }
 
@@ -94,7 +95,7 @@ class CfirDeclarationsResolveTransformer(
         return klass
     }
 
-    override fun transformFunction(function: CfirFunction, data: CfirResolutionMode): CfirFunction {
+    override fun transformFunction(function: CfirFunction, data: ResolutionMode): CfirFunction {
         val savedContext = context.towerDataContext
 
         context.withContainer(function) {
@@ -116,9 +117,7 @@ class CfirDeclarationsResolveTransformer(
 
             val body = function.body
             if (body != null) {
-                (function as? org.cangnova.cangjie.cfir.declarations.impl.CfirFunctionImpl)?.body = body.transform<CfirBlock, CfirResolutionMode>(
-                    transformer, CfirResolutionMode.ContextIndependent
-                )
+                function.transformBody(transformer, ResolutionMode.ContextIndependent)
             }
 
             if (function.returnTypeRef is CfirImplicitTypeRef) {
@@ -139,7 +138,7 @@ class CfirDeclarationsResolveTransformer(
         return function
     }
 
-    override fun transformConstructor(constructor: CfirConstructor, data: CfirResolutionMode): CfirConstructor {
+    override fun transformConstructor(constructor: CfirConstructor, data: ResolutionMode): CfirConstructor {
         val savedContext = context.towerDataContext
 
         context.withContainer(constructor) {
@@ -154,7 +153,8 @@ class CfirDeclarationsResolveTransformer(
             val returnTypeRef = constructor.returnTypeRef
             if (returnTypeRef is CfirImplicitTypeRef) {
                 val ownerClass = context.containers.filterIsInstance<CfirClass>().lastOrNull()
-                val ownerType = ownerClass?.let(::buildConstructedTypeForClass) ?: ConeErrorType("constructor has no owning class")
+                val ownerType = ownerClass?.let(::buildConstructedTypeForClass)
+                    ?: ConeErrorType(ConeSimpleDiagnostic("constructor has no owning class"))
                 constructor.replaceReturnTypeRef(
                     buildResolvedTypeRef {
                         source = returnTypeRef.source
@@ -176,7 +176,7 @@ class CfirDeclarationsResolveTransformer(
             val body = constructor.body
             if (body != null) {
                 (constructor as? org.cangnova.cangjie.cfir.declarations.impl.CfirConstructorImpl)?.body =
-                    body.transform<CfirBlock, CfirResolutionMode>(transformer, CfirResolutionMode.ContextIndependent)
+                    body.transform<CfirBlock, ResolutionMode>(transformer, ResolutionMode.ContextIndependent)
             }
         }
 
@@ -187,7 +187,7 @@ class CfirDeclarationsResolveTransformer(
 
     override fun transformEnumConstructor(
         enumConstructor: CfirEnumConstructor,
-        data: CfirResolutionMode,
+        data: ResolutionMode,
     ): CfirEnumConstructor {
         val savedContext = context.towerDataContext
 
@@ -208,7 +208,7 @@ class CfirDeclarationsResolveTransformer(
         return enumConstructor
     }
 
-    override fun transformProperty(property: CfirProperty, data: CfirResolutionMode): CfirProperty {
+    override fun transformProperty(property: CfirProperty, data: ResolutionMode): CfirProperty {
         val savedContext = context.towerDataContext
 
         context.withContainer(property) {
@@ -220,14 +220,14 @@ class CfirDeclarationsResolveTransformer(
         return property
     }
 
-    override fun transformVariable(variable: CfirVariable, data: CfirResolutionMode): CfirVariable {
+    override fun transformVariable(variable: CfirVariable, data: ResolutionMode): CfirVariable {
         bumpPhase(variable)
         return variable
     }
 
     override fun transformFieldVariable(
         fieldVariable: CfirFieldVariable,
-        data: CfirResolutionMode,
+        data: ResolutionMode,
     ): CfirFieldVariable {
         fieldVariable.replaceReturnTypeRef(
             resolveExplicitTypeRefIfNeeded(fieldVariable.returnTypeRef, fieldVariable.typeParameters),
@@ -235,15 +235,15 @@ class CfirDeclarationsResolveTransformer(
 
         val explicitTypeRef = fieldVariable.returnTypeRef
         val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
-            CfirResolutionMode.WithExpectedType(explicitTypeRef )
+            ResolutionMode.WithExpectedType(explicitTypeRef )
         } else {
-            CfirResolutionMode.ContextIndependent
+            ResolutionMode.ContextIndependent
         }
 
         val initializer = fieldVariable.initializer
         if (initializer != null) {
             (fieldVariable as? CfirFieldVariableImpl)?.initializer =
-                initializer.transform<CfirExpression, CfirResolutionMode>(transformer, initializerMode)
+                initializer.transform<CfirExpression, ResolutionMode>(transformer, initializerMode)
         }
 
         if (fieldVariable.returnTypeRef is CfirImplicitTypeRef) {
@@ -269,14 +269,14 @@ class CfirDeclarationsResolveTransformer(
         return fieldVariable
     }
 
-    override fun transformDeclaration(declaration: CfirDeclaration, data: CfirResolutionMode): CfirDeclaration {
+    override fun transformDeclaration(declaration: CfirDeclaration, data: ResolutionMode): CfirDeclaration {
         bumpPhase(declaration)
         return declaration
     }
 
     override fun transformPatternVariable(
         patternVariable: CfirPatternVariable,
-        data: CfirResolutionMode,
+        data: ResolutionMode,
     ): CfirPatternVariable {
         val rawTypeRef = patternVariable.returnTypeRef
         if (rawTypeRef !is CfirResolvedTypeRef && rawTypeRef !is CfirImplicitTypeRef) {
@@ -292,15 +292,15 @@ class CfirDeclarationsResolveTransformer(
 
         val explicitTypeRef = patternVariable.returnTypeRef
         val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
-            CfirResolutionMode.WithExpectedType(explicitTypeRef)
+            ResolutionMode.WithExpectedType(explicitTypeRef)
         } else {
-            CfirResolutionMode.ContextIndependent
+            ResolutionMode.ContextIndependent
         }
 
         val initializer = patternVariable.initializer
         if (initializer != null) {
             (patternVariable as? CfirPatternVariableImpl)?.initializer =
-                initializer.transform<CfirExpression, CfirResolutionMode>(transformer, initializerMode)
+                initializer.transform<CfirExpression, ResolutionMode>(transformer, initializerMode)
         }
 
         if (patternVariable.returnTypeRef is CfirImplicitTypeRef) {
@@ -344,7 +344,7 @@ class CfirDeclarationsResolveTransformer(
         }
     }
 
-    override fun transformBlock(block: CfirBlock, data: CfirResolutionMode): CfirExpression {
+    override fun transformBlock(block: CfirBlock, data: ResolutionMode): CfirExpression {
         val savedContext = context.towerDataContext
         val blockScope = CfirLocalScopeImpl()
         context.addLocalScope(blockScope)
@@ -448,17 +448,31 @@ class CfirDeclarationsResolveTransformer(
     }
 
     private fun buildConstructedTypeForClass(klass: CfirClass): ConeCangJieType {
-        val classId = resolveClassId(klass) ?: return ConeErrorType("cannot resolve class id for constructor owner")
-        val typeArguments = klass.typeParameters.map { ConeTypeParameterType(ConeTypeParameterLookupTag(it.name.asString())) }
-        val lookupTag = ConeClassLookupTagImpl(classId)
-        return when (klass.classKind) {
-            CfirClassKind.CLASS, CfirClassKind.INTERFACE -> ConeClassLikeType(
+        val classId = resolveClassId(klass)
+            ?: return ConeErrorType(ConeSimpleDiagnostic("cannot resolve class id for constructor owner"))
+        val typeArguments = klass.typeParameters.map { parameter ->
+            ConeTypeProjection(ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag()))
+        }
+        val lookupTag = ConeClassLikeLookupTagImpl(classId)
+        return when (klass) {
+            is CfirInterface -> ConeClassLikeType(
                 lookupTag = lookupTag,
                 typeArguments = typeArguments,
-                isInterface = klass.classKind == CfirClassKind.INTERFACE,
+                isInterface = true,
             )
-            CfirClassKind.STRUCT -> ConeStructType(lookupTag, typeArguments)
-            CfirClassKind.ENUM -> ConeEnumType(lookupTag, typeArguments)
+            is CfirStruct -> ConeStructType(
+                lookupTag = lookupTag,
+                typeArguments = typeArguments,
+            )
+            is CfirEnum -> ConeEnumType(
+                lookupTag = lookupTag,
+                typeArguments = typeArguments,
+                isRefEnum = klass.isRefEnum,
+            )
+            else -> ConeClassLikeType(
+                lookupTag = lookupTag,
+                typeArguments = typeArguments,
+            )
         }
     }
 }
