@@ -4,9 +4,12 @@
 
 package org.cangnova.cangjie.cfir.resolve.transformers
 
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -20,16 +23,21 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
+import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
+import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
+import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.SpecialNames
 
 /**
  * TYPES 阶段处理器。
@@ -37,7 +45,7 @@ import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
  */
 class CfirTypeResolveProcessor(
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
 ) : CfirTransformerBasedResolveProcessor(session, scopeSession, CfirResolvePhase.TYPES) {
     private val typeResolveTransformer = CfirTypeResolveTransformer(session)
 
@@ -69,6 +77,8 @@ class CfirTypeResolveTransformer(
     }
 
     override fun transformClass(klass: CfirClass, data: CfirTypeResolutionConfiguration): CfirClass {
+        ensureImplicitDefaultConstructorIfNeeded(klass)
+
         val configuration = data
             .withTopContainer(klass)
             .withAdditionalTypeParameters(klass.typeParameters)
@@ -200,6 +210,24 @@ class CfirTypeResolveTransformer(
     private fun bumpPhase(declaration: CfirDeclaration) {
         declaration.replaceResolvePhase(CfirResolvePhase.TYPES)
     }
-}
 
+    private fun ensureImplicitDefaultConstructorIfNeeded(klass: CfirClass) {
+        if (klass.declarations.any { it is CfirConstructor }) return
+
+        val classImpl = klass as? CfirClassImpl ?: return
+        val symbol = CfirConstructorSymbol(CallableId(SpecialNames.INIT))
+        val constructor = buildConstructor {
+            source = klass.source
+            moduleData = klass.moduleData
+            this.symbol = symbol
+            origin = CfirDeclarationOrigin.ImplicitDefault
+            attributes = CfirDeclarationAttributes.EMPTY
+            status = klass.status
+            returnTypeRef = buildImplicitTypeRef()
+            body = null
+        }
+        symbol.bind(constructor)
+        classImpl.declarations = classImpl.declarations + constructor
+    }
+}
 

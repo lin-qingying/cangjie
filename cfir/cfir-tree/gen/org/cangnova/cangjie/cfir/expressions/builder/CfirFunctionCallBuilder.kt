@@ -13,21 +13,24 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.impl.CfirFunctionCallImpl
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirFunctionCallBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    var coneTypeOrNull: ConeCangjieType? = null
+    var coneTypeOrNull: ConeCangJieType? = null
     lateinit var calleeReference: CfirReference
     var explicitReceiver: CfirExpression? = null
+    var dispatchReceiver: CfirExpression? = null
     val arguments: MutableList<CfirExpression> = mutableListOf()
     val typeArguments: MutableList<CfirTypeRef> = mutableListOf()
+    lateinit var origin: CfirFunctionCallOrigin
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirFunctionCall {
@@ -37,8 +40,10 @@ class CfirFunctionCallBuilder {
             coneTypeOrNull,
             calleeReference,
             explicitReceiver,
+            dispatchReceiver,
             arguments,
             typeArguments,
+            origin,
         )
     }
 
@@ -63,7 +68,9 @@ inline fun buildFunctionCallCopy(original: CfirFunctionCall, init: CfirFunctionC
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.calleeReference = original.calleeReference
     copyBuilder.explicitReceiver = original.explicitReceiver
+    copyBuilder.dispatchReceiver = original.dispatchReceiver
     copyBuilder.arguments.addAll(original.arguments)
     copyBuilder.typeArguments.addAll(original.typeArguments)
+    copyBuilder.origin = original.origin
     return copyBuilder.apply(init).build()
 }

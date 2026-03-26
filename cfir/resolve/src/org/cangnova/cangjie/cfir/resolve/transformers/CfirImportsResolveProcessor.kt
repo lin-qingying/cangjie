@@ -11,7 +11,7 @@ import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
 import org.cangnova.cangjie.cfir.resolve.CfirImportBindingResolver
 import org.cangnova.cangjie.cfir.resolve.CfirImportConflictReporter
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 
@@ -20,9 +20,10 @@ import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
  * 它把 `IMPORTS` 阶段与对应的 transformer 绑定起来，驱动整条 import 解析流程。
  */
 internal class CfirImportResolveProcessor(
+    @Suppress("unused")
     private val diagnosticReporter: CfirDiagnosticReporter,
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
 ) : CfirTransformerBasedResolveProcessor(
     session = session,
     scopeSession = scopeSession,
@@ -41,6 +42,7 @@ internal typealias CfirImportsResolveProcessor = CfirImportResolveProcessor
  */
 internal class CfirImportResolveTransformer(
     override val session: CfirSession,
+    @Suppress("unused")
     private val diagnosticReporter: CfirDiagnosticReporter,
 ) : CfirAbstractTreeTransformer<Nothing?>(CfirResolvePhase.IMPORTS) {
     override fun <E : CfirElement> transformElement(element: E, data: Nothing?): E {
@@ -84,4 +86,3 @@ internal class CfirImportResolveTransformer(
         return declaration
     }
 }
-

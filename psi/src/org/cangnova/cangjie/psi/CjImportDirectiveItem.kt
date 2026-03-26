@@ -105,13 +105,6 @@ class CjImportDirective : CjDeclarationStub<CangJieImportDirectiveStub> {
                     return null
                 }
 
-                is CjSynthesisQualifiedExpression -> {
-                    return fqNameFromExpression(expression.selectorExpression)?.let {
-                        fqNameFromExpression(expression.receiverExpression)?.child(
-                            it,
-                        )
-                    }
-                }
 
                 is CjSimpleNameExpression -> {
                     return topLevel(expression.referencedNameAsName)

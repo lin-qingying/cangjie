@@ -19,6 +19,16 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics")
     }
 
+    @TestMetadata(".cache")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Cache : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/.cache")
+        }
+    }
+
     @TestMetadata("const-eval")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
@@ -207,6 +217,28 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         }
     }
 
+    @TestMetadata("enum")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Enum : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/enum")
+        }
+
+        @TestMetadata("errorSimpleEnum.cj")
+        @Test
+        fun testErrorSimpleEnum() {
+            runTest("cfir/analysis-tests/testData/diagnostics/enum/errorSimpleEnum.cj")
+        }
+
+        @TestMetadata("noErrorSimpleEnum.cj")
+        @Test
+        fun testNoErrorSimpleEnum() {
+            runTest("cfir/analysis-tests/testData/diagnostics/enum/noErrorSimpleEnum.cj")
+        }
+    }
+
     @TestMetadata("function")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
@@ -352,6 +384,12 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         @Test
         fun testReturnTypeMismatch() {
             runTest("cfir/analysis-tests/testData/diagnostics/type-mismatch/returnTypeMismatch.cj")
+        }
+
+        @TestMetadata("simple.cj")
+        @Test
+        fun testSimple() {
+            runTest("cfir/analysis-tests/testData/diagnostics/type-mismatch/simple.cj")
         }
     }
 

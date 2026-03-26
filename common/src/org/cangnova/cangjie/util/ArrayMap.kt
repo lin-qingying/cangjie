@@ -94,8 +94,19 @@ internal class ArrayMapImpl<T : Any> private constructor(
         @Suppress("UNCHECKED_CAST")
         return data.getOrNull(index) as T?
     }
+    data class Entry<T>(override val key: Int, override val value: T) : Map.Entry<Int, T>
 
     override fun copy(): ArrayMap<T> = ArrayMapImpl(data.copyOf(), size)
+    fun entries(): List<Entry<T>> {
+        @Suppress("UNCHECKED_CAST")
+        return data.mapIndexedNotNull { index, value -> if (value != null) Entry(index, value as T) else null }
+    }
+    fun remove(index: Int) {
+        if (data[index] != null) {
+            size--
+        }
+        data[index] = null
+    }
 
     override fun iterator(): Iterator<T> = object : AbstractIterator<T>() {
         private var index = -1

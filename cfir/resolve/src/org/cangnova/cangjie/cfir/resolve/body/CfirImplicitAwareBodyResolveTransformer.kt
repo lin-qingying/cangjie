@@ -6,8 +6,10 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
-import org.cangnova.cangjie.cfir.resolve.CfirResolutionMode
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 
@@ -18,12 +20,12 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
  */
 open class CfirImplicitAwareBodyResolveTransformer(
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
     private val implicitBodyResolveComputationSession: CfirImplicitBodyResolveComputationSession,
     phase: CfirResolvePhase,
     implicitTypeOnly: Boolean,
-    returnTypeCalculator: CfirReturnTypeCalculator,
-    outerBodyResolveContext: CfirBodyResolveContext? = null,
+    returnTypeCalculator: ReturnTypeCalculator,
+    outerBodyResolveContext: BodyResolveContext? = null,
 ) : CfirBodyResolveTransformer(
     session = session,
     scopeSession = scopeSession,
@@ -33,21 +35,21 @@ open class CfirImplicitAwareBodyResolveTransformer(
     implicitTypeOnly = implicitTypeOnly,
 ) {
 
-    override fun transformFunction(function: CfirFunction, data: CfirResolutionMode): CfirFunction {
+    override fun transformFunction(function: CfirFunction, data: ResolutionMode): CfirFunction {
         @Suppress("UNCHECKED_CAST")
         return computeCachedTransformationResult(function) {
             super.transformFunction(function, data)
         } as CfirFunction
     }
 
-    override fun transformProperty(property: CfirProperty, data: CfirResolutionMode): CfirProperty {
+    override fun transformProperty(property: CfirProperty, data: ResolutionMode): CfirProperty {
         @Suppress("UNCHECKED_CAST")
         return computeCachedTransformationResult(property) {
             super.transformProperty(property, data)
         } as CfirProperty
     }
 
-    override fun transformVariable(variable: CfirVariable, data: CfirResolutionMode): CfirVariable {
+    override fun transformVariable(variable: CfirVariable, data: ResolutionMode): CfirVariable {
         @Suppress("UNCHECKED_CAST")
         return computeCachedTransformationResult(variable) {
             super.transformVariable(variable, data)
@@ -86,4 +88,3 @@ open class CfirImplicitAwareBodyResolveTransformer(
         }
     }
 }
-

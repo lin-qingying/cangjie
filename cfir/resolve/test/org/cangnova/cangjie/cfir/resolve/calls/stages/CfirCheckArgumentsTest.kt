@@ -2,14 +2,16 @@
 
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildFunctionSymbol
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildTypedExpression
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateApplicability
 import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
-import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculator
+import org.cangnova.cangjie.cfir.resolve.body.ReturnTypeCalculator
+import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
+import org.cangnova.cangjie.cfir.semantics.CandidateApplicability
 import org.cangnova.cangjie.cfir.types.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -27,8 +29,8 @@ class CfirCheckArgumentsTest {
     fun setUp() {
         context = CfirResolutionContext(
             session = StubSession,
-            bodyResolveContext = CfirBodyResolveContext(CfirReturnTypeCalculator.Default, CfirDataFlowAnalyzerContext()),
-            subtypeChecker = ConeSubtypeChecker(TestTypeContext()),
+            bodyResolveContext = CfirBodyResolveContext(ReturnTypeCalculator.Default, CfirDataFlowAnalyzerContext()),
+            typeRelations = CfirTypeRelations(TestTypeContext()),
         )
     }
 
@@ -45,7 +47,7 @@ class CfirCheckArgumentsTest {
 
             CfirCheckArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
 
-            assertEquals(CfirCandidateApplicability.RESOLVED, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.RESOLVED, candidate.lowestApplicability)
         }
 
         @Test
@@ -57,7 +59,7 @@ class CfirCheckArgumentsTest {
 
             CfirCheckArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
 
-            assertEquals(CfirCandidateApplicability.RESOLVED, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.RESOLVED, candidate.lowestApplicability)
         }
 
         @Test
@@ -69,7 +71,7 @@ class CfirCheckArgumentsTest {
 
             CfirCheckArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
 
-            assertEquals(CfirCandidateApplicability.RESOLVED, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.RESOLVED, candidate.lowestApplicability)
         }
     }
 
@@ -85,9 +87,9 @@ class CfirCheckArgumentsTest {
 
             CfirCheckArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
 
-            assertEquals(CfirCandidateApplicability.INAPPLICABLE, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.INAPPLICABLE, candidate.lowestApplicability)
             assertTrue(candidate.diagnostics.any {
-                it is org.cangnova.cangjie.cfir.resolve.calls.candidate.ArgumentTypeMismatch
+                it is ArgumentTypeMismatch
             })
         }
 
@@ -100,7 +102,7 @@ class CfirCheckArgumentsTest {
 
             CfirCheckArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
 
-            assertEquals(CfirCandidateApplicability.INAPPLICABLE, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.INAPPLICABLE, candidate.lowestApplicability)
         }
 
         @Test
@@ -121,7 +123,7 @@ class CfirCheckArgumentsTest {
 
             CfirCheckArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
 
-            assertEquals(CfirCandidateApplicability.INAPPLICABLE, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.INAPPLICABLE, candidate.lowestApplicability)
         }
     }
 
@@ -137,7 +139,7 @@ class CfirCheckArgumentsTest {
 
             CfirCheckArguments.check(candidate, CfirCheckerSinkImpl(candidate), context)
 
-            assertEquals(CfirCandidateApplicability.RESOLVED, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.RESOLVED, candidate.lowestApplicability)
         }
     }
 }
@@ -150,10 +152,9 @@ private object StubSession : org.cangnova.cangjie.cfir.session.CfirSession(Kind.
 
 /** 支持 `IdealInt` / `IdealFloat` 子类型判定的测试 `TypeContext`。 */
 private class TestTypeContext : ConeTypeContext {
-    override fun supertypes(type: ConeCangjieType): Collection<ConeCangjieType> = emptyList()
-    override fun isSameTypeConstructor(a: ConeCangjieType, b: ConeCangjieType): Boolean {
+    override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> = emptyList()
+    override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean {
         if (a is ConePrimitiveType && b is ConePrimitiveType) return a.kind == b.kind
         return a == b
     }
 }
-

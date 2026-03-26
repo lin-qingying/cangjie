@@ -3,6 +3,8 @@ package org.cangnova.cangjie.cfir.scopes.impl
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirImportScope
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -20,7 +22,7 @@ import org.cangnova.cangjie.name.Name
 class CfirExplicitStarImportingScope(
     imports: List<CfirImport>,
     private val symbolProvider: CfirSymbolProvider,
-) : CfirImportScope {
+) : CfirImportScope() {
 
     /** 所有星号导入的目标包名 */
     private val starImportPackages: List<FqName>
@@ -32,17 +34,23 @@ class CfirExplicitStarImportingScope(
             .distinct()
     }
 
-    override fun processClassifiersByName(name: Name, processor: (CfirClassSymbol) -> Unit) {
+    override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         for (packageFqName in starImportPackages) {
-            val classId = ClassId(packageFqName, FqName.topLevel(name), isLocal = false)
+            val classId = ClassId(packageFqName, FqName.topLevel(name))
             val symbol = symbolProvider.getClassLikeSymbolByClassId(classId)
             if (symbol != null) processor(symbol)
         }
     }
 
-    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol) -> Unit) {
+    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol<*>) -> Unit) {
         for (packageFqName in starImportPackages) {
             symbolProvider.getTopLevelFunctionSymbols(packageFqName, name).forEach(processor)
+        }
+    }
+
+    override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
+        for (packageFqName in starImportPackages) {
+            symbolProvider.getTopLevelCallableSymbols(packageFqName, name).forEach(processor)
         }
     }
 

@@ -13,7 +13,7 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeAliasImpl
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
@@ -23,9 +23,12 @@ class CfirTypeAliasBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    lateinit var symbol: CfirSymbol<*>
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
+    var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    val declarations: MutableList<CfirDeclaration> = mutableListOf()
+    val superTypeRefs: MutableList<CfirTypeRef> = mutableListOf()
+    lateinit var symbol: CfirTypeAliasSymbol
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var name: Name
@@ -37,9 +40,12 @@ class CfirTypeAliasBuilder {
             source,
             moduleData,
             annotations,
-            symbol,
             origin,
             attributes,
+            isLocal,
+            declarations,
+            superTypeRefs,
+            symbol,
             status,
             typeParameters,
             name,
@@ -68,9 +74,11 @@ inline fun buildTypeAliasCopy(original: CfirTypeAlias, init: CfirTypeAliasBuilde
     copyBuilder.source = original.source
     copyBuilder.moduleData = original.moduleData
     copyBuilder.annotations.addAll(original.annotations)
-    copyBuilder.symbol = original.symbol
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes
+    copyBuilder.isLocal = original.isLocal
+    copyBuilder.declarations.addAll(original.declarations)
+    copyBuilder.superTypeRefs.addAll(original.superTypeRefs)
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.name = original.name

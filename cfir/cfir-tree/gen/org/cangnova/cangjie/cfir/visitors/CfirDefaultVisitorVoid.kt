@@ -8,10 +8,7 @@ package org.cangnova.cangjie.cfir.visitors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.*
-import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
-import org.cangnova.cangjie.cfir.references.CfirErrorReference
-import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.*
 import org.cangnova.cangjie.cfir.types.*
 
 /**
@@ -20,10 +17,6 @@ import org.cangnova.cangjie.cfir.types.*
 abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
     override fun visitResolvedImport(resolvedImport: CfirResolvedImport) {
         visitImport(resolvedImport)
-    }
-
-    override fun visitMemberDeclaration(memberDeclaration: CfirMemberDeclaration) {
-        visitDeclaration(memberDeclaration)
     }
 
     override fun visitCallableDeclaration(callableDeclaration: CfirCallableDeclaration) {
@@ -39,7 +32,7 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
     }
 
     override fun visitExtend(extend: CfirExtend) {
-        visitClassLikeDeclaration(extend)
+        visitMemberDeclaration(extend)
     }
 
     override fun visitTypeAlias(typeAlias: CfirTypeAlias) {
@@ -50,20 +43,24 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitCallableDeclaration(function)
     }
 
+    override fun visitNamedFunction(namedFunction: CfirNamedFunction) {
+        visitFunction(namedFunction)
+    }
+
     override fun visitMainFunction(mainFunction: CfirMainFunction) {
-        visitCallableDeclaration(mainFunction)
+        visitFunction(mainFunction)
     }
 
     override fun visitMacroDeclaration(macroDeclaration: CfirMacroDeclaration) {
-        visitCallableDeclaration(macroDeclaration)
+        visitFunction(macroDeclaration)
     }
 
     override fun visitFinalizer(finalizer: CfirFinalizer) {
-        visitCallableDeclaration(finalizer)
+        visitFunction(finalizer)
     }
 
     override fun visitConstructor(constructor: CfirConstructor) {
-        visitCallableDeclaration(constructor)
+        visitFunction(constructor)
     }
 
     override fun visitInvalidDeclaration(invalidDeclaration: CfirInvalidDeclaration) {
@@ -84,14 +81,6 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
 
     override fun visitPatternVariable(patternVariable: CfirPatternVariable) {
         visitVariable(patternVariable)
-    }
-
-    override fun visitValueParameter(valueParameter: CfirValueParameter) {
-        visitCallableDeclaration(valueParameter)
-    }
-
-    override fun visitTypeParameter(typeParameter: CfirTypeParameter) {
-        visitDeclaration(typeParameter)
     }
 
     override fun visitExpression(expression: CfirExpression) {
@@ -116,6 +105,14 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
 
     override fun visitStringInterpolation(stringInterpolation: CfirStringInterpolation) {
         visitExpression(stringInterpolation)
+    }
+
+    override fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase) {
+        visitNamedReference(namedReferenceWithCandidateBase)
+    }
+
+    override fun visitThisReference(thisReference: CfirThisReference) {
+        visitReference(thisReference)
     }
 
     override fun visitAssignment(assignment: CfirAssignment) {
@@ -182,8 +179,16 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitExpression(jumpExpression)
     }
 
-    override fun visitLambdaExpression(lambdaExpression: CfirLambdaExpression) {
-        visitExpression(lambdaExpression)
+    override fun visitAnonymousFunction(anonymousFunction: CfirAnonymousFunction) {
+        visitFunction(anonymousFunction)
+    }
+
+    override fun visitResolvedErrorReference(resolvedErrorReference: CfirResolvedErrorReference) {
+        visitResolvedNamedReference(resolvedErrorReference)
+    }
+
+    override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) {
+        visitExpression(anonymousFunctionExpression)
     }
 
     override fun visitRangeExpression(rangeExpression: CfirRangeExpression) {
@@ -220,10 +225,6 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
 
     override fun visitSubscriptExpression(subscriptExpression: CfirSubscriptExpression) {
         visitExpression(subscriptExpression)
-    }
-
-    override fun visitErrorExpression(errorExpression: CfirErrorExpression) {
-        visitExpression(errorExpression)
     }
 
     override fun visitConstPattern(constPattern: CfirConstPattern) {
@@ -278,10 +279,6 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitTypeRef(vArrayTypeRef)
     }
 
-    override fun visitErrorTypeRef(errorTypeRef: CfirErrorTypeRef) {
-        visitTypeRef(errorTypeRef)
-    }
-
     override fun visitControlFlowGraphReference(controlFlowGraphReference: CfirControlFlowGraphReference) {
         visitReference(controlFlowGraphReference)
     }
@@ -291,7 +288,7 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
     }
 
     override fun visitResolvedNamedReference(resolvedNamedReference: CfirResolvedNamedReference) {
-        visitReference(resolvedNamedReference)
+        visitNamedReference(resolvedNamedReference)
     }
 
     override fun visitErrorReference(errorReference: CfirErrorReference) {

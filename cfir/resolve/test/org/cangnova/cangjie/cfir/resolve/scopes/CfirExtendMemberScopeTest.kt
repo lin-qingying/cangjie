@@ -17,11 +17,14 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirSessionExtendProvider
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.classId
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -69,6 +72,29 @@ class CfirExtendMemberScopeTest {
         scope.processClassifiersByName(Name.identifier("TargetNested"), classifiers::add)
         assertEquals(listOf(targetNestedClass.symbol as CfirClassSymbol), classifiers)
     }
+
+    @Test
+    fun `scope exposes extend members for primitive targets`() {
+        val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val targetClassId = PrimitiveTypeKind.INT64.classId
+        val primitiveFunction = newFunctionDeclaration(moduleData, "extFun")
+        val primitiveExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = emptyList(),
+            declarations = listOf(primitiveFunction),
+        )
+
+        val file = ExtendTestFixtures.newFile(moduleData, FqName.ROOT, listOf(primitiveExtend))
+        val store = CfirExtendIndexStore().also { it.rebuild(listOf(file), NoopTypeResolver) }
+        val provider = CfirSessionExtendProvider(store)
+        val scope = CfirExtendMemberScope(targetClassId, provider)
+
+        val functions = mutableListOf<CfirFunctionSymbol>()
+        scope.processFunctionsByName(Name.identifier("extFun"), functions::add)
+
+        assertEquals(listOf(primitiveFunction.symbol as CfirFunctionSymbol), functions)
+    }
 }
 
 private fun newClassDeclaration(moduleData: CfirModuleData, name: String): CfirClassImpl {
@@ -93,7 +119,7 @@ private fun newClassDeclaration(moduleData: CfirModuleData, name: String): CfirC
 }
 
 private fun newFunctionDeclaration(moduleData: CfirModuleData, name: String): CfirFunctionImpl {
-    val symbol = CfirFunctionSymbol()
+    val symbol = CfirNamedFunctionSymbol(CallableId(FqName.ROOT, Name.identifier(name)))
     return CfirFunctionImpl(
         source = null,
         moduleData = moduleData,
@@ -115,7 +141,7 @@ private fun newFunctionDeclaration(moduleData: CfirModuleData, name: String): Cf
 }
 
 private fun newPropertyDeclaration(moduleData: CfirModuleData, name: String): CfirPropertyImpl {
-    val symbol = CfirPropertySymbol()
+    val symbol = CfirPropertySymbol(CallableId(FqName.ROOT, Name.identifier(name)))
     return CfirPropertyImpl(
         source = null,
         moduleData = moduleData,
@@ -127,7 +153,6 @@ private fun newPropertyDeclaration(moduleData: CfirModuleData, name: String): Cf
         typeParameters = emptyList(),
         returnTypeRef = org.cangnova.cangjie.cfir.types.impl.CfirImplicitTypeRefImpl(emptyList()),
         name = Name.identifier(name),
-        initializer = null,
         getter = null,
         setter = null,
     ).also {
@@ -156,4 +181,3 @@ private object NoopTypeResolver : CfirTypeResolver() {
 
     override fun resolveClass(classId: ClassId): org.cangnova.cangjie.cfir.declarations.CfirClass? = null
 }
-

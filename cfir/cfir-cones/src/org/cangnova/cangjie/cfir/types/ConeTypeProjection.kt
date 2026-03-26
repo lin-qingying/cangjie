@@ -1,14 +1,16 @@
 package org.cangnova.cangjie.cfir.types
 
+import org.cangnova.cangjie.type.model.TypeArgumentMarker
+
 /**
- * 类型实参（Type Argument）。
+ * 仓颉泛型实参。
  *
- * 仓颉的泛型系统是不变的（invariant），没有 Kotlin 的 in/out 变型声明，
- * 也没有星号投影。所有泛型实参都必须是具体类型。
+ * 仓颉没有 Kotlin 的 `in` / `out` 投影和星号投影，
+ * 因而一个类型实参就是一个确定的具体类型。
  */
 class ConeTypeProjection(
-    val type: ConeCangjieType,
-) {
+    val type: ConeCangJieType,
+) : TypeArgumentMarker {
     override fun equals(other: Any?): Boolean =
         other is ConeTypeProjection && type == other.type
 

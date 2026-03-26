@@ -12,23 +12,25 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 
 @OptIn(CfirImplementationDetail::class)
 class CfirFileImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override val moduleData: CfirModuleData,
     override var annotations: List<CfirAnnotation>,
-    override val symbol: CfirSymbol<*>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
+    override val symbol: CfirFileSymbol,
     override val name: String,
     override val sourceFile: CjSourceFile?,
     override var packageDirective: CfirPackageDirective,
     override var imports: List<CfirImport>,
+    override val sourceFileLinesMapping: CjSourceFileLinesMapping?,
     override var declarations: List<CfirDeclaration>,
 ) : CfirFile() {
     override var controlFlowGraphReference: CfirControlFlowGraphReference? = null

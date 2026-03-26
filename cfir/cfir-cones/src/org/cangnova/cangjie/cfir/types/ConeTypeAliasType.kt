@@ -9,10 +9,10 @@ import org.cangnova.cangjie.name.ClassId
 class ConeTypeAliasType(
     val classId: ClassId,
     /** 展开后的实际类型（解析后设置） */
-    val expandedType: ConeCangjieType? = null,
-    override val typeArguments: List<ConeCangjieType> = emptyList(),
-    override val attributes: ConeAttributes = ConeAttributes.EMPTY,
-) : ConeRigidType() {
+    val expandedType: ConeCangJieType? = null,
+    override val typeArguments: List<ConeTypeProjection> = emptyList(),
+    override val attributes: ConeAttributes = ConeAttributes.Empty,
+) : ConeRigidType(), ConeTypeConstructorMarker {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -26,12 +26,5 @@ class ConeTypeAliasType(
         return result
     }
 
-    override fun toString(): String = buildString {
-        append("typealias ")
-        append(classId.shortClassName)
-        if (typeArguments.isNotEmpty()) {
-            typeArguments.joinTo(this, prefix = "<", postfix = ">")
-        }
-        expandedType?.let { append(" = $it") }
-    }
+
 }

@@ -1,5 +1,8 @@
 package org.cangnova.cangjie
 
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
+
 data class LanguageVersion(
     val major: Int,
     val minor: Int,
@@ -41,6 +44,7 @@ enum class LanguageFeature {
      * RETURN_TYPE_MISMATCH on lambda body return expression.
      */
     LambdaReturnTypeMismatchAsArgumentTypeMismatch,
+    LexicographicVariableReadinessCalculation,
     ;
 
     companion object {
@@ -56,10 +60,47 @@ enum class WarningLevel {
     Disabled,
 }
 
-class AnalysisFlag<T>(val defaultValue: T)
+class AnalysisFlag<out T> internal constructor(
+    private val name: String,
+    val defaultValue: T
+) {
+    override fun equals(other: Any?): Boolean = other is AnalysisFlag<*> && other.name == name
+
+    override fun hashCode(): Int = name.hashCode()
+
+    override fun toString(): String = name
+
+    class Delegate<out T>(name: String, defaultValue: T) : ReadOnlyProperty<Any?, AnalysisFlag<T>> {
+        private val flag = AnalysisFlag(name, defaultValue)
+
+        override fun getValue(thisRef: Any?, property: KProperty<*>): AnalysisFlag<T> = flag
+    }
+
+    object Delegates {
+        open class Boolean(val defaultValue: kotlin.Boolean) {
+            companion object : Boolean(defaultValue = false)
+
+            operator fun provideDelegate(instance: Any?, property: KProperty<*>) = Delegate(property.name, defaultValue)
+        }
+        object WarningLevelMap {
+            operator fun provideDelegate(instance: Any?, property: KProperty<*>):  AnalysisFlag.Delegate<Map<String, WarningLevel>> = Delegate(property.name, emptyMap())
+        }
+
+
+
+
+
+    }
+}
 
 object AnalysisFlags {
-    val warningLevels = AnalysisFlag<Map<String, WarningLevel>>(emptyMap())
+    val warningLevels by AnalysisFlag.Delegates.WarningLevelMap
+
+    @JvmStatic
+    val ideMode by AnalysisFlag.Delegates.Boolean
+    @JvmStatic
+    val stdlibCompilation by AnalysisFlag.Delegates.Boolean
+
 }
 
 data class LanguageVersionSettings(

@@ -1,13 +1,12 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers
 
-import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirExpressionCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.ExpressionCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirAssignmentChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirAssignmentTypeMismatchChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirBasicExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirConstEvalArithmeticChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirErrorExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirFunctionCallChecker
-import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirArgumentTypeMismatchChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirIfExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirIfConditionTypeMismatchChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirLiteralExpressionChecker
@@ -18,7 +17,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirMatchExhaustiv
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirReturnExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirReturnTypeMismatchChecker
 
-object CommonExpressionCheckers : CfirExpressionCheckers() {
+object CommonExpressionCheckers : ExpressionCheckers() {
     override val basicExpressionCheckers: Set<CfirBasicExpressionChecker>
         get() = setOf(
             CfirLoopConditionTypeMismatchChecker,
@@ -44,7 +43,7 @@ object CommonExpressionCheckers : CfirExpressionCheckers() {
 
     override val functionCallCheckers: Set<CfirFunctionCallChecker>
         get() = setOf(
-            CfirArgumentTypeMismatchChecker,
+//            CfirArgumentTypeMismatchChecker,
             CfirConstEvalArithmeticChecker,
         )
 }

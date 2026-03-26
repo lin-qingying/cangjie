@@ -47,7 +47,7 @@
 | 3 | CfirResolveProcessor 层次 | ✅ | resolve/src/.../CfirResolveProcessor.kt | ~200 |
 | 4 | CfirSession + ComponentArrayOwner | ✅ | cfir-common/src/.../CfirSession.kt | ~300 |
 | 5 | CfirSymbol 体系 | ✅ | cfir-tree/src/.../CfirSymbol.kt（25 种） | ~500 gen |
-| 6 | ConeCangjieType 体系 | ✅ | cfir-cones/src/.../Cone*.kt（14 种） | ~1000 |
+| 6 | ConeCangJieType 体系 | ✅ | cfir-cones/src/.../Cone*.kt（14 种） | ~1000 |
 | 7 | CfirSymbolProvider 抽象 | ✅ | symbols/src/.../CfirSymbolProvider.kt | ~200 |
 | 8 | CfirScope 抽象 | ✅ | symbols/src/.../CfirScope.kt | ~100 |
 | 9 | 诊断全链路 | ✅ | diagnostics/src + gen（Factory→Reporter→Collector→Renderer） | ~2100 |
@@ -64,9 +64,9 @@
 |---|------|--------|---------|-------|---------|
 | 1 | **表达式类型合成器** | "完全缺失" | ✅ 已实现 | **90%** | CfirExpressionsResolveTransformer.kt（617 行），覆盖 13 种表达式：字面量、变量引用、属性访问、函数调用、if、块、return、赋值、元组、数组、插值、错误、**match** |
 | 2 | **调用解析器** | "完全缺失" | ✅ 已实现 | **80%** | CfirCallResolver.kt（162 行）+ CfirTowerResolver.kt（182 行）：Tower 遍历 + 候选收集 + 4 阶段验证 + 冲突解析 |
-| 3 | **重载解析器** | "完全缺失" | ✅ 已实现 | **75%** | CfirOverloadConflictResolver.kt（115 行）：FlatSignature 提取 + specificity 比较 + 非泛型优先 |
+| 3 | **重载解析器** | "完全缺失" | ✅ 已实现 | **75%** | ConeOverloadConflictResolver.kt（115 行）：FlatSignature 提取 + specificity 比较 + 非泛型优先 |
 | 4 | **类型兼容性检查** | "完全缺失" | ✅ 已实现 | **95%** | ConeSubtypeChecker.kt（194 行）：16 条子类型规则完整覆盖 |
-| 5 | **返回类型推算器** | "完全缺失" | ✅ 已实现 | **90%** | CfirReturnTypeCalculatorWithJump.kt（108 行）：完整实现 + 递归保护 |
+| 5 | **返回类型推算器** | "完全缺失" | ✅ 已实现 | **90%** | ReturnTypeCalculatorWithJump.kt（108 行）：完整实现 + 递归保护 |
 
 ---
 
@@ -122,8 +122,8 @@
 | CfirDeclarationsResolveTransformer.kt | 声明处理 + scope 管理 | **90%** | **239** | **+20 行**（extend scope 自动推入） |
 | CfirTowerResolver.kt | Tower 名称查询 + 候选收集 | 80% | 182 | — |
 | CfirCallResolver.kt | 调用解析（Tower + 验证 + 冲突） | 80% | 162 | — |
-| CfirOverloadConflictResolver.kt | specificity 重载冲突解析 | 75% | 115 | — |
-| CfirReturnTypeCalculatorWithJump.kt | 返回类型推算 + 递归保护 | 90% | 108 | — |
+| ConeOverloadConflictResolver.kt | specificity 重载冲突解析 | 75% | 115 | — |
+| ReturnTypeCalculatorWithJump.kt | 返回类型推算 + 递归保护 | 90% | 108 | — |
 | CfirCandidateCollector.kt | 候选收集 + 排序 | 70% | 92 | — |
 | CfirImplicitAwareBodyResolveTransformer.kt | 隐式类型推断 | 90% | 93 | — |
 

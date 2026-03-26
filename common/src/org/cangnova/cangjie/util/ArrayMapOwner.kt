@@ -98,6 +98,10 @@ abstract class TypeRegistry<K : Any, V : Any> {
         return NullableArrayMapAccessor(getId(kClass))
     }
 
+    fun <KK : K> generateAnyNullableAccessor(kClass: KClass<KK>): NullableArrayMapAccessor<K, V, *> {
+        return NullableArrayMapAccessor(getId(kClass))
+    }
+
     fun <T : K> getId(kClass: KClass<T>): Int {
         return getId(kClass.qualifiedName!!)
     }

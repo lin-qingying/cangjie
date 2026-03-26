@@ -29,7 +29,6 @@ import org.jetbrains.annotations.NonNls
 open class CjKeywordToken : CjSingleValueToken {
     val isSoft: Boolean
 
-    @Deprecated("")
     protected constructor(debugName: String, value: String, isSoft: Boolean) : super(debugName, value) {
         this.isSoft = isSoft
     }
@@ -57,7 +56,6 @@ open class CjKeywordToken : CjSingleValueToken {
             return keyword(value, value, tokenId)
         }
 
-        @Deprecated("")
         fun keyword(debugName: String, value: String): CjKeywordToken {
             return CjKeywordToken(debugName, value, false)
         }

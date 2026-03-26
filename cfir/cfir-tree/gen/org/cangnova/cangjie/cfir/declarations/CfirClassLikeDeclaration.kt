@@ -7,7 +7,8 @@ package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbolWithClassId
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -19,9 +20,14 @@ sealed class CfirClassLikeDeclaration : CfirMemberDeclaration() {
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>
-    abstract override val symbol: CfirSymbol<*>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
+    abstract override val typeParameters: List<CfirTypeParameterRef>
+    abstract override val status: CfirDeclarationStatus
+    abstract override val isLocal: Boolean
+    abstract override val symbol: CfirClassifierSymbolWithClassId<*>
+    abstract val declarations: List<CfirDeclaration>
+    abstract val superTypeRefs: List<CfirTypeRef>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitClassLikeDeclaration(this, data)
@@ -33,6 +39,21 @@ sealed class CfirClassLikeDeclaration : CfirMemberDeclaration() {
     override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
 
+    override abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
+
+
     override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirClassLikeDeclaration
+
+
+    override abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirClassLikeDeclaration
+
+
+    override abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirClassLikeDeclaration
+
+
+    abstract fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirClassLikeDeclaration
+
+
+    abstract fun <D> transformSuperTypeRefs(transformer: CfirTransformer<D>, data: D): CfirClassLikeDeclaration
 
 }

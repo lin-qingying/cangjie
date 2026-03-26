@@ -13,7 +13,7 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
@@ -23,15 +23,15 @@ class CfirClassBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    lateinit var symbol: CfirSymbol<*>
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
+    var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
+    lateinit var symbol: CfirClassSymbol
     val superTypeRefs: MutableList<CfirTypeRef> = mutableListOf()
     val declarations: MutableList<CfirDeclaration> = mutableListOf()
     lateinit var name: Name
-    lateinit var classKind: CfirClassKind
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirClass {
@@ -39,15 +39,15 @@ class CfirClassBuilder {
             source,
             moduleData,
             annotations,
-            symbol,
             origin,
             attributes,
+            isLocal,
             status,
             typeParameters,
+            symbol,
             superTypeRefs,
             declarations,
             name,
-            classKind,
         ).also {
             it.initDefaultResolveState()
         }
@@ -72,14 +72,13 @@ inline fun buildClassCopy(original: CfirClass, init: CfirClassBuilder.() -> Unit
     copyBuilder.source = original.source
     copyBuilder.moduleData = original.moduleData
     copyBuilder.annotations.addAll(original.annotations)
-    copyBuilder.symbol = original.symbol
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes
+    copyBuilder.isLocal = original.isLocal
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)
     copyBuilder.declarations.addAll(original.declarations)
     copyBuilder.name = original.name
-    copyBuilder.classKind = original.classKind
     return copyBuilder.apply(init).build()
 }

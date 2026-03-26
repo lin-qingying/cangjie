@@ -1,80 +1,14 @@
 package org.cangnova.cangjie.cfir.renderer
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
-import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
-import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirImport
-import org.cangnova.cangjie.cfir.declarations.CfirPackageDirective
-import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
-import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-
-import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
-import org.cangnova.cangjie.cfir.expressions.CfirAssignment
-import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
-import org.cangnova.cangjie.cfir.expressions.CfirBlock
-import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
-import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
-import org.cangnova.cangjie.cfir.expressions.CfirJumpExpression
-import org.cangnova.cangjie.cfir.expressions.CfirLambdaExpression
-import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
-import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
-import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
-import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
-import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
-import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
-import org.cangnova.cangjie.cfir.expressions.CfirRangeExpression
-import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
-import org.cangnova.cangjie.cfir.expressions.CfirQuoteExpression
-import org.cangnova.cangjie.cfir.expressions.CfirMacroExpression
-import org.cangnova.cangjie.cfir.expressions.CfirSpawnExpression
-import org.cangnova.cangjie.cfir.expressions.CfirStringInterpolation
-import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
-import org.cangnova.cangjie.cfir.expressions.CfirSynchronizedExpression
-import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
-import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
-import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
-import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
-import org.cangnova.cangjie.cfir.expressions.CfirUnsafeExpression
-import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
-import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
-import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
-import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
-import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
-import org.cangnova.cangjie.cfir.patterns.CfirPattern
-import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
-import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
-import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
-import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
-import org.cangnova.cangjie.cfir.references.CfirErrorReference
-import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.references.CfirReference
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.patterns.*
+import org.cangnova.cangjie.cfir.references.*
+import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.source.AbstractCjSourceElement
-import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
-import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
-import org.cangnova.cangjie.cfir.types.CfirFunctionTypeRef
-import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.CfirTupleTypeRef
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
-import org.cangnova.cangjie.cfir.types.CfirVArrayTypeRef
-import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.utils.Printer
 
 open class CfirPrinter(builder: StringBuilder = StringBuilder()) {
@@ -118,7 +52,27 @@ open class CfirPrinter(builder: StringBuilder = StringBuilder()) {
 
     override fun toString(): String = printer.toString()
 }
+abstract class CfirErrorExpressionRenderer {
+    internal lateinit var components: CfirRendererComponents
+    protected val printer: CfirPrinter get() = components.printer
 
+    fun renderDiagnostic(diagnostic: ConeDiagnostic) {
+        printer.print("ERROR_EXPR(${diagnostic.reason})")
+    }
+
+    abstract fun renderErrorExpression(errorExpression: CfirErrorExpression)
+}
+
+class CfirErrorExpressionOnlyErrorRenderer : CfirErrorExpressionRenderer() {
+    override fun renderErrorExpression(errorExpression: CfirErrorExpression) {
+        renderDiagnostic(errorExpression.diagnostic)
+        errorExpression.expression?.let {
+            if (errorExpression.source?.kind == CjFakeSourceElementKind.ErrorExpressionForTopLevelLambda) {
+                it.accept(components.visitor)
+            }
+        }
+    }
+}
 interface CfirRendererComponents {
     val visitor: CfirRenderer.Visitor
     val printer: CfirPrinter
@@ -129,6 +83,8 @@ interface CfirRendererComponents {
     val referenceRenderer: CfirReferenceRenderer
     val statusRenderer: CfirStatusRenderer?
     val patternRenderer: CfirPatternRenderer?
+    val errorExpressionRenderer: CfirErrorExpressionRenderer?
+
     val inlineExpressionRenderer: CfirInlineExpressionRenderer?
 }
 
@@ -166,6 +122,8 @@ fun interface CfirInlineExpressionRenderer {
 
 private class CfirDefaultTypeRenderer : CfirTypeRenderer {
     override fun render(typeRef: CfirTypeRef): String = when (typeRef) {
+        is CfirErrorTypeRef -> "R|ERROR: ${typeRef.diagnostic.reason}|"
+
         is CfirUserTypeRef -> buildString {
             append("R|")
             typeRef.qualifier.joinTo(this, ".")
@@ -202,7 +160,6 @@ private class CfirDefaultTypeRenderer : CfirTypeRenderer {
             append(">|")
         }
 
-        is CfirErrorTypeRef -> "R|ERROR: ${typeRef.reason}|"
     }
 }
 
@@ -210,6 +167,10 @@ private class CfirDefaultReferenceRenderer : CfirReferenceRenderer {
     override fun render(reference: CfirReference): String = when (reference) {
         is CfirNamedReference -> reference.name.asString()
         is CfirResolvedNamedReference -> "${reference.name.asString()} -> ${reference.resolvedSymbol}"
+        is CfirThisReference -> buildString {
+            append("this")
+            reference.boundSymbol?.let { append(" -> ").append(it) }
+        }
         is CfirErrorReference -> "ERROR_REF(${reference.reason})"
         is CfirControlFlowGraphReference -> "<cfg-ref>"
     }
@@ -300,6 +261,8 @@ class CfirRenderer(
     override val declarationRenderer: CfirDeclarationRenderer? = CfirNoDeclarationRenderer,
     override val packageDirectiveRenderer: CfirPackageDirectiveRenderer? = CfirDefaultPackageDirectiveRenderer,
     override val resolvePhaseRenderer: CfirResolvePhaseRenderer? = null,
+    override val errorExpressionRenderer: CfirErrorExpressionRenderer? = CfirErrorExpressionOnlyErrorRenderer(),
+
     override val typeRenderer: CfirTypeRenderer = CfirDefaultTypeRenderer(),
     override val referenceRenderer: CfirReferenceRenderer = CfirDefaultReferenceRenderer(),
     override val statusRenderer: CfirStatusRenderer? = CfirDefaultStatusRenderer(),
@@ -327,7 +290,7 @@ class CfirRenderer(
     }
 
     fun renderElementAsString(element: CfirElement, trim: Boolean = true): String {
-        element.accept(visitor, Unit)
+        element.accept(visitor)
         val normalized = printer.toString().replace("\r\n", "\n")
         return if (trim) normalized.trimEnd() else normalized
     }
@@ -366,41 +329,43 @@ class CfirRenderer(
         return if (pattern is CfirBindingPattern) pattern.name.asString() else "<anonymous>"
     }
 
-    inner class Visitor internal constructor() : CfirVisitor<Unit, Unit>() {
-        override fun visitElement(element: CfirElement, data: Unit) {
+    inner class Visitor internal constructor() : CfirVisitorVoid() {
+        override fun visitElement(element: CfirElement ) {
             val className = element::class.simpleName.orEmpty()
             val publicName = className.removeSuffix("Impl")
             println("<element: $publicName>")
         }
 
-        override fun visitFile(file: CfirFile, data: Unit) {
+        override fun visitFile(file: CfirFile ) {
             declarationRenderer?.renderResolveInfo(file)
             resolvePhaseRenderer?.render(file)
             print("FILE: ")
             println(file.name)
 
             printer.pushIndent()
-            file.packageDirective.accept(this, data)
-            file.imports.forEach { it.accept(this, data) }
-            file.declarations.forEach { it.accept(this, data) }
+            file.packageDirective.accept(this )
+            file.imports.forEach { it.accept(this ) }
+            file.declarations.forEach { it.accept(this ) }
             printer.popIndent()
         }
 
-        override fun visitPackageDirective(packageDirective: CfirPackageDirective, data: Unit) {
+        override fun visitPackageDirective(packageDirective: CfirPackageDirective ) {
             packageDirectiveRenderer?.render(packageDirective)
             if (!packageDirective.packageFqName.isRoot) {
                 println("package ${packageDirective.packageFqName.asString()}")
             }
         }
 
-        override fun visitImport(import_: CfirImport, data: Unit) {
+        override fun visitImport(import_: CfirImport ) {
             val suffix = if (import_.isAllUnder) ".*" else ""
             val alias = import_.aliasName?.let { " as ${it.asString()}" } ?: ""
             val importedFqName = import_.importedFqName?.asString() ?: "<error>"
             println("import ${importedFqName}$suffix$alias")
         }
 
-        override fun visitClass(klass: CfirClass, data: Unit) {
+// ---- 替换原来的 visitClass，新增 visitInterface / visitStruct / visitEnum ----
+
+        override fun visitClass(klass: CfirClass) {
             declarationRenderer?.renderResolveInfo(klass)
             resolvePhaseRenderer?.render(klass)
             val prefix = renderStatus(klass.status, klass.source).let { if (it.isNotEmpty()) "$it " else "" }
@@ -408,16 +373,69 @@ class CfirRenderer(
                 "<${klass.typeParameters.joinToString { it.name.asString() }}>"
             } else ""
             val supers = if (klass.superTypeRefs.isNotEmpty()) {
-                " : ${klass.superTypeRefs.joinToString { renderType(it) }}"
+                " <: ${klass.superTypeRefs.joinToString { renderType(it) }}"
             } else ""
-            println("${prefix}${klass.classKind.name.lowercase()} ${klass.name.asString()}$typeParams$supers {")
+            println("${prefix}class ${klass.name.asString()}$typeParams$supers {")
             printer.pushIndent()
-            klass.declarations.forEach { it.accept(this, data) }
+            klass.declarations.forEach { it.accept(this) }
             printer.popIndent()
             println("}")
         }
 
-        override fun visitExtend(extend: CfirExtend, data: Unit) {
+        override fun visitInterface(iface: CfirInterface) {
+            declarationRenderer?.renderResolveInfo(iface)
+            resolvePhaseRenderer?.render(iface)
+            val prefix = renderStatus(iface.status, iface.source).let { if (it.isNotEmpty()) "$it " else "" }
+            val typeParams = if (iface.typeParameters.isNotEmpty()) {
+                "<${iface.typeParameters.joinToString { it.name.asString() }}>"
+            } else ""
+            val supers = if (iface.superTypeRefs.isNotEmpty()) {
+                " <: ${iface.superTypeRefs.joinToString { renderType(it) }}"
+            } else ""
+            println("${prefix}interface ${iface.name.asString()}$typeParams$supers {")
+            printer.pushIndent()
+            iface.properties.forEach { it.accept(this) }
+            iface.functions.forEach { it.accept(this) }
+            printer.popIndent()
+            println("}")
+        }
+
+        override fun visitStruct(struct: CfirStruct) {
+            declarationRenderer?.renderResolveInfo(struct)
+            resolvePhaseRenderer?.render(struct)
+            val prefix = renderStatus(struct.status, struct.source).let { if (it.isNotEmpty()) "$it " else "" }
+            val typeParams = if (struct.typeParameters.isNotEmpty()) {
+                "<${struct.typeParameters.joinToString { it.name.asString() }}>"
+            } else ""
+            val supers = if (struct.superTypeRefs.isNotEmpty()) {
+                " <: ${struct.superTypeRefs.joinToString { renderType(it) }}"
+            } else ""
+            println("${prefix}struct ${struct.name.asString()}$typeParams$supers {")
+            printer.pushIndent()
+            struct.declarations.forEach { it.accept(this) }
+            printer.popIndent()
+            println("}")
+        }
+
+        override fun visitEnum(enum_: CfirEnum) {
+            declarationRenderer?.renderResolveInfo(enum_)
+            resolvePhaseRenderer?.render(enum_)
+            val prefix = renderStatus(enum_.status, enum_.source).let { if (it.isNotEmpty()) "$it " else "" }
+            val refPrefix = if (enum_.isRefEnum) "ref " else ""
+            val typeParams = if (enum_.typeParameters.isNotEmpty()) {
+                "<${enum_.typeParameters.joinToString { it.name.asString() }}>"
+            } else ""
+            val supers = if (enum_.superTypeRefs.isNotEmpty()) {
+                " <: ${enum_.superTypeRefs.joinToString { renderType(it) }}"
+            } else ""
+            println("${prefix}${refPrefix}enum ${enum_.name.asString()}$typeParams$supers {")
+            printer.pushIndent()
+            enum_.declarations.forEach { it.accept(this) }
+            printer.popIndent()
+            println("}")
+        }
+
+        override fun visitExtend(extend: CfirExtend ) {
             declarationRenderer?.renderResolveInfo(extend)
             resolvePhaseRenderer?.render(extend)
             val typeParams = if (extend.typeParameters.isNotEmpty()) {
@@ -428,28 +446,37 @@ class CfirRenderer(
             } else ""
             println("extend$typeParams ${renderType(extend.extendedTypeRef)}$supers {")
             printer.pushIndent()
-            extend.declarations.forEach { it.accept(this, data) }
+            extend.declarations.forEach { it.accept(this ) }
             printer.popIndent()
             println("}")
         }
 
-        override fun visitFunction(function: CfirFunction, data: Unit) {
+        override fun visitFunction(function: CfirFunction ) {
             declarationRenderer?.renderResolveInfo(function)
             resolvePhaseRenderer?.render(function)
             val prefix = renderStatus(function.status, function.source).let { if (it.isNotEmpty()) "$it " else "" }
-            val mutPrefix = if (function.isMut) "mut " else ""
+            val mutPrefix = if ((function as? CfirNamedFunction)?.isMut == true) "mut " else ""
             val typeParams = if (function.typeParameters.isNotEmpty()) {
                 "<${function.typeParameters.joinToString { it.name.asString() }}>"
             } else ""
             val params = function.valueParameters.joinToString {
                 "${it.name.asString()}: ${renderType(it.returnTypeRef)}"
             }
+            val functionName = when (function) {
+                is CfirNamedFunction -> function.name.asString()
+                is CfirMacroDeclaration -> function.name.asString()
+                is CfirMainFunction -> "main"
+                is CfirConstructor -> "init"
+                is CfirFinalizer -> "finalizer"
+                is CfirAnonymousFunction -> "<anonymous>"
+                else -> "<anonymous>"
+            }
             val signature =
-                "${prefix}${mutPrefix}func ${function.name.asString()}$typeParams($params): ${renderType(function.returnTypeRef)}"
+                "${prefix}${mutPrefix}func $functionName$typeParams($params): ${renderType(function.returnTypeRef)}"
             if (function.body != null) {
                 println("$signature {")
                 printer.pushIndent()
-                function.body?.accept(this, data)
+                function.body?.accept(this )
                 printer.popIndent()
                 println("}")
             } else {
@@ -457,7 +484,7 @@ class CfirRenderer(
             }
         }
 
-        override fun visitConstructor(constructor: CfirConstructor, data: Unit) {
+        override fun visitConstructor(constructor: CfirConstructor ) {
             declarationRenderer?.renderResolveInfo(constructor)
             resolvePhaseRenderer?.render(constructor)
             val params = constructor.valueParameters.joinToString {
@@ -466,7 +493,7 @@ class CfirRenderer(
             if (constructor.body != null) {
                 println("init($params) {")
                 printer.pushIndent()
-                constructor.body?.accept(this, data)
+                constructor.body?.accept(this )
                 printer.popIndent()
                 println("}")
             } else {
@@ -474,24 +501,15 @@ class CfirRenderer(
             }
         }
 
-        override fun visitProperty(property: CfirProperty, data: Unit) {
+        override fun visitProperty(property: CfirProperty ) {
             declarationRenderer?.renderResolveInfo(property)
             resolvePhaseRenderer?.render(property)
             val prefix = renderStatus(property.status, property.source).let { if (it.isNotEmpty()) "$it " else "" }
             val keyword = "prop"
-            val init = if (property.initializer != null) " = ..." else ""
-            println("${prefix}$keyword ${property.name.asString()}: ${renderType(property.returnTypeRef)}$init")
-            property.initializer?.let {
-                printer.pushIndent()
-                println("initializer:")
-                printer.pushIndent()
-                it.accept(this, data)
-                printer.popIndent()
-                printer.popIndent()
-            }
+            println("${prefix}$keyword ${property.name.asString()}: ${renderType(property.returnTypeRef)}")
         }
 
-        override fun visitFieldVariable(variable: CfirFieldVariable, data: Unit) {
+        override fun visitFieldVariable(variable: CfirFieldVariable ) {
             declarationRenderer?.renderResolveInfo(variable)
             resolvePhaseRenderer?.render(variable)
             val prefix = renderStatus(variable.status, variable.source).let { if (it.isNotEmpty()) "$it " else "" }
@@ -502,13 +520,13 @@ class CfirRenderer(
                 printer.pushIndent()
                 println("initializer:")
                 printer.pushIndent()
-                it.accept(this, data)
+                it.accept(this )
                 printer.popIndent()
                 printer.popIndent()
             }
         }
 
-        override fun visitPatternVariable(variable: CfirPatternVariable, data: Unit) {
+        override fun visitPatternVariable(variable: CfirPatternVariable ) {
             declarationRenderer?.renderResolveInfo(variable)
             resolvePhaseRenderer?.render(variable)
             val prefix = renderStatus(variable.status, variable.source).let { if (it.isNotEmpty()) "$it " else "" }
@@ -519,25 +537,25 @@ class CfirRenderer(
                 printer.pushIndent()
                 println("initializer:")
                 printer.pushIndent()
-                it.accept(this, data)
+                it.accept(this )
                 printer.popIndent()
                 printer.popIndent()
             }
         }
 
-        override fun visitValueParameter(valueParameter: CfirValueParameter, data: Unit) {
+        override fun visitValueParameter(valueParameter: CfirValueParameter ) {
             declarationRenderer?.renderResolveInfo(valueParameter)
             resolvePhaseRenderer?.render(valueParameter)
             println("param ${valueParameter.name.asString()}: ${renderType(valueParameter.returnTypeRef)}")
         }
 
-        override fun visitTypeParameter(typeParameter: CfirTypeParameter, data: Unit) {
+        override fun visitTypeParameter(typeParameter: CfirTypeParameter ) {
             declarationRenderer?.renderResolveInfo(typeParameter)
             resolvePhaseRenderer?.render(typeParameter)
             println("type-param ${typeParameter.name.asString()}")
         }
 
-        override fun visitTypeAlias(typeAlias: CfirTypeAlias, data: Unit) {
+        override fun visitTypeAlias(typeAlias: CfirTypeAlias ) {
             declarationRenderer?.renderResolveInfo(typeAlias)
             resolvePhaseRenderer?.render(typeAlias)
             val prefix = renderStatus(typeAlias.status, typeAlias.source).let { if (it.isNotEmpty()) "$it " else "" }
@@ -547,7 +565,7 @@ class CfirRenderer(
             println("${prefix}typealias ${typeAlias.name.asString()}$typeParams = ${renderType(typeAlias.expandedTypeRef)}")
         }
 
-        override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: Unit) {
+        override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor ) {
             declarationRenderer?.renderResolveInfo(enumConstructor)
             resolvePhaseRenderer?.render(enumConstructor)
             val rendered = when (val typeRef = enumConstructor.returnTypeRef) {
@@ -562,11 +580,11 @@ class CfirRenderer(
             println(rendered)
         }
 
-        override fun visitBlock(block: CfirBlock, data: Unit) {
-            block.statements.forEach { it.accept(this, data) }
+        override fun visitBlock(block: CfirBlock ) {
+            block.statements.forEach { it.accept(this ) }
         }
 
-        override fun visitLiteralExpression(literal: CfirLiteralExpression, data: Unit) {
+        override fun visitLiteralExpression(literal: CfirLiteralExpression ) {
             val value = when (literal.kind) {
                 CfirLiteralKind.STRING -> "\"${literal.value}\""
                 CfirLiteralKind.RUNE -> "'${literal.value}'"
@@ -576,15 +594,15 @@ class CfirRenderer(
             println("${literal.kind.name}($value)")
         }
 
-        override fun visitStringInterpolation(interpolation: CfirStringInterpolation, data: Unit) {
+        override fun visitStringInterpolation(interpolation: CfirStringInterpolation ) {
             println("STRING_INTERPOLATION {")
             printer.pushIndent()
-            interpolation.parts.forEach { it.accept(this, data) }
+            interpolation.parts.forEach { it.accept(this ) }
             printer.popIndent()
             println("}")
         }
 
-        override fun visitFunctionCall(call: CfirFunctionCall, data: Unit) {
+        override fun visitFunctionCall(call: CfirFunctionCall ) {
             val ref = renderReference(call.calleeReference)
             val typeArgs = if (call.typeArguments.isNotEmpty()) {
                 "<${call.typeArguments.joinToString { renderType(it) }}>"
@@ -594,31 +612,31 @@ class CfirRenderer(
             call.explicitReceiver?.let {
                 println("receiver:")
                 printer.pushIndent()
-                it.accept(this, data)
+                it.accept(this )
                 printer.popIndent()
             }
             if (call.arguments.isNotEmpty()) {
                 if (call.explicitReceiver != null) {
                     println("arguments:")
                     printer.pushIndent()
-                    call.arguments.forEach { argument -> argument.accept(this, data) }
+                    call.arguments.forEach { argument -> argument.accept(this ) }
                     printer.popIndent()
                 } else {
-                    call.arguments.forEach { it.accept(this, data) }
+                    call.arguments.forEach { it.accept(this ) }
                 }
             }
             printer.popIndent()
             println("}")
         }
 
-        override fun visitPropertyAccess(access: CfirPropertyAccess, data: Unit) {
+        override fun visitPropertyAccess(access: CfirPropertyAccess ) {
             val ref = renderReference(access.calleeReference)
             if (access.explicitReceiver != null) {
                 println("PROPERTY_ACCESS($ref) {")
                 printer.pushIndent()
                 println("receiver:")
                 printer.pushIndent()
-                access.explicitReceiver!!.accept(this, data)
+                access.explicitReceiver!!.accept(this )
                 printer.popIndent()
                 printer.popIndent()
                 println("}")
@@ -627,14 +645,14 @@ class CfirRenderer(
             }
         }
 
-        override fun visitQualifiedAccess(access: CfirQualifiedAccess, data: Unit) {
+        override fun visitQualifiedAccess(access: CfirQualifiedAccess ) {
             val ref = renderReference(access.calleeReference)
             if (access.explicitReceiver != null) {
                 println("QUALIFIED_ACCESS($ref) {")
                 printer.pushIndent()
                 println("receiver:")
                 printer.pushIndent()
-                access.explicitReceiver!!.accept(this, data)
+                access.explicitReceiver!!.accept(this )
                 printer.popIndent()
                 printer.popIndent()
                 println("}")
@@ -643,132 +661,132 @@ class CfirRenderer(
             }
         }
 
-        override fun visitAssignment(assignment: CfirAssignment, data: Unit) {
+        override fun visitAssignment(assignment: CfirAssignment ) {
             println("ASSIGNMENT {")
             printer.pushIndent()
             println("lValue:")
             printer.pushIndent()
-            assignment.lValue.accept(this, data)
+            assignment.lValue.accept(this )
             printer.popIndent()
             println("rValue:")
             printer.pushIndent()
-            assignment.rValue.accept(this, data)
+            assignment.rValue.accept(this )
             printer.popIndent()
             printer.popIndent()
             println("}")
         }
 
-        override fun visitBinaryOp(binaryOp: CfirBinaryOp, data: Unit) {
+        override fun visitBinaryOp(binaryOp: CfirBinaryOp ) {
             println("BINARY_OP(${binaryOp.kind.name}) {")
             printer.pushIndent()
-            binaryOp.left.accept(this, data)
-            binaryOp.right.accept(this, data)
+            binaryOp.left.accept(this )
+            binaryOp.right.accept(this )
             printer.popIndent()
             println("}")
         }
 
-        override fun visitComparisonExpression(comparison: CfirComparisonExpression, data: Unit) {
+        override fun visitComparisonExpression(comparison: CfirComparisonExpression ) {
             println("COMPARISON(${comparison.operation.name}) {")
             printer.pushIndent()
-            comparison.left.accept(this, data)
-            comparison.right.accept(this, data)
+            comparison.left.accept(this )
+            comparison.right.accept(this )
             printer.popIndent()
             println("}")
         }
 
-        override fun visitTypeOperator(typeOperator: CfirTypeOperator, data: Unit) {
+        override fun visitTypeOperator(typeOperator: CfirTypeOperator ) {
             println("TYPE_OP(${typeOperator.operation.name}, ${renderType(typeOperator.typeRef)}) {")
             printer.pushIndent()
-            typeOperator.argument.accept(this, data)
+            typeOperator.argument.accept(this )
             printer.popIndent()
             println("}")
         }
 
-        override fun visitIfExpression(ifExpression: CfirIfExpression, data: Unit) {
+        override fun visitIfExpression(ifExpression: CfirIfExpression ) {
             println("IF {")
             printer.pushIndent()
             println("condition:")
             printer.pushIndent()
-            ifExpression.condition.accept(this, data)
+            ifExpression.condition.accept(this )
             printer.popIndent()
             println("then:")
             printer.pushIndent()
-            ifExpression.thenBranch.accept(this, data)
+            ifExpression.thenBranch.accept(this )
             printer.popIndent()
             ifExpression.elseBranch?.let {
                 println("else:")
                 printer.pushIndent()
-                it.accept(this, data)
+                it.accept(this )
                 printer.popIndent()
             }
             printer.popIndent()
             println("}")
         }
 
-        override fun visitMatchExpression(matchExpression: CfirMatchExpression, data: Unit) {
+        override fun visitMatchExpression(matchExpression: CfirMatchExpression ) {
             println("MATCH {")
             printer.pushIndent()
             matchExpression.subject?.let {
                 println("subject:")
                 printer.pushIndent()
-                it.accept(this, data)
+                it.accept(this )
 
                 printer.popIndent()
             }
 
-            matchExpression.branches.forEach { it.accept(this, data) }
+            matchExpression.branches.forEach { it.accept(this ) }
             printer.popIndent()
             println("}")
         }
 
-        override fun visitMatchBranch(matchBranch: CfirMatchBranch, data: Unit) {
+        override fun visitMatchBranch(matchBranch: CfirMatchBranch ) {
             val guardSuffix = matchBranch.guard
                 ?.let { " where ${inlineExpressionRenderer?.render(it) ?: "<guard>"}" }
                 ?: ""
             println("BRANCH(${renderPattern(matchBranch.pattern)}$guardSuffix) {")
             printer.pushIndent()
-            matchBranch.body.accept(this, data)
+            matchBranch.body.accept(this )
             printer.popIndent()
             println("}")
         }
 
-        override fun visitLoopExpression(loop: CfirLoopExpression, data: Unit) {
+        override fun visitLoopExpression(loop: CfirLoopExpression ) {
             val kind = if (loop.isDoWhile) "DO_WHILE" else "WHILE"
             println("$kind {")
             printer.pushIndent()
             println("condition:")
             printer.pushIndent()
-            loop.condition.accept(this, data)
+            loop.condition.accept(this )
             printer.popIndent()
             println("body:")
             printer.pushIndent()
-            loop.body.accept(this, data)
+            loop.body.accept(this )
             printer.popIndent()
             printer.popIndent()
             println("}")
         }
 
-        override fun visitForInExpression(forIn: CfirForInExpression, data: Unit) {
+        override fun visitForInExpression(forIn: CfirForInExpression ) {
             val variableName = renderPatternVariableName(forIn.variable)
             println("FOR_IN($variableName: ${renderType(forIn.variable.returnTypeRef)}) {")
             printer.pushIndent()
             println("iterable:")
             printer.pushIndent()
-            forIn.iterable.accept(this, data)
+            forIn.iterable.accept(this )
             printer.popIndent()
             println("body:")
             printer.pushIndent()
-            forIn.body.accept(this, data)
+            forIn.body.accept(this )
             printer.popIndent()
             printer.popIndent()
             println("}")
         }
 
-        override fun visitReturnExpression(returnExpression: CfirReturnExpression, data: Unit) {
+        override fun visitReturnExpression(returnExpression: CfirReturnExpression ) {
             if (returnExpression.result != null) {
                 println("RETURN {")
                 printer.pushIndent()
-                returnExpression.result!!.accept(this, data)
+                returnExpression.result!!.accept(this )
                 printer.popIndent()
                 println("}")
             } else {
@@ -776,123 +794,124 @@ class CfirRenderer(
             }
         }
 
-        override fun visitJumpExpression(jump: CfirJumpExpression, data: Unit) {
+        override fun visitJumpExpression(jump: CfirJumpExpression ) {
             println(jump.kind.name)
         }
 
-        override fun visitThrowExpression(throwExpression: CfirThrowExpression, data: Unit) {
+        override fun visitThrowExpression(throwExpression: CfirThrowExpression ) {
             println("THROW {")
             printer.pushIndent()
-            throwExpression.exception.accept(this, data)
+            throwExpression.exception.accept(this )
             printer.popIndent()
             println("}")
         }
 
-        override fun visitTryExpression(tryExpression: CfirTryExpression, data: Unit) {
+        override fun visitTryExpression(tryExpression: CfirTryExpression ) {
             println("TRY {")
             printer.pushIndent()
             println("try:")
             printer.pushIndent()
-            tryExpression.tryBlock.accept(this, data)
+            tryExpression.tryBlock.accept(this )
             printer.popIndent()
             tryExpression.catches.forEach { catchClause ->
                 println("catch(${catchClause.parameter.name.asString()}: ${renderType(catchClause.parameter.returnTypeRef)}):")
                 printer.pushIndent()
-                catchClause.body.accept(this, data)
+                catchClause.body.accept(this )
                 printer.popIndent()
             }
             tryExpression.finallyBlock?.let {
                 println("finally:")
                 printer.pushIndent()
-                it.accept(this, data)
+                it.accept(this )
                 printer.popIndent()
             }
             printer.popIndent()
             println("}")
         }
 
-        override fun visitLambdaExpression(lambda: CfirLambdaExpression, data: Unit) {
+        override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression ) {
+            val lambda = anonymousFunctionExpression
             val params = lambda.anonymousFunction.valueParameters.joinToString {
                 "${it.name.asString()}: ${renderType(it.returnTypeRef)}"
             }
             println("LAMBDA($params) {")
             printer.pushIndent()
-            lambda.anonymousFunction.body?.accept(this, data)
+            lambda.anonymousFunction.body?.accept(this )
             printer.popIndent()
             println("}")
         }
 
-        override fun visitRangeExpression(range: CfirRangeExpression, data: Unit) {
+        override fun visitRangeExpression(range: CfirRangeExpression ) {
             val op = if (range.isInclusive) "..=" else ".."
             println("RANGE($op) {")
             printer.pushIndent()
-            range.start.accept(this, data)
-            range.end.accept(this, data)
+            range.start.accept(this )
+            range.end.accept(this )
             printer.popIndent()
             println("}")
         }
 
-        override fun visitArrayLiteral(array: CfirArrayLiteral, data: Unit) {
+        override fun visitArrayLiteral(array: CfirArrayLiteral ) {
             println("ARRAY_LITERAL {")
             printer.pushIndent()
-            array.elements.forEach { it.accept(this, data) }
+            array.elements.forEach { it.accept(this ) }
             printer.popIndent()
             println("}")
         }
 
-        override fun visitTupleLiteral(tuple: CfirTupleLiteral, data: Unit) {
+        override fun visitTupleLiteral(tuple: CfirTupleLiteral ) {
             println("TUPLE_LITERAL {")
             printer.pushIndent()
-            tuple.elements.forEach { it.accept(this, data) }
+            tuple.elements.forEach { it.accept(this ) }
             printer.popIndent()
             println("}")
         }
 
-        override fun visitSpawnExpression(spawn: CfirSpawnExpression, data: Unit) {
+        override fun visitSpawnExpression(spawn: CfirSpawnExpression ) {
             println("SPAWN {")
             printer.pushIndent()
-            spawn.body.accept(this, data)
+            spawn.body.accept(this )
             printer.popIndent()
             println("}")
         }
 
-        override fun visitSynchronizedExpression(synchronizedExpression: CfirSynchronizedExpression, data: Unit) {
+        override fun visitSynchronizedExpression(synchronizedExpression: CfirSynchronizedExpression ) {
             println("SYNCHRONIZED {")
             printer.pushIndent()
             println("monitor:")
             printer.pushIndent()
-            synchronizedExpression.monitor.accept(this, data)
+            synchronizedExpression.monitor.accept(this )
             printer.popIndent()
             println("body:")
             printer.pushIndent()
-            synchronizedExpression.body.accept(this, data)
+            synchronizedExpression.body.accept(this )
             printer.popIndent()
             printer.popIndent()
             println("}")
         }
 
-        override fun visitUnsafeExpression(unsafeExpression: CfirUnsafeExpression, data: Unit) {
+        override fun visitUnsafeExpression(unsafeExpression: CfirUnsafeExpression ) {
             println("UNSAFE {")
             printer.pushIndent()
-            unsafeExpression.body.accept(this, data)
+            unsafeExpression.body.accept(this )
             printer.popIndent()
             println("}")
         }
 
-        override fun visitQuoteExpression(quoteExpression: CfirQuoteExpression, data: Unit) {
+        override fun visitQuoteExpression(quoteExpression: CfirQuoteExpression ) {
             println("QUOTE(\"${quoteExpression.rawText}\") {")
             printer.pushIndent()
             if (quoteExpression.interpolations.isNotEmpty()) {
                 println("interpolations:")
                 printer.pushIndent()
-                quoteExpression.interpolations.forEach { it.accept(this, data) }
+                quoteExpression.interpolations.forEach { it.accept(this ) }
                 printer.popIndent()
             }
             printer.popIndent()
             println("}")
         }
 
-        override fun visitMacroExpression(macroExpression: CfirMacroExpression, data: Unit) {
+        override fun visitMacroExpression(macroExpression: CfirMacroExpression ) {
             val name = macroExpression.name?.asString() ?: "<macro>"
             println("MACRO_EXPR($name) {")
             printer.pushIndent()
@@ -902,23 +921,24 @@ class CfirRenderer(
             println("}")
         }
 
-        override fun visitSubscriptExpression(subscript: CfirSubscriptExpression, data: Unit) {
+        override fun visitSubscriptExpression(subscript: CfirSubscriptExpression ) {
             println("SUBSCRIPT {")
             printer.pushIndent()
             println("receiver:")
             printer.pushIndent()
-            subscript.receiver.accept(this, data)
+            subscript.receiver.accept(this   )
             printer.popIndent()
             println("indices:")
             printer.pushIndent()
-            subscript.indices.forEach { it.accept(this, data) }
+            subscript.indices.forEach { it.accept(this ) }
             printer.popIndent()
             printer.popIndent()
             println("}")
         }
 
-        override fun visitErrorExpression(error: CfirErrorExpression, data: Unit) {
-            println("ERROR_EXPR(${error.reason})")
+        override fun visitErrorExpression(errorExpression: CfirErrorExpression ) {
+            errorExpressionRenderer?.renderErrorExpression(errorExpression)
+
         }
     }
 }

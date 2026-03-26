@@ -3,14 +3,17 @@ package org.cangnova.cangjie.cfir.lightTree
 import com.intellij.lang.PsiBuilderFactory
 import com.intellij.lang.LighterASTNode
 import com.intellij.util.diff.FlyweightCapableTreeStructure
+import org.cangnova.cangjie.CjInMemoryTextSourceFile
 import org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.lexer.CangJieLexer
 import org.cangnova.cangjie.parsing.CangJieLightParser
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
+import org.cangnova.cangjie.source.toSourceLinesMapping
 import java.io.File
 
 /**
@@ -41,11 +44,16 @@ abstract class AbstractLightTree2CfirConverterTestCase : AbstractRawCfirBuilderT
     protected fun buildCfirFileFromLightTree(
         text: String,
         session: CfirSession = createTestSession(),
-        fileName: String = "",
+        fileName: String = "test.cj",
         bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
     ): CfirFile {
         val lightTree = parseLightTree(text)
-        return LightTree2Cfir(session, text, fileName, bodyBuildingMode).buildCfirFile(lightTree)
+        val sourceFile = CjInMemoryTextSourceFile(fileName, null, text)
+        return LightTree2Cfir(
+            session = session,
+            scopeProvider = session.cangjieScopeProvider,
+            bodyBuildingMode = bodyBuildingMode,
+        ).buildCfirFile(lightTree, sourceFile, text.toSourceLinesMapping())
     }
 
     /**

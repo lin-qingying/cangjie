@@ -30,7 +30,7 @@ data class CfirExtendSemanticModel(
 internal fun CfirDeclarationOrigin.toExtendSemanticOrigin(): CfirExtendSemanticOrigin = when (this) {
     CfirDeclarationOrigin.Source -> CfirExtendSemanticOrigin.SOURCE
     CfirDeclarationOrigin.Library -> CfirExtendSemanticOrigin.LIBRARY
-    CfirDeclarationOrigin.Synthetic,
+    CfirDeclarationOrigin.Synthetic.Default,
     CfirDeclarationOrigin.ImplicitDefault,
     CfirDeclarationOrigin.Extension -> CfirExtendSemanticOrigin.SYNTHETIC
     else -> CfirExtendSemanticOrigin.OTHER

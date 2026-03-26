@@ -3,20 +3,25 @@ package org.cangnova.cangjie.cfir.pipeline
 import com.intellij.lang.PsiBuilderFactory
 import org.cangnova.cangjie.CjPsiSourceFile
 import org.cangnova.cangjie.CjSourceFile
-import org.cangnova.cangjie.cfir.analysis.CheckersComponent
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir
-import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.analysis.collectors.components.DiagnosticComponentsFactory
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.impl.BaseDiagnosticsCollector
+import org.cangnova.cangjie.cfir.diagnostics.impl.PendingDiagnosticsReporterImpl
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.diagnosticReporter
+import org.cangnova.cangjie.cfir.withFileAnalysisExceptionWrapping
 import org.cangnova.cangjie.lexer.CangJieLexer
 import org.cangnova.cangjie.parsing.CangJieLightParser
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.source.readSourceFileWithMapping
 
 /**
  * 从 PSI 构建 Raw CFIR（对齐 K2 的 buildFirFromKtFiles）。
@@ -31,7 +36,7 @@ import org.cangnova.cangjie.psi.CjFile
  */
 fun CfirSession.buildCfirFromCjFiles(cjFiles: Collection<CjFile>): List<CfirFile> {
     val firProvider = cfirProvider as CfirProviderImpl
-    val builder = PsiRawCfirBuilder(this)
+    val builder = PsiRawCfirBuilder(this, firProvider.cangjieScopeProvider)
     return cjFiles.map { cjFile ->
         builder.buildCfirFile(cjFile).also { cfirFile ->
             firProvider.recordFile(cfirFile)
@@ -48,23 +53,19 @@ fun CfirSession.buildCfirViaLightTree(
     reportFilesAndLines: ((String, Int) -> Unit)? = null,
 ): List<CfirFile> {
     val firProvider = cfirProvider as CfirProviderImpl
-    val parserDefinition = CangJieParserDefinition()
+    val builder = LightTree2Cfir(
+        session = this,
+        scopeProvider = firProvider.cangjieScopeProvider,
+        diagnosticsReporter = diagnosticReporterForLightTree,
+    )
 
     return lightTreeFiles.map { sourceFile ->
-        val sourceText = sourceFile.getContentsAsStream().bufferedReader().use { it.readText() }
-        val builder = PsiBuilderFactory.getInstance().createBuilder(
-            parserDefinition,
-            CangJieLexer(),
-            sourceText,
-        )
-        val lightTree = CangJieLightParser.parse(builder)
-        val cfirFile = LightTree2Cfir(
-            session = this,
-            source = sourceText,
-            fileName = sourceFile.name,
-        ).buildCfirFile(lightTree)
+        val (code, linesMapping) = sourceFile.getContentsAsStream().reader(Charsets.UTF_8).use {
+            it.readSourceFileWithMapping()
+        }
+        val cfirFile = builder.buildCfirFile(code, sourceFile, linesMapping)
         firProvider.recordFile(cfirFile)
-        reportFilesAndLines?.invoke(sourceFile.path ?: sourceFile.name, sourceText.lineSequence().count())
+        reportFilesAndLines?.invoke(sourceFile.path ?: sourceFile.name, linesMapping.linesCount)
         cfirFile
     }
 }
@@ -98,10 +99,21 @@ fun CfirSession.runResolution(cfirFiles: List<CfirFile>): Pair<ScopeSession, Lis
  */
 fun CfirSession.runCheckers(
     scopeSession: ScopeSession,
-    cfirFiles: Collection<CfirFile>,
-) {
-    // 当前实现：checker 已在 CHECKERS 阶段执行
-    // 此函数预留用于未来独立的 checker 执行逻辑
+    firFiles: Collection<CfirFile>,
+    diagnosticsCollector: BaseDiagnosticsCollector,
+): Map<CfirFile, List<CjDiagnostic>> {
+    val collector = DiagnosticComponentsFactory.create(this, scopeSession)
+    val diagnosticsReporter = PendingDiagnosticsReporterImpl(diagnosticsCollector)
+    for (file in firFiles) {
+        withFileAnalysisExceptionWrapping(file) {
+            collector.collectDiagnostics(file, diagnosticsReporter)
+        }
+    }
+    collector.collectDiagnosticsInSettings(diagnosticsReporter)
+    return firFiles.associateWith {
+        val path = it.sourceFile?.path ?: return@associateWith emptyList()
+        diagnosticsCollector.diagnosticsByFilePath[path] ?: emptyList()
+    }
 }
 
 /**
@@ -118,8 +130,9 @@ fun CfirSession.runCheckers(
 fun resolveAndCheckCfir(
     session: CfirSession,
     cfirFiles: List<CfirFile>,
+    diagnosticsCollector: BaseDiagnosticsCollector,
 ): SingleModuleFrontendOutput {
     val (scopeSession, fir) = session.runResolution(cfirFiles)
-    session.runCheckers(scopeSession, fir)
+    session.runCheckers(scopeSession, fir, diagnosticsCollector)
     return SingleModuleFrontendOutput(session, scopeSession, fir)
 }

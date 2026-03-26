@@ -1,0 +1,167 @@
+/*
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.resolve.calls.results
+
+import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemMarker
+import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.type.model.*
+
+interface SpecificityComparisonCallbacks {
+    fun isNonSubtypeEquallyOrMoreSpecific(specific: CangJieTypeMarker, general: CangJieTypeMarker): Boolean
+}
+
+object OverloadabilitySpecificityCallbacks : SpecificityComparisonCallbacks {
+    override fun isNonSubtypeEquallyOrMoreSpecific(specific: CangJieTypeMarker, general: CangJieTypeMarker): Boolean =
+        false
+}
+
+class TypeWithConversion(val resultType: CangJieTypeMarker?, val originalTypeIfWasConverted: CangJieTypeMarker? = null)
+
+class FlatSignature<out T>(
+    val origin: T,
+    val typeParameters: Collection<TypeParameterMarker>,
+    val hasExtensionReceiver: Boolean,
+    val contextReceiverCount: Int,
+    val hasVarargs: Boolean,
+    val numDefaults: Int,
+    val isExpect: Boolean,
+    val isSyntheticMember: Boolean,
+    val valueParameterTypes: List<TypeWithConversion?>
+) {
+    val isGeneric = typeParameters.isNotEmpty()
+
+    constructor(
+        origin: T,
+        typeParameters: Collection<TypeParameterMarker>,
+        valueParameterTypes: List<CangJieTypeMarker?>,
+        hasExtensionReceiver: Boolean,
+        contextReceiverCount: Int,
+        hasVarargs: Boolean,
+        numDefaults: Int,
+        isExpect: Boolean,
+        isSyntheticMember: Boolean,
+    ) : this(
+        origin, typeParameters, hasExtensionReceiver, contextReceiverCount, hasVarargs, numDefaults, isExpect,
+        isSyntheticMember, valueParameterTypes.map(::TypeWithConversion)
+    )
+
+    companion object
+}
+
+
+interface SimpleConstraintSystem {
+    fun registerTypeVariables(typeParameters: Collection<TypeParameterMarker>): TypeSubstitutorMarker
+    fun addSubtypeConstraint(subType: CangJieTypeMarker, superType: CangJieTypeMarker)
+    fun hasContradiction(): Boolean
+
+
+    val context: TypeSystemInferenceExtensionContext
+
+    val constraintSystemMarker: ConstraintSystemMarker
+}
+
+class FlatSignatureComparisonState(
+    private val cs: SimpleConstraintSystem,
+    private val typeParameters: Collection<TypeParameterMarker>,
+    private val typeSubstitutor: TypeSubstitutorMarker,
+    private val callbacks: SpecificityComparisonCallbacks,
+    private val specificityComparator: TypeSpecificityComparator,
+) {
+    fun isLessSpecific(specificType: CangJieTypeMarker, generalType: CangJieTypeMarker): Boolean {
+        if (specificityComparator.isDefinitelyLessSpecific(specificType, generalType)) {
+            return true
+        } else if (typeParameters.isEmpty() || with(cs.context) {
+                val parameterConstructors = typeParameters.map { parameter -> parameter.getTypeConstructor() }.toSet()
+                !generalType.contains { it.typeConstructor() in parameterConstructors }
+            }) {
+            if (!AbstractTypeChecker.isSubtypeOf(cs.context, specificType, generalType)) {
+                if (!callbacks.isNonSubtypeEquallyOrMoreSpecific(specificType, generalType)) {
+                    return true
+                }
+            }
+        } else {
+            val substitutedGeneralType = with(cs.context) { typeSubstitutor.safeSubstitute(generalType) }
+
+            /**
+             * Example:
+             * fun <X> Array<out X>.sort(): Unit {}
+             * fun <Y: Comparable<Y>> Array<out Y>.sort(): Unit {}
+             * Here, when we try solve this CS(Y is variables) then Array<out X> <: Array<out Y> and this system impossible to solve,
+             * so we capture types from receiver and value parameters.
+             */
+            val specificCapturedType = AbstractTypeChecker.prepareType(cs.context, specificType)
+
+            cs.addSubtypeConstraint(specificCapturedType, substitutedGeneralType)
+            if (cs.hasContradiction()) {
+                return true
+            }
+        }
+
+        return false
+    }
+}
+
+private fun <T> FlatSignatureComparisonState.isValueParameterTypeEquallyOrMoreSpecific(
+    specific: FlatSignature<T>,
+    general: FlatSignature<T>,
+    typeKindSelector: (TypeWithConversion?) -> CangJieTypeMarker?,
+): Boolean {
+    val specificContextReceiverCount = specific.contextReceiverCount
+    val generalContextReceiverCount = general.contextReceiverCount
+
+    var specificValueParameterTypes = specific.valueParameterTypes
+    var generalValueParameterTypes = general.valueParameterTypes
+
+    if (specificContextReceiverCount != generalContextReceiverCount) {
+        specificValueParameterTypes = specificValueParameterTypes.drop(specificContextReceiverCount)
+        generalValueParameterTypes = generalValueParameterTypes.drop(generalContextReceiverCount)
+    }
+
+    for (index in specificValueParameterTypes.indices) {
+        val specificType = typeKindSelector(specificValueParameterTypes[index]) ?: continue
+        val generalType = typeKindSelector(generalValueParameterTypes[index]) ?: continue
+
+        if (isLessSpecific(specificType, generalType)) return false
+    }
+
+    return true
+}
+
+fun <T> SimpleConstraintSystem.signatureComparisonStateIfEquallyOrMoreSpecific(
+    specific: FlatSignature<T>,
+    general: FlatSignature<T>,
+    callbacks: SpecificityComparisonCallbacks,
+    specificityComparator: TypeSpecificityComparator,
+    useOriginalSamTypes: Boolean = false,
+): FlatSignatureComparisonState? {
+    if (specific.hasExtensionReceiver != general.hasExtensionReceiver) return null
+    if (specific.contextReceiverCount > general.contextReceiverCount) return null
+    if (specific.valueParameterTypes.size - specific.contextReceiverCount != general.valueParameterTypes.size - general.contextReceiverCount)
+        return null
+
+    val typeSubstitutor = registerTypeVariables(general.typeParameters)
+    val state = FlatSignatureComparisonState(this, general.typeParameters, typeSubstitutor, callbacks, specificityComparator)
+
+    if (!state.isValueParameterTypeEquallyOrMoreSpecific(specific, general) { it?.resultType }) {
+        return null
+    }
+
+    if (useOriginalSamTypes && !state.isValueParameterTypeEquallyOrMoreSpecific(specific, general) { it?.originalTypeIfWasConverted }) {
+        return null
+    }
+
+    return state
+}
+
+fun <T> SimpleConstraintSystem.isSignatureEquallyOrMoreSpecific(
+    specific: FlatSignature<T>,
+    general: FlatSignature<T>,
+    callbacks: SpecificityComparisonCallbacks,
+    specificityComparator: TypeSpecificityComparator,
+    useOriginalSamTypes: Boolean = false
+): Boolean {
+    return signatureComparisonStateIfEquallyOrMoreSpecific(specific, general, callbacks, specificityComparator, useOriginalSamTypes) != null
+}

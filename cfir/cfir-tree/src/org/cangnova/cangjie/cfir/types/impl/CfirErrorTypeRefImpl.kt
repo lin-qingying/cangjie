@@ -1,0 +1,51 @@
+package org.cangnova.cangjie.cfir.types.impl
+
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeDiagnostic
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.source.CjSourceElement
+
+// Handwritten intentionally to preserve Kotlin FIR–style custom traversal semantics.
+// delegatedTypeRef is intentionally skipped in acceptChildren/transformChildren to avoid duplicate visits.
+class CfirErrorTypeRefImpl @CfirImplementationDetail constructor(
+    override val source: CjSourceElement?,
+    override var annotations: List<CfirAnnotation>,
+    typeOrNull: ConeCangJieType?,
+    override var delegatedTypeRef: CfirTypeRef?,
+    override val diagnostic: ConeDiagnostic,
+    override var partiallyResolvedTypeRef: CfirTypeRef? = null,
+) : CfirErrorTypeRef() {
+
+    override val coneType: ConeCangJieType = typeOrNull ?: ConeErrorType(diagnostic)
+
+    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
+        annotations.forEach { it.accept(visitor, data) }
+        partiallyResolvedTypeRef?.accept(visitor, data)
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
+        annotations = newAnnotations
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirErrorTypeRef {
+        annotations = annotations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnnotation }
+        return this
+    }
+
+    override fun <D> transformPartiallyResolvedTypeRef(transformer: CfirTransformer<D>, data: D): CfirErrorTypeRef {
+        partiallyResolvedTypeRef = partiallyResolvedTypeRef?.transform(transformer, data)
+        transformChildren(transformer, data)
+        return this
+    }
+
+    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirErrorTypeRef {
+        transformAnnotations(transformer, data)
+        return this
+    }
+}

@@ -1,36 +1,23 @@
 package org.cangnova.cangjie.cfir.declarations
 
-/**
- * 声明来源，标记一个 CFIR 声明是怎样产生的。
- */
-sealed class CfirDeclarationOrigin {
-    /** 来源于用户编写的源码 */
-    object Source : CfirDeclarationOrigin() {
-        override fun toString(): String = "Source"
+sealed class CfirDeclarationOrigin(
+    private val displayName: String? = null,
+    val fromSupertypes: Boolean = false,
+    val generated: Boolean = false,
+    val fromSource: Boolean = false,
+) {
+    object Source : CfirDeclarationOrigin(fromSource = true)
+    object Library : CfirDeclarationOrigin()
+
+    sealed class Synthetic : CfirDeclarationOrigin(generated = true) {
+        data object Default : Synthetic()
+        data object FakeFunction : Synthetic()
     }
 
-    /** 来源于已编译的库 */
-    object Library : CfirDeclarationOrigin() {
-        override fun toString(): String = "Library"
-    }
+    object ImplicitDefault : CfirDeclarationOrigin(generated = true)
+    object GenericInstantiation : CfirDeclarationOrigin(generated = true)
+    object Extension : CfirDeclarationOrigin(generated = true)
+    object SamConstructor : CfirDeclarationOrigin(generated = true)
 
-    /** 编译器合成的声明 */
-    object Synthetic : CfirDeclarationOrigin() {
-        override fun toString(): String = "Synthetic"
-    }
-
-    /** 默认构造函数等编译器隐式生成 */
-    object ImplicitDefault : CfirDeclarationOrigin() {
-        override fun toString(): String = "ImplicitDefault"
-    }
-
-    /** 泛型实例化生成的声明 */
-    object GenericInstantiation : CfirDeclarationOrigin() {
-        override fun toString(): String = "GenericInstantiation"
-    }
-
-    /** 来自 extend 声明的合成成员 */
-    object Extension : CfirDeclarationOrigin() {
-        override fun toString(): String = "Extension"
-    }
+    override fun toString(): String = displayName ?: this::class.simpleName!!
 }

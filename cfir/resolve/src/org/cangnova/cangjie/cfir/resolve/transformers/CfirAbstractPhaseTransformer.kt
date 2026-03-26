@@ -6,14 +6,15 @@ package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.CfirSessionHolder
+import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultTransformer
+import org.cangnova.cangjie.cfir.withFileAnalysisExceptionWrapping
 
 abstract class CfirAbstractPhaseTransformer<D>(
     val baseTransformerPhase: CfirResolvePhase,
-) : CfirDefaultTransformer<D>(), CfirSessionHolder {
+) : CfirDefaultTransformer<D>(), SessionHolder {
     abstract override val session: CfirSession
 
     init {
@@ -27,8 +28,11 @@ abstract class CfirAbstractPhaseTransformer<D>(
 
     override fun transformFile(file: CfirFile, data: D): CfirFile {
         checkSessionConsistency(file)
-        return super.transformFile(file, data) as CfirFile
+        return withFileAnalysisExceptionWrapping(file) {
+            super.transformFile(file, data)
+        }
     }
+
 
     protected fun checkSessionConsistency(file: CfirFile) {
         require(session.moduleData == file.moduleData) {

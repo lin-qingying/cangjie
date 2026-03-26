@@ -11,9 +11,10 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -21,17 +22,20 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirFunctionCallImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: List<CfirAnnotation>,
-    override var coneTypeOrNull: ConeCangjieType?,
+    override var coneTypeOrNull: ConeCangJieType?,
     override var calleeReference: CfirReference,
     override var explicitReceiver: CfirExpression?,
+    override var dispatchReceiver: CfirExpression?,
     override var arguments: List<CfirExpression>,
     override var typeArguments: List<CfirTypeRef>,
+    override val origin: CfirFunctionCallOrigin,
 ) : CfirFunctionCall() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
         calleeReference.accept(visitor, data)
         explicitReceiver?.accept(visitor, data)
+        dispatchReceiver?.accept(visitor, data)
         arguments.forEach { it.accept(visitor, data) }
         typeArguments.forEach { it.accept(visitor, data) }
     }
@@ -41,7 +45,7 @@ class CfirFunctionCallImpl @CfirImplementationDetail constructor(
         this.annotations = newAnnotations
     }
 
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
      {
         this.coneTypeOrNull = newConeTypeOrNull
     }
@@ -49,6 +53,16 @@ class CfirFunctionCallImpl @CfirImplementationDetail constructor(
     override fun replaceCalleeReference(newCalleeReference: CfirReference)
      {
         this.calleeReference = newCalleeReference
+    }
+
+    override fun replaceExplicitReceiver(newExplicitReceiver: CfirExpression?)
+     {
+        this.explicitReceiver = newExplicitReceiver
+    }
+
+    override fun replaceDispatchReceiver(newDispatchReceiver: CfirExpression?)
+     {
+        this.dispatchReceiver = newDispatchReceiver
     }
 
     override fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>)
@@ -74,6 +88,12 @@ class CfirFunctionCallImpl @CfirImplementationDetail constructor(
         return this
     }
 
+    override fun <D> transformDispatchReceiver(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
+     {
+        this.dispatchReceiver = dispatchReceiver?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression?
+        return this
+    }
+
     override fun <D> transformArguments(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
      {
         this.arguments = arguments.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression }
@@ -90,6 +110,7 @@ class CfirFunctionCallImpl @CfirImplementationDetail constructor(
         transformAnnotations(transformer, data)
         transformCalleeReference(transformer, data)
         transformExplicitReceiver(transformer, data)
+        transformDispatchReceiver(transformer, data)
         transformArguments(transformer, data)
         transformTypeArguments(transformer, data)
         return this

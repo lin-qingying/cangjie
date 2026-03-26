@@ -2,13 +2,13 @@
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.resolve.CfirResolutionMode
+import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitAwareBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSession
-import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculatorForFullBodyResolve
-import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculatorWithJump
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculatorForFullBodyResolve
+import org.cangnova.cangjie.cfir.resolve.body.ReturnTypeCalculatorWithJump
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
@@ -19,14 +19,14 @@ import org.cangnova.cangjie.cfir.session.CfirSession
  */
 internal class CfirImplicitTypesResolveProcessor(
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
 ) : CfirTransformerBasedResolveProcessor(
     session = session,
     scopeSession = scopeSession,
     phase = CfirResolvePhase.IMPLICIT_TYPES,
 ) {
     private val computationSession = CfirImplicitBodyResolveComputationSession()
-    private val returnTypeCalculator = CfirReturnTypeCalculatorWithJump(session, scopeSession, computationSession)
+    private val returnTypeCalculator = ReturnTypeCalculatorWithJump(session, scopeSession, computationSession)
 
     private val implicitTypesTransformer = CfirImplicitAwareBodyResolveTransformer(
         session = session,
@@ -41,7 +41,7 @@ internal class CfirImplicitTypesResolveProcessor(
     override val transformer get() = implicitTypesTransformer as org.cangnova.cangjie.cfir.visitors.CfirTransformer<Nothing?>
 
     override fun processFile(file: CfirFile) {
-        implicitTypesTransformer.transformFile(file, CfirResolutionMode.ContextIndependent)
+        implicitTypesTransformer.transformFile(file, ResolutionMode.ContextIndependent)
     }
 }
 
@@ -51,7 +51,7 @@ internal class CfirImplicitTypesResolveProcessor(
  */
 internal class CfirBodyResolveProcessor(
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
 ) : CfirTransformerBasedResolveProcessor(
     session = session,
     scopeSession = scopeSession,
@@ -60,14 +60,14 @@ internal class CfirBodyResolveProcessor(
     private val bodyResolveTransformer = CfirBodyResolveTransformer(
         session = session,
         scopeSession = scopeSession,
-        returnTypeCalculator = CfirReturnTypeCalculatorForFullBodyResolve.Default,
+        returnTypeCalculator = ReturnTypeCalculatorForFullBodyResolve.Default,
     )
 
     @Suppress("UNCHECKED_CAST")
     override val transformer get() = bodyResolveTransformer as org.cangnova.cangjie.cfir.visitors.CfirTransformer<Nothing?>
 
     override fun processFile(file: CfirFile) {
-        bodyResolveTransformer.transformFile(file, CfirResolutionMode.ContextIndependent)
+        bodyResolveTransformer.transformFile(file, ResolutionMode.ContextIndependent)
     }
 }
 

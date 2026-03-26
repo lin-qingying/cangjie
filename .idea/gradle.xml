@@ -47,11 +47,13 @@
             <option value="$PROJECT_DIR$/cfir/checkers/checkers-component-generator" />
             <option value="$PROJECT_DIR$/cfir/diagnostic-renderers" />
             <option value="$PROJECT_DIR$/cfir/entrypoint" />
+            <option value="$PROJECT_DIR$/cfir/providers" />
             <option value="$PROJECT_DIR$/cfir/raw-cfir" />
             <option value="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir" />
             <option value="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir" />
             <option value="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common" />
             <option value="$PROJECT_DIR$/cfir/resolve" />
+            <option value="$PROJECT_DIR$/cfir/semantics" />
             <option value="$PROJECT_DIR$/cfir/symbols" />
             <option value="$PROJECT_DIR$/common" />
             <option value="$PROJECT_DIR$/common/diagnostics" />
@@ -81,6 +83,7 @@
             <option value="$PROJECT_DIR$/repo/gradle-build-conventions/utilities" />
             <option value="$PROJECT_DIR$/repo/gradle-settings-conventions" />
             <option value="$PROJECT_DIR$/repo/gradle-settings-conventions/jvm-toolchain-provisioning" />
+            <option value="$PROJECT_DIR$/resolution.common" />
             <option value="$PROJECT_DIR$/tests" />
             <option value="$PROJECT_DIR$/tests/test-infrastructure" />
             <option value="$PROJECT_DIR$/util" />

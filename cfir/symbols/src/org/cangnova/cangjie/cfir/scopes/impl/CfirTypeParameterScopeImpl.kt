@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -21,7 +22,7 @@ import org.cangnova.cangjie.name.Name
  */
 class CfirTypeParameterScopeImpl(
     typeParameters: List<CfirTypeParameter>,
-) : CfirTypeParameterScope {
+) : CfirTypeParameterScope() {
 
     private val typeParametersByName: Map<Name, List<CfirTypeParameterSymbol>>
 
@@ -40,7 +41,7 @@ class CfirTypeParameterScopeImpl(
     }
 
     // CfirScope 的默认方法保持空实现，因为类型参数不是 classifiers/functions/properties
-    override fun processClassifiersByName(name: Name, processor: (CfirClassSymbol) -> Unit) {}
-    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol) -> Unit) {}
+    override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {}
+    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol<*>) -> Unit) {}
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {}
 }

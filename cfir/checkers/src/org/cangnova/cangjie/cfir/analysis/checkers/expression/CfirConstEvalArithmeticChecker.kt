@@ -1,7 +1,6 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import java.math.BigInteger
-import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 
@@ -13,13 +12,14 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorNameConventions
 
-object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker(CheckerDispatchKind.Common) {
-    private val PLUS = Name.identifier("plus")
-    private val MINUS = Name.identifier("minus")
-    private val TIMES = Name.identifier("times")
-    private val DIV = Name.identifier("div")
-    private val REM = Name.identifier("rem")
+object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
+    private val PLUS = OperatorNameConventions.PLUS
+    private val MINUS = OperatorNameConventions.MINUS
+    private val TIMES = OperatorNameConventions.TIMES
+    private val DIV = OperatorNameConventions.DIV
+    private val REM = OperatorNameConventions.REM
     private val SUPPORTED = setOf(PLUS, MINUS, TIMES, DIV, REM)
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -62,4 +62,3 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker(CheckerDispatchK
         }
     }
 }
-

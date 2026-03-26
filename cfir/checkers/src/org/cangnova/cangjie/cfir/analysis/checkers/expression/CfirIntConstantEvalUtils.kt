@@ -3,7 +3,7 @@
 import java.math.BigInteger
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 
@@ -100,7 +100,7 @@ internal object CfirIntConstantEvalUtils {
         }
     }
 
-    fun rangeForLiteralTargetType(type: ConeCangjieType?): IntegerRange? {
+    fun rangeForLiteralTargetType(type: ConeCangJieType?): IntegerRange? {
         val primitive = type as? ConePrimitiveType ?: return IntegerRange(INT64_MIN, INT64_MAX)
         return when (primitive.kind) {
             PrimitiveTypeKind.INT8 -> IntegerRange(INT8_MIN, INT8_MAX)

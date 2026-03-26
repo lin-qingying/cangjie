@@ -1,0 +1,22 @@
+Representative Task 8 work completed before blocker:
+- Added `// DUMP_INFERENCE_LOGS` to:
+  - `cfir/analysis-tests/testData/diagnostics/type-mismatch/genericConstraintFromExpectedType.cj`
+  - `cfir/analysis-tests/testData/diagnostics/type-mismatch/lambdaParameterInference.cj`
+  - `cfir/analysis-tests/testData/diagnostics/type-mismatch/lambdaReturnConstraintMismatch.cj`
+
+Logger-path fixes completed while trying to reach analysis tests:
+- Fixed `CfirInferenceLogsHandler` to import `inferenceLogger` from `org.cangnova.cangjie.cfir.session`
+- Fixed unrelated entrypoint compile blocker by replacing direct instantiation of abstract `CfirLazyDeclarationResolver` with `CfirCompilerLazyDeclarationResolver`
+
+Fresh verification results:
+- `./gradlew.bat :cfir:entrypoint:compileKotlin` → PASS
+- `./gradlew.bat :tests:test-infrastructure:compileTestFixturesKotlin` → FAIL
+
+Current unrelated blocker files in `tests:test-infrastructure`:
+- `tests/test-infrastructure/testFixtures/org/cangnova/cangjie/test/frontend/CfirDiagnosticsHandler.kt`
+- `tests/test-infrastructure/testFixtures/org/cangnova/cangjie/test/frontend/CfirScopeDumpHandler.kt`
+- `tests/test-infrastructure/testFixtures/org/cangnova/cangjie/test/frontend/CfirResolvedTypesVerifier.kt`
+
+Blocker assessment:
+- The remaining failures are general test-infrastructure API drift (symbol/type API mismatches), not inference-logger-specific logic.
+- Because `:tests:test-infrastructure:compileTestFixturesKotlin` fails, `:cfir:analysis-tests:test` cannot currently be used to generate or verify new `.cfir.inference.txt` goldens.

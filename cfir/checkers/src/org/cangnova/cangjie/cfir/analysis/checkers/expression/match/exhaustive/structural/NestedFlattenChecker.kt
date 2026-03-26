@@ -8,7 +8,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.collectEnumC
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.CheckSource
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.ExhaustivenessChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.ExhaustivenessResult
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 
 class NestedFlattenChecker : ExhaustivenessChecker {
@@ -19,7 +19,7 @@ class NestedFlattenChecker : ExhaustivenessChecker {
     private val maxFlattenedConstructors = 64
 
     override fun isApplicable(
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
         context: CheckerContext,
     ): Boolean {
@@ -30,7 +30,7 @@ class NestedFlattenChecker : ExhaustivenessChecker {
 
     override fun check(
         matrix: CfirMatrix,
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         context: CheckerContext,
     ): ExhaustivenessResult {
         val enumType = type as? ConeEnumType ?: return ExhaustivenessResult.Skipped
@@ -115,7 +115,7 @@ class NestedFlattenChecker : ExhaustivenessChecker {
         }
     }
 
-    private fun reconstructPattern(type: ConeCangjieType, path: String): CfirMatchPattern {
+    private fun reconstructPattern(type: ConeCangJieType, path: String): CfirMatchPattern {
         return CfirMatchPattern.wild(type)
     }
 

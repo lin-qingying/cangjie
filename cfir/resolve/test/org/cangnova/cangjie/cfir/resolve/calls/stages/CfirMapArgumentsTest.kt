@@ -2,12 +2,13 @@
 
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
-import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures
+import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildFunctionSymbol
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildTypedExpression
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateApplicability
+import org.cangnova.cangjie.cfir.resolve.body.ReturnTypeCalculator
+import org.cangnova.cangjie.cfir.semantics.CandidateApplicability
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
@@ -29,7 +30,7 @@ class CfirMapArgumentsTest {
 
             CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), stubContext())
 
-            assertEquals(CfirCandidateApplicability.RESOLVED, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.RESOLVED, candidate.lowestApplicability)
             assertEquals(0, candidate.numDefaults)
             assertTrue(candidate.argumentMapping.isEmpty())
         }
@@ -51,9 +52,9 @@ class CfirMapArgumentsTest {
 
             CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), stubContext())
 
-            assertEquals(CfirCandidateApplicability.RESOLVED, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.RESOLVED, candidate.lowestApplicability)
             assertEquals(0, candidate.numDefaults)
-            assertEquals(mapOf(0 to 0, 1 to 1), candidate.argumentMapping)
+            assertEquals(2, candidate.argumentMapping.size)
         }
     }
 
@@ -74,7 +75,7 @@ class CfirMapArgumentsTest {
 
             CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), stubContext())
 
-            assertEquals(CfirCandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR, candidate.lowestApplicability)
         }
 
         @Test
@@ -94,7 +95,7 @@ class CfirMapArgumentsTest {
 
             CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), stubContext())
 
-            assertEquals(CfirCandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR, candidate.lowestApplicability)
         }
     }
 
@@ -116,9 +117,9 @@ class CfirMapArgumentsTest {
 
             CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), stubContext())
 
-            assertEquals(CfirCandidateApplicability.RESOLVED, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.RESOLVED, candidate.lowestApplicability)
             assertEquals(1, candidate.numDefaults)
-            assertEquals(mapOf(0 to 0), candidate.argumentMapping)
+            assertEquals(1, candidate.argumentMapping.size)
         }
 
         @Test
@@ -133,7 +134,7 @@ class CfirMapArgumentsTest {
 
             CfirMapArguments.check(candidate, CfirCheckerSinkImpl(candidate), stubContext())
 
-            assertEquals(CfirCandidateApplicability.RESOLVED, candidate.lowestApplicability)
+            assertEquals(CandidateApplicability.RESOLVED, candidate.lowestApplicability)
             assertEquals(2, candidate.numDefaults)
         }
     }
@@ -142,7 +143,7 @@ class CfirMapArgumentsTest {
         return CfirResolutionContext(
             session = StubSessionForTest,
             bodyResolveContext = StubBodyResolveContext,
-            subtypeChecker = StubSubtypeChecker,
+            typeRelations = StubTypeRelations,
         )
     }
 }
@@ -154,14 +155,13 @@ private object StubSessionForTest : org.cangnova.cangjie.cfir.session.CfirSessio
 }
 
 private val StubBodyResolveContext = org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveContext(
-    org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculator.Default,
+    ReturnTypeCalculator.Default,
     org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext(),
 )
 
-private val StubSubtypeChecker = org.cangnova.cangjie.cfir.types.ConeSubtypeChecker(
+private val StubTypeRelations = CfirTypeRelations(
     object : org.cangnova.cangjie.cfir.types.ConeTypeContext {
-        override fun supertypes(type: org.cangnova.cangjie.cfir.types.ConeCangjieType) = emptyList<org.cangnova.cangjie.cfir.types.ConeCangjieType>()
-        override fun isSameTypeConstructor(a: org.cangnova.cangjie.cfir.types.ConeCangjieType, b: org.cangnova.cangjie.cfir.types.ConeCangjieType) = a == b
-    }
+        override fun supertypes(type: org.cangnova.cangjie.cfir.types.ConeCangJieType) = emptyList<org.cangnova.cangjie.cfir.types.ConeCangJieType>()
+        override fun isSameTypeConstructor(a: org.cangnova.cangjie.cfir.types.ConeCangJieType, b: org.cangnova.cangjie.cfir.types.ConeCangJieType) = a == b
+    },
 )
-

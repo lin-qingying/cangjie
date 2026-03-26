@@ -19,7 +19,12 @@ import org.cangnova.cangjie.test.directives.model.DirectivesContainer
 import org.cangnova.cangjie.test.directives.model.singleOrZeroValue
 import org.cangnova.cangjie.test.frontend.CfirDiagnosticsHandler
 import org.cangnova.cangjie.test.frontend.CfirFrontendFacade
+import org.cangnova.cangjie.test.frontend.CfirInferenceLogsHandler
+import org.cangnova.cangjie.test.frontend.CfirLazyDeclarationResolverWithPhaseCheckingSessionComponentRegistrar
 import org.cangnova.cangjie.test.frontend.CfirOutputArtifact
+import org.cangnova.cangjie.test.frontend.CfirResolveContractViolationErrorHandler
+import org.cangnova.cangjie.test.frontend.CfirResolvedTypesVerifier
+import org.cangnova.cangjie.test.frontend.CfirScopeDumpHandler
 import org.cangnova.cangjie.test.frontend.PsiLightTreeMetaInfoProcessor
 import org.cangnova.cangjie.test.model.AfterAnalysisChecker
 import org.cangnova.cangjie.test.model.DependencyKind
@@ -31,6 +36,7 @@ import org.cangnova.cangjie.test.services.MetaTestConfigurator
 import org.cangnova.cangjie.test.services.TestService
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.moduleStructure
+import org.cangnova.cangjie.test.services.service
 
 /**
  * General test configuration for CFIR-based diagnostic tests.
@@ -98,10 +104,10 @@ fun TestStepBuilder.HandlersStepBuilder.NonGroupingPhase<CfirOutputArtifact, Fro
 //        ::CfirDumpHandler,
 //        ::CfirCfgDumpHandler,
 //        ::CfirVFirDumpHandler,
-//        ::CfirInferenceLogsHandler,
+        ::CfirInferenceLogsHandler,
 //        ::CfirCfgConsistencyHandler,
-//        ::CfirResolvedTypesVerifier,
-//        ::CfirScopeDumpHandler,
+        ::CfirResolvedTypesVerifier,
+        ::CfirScopeDumpHandler,
     )
 }
 /**
@@ -145,7 +151,8 @@ fun TestConfigurationBuilder.configurationForTestWithLatestLanguageVersion() {
  * lazy resolve phase checker yet, so this method intentionally keeps a stable API surface.
  */
 fun TestConfigurationBuilder.enableLazyResolvePhaseChecking() {
-    // Intentionally left as an extension point.
+    useAdditionalServices(service(::CfirLazyDeclarationResolverWithPhaseCheckingSessionComponentRegistrar))
+    useAfterAnalysisCheckers(::CfirResolveContractViolationErrorHandler, insertAtFirst = true)
 }
 
 fun TestConfigurationBuilderBase<*, *>.configureCfirParser(parser: CfirParser) {
@@ -174,7 +181,7 @@ class CfirSpecificParserSuppressor(
     override fun shouldSkipTest(): Boolean {
         val allDirectives = testServices.moduleStructure.allDirectives
         val disabledParser = allDirectives.singleOrZeroValue(DISABLE_WITH_PARSER) ?: return false
-        val activeParser = allDirectives.singleOrZeroValue(CFIR_PARSER) ?: return false
+        val activeParser = allDirectives[CFIR_PARSER].lastOrNull() ?: return false
         return disabledParser == activeParser
     }
 }

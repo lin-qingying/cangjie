@@ -1,0 +1,6 @@
+Search: grep pattern `org\.cangnova\.cangjie\.cfir` in `resolution.common/src/**/*.kt`
+
+Result: No matches found.
+
+Conclusion:
+- Task 2 kept the generic inference logger API CFIR-free.

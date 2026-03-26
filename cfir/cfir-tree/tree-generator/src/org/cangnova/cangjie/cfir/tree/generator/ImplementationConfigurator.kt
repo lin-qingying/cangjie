@@ -2,7 +2,10 @@ package org.cangnova.cangjie.cfir.tree.generator
 
 import org.cangnova.cangjie.cfir.tree.generator.context.AbstractCfirTreeImplementationConfigurator
 import org.cangnova.cangjie.cfir.tree.generator.model.Element
+import org.cangnova.cangjie.cfir.tree.generator.model.Field
+import org.cangnova.cangjie.cfir.tree.generator.model.Implementation
 import org.cangnova.cangjie.cfir.tree.generator.util.type
+import org.cangnova.cangjie.generators.tree.config.AbstractImplementationConfigurator
 
 object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator() {
 
@@ -22,6 +25,8 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         noImpl(memberDeclaration)
         noImpl(callableDeclaration)
         noImpl(classLikeDeclaration)
+        noImpl(function)
+        noImpl(variable)
 
         // ---------- constructor 拆分为两个具名实现 ----------
         impl(constructor) {
@@ -53,10 +58,28 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
             publicImplementation()
         }
 
+
         // ---------- 字段精细配置 ----------
 
 
+        impl(errorExpression) {
+            default("coneTypeOrNull", "expression?.coneTypeOrNull ?: ConeErrorType(ConeUnreportedDuplicateDiagnostic(diagnostic))", withGetter = true)
+            additionalImports(coneErrorTypeType, coneUnreportedDuplicateDiagnosticType)
+        }
 
+        // anonymousFunctionExpression：类型和注解代理到内部匿名函数
+        impl(anonymousFunctionExpression) {
+            additionalImports(coneTypeOrNull)
+            default("coneTypeOrNull") {
+                delegate = "anonymousFunction"
+                delegateCall = "typeRef.coneTypeOrNull"
+                withGetter = true
+            }
+            default("annotations") {
+                delegate = "anonymousFunction"
+                withGetter = true
+            }
+        }
         impl(implicitTypeRef) {
             noSource()
         }
@@ -70,6 +93,18 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
 
             additionalImports(visibilitiesImport)
         }
+        fun AbstractImplementationConfigurator<Implementation, Element, Field>.ImplementationContext.configureCommonValueParameter() {
+            defaultFalse("isVar", withGetter = true)
+            defaultNull(
+                "initializer",
+                withGetter = true
+            )
+
+        }
+        impl(valueParameter){
+            configureCommonValueParameter()
+        }
+
 // resolvedImportDirective：委托字段给 delegate
         impl(resolvedImportDirective) {
             publicImplementation()
@@ -85,14 +120,6 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
                 delegateCall = "shortName()"
                 withGetter = true
             }
-        }
-        // errorExpression：coneTypeOrNull 携带错误类型信息
-        impl(errorExpression) {
-            default("coneTypeOrNull") {
-                value = "ConeErrorType(reason)"
-                withGetter = true
-            }
-            additionalImports(type("types", "ConeErrorType"))
         }
 
         // ---------- 具体节点：生成公开实现类 ----------
@@ -121,10 +148,10 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
 //        }
 
         // controlFlowGraphReference 默认 null
-        // lambdaExpression 的 cfg 由控制流分析阶段填充，排除在外
+        // anonymousFunctionExpression 的 cfg 由控制流分析阶段填充，排除在外
         configureFieldInAllImplementations(
             fieldName = "controlFlowGraphReference",
-            implementationPredicate = { it.typeName != "CfirLambdaExpressionImpl" }
+            implementationPredicate = { it.typeName != "CfirAnonymousFunctionExpressionImpl" }
         ) {
             defaultNull(it)
         }
@@ -152,10 +179,14 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         // -------- 声明节点 --------
         file,
         classDeclaration,
+        interfaceDeclaration,
+        structDeclaration,
+        enumDeclaration,
         enumConstructor,
         extend,
         typeAlias,
-        function,
+        namedFunction,
+        anonymousFunction,
         mainFunction,
         macroDeclaration,
         finalizer,
@@ -190,7 +221,7 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         throwExpression,
         returnExpression,
         jumpExpression,
-        lambdaExpression,
+        anonymousFunctionExpression,
         rangeExpression,
         arrayLiteral,
         tupleLiteral,
@@ -218,11 +249,11 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         functionTypeRef,
         tupleTypeRef,
         varrayTypeRef,
-        errorTypeRef,
 
         // -------- 引用节点 --------
         namedReference,
         resolvedNamedReference,
         errorReference,
+        thisReference,
     )
 }

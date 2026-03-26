@@ -34,7 +34,7 @@ import com.intellij.psi.stubs.StubBase
 import com.intellij.psi.stubs.StubElement
 import java.lang.reflect.Method
 
-val STUB_TO_STRING_PREFIX = "CangJieStub$"
+const val STUB_TO_STRING_PREFIX = "CangJieStub$"
 
 open class CangJieStubBaseImpl<T : CjElementImplStub<*>>(parent: StubElement<*>?, elementType: IStubElementType<*, *>) :
     StubBase<T>(parent, elementType) {
@@ -50,7 +50,6 @@ open class CangJieStubBaseImpl<T : CjElementImplStub<*>>(parent: StubElement<*>?
         )
     }
 
-    @Deprecated("Deprecated in Java")
     override fun getStubType(): IStubElementType<out StubElement<*>, *> =
         super.getStubType() as IStubElementType<out StubElement<*>, *>
 

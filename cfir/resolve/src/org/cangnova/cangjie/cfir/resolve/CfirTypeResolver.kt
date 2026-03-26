@@ -2,7 +2,12 @@ package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirClassKind
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.builtinTypes
@@ -18,16 +23,22 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTupleTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.CfirVArrayTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
-import org.cangnova.cangjie.cfir.types.ConeDiagnostic
+import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
-import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
-import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
-import org.cangnova.cangjie.cfir.types.ConeUnresolvedSymbolError
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.ConeTypeProjection
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -46,13 +57,13 @@ abstract class CfirTypeResolver : CfirSessionComponent {
         expandTypeAliases: Boolean = true,
     ): CfirTypeResolutionResult
 
-    abstract fun resolveClass(typeRef: CfirTypeRef): CfirClass?
+    abstract fun resolveClass(typeRef: CfirTypeRef): CfirClassLikeDeclaration?
 
-    abstract fun resolveClass(classId: ClassId): CfirClass?
+    abstract fun resolveClass(classId: ClassId): CfirClassLikeDeclaration?
 }
 
 data class CfirTypeResolutionResult(
-    val type: ConeCangjieType,
+    val type: ConeCangJieType,
     val diagnostic: ConeDiagnostic?,
 )
 
@@ -60,7 +71,7 @@ data class CfirTypeResolutionResult(
  * Supertype supplier hook used by the SUPER_TYPES phase.
  */
 fun interface SupertypeSupplier {
-    fun getSupertypes(classId: ClassId): List<ConeCangjieType>
+    fun getSupertypes(classId: ClassId): List<ConeCangJieType>
 
     companion object {
         val Default: SupertypeSupplier = SupertypeSupplier { emptyList() }
@@ -82,7 +93,7 @@ class CfirTypeResolverImpl(
     ): CfirTypeResolutionResult {
         val type = when (typeRef) {
             is CfirResolvedTypeRef -> typeRef.coneType
-            is CfirImplicitTypeRef -> ConeErrorType("Implicit type reference is not resolvable at this stage")
+            is CfirImplicitTypeRef -> ConeErrorType(ConeSimpleDiagnostic("Implicit type reference is not resolvable at this stage"))
             is CfirBasicTypeRef -> resolveBasicType(typeRef, configuration)
             is CfirUserTypeRef -> resolveUserType(typeRef, configuration)
             is CfirFunctionTypeRef -> {
@@ -100,11 +111,11 @@ class CfirTypeResolverImpl(
                 if (size != null) {
                     ConeVArrayType(elementType = elementType, size = size)
                 } else {
-                    ConeErrorType("Invalid VArray size: ${typeRef.sizeLiteral}")
+                    ConeErrorType(ConeSimpleDiagnostic("Invalid VArray size: ${typeRef.sizeLiteral}"))
                 }
             }
-            is CfirErrorTypeRef -> ConeErrorType(typeRef.reason)
-            else -> ConeErrorType("Unsupported type reference: ${typeRef::class.simpleName}")
+            is CfirErrorTypeRef -> ConeErrorType(typeRef.diagnostic)
+            else -> ConeErrorType(ConeSimpleDiagnostic("Unsupported type reference: ${typeRef::class.simpleName}"))
         }
 
         return CfirTypeResolutionResult(
@@ -113,7 +124,7 @@ class CfirTypeResolverImpl(
         )
     }
 
-    override fun resolveClass(typeRef: CfirTypeRef): CfirClass? {
+    override fun resolveClass(typeRef: CfirTypeRef): CfirClassLikeDeclaration? {
         val userTypeRef = typeRef as? CfirUserTypeRef ?: return null
         if (userTypeRef.qualifier.isEmpty()) return null
 
@@ -123,36 +134,39 @@ class CfirTypeResolverImpl(
         return resolveClass(ClassId(packageFqName, className))
     }
 
-    override fun resolveClass(classId: ClassId): CfirClass? {
+    override fun resolveClass(classId: ClassId): CfirClassLikeDeclaration? {
         session.cfirProvider.getClassByClassId(classId)?.let { return it }
-        return session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirClass
+        return session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
     }
 
     private fun resolveBasicType(
         typeRef: CfirBasicTypeRef,
         configuration: TypeResolutionConfiguration,
-    ): ConeCangjieType {
+    ): ConeCangJieType {
         val typeName = typeRef.name.asString()
-        if (configuration.scopeTypeParameters.containsKey(typeName)) {
-            return ConeTypeParameterType(ConeTypeParameterLookupTag(typeName))
+        val typeParameter = configuration.scopeTypeParameters[typeName]
+        if (typeParameter != null) {
+            return ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
         }
 
         val primitiveType = session.builtinTypes.getPrimitiveTypeByName(typeRef.name.asString())
-        return primitiveType ?: ConeErrorType("Unknown basic type: ${typeRef.name.asString()}")
+        return primitiveType ?: ConeErrorType(ConeSimpleDiagnostic("Unknown basic type: ${typeRef.name.asString()}"))
     }
 
     private fun resolveUserType(
         typeRef: CfirUserTypeRef,
         configuration: TypeResolutionConfiguration,
-    ): ConeCangjieType {
+        expandTypeAliases: Boolean = true,
+    ): ConeCangJieType {
         if (typeRef.qualifier.isEmpty()) {
-            return ConeErrorType("Empty user type")
+            return ConeErrorType(ConeSimpleDiagnostic("Empty user type"))
         }
 
         if (typeRef.qualifier.size == 1) {
             val typeParameterName = typeRef.qualifier.single().asString()
-            if (configuration.scopeTypeParameters.containsKey(typeParameterName)) {
-                return ConeTypeParameterType(ConeTypeParameterLookupTag(typeParameterName))
+            val typeParameter = configuration.scopeTypeParameters[typeParameterName]
+            if (typeParameter != null) {
+                return ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
             }
         }
 
@@ -167,22 +181,58 @@ class CfirTypeResolverImpl(
 
         val resolvedClass = resolveClass(classId) ?: return ConeErrorType(ConeUnresolvedSymbolError(classId))
         val resolvedArguments = typeRef.typeArguments.map { argument ->
-            resolveType(
-                argument,
-                configuration,
-                areBareTypesAllowed = false,
-                isOperandOfIsOperator = false,
-                resolveDeprecations = true,
-                supertypeSupplier = SupertypeSupplier.Default,
-                expandTypeAliases = true,
-            ).type
+            ConeTypeProjection(
+                resolveType(
+                    argument,
+                    configuration,
+                    areBareTypesAllowed = false,
+                    isOperandOfIsOperator = false,
+                    resolveDeprecations = true,
+                    supertypeSupplier = SupertypeSupplier.Default,
+                    expandTypeAliases = expandTypeAliases,
+                ).type
+            )
         }
 
-        return ConeClassLikeType(
-            lookupTag = ConeClassLookupTagImpl(classId),
-            typeArguments = resolvedArguments,
-            isInterface = resolvedClass.classKind == CfirClassKind.INTERFACE,
-        )
+        return when (resolvedClass) {
+            is CfirPrimitiveTypeDeclaration -> ConePrimitiveType(resolvedClass.kind)
+            is CfirClass -> ConeClassLikeType(
+                lookupTag = ConeClassLikeLookupTagImpl(classId),
+                typeArguments = resolvedArguments,
+            )
+            is CfirInterface -> ConeClassLikeType(
+                lookupTag = ConeClassLikeLookupTagImpl(classId),
+                typeArguments = resolvedArguments,
+                isInterface = true,
+            )
+            is CfirStruct -> ConeStructType(
+                lookupTag = ConeClassLikeLookupTagImpl(classId),
+                typeArguments = resolvedArguments,
+            )
+            is CfirEnum -> ConeEnumType(
+                lookupTag = ConeClassLikeLookupTagImpl(classId),
+                typeArguments = resolvedArguments,
+                isRefEnum = resolvedClass.isRefEnum,
+            )
+            is CfirTypeAlias -> {
+                val expandedType = resolvedClass.expandedTypeRef.coneTypeOrNull
+                    ?: resolveType(
+                        resolvedClass.expandedTypeRef,
+                        configuration,
+                        areBareTypesAllowed = false,
+                        isOperandOfIsOperator = false,
+                        resolveDeprecations = true,
+                        supertypeSupplier = SupertypeSupplier.Default,
+                        expandTypeAliases = true,
+                    ).type
+                if (expandTypeAliases) expandedType
+                else ConeTypeAliasType(
+                    classId = classId,
+                    expandedType = expandedType,
+                    typeArguments = resolvedArguments,
+                )
+            }
+        }
     }
 
     private fun resolveSimpleClassId(
@@ -190,6 +240,18 @@ class CfirTypeResolverImpl(
         configuration: TypeResolutionConfiguration,
     ): ClassId? {
         val candidates = LinkedHashSet<ClassId>()
+
+        for (scope in configuration.scopes) {
+            scope.processClassifiersByName(shortName) { classifier ->
+                val classId = when (classifier) {
+                    is org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbolWithClassId<*> -> classifier.classId
+                    else -> null
+                }
+                if (classId != null) {
+                    candidates += classId
+                }
+            }
+        }
 
         val file = configuration.useSiteFile
         if (file != null) {

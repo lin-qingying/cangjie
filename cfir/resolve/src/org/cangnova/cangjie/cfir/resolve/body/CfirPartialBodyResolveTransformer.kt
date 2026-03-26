@@ -1,7 +1,9 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.resolve.CfirResolutionMode
+import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 
 /**
  * Body resolve 的局部 transformer 基类，负责把 `context` / `components`
@@ -13,16 +15,18 @@ abstract class CfirPartialBodyResolveTransformer(
     val transformer: CfirAbstractBodyResolveTransformerDispatcher,
 ) : CfirAbstractBodyResolveTransformer(transformer.transformerPhase) {
 
-    final override val context: CfirBodyResolveContext
+    final override val context: BodyResolveContext
         get() = transformer.context
+
+    final override val resolutionContext: ResolutionContext
+        get() = transformer.resolutionContext
 
     final override val components: BodyResolveTransformerComponents
         get() = transformer.components
 
-    override fun <E : CfirElement> transformElement(element: E, data: CfirResolutionMode): E {
+    override fun <E : CfirElement> transformElement(element: E, data: ResolutionMode): E {
         element.transformChildren(transformer, data)
         @Suppress("UNCHECKED_CAST")
         return element as E
     }
 }
-

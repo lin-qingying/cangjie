@@ -24,8 +24,16 @@ fun main(args: Array<String>) {
         model.specifyHasAcceptAndTransformChildrenMethods()
 
         printElements(model, ::ElementPrinter)
-        printElementImplementations(implementations, ::ImplementationPrinter)
-        printElementBuilders(implementations.mapNotNull { it.builder } + builderConfigurator.intermediateBuilders, ::BuilderPrinter)
+        printElementImplementations(
+            implementations.filterNot { it.element == CfirTree.errorTypeRef },
+            ::ImplementationPrinter
+        )
+        printElementBuilders(
+            implementations
+                .filterNot { it.element == CfirTree.errorTypeRef }
+                .mapNotNull { it.builder } + builderConfigurator.intermediateBuilders,
+            ::BuilderPrinter
+        )
         printVisitors(
             model,
             listOf(

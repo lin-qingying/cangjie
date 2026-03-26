@@ -1,67 +1,62 @@
-﻿package org.cangnova.cangjie.cfir.resolve.calls.stages
+package org.cangnova.cangjie.cfir.resolve.calls.stages
 
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.WrongArgumentCount
-import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.diagnostic.WrongArgumentCount
+import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
+import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 
 /**
  * 参数映射阶段：把调用实参映射到函数形参。
- * 核心逻辑：
- * 1. 位置参数按顺序映射
- * 2. 带默认值的形参可以跳过，并计入 `numDefaults`
- * 3. 实参数量必须落在 `[minRequired, totalParams]` 范围内
- * Phase 3 只支持位置参数，不支持命名参数。
- * 对齐 K2 `MapArguments` + `FirArgumentsToParametersMapper`。
+ * 支持函数、类构造器和枚举构造器（枚举构造器参数来自其 payload 类型）。
  */
-object CfirMapArguments : CfirResolutionStage() {
+object CfirMapArguments : ResolutionStage() {
+    context(sink: CheckerSink, context: ResolutionContext)
+    override suspend fun check(candidate: Candidate) {
+        val argumentAtoms = candidate.callInfo.arguments.map(ConeResolutionAtom::createRawAtom)
 
-    override fun check(
-        candidate: CfirCandidate,
-        sink: CfirCheckerSink,
-        context: CfirResolutionContext,
+        when (candidate.callInfo.callKind) {
+            CallKind.VariableAccess -> mapVariableAccessArguments(candidate, argumentAtoms)
+            CallKind.Function,
+            CallKind.EnumConstructorCall,
+            -> mapCallableArguments(candidate, argumentAtoms)
+        }
+    }
+
+    context(sink: CheckerSink)
+    private fun mapVariableAccessArguments(
+        candidate: Candidate,
+        argumentAtoms: List<ConeResolutionAtom>,
     ) {
-        val valueParameters = extractValueParameters(candidate.symbol) ?: return
-        val arguments = candidate.callInfo.arguments
+        candidate.initializeArgumentMapping(argumentAtoms, linkedMapOf())
+        if (argumentAtoms.isNotEmpty()) {
+            sink.reportDiagnostic(WrongArgumentCount(expectedCount = 0, actualCount = argumentAtoms.size))
+        }
+    }
 
-        val totalParams = valueParameters.size
-        val requiredParams = valueParameters.count { it.defaultValue == null }
-        val actualArgs = arguments.size
+    context(sink: CheckerSink)
+    private fun mapCallableArguments(
+        candidate: Candidate,
+        argumentAtoms: List<ConeResolutionAtom>,
+    ) {
+        val parameters = candidate.declaredParametersForMapping()
+        val requiredParameters = parameters.count { it.defaultValue == null }
 
-        // 检查参数个数
-        if (actualArgs < requiredParams || actualArgs > totalParams) {
-            sink.reportDiagnostic(
-                WrongArgumentCount(
-                    expectedCount = if (requiredParams == totalParams) totalParams else requiredParams,
-                    actualCount = actualArgs,
-                )
-            )
+        if (argumentAtoms.size < requiredParameters || argumentAtoms.size > parameters.size) {
+            candidate.initializeArgumentMapping(argumentAtoms, linkedMapOf())
+            sink.reportDiagnostic(WrongArgumentCount(expectedCount = parameters.size, actualCount = argumentAtoms.size))
             return
         }
 
-        // 位置参数映射：argIndex -> paramIndex
-        val mapping = mutableMapOf<Int, Int>()
-        for (i in 0 until actualArgs) {
-            mapping[i] = i
+        val mapping = LinkedHashMap<ConeResolutionAtom, CfirValueParameter>(argumentAtoms.size)
+        for ((argument, parameter) in argumentAtoms.zip(parameters)) {
+            mapping[argument] = parameter
         }
-        candidate.argumentMapping = mapping
 
-        // 计算使用到的默认值参数个数
-        candidate.numDefaults = totalParams - actualArgs
+        candidate.initializeArgumentMapping(argumentAtoms, mapping)
+        candidate.numDefaults = parameters.size - argumentAtoms.size
     }
 
-    /** 从候选符号中提取值参数列表。 */
-    private fun extractValueParameters(symbol: CfirCallableSymbol<*>): List<CfirValueParameter>? {
-        if (!symbol.isBound) return null
-        return when (val decl = symbol.cfir) {
-            is CfirFunction -> decl.valueParameters
-            is CfirConstructor -> decl.valueParameters
-            else -> null
-        }
-    }
 }
-

@@ -10,7 +10,7 @@ package org.cangnova.cangjie.cfir.declarations.impl
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -23,9 +23,12 @@ class CfirTypeAliasImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override val moduleData: CfirModuleData,
     override var annotations: List<CfirAnnotation>,
-    override val symbol: CfirSymbol<*>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
+    override val isLocal: Boolean,
+    override var declarations: List<CfirDeclaration>,
+    override var superTypeRefs: List<CfirTypeRef>,
+    override val symbol: CfirTypeAliasSymbol,
     override var status: CfirDeclarationStatus,
     override var typeParameters: List<CfirTypeParameter>,
     override val name: Name,
@@ -34,6 +37,8 @@ class CfirTypeAliasImpl @CfirImplementationDetail constructor(
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
+        declarations.forEach { it.accept(visitor, data) }
+        superTypeRefs.forEach { it.accept(visitor, data) }
         typeParameters.forEach { it.accept(visitor, data) }
         expandedTypeRef.accept(visitor, data)
     }
@@ -59,6 +64,18 @@ class CfirTypeAliasImpl @CfirImplementationDetail constructor(
         return this
     }
 
+    override fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirTypeAlias
+     {
+        this.declarations = declarations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirDeclaration }
+        return this
+    }
+
+    override fun <D> transformSuperTypeRefs(transformer: CfirTransformer<D>, data: D): CfirTypeAlias
+     {
+        this.superTypeRefs = superTypeRefs.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirTypeRef }
+        return this
+    }
+
     override fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirTypeAlias
      {
         this.status = status.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirDeclarationStatus
@@ -79,6 +96,8 @@ class CfirTypeAliasImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirTypeAliasImpl {
         transformAnnotations(transformer, data)
+        transformDeclarations(transformer, data)
+        transformSuperTypeRefs(transformer, data)
         transformTypeParameters(transformer, data)
         transformExpandedTypeRef(transformer, data)
         return this

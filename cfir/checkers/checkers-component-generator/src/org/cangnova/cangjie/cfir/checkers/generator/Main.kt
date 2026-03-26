@@ -4,11 +4,13 @@ import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.DIAGNOSTICS_LIST
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.ErrorListDiagnosticListRenderer
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.generateDiagnostics
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -24,6 +26,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
@@ -36,7 +41,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirJumpExpression
-import org.cangnova.cangjie.cfir.expressions.CfirLambdaExpression
+import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
 import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
@@ -120,7 +125,7 @@ fun main(args: Array<String>) {
                     visitAlso<CfirCatch>(it)
                     visitAlso<CfirLoopExpression>(it)
                     visitAlso<CfirForInExpression>(it)
-                    visitAlso<CfirLambdaExpression>(it)
+                    visitAlso<CfirAnonymousFunctionExpression>(it)
                     visitAlso<CfirArrayLiteral>(it)
                     visitAlso<CfirTupleLiteral>(it)
                     visitAlso<CfirSpawnExpression>(it)
@@ -156,26 +161,38 @@ fun main(args: Array<String>) {
                 CfirDeclaration::class,
             ) {
                 alias<CfirDeclaration>("BasicDeclarationChecker")
-                alias<CfirMemberDeclaration>("MemberDeclarationChecker")
-                alias<CfirCallableDeclaration>("CallableDeclarationChecker").let {
-                    visitAlso<CfirEnumConstructor>(it)
+                alias<CfirMemberDeclaration>("MemberDeclarationChecker", false)
+                alias<CfirCallableDeclaration>("CallableDeclarationChecker", false).let {
+
+
+                }
+                alias<CfirFunction>("FunctionChecker", false).let {
                     visitAlso<CfirMacroDeclaration>(it)
                     visitAlso<CfirFinalizer>(it)
-                    visitAlso<CfirConstructor>(it)
                 }
-                alias<CfirClassLikeDeclaration>("ClassLikeChecker").let {
-                    visitAlso<CfirExtend>(it)
-                }
-                alias<CfirClass>("ClassChecker")
-                alias<CfirFile>("FileChecker")
-                alias<CfirFunction>("FunctionChecker")
-                alias<CfirMainFunction>("MainFunctionChecker")
+                alias<CfirEnumConstructor>("EnumConstructorChecker")
+                alias<CfirNamedFunction>("SimpleFunctionChecker")
                 alias<CfirProperty>("PropertyChecker")
-                alias<CfirFieldVariable>("FieldVariableChecker")
-                alias<CfirPatternVariable>("PatternVariableChecker")
+                alias<CfirClassLikeDeclaration>("ClassLikeChecker", false).let {
+                    visitAlso<CfirClass>(it)
+                    visitAlso<CfirInterface>(it)
 
+                    visitAlso<CfirStruct>(it)
+
+                    visitAlso<CfirEnum>(it)
+
+
+                }
+                alias<CfirAnonymousFunction>("AnonymousFunctionChecker")
+
+                alias<CfirConstructor>("ConstructorChecker")
+                alias<CfirFile>("FileChecker")
+                alias<CfirTypeParameter>("CfirTypeParameterChecker")
+                alias<CfirExtend>("ExtendChecker")
+                alias<CfirMainFunction>("MainFunctionChecker")
+                alias<CfirPatternVariable>("PatternVariableChecker")
+                alias<CfirFieldVariable>("FieldVariableChecker")
                 alias<CfirTypeAlias>("TypeAliasChecker")
-                alias<CfirTypeParameter>("TypeParameterChecker")
                 alias<CfirValueParameter>("ValueParameterChecker")
                 alias<CfirInvalidDeclaration>("InvalidDeclarationChecker")
             }
