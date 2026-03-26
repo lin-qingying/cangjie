@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -32,7 +33,7 @@ open class CfirSwitchableExtensionDeclarationsSymbolProvider protected construct
             if (disabled) null else delegate.symbolNamesProvider.getTopLevelCallableNamesInPackage(packageFqName)
     }
 
-    override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassSymbol? {
+    override fun getClassLikeSymbolByClassId(classId: ClassId):  CfirClassLikeSymbol<*>? {
         if (disabled) return null
         return delegate.getClassLikeSymbolByClassId(classId)
     }
@@ -42,7 +43,7 @@ open class CfirSwitchableExtensionDeclarationsSymbolProvider protected construct
         return delegate.getTopLevelCallableSymbols(packageFqName, name)
     }
 
-    override fun getTopLevelFunctionSymbols(packageFqName: FqName, name: Name): List<CfirFunctionSymbol> {
+    override fun getTopLevelFunctionSymbols(packageFqName: FqName, name: Name): List<CfirFunctionSymbol<*>> {
         if (disabled) return emptyList()
         return delegate.getTopLevelFunctionSymbols(packageFqName, name)
     }

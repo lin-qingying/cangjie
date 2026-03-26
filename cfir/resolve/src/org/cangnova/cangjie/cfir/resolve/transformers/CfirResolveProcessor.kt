@@ -1,9 +1,9 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.transformers
 
-import org.cangnova.cangjie.cfir.CfirSessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.lazyDeclarationResolver
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -13,9 +13,9 @@ annotation class AdapterForResolveProcessor
 
 sealed class CfirResolveProcessor(
     override val session: CfirSession,
-    override val scopeSession: CfirScopeSession,
+    override val scopeSession: ScopeSession,
     val phase: CfirResolvePhase?,
-) : CfirSessionAndScopeSessionHolder {
+) : SessionAndScopeSessionHolder {
     open fun beforePhase() {
         if (phase != null) {
             session.lazyDeclarationResolver.startResolvingPhase(phase)
@@ -31,7 +31,7 @@ sealed class CfirResolveProcessor(
 
 abstract class CfirGlobalResolveProcessor(
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
     phase: CfirResolvePhase,
 ) : CfirResolveProcessor(
     session = session,
@@ -43,7 +43,7 @@ abstract class CfirGlobalResolveProcessor(
 
 abstract class CfirTransformerBasedResolveProcessor(
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
     phase: CfirResolvePhase?,
 ) : CfirResolveProcessor(
     session = session,

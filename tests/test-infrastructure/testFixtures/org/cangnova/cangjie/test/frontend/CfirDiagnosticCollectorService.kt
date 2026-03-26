@@ -6,7 +6,8 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.Severity
 import org.cangnova.cangjie.cfir.diagnostics.impl.DiagnosticsCollectorImpl
-import org.cangnova.cangjie.cfir.session.diagnosticCollector
+import org.cangnova.cangjie.cfir.pipeline.runCheckers
+import org.cangnova.cangjie.cfir.session.lazyDeclarationResolver
 import org.cangnova.cangjie.test.services.TestService
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.toLightTreeShortName
@@ -38,34 +39,32 @@ open class CfirDiagnosticCollectorService(
         val diagnosticsByFile = linkedMapOf<CfirFile, MutableList<CjDiagnostic>>()
         allFiles.forEach { diagnosticsByFile[it] = mutableListOf() }
 
-        for (part in info.partsForDependsOnModules) {
-            val collector = runCatching { part.session.diagnosticCollector }.getOrNull()
-            if (collector != null) {
-                appendSessionDiagnostics(collector.rawDiagnostics, diagnosticsByFile)
+        val platformPart = info.partsForDependsOnModules.last()
+        val lazyDeclarationResolver = platformPart.session.lazyDeclarationResolver
+
+        lazyDeclarationResolver.disableLazyResolveContractChecksInside {
+            for (part in info.partsForDependsOnModules) {
+                val diagnosticsCollector = DiagnosticsCollectorImpl()
+                val diagnostics = part.session.runCheckers(
+                    scopeSession = part.scopeSession,
+                    firFiles = part.firFilesByTestFile.values,
+                    diagnosticsCollector = diagnosticsCollector,
+                )
+                appendComputedDiagnostics(diagnostics, diagnosticsByFile)
+                appendLightTreeSyntaxDiagnostics(part, diagnosticsByFile)
             }
-            appendLightTreeSyntaxDiagnostics(part, diagnosticsByFile)
         }
 
         return diagnosticsByFile.mapValues { (_, value) -> value.toList() }
     }
 
-    private fun appendSessionDiagnostics(
-        diagnostics: List<CjDiagnostic>,
+    private fun appendComputedDiagnostics(
+        diagnostics: CfirDiagnosticsMap,
         destination: MutableMap<CfirFile, MutableList<CjDiagnostic>>,
     ) {
-        if (diagnostics.isEmpty()) return
-
-        for (diagnostic in diagnostics) {
-            val filePath = (diagnostic.context as? DiagnosticContext)?.containingFilePath?.normalizePath()
-            if (filePath == null) {
-                destination.values.firstOrNull()?.add(diagnostic)
-                continue
-            }
-
-            val file = destination.keys.firstOrNull { firFile ->
-                firFile.sourceFile?.path?.normalizePath() == filePath
-            } ?: continue
-            destination.getValue(file).add(diagnostic)
+        for ((file, fileDiagnostics) in diagnostics) {
+            if (fileDiagnostics.isEmpty()) continue
+            destination.getOrPut(file) { mutableListOf() }.addAll(fileDiagnostics)
         }
     }
 

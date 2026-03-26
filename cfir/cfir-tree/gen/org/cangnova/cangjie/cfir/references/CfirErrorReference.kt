@@ -6,6 +6,7 @@
 package org.cangnova.cangjie.cfir.references
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirPureAbstractElement
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -13,7 +14,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.errorReference]
  */
-abstract class CfirErrorReference : CfirReference() {
+abstract class CfirErrorReference : CfirPureAbstractElement(), CfirReference {
     abstract override val source: CjSourceElement?
     abstract val reason: String
 

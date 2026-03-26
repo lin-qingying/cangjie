@@ -7,14 +7,14 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatrix
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.CheckSource
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.ExhaustivenessChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.ExhaustivenessResult
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 class TrivialChecker : ExhaustivenessChecker {
     override val source: CheckSource = CheckSource.TRIVIAL
     override val priority: Int = 0
 
     override fun isApplicable(
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
         context: CheckerContext,
     ): Boolean {
@@ -24,7 +24,7 @@ class TrivialChecker : ExhaustivenessChecker {
 
     override fun check(
         matrix: CfirMatrix,
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         context: CheckerContext,
     ): ExhaustivenessResult {
         if (matrix.isEmpty()) {

@@ -3,6 +3,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.overloads
 
 import org.cangnova.cangjie.cfir.declarations.asResolveState
+import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildFunctionSymbol
@@ -26,8 +27,7 @@ class CfirOverloadConflictResolverTest {
 
     @BeforeEach
     fun setUp() {
-        val subtypeChecker = ConeSubtypeChecker(OverloadTestTypeContext())
-        resolver = CfirOverloadConflictResolver(subtypeChecker)
+        resolver = CfirOverloadConflictResolver(CfirTypeRelations(OverloadTestTypeContext()))
     }
 
     @Nested
@@ -116,7 +116,7 @@ class CfirOverloadConflictResolverTest {
 
     // ---- 辅助方法 ----
 
-    private fun makeCandidate(name: String, paramTypes: List<ConeCangjieType>): CfirCandidate {
+    private fun makeCandidate(name: String, paramTypes: List<ConeCangJieType>): CfirCandidate {
         val symbol = buildFunctionSymbol(name, parameterTypes = paramTypes)
         val callInfo = buildCallInfo(name, paramTypes.map { buildTypedExpression(it) })
         return buildCandidate(symbol, callInfo)
@@ -145,7 +145,7 @@ class CfirOverloadConflictResolverTest {
  * 测试用 `TypeContext`，支持 `Child <: Parent`。
  */
 private class OverloadTestTypeContext : ConeTypeContext {
-    override fun supertypes(type: ConeCangjieType): Collection<ConeCangjieType> {
+    override fun supertypes(type: ConeCangJieType): Collection<ConeCangJieType> {
         // Child 的直接超类型包含 Parent
         if (type is ConeClassLikeType && type.classId == TYPE_CHILD.classId) {
             return listOf(TYPE_PARENT)
@@ -153,7 +153,7 @@ private class OverloadTestTypeContext : ConeTypeContext {
         return emptyList()
     }
 
-    override fun isSameTypeConstructor(a: ConeCangjieType, b: ConeCangjieType): Boolean {
+    override fun isSameTypeConstructor(a: ConeCangJieType, b: ConeCangJieType): Boolean {
         if (a is ConePrimitiveType && b is ConePrimitiveType) return a.kind == b.kind
         if (a is ConeClassLikeType && b is ConeClassLikeType) return a.classId == b.classId
         return a == b

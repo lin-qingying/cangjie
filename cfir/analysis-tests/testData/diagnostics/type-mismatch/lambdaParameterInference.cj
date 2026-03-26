@@ -1,4 +1,5 @@
 // RUN_PIPELINE_TILL: FRONTEND
+// DUMP_INFERENCE_LOGS
 // Lambda 参数类型推断测试
 func applyFunc(f: (Int64) -> Int64, x: Int64): Int64 {
     return f(x)

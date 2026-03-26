@@ -14,21 +14,23 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirFileImpl
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 
 @CfirBuilderDsl
 class CfirFileBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    lateinit var symbol: CfirSymbol<*>
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
+    lateinit var symbol: CfirFileSymbol
     lateinit var name: String
     var sourceFile: CjSourceFile? = null
     lateinit var packageDirective: CfirPackageDirective
     val imports: MutableList<CfirImport> = mutableListOf()
+    var sourceFileLinesMapping: CjSourceFileLinesMapping? = null
     val declarations: MutableList<CfirDeclaration> = mutableListOf()
 
     @OptIn(CfirImplementationDetail::class)
@@ -37,13 +39,14 @@ class CfirFileBuilder {
             source,
             moduleData,
             annotations,
-            symbol,
             origin,
             attributes,
+            symbol,
             name,
             sourceFile,
             packageDirective,
             imports,
+            sourceFileLinesMapping,
             declarations,
         ).also {
             it.initDefaultResolveState()
@@ -69,13 +72,13 @@ inline fun buildFileCopy(original: CfirFile, init: CfirFileBuilder.() -> Unit): 
     copyBuilder.source = original.source
     copyBuilder.moduleData = original.moduleData
     copyBuilder.annotations.addAll(original.annotations)
-    copyBuilder.symbol = original.symbol
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes
     copyBuilder.name = original.name
     copyBuilder.sourceFile = original.sourceFile
     copyBuilder.packageDirective = original.packageDirective
     copyBuilder.imports.addAll(original.imports)
+    copyBuilder.sourceFileLinesMapping = original.sourceFileLinesMapping
     copyBuilder.declarations.addAll(original.declarations)
     return copyBuilder.apply(init).build()
 }

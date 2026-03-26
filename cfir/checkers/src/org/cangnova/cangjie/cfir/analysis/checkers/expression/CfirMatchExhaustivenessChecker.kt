@@ -1,6 +1,5 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.ExhaustivenessAnalyzer
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.ExhaustivenessResult
@@ -12,7 +11,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.reportEnumUsageInMatch
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 
-object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker(CheckerDispatchKind.Common) {
+object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker( ) {
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirMatchExpression) {

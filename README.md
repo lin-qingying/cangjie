@@ -47,11 +47,18 @@
 | 模块 | 职责 | 状态 |
 |------|------|------|
 | `:cfir:cfir-common` | CFIR 基础设施（CfirSession、CfirModuleData、CfirElement） | ✅ 已实现 |
-| `:cfir:cfir-cones` | 类型系统核心（ConeCangjieType、ConeClassLikeType、ConePrimitiveType） | ✅ 已实现 |
+| `:cfir:cfir-cones` | 类型系统核心（ConeCangJieType、ConeClassLikeType、ConePrimitiveType） | ✅ 已实现 |
 | `:cfir:cfir-tree` | IR 树定义（声明、表达式、类型引用、访问者）— 生成式 | ✅ 已实现 |
 | `:cfir:symbols` | 符号提供者接口与实现、Scope 管理、内置符号 | ✅ 已实现 |
 | `:cfir:checkers` | 诊断检查器框架（Declaration/Expression/Type checkers） | ✅ 已实现 |
 | `:cfir:diagnostic-renderers` | 诊断渲染器 | ✅ 已实现 |
+
+- `:cfir:checkers` 已完成一轮针对 Kotlin/K2 API 漂移的主代码收敛：移除了已失配的 `CfirOverrideChecker` 与本地冗余的 `CfirTypeCheckUtils`，统一改为复用项目现有 `AbstractTypeChecker`/`typeContext` 入口，修复了 extend checker 的声明分派层级，并清理了 match/diagnostics 适配层中的过期调用；当前可通过定向编译（`./gradlew.bat :cfir:checkers:compileKotlin`）。
+- `:cfir:cfir-tree` 的声明节点现已对齐 Kotlin FIR 的“renderer 统一出字符串”思路：`CfirDeclaration` 由 tree-generator 统一生成 `toString()`，内部委托给 `CfirRenderer.withReadability().renderElementAsString(this)`，避免各声明叶子类重复拼接文本；新增 `cfir/cfir-tree/test/.../CfirDeclarationToStringTest.kt` 覆盖 class / named function / file 三类代表性声明，并通过 `./gradlew.bat :cfir:cfir-tree:generateTree` 与 `./gradlew.bat :cfir:cfir-tree:test --tests "org.cangnova.cangjie.cfir.declarations.CfirDeclarationToStringTest"` 验证行为与 renderer 保持一致。
+- `CfirErrorTypeRef` 的错误类型引用接管已进一步对齐 Kotlin FIR：`CfirErrorTypeRefBuilder` 与 `CfirErrorTypeRefImpl` 现均为手写实现，生成器已不再为 `ErrorTypeRef` 产出同名 builder/impl；当前手写版本位于 `cfir/cfir-tree/src/org/cangnova/cangjie/cfir/types/builder/CfirErrorTypeRefBuilder.kt` 与 `cfir/cfir-tree/src/org/cangnova/cangjie/cfir/types/impl/CfirErrorTypeRefImpl.kt`，并已通过 `./gradlew.bat :cfir:cfir-tree:generateTree`、`./gradlew.bat :cfir:cfir-tree:compileKotlin` 与 `./gradlew.bat :cfir:raw-cfir:psi2cfir:compileKotlin` 验证不会被重新生成覆盖，且 `buildErrorTypeRef { diagnostic = ConeSimpleDiagnostic(...) }` 调用链可编译通过。
+- 与上述迁移配套，`CfirErrorTypeRef` 的主要消费点也已从旧的 `reason` 读取切换到 `diagnostic.reason` / `diagnostic` 模型（如 `CfirTypeResolver`、`CfirTypeRefExtensions`、`CfirResolvedTypesVerifier`），当前 `:cfir:cfir-tree` 与 `:cfir:raw-cfir:psi2cfir` 均可定向编译通过。
+- 经过全仓扫尾，剩余 `.reason` 读取点主要已限定在其他错误节点模型（如 `CfirErrorReference`、`CfirInvalidDeclaration`、`CfirErrorExpression`），不再属于 `CfirErrorTypeRef` 迁移残留；`CfirErrorTypeRef` 主链现已统一到 `diagnostic` / `diagnostic.reason`。
+- `LightTreeTypeConverter` 中对 `buildErrorTypeRef` 的旧 `reason = ...` 写法也已迁移到 `diagnostic = ConeSimpleDiagnostic(...)`，并已通过 `./gradlew.bat :cfir:raw-cfir:light-tree2cfir:compileKotlin` 复验；其中一次失败来自 Kotlin daemon 增量缓存冲突，清理该模块 `build/kotlin` 缓存后 fresh 编译通过，说明源码层迁移正确。
 
 ### Raw CFIR 构建（阶段 6）
 
@@ -67,6 +74,14 @@
 |------|------|------|
 | `:cfir:resolve` | 多 Phase 语义解析（类型推断、重载解析、诊断检查） | ✅ 已实现 |
 | `:cfir:entrypoint` | CFIR 前端入口（Session 工厂、Pipeline 配置） | ✅ 已实现 |
+
+- `BodyResolveTransformerComponents` 已补齐对 `CfirBodyResolveContext` 的关键转发实现，包括容器链、tower data、局部作用域、文件导入作用域及调用解析依赖装配。
+- `:cfir:resolve` 测试基建已对齐当前调用解析/推断 API：测试 `CfirCandidate` 构造补齐了解析上下文、约束系统与显式接收者参数，旧的 `subtypeChecker` 入口迁移为 `CfirTypeRelations`，并同步修复了约束系统与 extend scope 测试中的过期构造参数。
+- `:cfir:resolve` 已修复 `CfirResolutionMode.WithExpectedType` 的 API 漂移：body resolve 与 call completer 统一改为通过 `expectedTypeRef.coneType` 读取期望类型，并在 lambda 期望类型传播时补齐 `CfirResolvedTypeRef` 包装，恢复模块编译通过。
+- `:resolution.common` 的类型系统对齐已完成主要迁移：`AbstractTypeChecker.RUN_SLOW_ASSERTIONS` 与 `prepareType` 契约入口已补齐，`NewCommonSuperTypeCalculator`、`TypeApproximatorConfiguration`、`AbstractTypeApproximator`、`TypeCheckerStateForConstraintSystem`、`ConstraintInjector`、`ConstraintIncorporator`、`ResultTypeResolver`、`TrivialConstraintTypeInferenceOracle`、`PostponedArgumentInputTypesResolver` 等核心文件已切换到仓颉刚性类型模型。
+- `:resolution.common` 当前可通过定向编译（`./gradlew.bat :resolution.common:compileKotlin`），并新增了 `resolution.common/src/.../type/model/TypeSystemContextBridge.kt` 作为显式 context-argument 桥接层，用于消除历史 Kotlin 风格扩展调用在仓颉 `TypeSystemInferenceExtensionContext` 下的歧义。
+- 编译器测试入口 `AbstractCangjieCompilerTest` 已接入 `-Dcangjie.slow.assertions=true` 的 slow assertions 开关：默认关闭，不影响正常编译路径；测试/调试时可显式开启，以执行 `resolution.common` 中已迁移的 guarded invariants。
+- 当前遗留主要从“模块不可编译”转为“后续精修/验证”性质：仍建议补齐更细粒度的定向测试、进一步审视桥接层是否可以继续内联回核心 API，以及继续清理少量历史日志/兼容调用以降低长期维护成本。
 
 ### 序列化（阶段 10）
 
@@ -153,6 +168,7 @@
 - `PsiRawCfirBuilder` 已支持 `BodyBuildingMode`（`NORMAL`/`LAZY_BODIES`）。
 - 已新增 `CfirBasicTypeRef`（基础类型引用）与 `CfirVArrayTypeRef`（定长数组类型引用）。
 - tests-gen 已加入 all-files-present 等效校验，新增 `.cj` 用例将被覆盖检查拦截漏测。
+- `CfirInferenceLogsHandler`、`CfirResolvedTypesVerifier`、`CfirScopeDumpHandler` 已按 Kotlin FIR 测试 handler 模式重写：移除了本地 force-write/probe 旁路逻辑，保留 directive 驱动的 side-file/golden 验证，并将 scope dump 收敛为类/成员级 dump + 现有 `DUMP_SCOPE` 文本契约兼容层。
 
 ## 源码输入约定
 
@@ -165,6 +181,10 @@
 ## 开发规范
 
 项目级开发规范与工程治理约定见：`DEVELOPMENT_CONVENTIONS.md`。
+
+## 设计与对照文档
+
+- 四套类型推断 / 约束系统对照：`docs/type-inference-four-systems-comparison.md`
 
 ## 目录结构
 

@@ -7,7 +7,7 @@ package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -21,11 +21,14 @@ abstract class CfirTypeAlias : CfirClassLikeDeclaration() {
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>
-    abstract override val symbol: CfirSymbol<*>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
-    abstract val status: CfirDeclarationStatus
-    abstract val typeParameters: List<CfirTypeParameter>
+    abstract override val isLocal: Boolean
+    abstract override val declarations: List<CfirDeclaration>
+    abstract override val superTypeRefs: List<CfirTypeRef>
+    abstract override val symbol: CfirTypeAliasSymbol
+    abstract override val status: CfirDeclarationStatus
+    abstract override val typeParameters: List<CfirTypeParameter>
     abstract val name: Name
     abstract val expandedTypeRef: CfirTypeRef
 
@@ -39,7 +42,7 @@ abstract class CfirTypeAlias : CfirClassLikeDeclaration() {
     override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
 
-    abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
+    override abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
 
 
     abstract fun replaceExpandedTypeRef(newExpandedTypeRef: CfirTypeRef)
@@ -48,10 +51,16 @@ abstract class CfirTypeAlias : CfirClassLikeDeclaration() {
     override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirTypeAlias
 
 
-    abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirTypeAlias
+    override abstract fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirTypeAlias
 
 
-    abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirTypeAlias
+    override abstract fun <D> transformSuperTypeRefs(transformer: CfirTransformer<D>, data: D): CfirTypeAlias
+
+
+    override abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirTypeAlias
+
+
+    override abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirTypeAlias
 
 
     abstract fun <D> transformExpandedTypeRef(transformer: CfirTransformer<D>, data: D): CfirTypeAlias

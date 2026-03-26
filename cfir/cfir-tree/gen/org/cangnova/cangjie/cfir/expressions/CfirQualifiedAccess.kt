@@ -10,7 +10,7 @@ import org.cangnova.cangjie.cfir.CfirResolvable
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -21,8 +21,9 @@ import org.cangnova.cangjie.source.CjSourceElement
 abstract class CfirQualifiedAccess : CfirExpression(), CfirResolvable {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
-    abstract override val coneTypeOrNull: ConeCangjieType?
+    abstract override val coneTypeOrNull: ConeCangJieType?
     abstract override val calleeReference: CfirReference
+    abstract val dispatchReceiver: CfirExpression?
     abstract val explicitReceiver: CfirExpression?
     abstract val typeArguments: List<CfirTypeRef>
 
@@ -36,10 +37,13 @@ abstract class CfirQualifiedAccess : CfirExpression(), CfirResolvable {
     override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
 
-    override abstract fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangjieType?)
+    override abstract fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
 
 
     override abstract fun replaceCalleeReference(newCalleeReference: CfirReference)
+
+
+    abstract fun replaceDispatchReceiver(newDispatchReceiver: CfirExpression?)
 
 
     abstract fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>)

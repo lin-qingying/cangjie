@@ -3,6 +3,8 @@ package org.cangnova.cangjie.cfir.scopes.impl
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirImportScope
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -21,7 +23,7 @@ import org.cangnova.cangjie.name.Name
 class CfirExplicitSimpleImportingScope(
     imports: List<CfirImport>,
     private val symbolProvider: CfirSymbolProvider,
-) : CfirImportScope {
+) : CfirImportScope() {
 
     /** 按有效名称（别名或短名称）索引的导入条目 */
     private val importsByName: Map<Name, List<CfirImport>>
@@ -37,7 +39,7 @@ class CfirExplicitSimpleImportingScope(
         importsByName = map
     }
 
-    override fun processClassifiersByName(name: Name, processor: (CfirClassSymbol) -> Unit) {
+    override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         val imports = importsByName[name] ?: return
         for (import in imports) {
             val importedFqName = import.importedFqName ?: continue
@@ -47,13 +49,23 @@ class CfirExplicitSimpleImportingScope(
         }
     }
 
-    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol) -> Unit) {
+    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol<*>) -> Unit) {
         val imports = importsByName[name] ?: return
         for (import in imports) {
             val fqName = import.importedFqName ?: continue
             val packageFqName = fqName.parent()
             val callableName = fqName.shortName()
             symbolProvider.getTopLevelFunctionSymbols(packageFqName, callableName).forEach(processor)
+        }
+    }
+
+    override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
+        val imports = importsByName[name] ?: return
+        for (import in imports) {
+            val fqName = import.importedFqName ?: continue
+            val packageFqName = fqName.parent()
+            val callableName = fqName.shortName()
+            symbolProvider.getTopLevelCallableSymbols(packageFqName, callableName).forEach(processor)
         }
     }
 

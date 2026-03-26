@@ -8,6 +8,7 @@ package org.cangnova.cangjie.cfir.declarations
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -17,13 +18,14 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.typeParameter]
  */
-abstract class CfirTypeParameter : CfirDeclaration() {
+abstract class CfirTypeParameter : CfirDeclaration(), CfirTypeParameterRef {
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>
-    abstract override val symbol: CfirSymbol<*>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
+    abstract val containingDeclarationSymbol: CfirSymbol<*>
+    abstract override val symbol: CfirTypeParameterSymbol
     abstract val name: Name
     abstract val bounds: List<CfirTypeRef>
 

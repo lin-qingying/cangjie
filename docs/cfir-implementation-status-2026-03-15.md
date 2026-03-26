@@ -95,7 +95,7 @@
 | 3 | CfirResolveProcessor 层次 | ✅ | resolve/src/.../CfirResolveProcessor.kt | ~200 |
 | 4 | CfirSession + ComponentArrayOwner | ✅ | cfir-common/src/.../CfirSession.kt | ~300 |
 | 5 | CfirSymbol 体系 | ✅ | cfir-tree/src/.../CfirSymbol.kt（25 种） | ~500 gen |
-| 6 | ConeCangjieType 体系 | ✅ | cfir-cones/src/.../Cone*.kt（14 种） | ~1000 |
+| 6 | ConeCangJieType 体系 | ✅ | cfir-cones/src/.../Cone*.kt（14 种） | ~1000 |
 | 7 | CfirSymbolProvider 抽象 | ✅ | symbols/src/.../CfirSymbolProvider.kt | ~200 |
 | 8 | CfirScope 抽象 | ✅ | symbols/src/.../CfirScope.kt | ~100 |
 | 9 | 诊断全链路 | ✅ | diagnostics/src + gen（Factory→Reporter→Collector→Renderer） | ~2100 |
@@ -110,9 +110,9 @@
 |---|------|--------|---------|-------|---------|
 | 1 | **表达式类型合成器** | "完全缺失" | ✅ 已实现 | **90%** | CfirExpressionsResolveTransformer.kt（617 行），覆盖 13 种表达式 |
 | 2 | **调用解析器** | "完全缺失" | ✅ 已实现 | **80%** | CfirCallResolver.kt（162 行）+ CfirTowerResolver.kt（182 行） |
-| 3 | **重载解析器** | "完全缺失" | ✅ 已实现 | **75%** | CfirOverloadConflictResolver.kt（115 行） |
+| 3 | **重载解析器** | "完全缺失" | ✅ 已实现 | **75%** | ConeOverloadConflictResolver.kt（115 行） |
 | 4 | **类型兼容性检查** | "完全缺失" | ✅ 已实现 | **95%** | ConeSubtypeChecker.kt（194 行）：16 条子类型规则 + 数值拓宽 |
-| 5 | **返回类型推算器** | "完全缺失" | ✅ 已实现 | **90%** | CfirReturnTypeCalculatorWithJump.kt（108 行） |
+| 5 | **返回类型推算器** | "完全缺失" | ✅ 已实现 | **90%** | ReturnTypeCalculatorWithJump.kt（108 行） |
 | 6 | **操作符重载** | "完全缺失" | ✅ **Phase 6 完成** | **95%** | ConeNumericWidening + CfirBuiltinOperatorResolver |
 
 ---

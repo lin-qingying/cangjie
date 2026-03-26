@@ -1,0 +1,16 @@
+Verification approach:
+- Confirmed `InferenceLogger.Dummy` still inherits the generic no-op implementations in
+  `resolution.common/src/org/cangnova/cangjie/resolve/calls/inference/components/InferenceLogger.kt`
+- Confirmed `InferenceLoggerTest` exercises:
+  - `logInitial`
+  - `logNewVariable`
+  - `log(variable, constraint, context)`
+  - `logError(error, context)`
+  - `logReadiness(...)`
+  - `logFixVariable(variable, resultType, context)`
+  - `withOrigin(...)`
+  - `withOrigins(...)`
+- `./gradlew.bat :resolution.common:test` passed with that contract test included.
+
+Conclusion:
+- Disabled-mode operation through `InferenceLogger.Dummy` remains side-effect-free for the expanded generic callback surface.

@@ -1,15 +1,16 @@
-﻿package org.cangnova.cangjie.cfir.resolve
+package org.cangnova.cangjie.cfir.resolve
 
+import org.cangnova.cangjie.cfir.render.ConeTypeRendererForDebugInfo
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
-import org.cangnova.cangjie.cfir.types.renderSemanticKey
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 internal fun CfirTypeRef.renderStableKey(): String = when (this) {
-    is CfirResolvedTypeRef -> "resolved:${coneType.renderSemanticKey()}"
+    is CfirResolvedTypeRef -> "resolved:${coneType.renderStableSemanticKey()}"
     is CfirUserTypeRef -> buildString {
         append("user:")
         append(qualifier.joinToString("."))
@@ -21,7 +22,7 @@ internal fun CfirTypeRef.renderStableKey(): String = when (this) {
     }
     is CfirBasicTypeRef -> "basic:${name.asString()}"
     is CfirImplicitTypeRef -> "implicit"
-    is CfirErrorTypeRef -> "error:${reason}"
+    is CfirErrorTypeRef -> "error:${diagnostic.reason}"
     else -> "${this::class.qualifiedName}:${toString()}"
 }
 
@@ -38,3 +39,5 @@ internal fun CfirTypeRef.isDefinitelyIllegalExtendedType(): Boolean = when (this
     else -> false
 }
 
+internal fun ConeCangJieType.renderStableSemanticKey(): String =
+    buildString { ConeTypeRendererForDebugInfo(this).render(this@renderStableSemanticKey) }

@@ -4,7 +4,7 @@ Date: 2026-03-19
 
 ## References Read
 
-- `external/kotlin/compiler/resolution.common/src/org/jetbrains/kotlin/resolve/calls/inference/model/NewConstraintSystemImpl.kt`
+- `external/kotlin/compiler/resolution.common/src/org/jetbrains/kotlin/resolve/calls/inference/model/ConstraintSystemImpl.kt`
 - `external/kotlin/compiler/resolution/src/org/jetbrains/kotlin/resolve/calls/inference/components/KotlinConstraintSystemCompleter.kt`
 - `external/cangjie_compiler/src/Sema/TypeArgumentInference.cpp`
 - `external/cangjie_compiler/src/Sema/LocalTypeArgumentSynthesis.cpp`

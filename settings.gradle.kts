@@ -34,6 +34,8 @@ include(":psi")
 
 include(":cfir")
 include(":cfir:cfir-common")
+
+include(":cfir:semantics")
 include(":cfir:cfir-cones")
 include(":common:diagnostics")
 include(":cfir:symbols")
@@ -77,3 +79,6 @@ include(":cfir:analysis-tests")
 include("cfir:diagnostic-renderers")
 
 include("compiler:plugin")
+
+include("cfir:providers")
+include("resolution.common")

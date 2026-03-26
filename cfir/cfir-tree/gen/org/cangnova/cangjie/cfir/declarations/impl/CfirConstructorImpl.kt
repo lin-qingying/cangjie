@@ -12,8 +12,9 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -23,14 +24,16 @@ class CfirConstructorImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override val moduleData: CfirModuleData,
     override var annotations: List<CfirAnnotation>,
-    override val symbol: CfirSymbol<*>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
+    override val isLocal: Boolean,
+    override val dispatchReceiverType: ConeSimpleCangJieType?,
     override var status: CfirDeclarationStatus,
     override var typeParameters: List<CfirTypeParameter>,
     override var returnTypeRef: CfirTypeRef,
     override var valueParameters: List<CfirValueParameter>,
     override var body: CfirBlock?,
+    override val symbol: CfirConstructorSymbol,
 ) : CfirConstructor() {
     override var controlFlowGraphReference: CfirControlFlowGraphReference? = null
     override val isPrimary: Boolean

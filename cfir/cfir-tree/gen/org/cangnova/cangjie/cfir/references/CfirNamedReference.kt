@@ -14,9 +14,9 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.namedReference]
  */
-abstract class CfirNamedReference : CfirReference() {
-    abstract override val source: CjSourceElement?
-    abstract val name: Name
+interface CfirNamedReference : CfirReference {
+    override val source: CjSourceElement?
+    val name: Name
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitNamedReference(this, data)

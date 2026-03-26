@@ -2,8 +2,9 @@
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.resolve.CfirResolutionMode
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
@@ -14,9 +15,9 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 class CfirDesignatedBodyResolveTransformer(
     private val designation: CfirCallableDeclaration,
     session: CfirSession,
-    scopeSession: CfirScopeSession,
+    scopeSession: ScopeSession,
     implicitBodyResolveComputationSession: CfirImplicitBodyResolveComputationSession,
-    returnTypeCalculator: CfirReturnTypeCalculator,
+    returnTypeCalculator: ReturnTypeCalculator,
 ) : CfirImplicitAwareBodyResolveTransformer(
     session = session,
     scopeSession = scopeSession,
@@ -32,11 +33,11 @@ class CfirDesignatedBodyResolveTransformer(
 
     override fun transformDeclarationContent(
         declaration: CfirDeclaration,
-        data: CfirResolutionMode,
+        data: ResolutionMode,
     ): CfirDeclaration {
         // 只变换指定目标声明
         if (declaration === designation) {
-            val result = declaration.transform<CfirDeclaration, CfirResolutionMode>(this, data)
+            val result = declaration.transform<CfirDeclaration, ResolutionMode>(this, data)
             lastResult = result
             return result
         }

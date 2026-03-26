@@ -41,6 +41,7 @@ data class CfirTowerGroup(
     }
 
     companion object {
+        val Start = CfirTowerGroup(Kind.PACKAGE, Int.MAX_VALUE)
         val MEMBER = CfirTowerGroup(Kind.MEMBER)
         val EXTEND = CfirTowerGroup(Kind.EXTEND)
         val PACKAGE = CfirTowerGroup(Kind.PACKAGE)

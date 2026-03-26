@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.scopes
 
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -9,13 +10,13 @@ abstract class CfirScopeProvider {
     abstract fun getUseSiteMemberScope(
         klass: CfirClass,
         useSiteSession: CfirSession,
-        scopeSession: CfirScopeSession,
-    ): CfirClassScope
+        scopeSession: ScopeSession,
+    ): CfirTypeScope
 
     abstract fun getPackageMemberScope(
         packageFqName: FqName,
         symbolProvider: CfirSymbolProvider,
         useSiteSession: CfirSession,
-        scopeSession: CfirScopeSession,
+        scopeSession: ScopeSession,
     ): CfirPackageScope
 }

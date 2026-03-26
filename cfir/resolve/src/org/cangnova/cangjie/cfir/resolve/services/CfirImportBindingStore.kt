@@ -4,7 +4,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -16,7 +16,7 @@ sealed interface CfirResolvedImportTarget {
 
     data class ClassLike(
         val classId: ClassId,
-        val symbol: CfirClassSymbol,
+        val symbol: CfirClassLikeSymbol<*>,
     ) : CfirResolvedImportTarget
 
     data class Callable(

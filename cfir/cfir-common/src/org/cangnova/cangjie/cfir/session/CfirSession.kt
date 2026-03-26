@@ -21,7 +21,11 @@ abstract class CfirSession(
         inline fun <reified T : CfirSessionComponent> sessionComponentAccessor(): ArrayMapAccessor<CfirSessionComponent, CfirSessionComponent, T> {
             return generateAccessor(T::class)
         }
-
+        inline fun <reified T : CfirSessionComponent> sessionComponentAccessorWithDefault(
+            defaultImplementation:  T
+        ): ArrayMapAccessor<CfirSessionComponent, CfirSessionComponent, T> {
+            return generateAccessor(T::class, defaultImplementation)
+        }
         inline fun <reified T : CfirSessionComponent> sessionComponentAccessor(id: String): ArrayMapAccessor<CfirSessionComponent, CfirSessionComponent, T> {
             return generateAccessor(id)
         }
@@ -45,5 +49,27 @@ abstract class CfirSession(
         Source,
         /** 库依赖模式（读取已编译的 .cjo） */
         Library,
+    }
+}
+
+enum class ProcessorAction {
+    STOP,
+    NEXT,
+    NONE;
+
+    operator fun not(): Boolean {
+        return when (this) {
+            STOP -> true
+            NEXT -> false
+            NONE -> false
+        }
+    }
+
+    fun stop(): Boolean = this == STOP
+    fun next(): Boolean = this != STOP
+
+    operator fun plus(other: ProcessorAction): ProcessorAction {
+        if (this == NEXT || other == NEXT) return NEXT
+        return this
     }
 }

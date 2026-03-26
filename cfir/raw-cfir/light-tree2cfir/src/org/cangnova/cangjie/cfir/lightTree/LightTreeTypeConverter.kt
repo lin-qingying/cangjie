@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.lightTree
 
 import com.intellij.lang.LighterASTNode
 import com.intellij.util.diff.FlyweightCapableTreeStructure
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -64,7 +65,7 @@ private fun convertTypeElement(
     }
     else -> buildErrorTypeRef {
         this.source = toSource(typeRefNode) as? CjSourceElement
-        reason = "Unsupported type element: ${typeElement.tokenType}"
+        diagnostic = ConeSimpleDiagnostic("Unsupported type element: ${typeElement.tokenType}")
     }
 }
 
@@ -245,7 +246,7 @@ private fun convertVArrayType(
     if (innerTypeRef == null) {
         return buildErrorTypeRef {
             this.source = toSource(typeRefNode) as? CjSourceElement
-            reason = "Malformed VArray type: missing element type"
+            diagnostic = ConeSimpleDiagnostic("Malformed VArray type: missing element type")
         }
     }
     val elementType = convertTypeReference(innerTypeRef, tree, source, toSource)
@@ -256,7 +257,7 @@ private fun convertVArrayType(
     if (sizeLiteral == null) {
         return buildErrorTypeRef {
             this.source = toSource(typeRefNode) as? CjSourceElement
-            reason = "Malformed VArray type: missing size literal"
+            diagnostic = ConeSimpleDiagnostic("Malformed VArray type: missing size literal")
         }
     }
 

@@ -4,7 +4,7 @@ class CallableId private constructor(
     val packageName: FqName,
     val className: FqName?,
     val callableName: Name,
-    val classId: IClassId?,
+    val classId:  ClassId?,
     private val pathToLocal: FqName?,
 ) {
     companion object {
@@ -12,11 +12,11 @@ class CallableId private constructor(
         val PACKAGE_FQ_NAME_FOR_LOCAL: FqName = FqName.topLevel(LOCAL_NAME)
 
         private fun calculateClassId(packageName: FqName, className: FqName?): ClassId? =
-            className?.let { ClassId(packageName, it, isLocal = packageName == PACKAGE_FQ_NAME_FOR_LOCAL) }
+            className?.let { ClassId(packageName, it, ) }
     }
 
     val isLocal: Boolean
-        get() = packageName == PACKAGE_FQ_NAME_FOR_LOCAL || classId?.isLocal == true
+        get() = packageName == PACKAGE_FQ_NAME_FOR_LOCAL
 
     constructor(
         packageName: FqName,

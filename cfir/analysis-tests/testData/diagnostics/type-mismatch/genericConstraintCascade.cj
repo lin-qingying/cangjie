@@ -1,4 +1,5 @@
 // RUN_PIPELINE_TILL: FRONTEND
+// DUMP_INFERENCE_LOGS
 func pair<T>(left: T, right: T): T {
     return left
 }

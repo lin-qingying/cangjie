@@ -1,0 +1,42 @@
+## Resolution Stages > CfirCreateFreshTypeVariableSubstitutorStage
+owner: FAIL(5/5): CfirNamedFunctionSymbol(identity)
+- NEW org.cangnova.cangjie.cfir.types.ConeTypeVariableType@3271ec2a
+
+
+## Resolution Stages > CfirCheckArguments
+owner: FAIL(5/5): CfirNamedFunctionSymbol(identity)
+- CONSTRAINT Int64 <: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac
+- ERROR Int64 <: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac @ Incorporate Int64 <: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac from Argument org.cangnova.cangjie.cfir.expressions.impl.CfirLiteralExpressionImpl@21516c88 from position Argument org.cangnova.cangjie.cfir.expressions.impl.CfirLiteralExpressionImpl@21516c88
+- CONSTRAINT Int64 <: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac
+- ERROR Int64 <: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac @ Incorporate Int64 <: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac from Argument org.cangnova.cangjie.cfir.expressions.impl.CfirLiteralExpressionImpl@21516c88 from position Argument org.cangnova.cangjie.cfir.expressions.impl.CfirLiteralExpressionImpl@21516c88
+- CONSTRAINT org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac <: Int64
+- ERROR org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac <: Int64 @ Incorporate org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac <: Int64 from ExpectedType for call null from position ExpectedType for call null
+
+
+## Call Completion
+owner: FAIL(5/5): CfirNamedFunctionSymbol(identity)
+- ERROR org.cangnova.cangjie.resolve.calls.inference.model.NotEnoughInformationForTypeParameter@1f7e52d1 @ NotEnoughInformationForTypeParameter
+- CONSTRAINT org.cangnova.cangjie.cfir.types.ConeTypeVariableType@3271ec2a == org.cangnova.cangjie.cfir.types.ConeErrorType@e01a26b
+- FIX org.cangnova.cangjie.cfir.types.ConeTypeVariableType@3271ec2a -> org.cangnova.cangjie.cfir.types.ConeErrorType@e01a26b
+
+
+## Resolution Stages > CfirCreateFreshTypeVariableSubstitutorStage
+owner: FAIL(5/5): CfirNamedFunctionSymbol(identity)
+- NEW org.cangnova.cangjie.cfir.types.ConeTypeVariableType@4aa22cc2
+
+
+## Resolution Stages > CfirCheckArguments
+owner: FAIL(5/5): CfirNamedFunctionSymbol(identity)
+- CONSTRAINT struct String <: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac
+- ERROR struct String <: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac @ Incorporate struct String <: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac from Argument org.cangnova.cangjie.cfir.expressions.impl.CfirLiteralExpressionImpl@464aeb09 from position Argument org.cangnova.cangjie.cfir.expressions.impl.CfirLiteralExpressionImpl@464aeb09
+- CONSTRAINT struct String <: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac
+- ERROR struct String <: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac @ Incorporate struct String <: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac from Argument org.cangnova.cangjie.cfir.expressions.impl.CfirLiteralExpressionImpl@464aeb09 from position Argument org.cangnova.cangjie.cfir.expressions.impl.CfirLiteralExpressionImpl@464aeb09
+- CONSTRAINT org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac <: struct String
+- ERROR org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac <: struct String @ Incorporate org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl@d3cd60ac <: struct String from ExpectedType for call null from position ExpectedType for call null
+
+
+## Call Completion
+owner: FAIL(5/5): CfirNamedFunctionSymbol(identity)
+- ERROR org.cangnova.cangjie.resolve.calls.inference.model.NotEnoughInformationForTypeParameter@69bc9584 @ NotEnoughInformationForTypeParameter
+- CONSTRAINT org.cangnova.cangjie.cfir.types.ConeTypeVariableType@4aa22cc2 == org.cangnova.cangjie.cfir.types.ConeErrorType@3214bad
+- FIX org.cangnova.cangjie.cfir.types.ConeTypeVariableType@4aa22cc2 -> org.cangnova.cangjie.cfir.types.ConeErrorType@3214bad

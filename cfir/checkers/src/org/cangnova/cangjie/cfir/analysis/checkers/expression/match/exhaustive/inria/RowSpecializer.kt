@@ -1,16 +1,15 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.inria
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CfirTypeCheckUtils
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirConstructor
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPattern
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPatternKind
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 object RowSpecializer {
     fun specializeRow(
         row: List<CfirMatchPattern>,
         constructor: CfirConstructor,
-        type: ConeCangjieType,
+        type: ConeCangJieType,
     ): List<CfirMatchPattern>? {
         val firstPattern = row.firstOrNull() ?: return emptyList()
 
@@ -31,7 +30,7 @@ object RowSpecializer {
                 if (constructor.coveredByRange(kind.value, kind.value, included = true)) emptyList() else null
             }
             is CfirMatchPatternKind.Type -> {
-                if (kind.type == type || CfirTypeCheckUtils.isSubtypeOf(kind.type, type)) wildPatterns else null
+                if (kind.type == type) wildPatterns else null
             }
             CfirMatchPatternKind.Wild, is CfirMatchPatternKind.Binding -> wildPatterns
             CfirMatchPatternKind.Error -> null
@@ -47,4 +46,3 @@ object RowSpecializer {
         }
     }
 }
-

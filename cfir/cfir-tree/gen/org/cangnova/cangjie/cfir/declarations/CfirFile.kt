@@ -9,10 +9,11 @@ import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.file]
@@ -21,14 +22,15 @@ abstract class CfirFile : CfirDeclaration(), CfirControlFlowGraphOwner {
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>
-    abstract override val symbol: CfirSymbol<*>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
     abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
+    abstract override val symbol: CfirFileSymbol
     abstract val name: String
     abstract val sourceFile: CjSourceFile?
     abstract val packageDirective: CfirPackageDirective
     abstract val imports: List<CfirImport>
+    abstract val sourceFileLinesMapping: CjSourceFileLinesMapping?
     abstract val declarations: List<CfirDeclaration>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =

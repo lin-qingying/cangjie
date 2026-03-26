@@ -7,7 +7,7 @@ package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -16,15 +16,16 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.extend]
  */
-abstract class CfirExtend : CfirClassLikeDeclaration() {
+abstract class CfirExtend : CfirMemberDeclaration() {
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>
-    abstract override val symbol: CfirSymbol<*>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
-    abstract val status: CfirDeclarationStatus
-    abstract val typeParameters: List<CfirTypeParameter>
+    abstract override val isLocal: Boolean
+    abstract override val symbol: CfirExtendSymbol
+    abstract override val status: CfirDeclarationStatus
+    abstract override val typeParameters: List<CfirTypeParameter>
     abstract val extendedTypeRef: CfirTypeRef
     abstract val superTypeRefs: List<CfirTypeRef>
     abstract val declarations: List<CfirDeclaration>
@@ -39,16 +40,16 @@ abstract class CfirExtend : CfirClassLikeDeclaration() {
     override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
 
-    abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
+    override abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
 
 
     override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirExtend
 
 
-    abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirExtend
+    override abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirExtend
 
 
-    abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirExtend
+    override abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirExtend
 
 
     abstract fun <D> transformExtendedTypeRef(transformer: CfirTransformer<D>, data: D): CfirExtend

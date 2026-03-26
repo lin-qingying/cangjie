@@ -1,7 +1,9 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.scopes.CfirScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
@@ -12,14 +14,14 @@ import org.cangnova.cangjie.cfir.session.CfirSession
  */
 open class CfirBodyResolveTransformer(
     session: CfirSession,
-    scopeSession: CfirScopeSession,
-    returnTypeCalculator: CfirReturnTypeCalculator = CfirReturnTypeCalculator.Default,
-    outerBodyResolveContext: CfirBodyResolveContext? = null,
+    scopeSession: ScopeSession,
+    returnTypeCalculator: ReturnTypeCalculator = ReturnTypeCalculator.Default,
+    outerBodyResolveContext: BodyResolveContext? = null,
     phase: CfirResolvePhase = CfirResolvePhase.BODY_RESOLVE,
     override val implicitTypeOnly: Boolean = false,
 ) : CfirAbstractBodyResolveTransformerDispatcher(phase, implicitTypeOnly) {
 
-    override val context: CfirBodyResolveContext = outerBodyResolveContext ?: CfirBodyResolveContext(
+    override val context: BodyResolveContext = outerBodyResolveContext ?: BodyResolveContext(
         returnTypeCalculator = returnTypeCalculator,
         dataFlowAnalyzerContext = CfirDataFlowAnalyzerContext(),
     )
@@ -30,4 +32,3 @@ open class CfirBodyResolveTransformer(
     final override val expressionsTransformer = CfirExpressionsResolveTransformer(this)
     final override val declarationsTransformer = CfirDeclarationsResolveTransformer(this)
 }
-

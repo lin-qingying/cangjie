@@ -16,9 +16,7 @@
 
 package org.cangnova.cangjie.utils.exceptions
 
-import org.cangnova.cangjie.utils.exceptions.CangJieIllegalArgumentExceptionWithAttachments
-
-fun ExceptionAttachmentBuilder.withFirEntry(name: String, fir: Any?) {
+fun ExceptionAttachmentBuilder.withCfirEntry(name: String, fir: Any?) {
     withEntry(name, fir) { it.toString() }
 }
 
@@ -32,3 +30,4 @@ inline fun rethrowExceptionWithDetails(
     error.buildAttachment(attachmentName) { buildAttachment() }
     throw error
 }
+

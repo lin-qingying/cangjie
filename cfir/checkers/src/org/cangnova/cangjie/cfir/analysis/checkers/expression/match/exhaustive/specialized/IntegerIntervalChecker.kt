@@ -8,7 +8,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatrix
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.CheckSource
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.ExhaustivenessChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.ExhaustivenessResult
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 
@@ -17,14 +17,14 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
     override val priority: Int = 30
 
     override fun isApplicable(
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         patterns: List<CfirMatchPattern>,
         context: CheckerContext,
     ): Boolean = type is ConePrimitiveType && type.kind.isInteger
 
     override fun check(
         matrix: CfirMatrix,
-        type: ConeCangjieType,
+        type: ConeCangJieType,
         context: CheckerContext,
     ): ExhaustivenessResult {
         val primitive = type as? ConePrimitiveType ?: return ExhaustivenessResult.Skipped
@@ -55,13 +55,7 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
         return if (gaps.isEmpty()) {
             ExhaustivenessResult.Exhaustive
         } else {
-            val missing = gaps.take(3).flatMap { gap ->
-                if (gap.last - gap.first > 10) {
-                    listOf(createIntegerPattern(type, gap.first), createIntegerPattern(type, gap.last))
-                } else {
-                    (gap.first..gap.last).map { createIntegerPattern(type, it) }
-                }
-            }.take(5)
+            val missing = collectMissingPatterns(type, gaps, maxPatterns = 5)
             ExhaustivenessResult.NonExhaustive(missing, source)
         }
     }
@@ -92,7 +86,12 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
         var current = sorted[0]
         for (i in 1 until sorted.size) {
             val next = sorted[i]
-            if (next.first <= current.last + 1) {
+            val areAdjacentOrOverlap = if (current.last == Long.MAX_VALUE) {
+                true
+            } else {
+                next.first <= current.last + 1
+            }
+            if (areAdjacentOrOverlap) {
                 current = current.first..maxOf(current.last, next.last)
             } else {
                 result += current
@@ -110,17 +109,67 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
             gaps += typeRange.first until intervals.first().first
         }
         for (i in 0 until intervals.size - 1) {
-            val gapStart = intervals[i].last + 1
+            val gapStart = if (intervals[i].last == Long.MAX_VALUE) {
+                continue
+            } else {
+                intervals[i].last + 1
+            }
             val gapEnd = intervals[i + 1].first - 1
             if (gapStart <= gapEnd) gaps += gapStart..gapEnd
         }
         if (intervals.last().last < typeRange.last) {
-            gaps += (intervals.last().last + 1)..typeRange.last
+            val tailStart = intervals.last().last + 1
+            gaps += tailStart..typeRange.last
         }
         return gaps
     }
 
-    private fun createIntegerPattern(type: ConeCangjieType, value: Long): CfirMatchPattern {
+    private fun collectMissingPatterns(
+        type: ConeCangJieType,
+        gaps: List<LongRange>,
+        maxPatterns: Int,
+    ): List<CfirMatchPattern> {
+        if (maxPatterns <= 0) return emptyList()
+        val result = ArrayList<CfirMatchPattern>(maxPatterns)
+        for (gap in gaps) {
+            if (result.size >= maxPatterns) break
+            val sampledValues = sampleValues(gap)
+            for (value in sampledValues) {
+                if (result.size >= maxPatterns) break
+                result += createIntegerPattern(type, value)
+            }
+        }
+        return result
+    }
+
+    private fun sampleValues(gap: LongRange): LongArray {
+        if (gap.first > gap.last) return LongArray(0)
+        return if (safeSpanGreaterThan(gap, 10L)) {
+            if (gap.first == gap.last) {
+                longArrayOf(gap.first)
+            } else {
+                longArrayOf(gap.first, gap.last)
+            }
+        } else {
+            val size = (gap.last - gap.first + 1).toInt()
+            LongArray(size) { index -> gap.first + index }
+        }
+    }
+
+    private fun safeSpanGreaterThan(range: LongRange, limit: Long): Boolean {
+        val span = safeSpan(range) ?: return true
+        return span > limit
+    }
+
+    private fun safeSpan(range: LongRange): Long? {
+        val diff = range.last - range.first
+        if (range.last >= range.first && diff < 0) return null
+        val span = diff + 1
+        if (span <= 0) return null
+        return span
+    }
+
+    private fun createIntegerPattern(type: ConeCangJieType, value: Long): CfirMatchPattern {
         val const = when ((type as? ConePrimitiveType)?.kind) {
             PrimitiveTypeKind.UINT8,
             PrimitiveTypeKind.UINT16,
@@ -137,4 +186,3 @@ class IntegerIntervalChecker : ExhaustivenessChecker {
         val INSTANCE = IntegerIntervalChecker()
     }
 }
-

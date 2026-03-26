@@ -2,7 +2,7 @@ package org.cangnova.cangjie.cfir.pipeline
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirGlobalResolveProcessor
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirTransformerBasedResolveProcessor
 import org.cangnova.cangjie.cfir.session.CfirSession

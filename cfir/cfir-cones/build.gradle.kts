@@ -1,4 +1,4 @@
-// CFIR Cones: 类型系统核心（ConeCangjieType 及其子类）
+// CFIR Cones: 类型系统核心（ConeCangJieType 及其子类）
 
 plugins {
     kotlin("jvm")
@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
     api(project(":cfir:cfir-common"))
+
     api(project(":common"))
 
     testImplementation(libs.junit.jupiter)

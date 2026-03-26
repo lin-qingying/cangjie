@@ -71,6 +71,12 @@
       <module name="cangjie.cfir.checkers.checkers-component-generator.test" options="-proc:none" />
       <module name="cangjie.cfir.checkers.main" options="-proc:none" />
       <module name="cangjie.cfir.checkers.test" options="-proc:none" />
+      <module name="cangjie.cfir.constraint" options="-proc:none" />
+      <module name="cangjie.cfir.constraint-system" options="-proc:none" />
+      <module name="cangjie.cfir.constraint-system.main" options="-proc:none" />
+      <module name="cangjie.cfir.constraint-system.test" options="-proc:none" />
+      <module name="cangjie.cfir.constraint.main" options="-proc:none" />
+      <module name="cangjie.cfir.constraint.test" options="-proc:none" />
       <module name="cangjie.cfir.diagnostic-renderers" options="-proc:none" />
       <module name="cangjie.cfir.diagnostic-renderers.main" options="-proc:none" />
       <module name="cangjie.cfir.diagnostic-renderers.test" options="-proc:none" />
@@ -80,6 +86,9 @@
       <module name="cangjie.cfir.entrypoint" options="-proc:none" />
       <module name="cangjie.cfir.entrypoint.main" options="-proc:none" />
       <module name="cangjie.cfir.entrypoint.test" options="-proc:none" />
+      <module name="cangjie.cfir.providers" options="-proc:none" />
+      <module name="cangjie.cfir.providers.main" options="-proc:none" />
+      <module name="cangjie.cfir.providers.test" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.light-tree2cfir" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.light-tree2cfir.main" options="-proc:none" />
       <module name="cangjie.cfir.raw-cfir.light-tree2cfir.test" options="-proc:none" />
@@ -94,6 +103,9 @@
       <module name="cangjie.cfir.resolve" options="-proc:none" />
       <module name="cangjie.cfir.resolve.main" options="-proc:none" />
       <module name="cangjie.cfir.resolve.test" options="-proc:none" />
+      <module name="cangjie.cfir.semantics" options="-proc:none" />
+      <module name="cangjie.cfir.semantics.main" options="-proc:none" />
+      <module name="cangjie.cfir.semantics.test" options="-proc:none" />
       <module name="cangjie.cfir.symbols" options="-proc:none" />
       <module name="cangjie.cfir.symbols.main" options="-proc:none" />
       <module name="cangjie.cfir.symbols.test" options="-proc:none" />
@@ -158,6 +170,9 @@
       <module name="cangjie.psi" options="-proc:none" />
       <module name="cangjie.psi.main" options="-proc:none" />
       <module name="cangjie.psi.test" options="-proc:none" />
+      <module name="cangjie.resolution.common" options="-proc:none" />
+      <module name="cangjie.resolution.common.main" options="-proc:none" />
+      <module name="cangjie.resolution.common.test" options="-proc:none" />
       <module name="cangjie.tests.test-infrastructure" options="-proc:none" />
       <module name="cangjie.tests.test-infrastructure.main" options="-proc:none" />
       <module name="cangjie.tests.test-infrastructure.test" options="-proc:none" />

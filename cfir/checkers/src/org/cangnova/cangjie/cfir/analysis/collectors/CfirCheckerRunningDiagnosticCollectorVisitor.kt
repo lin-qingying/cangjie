@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.collectors
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContextForProvider
 import org.cangnova.cangjie.cfir.analysis.checkers.context.MutableCheckerContext
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -9,9 +10,10 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
  * Runs checker components on each element and commits produced diagnostics.
  */
 open class CfirCheckerRunningDiagnosticCollectorVisitor(
-    context: MutableCheckerContext,
-    protected val components: CfirDiagnosticCollectorComponents,
-) : CfirAbstractDiagnosticCollectorVisitor(context) {
+    context: CheckerContextForProvider,
+
+    protected val components: DiagnosticCollectorComponents,
+) : AbstractDiagnosticCollectorVisitor(context) {
 
     override fun checkSettings() {
         components.regularComponents.forEach { it.checkSettings(context) }

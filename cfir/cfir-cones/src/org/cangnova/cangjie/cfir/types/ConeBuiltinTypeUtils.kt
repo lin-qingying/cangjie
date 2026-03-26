@@ -7,59 +7,63 @@ import org.cangnova.cangjie.name.ClassId
 // 适用于 ConePrimitiveType：Int64, Bool, Float64 等
 // ============================================================
 
-val ConeCangjieType.isBoolean: Boolean
+val ConeCangJieType.isBoolean: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.BOOLEAN
 
-val ConeCangjieType.isInt8: Boolean
+val ConeCangJieType.isInt8: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.INT8
 
-val ConeCangjieType.isInt16: Boolean
+val ConeCangJieType.isInt16: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.INT16
 
-val ConeCangjieType.isInt32: Boolean
+val ConeCangJieType.isInt32: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.INT32
 
-val ConeCangjieType.isInt64: Boolean
+val ConeCangJieType.isInt64: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.INT64
 
-val ConeCangjieType.isFloat16: Boolean
+val ConeCangJieType.isFloat16: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.FLOAT16
 
-val ConeCangjieType.isFloat32: Boolean
+val ConeCangJieType.isFloat32: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.FLOAT32
 
-val ConeCangjieType.isFloat64: Boolean
+val ConeCangJieType.isFloat64: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.FLOAT64
 
-val ConeCangjieType.isRune: Boolean
+val ConeCangJieType.isRune: Boolean
     get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.RUNE
 
 /** 内建整数类型（含 IdealInt） */
-val ConeCangjieType.isIntegerType: Boolean
+val ConeCangJieType.isIntegerType: Boolean
     get() = this is ConePrimitiveType && kind.isInteger
 
 /** 内建浮点类型（含 IdealFloat） */
-val ConeCangjieType.isFloatType: Boolean
+val ConeCangJieType.isFloatType: Boolean
     get() = this is ConePrimitiveType && kind.isFloat
 
 /** 内建数值类型（整数 + 浮点） */
-val ConeCangjieType.isNumericType: Boolean
+val ConeCangJieType.isNumericType: Boolean
     get() = this is ConePrimitiveType && kind.isNumeric
 
 /** 是否为内建原始类型 */
-val ConeCangjieType.isPrimitiveType: Boolean
+val ConeCangJieType.isPrimitiveType: Boolean
     get() = this is ConePrimitiveType
 
 // ---- IdealType 判断（仓颉特有，编译期字面量推断） ----
 
-val ConeCangjieType.isIdealInt: Boolean
-    get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.IDEAL_INT
+val ConeCangJieType.isIdealInt: Boolean
+    get() = this is ConeIdealIntLiteralType || (this is ConePrimitiveType && kind == PrimitiveTypeKind.IDEAL_INT)
 
-val ConeCangjieType.isIdealFloat: Boolean
-    get() = this is ConePrimitiveType && kind == PrimitiveTypeKind.IDEAL_FLOAT
+val ConeCangJieType.isIdealFloat: Boolean
+    get() = this is ConeIdealFloatLiteralType || (this is ConePrimitiveType && kind == PrimitiveTypeKind.IDEAL_FLOAT)
 
-val ConeCangjieType.isIdealType: Boolean
-    get() = this is ConePrimitiveType && kind.isIdeal
+val ConeCangJieType.isIdealType: Boolean
+    get() = this is ConeIdealLiteralType || (this is ConePrimitiveType && kind.isIdeal)
+
+/** 是否为理想字面量类型（[ConeIdealLiteralType] 形式） */
+val ConeCangJieType.isIdealLiteralType: Boolean
+    get() = this is ConeIdealLiteralType
 
 // ============================================================
 // 标准库类型判断（基于 ClassId）
@@ -67,7 +71,7 @@ val ConeCangjieType.isIdealType: Boolean
 // ============================================================
 
 /** 提取类类型的 ClassId（内建原始类型返回 null） */
-val ConeCangjieType.classId: ClassId?
+val ConeCangJieType.classId: ClassId?
     get() = when (this) {
         is ConeClassLikeType -> classId
         is ConeStructType -> classId
@@ -76,11 +80,26 @@ val ConeCangjieType.classId: ClassId?
         else -> null
     }
 
-val ConeCangjieType.isString: Boolean
+val ConeCangJieType.isString: Boolean
     get() = classId == StdlibClassIds.String
 
-val ConeCangjieType.isArray: Boolean
+val ConeCangJieType.isArray: Boolean
     get() = classId == StdlibClassIds.Array
 
-val ConeCangjieType.isOption: Boolean
+/**
+ * 提取标准库 `Array<T>` 的元素类型。
+ *
+ * 这里故意只识别名义 `Array<T>`，不再依赖已经被移除的 `ConeArrayType`。
+ */
+val ConeCangJieType.arrayElementType: ConeCangJieType?
+    get() = when (this) {
+        is ConeClassLikeType ->
+            if (classId == StdlibClassIds.Array) typeArguments.singleOrNull()?.type else null
+        is ConeStructType ->
+            if (classId == StdlibClassIds.Array) typeArguments.singleOrNull()?.type else null
+        is ConeTypeAliasType -> expandedType?.arrayElementType
+        else -> null
+    }
+
+val ConeCangJieType.isOption: Boolean
     get() = classId == StdlibClassIds.Option

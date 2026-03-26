@@ -1,53 +1,51 @@
 package org.cangnova.cangjie.cfir.scopes
 
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.ScopeSessionKey
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
-import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
+import org.cangnova.cangjie.cfir.session.ProcessorAction
+import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 
 /**
- * Scope provider aligned with Kotlin's FirKotlinScopeProvider responsibilities.
+ * 仓颉语言的 scope 提供者，对标 K2 FirKotlinScopeProvider。
  */
 open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent {
     override fun getUseSiteMemberScope(
         klass: CfirClass,
         useSiteSession: CfirSession,
-        scopeSession: CfirScopeSession,
-    ): CfirClassScope {
-        val classSymbol = klass.symbol as? org.cangnova.cangjie.cfir.symbols.CfirClassSymbol ?: return EMPTY_CLASS_SCOPE
-        val key = UseSiteMemberScopeKey(classSymbol)
-        return scopeSession.getOrBuild(key) {
-            CfirClassUseSiteMemberScope(classSymbol, useSiteSession.symbolProvider)
-        } as CfirClassScope
+        scopeSession: ScopeSession,
+    ): CfirTypeScope {
+        val classSymbol = klass.symbol as? CfirClassSymbol ?: return CfirTypeScope.Empty
+        return scopeSession.getOrBuild(useSiteSession to classSymbol, USE_SITE) {
+            CfirClassUseSiteMemberScope(classSymbol, useSiteSession.symbolProvider, useSiteSession.extendProvider)
+        }
     }
 
     override fun getPackageMemberScope(
         packageFqName: FqName,
         symbolProvider: CfirSymbolProvider,
         useSiteSession: CfirSession,
-        scopeSession: CfirScopeSession,
+        scopeSession: ScopeSession,
     ): CfirPackageScope {
-        val key = PackageMemberScopeKey(packageFqName, symbolProvider)
-        return scopeSession.getOrBuild(key) {
+        val key: ScopeSessionKey<PackageMemberScopeKey, CfirPackageMemberScope> = scopeSessionKey()
+        return scopeSession.getOrBuild(PackageMemberScopeKey(packageFqName, symbolProvider), key) {
             CfirPackageMemberScope(packageFqName, symbolProvider)
-        } as CfirPackageScope
+        }
     }
-
-    private data class UseSiteMemberScopeKey(
-        val classSymbol: org.cangnova.cangjie.cfir.symbols.CfirClassSymbol,
-    )
 
     private data class PackageMemberScopeKey(
         val packageFqName: FqName,
         val symbolProvider: CfirSymbolProvider,
     )
-
-    private companion object {
-        val EMPTY_CLASS_SCOPE = object : CfirClassScope {}
-    }
 }
-

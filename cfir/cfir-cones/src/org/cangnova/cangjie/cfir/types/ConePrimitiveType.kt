@@ -54,8 +54,8 @@ enum class PrimitiveTypeKind(val typeName: String) {
  */
 class ConePrimitiveType(
     val kind: PrimitiveTypeKind,
-    override val attributes: ConeAttributes = ConeAttributes.EMPTY,
-) : ConeRigidType() {
+    override val attributes: ConeAttributes = ConeAttributes.Empty,
+) : ConeRigidType(), ConeTypeConstructorMarker {
 
     override val isUnit: Boolean get() = kind == PrimitiveTypeKind.UNIT
     override val isNothing: Boolean get() = kind == PrimitiveTypeKind.NOTHING
@@ -65,7 +65,6 @@ class ConePrimitiveType(
 
     override fun hashCode(): Int = kind.hashCode()
 
-    override fun toString(): String = kind.typeName
 
     companion object {
         val UNIT = ConePrimitiveType(PrimitiveTypeKind.UNIT)

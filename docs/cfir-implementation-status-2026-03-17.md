@@ -180,7 +180,7 @@
 | 组件 | 行数 | 状态 |
 |------|------|------|
 | `CfirDeclDeserializer` | 447 | ✅ **完整**：Class/Interface/Struct/Enum/Function/Property/Variable/Extend/TypeAlias/TypeParameter/ValueParameter 全覆盖 |
-| `CfirTypeDeserializer` | — | ✅ 从 FlatBuffers SemaTy 重建 ConeCangjieType |
+| `CfirTypeDeserializer` | — | ✅ 从 FlatBuffers SemaTy 重建 ConeCangJieType |
 | `CfirDeserializationContext` | — | ✅ 缓存 + moduleData |
 | `CfirDeserializedSymbolProvider` | — | ✅ 按 ClassId/Name 查找反序列化符号 |
 | `CjoManager` | — | ✅ .cjo 文件管理 |
@@ -325,7 +325,7 @@ PSI ──→ RawCfirBuilder ──→ CFIR 树
 | `CfirCallResolver.kt` | 162 |
 | `CfirInferTypeArguments.kt` | 163 |
 | `CfirMatchExhaustivenessChecker.kt` | 161 |
-| `CfirOverloadConflictResolver.kt` | 115 |
+| `ConeOverloadConflictResolver.kt` | 115 |
 
 ---
 

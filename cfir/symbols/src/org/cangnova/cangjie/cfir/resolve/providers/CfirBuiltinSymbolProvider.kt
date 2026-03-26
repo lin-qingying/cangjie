@@ -1,99 +1,149 @@
-﻿package org.cangnova.cangjie.cfir.resolve.providers
+package org.cangnova.cangjie.cfir.resolve.providers
 
-import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.common.CfirBinaryDependenciesModuleData
-import org.cangnova.cangjie.cfir.common.CfirModuleData
-import org.cangnova.cangjie.cfir.declarations.CfirClassKind
+import org.cangnova.cangjie.cfir.common.moduleData
+import org.cangnova.cangjie.cfir.common.nullableModuleData
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
+import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
+import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
+import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.declarations.ResolveStateAccess
-import org.cangnova.cangjie.cfir.declarations.asResolveState
-import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
+import org.cangnova.cangjie.cfir.declarations.initDefaultResolveState
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
+import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
-import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.classId
+import org.cangnova.cangjie.cfir.types.isExposedBuiltinClassifier
+import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 /**
- * 内建原始类型符号提供器。
- * 为仓颉的原始类型（如 `Int8`、`Bool`、`Float64`）提供预构建的合成类符号。
- * 这些类型由 [PrimitiveTypeKind] 定义，不属于标准库 `std.core` 中的普通类声明，
- * 而是编译器内建的原始类型。
- * 对齐 Kotlin K2 的 `FirBuiltinSymbolProvider`（仅覆盖内建部分）。
+ * Exposes builtin primitive types as synthetic class-like declarations so that
+ * provider, scope and resolver code can use the same architecture as regular
+ * classifiers, mirroring Kotlin FIR's builtin provider design.
  */
 class CfirBuiltinSymbolProvider(
     session: CfirSession,
 ) : CfirSymbolProvider(session) {
 
-    override val symbolNamesProvider: CfirSymbolNamesProvider = BuiltinNamesProvider
-
-    private val builtinClassSymbols: Map<ClassId, CfirClassSymbol> by lazy {
-        buildBuiltinClassSymbols()
+    private val builtinModuleData by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        session.nullableModuleData
+            ?: CfirBinaryDependenciesModuleData(Name.identifier("<builtins>")).also { it.bindSession(session) }
     }
 
-    override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassSymbol? {
-        return builtinClassSymbols[classId]
+    private val primitiveDeclarationsByClassId: Map<ClassId, CfirPrimitiveTypeDeclaration> by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        PrimitiveTypeKind.entries.associateBy(
+            keySelector = { it.classId },
+            valueTransform = ::buildPrimitiveDeclaration,
+        )
     }
 
-    override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> {
-        // Builtin primitive types do not provide top-level callables.
-        return emptyList()
-    }
-
-    override fun hasPackage(fqName: FqName): Boolean {
-        return fqName == StandardNames.BASIC_PACKAGE_FQ_NAME
-    }
-
-    @OptIn(CfirImplementationDetail::class, ResolveStateAccess::class)
-    private fun buildBuiltinClassSymbols(): Map<ClassId, CfirClassSymbol> {
-        val moduleData = CfirBinaryDependenciesModuleData(Name.identifier("builtins")).apply {
-            bindSession(this@CfirBuiltinSymbolProvider.session)
-        }
-        return buildMap {
-            for (kind in PrimitiveTypeKind.entries) {
-                val name = Name.identifier(kind.typeName)
-                val classId = ClassId(StandardNames.BASIC_PACKAGE_FQ_NAME, name)
-                val symbol = CfirClassSymbol()
-                val cfirClass = CfirClassImpl(
-                    source = null,
-                    symbol = symbol,
-                    origin = CfirDeclarationOrigin.Synthetic,
-                    annotations = emptyList(),
-                    moduleData = moduleData,
-                    attributes = CfirDeclarationAttributes.EMPTY,
-                    status = CfirDeclarationStatusImpl.DEFAULT,
-                    typeParameters = emptyList(),
-                    superTypeRefs = emptyList(),
-                    declarations = emptyList(),
-                    name = name,
-                    classKind = CfirClassKind.STRUCT,
-                )
-                cfirClass.resolveState = CfirResolvePhase.RAW_CFIR.asResolveState()
-                symbol.bind(cfirClass)
-                put(classId, symbol)
+    private val containingClassIdsByCallable: Map<CfirCallableSymbol<*>, ClassId> by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        buildMap {
+            for ((classId, declaration) in primitiveDeclarationsByClassId) {
+                declaration.declarations.forEach { nested ->
+                    val callable = (nested as? CfirCallableDeclaration)?.symbol as? CfirCallableSymbol<*> ?: return@forEach
+                    put(callable, classId)
+                }
             }
         }
     }
 
+    override val symbolNamesProvider: CfirSymbolNamesProvider = BuiltinNamesProvider
+
+    override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
+        primitiveDeclarationsByClassId[classId]?.symbol
+
+    override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> =
+        emptyList()
+
+    override fun hasPackage(fqName: FqName): Boolean =
+        fqName == StandardNames.BASIC_PACKAGE_FQ_NAME
+
+    override fun getContainingClassId(symbol: CfirCallableSymbol<*>): ClassId? =
+        containingClassIdsByCallable[symbol]
+
+    private fun buildPrimitiveDeclaration(kind: PrimitiveTypeKind): CfirPrimitiveTypeDeclaration {
+        val symbol = CfirPrimitiveTypeSymbol(kind.classId, kind)
+        val declaration = CfirPrimitiveTypeDeclaration(
+            moduleData = builtinModuleData,
+            symbol = symbol,
+            name = kind.classId.shortClassName,
+            kind = kind,
+            origin = CfirDeclarationOrigin.Synthetic.Default,
+            attributes = CfirDeclarationAttributes.EMPTY,
+            declarations = buildPrimitiveMembers(kind),
+            superTypeRefs = emptyList(),
+        )
+        declaration.initDefaultResolveState()
+        symbol.bind(declaration)
+        return declaration
+    }
+
+    private fun buildPrimitiveMembers(kind: PrimitiveTypeKind): List<CfirDeclaration> =
+        BuiltinPrimitiveOperators.signaturesFor(kind).map { signature ->
+            val functionSymbol = CfirNamedFunctionSymbol(CallableId(kind.classId, signature.name))
+            val parameters = signature.parameterKinds.mapIndexed { index, parameterKind ->
+                val parameterSymbol = CfirValueParameterSymbol(CallableId(signature.name))
+                buildValueParameter {
+                    moduleData = builtinModuleData
+                    origin = CfirDeclarationOrigin.Synthetic.FakeFunction
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = false
+                    dispatchReceiverType = null
+                    symbol = parameterSymbol
+                    status = CfirDeclarationStatusImpl()
+                    returnTypeRef = buildResolvedTypeRef {
+                        coneType = ConePrimitiveType(parameterKind)
+                    }
+                    name = Name.identifier("p$index")
+                }.also(parameterSymbol::bind)
+            }
+
+            val status = CfirDeclarationStatusImpl().apply {
+                isOperator = true
+            }
+            buildNamedFunction {
+                moduleData = builtinModuleData
+                origin = CfirDeclarationOrigin.Synthetic.FakeFunction
+                attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = false
+                dispatchReceiverType = null
+                this.status = status
+                returnTypeRef = buildResolvedTypeRef {
+                    coneType = ConePrimitiveType(signature.returnKind)
+                }
+                valueParameters += parameters
+                symbol = functionSymbol
+                name = signature.name
+                isMut = false
+            }.also(functionSymbol::bind)
+        }
+
     private object BuiltinNamesProvider : CfirSymbolNamesProvider {
+        private val builtinClassifierNames: Set<Name> = PrimitiveTypeKind.entries
+            .filter(PrimitiveTypeKind::isExposedBuiltinClassifier)
+            .mapTo(linkedSetOf()) { Name.identifier(it.typeName) }
+
         override fun getPackageNames(): Set<FqName> =
             setOf(StandardNames.BASIC_PACKAGE_FQ_NAME)
 
-        override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? {
-            if (packageFqName != StandardNames.BASIC_PACKAGE_FQ_NAME) return emptySet()
-            return BUILTIN_TYPE_NAMES
-        }
+        override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? =
+            if (packageFqName == StandardNames.BASIC_PACKAGE_FQ_NAME) builtinClassifierNames else emptySet()
 
         override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>? = emptySet()
-
-        private val BUILTIN_TYPE_NAMES: Set<Name> =
-            PrimitiveTypeKind.entries.mapTo(mutableSetOf()) { Name.identifier(it.typeName) }
     }
 }

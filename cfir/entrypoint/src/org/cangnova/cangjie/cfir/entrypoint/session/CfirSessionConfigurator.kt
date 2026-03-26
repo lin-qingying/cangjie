@@ -3,9 +3,9 @@
 import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.analysis.CheckersComponent
 import org.cangnova.cangjie.cfir.analysis.checkers.LanguageVersionSettingsCheckers
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirDeclarationCheckers
-import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirExpressionCheckers
-import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirTypeCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.DeclarationCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.ExpressionCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.type.TypeCheckers
 import org.cangnova.cangjie.cfir.analysis.checkersComponent
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticsContainer
 import org.cangnova.cangjie.cfir.diagnostics.CjRegisteredDiagnosticFactoriesStorage
@@ -44,13 +44,13 @@ class CfirSessionConfigurator(
     }
 
     /** 注册表达式 checker。 */
-    fun useCheckers(checkers: CfirExpressionCheckers) {
+    fun useCheckers(checkers: ExpressionCheckers) {
         session.checkersComponent.register(checkers)
 
     }
 
     /** 注册声明 checker。 */
-    fun useCheckers(checkers: CfirDeclarationCheckers) {
+    fun useCheckers(checkers: DeclarationCheckers) {
         session  .checkersComponent.register(checkers)
 
     }
@@ -62,7 +62,7 @@ class CfirSessionConfigurator(
         session.checkersComponent.register(checkers)
     }
     /** 注册类型 checker。 */
-    fun useCheckers(checkers: CfirTypeCheckers) {
+    fun useCheckers(checkers: TypeCheckers) {
         session.checkersComponent.register(checkers)
 
     }

@@ -1,4 +1,4 @@
-// RUN_PIPELINE_TILL: FRONTEND
+
 func identity<T>(value: T): T {
     return value
 }

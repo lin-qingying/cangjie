@@ -1,75 +1,98 @@
-﻿package org.cangnova.cangjie.cfir.resolve.calls.stages
+package org.cangnova.cangjie.cfir.resolve.calls.stages
 
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.ArgumentTypeMismatch
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangjieType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.lookupTracker
+import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
+import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
+import org.cangnova.cangjie.cfir.resolve.calls.getExpectedType
+import org.cangnova.cangjie.cfir.resolve.transformers.ensureResolvedTypeDeclaration
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.coneType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import kotlin.compareTo
+import kotlin.text.get
 
-/**
- * 参数类型检查阶段：逐个验证实参与形参的类型兼容性。
- * 遍历 `argumentMapping` 中的每对 `(实参, 形参)`，
- * 用 `ConeSubtypeChecker` 判断实参类型是否为形参类型的子类型。
- * `IdealInt` / `IdealFloat` 的兼容性也由 `ConeSubtypeChecker` 统一处理。
- * 对齐 K2 `CheckArguments`。
- */
-object CfirCheckArguments : CfirResolutionStage() {
+object CfirCheckArguments : ResolutionStage() {
+    context(sink: CheckerSink, context: ResolutionContext)
+    override suspend fun check(candidate: Candidate) {
+        if (!candidate.argumentMappingInitialized) return
 
-    override fun check(
-        candidate: CfirCandidate,
-        sink: CfirCheckerSink,
-        context: CfirResolutionContext,
+        val contextArgumentsOfInvoke = candidate.expectedContextParameterCountForInvoke ?: 0
+        val argumentMapping = candidate.argumentMapping
+
+        for ((index, argument) in candidate.arguments.withIndex()) {
+            if (index < contextArgumentsOfInvoke) continue
+
+            val expression = argument.expression
+//            if (expression.isInaccessibleAndInapplicable()) {
+//                sink.reportDiagnostic(expression.toInaccessibleReceiverDiagnostic())
+//            }
+
+            val parameter = argumentMapping[argument]
+            candidate.resolveArgument(
+                candidate.callInfo,
+                argument,
+                parameter,
+                isReceiver = index == 0
+            )
+        }
+
+    }
+
+    context(sink: CheckerSink, context: ResolutionContext)
+    private fun Candidate.resolveArgument(
+        callInfo: CallInfo,
+        atom: ConeResolutionAtom,
+        parameter: CfirValueParameter?,
+        isReceiver: Boolean,
     ) {
-        val valueParameters = extractValueParameters(candidate.symbol) ?: return
-        val arguments = candidate.callInfo.arguments
-        val mapping = candidate.argumentMapping
-
-        for ((argIndex, paramIndex) in mapping) {
-            if (sink.shouldStop) return
-
-            val argument = arguments.getOrNull(argIndex) ?: continue
-            val parameter = valueParameters.getOrNull(paramIndex) ?: continue
-
-            val argType = argument.coneTypeOrNull ?: continue
-            val paramType = extractParameterType(parameter) ?: continue
-
-            // 对形参类型应用候选上的类型替换
-            val substitutedParamType = candidate.substitutor.substituteOrSelf(paramType)
-
-            // 错误类型不再继续检查，直接静默传播
-            if (argType is ConeErrorType || substitutedParamType is ConeErrorType) continue
-
-            // 子类型检查
-            if (!context.subtypeChecker.isSubtypeOf(argType, substitutedParamType)) {
-                sink.reportDiagnostic(
-                    ArgumentTypeMismatch(
-                        expectedType = substitutedParamType,
-                        actualType = argType,
-                        parameterIndex = paramIndex,
-                    )
-                )
-            }
-        }
-    }
-
-    /** 从候选符号中提取值参数列表。 */
-    private fun extractValueParameters(symbol: org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>): List<CfirValueParameter>? {
-        if (!symbol.isBound) return null
-        return when (val decl = symbol.cfir) {
-            is CfirFunction -> decl.valueParameters
-            is CfirConstructor -> decl.valueParameters
-            else -> null
-        }
-    }
-
-    /** 从值参数声明中提取参数类型。 */
-    private fun extractParameterType(parameter: CfirValueParameter): ConeCangjieType? {
-        val typeRef = parameter.returnTypeRef
-        return (typeRef as? CfirResolvedTypeRef)?.coneType
+        // Lambdas and callable references can be unresolved at this point
+        val argument = atom.expression
+        argument.coneTypeOrNull.ensureResolvedTypeDeclaration(context.session)
+        val expectedType =
+            prepareExpectedType(context.session, callInfo, argument, parameter)
+        ArgumentCheckingProcessor.resolveArgumentExpression(
+            this,
+            atom,
+            expectedType,
+            sink,
+            context,
+            isReceiver,
+            false
+        )
     }
 }
+private fun getExpectedTypeWithImplicitIntegerCoercion(
+    session: CfirSession,
+    argument: CfirExpression,
+    parameter: CfirValueParameter,
+    candidateExpectedType: ConeCangJieType
+): ConeCangJieType? {
+    return null
+//    if (!session.languageVersionSettings.supportsFeature(LanguageFeature.ImplicitSignedToUnsignedIntegerConversion)) return null
 
+}
+context(context: ResolutionContext)
+private fun Candidate.prepareExpectedType(
+    session: CfirSession,
+    callInfo: CallInfo,
+    argument: CfirExpression,
+    parameter: CfirValueParameter?,
+): ConeCangJieType? {
+    if (parameter == null) return null
+    val basicExpectedType = argument.getExpectedType(session, parameter)
+
+    // 仓颉没有 SAM 转换，直接跳过那一步
+    val expectedType =
+        getExpectedTypeWithImplicitIntegerCoercion(session, argument, parameter, basicExpectedType)
+            ?: basicExpectedType
+
+    return this.substitutor.substituteOrSelf(expectedType)
+}

@@ -1,0 +1,674 @@
+package org.cangnova.cangjie.cfir.types
+
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.FqNameUnsafe
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.type.AbstractTypePreparator
+import org.cangnova.cangjie.type.AbstractTypeRefiner
+import org.cangnova.cangjie.type.TypeCheckerState
+import org.cangnova.cangjie.type.model.*
+import org.cangnova.cangjie.type.newTypeCheckerState
+
+/** 创建简单诊断信息的辅助函数 */
+private fun simpleDiagnostic(reason: String): ConeDiagnostic = object : ConeDiagnostic {
+    override val reason: String = reason
+}
+
+/**
+ * ConeInferenceContext
+ *
+ * 仓颉（类似 Kotlin FIR）的类型推断上下文接口。
+ * 主要职责：
+ *   - 提供类型系统操作（创建类型、替换类型、判断类型）
+ *   - 支持类型推断（Type Inference）
+ *   - 提供类型检查（Type Checking）所需能力
+ *
+ * 可以理解为：K2 中 TypeSystemContext + InferenceContext 的组合
+ */
+interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeContext {
+
+    /**
+     * 当前 session 的符号提供器
+     */
+    val symbolProvider: CfirSymbolProvider
+        get() = session.symbolProvider
+
+    // =========================================================================
+    // 类型构造器查询
+    // =========================================================================
+
+    /**
+     * 获取刚性类型的类型构造器。
+     *
+     * 名义类型 → lookupTag
+     * 结构类型（func/tuple 等）→ 自身（实现了 ConeTypeConstructorMarker）
+     * 类型变量 → ConeTypeVariableTypeConstructor
+     */
+    override fun RigidTypeMarker.typeConstructor(): TypeConstructorMarker {
+        require(this is ConeRigidType)
+        return when (this) {
+            is ConeLookupTagBasedType -> lookupTag
+            is ConeTypeVariableType -> typeConstructor
+            is ConeStubType -> constructor
+            is ConeTypeConstructorMarker -> this
+            else -> error("无法获取类型构造器: $this (${this::class})")
+        }
+    }
+
+    /**
+     * 获取类型构造器的类型参数列表。
+     *
+     * 只有名义类型（通过 lookup tag → symbol → declaration）有类型参数。
+     * 结构类型（func/tuple 等）和原始类型没有声明级别的类型参数。
+     */
+    override fun TypeConstructorMarker.getParameters(): List<TypeParameterMarker> {
+        return when (this) {
+            is ConeClassLikeLookupTag -> {
+                val symbol = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(classId) }.getOrNull()
+                    ?: return emptyList()
+                if (!symbol.isBound) return emptyList()
+                val typeParams = when (val decl = symbol.cfir) {
+                    is CfirClass -> decl.typeParameters
+                    is CfirInterface -> decl.typeParameters
+                    is CfirStruct -> decl.typeParameters
+                    is CfirEnum -> decl.typeParameters
+                    is CfirTypeAlias -> decl.typeParameters
+                    else -> return emptyList()
+                }
+                typeParams.mapNotNull { (it.symbol as? org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol)?.toLookupTag() }
+            }
+            is ConeTypeParameterLookupTag -> emptyList()
+            is ConeTypeVariableTypeConstructor -> emptyList()
+            is ConeStubTypeConstructor -> emptyList()
+            else -> emptyList()
+        }
+    }
+
+    /**
+     * 获取类型构造器的所有父类型。
+     */
+    override fun TypeConstructorMarker.supertypes(): Collection<CangJieTypeMarker> {
+        return when (this) {
+            is ConeClassLikeLookupTag -> {
+                val symbol = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(classId) }.getOrNull()
+                    ?: return emptyList()
+                if (!symbol.isBound) return emptyList()
+                symbol.cfir.superTypeRefs.mapNotNull { (it as? CfirResolvedTypeRef)?.coneType }
+            }
+            is ConeTypeParameterLookupTag -> {
+                typeParameterSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+                typeParameterSymbol.resolvedBounds.map { it.coneType }
+            }
+
+            // 结构类型/原始类型默认以 Any 为父类型
+            is ConeAnyType -> emptyList()
+            is ConePrimitiveType -> if (kind == PrimitiveTypeKind.NOTHING) emptyList() else listOf(ConeAnyType)
+            else -> listOf(ConeAnyType)
+        }
+    }
+
+    override fun TypeConstructorMarker.isError(): Boolean {
+        return this is ConeClassLikeErrorLookupTag
+    }
+
+    override fun TypeConstructorMarker.isIntersection(): Boolean {
+        return this is ConeIntersectionType
+    }
+
+    override fun TypeConstructorMarker.isClassTypeConstructor(): Boolean {
+        if (this !is ConeClassLikeLookupTag) return false
+        val symbol = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(classId) }.getOrNull()
+            ?: return false
+        return symbol is org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+                || symbol is org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
+    }
+
+    override fun TypeConstructorMarker.isInterface(): Boolean {
+        if (this !is ConeClassLikeLookupTag) return false
+        val symbol = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(classId) }.getOrNull()
+            ?: return false
+        return symbol is org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
+    }
+
+    override fun TypeConstructorMarker.isAnyConstructor(): Boolean {
+        return this is ConeAnyType
+                || (this is ConeClassLikeLookupTag && classId == StdlibClassIds.Any)
+    }
+
+    override fun TypeConstructorMarker.isNothingConstructor(): Boolean {
+        return this is ConePrimitiveType && kind == PrimitiveTypeKind.NOTHING
+    }
+
+    override fun TypeConstructorMarker.isArrayConstructor(): Boolean {
+        return this is ConeClassLikeLookupTag && classId == StdlibClassIds.Array
+    }
+
+    override fun TypeConstructorMarker.isFinalClassConstructor(): Boolean {
+        // 结构类型/原始类型/枚举类型是 final 的
+        if (this is ConePrimitiveType || this is ConeFuncType || this is ConeTupleType ||
+            this is ConeVArrayType || this is ConePointerType || this is ConeCStringType) {
+            return true
+        }
+        if (this !is ConeClassLikeLookupTag) return false
+        val symbol = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(classId) }.getOrNull()
+            ?: return false
+        // struct 和 enum 在仓颉中不可被继承
+        return symbol is org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
+                || symbol is org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
+    }
+
+    override fun TypeConstructorMarker.isCommonFinalClassConstructor(): Boolean {
+        return isFinalClassConstructor()
+    }
+
+    override fun TypeConstructorMarker.isDenotable(): Boolean {
+        return when (this) {
+            is ConeClassifierLookupTag -> true
+            is ConePrimitiveType -> true
+            is ConeFuncType -> true
+            is ConeTupleType -> true
+            is ConeVArrayType -> true
+            is ConePointerType -> true
+            is ConeCStringType -> true
+            is ConeAnyType -> true
+            is ConeQuestType -> true
+            is ConeTypeAliasType -> true
+            // 类型变量、stub、captured、intersection 等不可表示
+            else -> false
+        }
+    }
+
+    override fun TypeConstructorMarker.isTypeVariable(): Boolean {
+        return this is ConeTypeVariableTypeConstructor
+    }
+
+    override fun TypeConstructorMarker.isValueTypeConstructor(): Boolean {
+        // struct 是值类型
+        if (this is ConeClassLikeLookupTag) {
+            val symbol = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(classId) }.getOrNull()
+                ?: return false
+            return symbol is org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
+        }
+        // 原始类型也是值类型
+        return this is ConePrimitiveType
+    }
+
+    override fun TypeConstructorMarker.isIntegerLiteralTypeConstructor(): Boolean {
+        return this is ConeIdealLiteralType
+    }
+
+    override fun TypeConstructorMarker.getClassFqNameUnsafe(): FqNameUnsafe? {
+        return when (this) {
+            is ConeClassLikeLookupTag -> classId.asSingleFqName().toUnsafe()
+            else -> null
+        }
+    }
+
+
+
+    // =========================================================================
+    // 简单类型谓词
+    // =========================================================================
+
+    override fun CangJieTypeMarker.isUnit(): Boolean {
+        return this is ConePrimitiveType && kind == PrimitiveTypeKind.UNIT
+    }
+
+    override fun CangJieTypeMarker.isFunctionType(): Boolean {
+        return this is ConeFuncType
+    }
+
+    override fun CangJieTypeMarker.isSpecial(): Boolean {
+        return this is ConeErrorType || this is ConeStubType || this is ConeQuestType
+    }
+
+    override fun CangJieTypeMarker.isTypeVariableType(): Boolean {
+        return this is ConeTypeVariableType
+    }
+
+    override fun CangJieTypeMarker.isSignedOrUnsignedNumberType(): Boolean {
+        return this is ConePrimitiveType && kind.isNumeric && !kind.isIdeal
+    }
+
+    override fun SimpleTypeMarker.isPrimitiveType(): Boolean {
+        return this is ConePrimitiveType
+    }
+
+    override fun CangJieTypeMarker.isArray(): Boolean {
+        val cone = this as? ConeCangJieType ?: return false
+        return cone.isArray
+    }
+
+    override fun RigidTypeMarker.isSingleClassifierType(): Boolean {
+        return this !is ConeIntersectionType && this !is ConeUnionType
+    }
+
+    override fun CangJieTypeMarker.isInterfaceOrAnnotationClass(): Boolean {
+        val constructor = (this as? ConeCangJieType)?.let {
+            (it as? ConeRigidType)?.typeConstructor()
+        } ?: return false
+        return constructor.isInterface()
+    }
+
+    // =========================================================================
+    // 类型判断（contains）
+    // =========================================================================
+
+    override fun CangJieTypeMarker.contains(predicate: (CangJieTypeMarker) -> Boolean): Boolean {
+        require(this is ConeCangJieType)
+        @Suppress("UNCHECKED_CAST")
+        return this.contains(predicate as (ConeCangJieType) -> Boolean)
+    }
+
+    // =========================================================================
+    // 类型创建
+    // =========================================================================
+
+    override fun createStubTypeForBuilderInference(typeVariable: TypeVariableMarker): StubTypeMarker {
+        require(typeVariable is ConeTypeVariable)
+        return ConeStubType(typeVariable.typeConstructor, ConeStubType.Kind.FOR_BUILDER_INFERENCE)
+    }
+
+    override fun createStubTypeForTypeVariablesInSubtyping(typeVariable: TypeVariableMarker): StubTypeMarker {
+        require(typeVariable is ConeTypeVariable)
+        return ConeStubType(typeVariable.typeConstructor, ConeStubType.Kind.FOR_SUBTYPING)
+    }
+
+    override fun createSimpleType(
+        constructor: TypeConstructorMarker,
+        arguments: List<TypeArgumentMarker>,
+        attributes: List<AnnotationMarker>?
+    ): SimpleTypeMarker {
+        val coneArguments = arguments.map { it as ConeTypeProjection }
+        val coneAttributes = ConeAttributes.Empty
+        return when (constructor) {
+            is ConeClassLikeLookupTag -> ConeClassLikeType(constructor, coneArguments, coneAttributes)
+            is ConeTypeParameterLookupTag -> org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl(constructor)
+            is ConePrimitiveType -> constructor
+            is ConeFuncType -> {
+                val coneTypes = arguments.map { (it as ConeTypeProjection).type }
+                val parameterTypes = coneTypes.dropLast(1)
+                val returnType = coneTypes.lastOrNull() ?: ConePrimitiveType.NOTHING
+                ConeFuncType(
+                    parameterTypes = parameterTypes,
+                    returnType = returnType,
+                    isCFunc = constructor.isCFunc,
+                    isClosureType = constructor.isClosureType,
+                    hasVariableLenArg = constructor.hasVariableLenArg,
+                    attributes = constructor.attributes,
+                )
+            }
+            is ConeTupleType -> constructor
+            is ConeAnyType -> ConeAnyType
+            is ConeTypeVariableTypeConstructor -> ConeTypeVariableType(constructor)
+            else -> ConeClassLikeType(
+                ConeClassLikeErrorLookupTag(
+                    org.cangnova.cangjie.name.ClassId.fromString("<unknown>"),
+                    simpleDiagnostic("无法为构造器创建简单类型: $constructor"),
+                ),
+                coneArguments,
+                coneAttributes,
+            )
+        }
+    }
+
+    override fun createTypeArgument(type: CangJieTypeMarker): TypeArgumentMarker {
+        require(type is ConeCangJieType)
+        return ConeTypeProjection(type)
+    }
+
+    override fun createErrorType(debugName: String, delegatedType: RigidTypeMarker?): SimpleTypeMarker {
+        return ConeErrorType(
+            simpleDiagnostic(debugName),
+            delegatedType = delegatedType as? ConeCangJieType,
+        )
+    }
+
+    override fun createUninferredType(constructor: TypeConstructorMarker): CangJieTypeMarker {
+        return ConeErrorType(
+            simpleDiagnostic("未推断的类型参数: $constructor"),
+            isUninferredParameter = true,
+        )
+    }
+
+    override fun createTypeWithUpperBoundForIntersectionResult(
+        firstCandidate: CangJieTypeMarker,
+        secondCandidate: CangJieTypeMarker
+    ): CangJieTypeMarker {
+        return ConeIntersectionType(
+            listOf(firstCandidate as ConeCangJieType, secondCandidate as ConeCangJieType)
+        )
+    }
+
+    override fun intersectTypes(types: Collection<CangJieTypeMarker>): CangJieTypeMarker {
+        val coneTypes = types.map { it as ConeCangJieType }
+        if (coneTypes.size == 1) return coneTypes.single()
+        return ConeIntersectionType(coneTypes)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun intersectTypes(types: Collection<SimpleTypeMarker>): SimpleTypeMarker {
+        if (types.size == 1) return types.single()
+        return ConeIntersectionType(types.map { it as ConeCangJieType })
+    }
+
+    override fun nothingType(): SimpleTypeMarker = ConePrimitiveType.NOTHING
+
+    override fun anyType(): SimpleTypeMarker = ConeAnyType
+
+    override fun arrayType(componentType: CangJieTypeMarker): SimpleTypeMarker {
+        require(componentType is ConeCangJieType)
+        return ConeClassLikeType(
+            StdlibClassIds.Array.toLookupTag(),
+            listOf(ConeTypeProjection(componentType)),
+        )
+    }
+
+    // =========================================================================
+    // 类型操作
+    // =========================================================================
+
+    override fun RigidTypeMarker.replaceArguments(newArguments: List<TypeArgumentMarker>): RigidTypeMarker {
+        require(this is ConeRigidType)
+        if (newArguments.isEmpty() && typeArguments.isEmpty()) return this
+        val coneArgs = newArguments.map { it as ConeTypeProjection }
+        return when (this) {
+            is ConeClassLikeType -> ConeClassLikeType(lookupTag, coneArgs, attributes, isInterface, isThisType)
+            is ConeStructType -> ConeStructType(lookupTag, coneArgs, attributes)
+            is ConeEnumType -> ConeEnumType(lookupTag, coneArgs, attributes, isRefEnum)
+            is ConeFuncType -> {
+                if (coneArgs.isEmpty()) return this
+                val paramTypes = coneArgs.dropLast(1).map { it.type }
+                val retType = coneArgs.last().type
+                ConeFuncType(paramTypes, retType, isCFunc, isClosureType, hasVariableLenArg, attributes)
+            }
+            is ConeTupleType -> ConeTupleType(coneArgs.map { it.type }, attributes)
+            is ConeVArrayType -> {
+                if (coneArgs.isEmpty()) return this
+                ConeVArrayType(coneArgs.first().type, size, attributes)
+            }
+            is ConePointerType -> {
+                if (coneArgs.isEmpty()) return this
+                ConePointerType(coneArgs.first().type, attributes)
+            }
+            is ConeIntersectionType -> ConeIntersectionType(coneArgs.map { it.type }, attributes)
+            is ConeTypeAliasType -> ConeTypeAliasType(classId, expandedType, coneArgs, attributes)
+            is ConeErrorType -> ConeErrorType(diagnostic, isUninferredParameter, delegatedType, coneArgs, attributes)
+            else -> this
+        }
+    }
+
+    override fun RigidTypeMarker.replaceArguments(replacement: (TypeArgumentMarker) -> TypeArgumentMarker): RigidTypeMarker {
+        require(this is ConeRigidType)
+        if (typeArguments.isEmpty()) return this
+        val newArgs = typeArguments.map { replacement(it) }
+        return replaceArguments(newArgs)
+    }
+
+    override fun CangJieTypeMarker.eraseContainingTypeParameters(): CangJieTypeMarker {
+        require(this is ConeCangJieType)
+        // 如果类型自身是类型参数，用其上界替代
+        if (this is org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType) {
+            val bounds = lookupTag.typeParameterSymbol.resolvedBounds
+            return if (bounds.isNotEmpty()) bounds.first().coneType else ConeAnyType
+        }
+        // 递归替换类型实参中的类型参数
+        if (typeArguments.isEmpty()) return this
+        var changed = false
+        val newArgs = typeArguments.map { proj ->
+            val erased = (proj.type as CangJieTypeMarker).eraseContainingTypeParameters()
+            if (erased !== proj.type) {
+                changed = true
+                ConeTypeProjection(erased as ConeCangJieType)
+            } else {
+                proj
+            }
+        }
+        if (!changed) return this
+        return (this as ConeRigidType).replaceArguments(newArgs)
+    }
+
+    override fun Collection<CangJieTypeMarker>.singleBestRepresentative(): CangJieTypeMarker? {
+        if (isEmpty()) return null
+        // 取第一个非 error 类型
+        return firstOrNull { !(it as ConeCangJieType).isError } ?: first()
+    }
+
+    override fun TypeConstructorMarker.getApproximatedIntegerLiteralType(expectedType: CangJieTypeMarker?): CangJieTypeMarker {
+        if (this is ConeIdealLiteralType) {
+            return getApproximatedType(expectedType as? ConeCangJieType)
+        }
+        // 不是理想字面量类型，返回 Int64 作为默认
+        return ConePrimitiveType.INT64
+    }
+
+
+
+    // =========================================================================
+    // 类型变量 / Stub
+    // =========================================================================
+
+    override fun TypeVariableMarker.freshTypeConstructor(): TypeVariableTypeConstructorMarker {
+        require(this is ConeTypeVariable)
+        return this.typeConstructor
+    }
+
+    override fun TypeVariableMarker.defaultType(): SimpleTypeMarker {
+        require(this is ConeTypeVariable)
+        return this.defaultType
+    }
+
+
+
+    override fun StubTypeMarker.getOriginalTypeVariable(): TypeVariableTypeConstructorMarker {
+        require(this is ConeStubType)
+        return constructor
+    }
+
+    // =========================================================================
+    // 类型参数操作
+    // =========================================================================
+
+    override fun TypeParameterMarker.getUpperBounds(): List<CangJieTypeMarker> {
+        require(this is ConeTypeParameterLookupTag)
+        typeParameterSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        return typeParameterSymbol.resolvedBounds.map { it.coneType }
+    }
+
+    override fun TypeParameterMarker.getRepresentativeUpperBound(): CangJieTypeMarker {
+        val bounds = getUpperBounds()
+        // 选第一个非 Any 的上界，如果没有则返回 Any
+        return bounds.firstOrNull {
+            val cone = it as ConeCangJieType
+            cone !== ConeAnyType && !(cone is ConeClassLikeType && cone.classId == StdlibClassIds.Any)
+        } ?: bounds.firstOrNull() ?: ConeAnyType
+    }
+
+    override fun TypeParameterMarker.getName(): Name {
+        require(this is ConeTypeParameterLookupTag)
+        return name
+    }
+
+    override fun TypeParameterMarker.isReified(): Boolean {
+        // 仓颉目前不支持 reified 类型参数
+        return false
+    }
+
+    // =========================================================================
+    // 替换器操作
+    // =========================================================================
+
+    override fun typeSubstitutorByTypeConstructor(map: Map<TypeConstructorMarker, CangJieTypeMarker>): TypeSubstitutorMarker {
+        @Suppress("UNCHECKED_CAST")
+        return createTypeSubstitutorByTypeConstructor(
+            map = map as Map<TypeConstructorMarker, ConeCangJieType>,
+            context = this,
+            approximateIntegerLiterals = false,
+        )
+    }
+
+    override fun createEmptySubstitutor(): TypeSubstitutorMarker {
+        return ConeEmptySubstitutor
+    }
+
+    override fun TypeSubstitutorMarker.safeSubstitute(type: CangJieTypeMarker): CangJieTypeMarker {
+        if (this is ConeEmptySubstitutor) return type
+        require(this is ConeSubstitutor)
+        require(type is ConeCangJieType)
+        return this.substituteOrSelf(type)
+    }
+
+    override fun createSubstitutionFromSubtypingStubTypesToTypeVariables(): TypeSubstitutorMarker {
+        // 默认返回空替换器，具体实现在约束系统求解时由调用方提供
+        return ConeEmptySubstitutor
+    }
+
+    override fun createSubstitutorForSuperTypes(baseType: CangJieTypeMarker): TypeSubstitutorMarker? {
+        require(baseType is ConeCangJieType)
+        val rigid = baseType as? ConeRigidType ?: return null
+        val constructor = rigid.typeConstructor()
+        val parameters = constructor.getParameters()
+        if (parameters.isEmpty()) return null
+        val arguments = rigid.typeArguments
+        if (arguments.size != parameters.size) return null
+
+        val map = mutableMapOf<TypeConstructorMarker, CangJieTypeMarker>()
+        for (i in parameters.indices) {
+            val param = parameters[i]
+            val arg = arguments[i]
+            map[param.getTypeConstructor()] = arg.type
+        }
+        return typeSubstitutorByTypeConstructor(map)
+    }
+
+    // =========================================================================
+    // 函数类型操作
+    // =========================================================================
+
+    override fun CangJieTypeMarker.contextParameterCount(): Int {
+        // 仓颉无 context receiver
+        return 0
+    }
+
+    override fun CangJieTypeMarker.extractArgumentsForFunctionType(): List<CangJieTypeMarker> {
+        require(this is ConeFuncType)
+        // 返回参数类型 + 返回值类型
+        return parameterTypes + returnType
+    }
+
+    override fun getFunctionTypeConstructor(parametersNumber: Int): TypeConstructorMarker {
+        // 仓颉函数类型不像 Kotlin 有 Function0/Function1 等独立构造器
+        // 返回一个占位的 ConeFuncType 作为构造器标记
+        val params = (0 until parametersNumber).map { ConePrimitiveType.NOTHING as ConeCangJieType }
+        return ConeFuncType(params, ConePrimitiveType.NOTHING)
+    }
+
+    // =========================================================================
+    // 注解/属性操作
+    // =========================================================================
+
+    override fun CangJieTypeMarker.getAttributes(): List<AnnotationMarker> {
+        require(this is ConeCangJieType)
+        return attributes.toList()
+    }
+
+    override fun CangJieTypeMarker.hasAnnotation(fqName: FqName): Boolean {
+        // 仓颉类型级注解尚未实现
+        return false
+    }
+
+    override fun CangJieTypeMarker.getAnnotationFirstArgumentValue(fqName: FqName): Any? {
+        // 仓颉类型级注解尚未实现
+        return null
+    }
+
+    override fun unionTypeAttributes(types: List<CangJieTypeMarker>): List<AnnotationMarker> {
+        var result = ConeAttributes.Empty
+        for (type in types) {
+            val coneType = type as ConeCangJieType
+            result = result.union(coneType.attributes)
+        }
+        return result.toList()
+    }
+
+    override fun CangJieTypeMarker.replaceCustomAttributes(newAttributes: List<AnnotationMarker>): CangJieTypeMarker {
+        // 目前仓颉类型的属性替换暂不需要
+        return this
+    }
+
+    // =========================================================================
+    // 状态与工具
+    // =========================================================================
+
+    override fun newTypeCheckerState(
+        errorTypesEqualToAnything: Boolean,
+        stubTypesEqualToAnything: Boolean
+    ): TypeCheckerState {
+        return TypeCheckerState(
+            isErrorTypeEqualsToAnything = errorTypesEqualToAnything,
+            isStubTypeEqualsToAnything = stubTypesEqualToAnything,
+            allowedTypeVariable = false,
+            typeSystemContext = this,
+            cangjieTypePreparator = AbstractTypePreparator.Default,
+            cangjieTypeRefiner = AbstractTypeRefiner.Default,
+        )
+    }
+
+    override fun substitutionSupertypePolicy(type: RigidTypeMarker): TypeCheckerState.SupertypesPolicy {
+        return TypeCheckerState.SupertypesPolicy.Direct
+    }
+
+    override fun RigidTypeMarker.typeDepth(): Int {
+        require(this is ConeRigidType)
+        if (typeArguments.isEmpty()) return 0
+        return 1 + (typeArguments.maxOfOrNull { proj ->
+            (proj.type as? ConeRigidType)?.typeDepth() ?: 0
+        } ?: 0)
+    }
+
+    override fun findCommonIntegerLiteralTypesSuperType(explicitSupertypes: List<RigidTypeMarker>): RigidTypeMarker? {
+        // 查找理想整数类型的公共具体类型
+        val idealTypes = explicitSupertypes.filterIsInstance<ConeIdealLiteralType>()
+        if (idealTypes.isEmpty()) return null
+        // 如果都是 IdealInt，返回 Int64
+        if (idealTypes.all { it is ConeIdealIntLiteralType }) return ConePrimitiveType.INT64
+        // 如果都是 IdealFloat，返回 Float64
+        if (idealTypes.all { it is ConeIdealFloatLiteralType }) return ConePrimitiveType.FLOAT64
+        return null
+    }
+
+    override fun TypeConstructorMarker.toErrorType(): SimpleTypeMarker {
+        return ConeErrorType(simpleDiagnostic("错误类型构造器: $this"))
+    }
+
+    override fun RigidTypeMarker.asArgumentList(): TypeArgumentListMarker {
+        require(this is ConeRigidType)
+        val args = ArgumentList(typeArguments.size)
+        args.addAll(typeArguments)
+        return args
+    }
+
+    override fun CangJieTypeMarker.getUnsubstitutedUnderlyingType(): CangJieTypeMarker? {
+        // 仓颉无 inline class / value class 的 underlying type 概念
+        return null
+    }
+
+    override fun TypeConstructorMarker.isFinalClassOrAnnotationClassConstructor(): Boolean {
+        return isFinalClassConstructor()
+    }
+}

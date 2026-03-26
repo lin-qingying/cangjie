@@ -20,9 +20,11 @@ import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.entrypoint.checkers.registerCommonCheckers
 import org.cangnova.cangjie.cfir.entrypoint.configuration.diagnosticFactoriesStorage
-import org.cangnova.cangjie.cfir.resolve.inference.FirInferenceLogger
+import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceLogger
+
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLibrarySessionProvider
 import org.cangnova.cangjie.cfir.resolve.CfirDefaultImportsProvider
+
 import org.cangnova.cangjie.cfir.scopes.CfirDefaultImportsProviderHolder
 import org.cangnova.cangjie.cfir.session.registerModuleData
 import org.cangnova.cangjie.cfir.session.StructuredProviders
@@ -176,7 +178,7 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
         return CfirDefaultSession(CfirSession.Kind.Source).apply session@{
             moduleData.bindSession(this@session)
             registerModuleData(moduleData)
-            if (configuration.dumpInferenceLogs) register(FirInferenceLogger::class, FirInferenceLogger())
+            if (configuration.dumpInferenceLogs) register(CfirInferenceLogger::class, CfirInferenceLogger())
             registerCliCompilerAndCommonComponents(languageVersionSettings)
             registerResolveComponents(
                 configuration.diagnosticFactoriesStorage ?: error("diagnosticFactoriesStorage is not registered in the configuration"),
