@@ -15,7 +15,7 @@ class CfirResolvedAppliedCallableReference @CfirImplementationDetail constructor
     override val resolvedSymbol: CfirSymbol<*>,
     val substitutedReturnType: ConeCangJieType?,
     val substitutedParameterTypes: List<ConeCangJieType>,
-) : CfirResolvedNamedReference() {
+) : CfirResolvedNamedReference {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
     }

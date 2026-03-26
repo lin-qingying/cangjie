@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendSemanticModel
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 
@@ -26,12 +27,7 @@ class CfirSessionExtendProvider(
     }
 
     override fun getExtendsForBuiltinType(kind: PrimitiveTypeKind): List<CfirExtend> {
-        val builtinName = kind.typeName
-        return indexStore.allModels()
-            .asSequence()
-            .filter { it.targetClassId?.shortClassName?.asString() == builtinName }
-            .map(CfirExtendSemanticModel::declaration)
-            .toList()
+        return indexStore.modelsForClass(kind.classId).map(CfirExtendSemanticModel::declaration)
     }
 }
 

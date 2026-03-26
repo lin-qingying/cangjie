@@ -68,6 +68,7 @@ abstract class KnownTypeParameterConstraintPosition<T : CangJieTypeMarker>(val t
     override fun toString(): String = "TypeArgument $typeArgument"
 }
 
+
 sealed class ArgumentConstraintPosition<out T>(val argument: T) : ConstraintPosition()
 
 abstract class RegularArgumentConstraintPosition<out T>(argument: T) : ArgumentConstraintPosition<T>(argument),
@@ -132,12 +133,6 @@ class ConstraintWarning(
     override val upperType: CangJieTypeMarker,
     override val position: IncorporationConstraintPosition,
 ) : ConstraintSystemError(RESOLVED), ConstraintMismatch
-
-class CapturedTypeFromSubtyping(
-    val typeVariable: TypeVariableMarker,
-    val constraintType: CangJieTypeMarker,
-    val position: ConstraintPosition
-) : ConstraintSystemError(INAPPLICABLE)
 
 open class NotEnoughInformationForTypeParameter<T>(
     val typeVariable: TypeVariableMarker,

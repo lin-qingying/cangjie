@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.name.Name
@@ -26,6 +27,8 @@ class CfirMacroDeclarationImpl @CfirImplementationDetail constructor(
     override var annotations: List<CfirAnnotation>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
+    override val isLocal: Boolean,
+    override val dispatchReceiverType: ConeSimpleCangJieType?,
     override var status: CfirDeclarationStatus,
     override var typeParameters: List<CfirTypeParameter>,
     override var returnTypeRef: CfirTypeRef,

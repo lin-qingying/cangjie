@@ -14,7 +14,6 @@
  * - 删除 DefinitelyNotNullType 相关函数
  * - 删除 DynamicType、Raw 类型相关函数
  * - 删除星号投影、型变相关函数
- * - asCapturedTypeUnwrappingDnn 改名为 asCapturedType
  * - 所有注释改为中文
  */
 
@@ -58,53 +57,8 @@ fun TypeConstructorMarker.isError(): Boolean = with(c) { isError() }
 context(c: TypeSystemContext)
 fun CangJieTypeMarker.isUninferredParameter(): Boolean = with(c) { isUninferredParameter() }
 
-// =====================================================================
-// 捕获类型转换
-// 仓颉无通配符/星号投影，捕获类型仅用于编译器内部推断约束的表示
-// =====================================================================
 
-/** 尝试将简单类型转为捕获类型，失败返回 null */
-context(c: TypeSystemContext)
-fun SimpleTypeMarker.asCapturedType(): CapturedTypeMarker? = with(c) { asCapturedType() }
 
-/**
- * @deprecated 对 CapturedTypeMarker 调用此方法是无意义的，请直接使用该值
- */
-@Deprecated(level = DeprecationLevel.ERROR, message = USELESS_CALL_MESSAGE)
-context(_: TypeSystemContext)
-fun CapturedTypeMarker.asCapturedType(): CapturedTypeMarker = this
-
-/** 尝试将刚性类型转为捕获类型 */
-context(c: TypeSystemContext)
-fun RigidTypeMarker.asCapturedType(): CapturedTypeMarker? = with(c) { asCapturedType() }
-
-/** 判断类型是否是捕获类型 */
-context(c: TypeSystemContext)
-fun CangJieTypeMarker.isCapturedType() = with(c) { isCapturedType() }
-
-// =====================================================================
-// 捕获类型属性访问
-// =====================================================================
-
-/** 判断是否是旧版捕获类型（遗留兼容） */
-context(c: TypeSystemContext)
-fun CapturedTypeMarker.isOldCapturedType(): Boolean = with(c) { isOldCapturedType() }
-
-/** 获取捕获类型的构造器 */
-context(c: TypeSystemContext)
-fun CapturedTypeMarker.typeConstructor(): CapturedTypeConstructorMarker = with(c) { typeConstructor() }
-
-/** 获取捕获状态（子类型检查 / 约束合并 / 表达式推断） */
-context(c: TypeSystemContext)
-fun CapturedTypeMarker.captureStatus(): CaptureStatus = with(c) { captureStatus() }
-
-/** 获取捕获类型构造器对应的原始泛型实参 */
-context(c: TypeSystemContext)
-fun CapturedTypeConstructorMarker.projection(): TypeArgumentMarker = with(c) { projection() }
-
-/** 获取捕获类型的下界类型（如有） */
-context(c: TypeSystemContext)
-fun CapturedTypeMarker.lowerType(): CangJieTypeMarker? = with(c) { lowerType() }
 
 // =====================================================================
 // 泛型实参访问
@@ -153,26 +107,7 @@ context(c: TypeSystemContext)
 fun RigidTypeMarker.isStubTypeForVariableInSubtyping(): Boolean =
     with(c) { isStubTypeForVariableInSubtyping() }
 
-/**
- * 判断是否是子类型检查存根或捕获自存根类型
- * 仓颉无星号投影，捕获存根判断直接检查捕获实参类型
- */
-context(c: TypeSystemContext)
-fun RigidTypeMarker.isStubTypeForVariableInSubtypingOrCaptured(): Boolean =
-    isStubTypeForVariableInSubtyping() || isCapturedStubTypeForVariableInSubtyping()
 
-/**
- * 判断捕获类型内部是否包含子类型检查存根
- * 直接检查捕获类型的实参类型是否是存根（仓颉无星号投影，实参始终有具体类型）
- */
-context(c: TypeSystemContext)
-private fun RigidTypeMarker.isCapturedStubTypeForVariableInSubtyping(): Boolean =
-    asCapturedType()
-        ?.typeConstructor()
-        ?.projection()
-        ?.getType()
-        ?.asRigidType()
-        ?.isStubTypeForVariableInSubtyping() == true
 
 /** 判断是否是用于 Builder 推断的存根类型 */
 context(c: TypeSystemContext)

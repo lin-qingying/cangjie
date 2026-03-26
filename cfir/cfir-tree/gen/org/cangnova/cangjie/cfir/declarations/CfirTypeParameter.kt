@@ -18,7 +18,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.typeParameter]
  */
-abstract class CfirTypeParameter : CfirDeclaration() {
+abstract class CfirTypeParameter : CfirDeclaration(), CfirTypeParameterRef {
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>

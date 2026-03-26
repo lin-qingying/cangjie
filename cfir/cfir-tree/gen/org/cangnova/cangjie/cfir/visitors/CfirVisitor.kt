@@ -50,8 +50,14 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitStatement(statement: CfirStatement, data: D): R =
         visitElement(statement, data)
 
+    open fun visitTypeParameterRef(typeParameterRef: CfirTypeParameterRef, data: D): R =
+        visitElement(typeParameterRef, data)
+
     open fun visitDeclaration(declaration: CfirDeclaration, data: D): R =
         visitElement(declaration, data)
+
+    open fun visitTypeParameterRefsOwner(typeParameterRefsOwner: CfirTypeParameterRefsOwner, data: D): R =
+        visitElement(typeParameterRefsOwner, data)
 
     open fun visitMemberDeclaration(memberDeclaration: CfirMemberDeclaration, data: D): R =
         visitElement(memberDeclaration, data)
@@ -164,6 +170,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitQualifiedAccess(qualifiedAccess: CfirQualifiedAccess, data: D): R =
         visitElement(qualifiedAccess, data)
 
+    open fun visitErrorFunction(errorFunction: CfirErrorFunction, data: D): R =
+        visitElement(errorFunction, data)
+
     open fun visitAssignment(assignment: CfirAssignment, data: D): R =
         visitElement(assignment, data)
 
@@ -214,6 +223,9 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitAnonymousFunction(anonymousFunction: CfirAnonymousFunction, data: D): R =
         visitElement(anonymousFunction, data)
+
+    open fun visitResolvedErrorReference(resolvedErrorReference: CfirResolvedErrorReference, data: D): R =
+        visitElement(resolvedErrorReference, data)
 
     open fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression, data: D): R =
         visitElement(anonymousFunctionExpression, data)

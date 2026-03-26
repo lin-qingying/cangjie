@@ -25,6 +25,3 @@ fun CangJieTypeMarker.dependsOnTypeParameters(
     val typeConstructors = with(c) { typeParameters.mapTo(mutableSetOf()) { it.getTypeConstructor() } }
     return dependsOnTypeConstructor(c, typeConstructors)
 }
-
-fun CapturedTypeMarker.captureStatus(c: TypeSystemInferenceExtensionContext): CaptureStatus =
-    with(c) { this@captureStatus.captureStatus() }

@@ -23,6 +23,7 @@ class CfirQualifiedAccessImpl @CfirImplementationDetail constructor(
     override var annotations: List<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
     override var calleeReference: CfirReference,
+    override var dispatchReceiver: CfirExpression?,
     override var explicitReceiver: CfirExpression?,
     override var typeArguments: List<CfirTypeRef>,
 ) : CfirQualifiedAccess() {
@@ -30,6 +31,7 @@ class CfirQualifiedAccessImpl @CfirImplementationDetail constructor(
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
         calleeReference.accept(visitor, data)
+        dispatchReceiver?.accept(visitor, data)
         explicitReceiver?.accept(visitor, data)
         typeArguments.forEach { it.accept(visitor, data) }
     }
@@ -47,6 +49,11 @@ class CfirQualifiedAccessImpl @CfirImplementationDetail constructor(
     override fun replaceCalleeReference(newCalleeReference: CfirReference)
      {
         this.calleeReference = newCalleeReference
+    }
+
+    override fun replaceDispatchReceiver(newDispatchReceiver: CfirExpression?)
+     {
+        this.dispatchReceiver = newDispatchReceiver
     }
 
     override fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>)
@@ -81,6 +88,7 @@ class CfirQualifiedAccessImpl @CfirImplementationDetail constructor(
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirQualifiedAccessImpl {
         transformAnnotations(transformer, data)
         transformCalleeReference(transformer, data)
+        dispatchReceiver?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data)
         transformExplicitReceiver(transformer, data)
         transformTypeArguments(transformer, data)
         return this

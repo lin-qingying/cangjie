@@ -115,13 +115,13 @@ class CfirResolvedTypesVerifier(
                 checkConeType(type.returnType, "$owner return", collector)
             }
             is ConeClassLikeType -> type.typeArguments.forEachIndexed { index, argument ->
-                checkConeType(argument, "$owner argument[$index]", collector)
+                checkConeType(argument.type, "$owner argument[$index]", collector)
             }
             is ConeStructType -> type.typeArguments.forEachIndexed { index, argument ->
-                checkConeType(argument, "$owner argument[$index]", collector)
+                checkConeType(argument.type, "$owner argument[$index]", collector)
             }
             is ConeEnumType -> type.typeArguments.forEachIndexed { index, argument ->
-                checkConeType(argument, "$owner argument[$index]", collector)
+                checkConeType(argument.type, "$owner argument[$index]", collector)
             }
             else -> Unit
         }

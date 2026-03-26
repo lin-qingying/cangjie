@@ -15,5 +15,4 @@ class ConePlaceholderType(
 
     override fun hashCode(): Int = System.identityHashCode(this)
 
-    override fun toString(): String = debugName
 }

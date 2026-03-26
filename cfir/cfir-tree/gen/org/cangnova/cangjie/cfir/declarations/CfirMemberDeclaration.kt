@@ -15,13 +15,16 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.memberDeclaration]
  */
-sealed class CfirMemberDeclaration : CfirDeclaration() {
+sealed class CfirMemberDeclaration : CfirDeclaration(), CfirTypeParameterRefsOwner {
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>
     abstract override val symbol: CfirSymbol<*>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
+    abstract override val typeParameters: List<CfirTypeParameterRef>
+    abstract val status: CfirDeclarationStatus
+    abstract val isLocal: Boolean
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitMemberDeclaration(this, data)
@@ -33,6 +36,15 @@ sealed class CfirMemberDeclaration : CfirDeclaration() {
     override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
 
+    abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
+
+
     override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirMemberDeclaration
+
+
+    override abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirMemberDeclaration
+
+
+    abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirMemberDeclaration
 
 }

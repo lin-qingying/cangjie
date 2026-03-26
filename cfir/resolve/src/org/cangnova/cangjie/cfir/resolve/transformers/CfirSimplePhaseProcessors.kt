@@ -6,9 +6,9 @@ import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitAwareBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSession
-import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculatorForFullBodyResolve
-import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculatorWithJump
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculatorForFullBodyResolve
+import org.cangnova.cangjie.cfir.resolve.body.ReturnTypeCalculatorWithJump
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
@@ -26,7 +26,7 @@ internal class CfirImplicitTypesResolveProcessor(
     phase = CfirResolvePhase.IMPLICIT_TYPES,
 ) {
     private val computationSession = CfirImplicitBodyResolveComputationSession()
-    private val returnTypeCalculator = CfirReturnTypeCalculatorWithJump(session, scopeSession, computationSession)
+    private val returnTypeCalculator = ReturnTypeCalculatorWithJump(session, scopeSession, computationSession)
 
     private val implicitTypesTransformer = CfirImplicitAwareBodyResolveTransformer(
         session = session,
@@ -60,7 +60,7 @@ internal class CfirBodyResolveProcessor(
     private val bodyResolveTransformer = CfirBodyResolveTransformer(
         session = session,
         scopeSession = scopeSession,
-        returnTypeCalculator = CfirReturnTypeCalculatorForFullBodyResolve.Default,
+        returnTypeCalculator = ReturnTypeCalculatorForFullBodyResolve.Default,
     )
 
     @Suppress("UNCHECKED_CAST")

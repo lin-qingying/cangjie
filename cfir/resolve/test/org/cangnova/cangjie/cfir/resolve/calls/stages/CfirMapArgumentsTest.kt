@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildC
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildFunctionSymbol
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildTypedExpression
+import org.cangnova.cangjie.cfir.resolve.body.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.semantics.CandidateApplicability
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.junit.jupiter.api.Assertions.*
@@ -154,7 +155,7 @@ private object StubSessionForTest : org.cangnova.cangjie.cfir.session.CfirSessio
 }
 
 private val StubBodyResolveContext = org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveContext(
-    org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculator.Default,
+    ReturnTypeCalculator.Default,
     org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext(),
 )
 

@@ -85,8 +85,12 @@ object CfirTree : AbstractCfirTreeBuilder() {
                 useInBaseTransformerDetection = false
             })
         val typeParameters = fieldSet(
-            listField("typeParameters", typeParameter, withTransform = true)
+            listField(
+                "typeParameters",
+                typeParameter
+            )
         )
+
         val annotations = fieldSet(
             listField("annotations", annotation, withReplace = true, useMutableOrEmpty = true, withTransform = true) {
                 needTransformInOtherChildren = true
@@ -173,7 +177,9 @@ object CfirTree : AbstractCfirTreeBuilder() {
         parent(rootElement)
         parent(annotationContainer)
     }
-
+    val typeParameterRef: Element by element(Declaration) {
+        +referencedSymbol(typeParameterSymbolType)
+    }
     val declaration: Element by sealedElement(Declaration) {
         parent(elementWithResolveState)
         parent(statement)
@@ -181,14 +187,32 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("origin", declarationOriginType)
         +field("attributes", declarationAttributesType)
     }
-
+    val typeParameterRefsOwner: Element by sealedElement(Declaration) {
+        +listField("typeParameters", typeParameterRef, withTransform = true)
+    }
     val memberDeclaration: Element by sealedElement(Declaration, name = "MemberDeclaration") {
         parent(declaration)
+
+        parent(typeParameterRefsOwner)
+
+        +field(
+            "status",
+            declarationStatus, withReplace = true, withTransform = true
+        )
+        +field("isLocal", boolean)
     }
 
     val callableDeclaration: Element by sealedElement(Declaration, name = "CallableDeclaration") {
         parent(memberDeclaration)
         +declaredSymbol(callableSymbolType)
+        +field(
+            "returnTypeRef",
+            typeRef, withReplace = true, withTransform = true
+        )
+
+        +field("dispatchReceiverType", coneSimpleCangJieTypeType, nullable = true)
+        +referencedSymbol(callableSymbolType.withArgs(callableDeclaration))
+
     }
 
     val classLikeDeclaration: Element by sealedElement(Declaration, name = "ClassLikeDeclaration") {
@@ -208,6 +232,8 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("sourceFile", sourceFileType, nullable = true)
         +field("packageDirective", packageDirective, withTransform = true)
         +listField("imports", importDirective, withTransform = true)
+        +field("sourceFileLinesMapping", sourceFileLinesMappingType, nullable = true)
+
         +FieldSets.declarations
     }
 
@@ -410,6 +436,8 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
 
     val typeParameter: Element by element(Declaration, name = "TypeParameter") {
+        parent(typeParameterRef)
+
         parent(declaration)
         +referencedSymbol("containingDeclarationSymbol", cfirSymbolType.withArgs(TreeTypeRef.Star)) {
             withBindThis = false
@@ -490,6 +518,8 @@ object CfirTree : AbstractCfirTreeBuilder() {
 
         +listField("arguments", expression, withTransform = true)
         +FieldSets.typeArguments
+        +field("origin", functionCallOrigin)
+
     }
     val errorNamedReference: Element by element(Reference) {
         parent(namedReference)
@@ -523,10 +553,17 @@ object CfirTree : AbstractCfirTreeBuilder() {
     val qualifiedAccess: Element by element(Expression, name = "QualifiedAccess") {
         parent(expression)
         parent(resolvable)
+        +field("dispatchReceiver", expression, nullable = true, withReplace = true)
+
         +field("explicitReceiver", expression, nullable = true, withTransform = true)
         +FieldSets.typeArguments
     }
+    val errorFunction: Element by element(Declaration) {
+        parent(function)
+        parent(diagnosticHolder)
 
+        +declaredSymbol(errorFunctionSymbolType)
+    }
     val assignment: Element by element(Expression, name = "Assignment") {
         parent(expression)
         +field("lValue", expression, withTransform = true)
@@ -642,6 +679,13 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("isLambda", booleanType)
         +field("typeRef", typeRef, withReplace = true)
         +field("matchingParameterFunctionType", coneTypeType, nullable = true, withReplace = true)
+    }
+
+    val resolvedErrorReference: Element by element(Reference) {
+        customParentInVisitor = resolvedNamedReference
+
+        parent(resolvedNamedReference)
+        parent(diagnosticHolder)
     }
 
     /**

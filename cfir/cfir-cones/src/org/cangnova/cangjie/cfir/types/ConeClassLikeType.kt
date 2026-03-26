@@ -42,7 +42,7 @@ abstract class ConeLookupTagBasedType : ConeSimpleCangJieType() {
  * [ConeClassifierLookupTag]，明确表达"这是一个分类器类型"的语义。
  */
 abstract class ConeClassifierType : ConeLookupTagBasedType() {
-    abstract override val lookupTag: ConeClassifierLookupTag
+    abstract override val lookupTag: ConeClassLikeLookupTag
 }
 
 /**
@@ -69,15 +69,7 @@ class ConeClassLikeType(
     /** 从 lookupTag 中直接提取 ClassId，方便调用方使用。 */
     val classId: ClassId get() = lookupTag.classId
 
-    override fun toString(): String = buildString {
-        append(lookupTag.name)
-        if (typeArguments.isNotEmpty()) {
-            // 以 <T1, T2, ...> 的形式拼接类型实参
-            typeArguments.joinTo(this, prefix = "<", postfix = ">")
-        }
-        // This 类型在调试输出中额外标注，便于区分
-        if (isThisType) append("(This)")
-    }
+
 }
 
 /**
@@ -98,13 +90,6 @@ class ConeStructType(
     /** 从 lookupTag 中直接提取 ClassId，方便调用方使用。 */
     val classId: ClassId get() = lookupTag.classId
 
-    override fun toString(): String = buildString {
-        append("struct ")
-        append(lookupTag.name)
-        if (typeArguments.isNotEmpty()) {
-            typeArguments.joinTo(this, prefix = "<", postfix = ">")
-        }
-    }
 }
 
 /**
@@ -147,12 +132,5 @@ class ConeEnumType(
         return result
     }
 
-    override fun toString(): String = buildString {
-        if (isRefEnum) append("ref ")
-        append("enum ")
-        append(lookupTag.name)
-        if (typeArguments.isNotEmpty()) {
-            typeArguments.joinTo(this, prefix = "<", postfix = ">")
-        }
-    }
+
 }

@@ -58,28 +58,7 @@ interface ConeTypeContext :
         return this is ConeErrorType && this.isUninferredParameter
     }
 
-    override fun SimpleTypeMarker.asCapturedType(): CapturedTypeMarker? = this as? ConeCapturedType
 
-
-    override fun CapturedTypeMarker.typeConstructor(): CapturedTypeConstructorMarker {
-        require(this is ConeCapturedType)
-        return constructor
-    }
-
-    override fun CapturedTypeMarker.captureStatus(): CaptureStatus {
-        require(this is ConeCapturedType)
-        return this.constructor.captureStatus
-    }
-
-    override fun CapturedTypeConstructorMarker.projection(): TypeArgumentMarker {
-        require(this is ConeCapturedTypeConstructor)
-        return projection
-    }
-
-    override fun CapturedTypeMarker.lowerType(): CangJieTypeMarker? {
-        require(this is ConeCapturedType)
-        return this.constructor.lowerType
-    }
 
     override fun CangJieTypeMarker.argumentsCount(): Int {
         require(this is ConeCangJieType)

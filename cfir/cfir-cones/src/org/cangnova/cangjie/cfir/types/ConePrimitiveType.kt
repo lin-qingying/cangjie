@@ -65,7 +65,6 @@ class ConePrimitiveType(
 
     override fun hashCode(): Int = kind.hashCode()
 
-    override fun toString(): String = kind.typeName
 
     companion object {
         val UNIT = ConePrimitiveType(PrimitiveTypeKind.UNIT)

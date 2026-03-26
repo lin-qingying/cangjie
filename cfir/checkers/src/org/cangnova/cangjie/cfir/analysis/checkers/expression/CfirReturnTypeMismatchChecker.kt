@@ -1,6 +1,5 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -19,7 +18,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * 函数返回类型检查器。
  * 检查 `return expr` 中 `expr` 的类型是否为所在函数返回类型的子类型。
  */
-object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker(CheckerDispatchKind.Common) {
+object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirReturnExpression) {
         val result = expression.result ?: return

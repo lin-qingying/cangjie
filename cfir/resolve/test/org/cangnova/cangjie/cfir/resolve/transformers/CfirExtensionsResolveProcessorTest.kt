@@ -8,8 +8,9 @@ import org.cangnova.cangjie.cfir.resolve.ExtendTestFixtures
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
-import org.cangnova.cangjie.cfir.resolve.services.CfirLazyDeclarationResolver
+import org.cangnova.cangjie.cfir.symbols.CfirDummyCompilerLazyDeclarationResolver
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -44,7 +45,7 @@ class CfirExtensionsResolveProcessorTest {
         }
         val indexStore = CfirExtendIndexStore()
         session.register(CfirProvider::class, provider)
-        session.register(CfirLazyDeclarationResolver::class, CfirLazyDeclarationResolver())
+        session.register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
         session.register(CfirTypeResolver::class, NoopTypeResolver)
         session.register(CfirExtendIndexStore::class, indexStore)
 
@@ -103,4 +104,3 @@ private object NoopTypeResolver : CfirTypeResolver() {
 
     override fun resolveClass(classId: ClassId): org.cangnova.cangjie.cfir.declarations.CfirClass? = null
 }
-

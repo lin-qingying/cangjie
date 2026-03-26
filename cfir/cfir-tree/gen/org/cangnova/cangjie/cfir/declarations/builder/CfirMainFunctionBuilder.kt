@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.declarations.impl.CfirMainFunctionImpl
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.symbols.CfirMainFunctionSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
@@ -25,6 +26,8 @@ class CfirMainFunctionBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
+    var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
@@ -40,6 +43,8 @@ class CfirMainFunctionBuilder {
             annotations,
             origin,
             attributes,
+            isLocal,
+            dispatchReceiverType,
             status,
             typeParameters,
             returnTypeRef,
@@ -72,6 +77,8 @@ inline fun buildMainFunctionCopy(original: CfirMainFunction, init: CfirMainFunct
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes
+    copyBuilder.isLocal = original.isLocal
+    copyBuilder.dispatchReceiverType = original.dispatchReceiverType
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.returnTypeRef = original.returnTypeRef

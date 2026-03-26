@@ -30,3 +30,4 @@ inline fun rethrowExceptionWithDetails(
     error.buildAttachment(attachmentName) { buildAttachment() }
     throw error
 }
+

@@ -486,12 +486,7 @@ class ConstraintSystemImpl(
 
     private fun isProperTypeImpl(type: CangJieTypeMarker): Boolean =
         !type.contains {
-            val capturedType = it.asRigidType()?.asCapturedType()
-
-            val typeToCheck = if (capturedType is CapturedTypeMarker && capturedType.captureStatus() == CaptureStatus.FROM_EXPRESSION)
-                capturedType.typeConstructorProjection().getType()
-            else
-                it
+            val typeToCheck = it
 
             if (typeToCheck == null) return@contains false
             if (typeVariablesThatAreCountedAsProperTypes?.contains(typeToCheck.typeConstructor()) == true) {
@@ -560,9 +555,6 @@ class ConstraintSystemImpl(
 
     override val outerSystemVariablesPrefixSize: Int
         get() = storage.outerSystemVariablesPrefixSize
-
-    override val approximatorCaches: TypeApproximatorCachesPerConfiguration
-        get() = storage.approximatorCaches
 
     override val constraintsFromAllForkPoints: MutableList<Pair<IncorporationConstraintPosition, ForkPointData>>
         get() {
@@ -670,7 +662,7 @@ class ConstraintSystemImpl(
     override fun addError(error: ConstraintSystemError) {
         checkState(State.BUILDING, State.COMPLETION, State.TRANSACTION)
         storage.errors.add(error)
-        inferenceLogger?.logReadiness(InferenceLogger.FixationLogRecord(emptyMap(), null), this)
+        inferenceLogger?.logError(error, this)
     }
 
     // KotlinConstraintSystemCompleter.Context
@@ -701,6 +693,7 @@ class ConstraintSystemImpl(
 
         storage.fixedTypeVariables[freshTypeConstructor] = resultType
         inferenceLogger?.logReadiness(InferenceLogger.FixationLogRecord(emptyMap(), variable), this@ConstraintSystemImpl)
+        inferenceLogger?.logFixVariable(variable, resultType, this@ConstraintSystemImpl)
 
 
         doPostponedComputationsIfAllVariablesAreFixed()

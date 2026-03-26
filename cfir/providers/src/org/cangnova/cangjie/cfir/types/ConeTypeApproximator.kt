@@ -120,12 +120,6 @@ class ConeTypeApproximator(
 //            )
 //        ) return false
 
-        /**
-         * 如果当前配置不是“专门处理 captured / ILT 的近似”，
-         * 那就不要拦截，让它正常执行
-         */
-        if (conf !is TypeApproximatorConfiguration.AbstractCapturedTypesAndILTApproximation)
-            return false
 
         /**
          * 核心逻辑：
@@ -140,20 +134,15 @@ class ConeTypeApproximator(
     }
 
     /**
-     * 判断某个类型“是否可能需要近似”
+     * 判断某个类型”是否可能需要近似”
      */
     private fun mightNeedApproximation(
         type: ConeCangJieType,
         conf: TypeApproximatorConfiguration
     ): Boolean = when (type) {
-
         // ILT（Ideal Literal Type，比如整数常量类型）必须近似
         is ConeIdealLiteralType -> true
-
-        // captured type 是否需要近似由配置决定
-        is ConeCapturedType -> conf.shouldApproximateCapturedType(type)
-
-        // 其他类型默认不需要
+        // 仓颉无 CapturedType，其他类型默认不需要近似
         else -> false
     }
 }

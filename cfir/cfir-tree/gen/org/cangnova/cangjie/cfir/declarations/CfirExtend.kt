@@ -22,9 +22,10 @@ abstract class CfirExtend : CfirMemberDeclaration() {
     abstract override val annotations: List<CfirAnnotation>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
+    abstract override val isLocal: Boolean
     abstract override val symbol: CfirExtendSymbol
-    abstract val status: CfirDeclarationStatus
-    abstract val typeParameters: List<CfirTypeParameter>
+    abstract override val status: CfirDeclarationStatus
+    abstract override val typeParameters: List<CfirTypeParameter>
     abstract val extendedTypeRef: CfirTypeRef
     abstract val superTypeRefs: List<CfirTypeRef>
     abstract val declarations: List<CfirDeclaration>
@@ -39,16 +40,16 @@ abstract class CfirExtend : CfirMemberDeclaration() {
     override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
 
-    abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
+    override abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
 
 
     override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirExtend
 
 
-    abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirExtend
+    override abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirExtend
 
 
-    abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirExtend
+    override abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirExtend
 
 
     abstract fun <D> transformExtendedTypeRef(transformer: CfirTransformer<D>, data: D): CfirExtend

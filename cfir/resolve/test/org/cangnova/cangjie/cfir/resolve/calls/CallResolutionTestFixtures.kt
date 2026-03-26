@@ -20,7 +20,7 @@ import org.cangnova.cangjie.cfir.resolve.CfirConstraintSystemImpl
 import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
 import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
-import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculator
+import org.cangnova.cangjie.cfir.resolve.body.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidate
@@ -41,7 +41,7 @@ import org.cangnova.cangjie.name.Name
  */
 object CallResolutionTestFixtures {
     private val STUB_BODY_RESOLVE_CONTEXT = CfirBodyResolveContext(
-        CfirReturnTypeCalculator.Default,
+        ReturnTypeCalculator.Default,
         CfirDataFlowAnalyzerContext(),
     )
 

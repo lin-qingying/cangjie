@@ -23,6 +23,7 @@ abstract class CfirQualifiedAccess : CfirExpression(), CfirResolvable {
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract override val calleeReference: CfirReference
+    abstract val dispatchReceiver: CfirExpression?
     abstract val explicitReceiver: CfirExpression?
     abstract val typeArguments: List<CfirTypeRef>
 
@@ -40,6 +41,9 @@ abstract class CfirQualifiedAccess : CfirExpression(), CfirResolvable {
 
 
     override abstract fun replaceCalleeReference(newCalleeReference: CfirReference)
+
+
+    abstract fun replaceDispatchReceiver(newDispatchReceiver: CfirExpression?)
 
 
     abstract fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>)

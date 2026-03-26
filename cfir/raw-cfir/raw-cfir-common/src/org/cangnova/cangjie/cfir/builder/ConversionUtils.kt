@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonOp
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorNameConventions
 
 /**
  * CFIR 构建通用工具函数（对齐 Kotlin 的 ConversionUtils.kt）。
@@ -47,19 +48,17 @@ private val ASSIGNMENT_TOKENS: Set<IElementType> = setOf(
 )
 
 private val COMPOUND_ASSIGN_NAMES: Map<IElementType, Name> = mapOf(
-    CjTokens.PLUSEQ to Name.identifier("plus"),
-    CjTokens.MINUSEQ to Name.identifier("minus"),
-    CjTokens.MULTEQ to Name.identifier("times"),
-    CjTokens.DIVEQ to Name.identifier("div"),
-    CjTokens.PERCEQ to Name.identifier("rem"),
-    CjTokens.ANDANDEQ to Name.identifier("and"),
-    CjTokens.OREQ to Name.identifier("or"),
-    CjTokens.ANDEQ to Name.identifier("and"),
-    CjTokens.XOREQ to Name.identifier("xor"),
-    CjTokens.LTLTEQ to Name.identifier("shl"),
-    CjTokens.GTGTEQ to Name.identifier("shr"),
-    CjTokens.OROREQ to Name.identifier("or"),
-    CjTokens.MULMULEQ to Name.identifier("pow"),
+    CjTokens.PLUSEQ to OperatorNameConventions.PLUS,
+    CjTokens.MINUSEQ to OperatorNameConventions.MINUS,
+    CjTokens.MULTEQ to OperatorNameConventions.TIMES,
+    CjTokens.DIVEQ to OperatorNameConventions.DIV,
+    CjTokens.PERCEQ to OperatorNameConventions.REM,
+    CjTokens.ANDEQ to OperatorNameConventions.AND,
+    CjTokens.OREQ to OperatorNameConventions.OR,
+    CjTokens.XOREQ to OperatorNameConventions.XOR,
+    CjTokens.LTLTEQ to OperatorNameConventions.LEFT_SHIFT,
+    CjTokens.GTGTEQ to OperatorNameConventions.RIGHT_SHIFT,
+    CjTokens.MULMULEQ to OperatorNameConventions.EXPONENTIATION,
 )
 
 private val BINARY_OP_KINDS: Map<IElementType, CfirBinaryOpKind> = mapOf(
@@ -79,29 +78,28 @@ private val COMPARISON_OPS: Map<IElementType, CfirComparisonOp> = mapOf(
 )
 
 private val BINARY_OPERATOR_NAMES: Map<IElementType, Name> = mapOf(
-    CjTokens.PLUS to Name.identifier("plus"),
-    CjTokens.MINUS to Name.identifier("minus"),
-    CjTokens.MUL to Name.identifier("times"),
-    CjTokens.DIV to Name.identifier("div"),
-    CjTokens.PERC to Name.identifier("rem"),
-    CjTokens.AND to Name.identifier("and"),
-    CjTokens.OR to Name.identifier("or"),
-    CjTokens.XOR to Name.identifier("xor"),
-    CjTokens.LTLT to Name.identifier("shl"),
-    CjTokens.GTGT to Name.identifier("shr"),
-    CjTokens.MULMUL to Name.identifier("pow"),
+    CjTokens.PLUS to OperatorNameConventions.PLUS,
+    CjTokens.MINUS to OperatorNameConventions.MINUS,
+    CjTokens.MUL to OperatorNameConventions.TIMES,
+    CjTokens.DIV to OperatorNameConventions.DIV,
+    CjTokens.PERC to OperatorNameConventions.REM,
+    CjTokens.AND to OperatorNameConventions.AND,
+    CjTokens.OR to OperatorNameConventions.OR,
+    CjTokens.XOR to OperatorNameConventions.XOR,
+    CjTokens.LTLT to OperatorNameConventions.LEFT_SHIFT,
+    CjTokens.GTGT to OperatorNameConventions.RIGHT_SHIFT,
+    CjTokens.MULMUL to OperatorNameConventions.EXPONENTIATION,
 )
 
 private val PREFIX_UNARY_NAMES: Map<IElementType, Name> = mapOf(
-    CjTokens.MINUS to Name.identifier("unaryMinus"),
-    CjTokens.PLUS to Name.identifier("unaryPlus"),
-    CjTokens.EXCL to Name.identifier("not"),
-    CjTokens.TILDE to Name.identifier("inv"),
-    CjTokens.PLUSPLUS to Name.identifier("inc"),
-    CjTokens.MINUSMINUS to Name.identifier("dec"),
+    CjTokens.MINUS to OperatorNameConventions.UNARY_MINUS,
+    CjTokens.PLUS to OperatorNameConventions.UNARY_PLUS,
+    CjTokens.EXCL to OperatorNameConventions.NOT,
+    CjTokens.PLUSPLUS to OperatorNameConventions.INC,
+    CjTokens.MINUSMINUS to OperatorNameConventions.DEC,
 )
 
 private val POSTFIX_UNARY_NAMES: Map<IElementType, Name> = mapOf(
-    CjTokens.PLUSPLUS to Name.identifier("postInc"),
-    CjTokens.MINUSMINUS to Name.identifier("postDec"),
+    CjTokens.PLUSPLUS to OperatorNameConventions.INC,
+    CjTokens.MINUSMINUS to OperatorNameConventions.DEC,
 )

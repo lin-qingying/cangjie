@@ -4,7 +4,21 @@
   "session_ids": [
     "ses_2dcb00b98ffeW2geb4PHcMdR9v",
     "ses_2dc935f52ffeyKURbKyid9XUL8",
-    "ses_2dc935d93ffeIQPc8LCIuDiY8I"
+    "ses_2dc935d93ffeIQPc8LCIuDiY8I",
+    "ses_2dc52672bffeT9z9KG7ngeReq4",
+    "ses_2dbf53ed8ffetSH7KTAv02fbS2",
+    "ses_2dbc0313fffe4K9WzHD3uc9oMc",
+    "ses_2dbb46e08ffeZmSW4L0GDI6mSk",
+    "ses_2dbaf5a34ffe86sH2T2kGpA6If",
+    "ses_2dbaf5a2fffe5zbH7bSn1v6Bp9",
+    "ses_2db7ae80bffeW4HHxtnyYeGh3t",
+    "ses_2daec1f49ffe81j1XR8xjstpWt",
+    "ses_2daa54cb5ffeNJk0MAzQTjrfwL",
+    "ses_2da923eadffegIa88XQtT2YHuA",
+    "ses_2da64e086ffeBnl9P06EqPoXii",
+    "ses_2d76d6142ffe7H1v8HtdbH8zIx",
+    "ses_2d76d6152ffemaUL6UuRbLiOxu",
+    "ses_2d730ed66ffeVqNNYxWSYu7Bvb"
   ],
   "plan_name": "fir-inference-logger-port",
   "agent": "atlas",

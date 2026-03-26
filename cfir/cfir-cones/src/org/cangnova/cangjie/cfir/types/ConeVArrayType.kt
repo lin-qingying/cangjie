@@ -25,5 +25,4 @@ class ConeVArrayType(
         return result
     }
 
-    override fun toString(): String = "VArray<$elementType, $size>"
 }

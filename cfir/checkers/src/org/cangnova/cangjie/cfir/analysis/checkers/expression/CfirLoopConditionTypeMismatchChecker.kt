@@ -1,6 +1,5 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 
@@ -18,7 +17,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * `while` / `do-while` 条件类型检查：条件表达式必须为 `Bool`。
  * `for-in` 没有用户可写的布尔条件，因此直接跳过。
  */
-object CfirLoopConditionTypeMismatchChecker : CfirBasicExpressionChecker(CheckerDispatchKind.Common) {
+object CfirLoopConditionTypeMismatchChecker : CfirBasicExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         val loopExpression = expression as? CfirLoopExpression ?: return

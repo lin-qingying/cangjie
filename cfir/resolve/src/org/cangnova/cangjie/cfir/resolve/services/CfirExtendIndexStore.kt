@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassKind
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
@@ -23,6 +24,8 @@ import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.arrayElementType
+import org.cangnova.cangjie.cfir.types.classId
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -137,12 +140,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
 
     private fun CfirTypeRef.toClassIdOrNull(): ClassId? {
         val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
-        return when (coneType) {
-            is ConeClassLikeType -> coneType.classId
-            is ConeStructType -> coneType.classId
-            is ConeEnumType -> coneType.classId
-            else -> null
-        }
+        return coneType.classIdOrPrimitiveClassId
     }
 }
 
@@ -185,7 +183,7 @@ private fun CfirTypeRef.containsAnyTypeParameter(parameterNames: Set<String>): B
 }
 
 private fun org.cangnova.cangjie.cfir.types.ConeCangJieType.containsAnyTypeParameter(parameterNames: Set<String>): Boolean = when (this) {
-    is ConeTypeParameterType -> lookupTag.name in parameterNames
+    is ConeTypeParameterType -> lookupTag.name.asString() in parameterNames
     is ConeClassLikeType -> typeArguments.any { it.containsAnyTypeParameter(parameterNames) }
     is ConeStructType -> typeArguments.any { it.containsAnyTypeParameter(parameterNames) }
     is ConeEnumType -> typeArguments.any { it.containsAnyTypeParameter(parameterNames) }
@@ -206,6 +204,7 @@ private fun ConeTypeProjection.containsAnyTypeParameter(parameterNames: Set<Stri
 }
 
 private fun CfirClassLikeDeclaration.classKindOrNull(): CfirClassKind? = when (this) {
+    is CfirPrimitiveTypeDeclaration -> CfirClassKind.CLASS
     is CfirClass -> CfirClassKind.CLASS
     is CfirInterface -> CfirClassKind.INTERFACE
     is CfirStruct -> CfirClassKind.STRUCT
@@ -214,6 +213,7 @@ private fun CfirClassLikeDeclaration.classKindOrNull(): CfirClassKind? = when (t
 }
 
 private fun CfirClassLikeDeclaration.typeParametersOrEmpty(): List<CfirTypeParameter> = when (this) {
+    is CfirPrimitiveTypeDeclaration -> emptyList()
     is CfirClass -> typeParameters
     is CfirInterface -> typeParameters
     is CfirStruct -> typeParameters

@@ -174,7 +174,7 @@ open class CfirFrontendFacade(
         sessionFactoryContext: CfirDefaultSessionFactory.Context,
     ): CfirOutputPartForDependsOnModule {
         val project = testServices.compilerConfigurationProvider.getProject(module)
-        val parser = module.directives.singleValue(CfirDiagnosticsDirectives.CFIR_PARSER)
+        val parser = module.directives[CfirDiagnosticsDirectives.CFIR_PARSER].lastOrNull() ?: CfirParser.LightTree
 
         val (cjFiles, lightTreeFiles) = when (parser) {
             CfirParser.LightTree -> {
@@ -185,6 +185,8 @@ open class CfirFrontendFacade(
         }
 
         val sessionConfigurator: CfirSessionConfigurator.() -> Unit = {
+            testServices.cfirLazyDeclarationResolverWithPhaseCheckingSessionComponentRegistrar
+                ?.registerAdditionalComponent(this)
 
             if (CfirDiagnosticsDirectives.WITH_EXTRA_CHECKERS in module.directives) {
                 registerExtraCommonCheckers()

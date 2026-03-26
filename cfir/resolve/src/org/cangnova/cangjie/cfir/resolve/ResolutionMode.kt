@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import kotlin.jvm.JvmName
 
 sealed class ResolutionMode(
     val forceFullCompletion: Boolean,
@@ -78,6 +79,7 @@ fun withExpectedType(
     else -> ResolutionMode.ContextIndependent
 }
 
+@JvmName("withExpectedNullableType")
 fun withExpectedType(coneType: ConeCangJieType?, lastStatementInBlock: Boolean = false): ResolutionMode {
     return coneType?.let { withExpectedType(it, lastStatementInBlock) } ?: ResolutionMode.ContextDependent
 }

@@ -6,6 +6,7 @@ dependencies {
     api(project(":cfir:cfir-common"))
     api(project(":cfir:cfir-tree"))
     api(project(":cfir:symbols"))
+    api(project(":cfir:providers"))
 
     api(project(":cfir:semantics"))
 

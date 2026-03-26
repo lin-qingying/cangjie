@@ -1,44 +1,70 @@
 package org.cangnova.cangjie.cfir.lightTree
 
 import com.intellij.lang.LighterASTNode
+import com.intellij.lang.PsiBuilderFactory
 import com.intellij.util.diff.FlyweightCapableTreeStructure
+import java.io.File
+import java.nio.file.Path
+import org.cangnova.cangjie.CjIoFileSourceFile
+import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.lexer.CangJieLexer
+import org.cangnova.cangjie.parsing.CangJieLightParser
+import org.cangnova.cangjie.parsing.CangJieParserDefinition
+import org.cangnova.cangjie.source.CjSourceFileLinesMapping
+import org.cangnova.cangjie.source.readSourceFileWithMapping
 
-/**
- * LightTree → Raw CFIR 顶层入口（对齐 Kotlin K2 的 LightTree2Fir）。
- *
- * 提供从 [FlyweightCapableTreeStructure] 构建 [CfirFile] 的 API。
- * 与 [PsiRawCfirBuilder.buildCfirFile] 对应，产出结构等价的 CFIR 树。
- *
- * 使用方式:
- * ```kotlin
- * val lightTree = CangJieLightParser.parse(builder)
- * val cfirFile = LightTree2Cfir(session, sourceText).buildCfirFile(lightTree)
- * ```
- */
 class LightTree2Cfir(
-    private val session: CfirSession,
-    private val source: CharSequence,
-    private val fileName: String = "",
+    val session: CfirSession,
+    private val scopeProvider: CfirScopeProvider,
+
+    @Suppress("UNUSED_PARAMETER")
+    private val diagnosticsReporter: DiagnosticReporter? = null,
     private val bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
 ) {
-    /**
-     * 将 LightTree 根节点构建为 [CfirFile]。
-     *
-     * @param tree LightTree 结构（由 [CangJieLightParser.parse] 返回）
-     * @return 未解析的 Raw CFIR 文件节点
-     */
-    fun buildCfirFile(tree: FlyweightCapableTreeStructure<LighterASTNode>): CfirFile {
-        val builder = LightTreeRawCfirDeclarationBuilder(
+    fun buildCfirFile(path: Path): CfirFile {
+        return buildCfirFile(path.toFile())
+    }
+
+    fun buildCfirFile(file: File): CfirFile {
+        val sourceFile = CjIoFileSourceFile(file)
+        val (code, linesMapping) = file.inputStream().reader(Charsets.UTF_8).use {
+            it.readSourceFileWithMapping()
+        }
+        return buildCfirFile(code, sourceFile, linesMapping)
+    }
+
+    fun buildCfirFile(
+        lightTree: FlyweightCapableTreeStructure<LighterASTNode>,
+        sourceFile: CjSourceFile,
+        linesMapping: CjSourceFileLinesMapping,
+    ): CfirFile {
+        val code = sourceFile.getContentsAsStream().reader(Charsets.UTF_8).use { it.readText() }
+        return LightTreeRawCfirDeclarationBuilder(
             session = session,
-            tree = tree,
-            source = source,
-            fileName = fileName,
+            baseScopeProvider = scopeProvider,
+            tree = lightTree,
+            source = code,
             bodyBuildingMode = bodyBuildingMode,
+        ).buildCfirFile(lightTree.root, sourceFile, linesMapping)
+    }
+
+    fun buildCfirFile(
+        code: CharSequence,
+        sourceFile: CjSourceFile,
+        linesMapping: CjSourceFileLinesMapping,
+    ): CfirFile {
+        val parserDefinition = CangJieParserDefinition()
+        val builder = PsiBuilderFactory.getInstance().createBuilder(
+            parserDefinition,
+            CangJieLexer(),
+            code,
         )
-        val root = tree.root
-        return builder.buildFile(root)
+        val lightTree = CangJieLightParser.parse(builder)
+        return buildCfirFile(lightTree, sourceFile, linesMapping)
     }
 }

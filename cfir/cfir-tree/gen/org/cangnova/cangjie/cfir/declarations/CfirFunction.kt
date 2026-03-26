@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -24,11 +25,13 @@ sealed class CfirFunction : CfirCallableDeclaration(), CfirControlFlowGraphOwner
     abstract override val annotations: List<CfirAnnotation>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
+    abstract override val isLocal: Boolean
+    abstract override val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
     abstract override val symbol: CfirFunctionSymbol<*>
-    abstract val status: CfirDeclarationStatus
-    abstract val typeParameters: List<CfirTypeParameter>
-    abstract val returnTypeRef: CfirTypeRef
+    abstract override val status: CfirDeclarationStatus
+    abstract override val typeParameters: List<CfirTypeParameter>
+    abstract override val returnTypeRef: CfirTypeRef
     abstract val valueParameters: List<CfirValueParameter>
     abstract val body: CfirBlock?
 
@@ -45,22 +48,22 @@ sealed class CfirFunction : CfirCallableDeclaration(), CfirControlFlowGraphOwner
     override abstract fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 
 
-    abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
+    override abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
 
 
-    abstract fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
+    override abstract fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
 
 
     override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFunction
 
 
-    abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirFunction
+    override abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirFunction
 
 
-    abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirFunction
+    override abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirFunction
 
 
-    abstract fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirFunction
+    override abstract fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirFunction
 
 
     abstract fun <D> transformValueParameters(transformer: CfirTransformer<D>, data: D): CfirFunction

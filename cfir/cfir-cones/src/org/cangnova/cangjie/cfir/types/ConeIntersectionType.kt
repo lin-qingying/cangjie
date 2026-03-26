@@ -16,8 +16,7 @@ class ConeIntersectionType(
 
     override fun hashCode(): Int = intersectedTypes.hashCode()
 
-    override fun toString(): String =
-        intersectedTypes.joinToString(" & ")
+
 }
 
 /**
@@ -36,6 +35,5 @@ class ConeUnionType(
 
     override fun hashCode(): Int = unionTypes.hashCode()
 
-    override fun toString(): String =
-        unionTypes.joinToString(" | ")
+
 }

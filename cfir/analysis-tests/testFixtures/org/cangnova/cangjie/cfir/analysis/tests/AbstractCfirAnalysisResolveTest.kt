@@ -23,12 +23,12 @@ import java.io.File
  *
  * 流程：
  * 1. `.cj` -> Raw CFIR
- * 2. 逐阶段推进到目标 resolve phase（默认 CHECKERS）
+ * 2. 逐阶段推进到目标 resolve phase（默认 BODY_RESOLVE）
  * 3. dump 最终 CFIR，并与 `.cfir.txt` 对比
  */
 abstract class AbstractCfirAnalysisResolveTest : AbstractCfirAnalysisTestCase() {
 
-    protected open val targetPhase: CfirResolvePhase = CfirResolvePhase.CHECKERS
+    protected open val targetPhase: CfirResolvePhase = CfirResolvePhase.BODY_RESOLVE
 
     protected fun runAnalysisTest(testDataFilePath: String) {
         val sourceFile = resolveTestDataPath(testDataFilePath)

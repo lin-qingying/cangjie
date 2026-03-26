@@ -9,7 +9,6 @@ import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
-import org.cangnova.cangjie.cfir.resolve.calls.overloads.ConeOverloadConflictResolver
 import org.cangnova.cangjie.cfir.resolve.inference.CfirCallCompleter
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.transformers.IntegerLiteralAndOperatorApproximationTransformer
@@ -24,10 +23,10 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import kotlinx.collections.immutable.toPersistentList
+import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 
 /**
  * Body resolve transformer 的抽象基类。
@@ -67,7 +66,7 @@ abstract class CfirAbstractBodyResolveTransformer(
         override val noExpectedType: CfirTypeRef
             get() = buildErrorTypeRef { diagnostic = org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic("No expected type") }
 
-        override val returnTypeCalculator: CfirReturnTypeCalculator
+        override val returnTypeCalculator: ReturnTypeCalculator
             get() = context.returnTypeCalculator
         override val implicitValueStorage
             get() = context.implicitValueStorage
@@ -196,6 +195,14 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
 
     override fun transformFunction(function: CfirFunction, data: ResolutionMode): CfirFunction {
         return declarationsTransformer.transformFunction(function, data)
+    }
+
+    override fun transformNamedFunction(namedFunction: CfirNamedFunction, data: ResolutionMode): CfirNamedFunction {
+        return declarationsTransformer.transformFunction(namedFunction, data) as CfirNamedFunction
+    }
+
+    override fun transformMainFunction(mainFunction: CfirMainFunction, data: ResolutionMode): CfirMainFunction {
+        return declarationsTransformer.transformFunction(mainFunction, data) as CfirMainFunction
     }
 
     override fun transformProperty(property: CfirProperty, data: ResolutionMode): CfirProperty {

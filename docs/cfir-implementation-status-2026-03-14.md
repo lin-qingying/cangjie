@@ -66,7 +66,7 @@
 | 2 | **调用解析器** | "完全缺失" | ✅ 已实现 | **80%** | CfirCallResolver.kt（162 行）+ CfirTowerResolver.kt（182 行）：Tower 遍历 + 候选收集 + 4 阶段验证 + 冲突解析 |
 | 3 | **重载解析器** | "完全缺失" | ✅ 已实现 | **75%** | ConeOverloadConflictResolver.kt（115 行）：FlatSignature 提取 + specificity 比较 + 非泛型优先 |
 | 4 | **类型兼容性检查** | "完全缺失" | ✅ 已实现 | **95%** | ConeSubtypeChecker.kt（194 行）：16 条子类型规则完整覆盖 |
-| 5 | **返回类型推算器** | "完全缺失" | ✅ 已实现 | **90%** | CfirReturnTypeCalculatorWithJump.kt（108 行）：完整实现 + 递归保护 |
+| 5 | **返回类型推算器** | "完全缺失" | ✅ 已实现 | **90%** | ReturnTypeCalculatorWithJump.kt（108 行）：完整实现 + 递归保护 |
 
 ---
 
@@ -123,7 +123,7 @@
 | CfirTowerResolver.kt | Tower 名称查询 + 候选收集 | 80% | 182 | — |
 | CfirCallResolver.kt | 调用解析（Tower + 验证 + 冲突） | 80% | 162 | — |
 | ConeOverloadConflictResolver.kt | specificity 重载冲突解析 | 75% | 115 | — |
-| CfirReturnTypeCalculatorWithJump.kt | 返回类型推算 + 递归保护 | 90% | 108 | — |
+| ReturnTypeCalculatorWithJump.kt | 返回类型推算 + 递归保护 | 90% | 108 | — |
 | CfirCandidateCollector.kt | 候选收集 + 排序 | 70% | 92 | — |
 | CfirImplicitAwareBodyResolveTransformer.kt | 隐式类型推断 | 90% | 93 | — |
 

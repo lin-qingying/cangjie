@@ -1,41 +1,32 @@
 package org.cangnova.cangjie.name
 
-interface IClassId {
-    val packageFqName: FqName
-    val relativeClassName: FqName
-    val isLocal: Boolean
-    val shortClassName: Name
-    fun asSingleFqName(): FqName
-    val outerClassId: ClassId?
-}
 
 data class ClassId(
-    override val packageFqName: FqName,
-    override val relativeClassName: FqName,
-    override val isLocal: Boolean,
-) : IClassId {
+    val packageFqName: FqName,
+    val relativeClassName: FqName,
+) {
     constructor(packageFqName: FqName, topLevelName: Name) : this(
         packageFqName,
         FqName.topLevel(topLevelName),
-        isLocal = false,
+
     )
 
     init {
         assert(!relativeClassName.isRoot) {
-            "Class name must not be root: " + packageFqName + if (isLocal) " (local)" else ""
+            "Class name must not be root: $packageFqName "
         }
     }
 
     val parentClassId: ClassId?
-        get() = if (isNestedClass) ClassId(packageFqName, relativeClassName.parent(), isLocal) else null
+        get() = if (isNestedClass) ClassId(packageFqName, relativeClassName.parent()) else null
 
-    override val shortClassName: Name
+    val shortClassName: Name
         get() = relativeClassName.shortName()
 
-    override val outerClassId: ClassId?
+    val outerClassId: ClassId?
         get() {
             val parent = relativeClassName.parent()
-            return if (!parent.isRoot) ClassId(packageFqName, parent, isLocal) else null
+            return if (!parent.isRoot) ClassId(packageFqName, parent) else null
         }
 
     val outermostClassId: ClassId
@@ -44,16 +35,16 @@ data class ClassId(
             while (!name.parent().isRoot) {
                 name = name.parent()
             }
-            return ClassId(packageFqName, name, isLocal = false)
+            return ClassId(packageFqName, name,)
         }
 
     val isNestedClass: Boolean
         get() = !relativeClassName.parent().isRoot
 
     fun createNestedClassId(name: Name): ClassId =
-        ClassId(packageFqName, relativeClassName.child(name), isLocal)
+        ClassId(packageFqName, relativeClassName.child(name))
 
-    override fun asSingleFqName(): FqName =
+    fun asSingleFqName(): FqName =
         if (packageFqName.isRoot) relativeClassName
         else FqName(packageFqName.asString() + "." + relativeClassName.asString())
 
@@ -81,19 +72,11 @@ data class ClassId(
             }
         }
 
-    override fun equals(other: Any?): Boolean {
-        if (other !is ClassId) return false
-        return other.packageFqName == packageFqName && other.relativeClassName == relativeClassName
-    }
 
     override fun toString(): String =
         if (packageFqName.isRoot) "/" + asString() else asString()
 
-    override fun hashCode(): Int {
-        var result = packageFqName.hashCode()
-        result = 31 * result + relativeClassName.hashCode()
-        return result
-    }
+
 
     companion object {
         @JvmStatic
@@ -102,7 +85,7 @@ data class ClassId(
 
         @JvmOverloads
         @JvmStatic
-        fun fromString(string: String, isLocal: Boolean = false): ClassId {
+        fun fromString(string: String): ClassId {
             val lastSlashIndex = string.lastIndexOf("/")
             val packageName: String
             val className: String
@@ -113,7 +96,7 @@ data class ClassId(
                 packageName = string.substring(0, lastSlashIndex).replace('/', '.')
                 className = string.substring(lastSlashIndex + 1)
             }
-            return ClassId(FqName(packageName), FqName(className), isLocal)
+            return ClassId(FqName(packageName), FqName(className),)
         }
     }
 }

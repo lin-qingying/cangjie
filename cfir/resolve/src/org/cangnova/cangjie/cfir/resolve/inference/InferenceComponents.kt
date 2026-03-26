@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.NoMutableState
 import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
+import org.cangnova.cangjie.cfir.session.inferenceLogger
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.types.ConeInferenceContext
 import org.cangnova.cangjie.cfir.types.typeApproximator

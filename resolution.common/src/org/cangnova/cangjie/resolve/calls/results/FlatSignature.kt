@@ -57,8 +57,6 @@ interface SimpleConstraintSystem {
     fun addSubtypeConstraint(subType: CangJieTypeMarker, superType: CangJieTypeMarker)
     fun hasContradiction(): Boolean
 
-    // todo hack for migration
-    val captureFromArgument get() = false
 
     val context: TypeSystemInferenceExtensionContext
 
@@ -95,7 +93,7 @@ class FlatSignatureComparisonState(
              * so we capture types from receiver and value parameters.
              */
             val specificCapturedType = AbstractTypeChecker.prepareType(cs.context, specificType)
-                .let { if (cs.captureFromArgument) cs.context.captureFromExpression(it) ?: it else it }
+
             cs.addSubtypeConstraint(specificCapturedType, substitutedGeneralType)
             if (cs.hasContradiction()) {
                 return true

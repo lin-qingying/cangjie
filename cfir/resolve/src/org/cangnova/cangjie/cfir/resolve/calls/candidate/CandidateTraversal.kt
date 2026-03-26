@@ -2,14 +2,6 @@ package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
 import org.cangnova.cangjie.cfir.resolve.calls.*
 
-/**
- * Atom 树遍历工具。
- *
- * 对齐 K2 `CandidateTraversal.kt`，提供对调用解析 atom 树的深度优先遍历，
- * 分别处理候选和延迟 atom。
- *
- * 使用 visited set 避免在存在共享子树（如 PCLA 场景）时重复处理。
- */
 fun ConeResolutionAtom.processCandidatesAndPostponedAtoms(
     candidateProcessor: (Candidate) -> Unit,
     postponedAtomsProcessor: (ConePostponedResolvedAtom) -> Unit,
@@ -50,23 +42,20 @@ private fun ConeResolutionAtom.processAtomRecursively(
             subAtom?.processAtomRecursively(visited, candidateProcessor, postponedAtomsProcessor)
         }
 
-
-
-        is ConeSimpleNameForContextSensitiveResolution -> {
-            postponedAtomsProcessor(this)
-        }
-
+        is ConeResolvedCallableReferenceAtom,
+        is ConeSimpleNameForContextSensitiveResolution,
         is ConeContextSensitiveAlternativeForQualifierAtom -> {
             postponedAtomsProcessor(this)
         }
 
         is ConeResolutionAtomWithPostponedChild -> {
-            val child = subAtom
-            child?.processAtomRecursively(visited, candidateProcessor, postponedAtomsProcessor)
+            subAtom?.processAtomRecursively(visited, candidateProcessor, postponedAtomsProcessor)
         }
 
-        is ConeSimpleLeafResolutionAtom -> {
-            // 叶子 atom，无需递归
+        is ConeResolutionAtomWithSingleChild -> {
+            subAtom?.processAtomRecursively(visited, candidateProcessor, postponedAtomsProcessor)
         }
+
+        is ConeSimpleLeafResolutionAtom -> Unit
     }
 }

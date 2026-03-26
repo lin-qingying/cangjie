@@ -43,12 +43,5 @@ class ConeFuncType(
         return result
     }
 
-    override fun toString(): String = buildString {
-        if (isCFunc) append("CFunc<")
-        append("(")
-        parameterTypes.joinTo(this)
-        append(") -> ")
-        append(returnType)
-        if (isCFunc) append(">")
-    }
+
 }

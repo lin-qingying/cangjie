@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.ProcessorAction
+import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
@@ -27,7 +28,7 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
     ): CfirTypeScope {
         val classSymbol = klass.symbol as? CfirClassSymbol ?: return CfirTypeScope.Empty
         return scopeSession.getOrBuild(useSiteSession to classSymbol, USE_SITE) {
-            CfirClassUseSiteMemberScope(classSymbol, useSiteSession.symbolProvider)
+            CfirClassUseSiteMemberScope(classSymbol, useSiteSession.symbolProvider, useSiteSession.extendProvider)
         }
     }
 

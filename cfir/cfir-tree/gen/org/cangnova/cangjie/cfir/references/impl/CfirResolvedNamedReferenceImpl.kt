@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.references.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.CfirPureAbstractElement
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -19,7 +20,7 @@ class CfirResolvedNamedReferenceImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override val name: Name,
     override val resolvedSymbol: CfirSymbol<*>,
-) : CfirResolvedNamedReference() {
+) : CfirPureAbstractElement(), CfirResolvedNamedReference {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
     }

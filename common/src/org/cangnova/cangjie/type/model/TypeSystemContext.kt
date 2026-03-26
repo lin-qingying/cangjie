@@ -48,14 +48,7 @@ interface TypeVariableMarker
 /** 类型变量对应的类型构造器标记接口 */
 interface TypeVariableTypeConstructorMarker : TypeConstructorMarker
 
-/** 捕获类型对应的类型构造器标记接口 */
-interface CapturedTypeConstructorMarker : TypeConstructorMarker
 
-/**
- * 捕获类型：类型推断过程中由泛型实参捕获产生的中间类型
- * 仓颉无通配符投影，捕获类型仅在编译器内部推断阶段使用（参考 Kotlin K2 推断机制）
- */
-interface CapturedTypeMarker : SimpleTypeMarker
 
 /**
  * 存根类型：类型推断中间状态的占位类型
@@ -233,8 +226,6 @@ interface TypeSystemInferenceExtensionContext : TypeSystemContext, TypeSystemBui
      */
     fun TypeConstructorMarker.getApproximatedIntegerLiteralType(expectedType: CangJieTypeMarker?): CangJieTypeMarker
 
-    /** 判断该类型构造器是否是捕获类型构造器 */
-    fun TypeConstructorMarker.isCapturedTypeConstructor(): Boolean
 
     /** 擦除类型中出现的所有含类型参数的类型 */
     fun CangJieTypeMarker.eraseContainingTypeParameters(): CangJieTypeMarker
@@ -251,21 +242,7 @@ interface TypeSystemInferenceExtensionContext : TypeSystemContext, TypeSystemBui
     /** 判断该类型是否是内置函数类型 */
     fun CangJieTypeMarker.isFunctionType(): Boolean
 
-    /**
-     * 创建捕获类型
-     * 仓颉无通配符/星号投影，捕获类型仅用于推断约束的内部表示
-     *
-     * @param constructorProjection 产生此捕获的泛型实参
-     * @param constructorSupertypes 捕获类型的父类型列表
-     * @param lowerType             捕获类型的下界（可为 null）
-     * @param captureStatus         捕获状态
-     */
-    fun createCapturedType(
-        constructorProjection: TypeArgumentMarker,
-        constructorSupertypes: List<CangJieTypeMarker>,
-        lowerType: CangJieTypeMarker?,
-        captureStatus: CaptureStatus
-    ): CapturedTypeMarker
+
 
     /** 为 Builder 推断创建存根类型 */
     fun createStubTypeForBuilderInference(typeVariable: TypeVariableMarker): StubTypeMarker
@@ -310,13 +287,7 @@ interface TypeSystemInferenceExtensionContext : TypeSystemContext, TypeSystemBui
      */
     fun TypeVariableMarker.freshTypeConstructor(): TypeVariableTypeConstructorMarker
 
-    /** 获取捕获类型对应的原始泛型实参 */
-    fun CapturedTypeMarker.typeConstructorProjection(): TypeArgumentMarker
-
-    /** 获取捕获类型关联的类型参数（如有） */
-    fun CapturedTypeMarker.typeParameter(): TypeParameterMarker?
-
-    /** 获取类型变量的默认类型（用于无法推断时的 fallback） */
+     /** 获取类型变量的默认类型（用于无法推断时的 fallback） */
     fun TypeVariableMarker.defaultType(): SimpleTypeMarker
 
     /**
@@ -401,10 +372,11 @@ interface TypeSystemInferenceExtensionContext : TypeSystemContext, TypeSystemBui
     fun createSubstitutionFromSubtypingStubTypesToTypeVariables(): TypeSubstitutorMarker
 
     /**
-     * 为自引用（递归）类型参数创建捕获的自引用投影
-     * 处理如 class Tree<T > where T <: Tree<T> 这类递归泛型约束
+     * 为自引用（递归）类型参数创建占位类型。
+     * 处理如 class Tree<T> where T <: Tree<T> 这类递归泛型约束。
+     * 仓颉无 CapturedType，直接返回上界交叉类型作为占位。
      */
-    fun createCapturedPlaceholderTypeForSelfType(
+    fun createPlaceholderTypeForSelfType(
         typeVariable: TypeVariableTypeConstructorMarker,
         typesForRecursiveTypeParameters: List<CangJieTypeMarker>,
     ): SimpleTypeMarker? {
@@ -415,8 +387,7 @@ interface TypeSystemInferenceExtensionContext : TypeSystemContext, TypeSystemBui
         val superType = intersectTypes(
             typesForRecursiveTypeParameters.map { type ->
                 type.replaceArgumentsDeeply {
-                    val typeConstructor = it.getType()?.typeConstructor()
-                    when (typeConstructor) {
+                    when (val typeConstructor = it.getType()?.typeConstructor()) {
                         typeVariable -> selfProjection
                         is TypeVariableTypeConstructorMarker -> createTypeArgument(
                             createUninferredType(typeConstructor)
@@ -427,7 +398,8 @@ interface TypeSystemInferenceExtensionContext : TypeSystemContext, TypeSystemBui
                 }
             }
         )
-        return createCapturedType(selfProjection, listOf(superType), lowerType = null, CaptureStatus.FROM_EXPRESSION)
+        // 仓颉无 CapturedType，直接用上界类型作为自类型占位
+        return superType.asRigidType() as? SimpleTypeMarker
     }
 
     /** 为给定基础类型的所有父类型构造替换器 */
@@ -500,42 +472,8 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
     /** 判断类型是否是尚未推断的参数类型 */
     fun CangJieTypeMarker.isUninferredParameter(): Boolean
 
-    // ------------------------------------------------------------------
-    // 捕获类型转换
-    // ------------------------------------------------------------------
-
-    /**
-     * @deprecated 对 CapturedTypeMarker 调用此方法是无意义的
-     */
-    @Deprecated(level = DeprecationLevel.ERROR, message = "此调用无实际效果，请直接使用该值")
-    fun CapturedTypeMarker.asCapturedType(): CapturedTypeMarker = this
-
-    /** 尝试将简单类型转为捕获类型，失败返回 null */
-    fun SimpleTypeMarker.asCapturedType(): CapturedTypeMarker?
-
-    /** 尝试将刚性类型转为捕获类型 */
-    fun RigidTypeMarker.asCapturedType(): CapturedTypeMarker? =
-        (this as? SimpleTypeMarker)?.asCapturedType()
-
-    /** 判断类型是否是捕获类型 */
-    fun CangJieTypeMarker.isCapturedType() = asRigidType()?.asCapturedType() != null
-
-    // ------------------------------------------------------------------
-    // 捕获类型属性访问
-    // ------------------------------------------------------------------
 
 
-    /** 获取捕获类型的构造器 */
-    fun CapturedTypeMarker.typeConstructor(): CapturedTypeConstructorMarker
-
-    /** 获取捕获状态（子类型检查/合并/表达式推断） */
-    fun CapturedTypeMarker.captureStatus(): CaptureStatus
-
-    /** 获取捕获类型构造器对应的原始泛型实参 */
-    fun CapturedTypeConstructorMarker.projection(): TypeArgumentMarker
-
-    /** 获取捕获类型的下界类型（如有） */
-    fun CapturedTypeMarker.lowerType(): CangJieTypeMarker?
 
     // ------------------------------------------------------------------
     // 泛型实参访问
@@ -706,14 +644,6 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
     /** 判断类型构造器是否对应不可被继承的 final class 或 struct */
     fun TypeConstructorMarker.isCommonFinalClassConstructor(): Boolean
 
-    /**
-     * 从泛型类型的实参中进行捕获（子类型检查阶段使用）
-     * 仓颉无通配符，捕获仅用于约束传播
-     */
-    fun captureFromArguments(type: RigidTypeMarker, status: CaptureStatus): RigidTypeMarker?
-
-    /** 从表达式类型进行捕获（表达式推断阶段使用） */
-    fun captureFromExpression(type: CangJieTypeMarker): CangJieTypeMarker?
 
     /** 将刚性类型转为泛型实参列表视图（用于遍历泛型实参） */
     fun RigidTypeMarker.asArgumentList(): TypeArgumentListMarker

@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -27,6 +28,7 @@ class CfirFunctionCallImpl @CfirImplementationDetail constructor(
     override var dispatchReceiver: CfirExpression?,
     override var arguments: List<CfirExpression>,
     override var typeArguments: List<CfirTypeRef>,
+    override val origin: CfirFunctionCallOrigin,
 ) : CfirFunctionCall() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {

@@ -19,9 +19,6 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitResolvedImport(resolvedImport: CfirResolvedImport, data: D): R =
         visitImport(resolvedImport, data)
 
-    override fun visitMemberDeclaration(memberDeclaration: CfirMemberDeclaration, data: D): R =
-        visitDeclaration(memberDeclaration, data)
-
     override fun visitCallableDeclaration(callableDeclaration: CfirCallableDeclaration, data: D): R =
         visitMemberDeclaration(callableDeclaration, data)
 
@@ -69,9 +66,6 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitPatternVariable(patternVariable: CfirPatternVariable, data: D): R =
         visitVariable(patternVariable, data)
-
-    override fun visitTypeParameter(typeParameter: CfirTypeParameter, data: D): R =
-        visitDeclaration(typeParameter, data)
 
     override fun visitExpression(expression: CfirExpression, data: D): R =
         visitStatement(expression, data)
@@ -147,6 +141,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitAnonymousFunction(anonymousFunction: CfirAnonymousFunction, data: D): R =
         visitFunction(anonymousFunction, data)
+
+    override fun visitResolvedErrorReference(resolvedErrorReference: CfirResolvedErrorReference, data: D): R =
+        visitResolvedNamedReference(resolvedErrorReference, data)
 
     override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression, data: D): R =
         visitExpression(anonymousFunctionExpression, data)

@@ -161,7 +161,7 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     private fun loadTopLevelClassSymbol(classId: ClassId): CfirClassLikeSymbol<*>? {
         val deserializers = getOrCreateDeserializers(classId.packageFqName.asString()) ?: return null
         val shortName = classId.shortClassName.asString()
-        val indices = deserializers.header.topLevelNameToIndices[shortName].orEmpty()
+        val indices = deserializers.header.topLevelClassifierNameToIndices[shortName].orEmpty()
 
         for (declIndex in indices) {
             val decl = deserializers.declDeserializer.deserializeDecl(declIndex)
@@ -236,11 +236,11 @@ abstract class AbstractCfirDeserializedSymbolProvider(
 
     private fun declSymbolName(declaration: CfirClassLikeDeclaration): String = when (declaration) {
         is CfirClass -> declaration.name.asString()
+        is org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration -> declaration.name.asString()
         is org.cangnova.cangjie.cfir.declarations.CfirInterface -> declaration.name.asString()
         is org.cangnova.cangjie.cfir.declarations.CfirStruct -> declaration.name.asString()
         is CfirEnum -> declaration.name.asString()
         is org.cangnova.cangjie.cfir.declarations.CfirTypeAlias -> declaration.name.asString()
-        is org.cangnova.cangjie.cfir.declarations.CfirExtend -> ""
     }
 
     protected class PackageDeserializers(

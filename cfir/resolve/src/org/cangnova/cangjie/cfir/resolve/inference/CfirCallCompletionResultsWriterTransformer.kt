@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
@@ -16,18 +17,16 @@ import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
-import org.cangnova.cangjie.cfir.references.builder.buildErrorReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
-
 import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
-import org.cangnova.cangjie.cfir.resolve.body.buildAppliedCallableReference
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzer
-import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirErrorReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
+import org.cangnova.cangjie.cfir.resolve.toErrorReference
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirAbstractTreeTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.IntegerLiteralAndOperatorApproximationTransformer
+import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -35,17 +34,20 @@ import org.cangnova.cangjie.cfir.types.ConeFuncType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
 import org.cangnova.cangjie.cfir.types.ConeTypeApproximator
 import org.cangnova.cangjie.cfir.types.ConeSubstitutor
+import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.coneTypeSafe
-import org.cangnova.cangjie.cfir.semantics.isSuccess
-import org.cangnova.cangjie.cfir.types.coneType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.visitors.transformSingle
+import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
+import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
+import org.cangnova.cangjie.types.TypeApproximatorConfiguration
 
 class CfirCallCompletionResultsWriterTransformer(
     override val session: CfirSession,
     override val scopeSession: ScopeSession,
     private val finalSubstitutor: ConeSubstitutor,
-    private val typeCalculator: CfirReturnTypeCalculator,
+    private val typeCalculator: ReturnTypeCalculator,
     private val typeApproximator: ConeTypeApproximator,
     private val dataFlowAnalyzer: CfirDataFlowAnalyzer,
     private val integerOperatorApproximator: IntegerLiteralAndOperatorApproximationTransformer,
@@ -96,7 +98,7 @@ class CfirCallCompletionResultsWriterTransformer(
             access is CfirPropertyAccess && approximatedExplicitReceiver != null -> access.transformExplicitReceiver(integerOperatorApproximator, null)
         }
 
-        access.replaceCalleeReference(calleeReference.toFinalReference(access))
+        access.replaceCalleeReference(calleeReference.toResolvedReference())
         access.replaceConeTypeOrNull(integerOperatorApproximator.approximateType(completedResultType(candidate), null))
         runPCLARelatedTasksForCandidate(candidate)
 
@@ -119,7 +121,7 @@ class CfirCallCompletionResultsWriterTransformer(
 
     private fun finalizeAnonymousFunction(function: CfirFunction) {
         val anonymousFunction = function as? CfirAnonymousFunction ?: return
-        val initialReturnType = anonymousFunction.returnTypeRef.coneType
+        val initialReturnType = anonymousFunction.returnTypeRef.coneTypeOrNull
         val returnExpressions = dataFlowAnalyzer
             .returnExpressionsOfAnonymousFunction(anonymousFunction)
             .replacePostponedAtomsInReturnExpressions()
@@ -140,7 +142,7 @@ class CfirCallCompletionResultsWriterTransformer(
             if (newData != null) {
                 body.transform<CfirElement, ConeCangJieType?>(this, newData)
             } else {
-                body.transform<CfirElement, ConeCangJieType?>(this, null)
+                body.transform(this, null)
             }
             body.transformSingle(integerOperatorApproximator, newData)
         }
@@ -185,55 +187,54 @@ class CfirCallCompletionResultsWriterTransformer(
                 expression.transform<CfirElement, ConeCangJieType?>(this, null) as CfirExpression
             }
 
-            resolvedCandidate.argumentReplacements?.containsKey(expression) == true -> {
-                resolvedCandidate.argumentReplacements.getValue(expression)
+            else -> {
+                val argumentReplacements = resolvedCandidate.argumentReplacements
+                if (argumentReplacements?.containsKey(expression) == true) {
+                    argumentReplacements.getValue(expression)
+                } else {
+                    expression
+                }
             }
-
-            else -> expression
         }
     }
 
     private fun completedResultType(candidate: Candidate): ConeCangJieType {
         val substituted = finallySubstituteOrSelf(candidate.substitutedReturnType())
-        val approximated = typeApproximator.approximateToSuperType(substituted) ?: substituted
+        val approximated = typeApproximator.approximateToSuperType(
+            substituted,
+            TypeApproximatorConfiguration.IntermediateApproximationToSupertypeAfterCompletionInK2,
+        ) ?: substituted
         return integerOperatorApproximator.approximateType(approximated, null) ?: approximated
     }
 
-    private fun CfirNamedReferenceWithCandidate.toFinalReference(access: CfirExpression): org.cangnova.cangjie.cfir.references.CfirReference {
-        val diagnostic = when {
-            this is CfirErrorReferenceWithCandidate -> diagnostic
-            !candidate.lowestApplicability.isSuccess -> ConeInapplicableCandidateError(candidate.lowestApplicability, candidate)
-            !candidate.isSuccessful -> ConeSimpleDiagnostic("Candidate constraint system contradiction: ${name.asString()}")
+    private fun CfirNamedReferenceWithCandidate.hasAdditionalResolutionErrors(): Boolean = false
+
+    @OptIn(ApplicabilityDetail::class)
+    private fun CfirNamedReferenceWithCandidate.toResolvedReference(): CfirNamedReference {
+        val errorDiagnostic = when {
+            this is CfirErrorReferenceWithCandidate -> this.diagnostic
+            !candidate.lowestApplicability.isSuccess ->
+                ConeInapplicableCandidateError(candidate.lowestApplicability, candidate)
+            !candidate.isSuccessful -> {
+                require(candidate.system.hasContradiction) {
+                    "Candidate is not successful, but system has no contradiction"
+                }
+                ConeConstraintSystemHasContradiction(candidate)
+
+            }
+            hasAdditionalResolutionErrors() ->
+                ConeConstraintSystemHasContradiction(candidate)
+
             else -> null
         }
 
-        if (diagnostic != null) {
-            return when (this) {
-                is CfirNamedReference -> buildErrorNamedReference {
-                    source = this@toFinalReference.source
-                    name = this@toFinalReference.name
-                    this.diagnostic = diagnostic
-                }
-
-                else -> buildErrorReference {
-                    source = this@toFinalReference.source
-                    reason = diagnostic.reason
-                }
-            }
-        }
-
-        return toResolvedReference(access)
-    }
-
-    private fun CfirNamedReferenceWithCandidate.toResolvedReference(access: CfirExpression): org.cangnova.cangjie.cfir.references.CfirReference {
-        return when (access) {
-            is CfirFunctionCall, is CfirQualifiedAccess, is CfirPropertyAccess ->
-                buildAppliedCallableReference(name, candidate, completedResultType(candidate))
-            else -> buildResolvedNamedReference {
+        return when (errorDiagnostic) {
+            null -> buildResolvedNamedReference {
                 source = this@toResolvedReference.source
                 name = this@toResolvedReference.name
                 resolvedSymbol = this@toResolvedReference.candidateSymbol
             }
+            else -> toErrorReference(errorDiagnostic)
         }
     }
 
@@ -281,3 +282,14 @@ private fun ConeCangJieType.approximateIntegerLiteralType(): ConeCangJieType =
         is ConeIdealLiteralType -> getApproximatedType()
         else -> this
     }
+
+private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.resolvedTypeFromPrototype(
+    type: ConeCangJieType,
+    source: org.cangnova.cangjie.source.CjSourceElement?,
+): org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef {
+    return buildResolvedTypeRef {
+        this.source = source ?: this@resolvedTypeFromPrototype.source
+        coneType = type
+        delegatedTypeRef = this@resolvedTypeFromPrototype
+    }
+}

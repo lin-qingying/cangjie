@@ -4,8 +4,6 @@ import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.resolve.calls.inference.model.*
 import org.cangnova.cangjie.type.model.*
 import org.cangnova.cangjie.types.AbstractTypeApproximator
-import org.cangnova.cangjie.types.TypeApproximatorCachesPerConfiguration
-import org.cangnova.cangjie.types.TypeApproximatorConfiguration
 import org.cangnova.cangjie.utils.SmartSet
 import java.util.*
 
@@ -20,7 +18,7 @@ import java.util.*
  * 2. 间接合并（[insideOtherConstraint]）：
  *    α <: Number, β <: Inv<α>  =>  β <: Inv<out Number>
  *
- * @param typeApproximator 类型近似器，用于将捕获类型近似为上界或下界。
+ * @param typeApproximator 类型近似器，用于将捕获类型近似为上界或下界。（仓颉不再使用捕获类型，保留供其他近似场景使用）
  * @param trivialConstraintTypeInferenceOracle 判断新生成的约束是否平凡（无需加入）的决策器。
  * @param utilContext 约束系统工具方法上下文。
  * @param languageVersionSettings 语言版本配置。
@@ -28,6 +26,7 @@ import java.util.*
  */
 class ConstraintIncorporator(
     val typeApproximator: AbstractTypeApproximator,
+
     val trivialConstraintTypeInferenceOracle: TrivialConstraintTypeInferenceOracle,
     val utilContext: ConstraintSystemUtilContext,
     private val languageVersionSettings: LanguageVersionSettings,
@@ -97,8 +96,6 @@ class ConstraintIncorporator(
             constraintContext: ConstraintContext,
         )
 
-        /** 类型近似器的缓存，按配置隔离，避免不同近似策略之间的缓存污染。 */
-        val approximatorCaches: TypeApproximatorCachesPerConfiguration
     }
 
     /**
@@ -276,23 +273,16 @@ class ConstraintIncorporator(
     ) {
         if (causeOfIncorporationVariable in otherConstraint.derivedFrom) return
 
-        val (type, needApproximation) = computeConstraintTypeForSecondIncorporationKind(
+        val type = computeConstraintTypeForSecondIncorporationKind(
             causeOfIncorporationVariable, causeOfIncorporationConstraint, otherConstraint,
         )
 
-        // 根据是否需要近似，准备最终约束类型
-        fun prepareType(toSuper: Boolean): CangJieTypeMarker =
-            when {
-                needApproximation -> approximateCapturedTypes(type, toSuper)
-                else -> type
-            }
-
-        // 生成上界方向的新约束（β <: Inv<out Number>）
+        // 生成上界方向的新约束（β <: Inv<Number>）
         if (otherConstraint.kind != ConstraintKind.LOWER) {
             addNewConstraintForSecondIncorporationKind(
                 causeOfIncorporationVariable, causeOfIncorporationConstraint,
                 otherVariable, otherConstraint,
-                prepareType(true), isSubtype = false,
+                type, isSubtype = false,
             )
         }
 
@@ -301,7 +291,7 @@ class ConstraintIncorporator(
             addNewConstraintForSecondIncorporationKind(
                 causeOfIncorporationVariable, causeOfIncorporationConstraint,
                 otherVariable, otherConstraint,
-                prepareType(false), isSubtype = true,
+                type, isSubtype = true,
             )
         }
     }
@@ -309,72 +299,50 @@ class ConstraintIncorporator(
     /**
      * 计算第二类合并中，将 α 替换为对应类型后的约束类型。
      *
-     * 返回 `Pair(替换后的类型, 是否需要进一步近似)`。
-     *
-     * 核心逻辑：根据 α 约束和 β 约束的种类（等式/上界/下界）以及 β 约束类型是否为泛型，
-     * 决定用什么类型替换 α：
-     * - 等式约束：直接用等式右侧类型替换，无需近似。
-     * - 上界约束 + 简单类型：用 Nothing 或约束类型直接替换。
-     * - 上界约束 + 泛型类型：创建 Captured(out T) 捕获类型，需要后续近似。
-     * - 下界约束类似，用 Any 或 Captured(in T)。
+     * 仓颉泛型严格不变，无需创建 CapturedType：
+     * - 等式约束：直接用等式右侧类型替换。
+     * - 上界/下界约束 + 简单类型：用 Nothing/Any 或约束类型替换。
+     * - 上界/下界约束 + 泛型类型：仓颉泛型不变，直接用约束类型替换（等价于 capture→approximate 恒等变换）。
      *
      * @param causeOfIncorporationVariable α
      * @param causeOfIncorporationConstraint α 的约束
      * @param otherConstraint β 的约束（含 α 的那条）
-     * @return `Pair(Inv<Captured(out Number)>, true)` 形式的结果
+     * @return 替换后的约束类型
      */
     context(c: Context)
     private fun computeConstraintTypeForSecondIncorporationKind(
         causeOfIncorporationVariable: TypeVariableMarker,
         causeOfIncorporationConstraint: Constraint,
         otherConstraint: Constraint,
-    ): Pair<CangJieTypeMarker, Boolean> {
-        val isBaseGenericType = otherConstraint.type.argumentsCount() != 0
-        val isBaseOrOtherCapturedType =
-            otherConstraint.type.isCapturedType() || causeOfIncorporationConstraint.type.isCapturedType()
-
-        val (alphaReplacement, needsApproximation) = when (causeOfIncorporationConstraint.kind) {
+    ): CangJieTypeMarker {
+        val alphaReplacement = when (causeOfIncorporationConstraint.kind) {
             ConstraintKind.EQUALITY -> {
-                // 等式约束：直接替换，无需近似
-                causeOfIncorporationConstraint.type to false
+                // 等式约束：直接替换
+                causeOfIncorporationConstraint.type
             }
             ConstraintKind.UPPER -> {
+                // α <: Number（上界约束）
                 when (otherConstraint.kind) {
                     // β 是下界且类型简单：替换为 Nothing（下界中的 α 取最小值）
-                    ConstraintKind.LOWER if !isBaseGenericType && !isBaseOrOtherCapturedType ->
-                        c.nothingType() to false
-                    // β 是上界且类型简单：直接替换
-                    ConstraintKind.UPPER if !isBaseGenericType && !isBaseOrOtherCapturedType ->
-                        causeOfIncorporationConstraint.type to false
-                    // 泛型类型：创建协变捕获类型 Captured(out T)，需近似
-                    else -> c.createCapturedType(
-                        c.createTypeArgument(causeOfIncorporationConstraint.type),
-                        listOf(causeOfIncorporationConstraint.type),
-                        null,
-                        CaptureStatus.FOR_INCORPORATION,
-                    ) to true
+                    ConstraintKind.LOWER if otherConstraint.type.argumentsCount() == 0 ->
+                        c.nothingType()
+                    // 其他情况（包括泛型类型）：仓颉泛型不变，直接用约束类型替换
+                    else -> causeOfIncorporationConstraint.type
                 }
             }
             ConstraintKind.LOWER -> {
+                // Number <: α（下界约束）
                 when (otherConstraint.kind) {
                     // β 是上界且类型简单：替换为 Any（上界中的 α 取最大值）
-                    ConstraintKind.UPPER if !isBaseGenericType && !isBaseOrOtherCapturedType ->
-                        c.anyType() to false
-                    // β 是下界且类型简单：直接替换
-                    ConstraintKind.LOWER if !isBaseGenericType && !isBaseOrOtherCapturedType ->
-                        causeOfIncorporationConstraint.type to false
-                    // 泛型类型：创建逆变捕获类型 Captured(in T)，需近似
-                    else -> c.createCapturedType(
-                        c.createTypeArgument(causeOfIncorporationConstraint.type),
-                        emptyList(),
-                        causeOfIncorporationConstraint.type,
-                        CaptureStatus.FOR_INCORPORATION,
-                    ) to true
+                    ConstraintKind.UPPER if otherConstraint.type.argumentsCount() == 0 ->
+                        c.anyType()
+                    // 其他情况（包括泛型类型）：仓颉泛型不变，直接用约束类型替换
+                    else -> causeOfIncorporationConstraint.type
                 }
             }
         }
 
-        return otherConstraint.type.substitute(causeOfIncorporationVariable, alphaReplacement) to needsApproximation
+        return otherConstraint.type.substitute(causeOfIncorporationVariable, alphaReplacement)
     }
 
     /**
@@ -488,27 +456,6 @@ class ConstraintIncorporator(
         return substitutor.safeSubstitute(this)
     }
 
-    /**
-     * 对捕获类型（FOR_INCORPORATION 产生的 Captured(out/in T)）进行近似。
-     *
-     * - toSuper = true：近似为上界（协变方向），用于生成上界约束。
-     * - toSuper = false：近似为下界（逆变方向），用于生成下界约束。
-     *
-     * 若近似器返回 null（无法近似），则保留原类型不变。
-     */
-    context(c: Context)
-    private fun approximateCapturedTypes(
-        type: CangJieTypeMarker,
-        toSuper: Boolean,
-    ): CangJieTypeMarker =
-        when {
-            toSuper -> typeApproximator.approximateToSuperType(
-                type, TypeApproximatorConfiguration.IncorporationConfiguration, c.approximatorCaches,
-            ) ?: type
-            else -> typeApproximator.approximateToSubType(
-                type, TypeApproximatorConfiguration.IncorporationConfiguration, c.approximatorCaches,
-            ) ?: type
-        }
 }
 
 /**

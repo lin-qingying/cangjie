@@ -335,42 +335,13 @@ inline fun CangJieTypeMarker.isProperTypeForFixation(
     if (!c.allowSemiFixationToOtherTypeVariables && typeConstructor() in notFixedTypeVariables) {
         return false
     }
-    return isProper(this) && extractProjectionsForAllCapturedTypes().all(isProper)
+    return isProper(this)
 }
 
-context(c: TypeSystemInferenceExtensionContext)
-fun CangJieTypeMarker.extractProjectionsForAllCapturedTypes(): Set<CangJieTypeMarker> {
-    return buildSet {
-        extractProjectionsForAllCapturedTypesInternal(this)
-    }
-}
-
-context(c: TypeSystemInferenceExtensionContext)
-private fun CangJieTypeMarker.extractProjectionsForAllCapturedTypesInternal(result: MutableSet<CangJieTypeMarker>) {
-    val simpleBaseType = asRigidType()?.asCapturedType()
-
-    val projectionType = if (simpleBaseType != null) {
-        val argumentType = simpleBaseType.typeConstructorProjection().getType() ?: return
-        if (!result.add(argumentType)) return
-        argumentType
-    } else {
-        this@extractProjectionsForAllCapturedTypesInternal
-    }
-    val argumentsCount = projectionType.argumentsCount().takeIf { it != 0 } ?: return
-
-    for (i in 0 until argumentsCount) {
-        val argumentType = projectionType.getArgument(i).getType() ?: continue
-        argumentType.extractProjectionsForAllCapturedTypesInternal(result)
-    }
-}
-
+/**
+ * 仓颉泛型严格不变，无 CapturedType，直接递归检查类型实参中是否包含类型变量。
+ */
 context(c: TypeSystemInferenceExtensionContext)
 fun CangJieTypeMarker.containsTypeVariable(typeVariable: TypeConstructorMarker): Boolean {
-    if (contains { it.typeConstructor().unwrapStubTypeVariableConstructor() == typeVariable }) return true
-
-    val typeProjections = extractProjectionsForAllCapturedTypes()
-
-    return typeProjections.any { typeProjectionsType ->
-        typeProjectionsType.contains { it.typeConstructor().unwrapStubTypeVariableConstructor() == typeVariable }
-    }
+    return contains { it.typeConstructor().unwrapStubTypeVariableConstructor() == typeVariable }
 }

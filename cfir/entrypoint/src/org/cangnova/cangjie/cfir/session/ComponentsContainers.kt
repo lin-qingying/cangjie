@@ -18,6 +18,8 @@ import org.cangnova.cangjie.cfir.nameConflictsTracker
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticCollector
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
+import org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents
+import org.cangnova.cangjie.cfir.resolve.calls.visibility.CfirModuleVisibilityChecker
 import org.cangnova.cangjie.cfir.resolve.services.CfirImportBindingStore
 import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
 import org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore
@@ -26,6 +28,7 @@ import org.cangnova.cangjie.cfir.resolve.services.CfirExtendRuleQueryServiceImpl
 import org.cangnova.cangjie.cfir.session.services.CfirExtendRuleQueryService
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.sourcesToPathsMapper
+import org.cangnova.cangjie.cfir.types.TypeComponents
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.analysis.CheckersComponent
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirNameConflictsTrackerImpl
@@ -33,6 +36,9 @@ import org.cangnova.cangjie.cfir.analysis.nullableCheckersComponent
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolverImpl
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionService
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.cfir.CfirCliExceptionHandler
+import org.cangnova.cangjie.cfir.CfirExceptionHandler
+import org.cangnova.cangjie.cfir.symbols.CfirDummyCompilerLazyDeclarationResolver
 import org.cangnova.cangjie.incremental.components.EnumMatchTracker
 import org.cangnova.cangjie.incremental.components.ICFileMappingTracker
 import org.cangnova.cangjie.incremental.components.ImportTracker
@@ -73,6 +79,10 @@ fun CfirSession.registerCommonComponents(languageVersionSettings: LanguageVersio
 @OptIn(SessionConfiguration::class)
 fun CfirSession.registerCliCompilerAndCommonComponents(languageVersionSettings: LanguageVersionSettings) {
     registerCommonComponents(languageVersionSettings)
+
+
+    register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
+    register(CfirExceptionHandler::class, CfirCliExceptionHandler)
 }
 
 /**
@@ -129,6 +139,8 @@ fun CfirSession.registerResolveComponents(
 
     // ── Step 3：注册核心 resolve 服务 ─────────────────────────────────────
     registerCoreResolveServices(diagnosticReporter)
+    register(TypeComponents::class, TypeComponents(this))
+    register(InferenceComponents::class, InferenceComponents(this))
 
     // 注册源文件路径映射服务，用于将 CjSourceElement 转换为文件系统路径
     register(SourcesToPathsMapper::class, SourcesToPathsMapper())
@@ -235,7 +247,7 @@ private fun CfirSession.registerCoreResolveServices(
 ) {
     // 懒加载声明解析器：协调各 Processor 按正确顺序解析声明，
     // 通过懒加载机制打破符号解析中的循环依赖
-    register(CfirLazyDeclarationResolver::class, CfirLazyDeclarationResolver())
+    register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
 
     // import 绑定存储：持久化每个文件的 import 解析结果
     // （由 CfirImportResolveTransformer 写入，由类型解析阶段读取）
@@ -245,6 +257,7 @@ private fun CfirSession.registerCoreResolveServices(
     //  1. 检测循环继承（A extends B extends A）
     //  2. 父类成员的继承与覆盖解析
     register(CfirSuperTypeGraphStore::class, CfirSuperTypeGraphStore())
+    register(CfirModuleVisibilityChecker::class, CfirModuleVisibilityChecker.Standard(this))
 
     val extendIndexStore = CfirExtendIndexStore()
     register(CfirExtendIndexStore::class, extendIndexStore)

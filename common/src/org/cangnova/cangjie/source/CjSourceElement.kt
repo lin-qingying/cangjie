@@ -932,4 +932,3 @@ inline fun LighterASTNode.toCjLightSourceElement(
     startOffset: Int = this.startOffset,
     endOffset: Int = this.endOffset,
 ): CjLightSourceElement = CjLightSourceElement(this, startOffset, endOffset, tree, kind)
-

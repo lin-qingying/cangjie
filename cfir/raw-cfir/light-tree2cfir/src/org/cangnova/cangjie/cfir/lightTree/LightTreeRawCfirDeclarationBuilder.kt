@@ -1,8 +1,9 @@
 package org.cangnova.cangjie.cfir.lightTree
 
 import com.intellij.lang.LighterASTNode
-import com.intellij.psi.tree.IElementType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
+import org.cangnova.cangjie.CjInMemoryTextSourceFile
+import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.builder.*
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.*
@@ -10,9 +11,9 @@ import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.source.AbstractCjSourceElement
-import org.cangnova.cangjie.source.CjSourceElement
-import org.cangnova.cangjie.source.toCjLightSourceElement
+import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
+import org.cangnova.cangjie.source.CjSourceFileLinesMapping
+import org.cangnova.cangjie.source.toSourceLinesMapping
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildTupleTypeRef
@@ -31,28 +32,14 @@ import org.cangnova.cangjie.psi.CjNodeTypes
  */
 class LightTreeRawCfirDeclarationBuilder(
     session: CfirSession,
-    private val tree: FlyweightCapableTreeStructure<LighterASTNode>,
-    private val source: CharSequence,
+    internal val baseScopeProvider: CfirScopeProvider,
+    tree: FlyweightCapableTreeStructure<LighterASTNode>,
+    source: CharSequence,
     context: Context<LighterASTNode> = Context(),
-    private val fileName: String = "",
     val bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
-) : AbstractRawCfirBuilder<LighterASTNode>(session, context) {
-
-    private fun callableIdFor(name: Name): CallableId {
-        return if (context.inLocalContext) CallableId(name) else CallableId(packageFqName, name)
-    }
+) : AbstractLightTreeRawCfirBuilder(session, tree, source, context) {
 
     // ===== AbstractRawCfirBuilder 抽象方法实现 =====
-
-    override fun LighterASTNode.toSourceElement(): AbstractCjSourceElement =
-        toCjLightSourceElement(tree)
-
-    override fun LighterASTNode.elementType(): IElementType = tokenType
-
-    override fun LighterASTNode.asText(): String = getNodeText(this, source)
-
-    private fun LighterASTNode.toSource(): CjSourceElement =
-        toCjLightSourceElement(tree)
 
     // ===== 表达式构建器（延迟初始化，解决循环依赖） =====
 
@@ -63,6 +50,14 @@ class LightTreeRawCfirDeclarationBuilder(
     // ===== Public API =====
 
     override fun buildFile(file: LighterASTNode): CfirFile {
+        error("Use buildCfirFile(lightTreeRoot, sourceFile, linesMapping) for LightTree file conversion")
+    }
+
+    fun buildCfirFile(
+        file: LighterASTNode,
+        sourceFile: CjSourceFile,
+        linesMapping: CjSourceFileLinesMapping,
+    ): CfirFile {
         // 解析包名
         val packageNode = tree.findChildByType(file, CjNodeTypes.PACKAGE_DIRECTIVE)
         val packageFqName = packageNode?.let { extractPackageFqName(it) } ?: FqName.ROOT
@@ -76,7 +71,10 @@ class LightTreeRawCfirDeclarationBuilder(
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
                     attributes = CfirDeclarationAttributes.EMPTY
-                    name = fileName // LightTree 文件名由外部传入
+                    name = sourceFile.name
+                    this.sourceFile = sourceFile
+                    this.sourceFileLinesMapping = linesMapping
+
                     packageDirective = buildPackageDirectiveNode(packageNode, packageFqName)
                     imports.addAll(buildImportsFromFile(file))
                     declarations.addAll(buildFileDeclarations(file))
@@ -127,32 +125,27 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun convertClass(node: LighterASTNode, classKind: CfirClassKind): CfirDeclaration {
         val name = extractName(node)
         val modifiers = LightTreeModifierList.from(tree, node)
-        val typeParams = extractTypeParameters(node)
         val superTypes = extractSuperTypeRefs(node)
-        val classDeclarations = extractClassMembers(node).toMutableList()
 
-        if (classKind != CfirClassKind.INTERFACE && classDeclarations.none { it is CfirConstructor }) {
-            classDeclarations.add(0, buildImplicitPrimaryConstructor(node))
-        }
 
         // 枚举：将 ENUM_CONSTRUCTOR 放在声明列表前面
-        if (classKind == CfirClassKind.ENUM) {
-            val enumBody = tree.findChildByType(node, CjNodeTypes.ENUM_BODY)
-            if (enumBody != null) {
-                val enumCtors = tree.getChildrenByType(enumBody, CjNodeTypes.ENUM_CONSTRUCTOR)
-                    .map { convertEnumConstructor(it, typeParams) }
-                classDeclarations.addAll(0, enumCtors)
-            }
-        }
 
-        return when (classKind) {
-            CfirClassKind.CLASS -> buildSourceDeclaration(CfirClassSymbol()) { symbol ->
+        return withClassName(name) {
+            when (classKind) {
+            CfirClassKind.CLASS -> buildSourceDeclaration(CfirClassSymbol(context.currentClassId!!)) { symbol ->
                 buildClass {
+                    val typeParams = extractTypeParameters(node, symbol)
+                    val classDeclarations = extractClassMembers(node).toMutableList().also { declarations ->
+                        if (declarations.none { it is CfirConstructor }) {
+                            declarations.add(0, buildImplicitPrimaryConstructor(node))
+                        }
+                    }
                     source = node.toSource()
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
                     attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = context.inLocalContext
                     status = modifiers.toDeclarationStatus(context.inLocalContext)
                     this.typeParameters.addAll(typeParams)
                     this.superTypeRefs.addAll(superTypes)
@@ -160,13 +153,16 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.name = name
                 }
             }
-            CfirClassKind.INTERFACE -> buildSourceDeclaration(CfirInterfaceSymbol()) { symbol ->
+            CfirClassKind.INTERFACE -> buildSourceDeclaration(CfirInterfaceSymbol(context.currentClassId!!)) { symbol ->
                 buildInterface {
+                    val typeParams = extractTypeParameters(node, symbol)
+                    val classDeclarations = extractClassMembers(node).toMutableList()
                     source = node.toSource()
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
                     attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = context.inLocalContext
                     status = modifiers.toDeclarationStatus(context.inLocalContext)
                     this.typeParameters.addAll(typeParams)
                     this.superTypeRefs.addAll(superTypes)
@@ -174,13 +170,20 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.name = name
                 }
             }
-            CfirClassKind.STRUCT -> buildSourceDeclaration(CfirStructSymbol()) { symbol ->
+            CfirClassKind.STRUCT -> buildSourceDeclaration(CfirStructSymbol(context.currentClassId!!)) { symbol ->
                 buildStruct {
+                    val typeParams = extractTypeParameters(node, symbol)
+                    val classDeclarations = extractClassMembers(node).toMutableList().also { declarations ->
+                        if (declarations.none { it is CfirConstructor }) {
+                            declarations.add(0, buildImplicitPrimaryConstructor(node))
+                        }
+                    }
                     source = node.toSource()
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
                     attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = context.inLocalContext
                     status = modifiers.toDeclarationStatus(context.inLocalContext)
                     this.typeParameters.addAll(typeParams)
                     this.superTypeRefs.addAll(superTypes)
@@ -188,13 +191,26 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.name = name
                 }
             }
-            CfirClassKind.ENUM -> buildSourceDeclaration(CfirEnumSymbol()) { symbol ->
+            CfirClassKind.ENUM -> buildSourceDeclaration(CfirEnumSymbol(context.currentClassId!!)) { symbol ->
                 buildEnum {
+                    val typeParams = extractTypeParameters(node, symbol)
+                    val classDeclarations = extractClassMembers(node).toMutableList().also { declarations ->
+                        if (declarations.none { it is CfirConstructor }) {
+                            declarations.add(0, buildImplicitPrimaryConstructor(node))
+                        }
+                        val enumBody = tree.findChildByType(node, CjNodeTypes.ENUM_BODY)
+                        if (enumBody != null) {
+                            val enumCtors = tree.getChildrenByType(enumBody, CjNodeTypes.ENUM_CONSTRUCTOR)
+                                .map { convertEnumConstructor(it, typeParams) }
+                            declarations.addAll(0, enumCtors)
+                        }
+                    }
                     source = node.toSource()
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
                     attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = context.inLocalContext
                     status = modifiers.toDeclarationStatus(context.inLocalContext)
                     this.typeParameters.addAll(typeParams)
                     this.superTypeRefs.addAll(superTypes)
@@ -202,6 +218,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.name = name
                     this.isRefEnum = false
                 }
+            }
             }
         }
     }
@@ -214,6 +231,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = context.inLocalContext
                 status = CfirDeclarationStatusImpl.DEFAULT
                 returnTypeRef = buildImplicitTypeRef()
                 body = null
@@ -225,7 +243,6 @@ class LightTreeRawCfirDeclarationBuilder(
 
     private fun convertExtend(node: LighterASTNode): CfirExtend {
         val modifiers = LightTreeModifierList.from(tree, node)
-        val typeParams = extractTypeParameters(node)
 
         // 提取 extendedTypeRef（第一个 TYPE_REFERENCE）
         var extendedTypeRefNode: LighterASTNode? = null
@@ -254,11 +271,13 @@ class LightTreeRawCfirDeclarationBuilder(
 
         return buildSourceDeclaration(CfirExtendSymbol()) { symbol ->
             buildExtend {
+                val typeParams = extractTypeParameters(node, symbol)
                 source = node.toSource()
                 this.symbol = symbol
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = context.inLocalContext
                 status = modifiers.toDeclarationStatus(context.inLocalContext)
                 this.typeParameters.addAll(typeParams)
                 this.extendedTypeRef = extendedType
@@ -273,18 +292,19 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun convertFunction(node: LighterASTNode): CfirFunction {
         val name = extractName(node)
         val modifiers = LightTreeModifierList.from(tree, node)
-        val typeParams = extractFunctionTypeParameters(node)
         val returnTypeRef = extractReturnTypeRef(node)
         val valueParams = extractValueParameters(node)
         val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractBody(node)
 
         return buildSourceDeclaration(CfirNamedFunctionSymbol(callableIdFor(name))) { symbol ->
             buildNamedFunction {
+                val typeParams = extractFunctionTypeParameters(node, symbol)
                 source = node.toSource()
                 this.symbol = symbol
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = context.inLocalContext
                 status = modifiers.toDeclarationStatus(context.inLocalContext)
                 this.typeParameters.addAll(typeParams)
                 this.returnTypeRef = returnTypeRef
@@ -309,6 +329,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = context.inLocalContext
                 status = modifiers.toDeclarationStatus(context.inLocalContext)
                 this.returnTypeRef = returnTypeRef
                 this.valueParameters.addAll(valueParams)
@@ -331,6 +352,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = context.inLocalContext
                 status = modifiers.toDeclarationStatus(context.inLocalContext)
                 this.returnTypeRef = returnTypeRef
                 this.name = name
@@ -352,6 +374,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = context.inLocalContext
                 status = modifiers.toDeclarationStatus(context.inLocalContext)
                 returnTypeRef = buildImplicitTypeRef()
                 this.valueParameters.addAll(valueParams)
@@ -374,6 +397,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = context.inLocalContext
                 status = modifiers.toDeclarationStatus(context.inLocalContext)
                 this.returnTypeRef = typeRef
                 this.name = name
@@ -395,6 +419,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = context.inLocalContext
                 status = modifiers.toDeclarationStatus(context.inLocalContext)
                 this.returnTypeRef = typeRef
                 this.name = name
@@ -420,6 +445,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = context.inLocalContext
                 status = modifiers.toDeclarationStatus(context.inLocalContext)
                 this.returnTypeRef = typeRef
                 this.pattern = pattern
@@ -444,6 +470,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
                     attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = context.inLocalContext
                     status = modifiers.toDeclarationStatus(context.inLocalContext)
                     returnTypeRef = buildImplicitTypeRef()
                     this.valueParameters.addAll(valueParams)
@@ -456,6 +483,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
                     attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = context.inLocalContext
                     status = modifiers.toDeclarationStatus(context.inLocalContext)
                     returnTypeRef = buildImplicitTypeRef()
                     this.valueParameters.addAll(valueParams)
@@ -470,20 +498,23 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun convertTypeAlias(node: LighterASTNode): CfirTypeAlias {
         val name = extractName(node)
         val modifiers = LightTreeModifierList.from(tree, node)
-        val typeParams = extractTypeParameters(node)
         val expandedType = extractReturnTypeRef(node)
 
-        return buildSourceDeclaration(CfirTypeAliasSymbol()) { symbol ->
-            buildTypeAlias {
-                source = node.toSource()
-                this.symbol = symbol
-                origin = CfirDeclarationOrigin.Source
-                moduleData = baseModuleData
-                attributes = CfirDeclarationAttributes.EMPTY
-                status = modifiers.toDeclarationStatus(context.inLocalContext)
-                this.typeParameters.addAll(typeParams)
-                this.name = name
-                expandedTypeRef = expandedType
+        return withClassName(name) {
+            buildSourceDeclaration(CfirTypeAliasSymbol(context.currentClassId!!)) { symbol ->
+                buildTypeAlias {
+                    val typeParams = extractTypeParameters(node, symbol)
+                    source = node.toSource()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = context.inLocalContext
+                    status = modifiers.toDeclarationStatus(context.inLocalContext)
+                    this.typeParameters.addAll(typeParams)
+                    this.name = name
+                    expandedTypeRef = expandedType
+                }
             }
         }
     }
@@ -525,6 +556,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = context.inLocalContext
                 status = CfirDeclarationStatusImpl.DEFAULT
                 typeParameters.addAll(ownerTypeParameters)
                 returnTypeRef = enumCtorTypeRef
@@ -556,6 +588,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = false
                 status = CfirDeclarationStatusImpl.DEFAULT
                 returnTypeRef = paramType
                 name = paramName
@@ -670,14 +703,26 @@ class LightTreeRawCfirDeclarationBuilder(
     }
 
     /** 提取类型参数列表 */
-    private fun extractTypeParameters(node: LighterASTNode): List<CfirTypeParameter> {
+    private fun extractTypeParameters(
+        node: LighterASTNode,
+        containingDeclarationSymbol: CfirSymbol<*>,
+    ): List<CfirTypeParameter> {
         val typeParamList = tree.findChildByType(node, CjNodeTypes.TYPE_PARAMETER_LIST) ?: return emptyList()
-        return tree.getChildrenByType(typeParamList, CjNodeTypes.TYPE_PARAMETER).map { convertTypeParameter(it) }
+        return tree.getChildrenByType(typeParamList, CjNodeTypes.TYPE_PARAMETER).map {
+            convertTypeParameter(it, containingDeclarationSymbol)
+        }
     }
 
     /** 提取函数类型参数列表 */
-    private fun extractFunctionTypeParameters(node: LighterASTNode): List<CfirTypeParameter> =
-        extractTypeParameters(node)
+    private fun extractFunctionTypeParameters(
+        node: LighterASTNode,
+        containingDeclarationSymbol: CfirSymbol<*>,
+    ): List<CfirTypeParameter> {
+        val typeParamList = tree.findChildByType(node, CjNodeTypes.TYPE_PARAMETER_LIST) ?: return emptyList()
+        return tree.getChildrenByType(typeParamList, CjNodeTypes.TYPE_PARAMETER).map {
+            convertTypeParameter(it, containingDeclarationSymbol)
+        }
+    }
 
     /** 转换单个类型参数 */
     private fun convertTypeParameter(node: LighterASTNode): CfirTypeParameter {
@@ -699,6 +744,34 @@ class LightTreeRawCfirDeclarationBuilder(
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
+                this.name = name
+                this.bounds.addAll(bounds)
+            }
+        }
+    }
+
+    private fun convertTypeParameter(
+        node: LighterASTNode,
+        containingDeclarationSymbol: CfirSymbol<*>,
+    ): CfirTypeParameter {
+        val name = tree.findChildByType(node, CjTokens.IDENTIFIER)?.let { Name.identifier(it.asText()) }
+            ?: Name.identifier("<error>")
+
+        val bounds = mutableListOf<CfirTypeRef>()
+        tree.forEachChildren(node) { child ->
+            if (child.tokenType == CjNodeTypes.TYPE_REFERENCE) {
+                bounds.add(convertTypeRef(child))
+            }
+        }
+
+        return buildSourceDeclaration(CfirTypeParameterSymbol()) { symbol ->
+            buildTypeParameter {
+                source = node.toSource()
+                this.symbol = symbol
+                origin = CfirDeclarationOrigin.Source
+                moduleData = baseModuleData
+                attributes = CfirDeclarationAttributes.EMPTY
+                this.containingDeclarationSymbol = containingDeclarationSymbol
                 this.name = name
                 this.bounds.addAll(bounds)
             }
@@ -768,7 +841,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     /** 类型引用转换 */
     private fun convertTypeRef(typeRefNode: LighterASTNode?): CfirTypeRef {
-        return convertTypeReference(typeRefNode, tree, source) { it.toCjLightSourceElement(tree) }
+        return convertTypeReference(typeRefNode, tree, source) { it.toSourceElement() }
     }
 
     /** 判断是否有 var 关键字 */

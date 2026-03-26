@@ -3,7 +3,7 @@
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CheckerSinkImpl
-import org.cangnova.cangjie.cfir.resolve.inference.inferenceLogger
+import org.cangnova.cangjie.cfir.session.inferenceLogger
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext

@@ -1,85 +1,98 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
-import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
+import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.lookupTracker
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
+import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
-import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.resolve.calls.getExpectedType
+import org.cangnova.cangjie.cfir.resolve.transformers.ensureResolvedTypeDeclaration
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
-import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.cfir.types.coneType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import kotlin.compareTo
+import kotlin.text.get
 
-/**
- * 参数类型检查阶段：逐个验证实参与形参的类型兼容性。
- *
- * 对齐 K2 的 `CheckArguments`：
- * - 泛型调用：通过约束系统事务性添加约束（`addSubtypeConstraintIfCompatible`），
- *   失败时报 `ArgumentTypeMismatch`。
- * - 非泛型调用：直接使用 `isSubtypeOf` 检查。
- */
-object CfirCheckArguments :  ResolutionStage() {
+object CfirCheckArguments : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
     override suspend fun check(candidate: Candidate) {
         if (!candidate.argumentMappingInitialized) return
 
-        candidate.argumentMapping.entries.forEach { (argumentAtom, parameter) ->
-            val argument = argumentAtom.expression
-            val actualType = argument.resolvedType() ?: return@forEach
-            val expectedType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return@forEach
+        val contextArgumentsOfInvoke = candidate.expectedContextParameterCountForInvoke ?: 0
+        val argumentMapping = candidate.argumentMapping
 
-            if (actualType is ConeErrorType || expectedType is ConeErrorType) return@forEach
+        for ((index, argument) in candidate.arguments.withIndex()) {
+            if (index < contextArgumentsOfInvoke) continue
 
-            if (shouldUseConstraintSystem(actualType, expectedType, candidate)) {
-                candidate.constraintSystem.addSubtypeConstraint(
-                    actualType,
-                    expectedType,
-                    ConeArgumentConstraintPosition(argument),
-                )
+            val expression = argument.expression
+//            if (expression.isInaccessibleAndInapplicable()) {
+//                sink.reportDiagnostic(expression.toInaccessibleReceiverDiagnostic())
+//            }
 
-                if (candidate.constraintSystem.hasContradiction) {
-                    sink.reportDiagnostic(
-                        ArgumentTypeMismatch(
-                            expectedType = expectedType,
-                            actualType = actualType,
-                            argument = argument,
-                            isMismatchDueToNullability = false,
-                            systemHadContradiction = true,
-                        )
-                    )
-                }
-                return@forEach
-            }
-
-            if (!AbstractTypeChecker.isSubtypeOf(context.typeContext, actualType, expectedType)) {
-                sink.reportDiagnostic(
-                    ArgumentTypeMismatch(
-                        expectedType = expectedType,
-                        actualType = actualType,
-                        argument = argument,
-                        isMismatchDueToNullability = false,
-                    )
-                )
-            }
+            val parameter = argumentMapping[argument]
+            candidate.resolveArgument(
+                candidate.callInfo,
+                argument,
+                parameter,
+                isReceiver = index == 0
+            )
         }
+
     }
 
-    private fun shouldUseConstraintSystem(
-        actualType: ConeCangJieType,
-        expectedType: ConeCangJieType,
-        candidate: Candidate,
-    ): Boolean {
-        return candidate.hasFreshTypeVariables() ||
-            actualType is ConeTypeParameterType ||
-            expectedType is ConeTypeParameterType
+    context(sink: CheckerSink, context: ResolutionContext)
+    private fun Candidate.resolveArgument(
+        callInfo: CallInfo,
+        atom: ConeResolutionAtom,
+        parameter: CfirValueParameter?,
+        isReceiver: Boolean,
+    ) {
+        // Lambdas and callable references can be unresolved at this point
+        val argument = atom.expression
+        argument.coneTypeOrNull.ensureResolvedTypeDeclaration(context.session)
+        val expectedType =
+            prepareExpectedType(context.session, callInfo, argument, parameter)
+        ArgumentCheckingProcessor.resolveArgumentExpression(
+            this,
+            atom,
+            expectedType,
+            sink,
+            context,
+            isReceiver,
+            false
+        )
     }
+}
+private fun getExpectedTypeWithImplicitIntegerCoercion(
+    session: CfirSession,
+    argument: CfirExpression,
+    parameter: CfirValueParameter,
+    candidateExpectedType: ConeCangJieType
+): ConeCangJieType? {
+    return null
+//    if (!session.languageVersionSettings.supportsFeature(LanguageFeature.ImplicitSignedToUnsignedIntegerConversion)) return null
 
-    private fun Candidate.hasFreshTypeVariables(): Boolean =
-        freshVariables.isNotEmpty()
+}
+context(context: ResolutionContext)
+private fun Candidate.prepareExpectedType(
+    session: CfirSession,
+    callInfo: CallInfo,
+    argument: CfirExpression,
+    parameter: CfirValueParameter?,
+): ConeCangJieType? {
+    if (parameter == null) return null
+    val basicExpectedType = argument.getExpectedType(session, parameter)
 
-    private fun CfirExpression.resolvedType(): ConeCangJieType? =
-        coneTypeOrNull
+    // 仓颉没有 SAM 转换，直接跳过那一步
+    val expectedType =
+        getExpectedTypeWithImplicitIntegerCoercion(session, argument, parameter, basicExpectedType)
+            ?: basicExpectedType
+
+    return this.substitutor.substituteOrSelf(expectedType)
 }

@@ -64,7 +64,6 @@ sealed class ConeIdealIntLiteralType : ConeIdealLiteralType() {
         return defaultType
     }
 
-    override fun toString(): String = "IdealInt"
 
     companion object {
         /** 理想整数类型可解析为的所有具体整数类型（对齐 C++ GetIdealTypesByKind） */
@@ -96,7 +95,6 @@ class ConeIdealIntConstantType(
 
     override fun hashCode(): Int = value.hashCode()
 
-    override fun toString(): String = "IdealInt($value)"
 }
 
 /**
@@ -139,8 +137,6 @@ sealed class ConeIdealFloatLiteralType : ConeIdealLiteralType() {
         return defaultType
     }
 
-    override fun toString(): String = "IdealFloat"
-
     companion object {
         /** 理想浮点类型可解析为的所有具体浮点类型 */
         val POSSIBLE_FLOAT_TYPES: List<ConePrimitiveType> = listOf(
@@ -168,7 +164,6 @@ class ConeIdealFloatConstantType(
 
     override fun hashCode(): Int = value.toBits().hashCode()
 
-    override fun toString(): String = "IdealFloat($value)"
 }
 
 /**

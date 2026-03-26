@@ -53,6 +53,6 @@ internal object ClassIdCalculator {
             },
         )
 
-        return ClassId(CjFile.packageFqName, relativeClassName, isLocal = false)
+        return ClassId(CjFile.packageFqName, relativeClassName )
     }
 }

@@ -27,6 +27,7 @@ import org.cangnova.cangjie.cli.compiler.findFileByPath
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.cangjieSourceRoots
 import org.cangnova.cangjie.config.classpathRoots
+import org.cangnova.cangjie.config.diagnosticsCollector
 import org.cangnova.cangjie.config.languageVersionSettings
 import org.cangnova.cangjie.config.messageCollector
 import org.cangnova.cangjie.config.moduleName
@@ -72,7 +73,11 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
 
         val outputs = sessionsWithSources.map { (session, sessionSources) ->
             val rawCfirFiles = session.buildCfirFromCjFiles(sessionSources.toCjFiles(environment))
-            resolveAndCheckCfir(session, rawCfirFiles)
+            resolveAndCheckCfir(
+                session = session,
+                cfirFiles = rawCfirFiles,
+                diagnosticsCollector = configuration.diagnosticsCollector,
+            )
         }
 
         return DefaultCfirFrontendPipelineArtifact(

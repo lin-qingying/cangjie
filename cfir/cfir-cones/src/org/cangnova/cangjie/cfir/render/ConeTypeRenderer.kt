@@ -1,13 +1,13 @@
 package org.cangnova.cangjie.cfir.render
 
 import org.cangnova.cangjie.cfir.types.ConeAnyType
-import org.cangnova.cangjie.cfir.types.ConeCapturedType
-import org.cangnova.cangjie.cfir.types.ConeCapturedTypeConstructor
+import org.cangnova.cangjie.cfir.types.ConeCStringType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeErrorLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassifierLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag
+import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -21,6 +21,7 @@ import org.cangnova.cangjie.cfir.types.ConeIntersectionType
 import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeQuestType
+import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeStubType
 import org.cangnova.cangjie.cfir.types.ConeStubTypeConstructor
@@ -31,7 +32,9 @@ import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableTypeConstructor
 import org.cangnova.cangjie.cfir.types.ConeUnionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.getConstructor
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
+import kotlin.compareTo
 
 /**
  * 仓颉 Cone 类型渲染器。
@@ -66,33 +69,6 @@ open class ConeTypeRenderer(
                 builder.append("TypeVariable(")
                 builder.append(constructor.debugName)
                 builder.append(")")
-            }
-
-            is ConeCapturedTypeConstructor -> {
-                builder.append("Captured<")
-                constructor.projection.render()
-                builder.append(">")
-                if (renderCapturedDetails) {
-                    builder.append(" {")
-                    builder.append("status=")
-                    builder.append(constructor.captureStatus.name)
-                    constructor.lowerType?.let {
-                        builder.append(", lower=")
-                        renderType(it)
-                    }
-                    constructor.supertypes?.takeIf { it.isNotEmpty() }?.let { supertypes ->
-                        builder.append(", supertypes=[")
-                        val prev = renderCapturedDetails
-                        renderCapturedDetails = false
-                        supertypes.forEachIndexed { index, superType ->
-                            if (index > 0) builder.append(", ")
-                            renderType(superType)
-                        }
-                        renderCapturedDetails = prev
-                        builder.append("]")
-                    }
-                    builder.append("}")
-                }
             }
 
             is ConeClassLikeErrorLookupTag -> {
@@ -131,10 +107,13 @@ open class ConeTypeRenderer(
     /**
      * 调试可读场景下保留的属性渲染入口。
      *
-     * 当前仓库还没有稳定的“编译器内部属性”白名单，这里先等同于 [renderAttributes]。
+     * 对齐 Kotlin FIR：这里不能再回调 [renderAttributes]，否则调试渲染器覆写
+     * `renderAttributes()` 后会递归。当前仓库还没有“编译器内部属性”白名单，
+     * 因此暂时直接复用全部 attributes 的 renderer 输出。
      */
     protected fun ConeCangJieType.renderNonCompilerAttributes() {
-        renderAttributes()
+        if (!attributes.any()) return
+        builder.append(attributeRenderer.render(attributes))
     }
 
     /**
@@ -153,7 +132,7 @@ open class ConeTypeRenderer(
             is ConeTupleType -> renderTupleType(type)
             is ConeVArrayType -> renderVArrayType(type)
             is ConePointerType -> renderPointerType(type)
-            is org.cangnova.cangjie.cfir.types.ConeCStringType -> builder.append("CString")
+            is ConeCStringType -> builder.append("CString")
             is ConeIntersectionType -> renderIntersectionType(type)
             is ConeUnionType -> renderUnionType(type)
             is ConeErrorType -> builder.append(renderDiagnostic(type.diagnostic, prefix = "ERROR TYPE: "))
@@ -165,17 +144,6 @@ open class ConeTypeRenderer(
                 builder.append(")")
             }
 
-            is ConeCapturedType -> {
-                builder.append("Captured<")
-                type.constructor.projection.render()
-                builder.append(">")
-                if (renderCapturedDetails) {
-                    builder.append("{status=")
-                    builder.append(type.constructor.captureStatus.name)
-                    builder.append("}")
-                }
-            }
-
             is ConeTypeVariableType -> {
                 builder.append("TypeVariable(")
                 builder.append(type.typeConstructor.debugName)
@@ -184,10 +152,39 @@ open class ConeTypeRenderer(
 
             is ConeQuestType -> builder.append("?")
             ConeAnyType -> builder.append("Any")
+
+            is ConeSimpleCangJieType ->
+
+
+
+                    renderSimpleType(type)
+
+
+
             else -> builder.append(type.toString())
         }
     }
+    private fun ConeClassifierType.renderTypeArguments() {
+        if (typeArguments.isEmpty()) return
+        builder.append("<")
+        for ((index, typeArgument) in typeArguments.withIndex()) {
+            if (index > 0) {
+                builder.append(", ")
+            }
+            typeArgument.render()
+        }
+        builder.append(">")
+    }
 
+    protected open fun renderSimpleType(type: ConeSimpleCangJieType, ) {
+        val hasTypeArguments = type is ConeClassLikeType && type.typeArguments.isNotEmpty()
+        renderConstructor(type.getConstructor())
+        if (hasTypeArguments) {
+            type.renderTypeArguments()
+        }
+
+
+    }
     /**
      * 理想字面量类型渲染。
      *
