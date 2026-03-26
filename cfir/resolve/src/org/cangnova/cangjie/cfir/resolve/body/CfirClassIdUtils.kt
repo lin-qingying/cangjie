@@ -14,6 +14,6 @@ internal fun classIdForClassNesting(
         .fold(FqName.topLevel(classNesting.first())) { current, nestedName ->
             current.child(nestedName)
         }
-    return ClassId(packageFqName, relativeClassName, isLocal = false)
+    return ClassId(packageFqName, relativeClassName)
 }
 

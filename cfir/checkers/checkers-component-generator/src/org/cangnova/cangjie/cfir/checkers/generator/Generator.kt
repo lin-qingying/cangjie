@@ -22,8 +22,6 @@ private typealias Checker = Map.Entry<KClass<*>, Pair<String, Boolean>>
 private const val CHECKERS_COMPONENT_INTERNAL = "CheckersComponentInternal"
 private const val CHECKERS_COMPONENT_INTERNAL_ANNOTATION = "@$CHECKERS_COMPONENT_INTERNAL"
 private const val CHECKERS_COMPONENT_INTERNAL_FQN = "org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal"
-private const val DISPATCH_KIND_FQN = "org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind"
-private const val DISPATCHED_CHECKER_FQN = "org.cangnova.cangjie.cfir.analysis.checkers.CfirCheckerWithDispatchKind"
 
 // DiagnosticComponent
 private const val FIR_SESSION_FQN = "org.cangnova.cangjie.cfir.session.CfirSession"
@@ -133,13 +131,10 @@ class Generator(
         val filename = "${composedComponentName}.kt"
         generationPath.resolve(filename).writeToFileUsingSmartPrinterIfFileContentChanged {
             printPackageAndCopyright()
-            printImports(true, DISPATCH_KIND_FQN, DISPATCHED_CHECKER_FQN)
+            printImports()
             printGeneratedMessage()
-            println("class $composedComponentName(val predicate: (CfirCheckerWithDispatchKind) -> Boolean) : $checkersComponentName() {")
+            println("class $composedComponentName : $checkersComponentName() {")
             withIndent {
-                println("constructor(dispatchKind: CheckerDispatchKind) : this({ it.dispatchKind == dispatchKind })")
-                println()
-
                 // public overrides
                 for ((alias, _) in configuration.aliases.values) {
                     println("override ${alias.valDeclaration}")
@@ -169,10 +164,10 @@ class Generator(
                 println("fun register(checkers: $checkersComponentName) {")
                 withIndent {
                     for ((alias, _) in configuration.aliases.values) {
-                        println("checkers.${alias.fieldName}.filterTo(_${alias.fieldName}, predicate)")
+                        println("_${alias.fieldName}.addAll(checkers.${alias.fieldName})")
                     }
                     for (fieldName in configuration.additionalCheckers.keys) {
-                        println("checkers.$fieldName.filterTo(_$fieldName, predicate)")
+                        println("_$fieldName.addAll(checkers.$fieldName)")
                     }
                 }
                 println("}")
@@ -191,7 +186,6 @@ class Generator(
                 FIR_SESSION_FQN,
                 DIAGNOSTIC_REPORTER_FQN,
                 ABSTRACT_DIAGNOSTIC_REPORTER_FQN,
-                DISPATCH_KIND_FQN,
                 CHECKER_CONTEXT_FQN,
                 "$FIR_FQN.$checkersPackageName.*",
                 CHECKERS_COMPONENT_FQN,
@@ -255,7 +249,14 @@ class Generator(
     }
 
     private fun SmartPrinter.printDiagnosticComponentVisitMethod(checker: KClass<*>, alias: Alias) {
-        val elementParamName = if (checker.elementParamName == "class") "klass" else checker.elementParamName
+        val elementParamName = when{
+            checker.elementParamName  == "class" -> "klass"
+            checker.elementParamName  == "interface" -> "`interface`"
+
+            else -> checker.elementParamName
+        }
+
+
 
         println("override fun visit${checker.elementName}($elementParamName: ${checker.elementTypeName}, data: CheckerContext) {")
         withIndent {
@@ -265,16 +266,11 @@ class Generator(
     }
 
     private fun SmartPrinter.printDiagnosticComponentConstructor() {
-        println("constructor(session: CfirSession, reporter: PendingDiagnosticReporter, dispatchKind: CheckerDispatchKind) : this(")
+        println("constructor(session: CfirSession, reporter: PendingDiagnosticReporter) : this(")
         withIndent {
             println("session,")
             println("reporter,")
-            println("when (dispatchKind) {")
-            withIndent {
-                println("CheckerDispatchKind.Common -> session.checkersComponent.common$checkersComponentName")
-                println("CheckerDispatchKind.Platform -> session.checkersComponent.platform$checkersComponentName")
-            }
-            println("}")
+            println("session.checkersComponent.${checkersComponentName.replaceFirstChar(Char::lowercaseChar)}")
         }
         println(")")
     }
@@ -355,7 +351,7 @@ class Generator(
     private val Fqn.simpleName: String
         get() = this.split(".").last()
 
-    private val checkersComponentName = abstractCheckerName.removePrefix("Fir") + "s"
+    private val checkersComponentName = abstractCheckerName.removePrefix("Cfir") + "s"
 
     private val checkersPackageName = abstractCheckerName
         .removePrefix("Cfir")
@@ -371,8 +367,6 @@ class Generator(
         generateDiagnosticComponent()
     }
 }
-
-
 
 
 

@@ -5,8 +5,16 @@
 ### Generic logger API
 - `resolution.common/src/org/cangnova/cangjie/resolve/calls/inference/components/InferenceLogger.kt`
   - Present.
-  - Current API is thin: `logInitial`, `logNewVariable`, `logReadiness`, `withOrigin`, `withOrigins`, `Dummy`.
-  - No generic callbacks yet for variable-constraint logging, error logging, or fix-variable logging.
+  - Current API now exposes:
+    - `logInitial`
+    - `logNewVariable`
+    - `log(variable, constraint, context)`
+    - `logError(error, context)`
+    - `logReadiness`
+    - `logFixVariable(variable, resultType, context)`
+    - `withOrigin`
+    - `withOrigins`
+    - `Dummy`
 
 ### Generic inference pipeline consumers
 - `resolution.common/src/org/cangnova/cangjie/resolve/calls/inference/components/ConstraintInjector.kt`
@@ -24,6 +32,9 @@
 - `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/InferenceComponents.kt`
   - Present.
   - Passes `session.inferenceLogger` into `ConstraintIncorporator`, `ConstraintInjector`, and readiness/fixation components.
+- `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/ConstraintSystemCompleter.kt`
+  - Present.
+  - Calls `context.session.inferenceLogger?.logStage("Call Completion", this)`.
 
 ### Runtime activation seam
 - `compiler/config/src/org/cangnova/cangjie/config/CommonConfigurationKeys.kt`
@@ -56,28 +67,45 @@
   - `cfir/analysis-tests/testData/diagnostics/type-mismatch/genericArgumentConstraintConflict.cfir.inference.txt`
   - Current contents sampled from representative files are still `<no inference logs>`.
 
-## Confirmed missing or not-discoverable first-party seams
+## Confirmed partial / missing first-party seams
 
 ### Concrete logger source
-- No first-party `CfirInferenceLogger` source file was found by file glob under the repository.
-- The only logger source discovered by name is upstream Kotlin:
-  - `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/inference/FirInferenceLogger.kt`
+- `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirInferenceLogger.kt`
+  - Present and tracked in git, but only as a partial stub.
+  - Current contents provide:
+    - `Call`
+    - `BlockOwner.CandidateOwner` / `BlockOwner.Unknown`
+    - `BlockElement(name, owner)`
+    - `topLevelBlocks`
+    - `logCandidate(candidate)`
+    - `logStage(name, system)`
+  - Missing relative to the existing handler contract and upstream shape:
+    - `topLevelElements`
+    - `BlockItemElement`
+    - `NewVariableElement`
+    - `ConstraintElement`
+    - `ErrorElement`
+    - `FixVariableElement`
+    - origin caching / constraint element tracking / readiness/fixation structure
 
 ### Session accessor
-- No `val CfirSession.inferenceLogger ...` accessor is currently present in first-party `cfir/**` sources.
+- A local accessor currently exists inside the partial logger file:
+  - `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirInferenceLogger.kt`
+  - `val CfirSession.inferenceLogger: CfirInferenceLogger? by CfirSession.nullableSessionComponentAccessor()`
 - Existing session extension file:
   - `cfir/resolve/src/org/cangnova/cangjie/cfir/session/CfirSessionExtensions.kt`
-  - This is the strongest local accessor landing point because it already hosts other resolve-session accessors.
+  - This remains the strongest local consolidation target because it already hosts other resolve-session accessors.
 
 ## Current mismatch summary
 - Runtime and test layers already assume a concrete `CfirInferenceLogger` exists.
 - Resolve and generic inference layers already consume `session.inferenceLogger`.
-- However, the discoverable first-party concrete logger source and the session accessor are missing.
-- Therefore the repository currently looks like a partial port where call sites and test expectations were added before the concrete implementation landed.
+- The concrete first-party logger source does exist, but only as a thin partial implementation that does not satisfy the current test handler contract.
+- The session accessor also exists, but is colocated inside the logger file rather than at the usual resolve-session extension seam.
+- Therefore the repository currently looks like a partial port where call sites and handler expectations advanced farther than the concrete logger model.
 
 ## Tentative local landing paths
-- Concrete logger source: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirInferenceLogger.kt`
-- Session accessor: `cfir/resolve/src/org/cangnova/cangjie/cfir/session/CfirSessionExtensions.kt`
+- Concrete logger completion target: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirInferenceLogger.kt`
+- Session accessor consolidation target: `cfir/resolve/src/org/cangnova/cangjie/cfir/session/CfirSessionExtensions.kt`
 
 ## Upstream source of truth
 - `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/inference/FirInferenceLogger.kt`
@@ -109,7 +137,7 @@
   - These are renderer/format references only, not runtime dependencies for the first local port.
 
 ## Task 2 implication
-- The current local `InferenceLogger` base class is missing the generic callback surface needed by upstream-shaped concrete logging:
+- The current local `InferenceLogger` base class needed the generic callback surface required by upstream-shaped concrete logging:
   - variable-constraint logging (`log(variable, constraint, context)`)
   - error logging (`logError(error, context)`)
   - fix-variable logging (`logFixVariable(variable, resultType, context)`)

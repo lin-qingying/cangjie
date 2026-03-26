@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.test.frontend
 
 import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceLogger
-import org.cangnova.cangjie.cfir.resolve.inference.inferenceLogger
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
 import org.cangnova.cangjie.test.directives.DiagnosticsDirectives
 import org.cangnova.cangjie.test.directives.model.DirectivesContainer
@@ -25,7 +25,7 @@ class CfirInferenceLogsHandler(
             val currentModule = part.module
             if (CfirDiagnosticsDirectives.DUMP_INFERENCE_LOGS !in currentModule.directives) continue
 
-            val logger = part.session.inferenceLogger
+            val logger = part.session.inferenceLoggerOrNull
             val renderedLogs = when {
                 logger == null -> "<no inference logger>"
                 logger.topLevelElements.isEmpty() -> "<no inference logs>"
@@ -77,7 +77,7 @@ class CfirInferenceLogsHandler(
                     append("<empty>")
                 } else {
                     block.items.forEach { item ->
-                        appendLine(renderItem(item))
+                        append(renderItem(item)).appendLine()
                     }
                 }
             }
@@ -89,10 +89,28 @@ class CfirInferenceLogsHandler(
         CfirInferenceLogger.BlockOwner.Unknown -> "Unknown"
     }
 
-    private fun renderItem(item: CfirInferenceLogger.BlockItemElement): String = when (item) {
-        is CfirInferenceLogger.NewVariableElement -> "NEW ${item.variable.lookupTag.name}"
-        is CfirInferenceLogger.ConstraintElement -> "CONSTRAINT ${item.formatted}"
-        is CfirInferenceLogger.ErrorElement -> "ERROR ${item.issue.message} @ ${item.issue.position}"
-        is CfirInferenceLogger.FixVariableElement -> "FIX ${item.variable.lookupTag.name} -> ${item.resultType}"
+    private fun renderItem(item: CfirInferenceLogger.BlockItemElement): String = buildString {
+        when (item) {
+            is CfirInferenceLogger.NewVariableElement -> append("- NEW ${item.variable.lookupTag.name}")
+            is CfirInferenceLogger.ConstraintElement -> {
+                append("- CONSTRAINT ${item.formatted}")
+                if (item.origins.isNotEmpty()) {
+                    appendLine()
+                    append(renderOrigins(item.origins))
+                }
+            }
+            is CfirInferenceLogger.ErrorElement -> append("- ERROR ${item.issue.message} @ ${item.issue.position}")
+            is CfirInferenceLogger.FixVariableElement -> append("- FIX ${item.variable.lookupTag.name} -> ${item.resultType}")
+        }
+    }
+
+    private fun renderOrigins(origins: List<CfirInferenceLogger.ConstraintElement>): String = buildString {
+        origins.forEachIndexed { index, origin ->
+            if (index > 0) appendLine()
+            append("  origins[").append(index).append("]: ").append(origin.formatted)
+        }
     }
 }
+
+private val CfirSession.inferenceLoggerOrNull: CfirInferenceLogger?
+    by CfirSession.nullableSessionComponentAccessor()

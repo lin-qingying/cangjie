@@ -3,6 +3,7 @@
 import com.intellij.psi.tree.IElementType
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.common.moduleData
@@ -39,6 +40,25 @@ abstract class AbstractRawCfirBuilder<T : Any>(
     protected fun <R> withPackageContext(fqName: FqName, block: () -> R): R = context.withPackage(fqName, block)
 
     protected fun <R> withLocalContext(block: () -> R): R = context.withLocalContext(block)
+
+    protected fun <R> withClassName(name: Name, block: () -> R): R = context.withClassName(name, block)
+
+    protected val inLocalContext: Boolean
+        get() = context.inLocalContext
+
+    protected val currentClassId get() = context.currentClassId
+
+    protected fun pushContainerSymbol(symbol: CfirSymbol<*>) = context.pushContainerSymbol(symbol)
+
+    protected fun popContainerSymbol(symbol: CfirSymbol<*>) = context.popContainerSymbol(symbol)
+
+    protected val containerSymbolIfAny: CfirSymbol<*>?
+        get() = context.containerSymbolIfAny
+
+    protected val containerSymbol: CfirSymbol<*>
+        get() = context.containerSymbol
+
+
 
     abstract fun T.toSourceElement(): AbstractCjSourceElement
 

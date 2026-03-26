@@ -25,6 +25,7 @@ class CfirTypeAliasBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
+    var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     val declarations: MutableList<CfirDeclaration> = mutableListOf()
     val superTypeRefs: MutableList<CfirTypeRef> = mutableListOf()
     lateinit var symbol: CfirTypeAliasSymbol
@@ -41,6 +42,7 @@ class CfirTypeAliasBuilder {
             annotations,
             origin,
             attributes,
+            isLocal,
             declarations,
             superTypeRefs,
             symbol,
@@ -74,6 +76,7 @@ inline fun buildTypeAliasCopy(original: CfirTypeAlias, init: CfirTypeAliasBuilde
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes
+    copyBuilder.isLocal = original.isLocal
     copyBuilder.declarations.addAll(original.declarations)
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)
     copyBuilder.status = original.status

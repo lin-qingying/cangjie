@@ -9,6 +9,7 @@ import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability.INAPPLICABLE_WRONG_RECEIVER
+import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability.RESOLVED_LOW_PRIORITY
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
 import org.cangnova.cangjie.resolve.calls.tower.shouldStopResolve
 
@@ -44,7 +45,9 @@ open class CfirCandidateCollector(
             applicability > currentApplicability ||
             (applicability == currentApplicability && (currentBestGroup == null || group < currentBestGroup))
         ) {
-            candidates.clear()
+            if (applicability >= RESOLVED_LOW_PRIORITY) {
+                candidates.clear()
+            }
 
             currentApplicability = applicability
             bestGroup = group

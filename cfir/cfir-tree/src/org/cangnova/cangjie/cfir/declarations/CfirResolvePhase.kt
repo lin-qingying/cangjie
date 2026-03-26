@@ -238,6 +238,12 @@ enum class CfirResolvePhase(
             val prevOrdinal = ordinal - 1
             return if (prevOrdinal >= 0) entries[prevOrdinal] else this
         }
+
+    companion object {
+        // Short-cut
+        val DECLARATIONS: CfirResolvePhase = CfirResolvePhase.STATUS
+        val ANALYZED_DEPENDENCIES: CfirResolvePhase = CfirResolvePhase.BODY_RESOLVE
+    }
 }
 
 /**

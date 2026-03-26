@@ -9,6 +9,8 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -22,8 +24,12 @@ sealed class CfirVariable : CfirCallableDeclaration() {
     abstract override val annotations: List<CfirAnnotation>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
+    abstract override val typeParameters: List<CfirTypeParameterRef>
+    abstract override val isLocal: Boolean
+    abstract override val returnTypeRef: CfirTypeRef
+    abstract override val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val symbol: CfirVariableSymbol<*>
-    abstract val status: CfirDeclarationStatus
+    abstract override val status: CfirDeclarationStatus
     abstract val initializer: CfirExpression?
     abstract val isVar: Boolean
 
@@ -37,13 +43,22 @@ sealed class CfirVariable : CfirCallableDeclaration() {
     override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
 
-    abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
+    override abstract fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
+
+
+    override abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
 
 
     override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirVariable
 
 
-    abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirVariable
+    override abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirVariable
+
+
+    override abstract fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirVariable
+
+
+    override abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirVariable
 
 
     abstract fun <D> transformInitializer(transformer: CfirTransformer<D>, data: D): CfirVariable

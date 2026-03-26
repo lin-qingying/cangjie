@@ -1,6 +1,5 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CheckerDispatchKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
@@ -25,24 +24,13 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.ConeUnionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.arrayElementType
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.name.Name
 
-abstract class CfirExtendChecker(
-    dispatchKind: CheckerDispatchKind,
-) : CfirMemberDeclarationChecker(dispatchKind) {
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    final override fun check(declaration: CfirMemberDeclaration) {
-        val extend = declaration as? CfirExtend ?: return
-        checkExtend(extend)
-    }
 
+object CfirExtendTargetLegalityChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    protected abstract fun checkExtend(extend: CfirExtend)
-}
-
-object CfirExtendTargetLegalityChecker : CfirExtendChecker(CheckerDispatchKind.Common) {
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun checkExtend(extend: CfirExtend) {
+    override fun check(extend: CfirExtend) {
         val targetTypeRef = extend.extendedTypeRef
 
         if (targetTypeRef.isDefinitelyIllegalExtendedType()) {
@@ -71,9 +59,9 @@ object CfirExtendTargetLegalityChecker : CfirExtendChecker(CheckerDispatchKind.C
     }
 }
 
-object CfirExtendInterfaceKindChecker : CfirExtendChecker(CheckerDispatchKind.Common) {
+object CfirExtendInterfaceKindChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun checkExtend(extend: CfirExtend) {
+    override fun check(extend: CfirExtend) {
         for (superTypeRef in extend.superTypeRefs) {
             if (superTypeRef.isDefinitelyNotInterfaceType()) {
                 reporter.reportOn(
@@ -102,9 +90,9 @@ object CfirExtendInterfaceKindChecker : CfirExtendChecker(CheckerDispatchKind.Co
     }
 }
 
-object CfirExtendDuplicateInterfaceChecker : CfirExtendChecker(CheckerDispatchKind.Common) {
+object CfirExtendDuplicateInterfaceChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun checkExtend(extend: CfirExtend) {
+    override fun check(extend: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
         val targetClassId = query.targetClassIdOf(extend) ?: return
 
@@ -129,9 +117,9 @@ object CfirExtendDuplicateInterfaceChecker : CfirExtendChecker(CheckerDispatchKi
     }
 }
 
-object CfirExtendOrphanRuleChecker : CfirExtendChecker(CheckerDispatchKind.Common) {
+object CfirExtendOrphanRuleChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun checkExtend(extend: CfirExtend) {
+    override fun check(extend: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
         val declarationPackage = query.packageFqNameOf(extend) ?: return
         val targetClassId = query.targetClassIdOf(extend) ?: return
@@ -150,9 +138,9 @@ object CfirExtendOrphanRuleChecker : CfirExtendChecker(CheckerDispatchKind.Commo
     }
 }
 
-object CfirExtendGenericUsageChecker : CfirExtendChecker(CheckerDispatchKind.Common) {
+object CfirExtendGenericUsageChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun checkExtend(extend: CfirExtend) {
+    override fun check(extend: CfirExtend) {
         if (extend.typeParameters.isEmpty()) return
         val allTypeRefs = buildList {
             add(extend.extendedTypeRef)
@@ -171,9 +159,9 @@ object CfirExtendGenericUsageChecker : CfirExtendChecker(CheckerDispatchKind.Com
     }
 }
 
-object CfirExtendSpecializationConflictChecker : CfirExtendChecker(CheckerDispatchKind.Common) {
+object CfirExtendSpecializationConflictChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun checkExtend(extend: CfirExtend) {
+    override fun check(extend: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
         val targetClassId = query.targetClassIdOf(extend) ?: return
         val localInterfaces = query.inheritedInterfacesOf(extend)
@@ -196,9 +184,9 @@ object CfirExtendSpecializationConflictChecker : CfirExtendChecker(CheckerDispat
     }
 }
 
-object CfirExtendDefaultImplementationConflictChecker : CfirExtendChecker(CheckerDispatchKind.Common) {
+object CfirExtendDefaultImplementationConflictChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun checkExtend(extend: CfirExtend) {
+    override fun check(extend: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
         val targetClassId = query.targetClassIdOf(extend) ?: return
         val localInterfaces = query.inheritedInterfacesOf(extend)
@@ -244,12 +232,7 @@ private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.isDefinitelyIllegalExten
 
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.toClassIdOrNull(): org.cangnova.cangjie.name.ClassId? {
     val coneType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
-    return when (coneType) {
-        is ConeClassLikeType -> coneType.classId
-        is ConeStructType -> coneType.classId
-        is ConeEnumType -> coneType.classId
-        else -> null
-    }
+    return coneType.classIdOrPrimitiveClassId
 }
 
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.toSemanticStableKey(): String {

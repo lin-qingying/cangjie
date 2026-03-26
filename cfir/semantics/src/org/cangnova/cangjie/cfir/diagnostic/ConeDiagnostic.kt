@@ -25,6 +25,18 @@ data class ConeUnresolvedReferenceError(
     override val reason: String = "unresolved reference: ${name.asString()}"
 }
 
+class ConeConstraintSystemHasContradiction(
+    override val candidate: AbstractCallCandidate<*>,
+) : ConeDiagnosticWithSingleCandidate {
+    override val reason: String
+        get() = "CS errors: ${
+             describeSymbol(
+                candidateSymbol
+            )
+        }"
+    override val candidateSymbol:CfirSymbol<*> get() = candidate.symbol
+}
+
 data class ConeUnresolvedSymbolError(
     val classId: ClassId,
 ) : ConeUnresolvedError {

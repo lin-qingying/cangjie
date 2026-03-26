@@ -99,12 +99,28 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(statement)
     }
 
+    final override fun visitTypeParameterRef(typeParameterRef: CfirTypeParameterRef, data: Nothing?) {
+        visitTypeParameterRef(typeParameterRef)
+    }
+
+    open fun visitTypeParameterRef(typeParameterRef: CfirTypeParameterRef) {
+        visitElement(typeParameterRef)
+    }
+
     final override fun visitDeclaration(declaration: CfirDeclaration, data: Nothing?) {
         visitDeclaration(declaration)
     }
 
     open fun visitDeclaration(declaration: CfirDeclaration) {
         visitElement(declaration)
+    }
+
+    final override fun visitTypeParameterRefsOwner(typeParameterRefsOwner: CfirTypeParameterRefsOwner, data: Nothing?) {
+        visitTypeParameterRefsOwner(typeParameterRefsOwner)
+    }
+
+    open fun visitTypeParameterRefsOwner(typeParameterRefsOwner: CfirTypeParameterRefsOwner) {
+        visitElement(typeParameterRefsOwner)
     }
 
     final override fun visitMemberDeclaration(memberDeclaration: CfirMemberDeclaration, data: Nothing?) {
@@ -403,6 +419,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(qualifiedAccess)
     }
 
+    final override fun visitErrorFunction(errorFunction: CfirErrorFunction, data: Nothing?) {
+        visitErrorFunction(errorFunction)
+    }
+
+    open fun visitErrorFunction(errorFunction: CfirErrorFunction) {
+        visitElement(errorFunction)
+    }
+
     final override fun visitAssignment(assignment: CfirAssignment, data: Nothing?) {
         visitAssignment(assignment)
     }
@@ -537,6 +561,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitAnonymousFunction(anonymousFunction: CfirAnonymousFunction) {
         visitElement(anonymousFunction)
+    }
+
+    final override fun visitResolvedErrorReference(resolvedErrorReference: CfirResolvedErrorReference, data: Nothing?) {
+        visitResolvedErrorReference(resolvedErrorReference)
+    }
+
+    open fun visitResolvedErrorReference(resolvedErrorReference: CfirResolvedErrorReference) {
+        visitElement(resolvedErrorReference)
     }
 
     final override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression, data: Nothing?) {

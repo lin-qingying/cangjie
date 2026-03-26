@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.InternalDiagnosticFactoryMethod
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
+import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
@@ -26,9 +27,11 @@ import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
+import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemError
 
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
+import kotlin.sequences.ifEmpty
 
 fun ConeDiagnostic.toCfirDiagnostics(
     session: CfirSession,
@@ -37,12 +40,38 @@ fun ConeDiagnostic.toCfirDiagnostics(
     valueParameter: CfirValueParameter? = null,
 ): List<CjDiagnostic> {
     return when (this) {
+        is ConeConstraintSystemHasContradiction -> mapSystemHasContradictionError(session, source, callOrAssignmentSource)
+
         is ConeInapplicableCandidateError -> mapInapplicableCandidateError(session, source, callOrAssignmentSource)
         is ConeAmbiguityError -> mapConeAmbiguityError(source, callOrAssignmentSource, session)
         else -> listOfNotNull(mapOtherDiagnostic(source, valueParameter, callOrAssignmentSource, session))
     }
 }
+private fun ConstraintSystemError.mapConstraintSystemError(
+    source: CjSourceElement?,
+    qualifiedAccessSource: CjSourceElement?,
+    session: CfirSession,
+    candidate: AbstractCallCandidate<*>,
+): CjDiagnostic?{
 
+}
+private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
+    session: CfirSession,
+    source: CjSourceElement?,
+    qualifiedAccessSource: CjSourceElement?,
+): List<CjDiagnostic>{
+    val errors = candidate.errors
+    return errors.mapNotNull { error ->
+        error.mapConstraintSystemError(
+            source,
+            qualifiedAccessSource,
+            session,
+            candidate,
+        )
+    }.ifEmpty{
+
+    }
+}
 // region mapInapplicableCandidateError — 对齐 K2 coneDiagnosticToFirDiagnostic.kt
 
 private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(

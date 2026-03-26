@@ -1,7 +1,9 @@
 package org.cangnova.cangjie.resolve.calls.inference.components
 
 import org.cangnova.cangjie.resolve.calls.inference.model.Constraint
+import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemError
 import org.cangnova.cangjie.resolve.calls.inference.model.InitialConstraint
+import org.cangnova.cangjie.type.model.CangJieTypeMarker
 import org.cangnova.cangjie.type.model.TypeVariableMarker
 
 open class InferenceLogger {
@@ -19,7 +21,13 @@ open class InferenceLogger {
 
     open fun logNewVariable(variable: TypeVariableMarker, context: Any?) {}
 
+    open fun log(variable: TypeVariableMarker, constraint: Constraint, context: Any?) {}
+
+    open fun logError(error: ConstraintSystemError, context: Any?) {}
+
     open fun logReadiness(record: FixationLogRecord, context: Any?) {}
+
+    open fun logFixVariable(variable: TypeVariableMarker, resultType: CangJieTypeMarker, context: Any?) {}
 
     open fun <T> withOrigin(origin: Any?, action: () -> T): T = action()
 

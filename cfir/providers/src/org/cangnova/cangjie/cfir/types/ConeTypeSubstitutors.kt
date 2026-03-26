@@ -49,33 +49,10 @@ abstract class AbstractConeSubstitutor(
 
     private fun ConeCangJieType.substituteRecursive(): ConeCangJieType? {
         return when (this) {
-            is ConeCapturedType -> substituteCapturedType()
             is ConeTypeAliasType -> substituteTypeAlias()
             is ConeRigidType -> substituteArguments()
             else -> null
         }
-    }
-
-    private fun ConeCapturedType.substituteCapturedType(): ConeCapturedType? {
-        val substitutedProjection = substituteArgument(constructor.projection, 0)
-        val substitutedLowerType = substituteOrNull(constructor.lowerType)
-        var supertypesChanged = false
-        val substitutedSupertypes = constructor.supertypes?.map { supertype ->
-            substituteOrNull(supertype)?.also { supertypesChanged = true } ?: supertype
-        }
-
-        if (substitutedProjection == null && substitutedLowerType == null && !supertypesChanged) {
-            return null
-        }
-
-        val newConstructor = ConeCapturedTypeConstructor(
-            projection = substitutedProjection ?: constructor.projection,
-            lowerType = substitutedLowerType ?: constructor.lowerType,
-            captureStatus = constructor.captureStatus,
-            supertypes = if (supertypesChanged) substitutedSupertypes else constructor.supertypes,
-            typeParameterMarker = constructor.typeParameterMarker,
-        )
-        return ConeCapturedType(newConstructor, attributes)
     }
 
     private fun ConeTypeAliasType.substituteTypeAlias(): ConeCangJieType? {
@@ -162,7 +139,6 @@ private fun ConeCangJieType.typeConstructorForSubstitution(): TypeConstructorMar
         is ConeLookupTagBasedType -> lookupTag
         is ConeTypeVariableType -> typeConstructor
         is ConeStubType -> constructor
-        is ConeCapturedType -> constructor
         is ConeTypeConstructorMarker -> this
         else -> null
     }
@@ -185,7 +161,6 @@ private fun ConeCangJieType.withAttributes(newAttributes: ConeAttributes): ConeC
         is ConeTypeAliasType -> ConeTypeAliasType(classId, expandedType, typeArguments, newAttributes)
         is ConeErrorType -> ConeErrorType(diagnostic, isUninferredParameter, delegatedType, typeArguments, newAttributes, nullable)
         is ConeQuestType -> ConeQuestType(newAttributes)
-        is ConeCapturedType -> ConeCapturedType(constructor, newAttributes)
         is ConeTypeVariableType -> ConeTypeVariableType(typeConstructor, newAttributes)
         is ConePlaceholderType -> ConePlaceholderType(debugName, newAttributes)
         else -> this

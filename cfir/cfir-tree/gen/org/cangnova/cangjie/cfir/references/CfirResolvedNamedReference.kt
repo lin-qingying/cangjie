@@ -6,7 +6,6 @@
 package org.cangnova.cangjie.cfir.references
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.CfirPureAbstractElement
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -16,10 +15,10 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.resolvedNamedReference]
  */
-abstract class CfirResolvedNamedReference : CfirPureAbstractElement(), CfirNamedReference {
-    abstract override val source: CjSourceElement?
-    abstract override val name: Name
-    abstract val resolvedSymbol: CfirSymbol<*>
+interface CfirResolvedNamedReference : CfirNamedReference {
+    override val source: CjSourceElement?
+    override val name: Name
+    val resolvedSymbol: CfirSymbol<*>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitResolvedNamedReference(this, data)

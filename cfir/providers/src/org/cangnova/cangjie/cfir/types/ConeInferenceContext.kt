@@ -18,6 +18,8 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.FqNameUnsafe
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.type.AbstractTypePreparator
+import org.cangnova.cangjie.type.AbstractTypeRefiner
 import org.cangnova.cangjie.type.TypeCheckerState
 import org.cangnova.cangjie.type.model.*
 import org.cangnova.cangjie.type.newTypeCheckerState
@@ -63,7 +65,6 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
             is ConeLookupTagBasedType -> lookupTag
             is ConeTypeVariableType -> typeConstructor
             is ConeStubType -> constructor
-            is ConeCapturedType -> constructor
             is ConeTypeConstructorMarker -> this
             else -> error("无法获取类型构造器: $this (${this::class})")
         }
@@ -92,7 +93,6 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
                 typeParams.mapNotNull { (it.symbol as? org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol)?.toLookupTag() }
             }
             is ConeTypeParameterLookupTag -> emptyList()
-            is ConeCapturedTypeConstructor -> emptyList()
             is ConeTypeVariableTypeConstructor -> emptyList()
             is ConeStubTypeConstructor -> emptyList()
             else -> emptyList()
@@ -114,7 +114,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
                 typeParameterSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
                 typeParameterSymbol.resolvedBounds.map { it.coneType }
             }
-            is ConeCapturedTypeConstructor -> supertypes ?: emptyList()
+
             // 结构类型/原始类型默认以 Any 为父类型
             is ConeAnyType -> emptyList()
             is ConePrimitiveType -> if (kind == PrimitiveTypeKind.NOTHING) emptyList() else listOf(ConeAnyType)
@@ -219,9 +219,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
         }
     }
 
-    override fun TypeConstructorMarker.isCapturedTypeConstructor(): Boolean {
-        return this is ConeCapturedTypeConstructor
-    }
+
 
     // =========================================================================
     // 简单类型谓词
@@ -281,23 +279,6 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
     // 类型创建
     // =========================================================================
 
-    override fun createCapturedType(
-        constructorProjection: TypeArgumentMarker,
-        constructorSupertypes: List<CangJieTypeMarker>,
-        lowerType: CangJieTypeMarker?,
-        captureStatus: CaptureStatus
-    ): CapturedTypeMarker {
-        require(constructorProjection is ConeTypeProjection)
-        val supertypes = constructorSupertypes.map { it as ConeCangJieType }
-        val constructor = ConeCapturedTypeConstructor(
-            projection = constructorProjection,
-            lowerType = lowerType as? ConeCangJieType,
-            captureStatus = captureStatus,
-            supertypes = supertypes,
-        )
-        return ConeCapturedType(constructor)
-    }
-
     override fun createStubTypeForBuilderInference(typeVariable: TypeVariableMarker): StubTypeMarker {
         require(typeVariable is ConeTypeVariable)
         return ConeStubType(typeVariable.typeConstructor, ConeStubType.Kind.FOR_BUILDER_INFERENCE)
@@ -319,7 +300,19 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
             is ConeClassLikeLookupTag -> ConeClassLikeType(constructor, coneArguments, coneAttributes)
             is ConeTypeParameterLookupTag -> org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl(constructor)
             is ConePrimitiveType -> constructor
-            is ConeFuncType -> constructor
+            is ConeFuncType -> {
+                val coneTypes = arguments.map { (it as ConeTypeProjection).type }
+                val parameterTypes = coneTypes.dropLast(1)
+                val returnType = coneTypes.lastOrNull() ?: ConePrimitiveType.NOTHING
+                ConeFuncType(
+                    parameterTypes = parameterTypes,
+                    returnType = returnType,
+                    isCFunc = constructor.isCFunc,
+                    isClosureType = constructor.isClosureType,
+                    hasVariableLenArg = constructor.hasVariableLenArg,
+                    attributes = constructor.attributes,
+                )
+            }
             is ConeTupleType -> constructor
             is ConeAnyType -> ConeAnyType
             is ConeTypeVariableTypeConstructor -> ConeTypeVariableType(constructor)
@@ -464,18 +457,10 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
         return ConePrimitiveType.INT64
     }
 
-    override fun captureFromArguments(type: RigidTypeMarker, status: CaptureStatus): RigidTypeMarker? {
-        // 仓颉无通配符投影，捕获仅在约束系统内部使用
-        return null
-    }
 
-    override fun captureFromExpression(type: CangJieTypeMarker): CangJieTypeMarker? {
-        // 仓颉无通配符投影
-        return null
-    }
 
     // =========================================================================
-    // 类型变量 / Stub / Captured 操作
+    // 类型变量 / Stub
     // =========================================================================
 
     override fun TypeVariableMarker.freshTypeConstructor(): TypeVariableTypeConstructorMarker {
@@ -488,15 +473,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
         return this.defaultType
     }
 
-    override fun CapturedTypeMarker.typeConstructorProjection(): TypeArgumentMarker {
-        require(this is ConeCapturedType)
-        return constructor.projection
-    }
 
-    override fun CapturedTypeMarker.typeParameter(): TypeParameterMarker? {
-        require(this is ConeCapturedType)
-        return constructor.typeParameterMarker
-    }
 
     override fun StubTypeMarker.getOriginalTypeVariable(): TypeVariableTypeConstructorMarker {
         require(this is ConeStubType)
@@ -642,9 +619,13 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
         errorTypesEqualToAnything: Boolean,
         stubTypesEqualToAnything: Boolean
     ): TypeCheckerState {
-        return (this as TypeCheckerProviderContext).newTypeCheckerState(
-            errorTypesEqualToAnything = errorTypesEqualToAnything,
-            stubTypesEqualToAnything = stubTypesEqualToAnything,
+        return TypeCheckerState(
+            isErrorTypeEqualsToAnything = errorTypesEqualToAnything,
+            isStubTypeEqualsToAnything = stubTypesEqualToAnything,
+            allowedTypeVariable = false,
+            typeSystemContext = this,
+            cangjieTypePreparator = AbstractTypePreparator.Default,
+            cangjieTypeRefiner = AbstractTypeRefiner.Default,
         )
     }
 

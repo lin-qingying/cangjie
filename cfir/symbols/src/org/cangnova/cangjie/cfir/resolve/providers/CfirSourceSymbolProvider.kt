@@ -93,6 +93,10 @@ class CfirProviderImpl(
     override fun getEnumConstructorOwnerClassId(symbol: CfirEnumConstructorSymbol): ClassId? =
         state.enumConstructorOwnerClassIdMap[symbol]
 
+    override fun getCfirClassifierContainerFile(fqName: ClassId): CfirFile =
+        state.classifierContainerFileMap[fqName]
+            ?: error("No containing file recorded for classifier $fqName")
+
     override fun getClassNamesInPackage(fqName: FqName): Set<Name> =
         state.classesInPackage[fqName].orEmpty()
 
@@ -115,6 +119,15 @@ class CfirProviderImpl(
 
         override fun getEnumConstructorOwnerClassId(symbol: CfirEnumConstructorSymbol): ClassId? =
             state.enumConstructorOwnerClassIdMap[symbol]
+
+        override fun getContainingFile(symbol: org.cangnova.cangjie.cfir.symbols.CfirSymbol<*>): CfirFile? = when (symbol) {
+            is CfirClassLikeSymbol<*> -> state.classIdBySymbol[symbol]?.let(state.classifierContainerFileMap::get)
+            is CfirCallableSymbol<*> -> state.callableContainerFileMap[symbol]
+            else -> null
+        }
+
+        override fun getContainingClassId(symbol: CfirCallableSymbol<*>): ClassId? =
+            state.callableOwnerClassIdMap[symbol]
 
         override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> =
             state.callableMap[CallableId(packageFqName, name)].orEmpty()
@@ -251,19 +264,12 @@ class CfirProviderImpl(
 
             // ---- 可调用声明（仅顶层注册）----
 
-            is CfirFunction -> {
-                if (!isTopLevel) return
-                val symbol = declaration.symbol as? CfirFunctionSymbol<*> ?: return
-                val callableName = declaration.callableNameOrNull() ?: return
-                val callableId = CallableId(packageFqName, callableName)
-                state.functionMap.getOrPut(callableId, ::mutableListOf).add(symbol)
-                state.callableMap.getOrPut(callableId, ::mutableListOf).add(symbol)
-                state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(callableName)
-            }
 
             is CfirProperty -> {
-                if (!isTopLevel) return
                 val symbol = declaration.symbol as? CfirPropertySymbol ?: return
+                state.callableContainerFileMap[symbol] = containingFile
+                state.callableOwnerClassIdMap[symbol] = containingClass
+                if (!isTopLevel) return
                 val callableId = CallableId(packageFqName, declaration.name)
                 state.propertyMap.getOrPut(callableId, ::mutableListOf).add(symbol)
                 state.callableMap.getOrPut(callableId, ::mutableListOf).add(symbol)
@@ -271,8 +277,10 @@ class CfirProviderImpl(
             }
 
             is CfirPatternVariable -> {
-                if (!isTopLevel) return
                 val symbol = declaration.symbol as? CfirPatternVariableSymbol ?: return
+                state.callableContainerFileMap[symbol] = containingFile
+                state.callableOwnerClassIdMap[symbol] = containingClass
+                if (!isTopLevel) return
                 for (name in collectBindingNames(declaration.pattern)) {
                     val callableId = CallableId(packageFqName, name)
                     state.callableMap.getOrPut(callableId, ::mutableListOf).add(symbol)
@@ -281,21 +289,36 @@ class CfirProviderImpl(
             }
 
             is CfirFieldVariable -> {
-                if (!isTopLevel) return
                 val symbol = declaration.symbol as? CfirFieldVariableSymbol ?: return
+                state.callableContainerFileMap[symbol] = containingFile
+                state.callableOwnerClassIdMap[symbol] = containingClass
+                if (!isTopLevel) return
                 val callableId = CallableId(packageFqName, declaration.name)
                 state.callableMap.getOrPut(callableId, ::mutableListOf).add(symbol)
                 state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(declaration.name)
             }
 
             is CfirMacroDeclaration -> {
-                if (!isTopLevel) return
                 val symbol = declaration.symbol as? CfirMacroDeclarationSymbol ?: return
+                state.callableContainerFileMap[symbol] = containingFile
+                state.callableOwnerClassIdMap[symbol] = containingClass
+                if (!isTopLevel) return
                 val callableId = CallableId(packageFqName, declaration.name)
                 state.callableMap.getOrPut(callableId, ::mutableListOf).add(symbol)
                 state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(declaration.name)
             }
 
+            is CfirFunction -> {
+                val symbol = declaration.symbol as? CfirFunctionSymbol<*> ?: return
+                state.callableContainerFileMap[symbol] = containingFile
+                state.callableOwnerClassIdMap[symbol] = containingClass
+                if (!isTopLevel) return
+                val callableName = declaration.callableNameOrNull() ?: return
+                val callableId = CallableId(packageFqName, callableName)
+                state.functionMap.getOrPut(callableId, ::mutableListOf).add(symbol)
+                state.callableMap.getOrPut(callableId, ::mutableListOf).add(symbol)
+                state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(callableName)
+            }
             else -> Unit
         }
     }
@@ -340,7 +363,7 @@ class CfirProviderImpl(
         return if (containingClass == null) {
             ClassId(packageFqName, shortName)
         } else {
-            ClassId(packageFqName, containingClass.relativeClassName.child(shortName), isLocal = false)
+            ClassId(packageFqName, containingClass.relativeClassName.child(shortName))
         }
     }
 
@@ -384,6 +407,8 @@ class CfirProviderImpl(
         val classifierInPackage: MutableMap<FqName, MutableSet<Name>> = hashMapOf()
         val classesInPackage: MutableMap<FqName, MutableSet<Name>> = hashMapOf()
         val enumConstructorOwnerClassIdMap: MutableMap<CfirEnumConstructorSymbol, ClassId> = hashMapOf()
+        val callableContainerFileMap: MutableMap<CfirCallableSymbol<*>, CfirFile> = hashMapOf()
+        val callableOwnerClassIdMap: MutableMap<CfirCallableSymbol<*>, ClassId?> = hashMapOf()
 
         val callableMap: MutableMap<CallableId, MutableList<CfirCallableSymbol<*>>> = hashMapOf()
         val functionMap: MutableMap<CallableId, MutableList<CfirFunctionSymbol<*>>> = hashMapOf()

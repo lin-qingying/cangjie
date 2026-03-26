@@ -25,6 +25,7 @@ class CfirInterfaceImpl @CfirImplementationDetail constructor(
     override var annotations: List<CfirAnnotation>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
+    override val isLocal: Boolean,
     override var declarations: List<CfirDeclaration>,
     override var status: CfirDeclarationStatus,
     override var typeParameters: List<CfirTypeParameter>,

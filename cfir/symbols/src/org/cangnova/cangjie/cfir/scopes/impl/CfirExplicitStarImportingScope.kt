@@ -36,7 +36,7 @@ class CfirExplicitStarImportingScope(
 
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         for (packageFqName in starImportPackages) {
-            val classId = ClassId(packageFqName, FqName.topLevel(name), isLocal = false)
+            val classId = ClassId(packageFqName, FqName.topLevel(name))
             val symbol = symbolProvider.getClassLikeSymbolByClassId(classId)
             if (symbol != null) processor(symbol)
         }

@@ -213,8 +213,8 @@ class CfirDeclDeserializer(
 
     /** ClassDecl → CfirClass */
     private fun convertClass(decl: Decl): CfirClass {
-        val name = Name.identifier(decl.identifier ?: "???")
-        val symbol = CfirClassSymbol(ClassId(packageFqName, name))
+        val name = decl.classLikeName()
+        val symbol = CfirClassSymbol(resolveClassId(decl, name))
         val status = buildStatus(decl)
         val typeParams = deserializeTypeParameters(decl)
         val info = decl.info(ClassInfo()) as? ClassInfo
@@ -227,6 +227,7 @@ class CfirDeclDeserializer(
             annotations = emptyList(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
             status = status,
             typeParameters = typeParams,
             symbol = symbol,
@@ -241,8 +242,12 @@ class CfirDeclDeserializer(
 
     /** InterfaceDecl → CfirInterface */
     private fun convertInterface(decl: Decl): CfirInterface {
-        val name = Name.identifier(decl.identifier ?: "???")
-        val symbol = CfirInterfaceSymbol(ClassId(packageFqName, name))
+        val name = decl.classLikeName()
+        val classId = resolveClassId(decl, name)
+        check(classId.relativeClassName.asString().isNotBlank()) {
+            "Blank interface ClassId for decl.identifier='${decl.identifier}' pkg='${packageFqName.asString()}'"
+        }
+        val symbol = CfirInterfaceSymbol(classId)
         val status = buildStatus(decl)
         val typeParams = deserializeTypeParameters(decl)
         val info = decl.info(InterfaceInfo()) as? InterfaceInfo
@@ -255,6 +260,7 @@ class CfirDeclDeserializer(
             annotations = emptyList(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
             declarations = members,
             status = status,
             typeParameters = typeParams,
@@ -271,8 +277,8 @@ class CfirDeclDeserializer(
 
     /** StructDecl → CfirStruct */
     private fun convertStruct(decl: Decl): CfirStruct {
-        val name = Name.identifier(decl.identifier ?: "???")
-        val symbol = CfirStructSymbol(ClassId(packageFqName, name))
+        val name = decl.classLikeName()
+        val symbol = CfirStructSymbol(resolveClassId(decl, name))
         val status = buildStatus(decl)
         val typeParams = deserializeTypeParameters(decl)
         val info = decl.info(StructInfo()) as? StructInfo
@@ -285,6 +291,7 @@ class CfirDeclDeserializer(
             annotations = emptyList(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
             status = status,
             typeParameters = typeParams,
             symbol = symbol,
@@ -299,9 +306,9 @@ class CfirDeclDeserializer(
 
     /** EnumDecl → CfirEnum */
     private fun convertEnum(decl: Decl): CfirEnum {
-        val name = Name.identifier(decl.identifier ?: "???")
+        val name = decl.classLikeName()
         val isRefEnum = false
-        val symbol = CfirEnumSymbol(ClassId(packageFqName, name), isRefEnum)
+        val symbol = CfirEnumSymbol(resolveClassId(decl, name), isRefEnum)
         val status = buildStatus(decl)
         val typeParams = deserializeTypeParameters(decl)
         val info = decl.info(EnumInfo()) as? EnumInfo
@@ -314,6 +321,7 @@ class CfirDeclDeserializer(
             annotations = emptyList(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
             status = status,
             typeParameters = typeParams,
             symbol = symbol,
@@ -361,6 +369,8 @@ class CfirDeclDeserializer(
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
+            dispatchReceiverType = null,
             status = status,
             typeParameters = typeParams,
             returnTypeRef = returnTypeRef,
@@ -389,6 +399,8 @@ class CfirDeclDeserializer(
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
+            dispatchReceiverType = null,
             status = status,
             typeParameters = typeParams,
             returnTypeRef = returnTypeRef,
@@ -423,6 +435,8 @@ class CfirDeclDeserializer(
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
+            dispatchReceiverType = null,
             status = status,
             typeParameters = typeParams,
             returnTypeRef = returnTypeRef,
@@ -454,12 +468,14 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             annotations = emptyList(),
-            symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
+            dispatchReceiverType = null,
             status = status,
             initializer = null,
             isVar = info?.isVar ?: false,
+            symbol = symbol,
             typeParameters = typeParams,
             returnTypeRef = returnTypeRef,
             pattern = pattern,
@@ -527,6 +543,7 @@ class CfirDeclDeserializer(
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
             status = status,
             typeParameters = typeParams,
             extendedTypeRef = extendedTypeRef,
@@ -540,8 +557,8 @@ class CfirDeclDeserializer(
 
     /** TypeAliasDecl → CfirTypeAlias */
     private fun convertTypeAlias(decl: Decl): CfirTypeAlias {
-        val name = Name.identifier(decl.identifier ?: "???")
-        val symbol = CfirTypeAliasSymbol()
+        val name = decl.classLikeName()
+        val symbol = CfirTypeAliasSymbol(resolveClassId(decl, name))
         val status = buildStatus(decl)
         val typeParams = deserializeTypeParameters(decl)
 
@@ -559,6 +576,7 @@ class CfirDeclDeserializer(
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
             declarations = emptyList(),
             superTypeRefs = emptyList(),
             status = status,
@@ -617,6 +635,8 @@ class CfirDeclDeserializer(
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
+            dispatchReceiverType = null,
             status = status,
             typeParameters = typeParams,
             returnTypeRef = buildImplicitTypeRef(),
@@ -641,6 +661,8 @@ class CfirDeclDeserializer(
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
+            dispatchReceiverType = null,
             status = status,
             typeParameters = typeParams,
             returnTypeRef = payloadTypeRef,
@@ -673,6 +695,16 @@ class CfirDeclDeserializer(
         }
     }
 
+    private fun resolveClassId(decl: Decl, fallbackName: Name): ClassId {
+        val name = decl.classLikeName(fallbackName)
+        return ClassId(packageFqName, name)
+    }
+
+    private fun Decl.classLikeName(fallback: Name = Name.identifier("___missing_class_name___")): Name {
+        val rawName = identifier?.takeIf { it.isNotBlank() }
+        return rawName?.let(Name::identifier) ?: fallback
+    }
+
     private fun convertValueParameter(decl: Decl): CfirValueParameter {
         val name = Name.identifier(decl.identifier ?: "_")
         val symbol = CfirValueParameterSymbol(CallableId(name))
@@ -684,11 +716,11 @@ class CfirDeclDeserializer(
             source = null,
             moduleData = context.moduleData,
             annotations = emptyList(),
-            symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
-            initializer = null,
-            isVar = false,
+            isLocal = false,
+            dispatchReceiverType = null,
+            symbol = symbol,
             status = status,
             typeParameters = typeParams,
             returnTypeRef = returnTypeRef,

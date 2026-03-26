@@ -5,7 +5,6 @@
 
 package org.cangnova.cangjie.resolve.calls.inference
 
-import org.cangnova.cangjie.resolve.calls.inference.components.extractProjectionsForAllCapturedTypes
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
 import org.cangnova.cangjie.type.model.*
@@ -51,7 +50,7 @@ context(c: TypeSystemInferenceExtensionContext)
 fun TypeConstructorMarker.hasRecursiveTypeParametersWithGivenSelfType(): Boolean {
     if (getParameters().any { it.hasRecursiveBounds(this) }) return true
 
-    if (this is CapturedTypeConstructorMarker || this.isIntersection()) {
+    if (this.isIntersection()) {
         return supertypes().any {
             it.typeConstructor().hasRecursiveTypeParametersWithGivenSelfType()
         }
@@ -93,12 +92,6 @@ fun ConstraintSystemImpl.registerTypeVariableIfNotPresent(
 context(c: TypeSystemInferenceExtensionContext)
 fun CangJieTypeMarker.extractAllContainingTypeVariables(): Set<TypeConstructorMarker> = buildSet {
     extractAllContainingTypeVariablesNoCaptureTypeProcessing(this)
-
-    val typeProjections = extractProjectionsForAllCapturedTypes()
-
-    typeProjections.forEach { typeProjectionsType ->
-        typeProjectionsType.extractAllContainingTypeVariablesNoCaptureTypeProcessing(this)
-    }
 }
 
 context(context: TypeSystemInferenceExtensionContext)

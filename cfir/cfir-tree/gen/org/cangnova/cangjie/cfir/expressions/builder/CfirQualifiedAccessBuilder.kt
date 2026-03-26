@@ -25,6 +25,7 @@ class CfirQualifiedAccessBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
     lateinit var calleeReference: CfirReference
+    var dispatchReceiver: CfirExpression? = null
     var explicitReceiver: CfirExpression? = null
     val typeArguments: MutableList<CfirTypeRef> = mutableListOf()
 
@@ -35,6 +36,7 @@ class CfirQualifiedAccessBuilder {
             annotations,
             coneTypeOrNull,
             calleeReference,
+            dispatchReceiver,
             explicitReceiver,
             typeArguments,
         )
@@ -60,6 +62,7 @@ inline fun buildQualifiedAccessCopy(original: CfirQualifiedAccess, init: CfirQua
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.calleeReference = original.calleeReference
+    copyBuilder.dispatchReceiver = original.dispatchReceiver
     copyBuilder.explicitReceiver = original.explicitReceiver
     copyBuilder.typeArguments.addAll(original.typeArguments)
     return copyBuilder.apply(init).build()

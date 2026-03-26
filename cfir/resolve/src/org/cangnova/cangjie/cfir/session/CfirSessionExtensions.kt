@@ -1,5 +1,6 @@
-﻿package org.cangnova.cangjie.cfir.session
+package org.cangnova.cangjie.cfir.session
 
+import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceLogger
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirPhaseResolverRegistry
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticCollector
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
@@ -61,3 +62,5 @@ val CfirSession.extendIndexStoreOrNull: CfirExtendIndexStore? by CfirSession.nul
 /** 类型解析器，对齐 Kotlin `FirTypeResolver`。 */
 val CfirSession.typeResolver: CfirTypeResolver by CfirSession.sessionComponentAccessor()
 
+/** 推断日志记录器，可空访问版本。 */
+val CfirSession.inferenceLogger: CfirInferenceLogger? by CfirSession.nullableSessionComponentAccessor()

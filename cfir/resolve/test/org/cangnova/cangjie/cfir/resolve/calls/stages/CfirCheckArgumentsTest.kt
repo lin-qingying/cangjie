@@ -9,7 +9,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildF
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildTypedExpression
 import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
-import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculator
+import org.cangnova.cangjie.cfir.resolve.body.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.CfirTypeRelations
 import org.cangnova.cangjie.cfir.semantics.CandidateApplicability
 import org.cangnova.cangjie.cfir.types.*
@@ -29,7 +29,7 @@ class CfirCheckArgumentsTest {
     fun setUp() {
         context = CfirResolutionContext(
             session = StubSession,
-            bodyResolveContext = CfirBodyResolveContext(CfirReturnTypeCalculator.Default, CfirDataFlowAnalyzerContext()),
+            bodyResolveContext = CfirBodyResolveContext(ReturnTypeCalculator.Default, CfirDataFlowAnalyzerContext()),
             typeRelations = CfirTypeRelations(TestTypeContext()),
         )
     }

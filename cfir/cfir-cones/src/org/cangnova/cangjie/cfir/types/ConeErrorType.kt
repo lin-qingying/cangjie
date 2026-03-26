@@ -44,5 +44,4 @@ class ConeQuestType(
 
     override fun hashCode(): Int = "Quest".hashCode()
 
-    override fun toString(): String = "?"
 }

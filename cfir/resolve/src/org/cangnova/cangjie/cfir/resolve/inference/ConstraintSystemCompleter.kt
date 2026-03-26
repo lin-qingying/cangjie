@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.processCandidatesAndPos
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeFixVariableConstraintPosition
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaParameterType
+import org.cangnova.cangjie.cfir.session.inferenceLogger
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.*
@@ -277,6 +278,7 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
         when (argument) {
             is ConeLambdaWithTypeVariableAsExpectedTypeAtom ->
                 argument.transformToResolvedLambda(c.getBuilder(), resolutionContext, revisedExpectedType)
+            is ConeResolvedCallableReferenceAtom -> return false
             else -> throw IllegalStateException("Unsupported postponed argument type of $argument")
         }
 
@@ -394,12 +396,21 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
             this?.typeConstructor?.takeIf { it in notFixedTypeVariables.keys }
 
         fun PostponedAtomWithRevisableExpectedType.collectNotFixedVariables() {
-            revisedExpectedType?.asArgumentList()?.let { typeArgumentList ->
-                for (typeArgument in typeArgumentList) {
-                    val constructor = typeArgument.getType()?.typeConstructor() ?: continue
-                    if (constructor in notFixedTypeVariables) {
-                        result.add(constructor)
-                    }
+            val revisedExpectedType = revisedExpectedType as? ConeCangJieType ?: return
+            for (typeArgument in revisedExpectedType.typeArguments) {
+                val constructor = typeArgument.type.typeConstructor() ?: continue
+                if (constructor in notFixedTypeVariables) {
+                    result.add(constructor)
+                }
+            }
+        }
+
+        fun ConeResolvedCallableReferenceAtom.collectNotFixedVariables() {
+            val revisedExpectedType = revisedExpectedType as? ConeCangJieType ?: return
+            for (typeArgument in revisedExpectedType.typeArguments) {
+                val constructor = typeArgument.type.typeConstructor() ?: continue
+                if (constructor in notFixedTypeVariables) {
+                    result.add(constructor)
                 }
             }
         }
@@ -419,7 +430,9 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
                     is ConeLambdaWithTypeVariableAsExpectedTypeAtom -> {
                         postponedAtom.collectNotFixedVariables()
                     }
-
+                    is ConeResolvedCallableReferenceAtom -> {
+                        postponedAtom.collectNotFixedVariables()
+                    }
                     is ConeSimpleNameForContextSensitiveResolution,
                     is ConeContextSensitiveAlternativeForQualifierAtom -> {
                         // 上下文敏感解析的 atom 尚未解析，无类型变量可收集

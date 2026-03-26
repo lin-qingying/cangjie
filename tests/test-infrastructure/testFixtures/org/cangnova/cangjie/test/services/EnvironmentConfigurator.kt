@@ -78,7 +78,7 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
 
 
 
-        when (module.directives.singleOrZeroValue( CFIR_PARSER)) {
+        when (module.directives[CFIR_PARSER].lastOrNull()) {
             CfirParser.Psi -> configuration.useLightTree = false
             CfirParser.LightTree -> configuration.useLightTree = true
             null -> {}

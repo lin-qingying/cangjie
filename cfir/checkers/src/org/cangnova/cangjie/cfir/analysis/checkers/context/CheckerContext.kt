@@ -12,15 +12,16 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
-import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
+import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 
-abstract class CheckerContext : DiagnosticContext {
-    abstract val file: CfirFile?
-    abstract val session: CfirSession
+abstract class CheckerContext : DiagnosticContext, SessionAndScopeSessionHolder {
     abstract val reporter: DiagnosticReporter
+    abstract val sessionHolder: SessionAndScopeSessionHolder
+    abstract val returnTypeCalculator: ReturnTypeCalculator
 
     abstract val containingDeclarations: List<CfirDeclaration>
     abstract val containingStatements: List<CfirStatement>
@@ -31,6 +32,12 @@ abstract class CheckerContext : DiagnosticContext {
     abstract val allInfosSuppressed: Boolean
     abstract val allWarningsSuppressed: Boolean
     abstract val allErrorsSuppressed: Boolean
+
+    override val session
+        get() = sessionHolder.session
+
+    override val scopeSession
+        get() = sessionHolder.scopeSession
 
     override val languageVersionSettings: LanguageVersionSettings
         get() = session.languageVersionSettings
@@ -50,16 +57,24 @@ abstract class CheckerContext : DiagnosticContext {
 }
 
 class MutableCheckerContext(
-    override val file: CfirFile?,
-    override val session: CfirSession,
+    override val sessionHolder: SessionAndScopeSessionHolder,
+    override val returnTypeCalculator: ReturnTypeCalculator,
     override val reporter: DiagnosticReporter,
+    override var containingFileSymbol: CfirFileSymbol?,
     override val suppressedDiagnostics: Set<String> = emptySet(),
     override val allInfosSuppressed: Boolean = false,
     override val allWarningsSuppressed: Boolean = false,
     override val allErrorsSuppressed: Boolean = false,
-) : CheckerContext() {
-    override val containingFileSymbol: CfirFileSymbol?
-        get() = file?.symbol as? CfirFileSymbol
+
+
+) : CheckerContextForProvider(
+    sessionHolder = sessionHolder,
+    returnTypeCalculator = returnTypeCalculator,
+    allInfosSuppressed = allInfosSuppressed,
+    allWarningsSuppressed = allWarningsSuppressed,
+    allErrorsSuppressed = allErrorsSuppressed,
+) {
+
     private val mutableDeclarations = mutableListOf<CfirDeclaration>()
     private val mutableStatements = mutableListOf<CfirStatement>()
     private val mutableElements = mutableListOf<CfirElement>()
@@ -76,36 +91,86 @@ class MutableCheckerContext(
     override val callsOrAssignments: List<CfirElement>
         get() = mutableCallsOrAssignments
 
-    fun addDeclaration(declaration: CfirDeclaration) {
-        mutableDeclarations += declaration
+    override fun addSuppressedDiagnostics(
+        diagnosticNames: Collection<String>,
+        allInfosSuppressed: Boolean,
+        allWarningsSuppressed: Boolean,
+        allErrorsSuppressed: Boolean,
+    ): CheckerContextForProvider {
+        if (diagnosticNames.isEmpty()) return this
+        return MutableCheckerContext(
+            sessionHolder = sessionHolder,
+            returnTypeCalculator = returnTypeCalculator,
+            containingFileSymbol = containingFileSymbol,
+            reporter = reporter,
+            suppressedDiagnostics = suppressedDiagnostics + diagnosticNames,
+            allInfosSuppressed = this.allInfosSuppressed || allInfosSuppressed,
+            allWarningsSuppressed = this.allWarningsSuppressed || allWarningsSuppressed,
+            allErrorsSuppressed = this.allErrorsSuppressed || allErrorsSuppressed,
+        )
     }
 
-    fun dropDeclaration() {
+    override fun addDeclaration(declaration: CfirDeclaration): CheckerContextForProvider {
+        mutableDeclarations += declaration
+        return this
+    }
+
+    override fun dropDeclaration() {
         if (mutableDeclarations.isNotEmpty()) {
             mutableDeclarations.removeLast()
         }
     }
 
-    fun addStatement(statement: CfirStatement) {
+    override fun addStatement(statement: CfirStatement): CheckerContextForProvider {
         mutableStatements += statement
+        return this
     }
 
-    fun dropStatement() {
+    override fun dropStatement() {
         if (mutableStatements.isNotEmpty()) {
             mutableStatements.removeLast()
         }
     }
 
-    fun addElement(element: CfirElement) {
+    override fun addCallOrAssignment(qualifiedAccessOrAnnotationCall: CfirStatement): CheckerContextForProvider {
+        mutableCallsOrAssignments += qualifiedAccessOrAnnotationCall
+        return this
+    }
+
+    override fun dropCallOrAssignment() {
+        if (mutableCallsOrAssignments.isNotEmpty()) {
+            mutableCallsOrAssignments.removeLast()
+        }
+    }
+
+    override fun addAnnotationContainer(annotationContainer: org.cangnova.cangjie.cfir.CfirAnnotationContainer): CheckerContextForProvider = this
+
+    override fun dropAnnotationContainer() {}
+
+    override fun enterContractBody(): CheckerContextForProvider = this
+
+    override fun exitContractBody(): CheckerContextForProvider = this
+
+    override fun enterFile(file: CfirFile): CheckerContextForProvider {
+        containingFileSymbol = file.symbol
+        return this
+    }
+
+    override fun exitFile(file: CfirFile): CheckerContextForProvider {
+        containingFileSymbol = file.symbol
+        return this
+    }
+    override fun addElement(element: CfirElement): CheckerContextForProvider {
         if (mutableElements.lastOrNull() !== element) {
             mutableElements += element
             if (element.isCallOrAssignmentCandidate()) {
                 mutableCallsOrAssignments += element
             }
         }
+        return this
     }
 
-    fun dropElement() {
+    override fun dropElement() {
         if (mutableElements.isNotEmpty()) {
             val removed = mutableElements.removeLast()
             if (removed.isCallOrAssignmentCandidate()) {

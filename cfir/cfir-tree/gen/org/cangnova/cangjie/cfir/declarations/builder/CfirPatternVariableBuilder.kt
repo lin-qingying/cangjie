@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
@@ -26,6 +27,8 @@ class CfirPatternVariableBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
+    var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var status: CfirDeclarationStatus
     var initializer: CfirExpression? = null
     var isVar: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
@@ -42,6 +45,8 @@ class CfirPatternVariableBuilder {
             annotations,
             origin,
             attributes,
+            isLocal,
+            dispatchReceiverType,
             status,
             initializer,
             isVar,
@@ -75,6 +80,8 @@ inline fun buildPatternVariableCopy(original: CfirPatternVariable, init: CfirPat
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes
+    copyBuilder.isLocal = original.isLocal
+    copyBuilder.dispatchReceiverType = original.dispatchReceiverType
     copyBuilder.status = original.status
     copyBuilder.initializer = original.initializer
     copyBuilder.isVar = original.isVar

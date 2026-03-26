@@ -14,7 +14,7 @@ import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind.*
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.TypeCheckerState
 import org.cangnova.cangjie.type.model.*
-import org.cangnova.cangjie.types.*
+import org.cangnova.cangjie.types.AbstractTypeApproximator
 import org.cangnova.cangjie.utils.SmartList
 import org.cangnova.cangjie.utils.addIfNotNull
 import org.cangnova.cangjie.utils.popLast
@@ -23,6 +23,7 @@ import kotlin.math.max
 class ConstraintInjector(
     val constraintIncorporator: ConstraintIncorporator,
     val typeApproximator: AbstractTypeApproximator,
+
     private val languageVersionSettings: LanguageVersionSettings,
     inferenceLoggerParameter: InferenceLogger? = null,
 ) {
@@ -44,8 +45,6 @@ class ConstraintInjector(
          * @see org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage.typeVariableDependencies
          */
         val typeVariableDependencies: Map<TypeConstructorMarker, Set<TypeConstructorMarker>>
-
-        val approximatorCaches: TypeApproximatorCachesPerConfiguration
 
         val atCompletionState: Boolean
 
@@ -189,6 +188,7 @@ class ConstraintInjector(
             }
 
             if (wasAdded) {
+                inferenceLogger?.log(typeVariable, addedOrNonRedundantExistedConstraint, c)
                 c.onNewConstraintOrForkPoint()
                 recordReferencesOfOtherTypeVariableInConstraint(constraint, typeVariableConstructor)
             }
@@ -368,6 +368,7 @@ class ConstraintInjector(
                 )
 
             if (!isSubtypeOf(upperType)) {
+
                 c.addError(ConstraintError(lowerType, upperType, position))
             }
         }
@@ -394,19 +395,6 @@ class ConstraintInjector(
                 typeVariable, type, EQUALITY,
                 isNoInfer = false
             )
-
-        private fun isCapturedTypeFromSubtyping(type: CangJieTypeMarker): Boolean {
-            val capturedType = type as? CapturedTypeMarker ?: return false
-
-            if (capturedType.isOldCapturedType()) return false
-
-            return when (capturedType.captureStatus()) {
-                CaptureStatus.FROM_EXPRESSION -> false
-                CaptureStatus.FOR_SUBTYPING -> true
-                CaptureStatus.FOR_INCORPORATION ->
-                    error("Captured type for incorporation shouldn't escape from incorporation: $type\n" + renderBaseConstraint())
-            }
-        }
 
         private fun addConstraint(
             typeVariableConstructor: TypeConstructorMarker,
@@ -489,30 +477,6 @@ class ConstraintInjector(
                 return
             }
 
-            if (type.contains(this::isCapturedTypeFromSubtyping)) {
-                // TypeVariable <: type -> if TypeVariable <: subType => TypeVariable <: type
-                if (kind == UPPER) {
-                    val subType =
-                        typeApproximator.approximateToSubType(type, TypeApproximatorConfiguration.SubtypeCapturedTypesApproximation)
-                    if (subType != null) {
-                        targetType = subType
-                    }
-                }
-
-                if (kind == LOWER) {
-                    val superType =
-                        typeApproximator.approximateToSuperType(type, TypeApproximatorConfiguration.SubtypeCapturedTypesApproximation)
-                    if (superType != null) { // todo rethink error reporting for Any cases
-                        targetType = superType
-                    }
-                }
-
-                if (targetType === type) {
-                    c.addError(CapturedTypeFromSubtyping(typeVariable, type, position))
-                    return
-                }
-            }
-
             val position = if (isIncorporatingConstraintFromDeclaredUpperBound) position.copy(isFromDeclaredUpperBound = true) else position
 
             val newConstraint = Constraint(
@@ -527,9 +491,6 @@ class ConstraintInjector(
 
         override val allTypeVariablesWithConstraints: Collection<VariableWithConstraints>
             get() = c.notFixedTypeVariables.values
-
-        override val approximatorCaches: TypeApproximatorCachesPerConfiguration
-            get() = c.approximatorCaches
 
         override fun getVariablesWithConstraintsContainingGivenTypeVariable(
             variableConstructorMarker: TypeConstructorMarker

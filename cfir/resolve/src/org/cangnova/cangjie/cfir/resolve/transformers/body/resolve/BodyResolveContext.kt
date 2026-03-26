@@ -2,7 +2,6 @@ package org.cangnova.cangjie.cfir.resolve.transformers.body.resolve
 
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.calls.InaccessibleImplicitReceiverValue
-import org.cangnova.cangjie.cfir.calls.ImplicitDispatchReceiverValue
 import org.cangnova.cangjie.cfir.calls.ImplicitReceiverValue
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -15,11 +14,11 @@ import org.cangnova.cangjie.cfir.expressions.InaccessibleReceiverKind
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueStorage
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
-import org.cangnova.cangjie.cfir.resolve.body.CfirReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataElement
 import org.cangnova.cangjie.cfir.resolve.body.collectTowerDataElementsForClass
 import org.cangnova.cangjie.cfir.resolve.body.typeParametersForTower
+import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
 import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
@@ -37,7 +36,7 @@ import java.util.EnumMap
 
 class BodyResolveContext(
     @set:PrivateForInline
-    var returnTypeCalculator: CfirReturnTypeCalculator,
+    var returnTypeCalculator: ReturnTypeCalculator,
     val dataFlowAnalyzerContext: CfirDataFlowAnalyzerContext,
     private val isContextCollectorMode: Boolean = false,
 ) {

@@ -14,9 +14,6 @@ import org.cangnova.cangjie.cfir.expressions.builder.*
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.source.AbstractCjSourceElement
-import org.cangnova.cangjie.source.CjSourceElement
-import org.cangnova.cangjie.source.toCjLightSourceElement
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.CallableId
@@ -31,27 +28,11 @@ import org.cangnova.cangjie.psi.CjNodeTypes
  */
 class LightTreeRawCfirExpressionBuilder(
     session: CfirSession,
-    private val tree: FlyweightCapableTreeStructure<LighterASTNode>,
-    private val source: CharSequence,
+    tree: FlyweightCapableTreeStructure<LighterASTNode>,
+    source: CharSequence,
     context: Context<LighterASTNode>,
     private val declarationBuilder: LightTreeRawCfirDeclarationBuilder,
-) : AbstractRawCfirBuilder<LighterASTNode>(session, context) {
-
-    private fun callableIdFor(name: Name): CallableId {
-        return if (context.inLocalContext) CallableId(name) else CallableId(packageFqName, name)
-    }
-
-    // ===== AbstractRawCfirBuilder 抽象方法实现 =====
-
-    override fun LighterASTNode.toSourceElement(): AbstractCjSourceElement =
-        toCjLightSourceElement(tree)
-
-    override fun LighterASTNode.elementType(): IElementType = tokenType
-
-    override fun LighterASTNode.asText(): String = getNodeText(this, source)
-
-    private fun LighterASTNode.toSource(): CjSourceElement =
-        toCjLightSourceElement(tree)
+) : AbstractLightTreeRawCfirBuilder(session, tree, source, context) {
 
     // ===== 公共 API =====
 
@@ -260,6 +241,7 @@ class LightTreeRawCfirExpressionBuilder(
                     calleeReference = buildNamedReference(Name.identifier(opName))
                     explicitReceiver = leftExpr
                     arguments.add(rightExpr)
+                    origin = CfirFunctionCallOrigin.Operator
                 }
             }
         }
@@ -291,6 +273,7 @@ class LightTreeRawCfirExpressionBuilder(
             calleeReference = buildNamedReference(operatorName)
             explicitReceiver = leftExpr
             arguments.add(rightExpr)
+            origin = CfirFunctionCallOrigin.Operator
         }
     }
 
@@ -348,6 +331,7 @@ class LightTreeRawCfirExpressionBuilder(
             source = node.toSource()
             calleeReference = buildNamedReference(opName)
             explicitReceiver = base
+            origin = CfirFunctionCallOrigin.Operator
         }
     }
 
@@ -373,6 +357,7 @@ class LightTreeRawCfirExpressionBuilder(
             source = node.toSource()
             calleeReference = buildNamedReference(opName)
             explicitReceiver = base
+            origin = CfirFunctionCallOrigin.Operator
         }
     }
 
@@ -413,7 +398,7 @@ class LightTreeRawCfirExpressionBuilder(
 
         val arguments = argNodes.map { convertExpression(it) }.toMutableList()
         val typeArgs = typeArgNodes.map { typeRefNode ->
-            convertTypeReference(typeRefNode, tree, source) { it.toCjLightSourceElement(tree) }
+            convertTypeReference(typeRefNode, tree, source) { it.toSourceElement() }
         }
         val lambdaArgs = lambdaArgNodes.mapNotNull { lambdaArg ->
             val lambdaExpr = tree.findChildByType(lambdaArg, CjNodeTypes.LAMBDA_EXPRESSION)
@@ -429,6 +414,7 @@ class LightTreeRawCfirExpressionBuilder(
             explicitReceiver = receiver
             this.arguments.addAll(arguments)
             typeArguments.addAll(typeArgs)
+            origin = CfirFunctionCallOrigin.Regular
         }
     }
 
@@ -535,7 +521,7 @@ class LightTreeRawCfirExpressionBuilder(
             }
             val arguments = argNodes.map { convertExpression(it) }.toMutableList()
             val typeArgs = typeArgNodes.map { typeRefNode ->
-                convertTypeReference(typeRefNode, tree, source) { it.toCjLightSourceElement(tree) }
+                convertTypeReference(typeRefNode, tree, source) { it.toSourceElement() }
             }
             val lambdaArgs = lambdaArgNodes.mapNotNull { lambdaArg ->
                 val lambdaExpr = tree.findChildByType(lambdaArg, CjNodeTypes.LAMBDA_EXPRESSION)
@@ -549,6 +535,7 @@ class LightTreeRawCfirExpressionBuilder(
                 explicitReceiver = receiver
                 this.arguments.addAll(arguments)
                 typeArguments.addAll(typeArgs)
+                origin = CfirFunctionCallOrigin.Regular
             }
         }
 
@@ -598,7 +585,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
 
         return typeArgNodes.map { typeRefNode ->
-            convertTypeReference(typeRefNode, tree, source) { it.toCjLightSourceElement(tree) }
+            convertTypeReference(typeRefNode, tree, source) { it.toSourceElement() }
         }
     }
 
@@ -769,9 +756,9 @@ class LightTreeRawCfirExpressionBuilder(
             val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
             buildTypePattern {
                 source = node.toSource()
-                this.typeRef = convertTypeReference(typeRef, tree, this@LightTreeRawCfirExpressionBuilder.source) {
-                    it.toCjLightSourceElement(tree)
-                }
+                    this.typeRef = convertTypeReference(typeRef, tree, this@LightTreeRawCfirExpressionBuilder.source) {
+                        it.toSourceElement()
+                    }
                 bindingName = nameNode?.let { Name.identifier(it.asText()) }
             }
         }
@@ -837,7 +824,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
         val paramTypeRef = paramNode?.let {
             val typeRef = tree.findChildByType(it, CjNodeTypes.TYPE_REFERENCE)
-            convertTypeReference(typeRef, tree, source) { n -> n.toCjLightSourceElement(tree) }
+            convertTypeReference(typeRef, tree, source) { n -> n.toSourceElement() }
         } ?: buildImplicitTypeRef()
 
         val variableName = if (paramName != null) Name.identifier(paramName) else Name.special("<anonymous>")
@@ -848,6 +835,7 @@ class LightTreeRawCfirExpressionBuilder(
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = true
                 status = CfirDeclarationStatusImpl.DEFAULT
                 returnTypeRef = paramTypeRef
                 pattern = buildBindingPattern {
@@ -980,6 +968,7 @@ class LightTreeRawCfirExpressionBuilder(
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
                     attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = false
                     status = CfirDeclarationStatusImpl.DEFAULT
                     returnTypeRef = paramTypeRef
                     name = catchParamName
@@ -1038,6 +1027,7 @@ class LightTreeRawCfirExpressionBuilder(
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = true
                 status = CfirDeclarationStatusImpl.DEFAULT
                 returnTypeRef = buildImplicitTypeRef()
                 this.valueParameters.addAll(valueParams)
@@ -1134,7 +1124,7 @@ class LightTreeRawCfirExpressionBuilder(
             operation = CfirTypeOperationKind.IS
             this.argument = argument
             typeRef = convertTypeReference(typeRefNode, tree, this@LightTreeRawCfirExpressionBuilder.source) {
-                it.toCjLightSourceElement(tree)
+                it.toSourceElement()
             }
         }
     }

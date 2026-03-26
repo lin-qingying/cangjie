@@ -20,8 +20,10 @@ val intellijVersion = property("intellijSdkVersion") as String
 dependencies {
     api(project(":cfir:cfir-tree"))
     api(project(":cfir:raw-cfir:raw-cfir-common"))
+    api(project(":cfir:symbols"))
     api(project(":cfir:semantics"))
     api(project(":psi"))
+    api(project(":common:diagnostics"))
 
     compileOnly(intellijCore())
 

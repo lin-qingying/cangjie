@@ -24,9 +24,10 @@ abstract class CfirEnum : CfirClassLikeDeclaration(), CfirControlFlowGraphOwner 
     abstract override val annotations: List<CfirAnnotation>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
+    abstract override val isLocal: Boolean
     abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
-    abstract val status: CfirDeclarationStatus
-    abstract val typeParameters: List<CfirTypeParameter>
+    abstract override val status: CfirDeclarationStatus
+    abstract override val typeParameters: List<CfirTypeParameter>
     abstract override val symbol: CfirEnumSymbol
     abstract override val superTypeRefs: List<CfirTypeRef>
     abstract override val declarations: List<CfirDeclaration>
@@ -46,16 +47,16 @@ abstract class CfirEnum : CfirClassLikeDeclaration(), CfirControlFlowGraphOwner 
     override abstract fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 
 
-    abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
+    override abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
 
 
     override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirEnum
 
 
-    abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirEnum
+    override abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirEnum
 
 
-    abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirEnum
+    override abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirEnum
 
 
     override abstract fun <D> transformSuperTypeRefs(transformer: CfirTransformer<D>, data: D): CfirEnum

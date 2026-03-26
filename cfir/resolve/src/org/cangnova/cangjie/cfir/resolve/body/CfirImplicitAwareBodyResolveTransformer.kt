@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -23,7 +24,7 @@ open class CfirImplicitAwareBodyResolveTransformer(
     private val implicitBodyResolveComputationSession: CfirImplicitBodyResolveComputationSession,
     phase: CfirResolvePhase,
     implicitTypeOnly: Boolean,
-    returnTypeCalculator: CfirReturnTypeCalculator,
+    returnTypeCalculator: ReturnTypeCalculator,
     outerBodyResolveContext: BodyResolveContext? = null,
 ) : CfirBodyResolveTransformer(
     session = session,

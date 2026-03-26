@@ -50,6 +50,7 @@ import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.classId
 
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRefCopy
@@ -437,15 +438,6 @@ internal open class CfirSupertypeResolverVisitor(
         forStaticNestedClass: Boolean,
     ): ScopePersistentList {
         val result = when {
-            classLikeDeclaration.isLocalClassLike() -> {
-                val localNavigation = localClassesNavigationInfo ?: return persistentListOf()
-                val parent = localNavigation.parentForClass[classLikeDeclaration]
-                when (parent) {
-                    null -> scopeForLocalClass ?: persistentListOf()
-                    else -> prepareScopeForNestedClasses(parent, forStaticNestedClass)
-                }
-            }
-
             classLikeDeclaration.symbol.classId.isNestedClass -> {
                 val outerClassId = classLikeDeclaration.symbol.classId.outerClassId ?: return persistentListOf()
                 val outerClass = session.cfirProvider.getClassByClassId(outerClassId)
@@ -692,16 +684,16 @@ private fun CfirClassLikeDeclaration.typeParametersScope(): CfirScope? {
 
 private fun CfirClassLikeDeclaration.typeParametersForResolution(): List<CfirTypeParameter> = when (this) {
     is CfirClass -> typeParameters
+    is org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration -> emptyList()
     is CfirInterface -> typeParameters
     is CfirStruct -> typeParameters
     is CfirEnum -> typeParameters
     is CfirTypeAlias -> typeParameters
 }
 
-private fun CfirClassLikeDeclaration.isLocalClassLike(): Boolean = symbol.classId.isLocal
-
 private fun CfirClassLikeDeclaration.isStaticallyNested(): Boolean = when (this) {
     is CfirClass -> status.isStatic
+    is org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration -> true
     is CfirTypeAlias -> true
     is CfirInterface, is CfirStruct, is CfirEnum -> true
 }
@@ -721,6 +713,7 @@ private fun CfirResolvedTypeRef.toReferencedDeclaration(session: CfirSession): C
 
 private fun ConeCangJieType.toReferencedDeclaration(session: CfirSession): CfirClassLikeDeclaration? {
     val classId = when (this) {
+        is org.cangnova.cangjie.cfir.types.ConePrimitiveType -> kind.classId
         is ConeClassLikeType -> classId
         is ConeStructType -> classId
         is ConeEnumType -> classId

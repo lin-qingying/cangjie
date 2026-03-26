@@ -41,13 +41,6 @@ context(c: TypeSystemInferenceExtensionContext)
 fun TypeConstructorMarker.getApproximatedIntegerLiteralType(expectedType: CangJieTypeMarker?): CangJieTypeMarker =
     with(c) { getApproximatedIntegerLiteralType(expectedType) }
 
-/**
- * 判断该类型构造器是否是捕获类型构造器
- * 捕获类型在编译器内部推断阶段由泛型实参产生，对外不可见
- */
-context(c: TypeSystemInferenceExtensionContext)
-fun TypeConstructorMarker.isCapturedTypeConstructor(): Boolean =
-    with(c) { isCapturedTypeConstructor() }
 
 /**
  * 擦除类型中出现的所有含类型参数的部分
@@ -199,19 +192,6 @@ fun TypeVariableMarker.defaultType(): SimpleTypeMarker =
 // 仓颉无通配符/星号投影，捕获类型仅用于编译器内部推断约束的表示
 // =====================================================================
 
-/**
- * 获取捕获类型对应的原始泛型实参
- */
-context(c: TypeSystemInferenceExtensionContext)
-fun CapturedTypeMarker.typeConstructorProjection(): TypeArgumentMarker =
-    with(c) { typeConstructorProjection() }
-
-/**
- * 获取捕获类型关联的类型参数（如有）
- */
-context(c: TypeSystemInferenceExtensionContext)
-fun CapturedTypeMarker.typeParameter(): TypeParameterMarker? =
-    with(c) { typeParameter() }
 
 // =====================================================================
 // 交叉类型近似

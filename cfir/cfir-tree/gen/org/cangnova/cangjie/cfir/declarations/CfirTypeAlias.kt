@@ -23,11 +23,12 @@ abstract class CfirTypeAlias : CfirClassLikeDeclaration() {
     abstract override val annotations: List<CfirAnnotation>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
+    abstract override val isLocal: Boolean
     abstract override val declarations: List<CfirDeclaration>
     abstract override val superTypeRefs: List<CfirTypeRef>
     abstract override val symbol: CfirTypeAliasSymbol
-    abstract val status: CfirDeclarationStatus
-    abstract val typeParameters: List<CfirTypeParameter>
+    abstract override val status: CfirDeclarationStatus
+    abstract override val typeParameters: List<CfirTypeParameter>
     abstract val name: Name
     abstract val expandedTypeRef: CfirTypeRef
 
@@ -41,7 +42,7 @@ abstract class CfirTypeAlias : CfirClassLikeDeclaration() {
     override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
 
-    abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
+    override abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
 
 
     abstract fun replaceExpandedTypeRef(newExpandedTypeRef: CfirTypeRef)
@@ -56,10 +57,10 @@ abstract class CfirTypeAlias : CfirClassLikeDeclaration() {
     override abstract fun <D> transformSuperTypeRefs(transformer: CfirTransformer<D>, data: D): CfirTypeAlias
 
 
-    abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirTypeAlias
+    override abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirTypeAlias
 
 
-    abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirTypeAlias
+    override abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirTypeAlias
 
 
     abstract fun <D> transformExpandedTypeRef(transformer: CfirTransformer<D>, data: D): CfirTypeAlias

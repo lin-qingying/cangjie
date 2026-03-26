@@ -24,10 +24,11 @@ abstract class CfirInterface : CfirClassLikeDeclaration(), CfirControlFlowGraphO
     abstract override val annotations: List<CfirAnnotation>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
+    abstract override val isLocal: Boolean
     abstract override val declarations: List<CfirDeclaration>
     abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
-    abstract val status: CfirDeclarationStatus
-    abstract val typeParameters: List<CfirTypeParameter>
+    abstract override val status: CfirDeclarationStatus
+    abstract override val typeParameters: List<CfirTypeParameter>
     abstract override val symbol: CfirInterfaceSymbol
     abstract override val superTypeRefs: List<CfirTypeRef>
     abstract val properties: List<CfirProperty>
@@ -47,7 +48,7 @@ abstract class CfirInterface : CfirClassLikeDeclaration(), CfirControlFlowGraphO
     override abstract fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 
 
-    abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
+    override abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
 
 
     override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirInterface
@@ -56,10 +57,10 @@ abstract class CfirInterface : CfirClassLikeDeclaration(), CfirControlFlowGraphO
     override abstract fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirInterface
 
 
-    abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirInterface
+    override abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirInterface
 
 
-    abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirInterface
+    override abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirInterface
 
 
     override abstract fun <D> transformSuperTypeRefs(transformer: CfirTransformer<D>, data: D): CfirInterface

@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.name.Name
@@ -26,8 +27,8 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
     override var annotations: List<CfirAnnotation>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
-    override var initializer: CfirExpression?,
-    override val isVar: Boolean,
+    override val isLocal: Boolean,
+    override val dispatchReceiverType: ConeSimpleCangJieType?,
     override val symbol: CfirValueParameterSymbol,
     override var status: CfirDeclarationStatus,
     override var typeParameters: List<CfirTypeParameter>,
@@ -35,11 +36,14 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
     override val name: Name,
     override var defaultValue: CfirExpression?,
 ) : CfirValueParameter() {
+    override val initializer: CfirExpression?
+        get() = null
+    override val isVar: Boolean
+        get() = false
     override var controlFlowGraphReference: CfirControlFlowGraphReference? = null
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
-        initializer?.accept(visitor, data)
         controlFlowGraphReference?.accept(visitor, data)
         typeParameters.forEach { it.accept(visitor, data) }
         returnTypeRef.accept(visitor, data)
@@ -74,7 +78,6 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformInitializer(transformer: CfirTransformer<D>, data: D): CfirValueParameter
      {
-        this.initializer = initializer?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression?
         return this
     }
 
@@ -104,7 +107,6 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirValueParameterImpl {
         transformAnnotations(transformer, data)
-        transformInitializer(transformer, data)
         controlFlowGraphReference?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data)
         transformTypeParameters(transformer, data)
         transformReturnTypeRef(transformer, data)

@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.*
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.session.builtinTypes
+import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
@@ -60,7 +61,7 @@ class CfirDeclarationsResolveTransformer(
                 decl.transform<CfirDeclaration, ResolutionMode>(transformer, ResolutionMode.ContextIndependent)
             }
         }
-        context.withTowerDataContext(savedContext) {}
+        context.replaceTowerDataContext(savedContext)
         return file
     }
 
@@ -74,15 +75,7 @@ class CfirDeclarationsResolveTransformer(
 
             val classSymbol = klass.symbol as? CfirClassSymbol
             if (classSymbol != null) {
-                context.addNonLocalScope(CfirClassUseSiteMemberScope(classSymbol, session.symbolProvider))
-
-                val extendProvider = components.extendProvider
-                if (extendProvider != null) {
-                    val classId = resolveClassId(klass)
-                    if (classId != null) {
-                        context.addNonLocalScope(CfirExtendMemberScope(classId, extendProvider))
-                    }
-                }
+                context.addNonLocalScope(CfirClassUseSiteMemberScope(classSymbol, session.symbolProvider, session.extendProvider))
             }
 
             (klass as? org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl)?.declarations = klass.declarations.map { decl ->
@@ -90,7 +83,7 @@ class CfirDeclarationsResolveTransformer(
             }
         }
 
-        context.withTowerDataContext(savedContext) {}
+        context.replaceTowerDataContext(savedContext)
         bumpPhase(klass)
         return klass
     }
@@ -133,7 +126,7 @@ class CfirDeclarationsResolveTransformer(
             }
         }
 
-        context.withTowerDataContext(savedContext) {}
+        context.replaceTowerDataContext(savedContext)
         bumpPhase(function)
         return function
     }
@@ -180,7 +173,7 @@ class CfirDeclarationsResolveTransformer(
             }
         }
 
-        context.withTowerDataContext(savedContext) {}
+        context.replaceTowerDataContext(savedContext)
         bumpPhase(constructor)
         return constructor
     }
@@ -203,7 +196,7 @@ class CfirDeclarationsResolveTransformer(
             }
         }
 
-        context.withTowerDataContext(savedContext) {}
+        context.replaceTowerDataContext(savedContext)
         bumpPhase(enumConstructor)
         return enumConstructor
     }
@@ -215,7 +208,7 @@ class CfirDeclarationsResolveTransformer(
             property.replaceReturnTypeRef(resolveExplicitTypeRefIfNeeded(property.returnTypeRef, property.typeParameters))
         }
 
-        context.withTowerDataContext(savedContext) {}
+        context.replaceTowerDataContext(savedContext)
         bumpPhase(property)
         return property
     }
@@ -351,7 +344,7 @@ class CfirDeclarationsResolveTransformer(
 
         val result = transformer.expressionsTransformer.transformBlock(block, data)
 
-        context.withTowerDataContext(savedContext) {}
+        context.replaceTowerDataContext(savedContext)
         return result
     }
 

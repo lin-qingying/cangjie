@@ -29,6 +29,8 @@ class CjoPackageHeader(
     val exportIdToIndex: Map<String, Int>,
     /** 顶级声明的 identifier → allDecls 索引列表映射（同名可能有多个重载） */
     val topLevelNameToIndices: Map<String, List<Int>>,
+    /** 顶级类/接口/结构体/枚举/类型别名 的 identifier → allDecls 索引列表映射 */
+    val topLevelClassifierNameToIndices: Map<String, List<Int>>,
 ) {
     companion object {
         /** 类类型的 DeclKind 集合 */
@@ -54,6 +56,7 @@ class CjoPackageHeader(
             val callableNames = mutableSetOf<Name>()
             val exportIdMap = mutableMapOf<String, Int>()
             val nameToIndices = mutableMapOf<String, MutableList<Int>>()
+            val classifierNameToIndices = mutableMapOf<String, MutableList<Int>>()
 
             for (i in 0 until pkg.allDeclsLength) {
                 val decl = pkg.allDecls(i) ?: continue
@@ -66,6 +69,7 @@ class CjoPackageHeader(
                 // 按声明类型分类
                 if (kind in CLASSIFIER_KINDS) {
                     classNames.add(name)
+                    classifierNameToIndices.getOrPut(identifier) { mutableListOf() }.add(i)
                 } else if (kind in CALLABLE_KINDS) {
                     callableNames.add(name)
                 }
@@ -90,6 +94,7 @@ class CjoPackageHeader(
                 topLevelCallableNames = callableNames,
                 exportIdToIndex = exportIdMap,
                 topLevelNameToIndices = nameToIndices,
+                topLevelClassifierNameToIndices = classifierNameToIndices,
             )
         }
     }

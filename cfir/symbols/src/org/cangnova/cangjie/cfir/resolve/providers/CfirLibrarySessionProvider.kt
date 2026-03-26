@@ -13,6 +13,8 @@ class CfirLibrarySessionProvider(
 
     override fun getClassNamesInPackage(fqName: FqName): Set<Name> = shouldNotBeCalled()
 
+    override fun getCfirClassifierContainerFile(fqName: ClassId): CfirFile = shouldNotBeCalled()
+
     private fun shouldNotBeCalled(): Nothing = error("Should not be called for CfirLibrarySessionProvider")
     override fun getCfirFilesByPackage(fqName: FqName): List<CfirFile> {
     return emptyList()

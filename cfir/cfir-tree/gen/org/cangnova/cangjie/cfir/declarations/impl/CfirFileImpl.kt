@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 
 @OptIn(CfirImplementationDetail::class)
 class CfirFileImpl @CfirImplementationDetail constructor(
@@ -29,6 +30,7 @@ class CfirFileImpl @CfirImplementationDetail constructor(
     override val sourceFile: CjSourceFile?,
     override var packageDirective: CfirPackageDirective,
     override var imports: List<CfirImport>,
+    override val sourceFileLinesMapping: CjSourceFileLinesMapping?,
     override var declarations: List<CfirDeclaration>,
 ) : CfirFile() {
     override var controlFlowGraphReference: CfirControlFlowGraphReference? = null

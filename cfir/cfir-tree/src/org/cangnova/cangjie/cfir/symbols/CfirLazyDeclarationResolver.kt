@@ -1,9 +1,13 @@
 package org.cangnova.cangjie.cfir.symbols
 
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
+import org.cangnova.cangjie.util.PrivateForInline
 
 /**
  * Lazy resolve [CfirBasedSymbol] to [CfirResolvePhase].
@@ -32,6 +36,14 @@ fun CfirElementWithResolveState.lazyResolveToPhase(toPhase: CfirResolvePhase) {
     invokeLazyResolveToPhase(toPhase, CfirLazyDeclarationResolver::lazyResolveToPhase)
 }
 
+fun CfirClassLikeDeclaration.lazyResolveToPhaseWithCallableMembers(toPhase: CfirResolvePhase) {
+    invokeLazyResolveToPhase(toPhase, CfirLazyDeclarationResolver::lazyResolveToPhaseWithCallableMembers)
+}
+
+fun CfirElementWithResolveState.lazyResolveToPhaseRecursively(toPhase: CfirResolvePhase) {
+    invokeLazyResolveToPhase(toPhase, CfirLazyDeclarationResolver::lazyResolveToPhaseRecursively)
+}
+
 private fun CfirElementWithResolveState.invokeLazyResolveToPhase(
     toPhase: CfirResolvePhase,
     resolver: CfirLazyDeclarationResolver.(CfirElementWithResolveState, CfirResolvePhase) -> Unit,
@@ -43,6 +55,13 @@ private fun CfirElementWithResolveState.invokeLazyResolveToPhase(
     }
 }
 
+private fun CfirClassLikeDeclaration.invokeLazyResolveToPhase(
+    toPhase: CfirResolvePhase,
+    resolver: CfirLazyDeclarationResolver.(CfirClassLikeDeclaration, CfirResolvePhase) -> Unit,
+) {
+    lazyDeclarationResolver.resolver(this, toPhase)
+}
+
 private val CfirElementWithResolveState.lazyDeclarationResolver get() = moduleData.session.lazyDeclarationResolver
 val CfirSession.lazyDeclarationResolver: CfirLazyDeclarationResolver by CfirSession.sessionComponentAccessor()
 
@@ -50,24 +69,67 @@ val CfirSession.lazyDeclarationResolver: CfirLazyDeclarationResolver by CfirSess
  * Tracks active resolving phases for a single CfirSession.
  */
 abstract class CfirLazyDeclarationResolver : CfirSessionComponent {
-    private val phaseStack: ArrayDeque<CfirResolvePhase> = ArrayDeque()
+    @PrivateForInline
+    @Suppress("PropertyName")
+    val _lazyResolveContractChecksEnabled: ThreadLocal<Boolean> = ThreadLocal.withInitial { true }
+    abstract fun startResolvingPhase(phase: CfirResolvePhase)
 
-    fun startResolvingPhase(phase: CfirResolvePhase) {
-        phaseStack.addLast(phase)
-    }
+    abstract fun finishResolvingPhase(phase: CfirResolvePhase)
+
+
+    @PrivateForInline
+    @Suppress("PropertyName")
+    val _lazyResolveIsAllowed: ThreadLocal<Boolean> = ThreadLocal.withInitial { true }
+
     abstract fun lazyResolveToPhase(element: CfirElementWithResolveState, toPhase: CfirResolvePhase)
 
-    fun finishResolvingPhase(phase: CfirResolvePhase) {
-        check(phaseStack.isNotEmpty()) { "No active resolve phase when finishing $phase" }
-        val current = phaseStack.removeLast()
-        check(current == phase) { "Mismatched resolve phase: expected finish $current, got $phase" }
+    open fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClassLikeDeclaration, toPhase: CfirResolvePhase) {
+        lazyResolveToPhase(clazz, toPhase)
     }
 
-    val currentPhase: CfirResolvePhase?
-        get() = phaseStack.lastOrNull()
+    open fun lazyResolveToPhaseRecursively(element: CfirElementWithResolveState, toPhase: CfirResolvePhase) {
+        lazyResolveToPhase(element, toPhase)
+    }
+    @OptIn(PrivateForInline::class)
+    inline fun <T> forbidLazyResolveInside(action: () -> T): T {
+        val current = _lazyResolveIsAllowed.get()
+        _lazyResolveIsAllowed.set(false)
+        try {
+            return action()
+        } finally {
+            _lazyResolveIsAllowed.set(current)
+        }
+    }
 
-    fun isResolving(phase: CfirResolvePhase): Boolean = currentPhase == phase
+    @OptIn(PrivateForInline::class)
+    protected fun assertLazyResolveAllowed() {
+        if (!_lazyResolveIsAllowed.get()) {
+            throw CfirLazyResolveForbiddenException()
+        }
+    }
 
-    val isResolvingAny: Boolean
-        get() = phaseStack.isNotEmpty()
+    @OptIn(PrivateForInline::class)
+    inline fun <T> disableLazyResolveContractChecksInside(action: () -> T): T {
+        val current = _lazyResolveContractChecksEnabled.get()
+        _lazyResolveContractChecksEnabled.set(false)
+        try {
+            return action()
+        } finally {
+            _lazyResolveContractChecksEnabled.set(current)
+        }
+    }
+
+
 }
+class CfirLazyResolveForbiddenException() : IllegalStateException("Lazy resolve is forbidden")
+
+object CfirDummyCompilerLazyDeclarationResolver : CfirLazyDeclarationResolver() {
+    override fun startResolvingPhase(phase: CfirResolvePhase) {}
+    override fun finishResolvingPhase(phase: CfirResolvePhase) {}
+    override fun lazyResolveToPhase(element: CfirElementWithResolveState, toPhase: CfirResolvePhase) {}
+    override fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClassLikeDeclaration, toPhase: CfirResolvePhase) {}
+    override fun lazyResolveToPhaseRecursively(element: CfirElementWithResolveState, toPhase: CfirResolvePhase) {}
+}
+
+
+

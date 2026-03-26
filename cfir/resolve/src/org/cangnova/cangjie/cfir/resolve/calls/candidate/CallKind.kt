@@ -3,7 +3,7 @@ import  org.cangnova.cangjie.cfir.resolve.calls.stages.   ResolutionStage
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckArguments
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckVisibility
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCreateFreshTypeVariableSubstitutorStage
-import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirInferTypeArguments
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirMapTypeArguments
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirMapArguments
 /**
  * 调用种类，决定候选验证管线需要执行哪些阶段。
@@ -25,10 +25,10 @@ sealed class  CallKind(
      */
     data object Function : CallKind(
         CfirCheckVisibility,
-        CfirCreateFreshTypeVariableSubstitutorStage,
         CfirMapArguments,
+        CfirMapTypeArguments,
+        CfirCreateFreshTypeVariableSubstitutorStage,
         CfirCheckArguments,
-        CfirInferTypeArguments,
     )
 
     /**
@@ -37,6 +37,7 @@ sealed class  CallKind(
      */
     data object VariableAccess : CallKind(
         CfirCheckVisibility,
+        CfirMapTypeArguments,
         CfirCreateFreshTypeVariableSubstitutorStage,
         CfirMapArguments,
     )
@@ -49,9 +50,9 @@ sealed class  CallKind(
      */
     data object EnumConstructorCall : CallKind(
         CfirCheckVisibility,
-        CfirCreateFreshTypeVariableSubstitutorStage,
         CfirMapArguments,
+        CfirMapTypeArguments,
+        CfirCreateFreshTypeVariableSubstitutorStage,
         CfirCheckArguments,
-        CfirInferTypeArguments,
     )
 }

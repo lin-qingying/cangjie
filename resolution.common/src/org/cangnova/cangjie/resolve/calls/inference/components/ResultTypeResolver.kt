@@ -39,7 +39,7 @@ class ResultTypeResolver(
             constraint.type.extractTypeForGivenRecursiveTypeParameter(typeParameter)
         }.takeIf { it.isNotEmpty() } ?: return null
 
-        return c.createCapturedPlaceholderTypeForSelfType(typeVariableConstructor, typesForRecursiveTypeParameters)
+        return c.createPlaceholderTypeForSelfType(typeVariableConstructor, typesForRecursiveTypeParameters)
     }
 
     context(c: Context)
@@ -241,7 +241,7 @@ class ResultTypeResolver(
             if (lowerConstraintTypes.size > 1 &&
                 lowerConstraintTypes.all { type ->
                     type.asRigidType()?.let { rigidType ->
-                        rigidType.isStubTypeForVariableInSubtyping() || rigidType.isCapturedType()
+                        rigidType.isStubTypeForVariableInSubtyping()
                     } == true
                 }
             ) {

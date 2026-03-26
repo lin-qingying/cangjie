@@ -8,6 +8,8 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeClassifierType
+import org.cangnova.cangjie.utils.WeakPair
 
 context(sessionHolder: SessionHolder)
 fun ConeCangJieType.fullyExpandedType(): ConeCangJieType {
@@ -21,11 +23,26 @@ fun CfirTypeAlias.expandedConeTypeWithEnsuredPhase(): ConeClassLikeType? {
  * @see fullyExpandedType (the first function in the file)
  * @return the expanded type or the same instance if top-level constructor is not expandable type alias
  */
-fun ConeCangJieType.fullyExpandedType(
+fun ConeClassifierType.fullyExpandedType(
     useSiteSession: CfirSession,
     expandedConeType: (CfirTypeAlias) -> ConeClassLikeType? = CfirTypeAlias::expandedConeTypeWithEnsuredPhase,
-): ConeCangJieType= when (this) {
+): ConeClassifierType= when (this) {
 
     is ConeClassLikeType -> fullyExpandedType(useSiteSession, expandedConeType)
     else -> this
 }
+
+
+/**
+ * @see fullyExpandedType (the first function in the file)
+ * @return the expanded type or the same instance if top-level constructor is not expandable type alias
+ */
+fun ConeCangJieType.fullyExpandedType(
+    useSiteSession: CfirSession,
+    expandedConeType: (CfirTypeAlias) -> ConeClassLikeType? = CfirTypeAlias::expandedConeTypeWithEnsuredPhase,
+): ConeCangJieType = when (this) {
+
+    is ConeClassLikeType -> fullyExpandedType(useSiteSession, expandedConeType)
+    else -> this
+}
+

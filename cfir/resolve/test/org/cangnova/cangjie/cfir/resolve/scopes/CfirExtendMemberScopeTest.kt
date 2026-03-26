@@ -23,6 +23,8 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.classId
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -69,6 +71,29 @@ class CfirExtendMemberScopeTest {
         val classifiers = mutableListOf<CfirClassSymbol>()
         scope.processClassifiersByName(Name.identifier("TargetNested"), classifiers::add)
         assertEquals(listOf(targetNestedClass.symbol as CfirClassSymbol), classifiers)
+    }
+
+    @Test
+    fun `scope exposes extend members for primitive targets`() {
+        val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val targetClassId = PrimitiveTypeKind.INT64.classId
+        val primitiveFunction = newFunctionDeclaration(moduleData, "extFun")
+        val primitiveExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = emptyList(),
+            declarations = listOf(primitiveFunction),
+        )
+
+        val file = ExtendTestFixtures.newFile(moduleData, FqName.ROOT, listOf(primitiveExtend))
+        val store = CfirExtendIndexStore().also { it.rebuild(listOf(file), NoopTypeResolver) }
+        val provider = CfirSessionExtendProvider(store)
+        val scope = CfirExtendMemberScope(targetClassId, provider)
+
+        val functions = mutableListOf<CfirFunctionSymbol>()
+        scope.processFunctionsByName(Name.identifier("extFun"), functions::add)
+
+        assertEquals(listOf(primitiveFunction.symbol as CfirFunctionSymbol), functions)
     }
 }
 
@@ -156,4 +181,3 @@ private object NoopTypeResolver : CfirTypeResolver() {
 
     override fun resolveClass(classId: ClassId): org.cangnova.cangjie.cfir.declarations.CfirClass? = null
 }
-

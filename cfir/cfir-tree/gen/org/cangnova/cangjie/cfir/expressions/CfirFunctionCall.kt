@@ -27,6 +27,7 @@ abstract class CfirFunctionCall : CfirExpression(), CfirResolvable {
     abstract val dispatchReceiver: CfirExpression?
     abstract val arguments: List<CfirExpression>
     abstract val typeArguments: List<CfirTypeRef>
+    abstract val origin: CfirFunctionCallOrigin
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitFunctionCall(this, data)

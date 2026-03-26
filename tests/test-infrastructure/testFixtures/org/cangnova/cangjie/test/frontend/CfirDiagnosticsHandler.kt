@@ -246,7 +246,7 @@ class CfirDiagnosticsHandler(
     private fun getTypeOfCall(reference: CfirNamedReference, resolvedSymbol: CfirSymbol<*>?): String {
         if (resolvedSymbol == null) return TypeOfCall.UNRESOLVED.nameToRender
 
-        if ((resolvedSymbol as? CfirFunctionSymbol)?.cfir?.name == Name.identifier("invoke")
+        if ((resolvedSymbol as? CfirFunctionSymbol<*>)?.name == Name.identifier("invoke")
             && reference.name != Name.identifier("invoke")
         ) {
             return TypeOfCall.VARIABLE_THROUGH_INVOKE.nameToRender
@@ -254,7 +254,7 @@ class CfirDiagnosticsHandler(
 
         return when (resolvedSymbol) {
             is CfirPropertySymbol -> TypeOfCall.PROPERTY_GETTER.nameToRender
-            is CfirFunctionSymbol -> buildString {
+            is CfirFunctionSymbol<*> -> buildString {
                 if (resolvedSymbol.cfir.status.isOperator) append("operator ")
                 append(TypeOfCall.FUNCTION.nameToRender)
             }
@@ -269,14 +269,14 @@ class CfirDiagnosticsHandler(
     }
 
     private fun callableNameForDebug(callable: CfirCallableDeclaration): String = when (callable) {
-        is CfirFunction -> callable.name.asString()
+        is CfirFunction -> callable.symbol.name.asString()
         is CfirProperty -> callable.name.asString()
         is CfirFieldVariable -> callable.name.asString()
         is CfirPatternVariable -> "<pattern>"
         is CfirVariable -> callable.symbol.toString()
         is CfirValueParameter -> callable.name.asString()
         is CfirMainFunction -> "main"
-        is CfirMacroDeclaration -> callable.name.asString()
+        is CfirMacroDeclaration -> callable.symbol.name.asString()
         is CfirConstructor -> "<init>"
         else -> callable.symbol.toString()
     }

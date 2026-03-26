@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.file]
@@ -29,6 +30,7 @@ abstract class CfirFile : CfirDeclaration(), CfirControlFlowGraphOwner {
     abstract val sourceFile: CjSourceFile?
     abstract val packageDirective: CfirPackageDirective
     abstract val imports: List<CfirImport>
+    abstract val sourceFileLinesMapping: CjSourceFileLinesMapping?
     abstract val declarations: List<CfirDeclaration>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =

@@ -16,7 +16,6 @@ class ConePointerType(
 
     override fun hashCode(): Int = pointeeType.hashCode()
 
-    override fun toString(): String = "CPointer<$pointeeType>"
 }
 
 /**
@@ -31,7 +30,6 @@ class ConeCStringType(
 
     override fun hashCode(): Int = "CString".hashCode()
 
-    override fun toString(): String = "CString"
 }
 
 /**
@@ -40,5 +38,4 @@ class ConeCStringType(
  */
 object ConeAnyType : ConeRigidType(), ConeTypeConstructorMarker {
     override val attributes: ConeAttributes get() = ConeAttributes.Empty
-    override fun toString(): String = "Any"
 }

@@ -37,7 +37,7 @@ fun ResolutionStageRunner.createErrorCandidate(
     resolutionContext: ResolutionContext,
     diagnostic: ConeDiagnostic,
 ): Candidate {
-    val candidate = CandidateFactory(resolutionContext).createErrorCandidate(callInfo, diagnostic)
+    val candidate = CandidateFactory(resolutionContext, callInfo).createErrorCandidate(callInfo, diagnostic)
     processCandidate(candidate, resolutionContext, stopOnFirstError = false)
     return candidate
 }

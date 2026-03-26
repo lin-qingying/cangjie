@@ -80,6 +80,7 @@ class CfirSmartCastExpression(
     var upperTypesFromSmartCast: List<ConeCangJieType>,
     var lowerTypesFromSmartCast: List<ConeCangJieType>,
     var smartcastStability: CfirSmartcastStability,
+
 ) : CfirExpression() {
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitExpression(this, data)

@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.ProcessorAction
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -106,14 +107,14 @@ class CfirScopeDumpHandler(
 
             val declaredNames = cfirFile.declarations.mapNotNull { declaration ->
                 when (declaration) {
-                    is org.cangnova.cangjie.cfir.declarations.CfirFunction -> declaration.name
-                    is org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration -> declaration.name
+                    is org.cangnova.cangjie.cfir.declarations.CfirFunction -> declaration.symbol.name
+                    is org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration -> declaration.symbol.name
                     is org.cangnova.cangjie.cfir.declarations.CfirProperty -> declaration.name
                     is org.cangnova.cangjie.cfir.declarations.CfirFieldVariable -> declaration.name
                     is org.cangnova.cangjie.cfir.declarations.CfirValueParameter -> declaration.name
                     is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> declaration.name
-                    is CfirClass -> declaration.name
-                    is org.cangnova.cangjie.cfir.declarations.CfirTypeAlias -> declaration.name
+                    is CfirClass -> declaration.symbol.name
+                    is org.cangnova.cangjie.cfir.declarations.CfirTypeAlias -> declaration.symbol.name
                     else -> null
                 }
             }.distinct().sortedBy { it.asString() }
@@ -141,7 +142,8 @@ class CfirScopeDumpHandler(
         val classId = ClassId.topLevel(FqName(request.classFqName))
         val classSymbol = part.session.symbolProvider.getClassLikeSymbolByClassId(classId)
             ?: return "CLASS: ${request.classFqName}\n<unresolved class symbol>"
-        val scope = part.session.cangjieScopeProvider.getUseSiteMemberScope(classSymbol.cfir, part.session, part.scopeSession)
+        val ownerClass = classSymbol.cfir as? CfirClass ?: return "CLASS: ${request.classFqName}\n<unsupported class-like symbol>"
+        val scope = part.session.cangjieScopeProvider.getUseSiteMemberScope(ownerClass, part.session, part.scopeSession)
 
         return buildString {
             appendLine("CLASS: ${request.classFqName}")
@@ -161,7 +163,7 @@ class CfirScopeDumpHandler(
     }
 
     private fun StringBuilder.appendCallableDump(scope: CfirTypeScope, name: Name) {
-        val functions = mutableListOf<CfirFunctionSymbol>()
+        val functions = mutableListOf<CfirFunctionSymbol<*>>()
         val properties = mutableListOf<CfirPropertySymbol>()
         scope.processFunctionsByName(name, functions::add)
         scope.processPropertiesByName(name, properties::add)
@@ -177,8 +179,8 @@ class CfirScopeDumpHandler(
 
     private fun StringBuilder.appendOverrideChain(scope: CfirTypeScope, symbol: CfirCallableSymbol<*>, depth: Int) {
         when (symbol) {
-            is CfirFunctionSymbol -> {
-                val overridden = mutableListOf<Pair<CfirFunctionSymbol, CfirTypeScope>>()
+            is CfirFunctionSymbol<*> -> {
+                val overridden = mutableListOf<Pair<CfirFunctionSymbol<*>, CfirTypeScope>>()
                 scope.processDirectOverriddenFunctionsWithBaseScope(symbol) { overriddenSymbol, baseScope ->
                     overridden += overriddenSymbol to baseScope
                     ProcessorAction.NEXT
@@ -228,16 +230,16 @@ class CfirScopeDumpHandler(
     private fun renderList(items: List<String>): String = items.distinct().sorted().ifEmpty { listOf("<none>") }.joinToString()
 
     private fun renderDeclaration(declaration: Any): String = when (declaration) {
-        is org.cangnova.cangjie.cfir.declarations.CfirFunction -> "function ${declaration.name.asString()}"
+        is org.cangnova.cangjie.cfir.declarations.CfirFunction -> "function ${declaration.symbol.name.asString()}"
         is org.cangnova.cangjie.cfir.declarations.CfirProperty -> "property ${declaration.name.asString()}"
         is org.cangnova.cangjie.cfir.declarations.CfirFieldVariable -> "field ${declaration.name.asString()}"
-        is CfirClass -> "class ${declaration.name.asString()}"
-        is org.cangnova.cangjie.cfir.declarations.CfirTypeAlias -> "typealias ${declaration.name.asString()}"
+        is CfirClass -> "class ${declaration.symbol.name.asString()}"
+        is org.cangnova.cangjie.cfir.declarations.CfirTypeAlias -> "typealias ${declaration.symbol.name.asString()}"
         else -> declaration::class.simpleName ?: "<anonymous declaration>"
     }
 
-    private fun renderClassSymbol(symbol: org.cangnova.cangjie.cfir.symbols.CfirClassSymbol): String {
-        return symbol.cfir.name.asString()
+    private fun renderClassSymbol(symbol: CfirClassLikeSymbol<*>): String {
+        return symbol.name.asString()
     }
 
     private fun renderCallableSymbol(symbol: CfirCallableSymbol<*>): String {

@@ -2,7 +2,10 @@ package org.cangnova.cangjie.cfir.symbols
 
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassifierLookupTag
 import org.cangnova.cangjie.constant.EvaluatedConstTracker
 import org.cangnova.cangjie.name.CallableId
@@ -68,27 +71,28 @@ sealed class CfirClassifierSymbol<D : CfirDeclaration> : CfirThisOwnerSymbol<D>(
  * 子类只需提供 [classId]，无需重复实现 [toLookupTag]。
  */
 sealed class CfirClassifierSymbolWithClassId<D : CfirDeclaration>(
-    open val classId: ClassId = ClassId(FqName.ROOT, SpecialNames.NO_NAME_PROVIDED),
+    classId: ClassId ,
 ) : CfirClassifierSymbol<D>() {
+
+    open val classId: ClassId = classId
 
 
 
     open val name: Name
         get() = classId.shortClassName
 
-    /** 局部声明使用固定符号 tag，顶层/嵌套声明使用 ClassId tag。 */
-    private val lookupTag: ConeClassifierLookupTag =
-        if (classId.isLocal) ConeClassLikeLookupTagWithFixedSymbol(classId, this)
-        else classId.toLookupTag()
 
-    final override fun toLookupTag(): ConeClassifierLookupTag = lookupTag
+    private val lookupTag: ConeClassLikeLookupTag =
+         classId.toLookupTag()
+
+    final override fun toLookupTag(): ConeClassLikeLookupTag = lookupTag
 
     override val debugName: String get() = classId.asString()
 }
 
 sealed class CfirClassLikeSymbol<D : CfirClassLikeDeclaration>(
-    override val classId: ClassId = ClassId(FqName.ROOT, SpecialNames.NO_NAME_PROVIDED),
-) : CfirClassifierSymbolWithClassId<D>()
+    override val classId: ClassId ,
+) : CfirClassifierSymbolWithClassId<D>(classId)
 
 /**
  * class 符号，对应仓颉中引用语义的具名类型声明。
@@ -96,7 +100,7 @@ sealed class CfirClassLikeSymbol<D : CfirClassLikeDeclaration>(
  * 可以包含构造器、方法、属性、字段变量、嵌套类型等任意成员。
  */
 class CfirClassSymbol(
-    override val classId: ClassId = ClassId(FqName.ROOT, SpecialNames.NO_NAME_PROVIDED),
+    override val classId: ClassId ,
 ) : CfirClassLikeSymbol<CfirClass>(classId) {
 
     override val name: Name
@@ -115,7 +119,7 @@ class CfirClassSymbol(
  * 字段而非通用 declarations 列表来静态保证。
  */
 class CfirInterfaceSymbol(
-    override val classId: ClassId = ClassId(FqName.ROOT, SpecialNames.NO_NAME_PROVIDED),
+    override val classId: ClassId ,
 ) : CfirClassLikeSymbol<CfirInterface>(classId) {
 
     override val name: Name
@@ -132,7 +136,7 @@ class CfirInterfaceSymbol(
  * 与 [CfirClassSymbol] 结构对称，但在类型系统中区分值语义和引用语义。
  */
 class CfirStructSymbol(
-    override val classId: ClassId = ClassId(FqName.ROOT, SpecialNames.NO_NAME_PROVIDED),
+    override val classId: ClassId ,
 ) : CfirClassLikeSymbol<CfirStruct>(classId) {
 
     override val name: Name
@@ -150,7 +154,7 @@ class CfirStructSymbol(
  * 决定构造器实例的内存分配方式。
  */
 class CfirEnumSymbol(
-    override val classId: ClassId = ClassId(FqName.ROOT, SpecialNames.NO_NAME_PROVIDED),
+    override val classId: ClassId ,
     /** 是否为引用枚举（RefEnumTy）。 */
     val isRefEnum: Boolean = false,
 ) : CfirClassLikeSymbol<CfirEnum>(classId) {
@@ -170,7 +174,7 @@ class CfirEnumSymbol(
  * 所有实质性类型运算均发生在展开后的目标类型上。
  */
 class CfirTypeAliasSymbol(
-    override val classId: ClassId = ClassId(FqName.ROOT, SpecialNames.NO_NAME_PROVIDED),
+    override val classId: ClassId ,
 ) : CfirClassifierSymbolWithClassId<CfirTypeAlias>(classId) {
 
     override val name: Name
@@ -223,30 +227,35 @@ class CfirTypeParameterSymbol : CfirClassifierSymbol<CfirTypeParameter>() {
 sealed class CfirCallableSymbol<out D : CfirCallableDeclaration> : CfirSymbol<D>() {
     abstract val callableId: CallableId
     abstract val name: Name
-
+    private fun ensureType(typeRef: CfirTypeRef?) {
+        when (typeRef) {
+            null, is CfirResolvedTypeRef -> {}
+            is CfirImplicitTypeRef -> lazyResolveToPhase(CfirResolvePhase.IMPLICIT_TYPES)
+            else -> lazyResolveToPhase(CfirResolvePhase.TYPES)
+        }
+    }
+    fun calculateReturnType() {
+        ensureType(cfir.returnTypeRef)
+        val returnTypeRef = cfir.returnTypeRef
+        if (returnTypeRef !is CfirResolvedTypeRef) {
+            errorInLazyResolve("returnTypeRef", returnTypeRef::class, CfirResolvedTypeRef::class)
+        }
+    }
     fun callableIdAsString(): String = callableId.toString()
+    val resolvedReturnTypeRef: CfirResolvedTypeRef
+        get() {
+            calculateReturnType()
+            return cfir.returnTypeRef as CfirResolvedTypeRef
+        }
 
     override val debugName: String get() = name.asString()
 }
 
-/**
- * 所有函数类符号的密封基类，对齐 K2 `FirFunctionSymbol`。
- *
- * 子类包括具名函数、匿名函数、构造器、main 函数、析构函数等。
- * 提供 [valueParameterSymbols] 统一访问值参数符号列表。
- */
-sealed class CfirFunctionSymbol<out D : CfirFunction> : CfirCallableSymbol<D>() {
-    val valueParameterSymbols: List<CfirValueParameterSymbol>
-        get() = cfir.valueParameters.map { it.symbol }
-
-    val hasBody: Boolean
-        get() = cfir.body != null
-}
 
 /** 具名函数符号，对齐 K2 `FirNamedFunctionSymbol`。 */
 class CfirNamedFunctionSymbol(
-    override val callableId: CallableId,
-) : CfirFunctionSymbol<CfirNamedFunction>() {
+   callableId: CallableId,
+) : CfirFunctionSymbol<CfirNamedFunction>(callableId) {
     override val name: Name get() = callableId.callableName
 
     override fun toString(): String =
@@ -258,17 +267,16 @@ class CfirNamedFunctionSymbol(
  *
  * 名称始终为 `<anonymous>`，不持有全局唯一的 [CallableId]。
  */
-class CfirAnonymousFunctionSymbol : CfirFunctionSymbol<CfirAnonymousFunction>() {
+class CfirAnonymousFunctionSymbol : CfirFunctionWithoutNameSymbol<CfirAnonymousFunction>(Name.identifier("anonymous")) {
     override val name: Name get() = SpecialNames.ANONYMOUS
-    override val callableId: CallableId get() = CallableId(SpecialNames.ANONYMOUS)
 
     override fun toString(): String = "CfirAnonymousFunctionSymbol"
 }
 
 /** 顶层 main 函数符号，程序入口点。 */
 class CfirMainFunctionSymbol(
-    override val callableId: CallableId,
-) : CfirFunctionSymbol<CfirMainFunction>() {
+   callableId: CallableId,
+) : CfirFunctionSymbol<CfirMainFunction>(callableId) {
     override val name: Name get() = callableId.callableName
 
     override fun toString(): String =
@@ -277,8 +285,8 @@ class CfirMainFunctionSymbol(
 
 /** 宏声明符号。 */
 class CfirMacroDeclarationSymbol(
-    override val callableId: CallableId,
-) : CfirFunctionSymbol<CfirMacroDeclaration>() {
+      callableId: CallableId,
+) : CfirFunctionSymbol<CfirMacroDeclaration>(callableId) {
     override val name: Name get() = callableId.callableName
 
     override fun toString(): String =
@@ -287,8 +295,8 @@ class CfirMacroDeclarationSymbol(
 
 /** finalizer（析构函数）符号，在对象生命周期结束时被调用。 */
 class CfirFinalizerSymbol(
-    override val callableId: CallableId,
-) : CfirFunctionSymbol<CfirFinalizer>() {
+     callableId: CallableId,
+) : CfirFunctionSymbol<CfirFinalizer>(callableId) {
     override val name: Name get() = callableId.callableName
 
     override fun toString(): String =
@@ -297,8 +305,8 @@ class CfirFinalizerSymbol(
 
 /** 构造器符号，对应 class/struct 的 `init` 声明。 */
 class CfirConstructorSymbol(
-    override val callableId: CallableId,
-) : CfirFunctionSymbol<CfirConstructor>() {
+  callableId: CallableId,
+) : CfirFunctionSymbol<CfirConstructor>(callableId) {
     override val name: Name get() = callableId.callableName
 
     override fun toString(): String =

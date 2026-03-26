@@ -251,6 +251,7 @@ fun CfirClassLikeDeclaration.staticScope(
 
 fun CfirClassLikeDeclaration.typeParametersForTower(): List<CfirTypeParameter> = when (this) {
     is CfirClass -> typeParameters
+    is org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration -> emptyList()
     is CfirInterface -> typeParameters
     is CfirStruct -> typeParameters
     is CfirEnum -> typeParameters

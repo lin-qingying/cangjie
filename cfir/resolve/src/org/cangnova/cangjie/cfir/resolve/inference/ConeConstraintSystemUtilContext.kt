@@ -1,5 +1,14 @@
 package org.cangnova.cangjie.cfir.resolve.inference
 
+import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaParameterType
+import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForPostponedAtom
+import org.cangnova.cangjie.cfir.resolve.calls.ConeLambdaWithTypeVariableAsExpectedTypeAtom
+import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
+import org.cangnova.cangjie.cfir.resolve.inference.model.ConeFixVariableConstraintPosition
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemUtilContext
 import org.cangnova.cangjie.resolve.calls.inference.components.PostponedArgumentInputTypesResolver
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintPosition
@@ -10,58 +19,82 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.type.model.TypeVariableMarker
 
 object ConeConstraintSystemUtilContext : ConstraintSystemUtilContext {
-    override fun CangJieTypeMarker.refineType(): CangJieTypeMarker {
-        TODO("Not yet implemented")
+    override fun getBuiltinFunctionTypeConstructor(parametersNumber: Int): TypeConstructorMarker {
+        return ConeFuncType(
+            parameterTypes = List(parametersNumber) { ConePrimitiveType.NOTHING },
+            returnType = ConePrimitiveType.NOTHING,
+        )
     }
 
+    override fun CangJieTypeMarker.extractBuiltinFunctionArgumentTypes(): List<CangJieTypeMarker> {
+        return (this as? ConeFuncType)?.parameterTypes.orEmpty()
+    }
+
+    override fun CangJieTypeMarker.unCapture(): CangJieTypeMarker = this
+
+    override fun CangJieTypeMarker.refineType(): CangJieTypeMarker = this
+
     override fun createArgumentConstraintPosition(argument: PostponedAtomWithRevisableExpectedType): ConstraintPosition {
-        TODO("Not yet implemented")
+        require(argument is ConeLambdaWithTypeVariableAsExpectedTypeAtom || argument is org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedCallableReferenceAtom) {
+            "${argument::class}"
+        }
+        val atom = argument as? ConeLambdaWithTypeVariableAsExpectedTypeAtom
+            ?: return ConeArgumentConstraintPosition((argument as org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedCallableReferenceAtom).expression)
+        return ConeArgumentConstraintPosition(atom.expression)
     }
 
     override fun <T> createFixVariableConstraintPosition(
         variable: TypeVariableMarker,
-        atom: T
+        atom: T,
     ): FixVariableConstraintPosition<T> {
-        TODO("Not yet implemented")
+        @Suppress("UNCHECKED_CAST")
+        return ConeFixVariableConstraintPosition(variable) as FixVariableConstraintPosition<T>
     }
 
-    override fun extractLambdaParameterTypesFromDeclaration(declaration: PostponedAtomWithRevisableExpectedType): List<CangJieTypeMarker?>? {
-        TODO("Not yet implemented")
+    override fun extractLambdaParameterTypesFromDeclaration(
+        declaration: PostponedAtomWithRevisableExpectedType,
+    ): List<CangJieTypeMarker?>? {
+        declaration as? ConeLambdaWithTypeVariableAsExpectedTypeAtom ?: return null
+        val anonymousFunction = declaration.anonymousFunction
+        if (anonymousFunction.isLambda && !anonymousFunction.hasExplicitParameterList) {
+            return null
+        }
+        return anonymousFunction.valueParameters.map { it.returnTypeRef.coneTypeOrNull }
     }
 
     override fun PostponedAtomWithRevisableExpectedType.isFunctionExpression(): Boolean {
-        TODO("Not yet implemented")
+        return this is ConeLambdaWithTypeVariableAsExpectedTypeAtom && !anonymousFunction.isLambda
     }
 
-    override fun PostponedAtomWithRevisableExpectedType.contextParameterCountOfFunctionExpression(): Int {
-        TODO("Not yet implemented")
-    }
+    override fun PostponedAtomWithRevisableExpectedType.contextParameterCountOfFunctionExpression(): Int = 0
 
     override fun PostponedAtomWithRevisableExpectedType.isLambda(): Boolean {
-        TODO("Not yet implemented")
+        return this is ConeLambdaWithTypeVariableAsExpectedTypeAtom && anonymousFunction.isLambda
     }
 
     override fun createTypeVariableForLambdaReturnType(): TypeVariableMarker {
-        TODO("Not yet implemented")
+        return ConeTypeVariableForPostponedAtom(PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_FOR_LAMBDA_RETURN_TYPE)
     }
 
     override fun createTypeVariableForLambdaParameterType(
         argument: PostponedAtomWithRevisableExpectedType,
-        index: Int
+        index: Int,
     ): TypeVariableMarker {
-        TODO("Not yet implemented")
+        return ConeTypeVariableForLambdaParameterType(
+            PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_PREFIX_FOR_LAMBDA_PARAMETER_TYPE + index,
+        )
     }
 
     override fun createTypeVariableForCallableReferenceReturnType(): TypeVariableMarker {
-        return ConeTypeVariableForPostponedAtom(PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_FOR_LAMBDA_RETURN_TYPE)
-
+        return ConeTypeVariableForPostponedAtom(PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_FOR_CR_RETURN_TYPE)
     }
 
     override fun createTypeVariableForCallableReferenceParameterType(
         argument: PostponedAtomWithRevisableExpectedType,
-        index: Int
+        index: Int,
     ): TypeVariableMarker {
-        TODO("Not yet implemented")
+        return ConeTypeVariableForPostponedAtom(
+            PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_PREFIX_FOR_CR_PARAMETER_TYPE + index,
+        )
     }
-
 }

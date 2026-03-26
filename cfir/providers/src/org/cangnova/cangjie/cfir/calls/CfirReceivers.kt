@@ -1,28 +1,39 @@
 package org.cangnova.cangjie.cfir.calls
 
+import org.cangnova.cangjie.cfir.CfirResolvable
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.InaccessibleReceiverKind
 import org.cangnova.cangjie.cfir.expressions.buildInaccessibleReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.buildThisReceiverExpression
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.buildImplicitThisReference
+import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassStaticScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirThisOwnerSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeStructType
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.fakeElement
 
@@ -31,7 +42,7 @@ sealed interface ReceiverValue {
 
     val receiverExpression: CfirExpression
 
-    fun scope(c: SessionAndScopeSessionHolder): CfirTypeScope?
+    fun scope(c: SessionAndScopeSessionHolder): CfirScope?
 }
 
 class ExpressionReceiverValue(
@@ -41,8 +52,9 @@ class ExpressionReceiverValue(
         get() = receiverExpression.coneTypeOrNull
             ?: error("Receiver expression '${receiverExpression::class.simpleName}' has no resolved type")
 
-    override fun scope(c: SessionAndScopeSessionHolder): CfirTypeScope? =
-        typeToScope(c.session, c.scopeSession, type)
+    override fun scope(c: SessionAndScopeSessionHolder): CfirScope? =
+        receiverExpression.qualifierScopeOrNull(c.session)
+            ?: typeToScope(c.session, c.scopeSession, type)
 }
 
 sealed class ImplicitReceiverValue<S : CfirThisOwnerSymbol<*>>(
@@ -65,7 +77,7 @@ sealed class ImplicitReceiverValue<S : CfirThisOwnerSymbol<*>>(
     override fun computeOriginalExpression(): CfirExpression =
         receiverExpression(boundSymbol, originalType, inaccessibleReceiverKind)
 
-    override fun scope(c: SessionAndScopeSessionHolder): CfirTypeScope? = implicitScope
+    override fun scope(c: SessionAndScopeSessionHolder): CfirScope? = implicitScope
 
     final override val receiverExpression: CfirExpression
         get() = computeExpression()
@@ -199,19 +211,51 @@ private fun typeToScope(
     scopeSession: ScopeSession,
     type: ConeCangJieType,
 ): CfirTypeScope? {
-    val classId = when (type) {
-        is ConeClassLikeType -> type.classId
-        is ConeStructType -> type.classId
-        is ConeEnumType -> type.classId
-        else -> return null
-    }
-
+    val classId = type.classIdOrPrimitiveClassId ?: return null
     val symbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
     val declaration = symbol.cfir
 
     return when (declaration) {
         is CfirClass -> session.cangjieScopeProvider.getUseSiteMemberScope(declaration, session, scopeSession)
-        is CfirExtend -> CfirClassUseSiteMemberScope(symbol, session.symbolProvider)
-        else -> CfirClassUseSiteMemberScope(symbol, session.symbolProvider)
+        is CfirExtend -> CfirClassUseSiteMemberScope(symbol, session.symbolProvider, session.extendProvider)
+        else -> CfirClassUseSiteMemberScope(symbol, session.symbolProvider, session.extendProvider)
     }
+}
+
+fun CfirExpression.resolvedQualifierClassifier(session: CfirSession): CfirClassLikeSymbol<*>? {
+    val resolvedSymbol = ((this as? CfirResolvable)?.calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol
+        ?: return null
+    return when (resolvedSymbol) {
+        is CfirTypeAliasSymbol -> resolvedSymbol.expandedClassLikeSymbol(session)
+        is CfirClassLikeSymbol<*> -> resolvedSymbol
+        else -> null
+    }
+}
+
+fun CfirExpression.qualifierScopeOrNull(
+    session: CfirSession,
+): CfirScope? {
+    val classifier = resolvedQualifierClassifier(session) ?: return null
+    val declaration = classifier.cfir as? CfirClassLikeDeclaration ?: return null
+    return CfirClassStaticScope(declaration)
+}
+
+private fun CfirTypeAliasSymbol.expandedClassLikeSymbol(session: CfirSession): CfirClassLikeSymbol<*>? {
+    if (!isBound) return null
+    val expandedType = (cfir as? CfirTypeAlias)?.expandedTypeRef?.coneTypeOrNull ?: return null
+    val classId = when (expandedType) {
+        is ConeClassLikeType -> expandedType.classId
+        is ConeStructType -> expandedType.classId
+        is ConeEnumType -> expandedType.classId
+        is ConeTypeAliasType -> expandedType.expandedType?.let { nested ->
+            when (nested) {
+                is ConeClassLikeType -> nested.classId
+                is ConeStructType -> nested.classId
+                is ConeEnumType -> nested.classId
+                else -> expandedType.classId
+            }
+        } ?: expandedType.classId
+        else -> return null
+    }
+    return session.symbolProvider.getClassLikeSymbolByClassId(classId)
 }

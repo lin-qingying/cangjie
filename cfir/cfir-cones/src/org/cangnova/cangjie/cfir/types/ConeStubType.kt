@@ -40,5 +40,4 @@ class ConeStubType(
 
     override fun hashCode(): Int = constructor.hashCode() * 31 + kind.hashCode()
 
-    override fun toString(): String = "Stub(${constructor.name}:$kind)"
 }

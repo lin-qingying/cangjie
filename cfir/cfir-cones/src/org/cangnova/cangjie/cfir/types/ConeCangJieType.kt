@@ -44,8 +44,7 @@ import org.cangnova.cangjie.type.model.SimpleTypeMarker
  *   │   │   ├── ConePlaceholderType
  *   │   │   └── ConeDeferredType
  *   │   └── 过渡推断类型
- *   │       ├── ConeStubType
- *   │       └── ConeCapturedType
+ *   │       └── ConeStubType
  *
  * 当前稳定保留的具体类型集合包括：
  * - ConePrimitiveType
@@ -68,7 +67,9 @@ sealed class ConeCangJieType : CangJieTypeMarker {
     /** 泛型类型实参。仓颉泛型是不变的，类型实参只能是具体类型。 */
     abstract val typeArguments: List<ConeTypeProjection>
     abstract val attributes: ConeAttributes
-
+    final override fun toString(): String {
+        return renderForDebugging()
+    }
     open val isUnit: Boolean get() = false
     open val isNothing: Boolean get() = false
     open val isError: Boolean get() = false

@@ -2,7 +2,10 @@ package org.cangnova.cangjie.cfir.tree.generator
 
 import org.cangnova.cangjie.cfir.tree.generator.context.AbstractCfirTreeImplementationConfigurator
 import org.cangnova.cangjie.cfir.tree.generator.model.Element
+import org.cangnova.cangjie.cfir.tree.generator.model.Field
+import org.cangnova.cangjie.cfir.tree.generator.model.Implementation
 import org.cangnova.cangjie.cfir.tree.generator.util.type
+import org.cangnova.cangjie.generators.tree.config.AbstractImplementationConfigurator
 
 object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator() {
 
@@ -90,6 +93,18 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
 
             additionalImports(visibilitiesImport)
         }
+        fun AbstractImplementationConfigurator<Implementation, Element, Field>.ImplementationContext.configureCommonValueParameter() {
+            defaultFalse("isVar", withGetter = true)
+            defaultNull(
+                "initializer",
+                withGetter = true
+            )
+
+        }
+        impl(valueParameter){
+            configureCommonValueParameter()
+        }
+
 // resolvedImportDirective：委托字段给 delegate
         impl(resolvedImportDirective) {
             publicImplementation()

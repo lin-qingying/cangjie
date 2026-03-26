@@ -19,6 +19,4 @@ class ConeTupleType(
 
     override fun hashCode(): Int = elementTypes.hashCode()
 
-    override fun toString(): String =
-        elementTypes.joinToString(prefix = "(", postfix = ")")
 }

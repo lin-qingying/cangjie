@@ -26,12 +26,5 @@ class ConeTypeAliasType(
         return result
     }
 
-    override fun toString(): String = buildString {
-        append("typealias ")
-        append(classId.shortClassName)
-        if (typeArguments.isNotEmpty()) {
-            typeArguments.joinTo(this, prefix = "<", postfix = ">")
-        }
-        expandedType?.let { append(" = $it") }
-    }
+
 }

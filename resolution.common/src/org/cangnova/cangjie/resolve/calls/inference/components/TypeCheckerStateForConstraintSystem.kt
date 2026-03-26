@@ -11,7 +11,6 @@ import org.cangnova.cangjie.type.AbstractTypeRefiner
 import org.cangnova.cangjie.type.TypeCheckerState
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.*
-import org.cangnova.cangjie.types.*
 
 abstract class TypeCheckerStateForConstraintSystem(
     val extensionTypeContext: TypeSystemInferenceExtensionContext,
@@ -41,23 +40,6 @@ abstract class TypeCheckerStateForConstraintSystem(
 
     abstract fun addEqualityConstraint(typeVariable: TypeConstructorMarker, type: CangJieTypeMarker)
 
-    fun getLowerCapturedTypePolicy(subType: RigidTypeMarker, superType: CapturedTypeMarker): LowerCapturedTypePolicy =
-        with(extensionTypeContext) {
-            return when {
-                isMyTypeVariable(subType) -> {
-                    val projection = superType.typeConstructorProjection()
-                    val type = projection.getType()?.asRigidType()
-                    if (type != null && isMyTypeVariable(type)) {
-                        LowerCapturedTypePolicy.CHECK_ONLY_LOWER
-                    } else {
-                        LowerCapturedTypePolicy.SKIP_LOWER
-                    }
-                }
-                subType.contains { it.anyBound(::isMyTypeVariable) } -> LowerCapturedTypePolicy.CHECK_ONLY_LOWER
-                else -> LowerCapturedTypePolicy.CHECK_SUBTYPE_AND_LOWER
-            }
-        }
-
     /**
      * todo: possible we should override this method, because otherwise OR in subtyping transformed to AND in constraint system
      * Now we cannot do this, because sometimes we have proper intersection type as lower type and if we first supertype,
@@ -69,15 +51,6 @@ abstract class TypeCheckerStateForConstraintSystem(
         superType: CangJieTypeMarker,
     ): Boolean? {
         return internalAddSubtypeConstraint(subType, superType, isNoInfer = false)
-    }
-
-    private fun extractTypeForProjectedType(type: CangJieTypeMarker, out: Boolean): CangJieTypeMarker? = with(extensionTypeContext) {
-        val rigidType = type.asRigidType()
-        val typeMarker = rigidType?.asCapturedType() ?: return null
-
-        val projection = typeMarker.typeConstructorProjection()
-        val projectedType = projection.getType() ?: return typeMarker.lowerType()
-        return if (out) projectedType else typeMarker.lowerType() ?: projectedType
     }
 
     private fun internalAddSubtypeConstraint(
@@ -93,34 +66,12 @@ abstract class TypeCheckerStateForConstraintSystem(
             answer = simplifyLowerConstraint(superType, subType, isNoInfer)
         }
 
-        if (subType.anyBound(this::isMyTypeVariable)) {
-            return simplifyUpperConstraint(subType, superType, isNoInfer) && (answer ?: true)
+        return if (subType.anyBound(this::isMyTypeVariable)) {
+            simplifyUpperConstraint(subType, superType, isNoInfer) && (answer ?: true)
         } else {
-            extractTypeVariableForSubtype(subType, superType, isNoInfer)?.let {
-                return simplifyUpperConstraint(it, superType, isNoInfer) && (answer ?: true)
-            }
-
-            return simplifyConstraintForPossibleIntersectionSubType(subType, superType, isNoInfer) ?: answer
+            simplifyConstraintForPossibleIntersectionSubType(subType, superType, isNoInfer) ?: answer
         }
     }
-
-    // extract type variable only from type like Captured(out T)
-    private fun extractTypeVariableForSubtype(subType: CangJieTypeMarker, superType: CangJieTypeMarker, isNoInfer: Boolean): CangJieTypeMarker? =
-        with(extensionTypeContext) {
-
-            val typeMarker = subType.asRigidType()?.asCapturedType() ?: return null
-
-            val projection = typeMarker.typeConstructorProjection()
-            val projectedType = projection.getType()?.asRigidType() ?: return null
-            if (!isMyTypeVariable(projectedType)) return null
-
-            simplifyLowerConstraint(projectedType, superType, isNoInfer = isNoInfer)
-            if (isMyTypeVariable(superType.asRigidType() ?: return null)) {
-                addLowerConstraint(superType.typeConstructor(), anyType(), isNoInfer = isNoInfer)
-            }
-
-            return projectedType
-        }
 
     /**
      * Foo <: T -- leave as is
@@ -175,13 +126,12 @@ abstract class TypeCheckerStateForConstraintSystem(
         val rigidTypeVariable = typeVariable.asRigidType() ?: return false
         if (!isMyTypeVariable(rigidTypeVariable)) return true
 
-        val lowerConstraint = extractTypeForProjectedType(subType, out = true) ?: subType
         when {
-            lowerConstraint.isError() -> return false
-            lowerConstraint.isUninferredParameter() -> return true
+            subType.isError() -> return false
+            subType.isUninferredParameter() -> return true
         }
 
-        addLowerConstraint(rigidTypeVariable.typeConstructor(), lowerConstraint, isFromNullabilityConstraint, isNoInfer)
+        addLowerConstraint(rigidTypeVariable.typeConstructor(), subType, isFromNullabilityConstraint, isNoInfer)
 
         return true
     }
@@ -200,8 +150,7 @@ abstract class TypeCheckerStateForConstraintSystem(
         val rigidTypeVariable = typeVariable.asRigidType() ?: return false
         if (!isMyTypeVariable(rigidTypeVariable)) return true
 
-        val simplifiedSuperType = extractTypeForProjectedType(superType, out = false) ?: superType
-        addUpperConstraint(rigidTypeVariable.typeConstructor(), simplifiedSuperType, isNoInfer)
+        addUpperConstraint(rigidTypeVariable.typeConstructor(), superType, isNoInfer)
         return true
     }
 

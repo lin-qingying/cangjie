@@ -1,10 +1,12 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -47,6 +49,22 @@ class CfirCompositeSymbolProvider(
     override fun getEnumConstructorOwnerClassId(symbol: CfirEnumConstructorSymbol): ClassId? {
         for (provider in providers) {
             val classId = provider.getEnumConstructorOwnerClassId(symbol)
+            if (classId != null) return classId
+        }
+        return null
+    }
+
+    override fun getContainingFile(symbol: CfirSymbol<*>): CfirFile? {
+        for (provider in providers) {
+            val file = provider.getContainingFile(symbol)
+            if (file != null) return file
+        }
+        return null
+    }
+
+    override fun getContainingClassId(symbol: CfirCallableSymbol<*>): ClassId? {
+        for (provider in providers) {
+            val classId = provider.getContainingClassId(symbol)
             if (classId != null) return classId
         }
         return null

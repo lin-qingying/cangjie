@@ -7,10 +7,6 @@ import org.cangnova.cangjie.utils.WeakPair
 
 class ConeClassLikeLookupTagImpl(override val classId: ClassId) : ConeClassLikeLookupTag() {
 
-    init {
-        assert(!classId.isLocal) { "You should use ${ConeClassLikeLookupTagWithFixedSymbol::class.simpleName} for local $classId!" }
-    }
-
 
     var boundSymbol: WeakPair<CfirSession, CfirClassLikeSymbol<*>?>? = null
 

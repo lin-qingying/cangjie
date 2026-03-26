@@ -1,0 +1,14 @@
+Command: ./gradlew.bat :resolution.common:test
+
+Result: PASS
+
+Task-4-specific instrumentation now wired:
+- `resolution.common/src/org/cangnova/cangjie/resolve/calls/inference/components/ConstraintInjector.kt`
+  - logs added constraints via `inferenceLogger?.log(typeVariable, addedConstraint, context)`
+- `resolution.common/src/org/cangnova/cangjie/resolve/calls/inference/model/ConstraintSystemImpl.kt`
+  - logs errors via `inferenceLogger?.logError(error, this)`
+  - logs fixed variables via `inferenceLogger?.logFixVariable(variable, resultType, this)`
+
+Notes:
+- This verifies the shared generic inference instrumentation slice remains green.
+- `:cfir:resolve` module-wide verification remains blocked by unrelated pre-existing baseline compilation failures recorded separately.

@@ -12,7 +12,7 @@ dependencies {
     implementation(project(":cfir:entrypoint"))
 
     compileOnly(intellijCore())
-    testCompileOnly(intellijCore())
+    testImplementation(intellijCore())
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

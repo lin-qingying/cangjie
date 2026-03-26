@@ -39,6 +39,13 @@ class CfirCompositeProvider(
         }
     }
 
+    override fun getCfirClassifierContainerFile(fqName: ClassId): CfirFile {
+        for (provider in providers) {
+            runCatching { provider.getCfirClassifierContainerFile(fqName) }.getOrNull()?.let { return it }
+        }
+        error("No containing file found for classifier $fqName")
+    }
+
     override fun getClassIdBySymbol(classSymbol: CfirClassSymbol): ClassId? {
         for (provider in providers) {
             val classId = provider.getClassIdBySymbol(classSymbol)

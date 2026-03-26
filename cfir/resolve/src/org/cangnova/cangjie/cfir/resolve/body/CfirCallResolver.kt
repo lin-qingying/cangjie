@@ -14,6 +14,8 @@ import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
+import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
@@ -45,6 +47,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.overloads.callConflictResolverFac
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
 import org.cangnova.cangjie.cfir.resolve.typeFromCallee
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassStaticScope
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
@@ -99,7 +102,7 @@ class CfirCallResolver(
         val result = collectCandidates(
             qualifiedAccess = functionCall,
             name = callee.name,
-            origin = CfirFunctionCallOrigin.Regular,
+            origin = functionCall.origin,
             resolutionMode = resolutionMode,
             collectionLiteralContext = collectionLiteralContext,
         )
@@ -110,12 +113,18 @@ class CfirCallResolver(
                 functionCall,
                 callee.name,
                 CallKind.VariableAccess,
-                origin = CfirFunctionCallOrigin.Regular,
+                origin = functionCall.origin,
                 resolutionMode = resolutionMode,
             )
             if (newResult.candidates.isNotEmpty()) {
                 forceCandidates = newResult.candidates
             }
+        }
+
+        val matchedClassifier = if (result.candidates.isEmpty() && forceCandidates == null) {
+            findClassifierForCall(functionCall, callee.name)
+        } else {
+            null
         }
 
         val nameReference = createResolvedNamedReference(
@@ -125,6 +134,7 @@ class CfirCallResolver(
             result.candidates,
             result.applicability,
             functionCall.explicitReceiver,
+            matchedClassifier = matchedClassifier,
             expectedCallKind = if (forceCandidates != null) CallKind.VariableAccess else null,
             expectedCandidates = forceCandidates
         )
@@ -167,6 +177,22 @@ class CfirCallResolver(
             if (newResult.candidates.isNotEmpty()) {
                 result = newResult
                 functionCallExpected = true
+            }
+        }
+
+        if (result.candidates.isEmpty()) {
+            val classifierFromQualifier = qualifiedAccess.explicitReceiverOrNull()?.let {
+                findClassifierInQualifierScope(it, callee.name)
+            }
+            if (classifierFromQualifier != null) {
+                qualifiedAccess.replaceCalleeReference(
+                    buildResolvedNamedReference {
+                        source = callee.source
+                        name = callee.name
+                        resolvedSymbol = classifierFromQualifier
+                    }
+                )
+                return qualifiedAccess
             }
         }
 
@@ -269,6 +295,7 @@ class CfirCallResolver(
             callSite = callSite,
             callKind = callKind,
             name = name,
+            origin = origin,
             explicitReceiver = explicitReceiver,
             arguments = arguments,
             isUsedAsGetClassReceiver = isUsedAsGetClassReceiver,
@@ -280,16 +307,7 @@ class CfirCallResolver(
             containingCandidateForCollectionLiteral = collectionLiteralContext?.containingCandidate,
         )
 
-        val resultCollector = collector ?: CfirCandidateCollector(components, components.resolutionStageRunner)
-        val resolver = if (collector == null) {
-            towerResolver.reset()
-            towerResolver
-        } else {
-            collector.newDataSet()
-            CfirTowerResolver(components, components.resolutionStageRunner, collector)
-        }
-
-        resolver.runResolver(info, resolutionContext)
+        val resultCollector = towerResolver.runResolver(info, resolutionContext, collector)
         val (reducedCandidates, applicability) = reduceCandidates(resultCollector)
 
         return ResolutionResult(
@@ -327,6 +345,7 @@ class CfirCallResolver(
         applicability: CandidateApplicability,
         explicitReceiver: CfirExpression? = null,
         createResolvedReferenceWithoutCandidateForLocalVariables: Boolean = true,
+        matchedClassifier: CfirClassLikeSymbol<*>? = null,
         expectedCallKind: CallKind? = null,
         expectedCandidates: Collection<Candidate>? = null,
     ): CfirNamedReference {
@@ -390,6 +409,7 @@ class CfirCallResolver(
 
             candidates.isEmpty() -> {
                 when {
+                    matchedClassifier != null && callInfo.callKind == CallKind.Function -> ConeNoConstructorError
                     name.asString() == "invoke" && explicitReceiver is CfirLiteralExpression ->
                         ConeFunctionExpectedError(
                             explicitReceiver.value?.toString() ?: "",
@@ -448,6 +468,34 @@ class CfirCallResolver(
         }
 
         return CfirNamedReferenceWithCandidate(source, name, candidate)
+    }
+
+    private fun findClassifierForCall(
+        qualifiedAccess: CfirExpression,
+        name: Name,
+    ): CfirClassLikeSymbol<*>? {
+        val explicitReceiver = qualifiedAccess.explicitReceiverOrNull()
+        return if (explicitReceiver != null) {
+            findClassifierInQualifierScope(explicitReceiver, name)
+        } else {
+            towerResolver.findClassifiers(name).firstOrNull()
+        }
+    }
+
+    private fun findClassifierInQualifierScope(
+        receiver: CfirExpression,
+        name: Name,
+    ): CfirClassLikeSymbol<*>? {
+        val qualifierClassifier = receiver.resolvedQualifierClassifier(session) ?: return null
+        val declaration = qualifierClassifier.cfir as? CfirClassLikeDeclaration ?: return null
+        val staticScope = CfirClassStaticScope(declaration)
+        var result: CfirClassLikeSymbol<*>? = null
+        staticScope.processClassifiersByName(name) { classifier ->
+            if (result == null) {
+                result = classifier
+            }
+        }
+        return result
     }
 
     private fun createErrorReferenceForSingleCandidate(

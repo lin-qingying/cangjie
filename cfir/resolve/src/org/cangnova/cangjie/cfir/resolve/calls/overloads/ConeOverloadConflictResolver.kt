@@ -539,11 +539,11 @@ class ConeOverloadConflictResolver(
     private fun CfirClassLikeDeclaration.typeParameters(): List<CfirTypeParameter> {
         return when (this) {
             is CfirClass -> typeParameters
+            is org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration -> emptyList()
             is CfirInterface -> typeParameters
             is CfirStruct -> typeParameters
             is CfirEnum -> typeParameters
             is CfirTypeAlias -> typeParameters
-            is CfirExtend -> typeParameters
             else -> emptyList()
         }
     }
@@ -690,8 +690,7 @@ private class ConeSimpleConstraintSystemImpl(
 
     override fun hasContradiction(): Boolean = system.hasContradiction
 
-    override val captureFromArgument: Boolean
-        get() = true
+
 
     override val context: TypeSystemInferenceExtensionContext
         get() = system

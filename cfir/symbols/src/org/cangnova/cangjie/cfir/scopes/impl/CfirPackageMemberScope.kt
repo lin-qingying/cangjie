@@ -30,7 +30,7 @@ class CfirPackageMemberScope(
 
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         val symbols = classifierCache.getOrPut(name) {
-            val classId = org.cangnova.cangjie.name.ClassId(packageFqName, FqName.topLevel(name), isLocal = false)
+            val classId = org.cangnova.cangjie.name.ClassId(packageFqName, FqName.topLevel(name))
             listOfNotNull(symbolProvider.getClassLikeSymbolByClassId(classId))
         }
         symbols.forEach(processor)
