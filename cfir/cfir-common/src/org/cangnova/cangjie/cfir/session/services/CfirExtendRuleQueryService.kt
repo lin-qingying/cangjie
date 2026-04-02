@@ -20,4 +20,10 @@ interface CfirExtendRuleQueryService : CfirSessionComponent {
     fun inheritedInterfaceSemanticKeysOf(declaration: Any): List<String>
     fun inheritedInterfaceSemanticKeysForTarget(targetClassId: ClassId, excludingDeclaration: Any? = null): List<String>
     fun defaultIndependentMembersOfInterface(interfaceClassId: ClassId): List<Name>
+
+    /** 获取目标类自身声明中继承的所有接口 ClassId 集合 */
+    fun targetClassOwnInterfaceClassIds(targetClassId: ClassId): Set<ClassId>
+
+    /** 获取其他包中对同一目标类已 extend 过的接口 ClassId 集合（含传递父接口） */
+    fun otherPackageExtendedInterfaceClassIds(targetClassId: ClassId, currentPackage: FqName): Set<ClassId>
 }

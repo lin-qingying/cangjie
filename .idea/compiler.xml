@@ -37,12 +37,27 @@
       <module name="cangjie.analysis.analysis-api-impl-base" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api-impl-base.main" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api-impl-base.test" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-platform-interface" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-platform-interface.main" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-platform-interface.test" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-standalone" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-standalone.main" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-standalone.test" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api.main" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api.test" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-internal-utils" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-internal-utils.main" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-internal-utils.test" options="-proc:none" />
       <module name="cangjie.analysis.analysis-test-framework" options="-proc:none" />
       <module name="cangjie.analysis.analysis-test-framework.main" options="-proc:none" />
       <module name="cangjie.analysis.analysis-test-framework.test" options="-proc:none" />
       <module name="cangjie.analysis.analysis-test-framework.testFixtures" options="-proc:none" />
+      <module name="cangjie.analysis.cj-references" options="-proc:none" />
+      <module name="cangjie.analysis.cj-references.main" options="-proc:none" />
+      <module name="cangjie.analysis.cj-references.test" options="-proc:none" />
+      <module name="cangjie.analysis.low-level-api-cfir" options="-proc:none" />
+      <module name="cangjie.analysis.low-level-api-cfir.main" options="-proc:none" />
+      <module name="cangjie.analysis.low-level-api-cfir.test" options="-proc:none" />
       <module name="cangjie.cfir.analysis-tests" options="-proc:none" />
       <module name="cangjie.cfir.analysis-tests.main" options="-proc:none" />
       <module name="cangjie.cfir.analysis-tests.test" options="-proc:none" />

@@ -1,14 +1,12 @@
 plugins {
     kotlin("jvm")
 }
-// 分析 API 的 CFIR 实现模块（对齐 Kotlin analysis-api-fir）
+
 dependencies {
     api(project(":analysis:analysis-api"))
     api(project(":analysis:analysis-api-impl-base"))
-    api(project(":cfir:cfir-tree"))
-    api(project(":cfir:resolve"))
-    api(project(":cfir:checkers"))
-    api(project(":common:diagnostics"))
+    api(project(":analysis:analysis-api-platform-interface"))
+    api(project(":analysis:low-level-api-cfir"))
     implementation(project(":psi"))
 
     compileOnly(intellijCore())

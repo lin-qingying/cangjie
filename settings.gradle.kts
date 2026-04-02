@@ -53,8 +53,13 @@ include(":cfir:raw-cfir:raw-cfir-common")
 
 // Analysis API，对齐 Kotlin analysis/analysis-api
 include(":analysis:analysis-api")
+include(":analysis:analysis-api-platform-interface")
 include(":analysis:analysis-api-impl-base")
+include(":analysis:analysis-api-standalone")
 include(":analysis:analysis-api-cfir")
+include(":analysis:low-level-api-cfir")
+include(":analysis:analysis-internal-utils")
+include(":analysis:cj-references")
 
 
 include(":analysis:analysis-test-framework")

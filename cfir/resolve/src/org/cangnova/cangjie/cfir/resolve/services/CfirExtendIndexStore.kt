@@ -37,6 +37,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
     private var modelsByOrigin: Map<CfirExtendSemanticOrigin, List<CfirExtendSemanticModel>> = emptyMap()
     private var modelByDeclaration: Map<CfirExtend, CfirExtendSemanticModel> = emptyMap()
     private var defaultIndependentMembersByInterface: Map<ClassId, List<Name>> = emptyMap()
+    private var targetClassOwnInterfacesByClassId: Map<ClassId, Set<ClassId>> = emptyMap()
 
     @Synchronized
     fun rebuild(files: List<CfirFile>, resolver: CfirTypeResolver) {
@@ -56,6 +57,7 @@ class CfirExtendIndexStore : CfirSessionComponent {
         modelsByPackage = next.groupBy { it.packageFqName }
         modelsByOrigin = next.groupBy { it.origin }
         defaultIndependentMembersByInterface = buildDefaultIndependentMembersMap(next, resolver)
+        targetClassOwnInterfacesByClassId = buildTargetClassOwnInterfacesMap(next, resolver)
     }
 
     fun allModels(): List<CfirExtendSemanticModel> = models
@@ -70,6 +72,17 @@ class CfirExtendIndexStore : CfirSessionComponent {
 
     fun defaultIndependentMembersOfInterface(interfaceClassId: ClassId): List<Name> =
         defaultIndependentMembersByInterface[interfaceClassId].orEmpty()
+
+    fun targetClassOwnInterfaceClassIds(targetClassId: ClassId): Set<ClassId> =
+        targetClassOwnInterfacesByClassId[targetClassId].orEmpty()
+
+    fun otherPackageExtendedInterfaceClassIds(targetClassId: ClassId, currentPackage: FqName): Set<ClassId> {
+        return modelsForClass(targetClassId)
+            .asSequence()
+            .filter { it.packageFqName != currentPackage }
+            .flatMap { it.inheritedInterfaceClassIds.asSequence() }
+            .toSet()
+    }
 
     private fun CfirExtend.toSemanticModel(
         file: CfirFile,
@@ -133,6 +146,53 @@ class CfirExtendIndexStore : CfirSessionComponent {
                 .toList()
             if (members.isNotEmpty()) {
                 result[interfaceId] = members
+            }
+        }
+        return result
+    }
+
+    /**
+     * 构建目标类自身声明的接口集合映射。
+     * 收集每个 extend 目标类的 inheritedTypes 中所有接口的 ClassId。
+     */
+    private fun buildTargetClassOwnInterfacesMap(
+        models: List<CfirExtendSemanticModel>,
+        resolver: CfirTypeResolver,
+    ): Map<ClassId, Set<ClassId>> {
+        val targetClassIds = models.mapNotNull { it.targetClassId }.toSet()
+        val result = linkedMapOf<ClassId, Set<ClassId>>()
+        for (targetClassId in targetClassIds) {
+            val declaration = resolver.resolveClass(targetClassId) ?: continue
+            val ownInterfaces = collectOwnInterfaceClassIds(declaration, resolver)
+            if (ownInterfaces.isNotEmpty()) {
+                result[targetClassId] = ownInterfaces
+            }
+        }
+        return result
+    }
+
+    /**
+     * 递归收集一个声明的所有超类型中的接口 ClassId（含传递）
+     */
+    private fun collectOwnInterfaceClassIds(
+        declaration: CfirClassLikeDeclaration,
+        resolver: CfirTypeResolver,
+    ): Set<ClassId> {
+        val result = linkedSetOf<ClassId>()
+        val superTypeRefs = when (declaration) {
+            is CfirClass -> declaration.superTypeRefs
+            is CfirStruct -> declaration.superTypeRefs
+            is CfirEnum -> declaration.superTypeRefs
+            is CfirInterface -> declaration.superTypeRefs
+            else -> emptyList()
+        }
+        for (superTypeRef in superTypeRefs) {
+            val classId = superTypeRef.toClassIdOrNull() ?: continue
+            val superDeclaration = resolver.resolveClass(classId) ?: continue
+            if (superDeclaration.classKindOrNull() == CfirClassKind.INTERFACE) {
+                result.add(classId)
+                // 递归收集父接口
+                result.addAll(collectOwnInterfaceClassIds(superDeclaration, resolver))
             }
         }
         return result
