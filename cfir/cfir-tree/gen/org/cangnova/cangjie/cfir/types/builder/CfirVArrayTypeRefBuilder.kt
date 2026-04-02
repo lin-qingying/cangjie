@@ -9,8 +9,9 @@ package org.cangnova.cangjie.cfir.types.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirVArrayTypeRef
 import org.cangnova.cangjie.cfir.types.impl.CfirVArrayTypeRefImpl
@@ -27,7 +28,7 @@ class CfirVArrayTypeRefBuilder {
     fun build(): CfirVArrayTypeRef {
         return CfirVArrayTypeRefImpl(
             source,
-            annotations,
+            annotations.toMutableOrEmpty(),
             elementTypeRef,
             sizeLiteral,
         )

@@ -13,12 +13,13 @@ import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirEnumPatternImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var constructorReference: CfirReference,
-    override var arguments: List<CfirPattern>,
+    override val arguments: MutableList<CfirPattern>,
 ) : CfirEnumPattern() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -26,21 +27,19 @@ class CfirEnumPatternImpl @CfirImplementationDetail constructor(
         arguments.forEach { it.accept(visitor, data) }
     }
 
-    override fun <D> transformConstructorReference(transformer: CfirTransformer<D>, data: D): CfirEnumPattern
-     {
-        this.constructorReference = constructorReference.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirReference
-        return this
-    }
-
-    override fun <D> transformArguments(transformer: CfirTransformer<D>, data: D): CfirEnumPattern
-     {
-        this.arguments = arguments.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirPattern }
-        return this
-    }
-
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirEnumPatternImpl {
         transformConstructorReference(transformer, data)
         transformArguments(transformer, data)
+        return this
+    }
+
+    override fun <D> transformConstructorReference(transformer: CfirTransformer<D>, data: D): CfirEnumPatternImpl {
+        constructorReference = constructorReference.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformArguments(transformer: CfirTransformer<D>, data: D): CfirEnumPatternImpl {
+        arguments.transformInplace(transformer, data)
         return this
     }
 }

@@ -8,6 +8,8 @@ enum class DiagnosticKind {
     DeserializationError,
     InferenceError,
     RecursionInImplicitTypes,
+    LoopInSupertype,
+    DuplicateSupertype,
     ReturnNotAllowed,
     UnresolvedSupertype,
     CannotInferParameterType,

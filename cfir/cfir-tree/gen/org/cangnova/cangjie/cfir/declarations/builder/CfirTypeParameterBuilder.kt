@@ -9,10 +9,12 @@ package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -23,6 +25,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirTypeParameterBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
+    lateinit var resolvePhase: CfirResolvePhase
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
@@ -36,16 +39,15 @@ class CfirTypeParameterBuilder {
         return CfirTypeParameterImpl(
             source,
             moduleData,
-            annotations,
+            resolvePhase,
+            annotations.toMutableOrEmpty(),
             origin,
             attributes,
             containingDeclarationSymbol,
             symbol,
             name,
             bounds,
-        ).also {
-            it.initDefaultResolveState()
-        }
+        )
     }
 
 }
@@ -66,9 +68,10 @@ inline fun buildTypeParameterCopy(original: CfirTypeParameter, init: CfirTypePar
     val copyBuilder = CfirTypeParameterBuilder()
     copyBuilder.source = original.source
     copyBuilder.moduleData = original.moduleData
+    copyBuilder.resolvePhase = original.resolvePhase
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
-    copyBuilder.attributes = original.attributes
+    copyBuilder.attributes = original.attributes.copy()
     copyBuilder.containingDeclarationSymbol = original.containingDeclarationSymbol
     copyBuilder.name = original.name
     copyBuilder.bounds.addAll(original.bounds)

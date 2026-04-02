@@ -4,7 +4,7 @@ interface DefaultOps<T> {
         return 1
     }
 
-    func echo(v: T): T
+    func echo(v: T): Unit{}
 }
 
 class Host<T> {}

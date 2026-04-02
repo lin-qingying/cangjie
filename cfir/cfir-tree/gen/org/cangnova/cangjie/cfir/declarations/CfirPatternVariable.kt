@@ -7,6 +7,7 @@ package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
@@ -42,30 +43,21 @@ abstract class CfirPatternVariable : CfirVariable() {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformPatternVariable(this, data) as E
 
-    override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+    abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
+    abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
 
-    override abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
+    abstract override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
 
+    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
 
-    override abstract fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
+    abstract override fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
 
+    abstract override fun <D> transformInitializer(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
 
-    override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
+    abstract override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
 
-
-    override abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
-
-
-    override abstract fun <D> transformInitializer(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
-
-
-    override abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
-
-
-    override abstract fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
-
+    abstract override fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
 
     abstract fun <D> transformPattern(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
-
 }

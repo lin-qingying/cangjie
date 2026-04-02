@@ -11,6 +11,11 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -18,10 +23,15 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression as bui
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference as buildNamedReferenceNode
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
+import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef as buildImplicitTypeRefNode
 import org.cangnova.cangjie.descriptors.Visibility
+import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
@@ -58,6 +68,41 @@ abstract class AbstractRawCfirBuilder<T : Any>(
     protected val containerSymbol: CfirSymbol<*>
         get() = context.containerSymbol
 
+    protected inline fun <R> withContainerSymbol(symbol: CfirSymbol<*>, block: () -> R): R {
+        pushContainerSymbol(symbol)
+        return try {
+            block()
+        } finally {
+            popContainerSymbol(symbol)
+        }
+    }
+
+    protected fun callableIdFor(name: Name): CallableId {
+        if (context.inLocalContext) return CallableId(name)
+
+        val containingClass = containerSymbolIfAny as? CfirClassLikeSymbol<*>
+        return if (containingClass != null) {
+            CallableId(containingClass.classId, name)
+        } else {
+            CallableId(packageFqName, name)
+        }
+    }
+
+    protected fun currentDispatchReceiverType(): ConeSimpleCangJieType? {
+        if (context.inLocalContext) return null
+
+        val containingClass = containerSymbolIfAny as? CfirClassLikeSymbol<*> ?: return null
+        return when (containingClass) {
+            is CfirInterfaceSymbol -> ConeClassLikeType(containingClass.classId.toLookupTag(), isInterface = true)
+            is CfirStructSymbol -> ConeStructType(containingClass.classId.toLookupTag())
+            is CfirEnumSymbol -> ConeEnumType(
+                containingClass.classId.toLookupTag(),
+                isRefEnum = containingClass.isRefEnum,
+            )
+            else -> ConeClassLikeType(containingClass.classId.toLookupTag())
+        }
+    }
+
 
 
     abstract fun T.toSourceElement(): AbstractCjSourceElement
@@ -92,6 +137,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         isStatic: Boolean = false,
         isMut: Boolean = false,
         isOverride: Boolean = false,
+        isRedef: Boolean = false,
         isOperator: Boolean = false,
         isUnsafe: Boolean = false,
         isForeign: Boolean = false,
@@ -108,6 +154,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         status.isStatic = isStatic
         status.isMut = isMut
         status.isOverride = isOverride
+        status.isRedef = isRedef
         status.isOperator = isOperator
         status.isUnsafe = isUnsafe
         status.isForeign = isForeign

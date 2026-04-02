@@ -29,23 +29,6 @@ abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(val
         print(field.name)
     }
 
-    /**
-     * 判断给定 builder 的 `build()` 方法是否需要 post-construction 初始化语句。
-     *
-     * 若返回 true，则 `build()` 的返回表达式会被包裹在 `.also { }` 中，
-     * 并由 [printPostBuildStatements] 输出具体语句。
-     */
-    protected open fun hasPostBuildStatements(builder: LeafBuilder<ElementField, Element, Implementation>): Boolean = false
-
-    /**
-     * 在 `build()` 方法的 `.also { }` 块中输出 post-construction 初始化语句。
-     *
-     * 仅当 [hasPostBuildStatements] 返回 true 时被调用。
-     * `it` 指代刚构造的 Impl 实例。
-     */
-    protected open fun ImportCollectingPrinter.printPostBuildStatements(builder: LeafBuilder<ElementField, Element, Implementation>) {
-    }
-
     protected open fun actualTypeOfField(field: ElementField): TypeRefWithNullability =
         if (field is ListField) StandardTypes.mutableList.withArgs(field.baseType) else field.typeRef
 
@@ -114,9 +97,6 @@ abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(val
                 }
                 print("fun build(): ", buildType)
                 if (builder is LeafBuilder<*, *, *>) {
-                    @Suppress("UNCHECKED_CAST")
-                    val leafBuilder = builder as LeafBuilder<ElementField, Element, Implementation>
-                    val needsPostBuild = hasPostBuildStatements(leafBuilder)
                     printBlock {
                         println("return ${builder.implementation.render()}(")
                         withIndent {
@@ -126,15 +106,7 @@ abstract class AbstractBuilderPrinter<Element, Implementation, ElementField>(val
                                 println(",")
                             }
                         }
-                        if (!needsPostBuild) {
-                            println(")")
-                        } else {
-                            println(").also {")
-                            withIndent {
-                                printPostBuildStatements(leafBuilder)
-                            }
-                            println("}")
-                        }
+                        println(")")
                     }
                     if (hasBackingFields) {
                         println()

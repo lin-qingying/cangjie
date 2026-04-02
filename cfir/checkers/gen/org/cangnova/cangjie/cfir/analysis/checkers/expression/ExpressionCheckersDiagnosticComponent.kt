@@ -44,12 +44,12 @@ class ExpressionCheckersDiagnosticComponent(
         checkers.allFunctionCallCheckers.check(functionCall, data)
     }
 
-    override fun visitPropertyAccess(propertyAccess: CfirPropertyAccess, data: CheckerContext) {
-        checkers.allPropertyAccessCheckers.check(propertyAccess, data)
+    override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression, data: CheckerContext) {
+        checkers.allNamedAccessCheckers.check(namedAccessExpression, data)
     }
 
-    override fun visitQualifiedAccess(qualifiedAccess: CfirQualifiedAccess, data: CheckerContext) {
-        checkers.allQualifiedAccessCheckers.check(qualifiedAccess, data)
+    override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression, data: CheckerContext) {
+        checkers.allQualifiedAccessCheckers.check(qualifiedAccessExpression, data)
     }
 
     override fun visitAssignment(assignment: CfirAssignment, data: CheckerContext) {

@@ -17,8 +17,7 @@ class CfirWildcardPatternImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
 ) : CfirWildcardPattern() {
 
-    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
-    }
+    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirWildcardPatternImpl {
         return this

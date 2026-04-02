@@ -38,6 +38,11 @@ open class CfirSwitchableExtensionDeclarationsSymbolProvider protected construct
         return delegate.getClassLikeSymbolByClassId(classId)
     }
 
+    override fun getTopLevelClassifierSymbols(packageFqName: FqName, name: Name): List<CfirClassLikeSymbol<*>> {
+        if (disabled) return emptyList()
+        return delegate.getTopLevelClassifierSymbols(packageFqName, name)
+    }
+
     override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> {
         if (disabled) return emptyList()
         return delegate.getTopLevelCallableSymbols(packageFqName, name)

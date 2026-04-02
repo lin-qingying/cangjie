@@ -18,7 +18,7 @@ abstract class ExpressionCheckers {
     open val basicExpressionCheckers: Set<CfirBasicExpressionChecker> = emptySet()
     open val literalExpressionCheckers: Set<CfirLiteralExpressionChecker> = emptySet()
     open val functionCallCheckers: Set<CfirFunctionCallChecker> = emptySet()
-    open val propertyAccessCheckers: Set<CfirPropertyAccessChecker> = emptySet()
+    open val namedAccessCheckers: Set<CfirNamedAccessChecker> = emptySet()
     open val qualifiedAccessCheckers: Set<CfirQualifiedAccessChecker> = emptySet()
     open val assignmentCheckers: Set<CfirAssignmentChecker> = emptySet()
     open val binaryOpCheckers: Set<CfirBinaryOpChecker> = emptySet()
@@ -36,8 +36,8 @@ abstract class ExpressionCheckers {
 
     @CheckersComponentInternal internal val allBasicExpressionCheckers: Array<CfirBasicExpressionChecker> by lazy { basicExpressionCheckers.toTypedArray() }
     @CheckersComponentInternal internal val allLiteralExpressionCheckers: Array<CfirLiteralExpressionChecker> by lazy { (literalExpressionCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirLiteralExpressionChecker> }
-    @CheckersComponentInternal internal val allFunctionCallCheckers: Array<CfirFunctionCallChecker> by lazy { (functionCallCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirFunctionCallChecker> }
-    @CheckersComponentInternal internal val allPropertyAccessCheckers: Array<CfirPropertyAccessChecker> by lazy { (propertyAccessCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirPropertyAccessChecker> }
+    @CheckersComponentInternal internal val allFunctionCallCheckers: Array<CfirFunctionCallChecker> by lazy { (functionCallCheckers + qualifiedAccessCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirFunctionCallChecker> }
+    @CheckersComponentInternal internal val allNamedAccessCheckers: Array<CfirNamedAccessChecker> by lazy { (namedAccessCheckers + qualifiedAccessCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirNamedAccessChecker> }
     @CheckersComponentInternal internal val allQualifiedAccessCheckers: Array<CfirQualifiedAccessChecker> by lazy { (qualifiedAccessCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirQualifiedAccessChecker> }
     @CheckersComponentInternal internal val allAssignmentCheckers: Array<CfirAssignmentChecker> by lazy { (assignmentCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirAssignmentChecker> }
     @CheckersComponentInternal internal val allBinaryOpCheckers: Array<CfirBinaryOpChecker> by lazy { (binaryOpCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirBinaryOpChecker> }

@@ -16,8 +16,17 @@ import org.cangnova.cangjie.cfir.types.*
  */
 abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
+    override fun visitWrappedExpression(wrappedExpression: CfirWrappedExpression, data: D): R =
+        visitExpression(wrappedExpression, data)
+
     override fun visitResolvedImport(resolvedImport: CfirResolvedImport, data: D): R =
         visitImport(resolvedImport, data)
+
+    override fun visitAnnotation(annotation: CfirAnnotation, data: D): R =
+        visitExpression(annotation, data)
+
+    override fun visitStatement(statement: CfirStatement, data: D): R =
+        visitAnnotationContainer(statement, data)
 
     override fun visitCallableDeclaration(callableDeclaration: CfirCallableDeclaration, data: D): R =
         visitMemberDeclaration(callableDeclaration, data)
@@ -88,8 +97,14 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase, data: D): R =
         visitNamedReference(namedReferenceWithCandidateBase, data)
 
+    override fun visitCall(call: CfirCall, data: D): R =
+        visitStatement(call, data)
+
     override fun visitThisReference(thisReference: CfirThisReference, data: D): R =
         visitReference(thisReference, data)
+
+    override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression, data: D): R =
+        visitQualifiedAccessExpression(namedAccessExpression, data)
 
     override fun visitAssignment(assignment: CfirAssignment, data: D): R =
         visitExpression(assignment, data)
@@ -193,11 +208,17 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitTypePattern(typePattern: CfirTypePattern, data: D): R =
         visitPattern(typePattern, data)
 
+    override fun visitTypeRef(typeRef: CfirTypeRef, data: D): R =
+        visitAnnotationContainer(typeRef, data)
+
     override fun visitResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef, data: D): R =
         visitTypeRef(resolvedTypeRef, data)
 
+    override fun visitUnresolvedTypeRef(unresolvedTypeRef: CfirUnresolvedTypeRef, data: D): R =
+        visitTypeRef(unresolvedTypeRef, data)
+
     override fun visitUserTypeRef(userTypeRef: CfirUserTypeRef, data: D): R =
-        visitTypeRef(userTypeRef, data)
+        visitUnresolvedTypeRef(userTypeRef, data)
 
     override fun visitBasicTypeRef(basicTypeRef: CfirBasicTypeRef, data: D): R =
         visitTypeRef(basicTypeRef, data)

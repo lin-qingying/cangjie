@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import org.cangnova.cangjie.resolve.calls.CommonSuperTypeCalculator
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.model.supertypes
 
@@ -111,4 +112,14 @@ private fun ConeTypeParameterLookupTag.collectUpperBounds(): List<ConeCangJieTyp
 
 private inline fun ConeTypeParameterLookupTag.collectUpperBoundsTo(collect: (ConeCangJieType) -> Unit) {
     collectUpperBounds().forEach(collect)
+}
+
+fun ConeInferenceContext.commonSuperTypeOrNull(types: List<ConeCangJieType>): ConeCangJieType? {
+    return when (types.size) {
+        0 -> null
+        1 -> types.first()
+        else -> with(CommonSuperTypeCalculator) {
+            commonSuperType(types).asCone()
+        }
+    }
 }

@@ -1,8 +1,8 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.body
 
+import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.declarations.impl.CfirFieldVariableImpl
-import org.cangnova.cangjie.cfir.declarations.impl.CfirPatternVariableImpl
+import org.cangnova.cangjie.cfir.declarations.impl.CfirInterfaceImpl
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -13,10 +13,8 @@ import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.*
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.session.builtinTypes
-import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
@@ -30,7 +28,6 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
-import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
@@ -57,35 +54,62 @@ class CfirDeclarationsResolveTransformer(
             val importScopes = createImportingScopes(file)
             context.addNonLocalScopes(importScopes)
 
-            (file as? org.cangnova.cangjie.cfir.declarations.impl.CfirFileImpl)?.declarations = file.declarations.map { decl ->
-                decl.transform<CfirDeclaration, ResolutionMode>(transformer, ResolutionMode.ContextIndependent)
-            }
+            file.transformDeclarations(transformer, ResolutionMode.ContextIndependent)
         }
         context.replaceTowerDataContext(savedContext)
         return file
     }
 
     override fun transformClass(klass: CfirClass, data: ResolutionMode): CfirClass {
+        return transformClassLikeDeclaration(klass)
+    }
+
+    override fun transformInterface(`interface`: CfirInterface, data: ResolutionMode): CfirInterface {
+        return transformClassLikeDeclaration(`interface`)
+    }
+
+    override fun transformStruct(struct: CfirStruct, data: ResolutionMode): CfirStruct {
+        return transformClassLikeDeclaration(struct)
+    }
+
+    override fun transformEnum(enum: CfirEnum, data: ResolutionMode): CfirEnum {
+        return transformClassLikeDeclaration(enum)
+    }
+
+    private fun <T : CfirClassLikeDeclaration> transformClassLikeDeclaration(classLike: T): T {
         val savedContext = context.towerDataContext
 
-        context.withContainer(klass) {
-            if (klass.typeParameters.isNotEmpty()) {
-                context.addNonLocalScope(CfirTypeParameterScopeImpl(klass.typeParameters))
+        context.withContainer(classLike) {
+            val resolveDeclarations = {
+                classLike.transformDeclarations(transformer, ResolutionMode.ContextIndependent)
+
+                if (classLike is CfirInterfaceImpl) {
+                    val declarations = classLike.declarations
+                    classLike.properties.apply {
+                        clear()
+                        addAll(declarations.filterIsInstance<CfirProperty>())
+                    }
+                    classLike.functions.apply {
+                        clear()
+                        addAll(declarations.filterIsInstance<CfirFunction>())
+                    }
+                }
             }
 
-            val classSymbol = klass.symbol as? CfirClassSymbol
-            if (classSymbol != null) {
-                context.addNonLocalScope(CfirClassUseSiteMemberScope(classSymbol, session.symbolProvider, session.extendProvider))
-            }
+            when (classLike) {
+                is CfirClass -> {
+                    context.withContainingClass(classLike) {
+                        context.withScopesForClass(classLike, components, resolveDeclarations)
+                    }
+                }
 
-            (klass as? org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl)?.declarations = klass.declarations.map { decl ->
-                decl.transform<CfirDeclaration, ResolutionMode>(transformer, ResolutionMode.ContextIndependent)
+                else -> context.withScopesForClass(classLike, components, resolveDeclarations)
             }
         }
 
         context.replaceTowerDataContext(savedContext)
-        bumpPhase(klass)
-        return klass
+        bumpPhase(classLike)
+        return classLike
     }
 
     override fun transformFunction(function: CfirFunction, data: ResolutionMode): CfirFunction {
@@ -117,11 +141,7 @@ class CfirDeclarationsResolveTransformer(
                 val bodyType = function.body?.coneTypeOrNull ?: session.builtinTypes.unitType
                 val resolvedType = IdealTypeResolver.resolveIfIdeal(bodyType)
                 function.replaceReturnTypeRef(
-                    buildResolvedTypeRef {
-                        source = function.returnTypeRef.source
-                        coneType = resolvedType
-                        delegatedTypeRef = function.returnTypeRef
-                    },
+                    function.returnTypeRef.resolvedTypeFromPrototype(resolvedType, function.returnTypeRef.source),
                 )
             }
         }
@@ -145,15 +165,11 @@ class CfirDeclarationsResolveTransformer(
 
             val returnTypeRef = constructor.returnTypeRef
             if (returnTypeRef is CfirImplicitTypeRef) {
-                val ownerClass = context.containers.filterIsInstance<CfirClass>().lastOrNull()
+                val ownerClass = context.containers.filterIsInstance<CfirClassLikeDeclaration>().lastOrNull()
                 val ownerType = ownerClass?.let(::buildConstructedTypeForClass)
                     ?: ConeErrorType(ConeSimpleDiagnostic("constructor has no owning class"))
                 constructor.replaceReturnTypeRef(
-                    buildResolvedTypeRef {
-                        source = returnTypeRef.source
-                        coneType = ownerType
-                        delegatedTypeRef = returnTypeRef
-                    },
+                    returnTypeRef.resolvedTypeFromPrototype(ownerType, returnTypeRef.source),
                 )
             } else {
                 constructor.replaceReturnTypeRef(resolveExplicitTypeRefIfNeeded(returnTypeRef, constructor.typeParameters))
@@ -168,8 +184,7 @@ class CfirDeclarationsResolveTransformer(
 
             val body = constructor.body
             if (body != null) {
-                (constructor as? org.cangnova.cangjie.cfir.declarations.impl.CfirConstructorImpl)?.body =
-                    body.transform<CfirBlock, ResolutionMode>(transformer, ResolutionMode.ContextIndependent)
+                constructor.transformBody(transformer, ResolutionMode.ContextIndependent)
             }
         }
 
@@ -235,8 +250,7 @@ class CfirDeclarationsResolveTransformer(
 
         val initializer = fieldVariable.initializer
         if (initializer != null) {
-            (fieldVariable as? CfirFieldVariableImpl)?.initializer =
-                initializer.transform<CfirExpression, ResolutionMode>(transformer, initializerMode)
+            fieldVariable.transformInitializer(transformer, initializerMode)
         }
 
         if (fieldVariable.returnTypeRef is CfirImplicitTypeRef) {
@@ -244,11 +258,10 @@ class CfirDeclarationsResolveTransformer(
             if (initType != null) {
                 val resolvedType = IdealTypeResolver.resolveIfIdeal(initType)
                 fieldVariable.replaceReturnTypeRef(
-                    buildResolvedTypeRef {
-                        source = fieldVariable.returnTypeRef.source
-                        coneType = resolvedType
-                        delegatedTypeRef = fieldVariable.returnTypeRef
-                    },
+                    fieldVariable.returnTypeRef.resolvedTypeFromPrototype(
+                        resolvedType,
+                        fieldVariable.returnTypeRef.source,
+                    ),
                 )
             }
         }
@@ -292,8 +305,7 @@ class CfirDeclarationsResolveTransformer(
 
         val initializer = patternVariable.initializer
         if (initializer != null) {
-            (patternVariable as? CfirPatternVariableImpl)?.initializer =
-                initializer.transform<CfirExpression, ResolutionMode>(transformer, initializerMode)
+            patternVariable.transformInitializer(transformer, initializerMode)
         }
 
         if (patternVariable.returnTypeRef is CfirImplicitTypeRef) {
@@ -301,11 +313,10 @@ class CfirDeclarationsResolveTransformer(
             if (initType != null) {
                 val resolvedType = IdealTypeResolver.resolveIfIdeal(initType)
                 patternVariable.replaceReturnTypeRef(
-                    buildResolvedTypeRef {
-                        source = patternVariable.returnTypeRef.source
-                        coneType = resolvedType
-                        delegatedTypeRef = patternVariable.returnTypeRef
-                    },
+                    patternVariable.returnTypeRef.resolvedTypeFromPrototype(
+                        resolvedType,
+                        patternVariable.returnTypeRef.source,
+                    ),
                 )
             }
         }
@@ -402,7 +413,9 @@ class CfirDeclarationsResolveTransformer(
     private fun extractTypeParameters(declaration: CfirDeclaration): List<CfirTypeParameter> {
         return when (declaration) {
             is CfirClass -> declaration.typeParameters
-            is CfirFunction -> declaration.typeParameters
+            is CfirInterface -> declaration.typeParameters
+            is CfirStruct -> declaration.typeParameters
+            is CfirEnum -> declaration.typeParameters
             is CfirConstructor -> declaration.typeParameters
             is CfirProperty -> declaration.typeParameters
             is CfirFieldVariable -> declaration.typeParameters
@@ -413,6 +426,8 @@ class CfirDeclarationsResolveTransformer(
             is CfirMacroDeclaration -> declaration.typeParameters
             is CfirMainFunction -> declaration.typeParameters
             is CfirFinalizer -> declaration.typeParameters
+            is CfirFunction -> declaration.typeParameters
+
             is CfirEnumConstructor -> declaration.typeParameters
             else -> emptyList()
         }
@@ -426,7 +441,7 @@ class CfirDeclarationsResolveTransformer(
         }
     }
 
-    private fun resolveClassId(klass: CfirClass): ClassId? {
+    private fun resolveClassId(klass: CfirClassLikeDeclaration): ClassId? {
         val packageFqName = try {
             context.file.packageDirective.packageFqName
         } catch (_: UninitializedPropertyAccessException) {
@@ -440,7 +455,7 @@ class CfirDeclarationsResolveTransformer(
         return classIdForClassNesting(packageFqName, classNesting) ?: ClassId(packageFqName, klass.name)
     }
 
-    private fun buildConstructedTypeForClass(klass: CfirClass): ConeCangJieType {
+    private fun buildConstructedTypeForClass(klass: CfirClassLikeDeclaration): ConeCangJieType {
         val classId = resolveClassId(klass)
             ?: return ConeErrorType(ConeSimpleDiagnostic("cannot resolve class id for constructor owner"))
         val typeArguments = klass.typeParameters.map { parameter ->

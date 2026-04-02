@@ -31,5 +31,5 @@ abstract class AbstractDiagnosticCollector(
     protected abstract fun createVisitor(
         components: DiagnosticCollectorComponents,
         reporter: PendingDiagnosticReporter,
-    ): CfirCheckerRunningDiagnosticCollectorVisitor
+    ): CheckerRunningDiagnosticCollectorVisitor
 }

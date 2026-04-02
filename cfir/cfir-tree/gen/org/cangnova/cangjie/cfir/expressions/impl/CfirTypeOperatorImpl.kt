@@ -8,7 +8,9 @@
 package org.cangnova.cangjie.cfir.expressions.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTypeOperationKind
 import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
@@ -16,11 +18,12 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirTypeOperatorImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
-    override var annotations: List<CfirAnnotation>,
+    override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
     override val operation: CfirTypeOperationKind,
     override var argument: CfirExpression,
@@ -33,38 +36,33 @@ class CfirTypeOperatorImpl @CfirImplementationDetail constructor(
         typeRef.accept(visitor, data)
     }
 
-    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-     {
-        this.annotations = newAnnotations
-    }
-
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
-     {
-        this.coneTypeOrNull = newConeTypeOrNull
-    }
-
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirTypeOperator
-     {
-        this.annotations = annotations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnnotation }
-        return this
-    }
-
-    override fun <D> transformArgument(transformer: CfirTransformer<D>, data: D): CfirTypeOperator
-     {
-        this.argument = argument.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression
-        return this
-    }
-
-    override fun <D> transformTypeRef(transformer: CfirTransformer<D>, data: D): CfirTypeOperator
-     {
-        this.typeRef = typeRef.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirTypeRef
-        return this
-    }
-
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirTypeOperatorImpl {
         transformAnnotations(transformer, data)
         transformArgument(transformer, data)
         transformTypeRef(transformer, data)
         return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirTypeOperatorImpl {
+        annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformArgument(transformer: CfirTransformer<D>, data: D): CfirTypeOperatorImpl {
+        argument = argument.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformTypeRef(transformer: CfirTransformer<D>, data: D): CfirTypeOperatorImpl {
+        typeRef = typeRef.transform(transformer, data)
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
+        annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
+        coneTypeOrNull = newConeTypeOrNull
     }
 }

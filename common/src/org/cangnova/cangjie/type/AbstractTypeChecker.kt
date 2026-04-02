@@ -320,7 +320,9 @@ object AbstractTypeChecker {
 
         ctx.fastCorrespondingSupertypes(subType, superConstructor)?.let { return it }
 
-        if (!ctx.isClassTypeConstructor(superConstructor) && ctx.isClassType(subType)) return emptyList()
+        if (!ctx.isClassTypeConstructor(superConstructor) && !ctx.isInterface(superConstructor) && ctx.isClassType(subType)) {
+            return emptyList()
+        }
 
         if (ctx.isCommonFinalClassConstructor(superConstructor)) {
             return if (ctx.areEqualTypeConstructors(ctx.typeConstructor(subType), superConstructor)) {
@@ -403,6 +405,9 @@ private fun TypeSystemContext.getUpperBound(param: TypeParameterMarker, index: I
 
 /** 桥接 [TypeSystemContext.isClassTypeConstructor] */
 private fun TypeSystemContext.isClassTypeConstructor(ctor: TypeConstructorMarker): Boolean = ctor.isClassTypeConstructor()
+
+/** 桥接 [TypeSystemContext.isInterface] */
+private fun TypeSystemContext.isInterface(ctor: TypeConstructorMarker): Boolean = ctor.isInterface()
 
 /** 桥接 [TypeSystemContext.isClassType] */
 private fun TypeSystemContext.isClassType(type: RigidTypeMarker): Boolean = type.isClassType()

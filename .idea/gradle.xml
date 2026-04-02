@@ -78,6 +78,11 @@
             <option value="$PROJECT_DIR$/llvm-interop" />
             <option value="$PROJECT_DIR$/llvm-interop/llvm-interop-api" />
             <option value="$PROJECT_DIR$/llvm-interop/llvm-interop-jni" />
+            <option value="$PROJECT_DIR$/lsp" />
+            <option value="$PROJECT_DIR$/macro" />
+            <option value="$PROJECT_DIR$/macro/macro-common" />
+            <option value="$PROJECT_DIR$/macro/macro-process" />
+            <option value="$PROJECT_DIR$/macro/macro-stub" />
             <option value="$PROJECT_DIR$/psi" />
             <option value="$PROJECT_DIR$/repo/gradle-build-conventions" />
             <option value="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat" />

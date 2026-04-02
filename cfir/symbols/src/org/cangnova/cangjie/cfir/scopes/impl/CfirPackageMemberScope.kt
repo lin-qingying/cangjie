@@ -1,10 +1,11 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.FqName
@@ -28,10 +29,15 @@ class CfirPackageMemberScope(
     private val functionCache = HashMap<Name, List<CfirFunctionSymbol<*>>>()
     private val propertyCache = HashMap<Name, List<CfirPropertySymbol>>()
 
+    override fun getCallableNames(): Set<Name> =
+        symbolProvider.symbolNamesProvider.getTopLevelCallableNamesInPackage(packageFqName).orEmpty()
+
+    override fun getClassifierNames(): Set<Name> =
+        symbolProvider.symbolNamesProvider.getTopLevelClassifierNamesInPackage(packageFqName).orEmpty()
+
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         val symbols = classifierCache.getOrPut(name) {
-            val classId = org.cangnova.cangjie.name.ClassId(packageFqName, FqName.topLevel(name))
-            listOfNotNull(symbolProvider.getClassLikeSymbolByClassId(classId))
+            symbolProvider.getTopLevelClassifierSymbols(packageFqName, name)
         }
         symbols.forEach(processor)
     }
@@ -56,4 +62,11 @@ class CfirPackageMemberScope(
         }
         symbols.forEach(processor)
     }
+
+    override fun withReplacedSessionOrNull(
+        newSession: CfirSession,
+        newScopeSession: ScopeSession,
+    ): CfirPackageScope? = null
+
+    override fun toString(): String = "Use site scope of /$packageFqName"
 }

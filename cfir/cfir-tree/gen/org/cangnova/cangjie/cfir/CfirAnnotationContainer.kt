@@ -5,7 +5,7 @@
 
 package org.cangnova.cangjie.cfir
 
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -26,7 +26,5 @@ interface CfirAnnotationContainer : CfirElement {
 
     fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
-
     fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirAnnotationContainer
-
 }

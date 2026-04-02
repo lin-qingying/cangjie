@@ -6,7 +6,6 @@
 package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -28,15 +27,11 @@ abstract class CfirLazyBlock : CfirBlock() {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformLazyBlock(this, data) as E
 
-    override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+    abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
+    abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
 
-    override abstract fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirLazyBlock
 
-
-    override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirLazyBlock
-
-
-    override abstract fun <D> transformStatements(transformer: CfirTransformer<D>, data: D): CfirLazyBlock
-
+    abstract override fun <D> transformStatements(transformer: CfirTransformer<D>, data: D): CfirLazyBlock
 }

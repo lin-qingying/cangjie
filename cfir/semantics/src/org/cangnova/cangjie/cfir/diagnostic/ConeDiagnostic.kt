@@ -83,10 +83,13 @@ class ConeVisibilityError(
     override val reason: String get() = "Cannot access: ${describeSymbol(symbol)}"
 }
 
+
+
 data class ConeUnresolvedNameError(
     val name: Name,
     val operator: String? = null,
     val receiverType: ConeCangJieType? = null,
+    val argumentTypes: List<ConeCangJieType> = emptyList(),
 ) : ConeUnresolvedError {
     override val reason: String = buildString {
         append("unresolved name: ")
@@ -98,6 +101,10 @@ data class ConeUnresolvedNameError(
         if (receiverType != null) {
             append(", receiver=")
             append(receiverType)
+        }
+        if (argumentTypes.isNotEmpty()) {
+            append(", arguments=")
+            append(argumentTypes.joinToString(prefix = "[", postfix = "]"))
         }
     }
 }
@@ -175,3 +182,17 @@ class ConeCannotInferValueParameterType(
 
 
 
+class ConeTypeParameterInQualifiedAccess(val symbol: CfirTypeParameterSymbol) : ConeDiagnostic {
+    override val reason: String get() = "Type parameter ${symbol.cfir.name} in qualified access"
+}
+
+/**
+ * 变量已解析但其类型上没有匹配的 invoke 操作符。
+ * 例如 `a()` 中 a 是类型 C 的变量，但 C 未定义 `operator func ()()`。
+ */
+data class ConeNoMatchingInvokeOperatorError(
+    val name: Name,
+    val receiverType: ConeCangJieType,
+) : ConeDiagnostic {
+    override val reason: String get() = "no matching operator '()' for type $receiverType"
+}

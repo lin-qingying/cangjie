@@ -4,14 +4,17 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.toCfirDiagnostics
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
 import org.cangnova.cangjie.cfir.references.CfirErrorReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -29,6 +32,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
 import org.cangnova.cangjie.cfir.expressions.toReference
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
+import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.renderForDebugging
@@ -69,6 +73,20 @@ class ErrorNodeDiagnosticCollectorComponent(
 
     override fun visitErrorNamedReference(errorNamedReference: CfirErrorNamedReference, data: CheckerContext) {
         processErrorReference(errorNamedReference, errorNamedReference.diagnostic, data)
+    }
+
+    override fun visitNamedReferenceWithCandidateBase(
+        namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase,
+        data: CheckerContext,
+    ) {
+        val diagnosticHolder = namedReferenceWithCandidateBase as? CfirDiagnosticHolder
+        if (diagnosticHolder != null) {
+            processErrorReference(
+                namedReferenceWithCandidateBase,
+                diagnosticHolder.diagnostic,
+                data,
+            )
+        }
     }
 
 
@@ -120,6 +138,16 @@ class ErrorNodeDiagnosticCollectorComponent(
         return
     }
 
+    override fun visitComparisonExpression(comparisonExpression: CfirComparisonExpression, data: CheckerContext) {
+        val source = comparisonExpression.source as? CjSourceElement ?: return
+        processConeTypeDiagnostic(comparisonExpression, comparisonExpression.coneTypeOrNull, source, data)
+    }
+
+    override fun visitSubscriptExpression(subscriptExpression: CfirSubscriptExpression, data: CheckerContext) {
+        val source = subscriptExpression.source as? CjSourceElement ?: return
+        processConeTypeDiagnostic(subscriptExpression, subscriptExpression.coneTypeOrNull, source, data)
+    }
+
 
 
     // ── 错误引用处理 ──────────────────────────────────────────────────────────
@@ -145,7 +173,7 @@ class ErrorNodeDiagnosticCollectorComponent(
         ) return
 
         // If the receiver cannot be resolved, we skip reporting any further problems for this call.
-        if (callOrAssignment is CfirQualifiedAccess) {
+        if (callOrAssignment is CfirQualifiedAccessExpression) {
             if (callOrAssignment.dispatchReceiver.cannotBeResolved() ||
 //                callOrAssignment.extensionReceiver.cannotBeResolved() ||
                 callOrAssignment.explicitReceiver.cannotBeResolved()
@@ -196,8 +224,8 @@ class ErrorNodeDiagnosticCollectorComponent(
     private fun findOwningCallOrAssignment(owner: CfirElement, context: CheckerContext): CfirElement? {
         return when (owner) {
             is CfirFunctionCall,
-            is CfirPropertyAccess,
-            is CfirQualifiedAccess,
+            is CfirNamedAccessExpression,
+            is CfirQualifiedAccessExpression,
             is CfirAssignment -> owner   // 节点本身就是调用/赋值，直接作为宿主
             else -> context.callsOrAssignments.lastOrNull()  // 从上下文栈中取最近宿主
         }
@@ -249,8 +277,8 @@ class ErrorNodeDiagnosticCollectorComponent(
      */
     private fun CfirElement.toReferenceOrNull(): CfirReference? = when (this) {
         is CfirFunctionCall   -> calleeReference
-        is CfirPropertyAccess -> calleeReference
-        is CfirQualifiedAccess -> calleeReference
+        is CfirNamedAccessExpression -> calleeReference
+        is CfirQualifiedAccessExpression -> calleeReference
         is CfirAssignment     -> lValue.toReferenceOrNull()
         else                  -> null
     }
@@ -264,8 +292,8 @@ class ErrorNodeDiagnosticCollectorComponent(
     private fun CfirExpression.hasUnresolvedReceiver(): Boolean {
         val receiver = when (this) {
             is CfirFunctionCall   -> explicitReceiver
-            is CfirPropertyAccess -> explicitReceiver
-            is CfirQualifiedAccess -> explicitReceiver
+            is CfirNamedAccessExpression -> explicitReceiver
+            is CfirQualifiedAccessExpression -> explicitReceiver
             else                  -> null
         }
         return receiver.cannotBeResolved()

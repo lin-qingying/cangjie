@@ -200,12 +200,12 @@ private class CfirDefaultInlineExpressionRenderer(
             CfirLiteralKind.STRING -> "\"${expression.value}\""
             else -> "${expression.value}"
         }
+        is CfirFunctionCall -> "${referenceRenderer.render(expression.calleeReference)}(${expression.argumentList.arguments.joinToString { argument -> render(argument) }})"
 
-        is CfirQualifiedAccess -> referenceRenderer.render(expression.calleeReference)
-        is CfirPropertyAccess -> referenceRenderer.render(expression.calleeReference)
+        is CfirNamedAccessExpression -> referenceRenderer.render(expression.calleeReference)
+        is CfirQualifiedAccessExpression -> referenceRenderer.render(expression.calleeReference)
         is CfirComparisonExpression -> "${render(expression.left)} ${expression.operation.symbol} ${render(expression.right)}"
         is CfirBinaryOp -> "${render(expression.left)} ${expression.kind.symbol} ${render(expression.right)}"
-        is CfirFunctionCall -> "${referenceRenderer.render(expression.calleeReference)}(${expression.arguments.joinToString { render(it) }})"
         else -> "<expr>"
     }
 }
@@ -460,7 +460,7 @@ class CfirRenderer(
                 "<${function.typeParameters.joinToString { it.name.asString() }}>"
             } else ""
             val params = function.valueParameters.joinToString {
-                "${it.name.asString()}: ${renderType(it.returnTypeRef)}"
+                "${it.name.asString()}${if(it.isNamed) "!" else ""}: ${renderType(it.returnTypeRef)}"
             }
             val functionName = when (function) {
                 is CfirNamedFunction -> function.name.asString()
@@ -615,24 +615,27 @@ class CfirRenderer(
                 it.accept(this )
                 printer.popIndent()
             }
-            if (call.arguments.isNotEmpty()) {
+            val arguments = call.argumentList.arguments
+            if (arguments.isNotEmpty()) {
                 if (call.explicitReceiver != null) {
                     println("arguments:")
                     printer.pushIndent()
-                    call.arguments.forEach { argument -> argument.accept(this ) }
+                    arguments.forEach { argument -> argument.accept(this ) }
                     printer.popIndent()
                 } else {
-                    call.arguments.forEach { it.accept(this ) }
+                    arguments.forEach { argument -> argument.accept(this ) }
                 }
             }
             printer.popIndent()
             println("}")
         }
-
-        override fun visitPropertyAccess(access: CfirPropertyAccess ) {
+        override fun visitNamedFunction(namedFunction: CfirNamedFunction) {
+            visitFunction(namedFunction)
+        }
+        override fun visitNamedAccessExpression(access: CfirNamedAccessExpression ) {
             val ref = renderReference(access.calleeReference)
             if (access.explicitReceiver != null) {
-                println("PROPERTY_ACCESS($ref) {")
+                println("NAMED_ACCESS($ref) {")
                 printer.pushIndent()
                 println("receiver:")
                 printer.pushIndent()
@@ -641,11 +644,11 @@ class CfirRenderer(
                 printer.popIndent()
                 println("}")
             } else {
-                println("PROPERTY_ACCESS($ref)")
+                println("NAMED_ACCESS($ref)")
             }
         }
 
-        override fun visitQualifiedAccess(access: CfirQualifiedAccess ) {
+        override fun visitQualifiedAccessExpression(access: CfirQualifiedAccessExpression ) {
             val ref = renderReference(access.calleeReference)
             if (access.explicitReceiver != null) {
                 println("QUALIFIED_ACCESS($ref) {")

@@ -1,6 +1,5 @@
 package org.cangnova.cangjie.cfir.resolve
 
-import org.cangnova.cangjie.cfir.CfirResolvable
 import org.cangnova.cangjie.cfir.diagnostic.ConeHiddenCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
@@ -16,7 +15,12 @@ import org.cangnova.cangjie.cfir.references.CfirThisReference
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedErrorReference
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
+import org.cangnova.cangjie.cfir.expressions.CfirResolvable
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -27,11 +31,13 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirErrorFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirErrorNamedValueSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeFuncType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
@@ -54,7 +60,14 @@ fun BodyResolveComponents.typeFromCallee(calleeReference: CfirReference): ConeCa
         }
 
         is CfirNamedReferenceWithCandidate -> {
-            typeFromSymbol(calleeReference.candidateSymbol)
+            val candidate = calleeReference.candidate
+            if (candidate.symbol.cfir is CfirEnumConstructor) {
+                return candidate.substitutedReturnType()
+            }
+            when (candidate.callInfo.callKind) {
+                CallKind.NamedValueAccess -> typeFromNamedValueCandidate(candidate)
+                else -> typeFromSymbol(candidate.symbol)
+            }
         }
 
         is CfirResolvedNamedReference -> {
@@ -80,6 +93,28 @@ fun BodyResolveComponents.typeFromCallee(calleeReference: CfirReference): ConeCa
             withCfirEntry("reference", calleeReference)
         }
     }
+}
+
+private fun BodyResolveComponents.typeFromNamedValueCandidate(candidate: Candidate): ConeCangJieType {
+    val declaration = candidate.symbol.cfir
+    if (declaration !is CfirFunction) {
+        if (declaration is CfirEnumConstructor) {
+            return candidate.substitutedReturnType()
+        }
+        return typeFromSymbol(candidate.symbol)
+    }
+
+    val parameterTypes = declaration.valueParameters.map { parameter ->
+        val resolvedType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+            ?: return ConeErrorType(ConeSimpleDiagnostic("Unresolved function parameter type", DiagnosticKind.Other))
+        runCatching { candidate.substitutor.substituteOrSelf(resolvedType) }.getOrDefault(resolvedType)
+    }
+
+    val returnType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+        ?: return ConeErrorType(ConeSimpleDiagnostic("Unresolved function return type", DiagnosticKind.Other))
+    val substitutedReturnType = runCatching { candidate.substitutor.substituteOrSelf(returnType) }.getOrDefault(returnType)
+
+    return ConeFuncType(parameterTypes, substitutedReturnType)
 }
 
 private fun BodyResolveComponents.typeFromSymbol(symbol: CfirSymbol<*>): ConeCangJieType {
@@ -140,15 +175,17 @@ fun CfirTypeAliasSymbol.fullyExpandedClass(session: CfirSession): CfirClassLikeS
 
 fun CfirNamedReferenceWithCandidate.toErrorReference(diagnostic: ConeDiagnostic): CfirNamedReference {
     val calleeReference = this
+    val errorSource = calleeReference.source ?: calleeReference.candidate.callInfo.callSite.source
     return when (calleeReference.candidateSymbol) {
-        is CfirErrorFunctionSymbol -> buildErrorNamedReference {
-            source = calleeReference.source
+        is CfirErrorFunctionSymbol,
+        is CfirErrorNamedValueSymbol -> buildErrorNamedReference {
+            source = errorSource
             name = calleeReference.name
             this.diagnostic = diagnostic
         }
 
         else -> buildResolvedErrorReference {
-            source = calleeReference.source
+            source = errorSource
             name = calleeReference.name
             resolvedSymbol = calleeReference.candidateSymbol
             this.diagnostic = diagnostic

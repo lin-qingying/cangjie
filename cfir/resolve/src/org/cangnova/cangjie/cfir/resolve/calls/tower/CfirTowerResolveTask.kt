@@ -128,7 +128,7 @@ internal open class CfirTowerResolveTask(
                     DispatchReceiverMemberScopeTowerLevel(components, receiver),
                     info,
                     group,
-                    explicitReceiverKind = ExplicitReceiverKind.DISPATCH_RECEIVER,
+                    explicitReceiverKind = ExplicitReceiverKind.NO_EXPLICIT_RECEIVER,
                 )
             },
         )

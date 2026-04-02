@@ -14,8 +14,8 @@ class CliDiagnosticsCollector(
     override fun createVisitor(
         components: DiagnosticCollectorComponents,
         reporter: PendingDiagnosticReporter,
-    ): CfirCheckerRunningDiagnosticCollectorVisitor {
-        return CfirCheckerRunningDiagnosticCollectorVisitor(
+    ): CheckerRunningDiagnosticCollectorVisitor {
+        return CheckerRunningDiagnosticCollectorVisitor(
             MutableCheckerContext(
                 sessionHolder = this,
                 returnTypeCalculator = ReturnTypeCalculatorForFullBodyResolve.Default,

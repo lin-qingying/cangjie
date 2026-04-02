@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostic.WrongArgumentCount
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
@@ -18,7 +19,14 @@ object CfirMapArguments : ResolutionStage() {
         val argumentAtoms = candidate.callInfo.arguments.map(ConeResolutionAtom::createRawAtom)
 
         when (candidate.callInfo.callKind) {
-            CallKind.VariableAccess -> mapVariableAccessArguments(candidate, argumentAtoms)
+            CallKind.NamedValueAccess -> {
+                val declaration = candidate.symbol.takeIf { it.isBound }?.cfir
+                if (declaration is CfirEnumConstructor) {
+                    mapCallableArguments(candidate, argumentAtoms)
+                } else {
+                    mapVariableAccessArguments(candidate, argumentAtoms)
+                }
+            }
             CallKind.Function,
             CallKind.EnumConstructorCall,
             -> mapCallableArguments(candidate, argumentAtoms)

@@ -35,6 +35,8 @@ internal class CfirSuperTypeChecker(
             val key = superTypeRef.renderStableKey()
             val resolvedClass = resolver.resolveClass(superTypeRef)
             graphEdges += CfirSuperTypeGraphEdge(
+                typeRef = superTypeRef as? org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+                    ?: continue,
                 renderedType = key,
                 resolvedClassSymbol = resolvedClass?.symbol as? CfirClassSymbol,
             )

@@ -8,21 +8,24 @@
 package org.cangnova.cangjie.cfir.expressions.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirCatch
 import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirTryExpressionImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
-    override var annotations: List<CfirAnnotation>,
+    override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
     override var tryBlock: CfirBlock,
-    override var catches: List<CfirCatch>,
+    override val catches: MutableList<CfirCatch>,
     override var finallyBlock: CfirBlock?,
 ) : CfirTryExpression() {
 
@@ -33,45 +36,39 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
         finallyBlock?.accept(visitor, data)
     }
 
-    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-     {
-        this.annotations = newAnnotations
-    }
-
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
-     {
-        this.coneTypeOrNull = newConeTypeOrNull
-    }
-
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirTryExpression
-     {
-        this.annotations = annotations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnnotation }
-        return this
-    }
-
-    override fun <D> transformTryBlock(transformer: CfirTransformer<D>, data: D): CfirTryExpression
-     {
-        this.tryBlock = tryBlock.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirBlock
-        return this
-    }
-
-    override fun <D> transformCatches(transformer: CfirTransformer<D>, data: D): CfirTryExpression
-     {
-        this.catches = catches.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirCatch }
-        return this
-    }
-
-    override fun <D> transformFinallyBlock(transformer: CfirTransformer<D>, data: D): CfirTryExpression
-     {
-        this.finallyBlock = finallyBlock?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirBlock?
-        return this
-    }
-
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirTryExpressionImpl {
         transformAnnotations(transformer, data)
         transformTryBlock(transformer, data)
         transformCatches(transformer, data)
         transformFinallyBlock(transformer, data)
         return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirTryExpressionImpl {
+        annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformTryBlock(transformer: CfirTransformer<D>, data: D): CfirTryExpressionImpl {
+        tryBlock = tryBlock.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformCatches(transformer: CfirTransformer<D>, data: D): CfirTryExpressionImpl {
+        catches.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformFinallyBlock(transformer: CfirTransformer<D>, data: D): CfirTryExpressionImpl {
+        finallyBlock = finallyBlock?.transform(transformer, data)
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
+        annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
+        coneTypeOrNull = newConeTypeOrNull
     }
 }

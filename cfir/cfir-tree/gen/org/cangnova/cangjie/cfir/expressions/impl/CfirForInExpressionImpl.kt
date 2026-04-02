@@ -8,19 +8,22 @@
 package org.cangnova.cangjie.cfir.expressions.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirForInExpressionImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
-    override var annotations: List<CfirAnnotation>,
+    override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
     override var condition: CfirExpression,
     override val isDoWhile: Boolean,
@@ -37,46 +40,6 @@ class CfirForInExpressionImpl @CfirImplementationDetail constructor(
         body.accept(visitor, data)
     }
 
-    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-     {
-        this.annotations = newAnnotations
-    }
-
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
-     {
-        this.coneTypeOrNull = newConeTypeOrNull
-    }
-
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirForInExpression
-     {
-        this.annotations = annotations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnnotation }
-        return this
-    }
-
-    override fun <D> transformCondition(transformer: CfirTransformer<D>, data: D): CfirForInExpression
-     {
-        this.condition = condition.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression
-        return this
-    }
-
-    override fun <D> transformVariable(transformer: CfirTransformer<D>, data: D): CfirForInExpression
-     {
-        this.variable = variable.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirPatternVariable
-        return this
-    }
-
-    override fun <D> transformIterable(transformer: CfirTransformer<D>, data: D): CfirForInExpression
-     {
-        this.iterable = iterable.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression
-        return this
-    }
-
-    override fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirForInExpression
-     {
-        this.body = body.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirBlock
-        return this
-    }
-
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirForInExpressionImpl {
         transformAnnotations(transformer, data)
         transformCondition(transformer, data)
@@ -84,5 +47,38 @@ class CfirForInExpressionImpl @CfirImplementationDetail constructor(
         transformIterable(transformer, data)
         transformBody(transformer, data)
         return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirForInExpressionImpl {
+        annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformCondition(transformer: CfirTransformer<D>, data: D): CfirForInExpressionImpl {
+        condition = condition.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformVariable(transformer: CfirTransformer<D>, data: D): CfirForInExpressionImpl {
+        variable = variable.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformIterable(transformer: CfirTransformer<D>, data: D): CfirForInExpressionImpl {
+        iterable = iterable.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirForInExpressionImpl {
+        body = body.transform(transformer, data)
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
+        annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
+        coneTypeOrNull = newConeTypeOrNull
     }
 }

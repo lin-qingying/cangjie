@@ -8,7 +8,6 @@ package org.cangnova.cangjie.cfir.visitors
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
-import org.cangnova.cangjie.cfir.CfirResolvable
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.expressions.*
@@ -31,6 +30,9 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitControlFlowGraphOwner(controlFlowGraphOwner: CfirControlFlowGraphOwner, data: D): R =
         visitElement(controlFlowGraphOwner, data)
+
+    open fun visitWrappedExpression(wrappedExpression: CfirWrappedExpression, data: D): R =
+        visitElement(wrappedExpression, data)
 
     open fun visitResolvable(resolvable: CfirResolvable, data: D): R =
         visitElement(resolvable, data)
@@ -161,17 +163,29 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitErrorNamedReference(errorNamedReference: CfirErrorNamedReference, data: D): R =
         visitElement(errorNamedReference, data)
 
+    open fun visitArgumentList(argumentList: CfirArgumentList, data: D): R =
+        visitElement(argumentList, data)
+
+    open fun visitCall(call: CfirCall, data: D): R =
+        visitElement(call, data)
+
+    open fun visitAnnotationCall(annotationCall: CfirAnnotationCall, data: D): R =
+        visitElement(annotationCall, data)
+
     open fun visitThisReference(thisReference: CfirThisReference, data: D): R =
         visitElement(thisReference, data)
 
-    open fun visitPropertyAccess(propertyAccess: CfirPropertyAccess, data: D): R =
-        visitElement(propertyAccess, data)
+    open fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression, data: D): R =
+        visitElement(namedAccessExpression, data)
 
-    open fun visitQualifiedAccess(qualifiedAccess: CfirQualifiedAccess, data: D): R =
-        visitElement(qualifiedAccess, data)
+    open fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression, data: D): R =
+        visitElement(qualifiedAccessExpression, data)
 
     open fun visitErrorFunction(errorFunction: CfirErrorFunction, data: D): R =
         visitElement(errorFunction, data)
+
+    open fun visitErrorNamedValue(errorNamedValue: CfirErrorNamedValue, data: D): R =
+        visitElement(errorNamedValue, data)
 
     open fun visitAssignment(assignment: CfirAssignment, data: D): R =
         visitElement(assignment, data)
@@ -289,6 +303,9 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef, data: D): R =
         visitElement(resolvedTypeRef, data)
+
+    open fun visitUnresolvedTypeRef(unresolvedTypeRef: CfirUnresolvedTypeRef, data: D): R =
+        visitElement(unresolvedTypeRef, data)
 
     open fun visitUserTypeRef(userTypeRef: CfirUserTypeRef, data: D): R =
         visitElement(userTypeRef, data)

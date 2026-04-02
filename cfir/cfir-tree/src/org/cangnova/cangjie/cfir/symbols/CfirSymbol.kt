@@ -1,18 +1,20 @@
 package org.cangnova.cangjie.cfir.symbols
 
 import org.cangnova.cangjie.CjSourceFile
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassifierLookupTag
+import org.cangnova.cangjie.cfir.withCfirSymbolIdEntry
 import org.cangnova.cangjie.constant.EvaluatedConstTracker
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.SpecialNames
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 
 /**
  * 符号基类。每个声明对应一个唯一的符号实例。
@@ -21,26 +23,25 @@ import org.cangnova.cangjie.name.SpecialNames
  * 即使声明节点本身因转换而被替换。
  */
 sealed class CfirSymbol<out D : CfirDeclaration> {
-    private var _fir: @UnsafeVariance D? = null
+    private var _cfir: @UnsafeVariance D? = null
 
     /** 指向对应的 CFIR 声明，未绑定时访问会抛出异常。 */
     val cfir: D
-        get() = _fir ?: error("Symbol is not bound to a declaration")
-
+        get() = _cfir
+            ?: errorWithAttachment("Cfir is not initialized for ${this::class}") {
+                withCfirSymbolIdEntry("symbol", this@CfirSymbol)
+            }
     /** 符号是否已绑定到声明。 */
     val isBound: Boolean
-        get() = _fir != null
+        get() = _cfir != null
     val origin: CfirDeclarationOrigin
         get() = cfir.origin
 
-    /**
-     * 绑定符号到声明，只能绑定一次。
-     * 重复绑定会抛出异常，保证符号与声明的一一对应关系。
-     */
-    fun bind(declaration: @UnsafeVariance D) {
-        check(_fir == null) { "Symbol is already bound" }
-        _fir = declaration
+    @CfirImplementationDetail
+    fun bind(e: @UnsafeVariance D) {
+        _cfir = e
     }
+
 
     open val debugName: String
         get() = toString()
@@ -70,13 +71,11 @@ sealed class CfirClassifierSymbol<D : CfirDeclaration> : CfirThisOwnerSymbol<D>(
  *
  * 子类只需提供 [classId]，无需重复实现 [toLookupTag]。
  */
-sealed class CfirClassifierSymbolWithClassId<D : CfirDeclaration>(
-    classId: ClassId ,
+sealed class CfirClassLikeSymbol<D : CfirClassLikeDeclaration>(
+    classId: ClassId,
 ) : CfirClassifierSymbol<D>() {
 
     open val classId: ClassId = classId
-
-
 
     open val name: Name
         get() = classId.shortClassName
@@ -90,9 +89,9 @@ sealed class CfirClassifierSymbolWithClassId<D : CfirDeclaration>(
     override val debugName: String get() = classId.asString()
 }
 
-sealed class CfirClassLikeSymbol<D : CfirClassLikeDeclaration>(
-    override val classId: ClassId ,
-) : CfirClassifierSymbolWithClassId<D>(classId)
+//sealed class CfirClassLikeSymbol<D : CfirClassLikeDeclaration>(
+//    override val classId: ClassId ,
+//) : CfirClassLikeSymbol<D>(classId)
 
 /**
  * class 符号，对应仓颉中引用语义的具名类型声明。
@@ -174,8 +173,8 @@ class CfirEnumSymbol(
  * 所有实质性类型运算均发生在展开后的目标类型上。
  */
 class CfirTypeAliasSymbol(
-    override val classId: ClassId ,
-) : CfirClassifierSymbolWithClassId<CfirTypeAlias>(classId) {
+    classId: ClassId ,
+) : CfirClassLikeSymbol<CfirTypeAlias>(classId) {
 
     override val name: Name
         get() = if (isBound) cfir.name else super.name
@@ -251,6 +250,11 @@ sealed class CfirCallableSymbol<out D : CfirCallableDeclaration> : CfirSymbol<D>
     override val debugName: String get() = name.asString()
 }
 
+sealed class CfirNamedValueSymbol<out D : CfirCallableDeclaration> (override val callableId: CallableId): CfirCallableSymbol<D>()
+{
+
+
+}
 
 /** 具名函数符号，对齐 K2 `FirNamedFunctionSymbol`。 */
 class CfirNamedFunctionSymbol(
@@ -315,8 +319,8 @@ class CfirConstructorSymbol(
 
 /** 属性符号，对应 `prop` 声明。 */
 class CfirPropertySymbol(
-    override val callableId: CallableId,
-) : CfirCallableSymbol<CfirProperty>() {
+    callableId: CallableId,
+) : CfirNamedValueSymbol<CfirProperty>(callableId) {
     override val name: Name get() = callableId.callableName
 
     override fun toString(): String =
@@ -324,11 +328,11 @@ class CfirPropertySymbol(
 }
 
 /** 成员字段变量符号，对应 class/struct 内的 `var`/`let` 字段声明。 */
-sealed class CfirVariableSymbol<out D : CfirVariable> : CfirCallableSymbol<D>()
+sealed class CfirVariableSymbol<out D : CfirVariable> (callableId: CallableId): CfirNamedValueSymbol<D>(callableId)
 
 class CfirFieldVariableSymbol(
     override val callableId: CallableId,
-) : CfirVariableSymbol<CfirFieldVariable>() {
+) : CfirVariableSymbol<CfirFieldVariable>(callableId) {
     override val name: Name get() = callableId.callableName
 
     override fun toString(): String =
@@ -337,8 +341,8 @@ class CfirFieldVariableSymbol(
 
 /** 模式变量符号，对应模式匹配中绑定的变量，如 `case Foo(x) =>` 中的 `x`。 */
 class CfirPatternVariableSymbol(
-    override val callableId: CallableId,
-) : CfirVariableSymbol<CfirPatternVariable>() {
+  callableId: CallableId,
+) : CfirVariableSymbol<CfirPatternVariable>(callableId) {
     override val name: Name get() = callableId.callableName
 
     override fun toString(): String =
@@ -348,8 +352,8 @@ class CfirPatternVariableSymbol(
 
 /** 值参数符号，对应函数声明中的形参。 */
 class CfirValueParameterSymbol(
-    override val callableId: CallableId,
-) : CfirVariableSymbol<CfirValueParameter>() {
+  callableId: CallableId,
+) : CfirVariableSymbol<CfirValueParameter>(callableId) {
     override val name: Name get() = callableId.callableName
 
     override fun toString(): String =

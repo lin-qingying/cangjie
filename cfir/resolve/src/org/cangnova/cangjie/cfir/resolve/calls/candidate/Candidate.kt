@@ -2,6 +2,8 @@ package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
+import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
 import org.cangnova.cangjie.cfir.resolve.calls.CallableReferenceAdaptation
@@ -15,9 +17,18 @@ import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.semantics.isSuccess
+import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemError
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
@@ -235,7 +246,7 @@ class Candidate(
         }
     }
 
-    fun setUpdatedArgumentFromContextSensitiveResolution(old: CfirPropertyAccess, new: CfirExpression) {
+    fun setUpdatedArgumentFromContextSensitiveResolution(old: CfirNamedAccessExpression, new: CfirExpression) {
         setUpdatedArgument(old, new)
     }
 
@@ -339,11 +350,16 @@ class Candidate(
     val constraintSystem: ConstraintSystemImpl
         get() = system
 
+    private var cachedSyntheticEnumConstructorParameters: List<CfirValueParameter>? = null
+    private var cachedSyntheticCallableValueParameters: List<CfirValueParameter>? = null
+
     fun declaredParametersForMapping(): List<CfirValueParameter> {
         if (!symbol.isBound) return emptyList()
         return when (val declaration = symbol.cfir) {
             is CfirFunction -> declaration.valueParameters
             is CfirConstructor -> declaration.valueParameters
+            is CfirEnumConstructor -> enumConstructorParametersForMapping(declaration)
+            is CfirVariable -> callableValueParametersForMapping(declaration)
             else -> emptyList()
         }
     }
@@ -352,11 +368,127 @@ class Candidate(
         val declared = when (val declaration = symbol.cfir) {
             is CfirFunction -> (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
             is CfirConstructor -> (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
-            is CfirEnumConstructor -> (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+            is CfirEnumConstructor -> enumConstructorOwnerType(declaration)
+                ?: (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+            is CfirVariable -> callableValueReturnType(declaration)
             else -> null
         } ?: return ConeErrorType(ConeSimpleDiagnostic("Unresolved return type"))
 
         return if (::substitutor.isInitialized) substitutor.substituteOrSelf(declared) else declared
+    }
+
+    private fun enumConstructorOwnerType(declaration: CfirEnumConstructor): ConeCangJieType? {
+        val enumConstructorSymbol = symbol as? CfirEnumConstructorSymbol ?: return null
+        val ownerClassId = callInfo.session.symbolProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
+            ?: callInfo.session.cfirProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
+            ?: return null
+        val ownerTypeArguments = enumConstructorTypeParameters(declaration).map { typeParameter ->
+            ConeTypeProjection(ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag()))
+        }
+        return ConeEnumType(ownerClassId.toLookupTag(), ownerTypeArguments)
+    }
+
+    private fun enumConstructorTypeParameters(declaration: CfirEnumConstructor): List<CfirTypeParameter> {
+        if (declaration.typeParameters.isNotEmpty()) return declaration.typeParameters
+        val enumConstructorSymbol = symbol as? CfirEnumConstructorSymbol ?: return emptyList()
+        val ownerClassId = callInfo.session.symbolProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
+            ?: callInfo.session.cfirProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
+            ?: return emptyList()
+        val ownerDeclaration = callInfo.session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
+            ?: return emptyList()
+        return when (ownerDeclaration) {
+            is CfirClass -> ownerDeclaration.typeParameters
+            is CfirInterface -> ownerDeclaration.typeParameters
+            is CfirStruct -> ownerDeclaration.typeParameters
+            is CfirEnum -> ownerDeclaration.typeParameters
+            else -> emptyList()
+        }
+    }
+
+    private fun enumConstructorParametersForMapping(declaration: CfirEnumConstructor): List<CfirValueParameter> {
+        cachedSyntheticEnumConstructorParameters?.let { return it }
+
+        val payloadTypes = when (val payloadTypeRef = declaration.returnTypeRef) {
+            is CfirResolvedTypeRef -> when (val payloadType = payloadTypeRef.coneType) {
+                is ConeTupleType -> payloadType.elementTypes
+                else -> listOf(payloadType)
+            }
+            else -> emptyList()
+        }
+
+        if (payloadTypes.isEmpty()) {
+            cachedSyntheticEnumConstructorParameters = emptyList()
+            return emptyList()
+        }
+
+        val syntheticParameters = payloadTypes.mapIndexed { index, payloadType ->
+            val parameterName = Name.identifier("enumCtorArg$index")
+            val parameterSymbol = CfirValueParameterSymbol(CallableId(parameterName))
+            buildValueParameter {
+                source = declaration.source
+                moduleData = declaration.moduleData
+                resolvePhase = CfirResolvePhase.BODY_RESOLVE
+                origin = CfirDeclarationOrigin.Synthetic.Error
+                attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = true
+                isNamed = false
+                dispatchReceiverType = null
+                symbol = parameterSymbol
+                status = CfirDeclarationStatusImpl.DEFAULT
+                returnTypeRef = buildResolvedTypeRef {
+                    source = declaration.returnTypeRef.source
+                    coneType = payloadType
+                }
+                name = parameterName
+                defaultValue = null
+            }
+        }
+
+        cachedSyntheticEnumConstructorParameters = syntheticParameters
+        return syntheticParameters
+    }
+
+    private fun callableValueReturnType(declaration: CfirVariable): ConeCangJieType? {
+        val variableType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return null
+        val functionType = variableType as? ConeFuncType ?: return null
+        return functionType.returnType
+    }
+
+    private fun callableValueParametersForMapping(declaration: CfirVariable): List<CfirValueParameter> {
+        cachedSyntheticCallableValueParameters?.let { return it }
+
+        val variableType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+        val functionType = variableType as? ConeFuncType
+        if (functionType == null || functionType.parameterTypes.isEmpty()) {
+            cachedSyntheticCallableValueParameters = emptyList()
+            return emptyList()
+        }
+
+        val syntheticParameters = functionType.parameterTypes.mapIndexed { index, parameterType ->
+            val parameterName = Name.identifier("callableValueArg$index")
+            val parameterSymbol = CfirValueParameterSymbol(CallableId(parameterName))
+            buildValueParameter {
+                source = declaration.source
+                moduleData = declaration.moduleData
+                resolvePhase = CfirResolvePhase.BODY_RESOLVE
+                origin = CfirDeclarationOrigin.Synthetic.Error
+                attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = true
+                isNamed = false
+                dispatchReceiverType = null
+                symbol = parameterSymbol
+                status = CfirDeclarationStatusImpl.DEFAULT
+                returnTypeRef = buildResolvedTypeRef {
+                    source = declaration.returnTypeRef.source
+                    coneType = parameterType
+                }
+                name = parameterName
+                defaultValue = null
+            }
+        }
+
+        cachedSyntheticCallableValueParameters = syntheticParameters
+        return syntheticParameters
     }
 
 

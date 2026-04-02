@@ -8,18 +8,21 @@
 package org.cangnova.cangjie.cfir.expressions.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirIfExpressionImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
-    override var annotations: List<CfirAnnotation>,
+    override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
     override var condition: CfirExpression,
     override var thenBranch: CfirBlock,
@@ -33,45 +36,39 @@ class CfirIfExpressionImpl @CfirImplementationDetail constructor(
         elseBranch?.accept(visitor, data)
     }
 
-    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-     {
-        this.annotations = newAnnotations
-    }
-
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
-     {
-        this.coneTypeOrNull = newConeTypeOrNull
-    }
-
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirIfExpression
-     {
-        this.annotations = annotations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnnotation }
-        return this
-    }
-
-    override fun <D> transformCondition(transformer: CfirTransformer<D>, data: D): CfirIfExpression
-     {
-        this.condition = condition.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression
-        return this
-    }
-
-    override fun <D> transformThenBranch(transformer: CfirTransformer<D>, data: D): CfirIfExpression
-     {
-        this.thenBranch = thenBranch.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirBlock
-        return this
-    }
-
-    override fun <D> transformElseBranch(transformer: CfirTransformer<D>, data: D): CfirIfExpression
-     {
-        this.elseBranch = elseBranch?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression?
-        return this
-    }
-
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirIfExpressionImpl {
         transformAnnotations(transformer, data)
         transformCondition(transformer, data)
         transformThenBranch(transformer, data)
         transformElseBranch(transformer, data)
         return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirIfExpressionImpl {
+        annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformCondition(transformer: CfirTransformer<D>, data: D): CfirIfExpressionImpl {
+        condition = condition.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformThenBranch(transformer: CfirTransformer<D>, data: D): CfirIfExpressionImpl {
+        thenBranch = thenBranch.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformElseBranch(transformer: CfirTransformer<D>, data: D): CfirIfExpressionImpl {
+        elseBranch = elseBranch?.transform(transformer, data)
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
+        annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
+        coneTypeOrNull = newConeTypeOrNull
     }
 }

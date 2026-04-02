@@ -244,7 +244,7 @@ class CfirTypeResolverImpl(
         for (scope in configuration.scopes) {
             scope.processClassifiersByName(shortName) { classifier ->
                 val classId = when (classifier) {
-                    is org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbolWithClassId<*> -> classifier.classId
+                    is org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*> -> classifier.classId
                     else -> null
                 }
                 if (classId != null) {

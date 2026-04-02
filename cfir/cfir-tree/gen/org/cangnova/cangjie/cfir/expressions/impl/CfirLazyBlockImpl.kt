@@ -8,7 +8,7 @@
 package org.cangnova.cangjie.cfir.expressions.impl
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -25,28 +25,23 @@ class CfirLazyBlockImpl : CfirLazyBlock() {
     override val statements: List<CfirElement>
         get() = error("CfirLazyBlock should be resolved before accessing")
 
-    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
-    }
-
-    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-     {
-    }
-
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
-     {
-    }
-
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirLazyBlock
-     {
-        return this
-    }
-
-    override fun <D> transformStatements(transformer: CfirTransformer<D>, data: D): CfirLazyBlock
-     {
-        return this
-    }
+    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirLazyBlockImpl {
         return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirLazyBlockImpl {
+        return this
+    }
+
+    override fun <D> transformStatements(transformer: CfirTransformer<D>, data: D): CfirLazyBlockImpl {
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {}
+
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
+        require(newConeTypeOrNull == coneTypeOrNull) { "${javaClass.simpleName}.replaceConeTypeOrNull() called with invalid type '${newConeTypeOrNull}'. Current type is '$coneTypeOrNull'" }
     }
 }

@@ -4,6 +4,10 @@
         serviceInterface="org.cangnova.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry"
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.permissions.CaBaseAnalysisPermissionRegistry"
     />
+    <applicationService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionOptions"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.permissions.CaBaseAnalysisPermissionOptions"
+    />
 
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker"
@@ -13,6 +17,14 @@
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.lifetime.CaLifetimeTracker"
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.lifetime.CaBaseLifetimeTracker"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.lifetime.CaLifetimeTokenFactory"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.lifetime.CaBaseLifetimeTokenFactory"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.platform.CaBasePlatformSettings"
     />
   </extensions>
 </idea-plugin>

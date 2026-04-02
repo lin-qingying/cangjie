@@ -19,6 +19,7 @@ import org.cangnova.cangjie.cfir.types.ConeIdealIntLiteralType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
 import org.cangnova.cangjie.cfir.types.ConeIntersectionType
 import org.cangnova.cangjie.cfir.types.ConePointerType
+import org.cangnova.cangjie.cfir.types.ConePlaceholderType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeQuestType
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
@@ -80,6 +81,12 @@ open class ConeTypeRenderer(
             is ConeStubTypeConstructor -> {
                 builder.append("Stub(")
                 builder.append(constructor.variable.typeConstructor.debugName)
+                builder.append(")")
+            }
+
+            is ConePlaceholderType -> {
+                builder.append("Placeholder(")
+                builder.append(constructor.debugName)
                 builder.append(")")
             }
 
@@ -152,6 +159,11 @@ open class ConeTypeRenderer(
 
             is ConeQuestType -> builder.append("?")
             ConeAnyType -> builder.append("Any")
+            is ConePlaceholderType -> {
+                builder.append("Placeholder(")
+                builder.append(type.debugName)
+                builder.append(")")
+            }
 
             is ConeSimpleCangJieType ->
 

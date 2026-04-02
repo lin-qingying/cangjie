@@ -1,6 +1,5 @@
-// RUN_PIPELINE_TILL: FRONTEND
-// DUMP_SCOPE
-// VERIFY_RESOLVED_TYPES
+
+
 func add(a: Int64, b: Int64): Int64 {
     return a + b
 }

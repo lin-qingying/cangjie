@@ -4,8 +4,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
 import org.cangnova.cangjie.cfir.declarations.resolvePhase
-import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.extendIndexStoreOrNull
@@ -26,6 +26,8 @@ internal class CfirExtensionsResolveProcessor(
         super.beforePhase()
 
         val files = (runCatching { session.cfirProvider }.getOrNull() as? CfirProviderImpl)?.getAllFiles().orEmpty()
+        if (files.isEmpty()) return
+
         session.extendIndexStoreOrNull?.rebuild(files, session.typeResolver)
     }
 }
@@ -42,4 +44,3 @@ internal class CfirExtensionsResolveTransformer(
         return declaration
     }
 }
-

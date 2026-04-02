@@ -25,5 +25,4 @@ abstract class CfirTuplePattern : CfirPattern() {
         transformer.transformTuplePattern(this, data) as E
 
     abstract fun <D> transformElements(transformer: CfirTransformer<D>, data: D): CfirTuplePattern
-
 }

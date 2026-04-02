@@ -13,7 +13,7 @@ import org.cangnova.cangjie.utils.SmartPrinter
 import org.cangnova.cangjie.utils.withIndent
 
 /**
- * FIR/IR 树元素打印器的通用基类。
+ * A common class for printing FIR or IR tree elements.
  */
 abstract class AbstractElementPrinter<Element : AbstractElement<Element, Field, *>, Field : AbstractField<Field>>(
     private val printer: ImportCollectingPrinter,

@@ -57,6 +57,7 @@ interface CfirElement {
      * @param data An arbitrary context to pass to each invocation of [visitor]'s methods.
      */
     fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D)
+
     /**
      * Runs the provided [visitor] on subtrees with roots in this node's children.
      *
@@ -69,7 +70,6 @@ interface CfirElement {
     fun acceptChildren(visitor: CfirVisitorVoid) {
         acceptChildren(visitor, null)
     }
-
 
     /**
      * Recursively transforms this node's children *in place* using [transformer].

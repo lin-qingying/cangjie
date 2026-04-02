@@ -5,10 +5,11 @@
 
 package org.cangnova.cangjie.cfir.declarations
 
+import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.common.CfirModuleData
-import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -18,7 +19,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.declaration]
  */
-sealed class CfirDeclaration : CfirElementWithResolveState(), CfirStatement {
+sealed class CfirDeclaration : CfirElementWithResolveState(), CfirAnnotationContainer {
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>
@@ -33,11 +34,9 @@ sealed class CfirDeclaration : CfirElementWithResolveState(), CfirStatement {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformDeclaration(this, data) as E
 
-    override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+    abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
-
-    override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirDeclaration
-
+    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirDeclaration
 
     override fun toString(): String = CfirRenderer.withReadability().renderElementAsString(this)
 

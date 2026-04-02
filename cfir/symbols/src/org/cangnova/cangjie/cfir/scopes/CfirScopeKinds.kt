@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.scopes
 
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -10,8 +11,8 @@ import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.Name
 
 /** 包级 scope，解析包内的顶级声明 */
-abstract class CfirPackageScope : CfirScope() {
-    override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirScope? = null
+abstract class CfirPackageScope : CfirContainingNamesAwareScope() {
+    override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirPackageScope? = null
 }
 
 /** 类级 scope，解析类内部的成员声明 */

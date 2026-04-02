@@ -45,7 +45,7 @@ open class CallInfo(
     val argumentAtoms: List<ConeResolutionAtom> = arguments.map { createRawAtom(it) }
 
     fun replaceWithVariableAccess(): CallInfo =
-        copy(callKind = CallKind.VariableAccess, typeArguments = emptyList())
+        copy(callKind = CallKind.NamedValueAccess)
 
     fun replaceExplicitReceiver(explicitReceiver: CfirExpression?): CallInfo =
         copy(explicitReceiver = explicitReceiver)

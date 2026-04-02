@@ -84,8 +84,8 @@ fun List<CjSourceFile>.asCjFilesList(): List<CjFile> {
  */
 fun CfirSession.runResolution(cfirFiles: List<CfirFile>): Pair<ScopeSession, List<CfirFile>> {
     val resolveProcessor = CfirTotalResolveProcessor(this)
-    resolveProcessor.process(cfirFiles)
-    return resolveProcessor.scopeSession to cfirFiles
+    val resolvedFiles = resolveProcessor.process(cfirFiles)
+    return resolveProcessor.scopeSession to resolvedFiles
 }
 
 /**

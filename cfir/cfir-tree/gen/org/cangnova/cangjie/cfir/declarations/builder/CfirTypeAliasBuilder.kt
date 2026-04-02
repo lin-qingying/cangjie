@@ -9,10 +9,12 @@ package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeAliasImpl
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
@@ -22,6 +24,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirTypeAliasBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
+    lateinit var resolvePhase: CfirResolvePhase
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
@@ -39,7 +42,8 @@ class CfirTypeAliasBuilder {
         return CfirTypeAliasImpl(
             source,
             moduleData,
-            annotations,
+            resolvePhase,
+            annotations.toMutableOrEmpty(),
             origin,
             attributes,
             isLocal,
@@ -50,9 +54,7 @@ class CfirTypeAliasBuilder {
             typeParameters,
             name,
             expandedTypeRef,
-        ).also {
-            it.initDefaultResolveState()
-        }
+        )
     }
 
 }
@@ -73,9 +75,10 @@ inline fun buildTypeAliasCopy(original: CfirTypeAlias, init: CfirTypeAliasBuilde
     val copyBuilder = CfirTypeAliasBuilder()
     copyBuilder.source = original.source
     copyBuilder.moduleData = original.moduleData
+    copyBuilder.resolvePhase = original.resolvePhase
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
-    copyBuilder.attributes = original.attributes
+    copyBuilder.attributes = original.attributes.copy()
     copyBuilder.isLocal = original.isLocal
     copyBuilder.declarations.addAll(original.declarations)
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)

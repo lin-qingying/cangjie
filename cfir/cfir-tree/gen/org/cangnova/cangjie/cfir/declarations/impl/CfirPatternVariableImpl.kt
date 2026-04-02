@@ -8,8 +8,11 @@
 package org.cangnova.cangjie.cfir.declarations.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
@@ -17,13 +20,15 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
-@OptIn(CfirImplementationDetail::class)
+@OptIn(CfirImplementationDetail::class, ResolveStateAccess::class)
 class CfirPatternVariableImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override val moduleData: CfirModuleData,
-    override var annotations: List<CfirAnnotation>,
+    resolvePhase: CfirResolvePhase,
+    override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
     override val isLocal: Boolean,
@@ -32,10 +37,17 @@ class CfirPatternVariableImpl @CfirImplementationDetail constructor(
     override var initializer: CfirExpression?,
     override val isVar: Boolean,
     override val symbol: CfirPatternVariableSymbol,
-    override var typeParameters: List<CfirTypeParameter>,
+    override val typeParameters: MutableList<CfirTypeParameter>,
     override var returnTypeRef: CfirTypeRef,
     override var pattern: CfirPattern,
 ) : CfirPatternVariable() {
+
+    init {
+        symbol.bind(this)
+        resolveState = resolvePhase.asResolveState()
+        @Suppress("SENSELESS_COMPARISON")
+        require(source != null || origin != CfirDeclarationOrigin.Source) { "${this::class.simpleName} with Source origin was instantiated without a source element." }
+    }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
@@ -45,57 +57,6 @@ class CfirPatternVariableImpl @CfirImplementationDetail constructor(
         pattern.accept(visitor, data)
     }
 
-    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-     {
-        this.annotations = newAnnotations
-    }
-
-    override fun replaceStatus(newStatus: CfirDeclarationStatus)
-     {
-        this.status = newStatus
-    }
-
-    override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
-     {
-        this.returnTypeRef = newReturnTypeRef
-    }
-
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
-     {
-        this.annotations = annotations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnnotation }
-        return this
-    }
-
-    override fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
-     {
-        this.status = status.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirDeclarationStatus
-        return this
-    }
-
-    override fun <D> transformInitializer(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
-     {
-        this.initializer = initializer?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression?
-        return this
-    }
-
-    override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
-     {
-        this.typeParameters = typeParameters.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirTypeParameter }
-        return this
-    }
-
-    override fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
-     {
-        this.returnTypeRef = returnTypeRef.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirTypeRef
-        return this
-    }
-
-    override fun <D> transformPattern(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
-     {
-        this.pattern = pattern.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirPattern
-        return this
-    }
-
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirPatternVariableImpl {
         transformAnnotations(transformer, data)
         transformInitializer(transformer, data)
@@ -103,5 +64,46 @@ class CfirPatternVariableImpl @CfirImplementationDetail constructor(
         transformReturnTypeRef(transformer, data)
         transformPattern(transformer, data)
         return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirPatternVariableImpl {
+        annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirPatternVariableImpl {
+        return this
+    }
+
+    override fun <D> transformInitializer(transformer: CfirTransformer<D>, data: D): CfirPatternVariableImpl {
+        initializer = initializer?.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirPatternVariableImpl {
+        typeParameters.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirPatternVariableImpl {
+        returnTypeRef = returnTypeRef.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformPattern(transformer: CfirTransformer<D>, data: D): CfirPatternVariableImpl {
+        pattern = pattern.transform(transformer, data)
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
+        annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceStatus(newStatus: CfirDeclarationStatus) {
+        status = newStatus
+    }
+
+    override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef) {
+        returnTypeRef = newReturnTypeRef
     }
 }

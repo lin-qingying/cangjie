@@ -26,5 +26,4 @@ abstract class CfirExpressionPattern : CfirPattern() {
         transformer.transformExpressionPattern(this, data) as E
 
     abstract fun <D> transformExpression(transformer: CfirTransformer<D>, data: D): CfirExpressionPattern
-
 }

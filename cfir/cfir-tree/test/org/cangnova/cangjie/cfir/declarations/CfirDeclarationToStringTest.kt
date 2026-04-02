@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.declarations
 
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.common.CfirModuleCapabilities
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
@@ -22,6 +23,7 @@ import org.cangnova.cangjie.name.Name
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
+@OptIn(CfirImplementationDetail::class)
 class CfirDeclarationToStringTest {
     @Test
     fun `class toString delegates to readability renderer`() {
@@ -62,6 +64,7 @@ class CfirDeclarationToStringTest {
                 isLocal = false
                 dispatchReceiverType = null
                 symbol = CfirValueParameterSymbol(CallableId(Name.identifier("value")))
+                isNamed = false
                 status = CfirDeclarationStatusImpl()
                 returnTypeRef = buildImplicitTypeRef()
                 name = Name.identifier("value")
