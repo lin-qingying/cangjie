@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.constraints.CfirTypeSubstitutorByMap
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.diagnostic.InferenceConstraintError
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
@@ -9,6 +11,10 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeDeclaredUpperBoundConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExplicitTypeParameterConstraintPosition
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePlaceholderType
 import org.cangnova.cangjie.cfir.types.ConeSubstitutor
@@ -30,14 +36,15 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
     override suspend fun check(candidate: Candidate) {
         val declaration = candidate.symbol.cfir
-        if (declaration !is CfirTypeParameterRefsOwner || declaration.typeParameters.isEmpty()) {
+        val typeParameters = collectTypeParametersForFreshVariables(context.session, candidate, declaration)
+        if (typeParameters.isEmpty()) {
             candidate.initializeSubstitutorAndVariables(ConeSubstitutor.Empty, emptyList())
             return
         }
 
         val csBuilder = candidate.system.getBuilder()
         val (substitutor, freshVariables) =
-            createToFreshVariableSubstitutorAndAddInitialConstraints(declaration, csBuilder)
+            createToFreshVariableSubstitutorAndAddInitialConstraints(typeParameters, csBuilder)
         candidate.initializeSubstitutorAndVariables(substitutor, freshVariables)
 
         // 声明侧存在矛盾（如上界冲突）——直接标记不可用
@@ -52,7 +59,6 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         }
 
         // 处理显式类型实参：添加相等约束
-        val typeParameters = declaration.typeParameters
         for (index in typeParameters.indices) {
             val freshVariable = freshVariables[index]
             val typeArgument = candidate.typeArgumentMapping[index]
@@ -81,10 +87,9 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
      * 为声明的类型参数创建新鲜类型变量，构建替代器，并添加上界约束。
      */
     private fun createToFreshVariableSubstitutorAndAddInitialConstraints(
-        declaration: CfirTypeParameterRefsOwner,
+        typeParameters: List<CfirTypeParameterRef>,
         csBuilder: ConstraintSystemOperation,
     ): Pair<ConeSubstitutor, List<ConeTypeVariable>> {
-        val typeParameters = declaration.typeParameters
         val freshTypeVariables = typeParameters.map { ConeTypeParameterBasedTypeVariable(it.symbol) }
 
         // 构建替代器：类型参数名 → 新鲜类型变量的默认类型
@@ -111,5 +116,28 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         }
 
         return toFreshVariables to freshTypeVariables
+    }
+
+    private fun collectTypeParametersForFreshVariables(
+        session: CfirSession,
+        candidate: Candidate,
+        declaration: Any?,
+    ): List<CfirTypeParameterRef> {
+        if (declaration !is CfirTypeParameterRefsOwner) return emptyList()
+        if (declaration.typeParameters.isNotEmpty()) return declaration.typeParameters
+        if (declaration !is CfirEnumConstructor) return emptyList()
+
+        val enumConstructorSymbol = candidate.symbol as? CfirEnumConstructorSymbol ?: return emptyList()
+        val ownerClassId = session.symbolProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
+            ?: session.cfirProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
+            ?: return emptyList()
+        val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
+            ?: session.cfirProvider.getClassByClassId(ownerClassId)
+            ?: return emptyList()
+
+        return when (ownerDeclaration) {
+            is CfirTypeParameterRefsOwner -> ownerDeclaration.typeParameters
+            else -> emptyList()
+        }
     }
 }

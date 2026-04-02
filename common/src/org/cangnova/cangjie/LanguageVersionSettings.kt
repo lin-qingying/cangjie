@@ -44,6 +44,7 @@ enum class LanguageFeature {
      * RETURN_TYPE_MISMATCH on lambda body return expression.
      */
     LambdaReturnTypeMismatchAsArgumentTypeMismatch,
+    InvalidBinaryOperatorDiagnostics,
     LexicographicVariableReadinessCalculation,
     ;
 

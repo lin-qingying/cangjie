@@ -27,6 +27,7 @@ include(":compiler:arguments")
 include(":compiler:cli-arguments-generator")
 
 include(":util")
+include(":lsp")
 // PSI 模块
 include(":psi")
 
@@ -79,6 +80,11 @@ include(":flatbuffers-gen")
 
 
 include(":cfir:analysis-tests")
+
+// 宏展开模块
+include(":macro:macro-common")
+include(":macro:macro-process")
+include(":macro:macro-stub")
 
 
 include("cfir:diagnostic-renderers")

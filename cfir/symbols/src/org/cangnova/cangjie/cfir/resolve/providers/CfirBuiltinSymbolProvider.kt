@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
@@ -85,11 +86,11 @@ class CfirBuiltinSymbolProvider(
             kind = kind,
             origin = CfirDeclarationOrigin.Synthetic.Default,
             attributes = CfirDeclarationAttributes.EMPTY,
-            declarations = buildPrimitiveMembers(kind),
-            superTypeRefs = emptyList(),
+            declarations = buildPrimitiveMembers(kind).toMutableList(),
+            superTypeRefs = mutableListOf(),
         )
         declaration.initDefaultResolveState()
-        symbol.bind(declaration)
+
         return declaration
     }
 
@@ -100,17 +101,19 @@ class CfirBuiltinSymbolProvider(
                 val parameterSymbol = CfirValueParameterSymbol(CallableId(signature.name))
                 buildValueParameter {
                     moduleData = builtinModuleData
+                    resolvePhase = CfirResolvePhase.BODY_RESOLVE
                     origin = CfirDeclarationOrigin.Synthetic.FakeFunction
                     attributes = CfirDeclarationAttributes.EMPTY
                     isLocal = false
                     dispatchReceiverType = null
                     symbol = parameterSymbol
+                    isNamed = false
                     status = CfirDeclarationStatusImpl()
                     returnTypeRef = buildResolvedTypeRef {
                         coneType = ConePrimitiveType(parameterKind)
                     }
                     name = Name.identifier("p$index")
-                }.also(parameterSymbol::bind)
+                }
             }
 
             val status = CfirDeclarationStatusImpl().apply {
@@ -118,6 +121,7 @@ class CfirBuiltinSymbolProvider(
             }
             buildNamedFunction {
                 moduleData = builtinModuleData
+                resolvePhase = CfirResolvePhase.BODY_RESOLVE
                 origin = CfirDeclarationOrigin.Synthetic.FakeFunction
                 attributes = CfirDeclarationAttributes.EMPTY
                 isLocal = false
@@ -130,7 +134,7 @@ class CfirBuiltinSymbolProvider(
                 symbol = functionSymbol
                 name = signature.name
                 isMut = false
-            }.also(functionSymbol::bind)
+            }
         }
 
     private object BuiltinNamesProvider : CfirSymbolNamesProvider {

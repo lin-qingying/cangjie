@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.name.ClassId
@@ -175,6 +176,11 @@ interface ConeTypeContext :
         val classSymbol = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(classId) }.getOrNull()
             ?: return emptyList()
         if (!classSymbol.isBound) return emptyList()
-        return classSymbol.cfir.superTypeRefs.mapNotNull { (it as? CfirResolvedTypeRef)?.coneType }
+        classSymbol.lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
+        return session.directSupertypeProviderOrNull
+            ?.getDirectSuperTypes(classId)
+            ?.map { it.coneType }
+            ?.takeIf { it.isNotEmpty() }
+            ?: classSymbol.cfir.superTypeRefs.mapNotNull { (it as? CfirResolvedTypeRef)?.coneType }
     }
 }

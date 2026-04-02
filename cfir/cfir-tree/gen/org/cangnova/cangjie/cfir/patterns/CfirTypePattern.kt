@@ -28,5 +28,4 @@ abstract class CfirTypePattern : CfirPattern() {
         transformer.transformTypePattern(this, data) as E
 
     abstract fun <D> transformTypeRef(transformer: CfirTransformer<D>, data: D): CfirTypePattern
-
 }

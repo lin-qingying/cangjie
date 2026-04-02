@@ -25,7 +25,8 @@
       "Bash(openspec-cn instructions:*)",
       "Bash(openspec-cn new:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(./gradlew.bat :cfir:analysis-tests:test:*)"
     ]
   }
 }

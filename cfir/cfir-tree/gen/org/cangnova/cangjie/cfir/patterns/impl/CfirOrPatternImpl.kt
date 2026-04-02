@@ -11,25 +11,25 @@ import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 internal class CfirOrPatternImpl(
     override val source: CjSourceElement?,
-    override var alternatives: List<CfirPattern>,
+    override val alternatives: MutableList<CfirPattern>,
 ) : CfirOrPattern() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         alternatives.forEach { it.accept(visitor, data) }
     }
 
-    override fun <D> transformAlternatives(transformer: CfirTransformer<D>, data: D): CfirOrPattern
-     {
-        this.alternatives = alternatives.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirPattern }
+    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirOrPatternImpl {
+        transformAlternatives(transformer, data)
         return this
     }
 
-    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirOrPatternImpl {
-        transformAlternatives(transformer, data)
+    override fun <D> transformAlternatives(transformer: CfirTransformer<D>, data: D): CfirOrPatternImpl {
+        alternatives.transformInplace(transformer, data)
         return this
     }
 }

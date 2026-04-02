@@ -14,6 +14,10 @@ object CfirDiagnosticRenderers {
         type.toString()
     }
 
+    val RENDER_TYPE_LIST = ContextDependentRenderer { types: Collection<ConeCangJieType>, context ->
+        types.joinToString(", ") { RENDER_TYPE.render(it, context) }
+    }
+
     val DECLARATION_NAME = Renderer { symbol: CfirSymbol<*> ->
         when (symbol) {
             is CfirCallableSymbol<*> -> symbol.name.asString()
@@ -21,5 +25,9 @@ object CfirDiagnosticRenderers {
             is CfirTypeParameterSymbol -> symbol.name.asString()
             else -> return@Renderer "???"
         }
+    }
+
+    val DECLARATION_NAME_LIST = ContextDependentRenderer { symbols: Collection<CfirSymbol<*>>, context ->
+        symbols.joinToString(", ") { DECLARATION_NAME.render(it, context) }
     }
 }

@@ -1,6 +1,8 @@
 # 仓颉编译器阶段设计（Kotlin 实现版）
 
-> 基于 Kotlin 实现的仓颉编译器，IR 命名为 **CFIR**（Cangjie Frontend IR），对齐 Kotlin K2 架构，同时完整覆盖官方仓颉编译器的功能。
+> 基于 Kotlin 实现的仓颉语言前端，IR 命名为 **CFIR**（Cangjie Frontend IR），对齐 Kotlin K2 架构，同时覆盖官方仓颉编译器的前端功能。
+>
+> **核心管线**终止于 `SAVE_CJO`（阶段 10），后续的 `CFIR2CHIR` 和 `CODEGEN` 阶段为**可选扩展**，不在核心管线范围内。
 
 ---
 
@@ -191,6 +193,12 @@ Raw CFIR（结构化 IR，无类型信息）
 **说明：**
 宏展开必须在语义分析前完成，因为宏可能引入新的声明和类型引用。Kotlin 无宏系统，使用编译器插件在 FIR Phase 间生成合成节点替代。
 
+**本实现方案概述：**
+- 本项目基于 JVM，无法 dlopen 仓颉 native 宏动态库，必须通过外部进程 `LSPMacroServer` 执行宏函数
+- 模块化设计：`macro-common`（接口 + 数据模型 + FlatBuffers 编解码）、`macro-process`（进程执行器）、`macro-stub`（测试桩）
+- 核心接口链：`MacroCollector`（收集宏调用）→ `MacroExecutor`（执行宏展开）→ `MacroReplacer`（AST 替换）→ `MacroExpander`（编排器）
+- 通信协议：FlatBuffers + length-prefixed 帧（8 字节 uint64_le 长度前缀 + payload），通过匿名管道与 LSPMacroServer 子进程通信
+
 ---
 
 ### 6. `CFIR_BUILD` — CFIR 构建
@@ -229,6 +237,7 @@ Raw CFIR（结构化 IR，无类型信息）
 ```
 RAW_CFIR
   → IMPORTS          # 导入符号绑定
+  → MACRO_EXPAND     # 宏展开（替换宏调用，可能重建文件）
   → SUPER_TYPES      # 超类/接口层次解析（class <: SuperClass）
   → TYPES            # 显式类型引用解析（参数类型、返回类型、字段类型）
   → STATUS           # 声明状态解析（public/private/open/abstract/mut 等修饰符）
@@ -333,7 +342,7 @@ RAW_CFIR
 
 ---
 
-### 11. `CFIR2CHIR` — CHIR 生成
+### 11. `CFIR2CHIR` — CHIR 生成（可选扩展）
 
 **职责：** 将 CFIR 转换为 CHIR（Cangjie High-level IR），执行 CHIR 级别优化和分析。
 
@@ -375,7 +384,7 @@ ANALYSIS_FOR_CJLINT → 静态分析完成
 
 ---
 
-### 12. `CODEGEN` — 代码生成
+### 12. `CODEGEN` — 代码生成（可选扩展）
 
 **职责：** 将 CHIR 转换为 LLVM IR，生成目标平台字节码。
 
@@ -451,6 +460,7 @@ CFIR_RESOLVE 采用 Kotlin K2 风格的分阶段解析，每个声明独立跟�
 |------------------|-----------|--------------------------------------------------------|
 | `RAW_CFIR`       | 初始状态   | PSI/LightTree → CFIR 转换完成                           |
 | `IMPORTS`        | 导入绑定   | 解析 import 语句，绑定导入符号                            |
+| `MACRO_EXPAND`   | 宏展开     | 展开宏调用，可能替换整个 CfirFile                          |
 | `SUPER_TYPES`    | 超类解析   | 解析 `class <: SuperClass`，构建继承层次                  |
 | `TYPES`          | 类型解析   | 解析显式类型（参数、返回值、字段类型引用）                   |
 | `STATUS`         | 状态解析   | 解析声明修饰符（public/private/open/abstract/mut/static） |
@@ -465,6 +475,7 @@ CFIR_RESOLVE 采用 Kotlin K2 风格的分阶段解析，每个声明独立跟�
 |---------------------------------|---------------------------------|------------------------|
 | `RAW_FIR`                       | `RAW_CFIR`                      | 对应                    |
 | `IMPORTS`                       | `IMPORTS`                       | 对应                    |
+| *(无，用插件替代)*                | `MACRO_EXPAND`                  | 仓颉特有宏展开，纳入 resolve phase |
 | `SUPER_TYPES`                   | `SUPER_TYPES`                   | 对应                    |
 | `SEALED_CLASS_INHERITORS`       | *(无)*                           | 仓颉无 sealed 继承者推断 |
 | `TYPES`                         | `TYPES`                         | 对应                    |

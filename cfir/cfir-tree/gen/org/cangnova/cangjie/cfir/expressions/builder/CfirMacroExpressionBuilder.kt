@@ -9,8 +9,9 @@ package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirMacroExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirMacroExpressionImpl
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -30,7 +31,7 @@ class CfirMacroExpressionBuilder {
     fun build(): CfirMacroExpression {
         return CfirMacroExpressionImpl(
             source,
-            annotations,
+            annotations.toMutableOrEmpty(),
             coneTypeOrNull,
             name,
             inputText,

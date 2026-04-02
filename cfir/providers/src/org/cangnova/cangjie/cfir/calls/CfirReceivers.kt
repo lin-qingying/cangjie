@@ -1,6 +1,5 @@
 package org.cangnova.cangjie.cfir.calls
 
-import org.cangnova.cangjie.cfir.CfirResolvable
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -8,6 +7,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.InaccessibleReceiverKind
 import org.cangnova.cangjie.cfir.expressions.buildInaccessibleReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.buildThisReceiverExpression
@@ -17,8 +17,10 @@ import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassStaticScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirCompositeTypeScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -26,14 +28,20 @@ import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirThisOwnerSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.constructType
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.ConeIntersectionType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.resolvedType
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.fakeElement
 
@@ -45,13 +53,11 @@ sealed interface ReceiverValue {
     fun scope(c: SessionAndScopeSessionHolder): CfirScope?
 }
 
-class ExpressionReceiverValue(
+    class ExpressionReceiverValue(
     override val receiverExpression: CfirExpression,
 ) : ReceiverValue {
     override val type: ConeCangJieType
-        get() = receiverExpression.coneTypeOrNull
-            ?: error("Receiver expression '${receiverExpression::class.simpleName}' has no resolved type")
-
+        get() = receiverExpression.resolvedType
     override fun scope(c: SessionAndScopeSessionHolder): CfirScope? =
         receiverExpression.qualifierScopeOrNull(c.session)
             ?: typeToScope(c.session, c.scopeSession, type)
@@ -211,15 +217,125 @@ private fun typeToScope(
     scopeSession: ScopeSession,
     type: ConeCangJieType,
 ): CfirTypeScope? {
-    val classId = type.classIdOrPrimitiveClassId ?: return null
-    val symbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
-    val declaration = symbol.cfir
-
-    return when (declaration) {
-        is CfirClass -> session.cangjieScopeProvider.getUseSiteMemberScope(declaration, session, scopeSession)
-        is CfirExtend -> CfirClassUseSiteMemberScope(symbol, session.symbolProvider, session.extendProvider)
-        else -> CfirClassUseSiteMemberScope(symbol, session.symbolProvider, session.extendProvider)
+    val scopes = linkedSetOf<CfirTypeScope>()
+    collectTypeScopes(session, scopeSession, type, scopes, linkedSetOf(), linkedSetOf())
+    return when (scopes.size) {
+        0 -> null
+        1 -> scopes.single()
+        else -> CfirCompositeTypeScope(scopes.toList())
     }
+}
+
+private fun collectTypeScopes(
+    session: CfirSession,
+    scopeSession: ScopeSession,
+    type: ConeCangJieType,
+    destination: MutableSet<CfirTypeScope>,
+    visitedClassIds: MutableSet<org.cangnova.cangjie.name.ClassId>,
+    visitedTypeParameters: MutableSet<ConeTypeParameterLookupTag>,
+) {
+    when (type) {
+        is ConeTypeVariableType -> {
+            val originalTypeParameter = type.typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag ?: return
+            collectTypeParameterBoundsScopes(
+                session,
+                scopeSession,
+                originalTypeParameter,
+                destination,
+                visitedClassIds,
+                visitedTypeParameters,
+            )
+        }
+
+        is org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType -> {
+            collectTypeParameterBoundsScopes(
+                session,
+                scopeSession,
+                type.lookupTag,
+                destination,
+                visitedClassIds,
+                visitedTypeParameters,
+            )
+        }
+
+        is ConeIntersectionType -> {
+            type.intersectedTypes.forEach {
+                collectTypeScopes(session, scopeSession, it, destination, visitedClassIds, visitedTypeParameters)
+            }
+        }
+
+        else -> {
+            val classId = type.classIdOrPrimitiveClassId ?: return
+            if (!visitedClassIds.add(classId)) return
+            val symbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return
+            val declaration = symbol.cfir
+
+            val scope = when (declaration) {
+                is CfirClass -> session.cangjieScopeProvider.getUseSiteMemberScope(declaration, session, scopeSession)
+                is CfirExtend -> CfirClassUseSiteMemberScope(
+                    symbol,
+                    session.symbolProvider,
+                    session.extendProvider,
+                    session.directSupertypeProviderOrNull,
+                )
+                else -> CfirClassUseSiteMemberScope(
+                    symbol,
+                    session.symbolProvider,
+                    session.extendProvider,
+                    session.directSupertypeProviderOrNull,
+                )
+            }
+            destination += scope
+        }
+    }
+}
+
+private fun collectTypeParameterBoundsScopes(
+    session: CfirSession,
+    scopeSession: ScopeSession,
+    lookupTag: ConeTypeParameterLookupTag,
+    destination: MutableSet<CfirTypeScope>,
+    visitedClassIds: MutableSet<org.cangnova.cangjie.name.ClassId>,
+    visitedTypeParameters: MutableSet<ConeTypeParameterLookupTag>,
+) {
+    if (!visitedTypeParameters.add(lookupTag)) return
+    val typeParameterType = org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl(lookupTag)
+    val bounds = collectTypeParameterUpperBounds(typeParameterType)
+    bounds.forEach {
+        collectTypeScopes(session, scopeSession, it, destination, visitedClassIds, visitedTypeParameters)
+    }
+}
+
+private fun collectTypeParameterUpperBounds(
+    typeParameterType: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType,
+): Set<ConeCangJieType> {
+    val upperBounds = linkedSetOf<ConeCangJieType>()
+    val seen = linkedSetOf<ConeCangJieType>()
+
+    fun collect(type: ConeCangJieType) {
+        if (!seen.add(type)) return
+
+        when (type) {
+            is ConeErrorType -> Unit
+            is org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType -> {
+                type.lookupTag.collectUpperBoundsTo(::collect)
+            }
+            is ConeTypeVariableType -> {
+                val originalTypeParameter = type.typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag ?: return
+                originalTypeParameter.collectUpperBoundsTo(::collect)
+            }
+            is ConeIntersectionType -> type.intersectedTypes.forEach(::collect)
+            else -> upperBounds += type
+        }
+    }
+
+    collect(typeParameterType)
+    return upperBounds
+}
+
+private fun ConeTypeParameterLookupTag.collectUpperBoundsTo(collect: (ConeCangJieType) -> Unit) {
+    typeParameterSymbol.lazyResolveToPhase(org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.TYPES)
+    typeParameterSymbol.resolvedBounds.map { it.coneType }.forEach(collect)
 }
 
 fun CfirExpression.resolvedQualifierClassifier(session: CfirSession): CfirClassLikeSymbol<*>? {

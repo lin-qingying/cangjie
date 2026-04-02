@@ -182,6 +182,19 @@
       <module name="cangjie.llvm-interop.llvm-interop-jni.test" options="-proc:none" />
       <module name="cangjie.llvm-interop.main" options="-proc:none" />
       <module name="cangjie.llvm-interop.test" options="-proc:none" />
+      <module name="cangjie.lsp" options="-proc:none" />
+      <module name="cangjie.lsp.main" options="-proc:none" />
+      <module name="cangjie.lsp.test" options="-proc:none" />
+      <module name="cangjie.lsp.testFixtures" options="-proc:none" />
+      <module name="cangjie.macro.macro-common" options="-proc:none" />
+      <module name="cangjie.macro.macro-common.main" options="-proc:none" />
+      <module name="cangjie.macro.macro-common.test" options="-proc:none" />
+      <module name="cangjie.macro.macro-process" options="-proc:none" />
+      <module name="cangjie.macro.macro-process.main" options="-proc:none" />
+      <module name="cangjie.macro.macro-process.test" options="-proc:none" />
+      <module name="cangjie.macro.macro-stub" options="-proc:none" />
+      <module name="cangjie.macro.macro-stub.main" options="-proc:none" />
+      <module name="cangjie.macro.macro-stub.test" options="-proc:none" />
       <module name="cangjie.psi" options="-proc:none" />
       <module name="cangjie.psi.main" options="-proc:none" />
       <module name="cangjie.psi.test" options="-proc:none" />

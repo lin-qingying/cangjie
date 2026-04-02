@@ -65,7 +65,7 @@ private fun CjUserType.toFirUserTypeRef(
     val qualifier = buildQualifierFromUserType(this)
     val typeArguments = typeArguments.map { it.typeReference.toFirOrImplicitTypeRef(toSource) }
     return buildUserTypeRef {
-        source = ref.toCjSourceElementOrNull(toSource)
+        source = ref.toCjSourceElement(toSource)
         this.qualifier += qualifier
         this.typeArguments += typeArguments
     }
@@ -137,3 +137,8 @@ private fun CjVArrayType.toFirVArrayTypeRef(
 private fun CjTypeReference.toCjSourceElementOrNull(
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
 ): CjSourceElement? = toSource(this) as? CjSourceElement
+
+private fun CjTypeReference.toCjSourceElement(
+    toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
+): CjSourceElement =
+    requireNotNull(toCjSourceElementOrNull(toSource)) { "Expected CjSourceElement for type reference: $text" }

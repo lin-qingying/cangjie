@@ -4,8 +4,12 @@ import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.collectUpperBounds
 import org.cangnova.cangjie.cfir.types.coneType
@@ -45,13 +49,40 @@ internal fun substituteTypeParameterUpperBoundIfNeeded(
     session: CfirSession
 ): ConeCangJieType {
     val expectedTypeClassId = expectedType.classIdOrPrimitiveClassId ?: return argumentType
-    val simplifiedArgumentType = argumentType as? ConeTypeParameterType ?: return argumentType
     val context = session.typeContext
+    val chosenSupertype = when (argumentType) {
+        is ConeTypeParameterType -> argumentType.collectUpperBounds(context)
+            .singleOrNull { it.hasSupertypeWithGivenClassId(expectedTypeClassId, context) }
 
-    val chosenSupertype = simplifiedArgumentType.collectUpperBounds(session.typeContext)
-        .singleOrNull { it.hasSupertypeWithGivenClassId(expectedTypeClassId, context) } ?: return argumentType
+        is ConeTypeVariableType -> {
+            val originalTypeParameter = argumentType.typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag
+                ?: return argumentType
+            ConeTypeParameterTypeImpl(originalTypeParameter, argumentType.attributes)
+                .collectUpperBounds(context)
+                .singleOrNull { it.hasSupertypeWithGivenClassId(expectedTypeClassId, context) }
+                ?: ConeTypeParameterTypeImpl(originalTypeParameter, argumentType.attributes)
+        }
 
+        is ConeIdealLiteralType -> argumentType.defaultType
+        else -> null
+    } ?: return argumentType
     return chosenSupertype
+}
+
+internal fun normalizeTypeForCompatibilityCheck(type: ConeCangJieType): ConeCangJieType {
+    return when (type) {
+        is ConeTypeVariableType -> {
+            val originalTypeParameter = type.typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag
+            if (originalTypeParameter != null) {
+                ConeTypeParameterTypeImpl(originalTypeParameter, type.attributes)
+            } else {
+                type
+            }
+        }
+
+        is ConeIdealLiteralType -> type.defaultType
+        else -> type
+    }
 }
 
 fun CfirExpression.getExpectedType(

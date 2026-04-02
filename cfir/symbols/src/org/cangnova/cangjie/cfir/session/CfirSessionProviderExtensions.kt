@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.session
 
+import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
@@ -10,6 +11,10 @@ val CfirSession.symbolProvider: CfirSymbolProvider by CfirSession.sessionCompone
 val CfirSession.cfirProvider: CfirProvider by CfirSession.sessionComponentAccessor()
 
 val CfirSession.extendProvider: CfirExtendProvider by CfirSession.sessionComponentAccessor()
+val CfirSession.extendProviderOrNull: CfirExtendProvider? by CfirSession.nullableSessionComponentAccessor()
+
+val CfirSession.directSupertypeProviderOrNull: CfirDirectSupertypeProvider?
+        by CfirSession.nullableSessionComponentAccessor()
 
 val CfirSession.cangjieScopeProvider: CfirCangJieScopeProvider by CfirSession.sessionComponentAccessor()
 

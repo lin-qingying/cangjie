@@ -1,30 +1,27 @@
 package org.cangnova.cangjie.cfir.resolve.body
 
+import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.CfirResolvable
 import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionExpectedError
-import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionCallExpectedError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoConstructorError
 import org.cangnova.cangjie.cfir.diagnostic.ConeResolutionToClassifierError
-import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostic.ConeHiddenCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
-import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedError
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
-import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.unwrapSmartcastExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
-import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.CollectionLiteralOuterCandidateContext
@@ -38,7 +35,6 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirAllCandidatesCollector
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateCollector
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirErrorReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.createErrorReferenceWithErrorCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.createErrorReferenceWithExistingCandidate
@@ -48,13 +44,14 @@ import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
 import org.cangnova.cangjie.cfir.resolve.typeFromCallee
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassStaticScope
+import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
@@ -62,15 +59,17 @@ import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFuncType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
 import org.cangnova.cangjie.utils.runIf
-import kotlin.text.get
 
 class CfirCallResolver(
     private val components: CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
@@ -99,6 +98,7 @@ class CfirCallResolver(
         collectionLiteralContext: CollectionLiteralOuterCandidateContext? = null,
     ): CfirFunctionCall {
         val callee = functionCall.calleeReference as? CfirNamedReference ?: return functionCall
+        val isCollectionLiteralCall = collectionLiteralContext != null
         val result = collectCandidates(
             qualifiedAccess = functionCall,
             name = callee.name,
@@ -107,21 +107,37 @@ class CfirCallResolver(
             collectionLiteralContext = collectionLiteralContext,
         )
 
-        var forceCandidates: Collection<Candidate>? = null
-        if (result.candidates.isEmpty()) {
-            val newResult = collectCandidates(
+        var effectiveResult = result
+        var expectedCallKind: CallKind? = null
+        var expectedCandidates: Collection<Candidate>? = null
+        if (result.candidates.isEmpty() && !isCollectionLiteralCall) {
+            // 阶段2a：普通函数搜索为空时，先尝试枚举构造器搜索（对齐官方两阶段语义：普通函数完全遮蔽枚举构造器）
+            val enumResult = collectCandidates(
                 functionCall,
                 callee.name,
-                CallKind.VariableAccess,
+                CallKind.EnumConstructorCall,
                 origin = functionCall.origin,
                 resolutionMode = resolutionMode,
             )
-            if (newResult.candidates.isNotEmpty()) {
-                forceCandidates = newResult.candidates
+            if (enumResult.candidates.isNotEmpty()) {
+                effectiveResult = enumResult
+            } else {
+                // 阶段2b：枚举构造器也未找到，fallback 到 NamedValueAccess（无参枚举作为值访问等场景）
+                val variableAccessResult = collectCandidates(
+                    functionCall,
+                    callee.name,
+                    CallKind.NamedValueAccess,
+                    origin = functionCall.origin,
+                    resolutionMode = resolutionMode,
+                )
+                if (variableAccessResult.candidates.isNotEmpty()) {
+                    expectedCallKind = CallKind.NamedValueAccess
+                    expectedCandidates = variableAccessResult.candidates
+                }
             }
         }
 
-        val matchedClassifier = if (result.candidates.isEmpty() && forceCandidates == null) {
+        val matchedClassifier = if (effectiveResult.candidates.isEmpty() && expectedCandidates == null) {
             findClassifierForCall(functionCall, callee.name)
         } else {
             null
@@ -130,108 +146,173 @@ class CfirCallResolver(
         val nameReference = createResolvedNamedReference(
             callee,
             callee.name,
-            result.info,
-            result.candidates,
-            result.applicability,
+            effectiveResult.info,
+            effectiveResult.candidates,
+            effectiveResult.applicability,
             functionCall.explicitReceiver,
             matchedClassifier = matchedClassifier,
-            expectedCallKind = if (forceCandidates != null) CallKind.VariableAccess else null,
-            expectedCandidates = forceCandidates
+            expectedCallKind = expectedCallKind,
+            expectedCandidates = expectedCandidates,
         )
 
         functionCall.replaceCalleeReference(nameReference)
         val candidate = (nameReference as? CfirNamedReferenceWithCandidate)?.candidate
         candidate?.updateSourcesOfReceivers()
-
         return functionCall
     }
 
-    fun <T> resolveVariableAccessAndSelectCandidate(
-        qualifiedAccess: T,
+    fun resolveNamedValueAccessAndSelectCandidate(
+        qualifiedAccess: CfirQualifiedAccessExpression,
+        isUsedAsReceiver: Boolean,
+        isUsedAsGetClassReceiver: Boolean,
+        callSite: CfirElement,
         resolutionMode: ResolutionMode,
-        forceCallKind: CallKind? = null,
-        isUsedAsGetClassReceiver: Boolean = false,
-        callSite: CfirElement = qualifiedAccess,
-    ): T where T : CfirExpression, T : CfirResolvable {
-        val callee = qualifiedAccess.calleeReference as? CfirNamedReference ?: return qualifiedAccess
-
-        var result = collectCandidates(
+    ): CfirExpression {
+        return resolveNamedValueAccessAndSelectCandidateImpl(
             qualifiedAccess = qualifiedAccess,
-            name = callee.name,
-            forceCallKind = forceCallKind,
+            isUsedAsReceiver = isUsedAsReceiver,
+            resolutionMode = resolutionMode,
+            isUsedAsGetClassReceiver = isUsedAsGetClassReceiver,
+            callSite = callSite,
+        ) { true }
+    }
+
+    @Deprecated(
+        message = "Use resolveNamedValueAccessAndSelectCandidate instead",
+        replaceWith = ReplaceWith(
+            "resolveNamedValueAccessAndSelectCandidate(qualifiedAccess, isUsedAsReceiver, isUsedAsGetClassReceiver, callSite, resolutionMode)"
+        ),
+    )
+    fun resolveVariableAccessAndSelectCandidate(
+        qualifiedAccess: CfirQualifiedAccessExpression,
+        isUsedAsReceiver: Boolean,
+        isUsedAsGetClassReceiver: Boolean,
+        callSite: CfirElement,
+        resolutionMode: ResolutionMode,
+    ): CfirExpression =
+        resolveNamedValueAccessAndSelectCandidate(
+            qualifiedAccess = qualifiedAccess,
+            isUsedAsReceiver = isUsedAsReceiver,
             isUsedAsGetClassReceiver = isUsedAsGetClassReceiver,
             callSite = callSite,
             resolutionMode = resolutionMode,
         )
 
-        var functionCallExpected = false
-        if (result.candidates.isEmpty() && forceCallKind == null && qualifiedAccess !is CfirFunctionCall) {
-            val newResult = collectCandidates(
-                qualifiedAccess = qualifiedAccess,
+    @OptIn(ApplicabilityDetail::class)
+    private fun resolveNamedValueAccessAndSelectCandidateImpl(
+        qualifiedAccess: CfirQualifiedAccessExpression,
+        isUsedAsReceiver: Boolean,
+        resolutionMode: ResolutionMode,
+        isUsedAsGetClassReceiver: Boolean,
+        callSite: CfirElement = qualifiedAccess,
+        acceptCandidates: (Collection<Candidate>) -> Boolean,
+    ): CfirExpression {
+        val callee = qualifiedAccess.calleeReference as? CfirNamedReference ?: return qualifiedAccess
+
+        val transformedAccess = transformer.transformExplicitReceiverOf(qualifiedAccess)
+
+        val basicResult by lazy(LazyThreadSafetyMode.NONE) {
+            collectCandidates(
+                qualifiedAccess = transformedAccess,
                 name = callee.name,
-                forceCallKind = CallKind.Function,
                 isUsedAsGetClassReceiver = isUsedAsGetClassReceiver,
                 callSite = callSite,
                 resolutionMode = resolutionMode,
             )
-            if (newResult.candidates.isNotEmpty()) {
-                result = newResult
-                functionCallExpected = true
-            }
         }
 
-        if (result.candidates.isEmpty()) {
-            val classifierFromQualifier = qualifiedAccess.explicitReceiverOrNull()?.let {
+        if (isUsedAsReceiver || !basicResult.isSuccess) {
+            val classifierFromQualifier = transformedAccess.explicitReceiver?.let {
                 findClassifierInQualifierScope(it, callee.name)
             }
             if (classifierFromQualifier != null) {
-                qualifiedAccess.replaceCalleeReference(
+                transformedAccess.replaceCalleeReference(
                     buildResolvedNamedReference {
                         source = callee.source
                         name = callee.name
                         resolvedSymbol = classifierFromQualifier
                     }
                 )
-                return qualifiedAccess
+                return transformedAccess
             }
         }
 
-        if (result.candidates.isEmpty() && qualifiedAccess.explicitReceiverOrNull() == null) {
-            val classifier = towerResolver.findClassifiers(callee.name).firstOrNull()
-            if (classifier != null) {
-                qualifiedAccess.replaceCalleeReference(
-                    buildResolvedNamedReference {
-                        source = callee.source
-                        name = callee.name
-                        resolvedSymbol = classifier
-                    }
-                )
-                return qualifiedAccess
+        var result = basicResult
+
+        if (transformedAccess.explicitReceiver == null) {
+            if (!result.isSuccess || (isUsedAsReceiver && result.candidates.all { it.symbol is CfirClassLikeSymbol<*> })) {
+                val classifier = towerResolver.findClassifiers(callee.name).firstOrNull()
+                if (classifier != null) {
+                    transformedAccess.replaceCalleeReference(
+                        buildResolvedNamedReference {
+                            source = callee.source
+                            name = callee.name
+                            resolvedSymbol = classifier
+                        }
+                    )
+                    return transformedAccess
+                }
             }
         }
+
+        val shouldTryEnumValueAccess =
+            !isUsedAsReceiver &&
+                    transformedAccess !is CfirFunctionCall &&
+                    (result.candidates.isEmpty() || result.candidates.all { it.symbol is CfirEnumConstructorSymbol })
+
+        var functionCallExpected = false
+        if (shouldTryEnumValueAccess) {
+            // 先尝试枚举构造器（作为值访问，对应无参枚举构造器的直接引用）
+            val enumResult = collectCandidates(
+                qualifiedAccess = transformedAccess,
+                name = callee.name,
+                forceCallKind = CallKind.EnumConstructorCall,
+                isUsedAsGetClassReceiver = isUsedAsGetClassReceiver,
+                callSite = callSite,
+                resolutionMode = resolutionMode,
+            )
+            if (enumResult.candidates.isNotEmpty()) {
+                result = enumResult
+            } else if (result.candidates.isEmpty()) {
+                val newResult = collectCandidates(
+                    qualifiedAccess = transformedAccess,
+                    name = callee.name,
+                    forceCallKind = CallKind.Function,
+                    isUsedAsGetClassReceiver = isUsedAsGetClassReceiver,
+                    callSite = callSite,
+                    resolutionMode = resolutionMode,
+                )
+                if (newResult.candidates.isNotEmpty()) {
+                    result = newResult
+                    functionCallExpected = newResult.applicability > CandidateApplicability.INAPPLICABLE_WRONG_RECEIVER
+                }
+            }
+        }
+
+        val reducedCandidates = result.candidates
+        if (!acceptCandidates(reducedCandidates)) return transformedAccess
 
         val nameReference = createResolvedNamedReference(
-            callee,
-            callee.name,
-            result.info,
-            result.candidates,
-            result.applicability,
-            qualifiedAccess.explicitReceiverOrNull(),
-            expectedCallKind = if (functionCallExpected) CallKind.Function else null
+            reference = callee,
+            name = callee.name,
+            callInfo = result.info,
+            candidates = reducedCandidates,
+            applicability = result.applicability,
+            explicitReceiver = transformedAccess.explicitReceiver,
+            expectedCallKind = if (functionCallExpected) CallKind.Function else null,
         )
 
-        qualifiedAccess.replaceCalleeReference(nameReference)
-        if (result.candidates.size == 1) {
-            val candidate = result.candidates.single()
+        transformedAccess.replaceCalleeReference(nameReference)
+        if (reducedCandidates.size == 1) {
+            val candidate = reducedCandidates.single()
             candidate.updateSourcesOfReceivers()
-            // 存储类型信息（如果需要）
         }
-
-        return qualifiedAccess
+        transformer.storeTypeFromCallee(transformedAccess)
+        return transformedAccess
     }
 
     fun collectAllCandidates(
-        qualifiedAccess: CfirQualifiedAccess,
+        qualifiedAccess: CfirQualifiedAccessExpression,
         name: Name,
         containingDeclarations: List<CfirDeclaration> = transformer.components.containingDeclarations,
         resolutionContext: ResolutionContext = transformer.resolutionContext,
@@ -268,7 +349,7 @@ class CfirCallResolver(
     }
 
     private fun collectCandidates(
-        qualifiedAccess: CfirExpression,
+        qualifiedAccess: CfirQualifiedAccessExpression,
         name: Name,
         forceCallKind: CallKind? = null,
         isUsedAsGetClassReceiver: Boolean = false,
@@ -280,15 +361,15 @@ class CfirCallResolver(
         resolutionMode: ResolutionMode,
         collectionLiteralContext: CollectionLiteralOuterCandidateContext? = null,
     ): ResolutionResult {
-        val explicitReceiver = qualifiedAccess.explicitReceiverOrNull()
-        val arguments = (qualifiedAccess as? CfirFunctionCall)?.arguments ?: emptyList()
-        val typeArguments = qualifiedAccess.typeArgumentsOrEmpty(forceCallKind)
+        val explicitReceiver = qualifiedAccess.explicitReceiver
+        val arguments = (qualifiedAccess as? CfirFunctionCall)?.argumentList?.arguments ?: emptyList()
+        val typeArguments = qualifiedAccess.typeArguments
 
         val callKind = when {
             forceCallKind != null -> forceCallKind
             collectionLiteralContext != null -> CallKind.Function
             qualifiedAccess is CfirFunctionCall -> CallKind.Function
-            else -> CallKind.VariableAccess
+            else -> CallKind.NamedValueAccess
         }
 
         val info = CallInfo(
@@ -307,6 +388,14 @@ class CfirCallResolver(
             containingCandidateForCollectionLiteral = collectionLiteralContext?.containingCandidate,
         )
 
+        return collectCandidates(info = info, resolutionContext = resolutionContext, collector = collector)
+    }
+
+    private fun collectCandidates(
+        info: CallInfo,
+        resolutionContext: ResolutionContext,
+        collector: CfirCandidateCollector? = null,
+    ): ResolutionResult {
         val resultCollector = towerResolver.runResolver(info, resolutionContext, collector)
         val (reducedCandidates, applicability) = reduceCandidates(resultCollector)
 
@@ -353,6 +442,7 @@ class CfirCallResolver(
         val operatorToken = runIf(callInfo.origin == CfirFunctionCallOrigin.Operator) {
             OperatorNameConventions.TOKENS_BY_OPERATOR_NAME[name]
         }
+        val argumentTypes = callInfo.arguments.mapNotNull { it.coneTypeOrNull }
 
         // 根据期望的调用种类生成诊断
         val diagnostic = when {
@@ -400,7 +490,7 @@ class CfirCallResolver(
                                         singleExpectedCandidate,
                                     )
                                 }
-                                else -> ConeUnresolvedNameError(name, operatorToken)
+                                else -> ConeUnresolvedNameError(name, operatorToken, argumentTypes = argumentTypes)
                             }
                         }
                     }
@@ -419,7 +509,7 @@ class CfirCallResolver(
                         val receiverType = explicitReceiver?.coneTypeOrNull
                         when {
                             receiverType is ConeClassLikeType && receiverType.isInterface -> ConeNoConstructorError
-                            else -> ConeUnresolvedNameError(name, operatorToken, receiverType)
+                            else -> ConeUnresolvedNameError(name, operatorToken, receiverType, argumentTypes)
                         }
                     }
                 }
@@ -453,17 +543,20 @@ class CfirCallResolver(
         val candidate = candidates.single()
 
         // 优化：对于没有类型参数的局部变量或属性，直接创建已解析引用而不保留候选
-        if (candidate.usedOuterCs == false && explicitReceiver?.coneTypeOrNull !is ConeIdealLiteralType &&
-            (candidate.symbol as? CfirCallableSymbol<*>)?.let {
-                it is CfirVariableSymbol && (it !is CfirPropertySymbol || it.cfir.typeParameters.isEmpty())
-            } == true &&
-                createResolvedReferenceWithoutCandidateForLocalVariables &&
-                !candidate.doesResolutionResultOverrideOtherToPreserveCompatibility()
+        val symbol = candidate.symbol
+        val canDropCandidateForNamedValueAccess = when (symbol) {
+            is CfirPropertySymbol -> symbol.cfir.typeParameters.isEmpty()
+            is CfirVariableSymbol -> true
+            else -> false
+        }
+
+        if (
+            !candidate.usedOuterCs && callInfo.callKind == CallKind.NamedValueAccess && explicitReceiver?.coneTypeOrNull !is ConeIdealLiteralType && canDropCandidateForNamedValueAccess && createResolvedReferenceWithoutCandidateForLocalVariables && !candidate.doesResolutionResultOverrideOtherToPreserveCompatibility()
         ) {
             return buildResolvedNamedReference {
                 this.source = source
                 this.name = name
-                resolvedSymbol = candidate.symbol
+                resolvedSymbol = symbol
             }
         }
 
@@ -471,14 +564,60 @@ class CfirCallResolver(
     }
 
     private fun findClassifierForCall(
-        qualifiedAccess: CfirExpression,
+        qualifiedAccess: CfirQualifiedAccessExpression,
         name: Name,
     ): CfirClassLikeSymbol<*>? {
-        val explicitReceiver = qualifiedAccess.explicitReceiverOrNull()
+        val explicitReceiver = qualifiedAccess.explicitReceiver
         return if (explicitReceiver != null) {
             findClassifierInQualifierScope(explicitReceiver, name)
         } else {
-            towerResolver.findClassifiers(name).firstOrNull()
+            towerResolver.findClassifiers(name).firstOrNull() ?: resolveTopLevelClassifierByShortName(name)
+        }
+    }
+
+    private fun resolveTopLevelClassifierByShortName(name: Name): CfirClassLikeSymbol<*>? {
+        val candidates = LinkedHashSet<ClassId>()
+        val file = components.file
+
+        for (importInfo in file.imports) {
+            val importedFqName = importInfo.importedFqName ?: continue
+            if (importInfo.isAllUnder) {
+                candidates += ClassId(importedFqName, name)
+                continue
+            }
+
+            val importedName = importInfo.aliasName?.asString() ?: importedFqName.shortName().asString()
+            if (importedName == name.asString()) {
+                candidates += ClassId.topLevel(importedFqName)
+            }
+        }
+
+        candidates += ClassId(file.packageDirective.packageFqName, name)
+
+        val defaultImportsProvider = session.defaultImportsProvider
+        val defaultImports = defaultImportsProvider.getDefaultImports(includeLowPriorityImports = true)
+            .filter { it.fqName !in defaultImportsProvider.excludedImports }
+        addDefaultImportCandidates(candidates, defaultImports, name)
+
+        return candidates.firstNotNullOfOrNull(components.symbolProvider::getClassLikeSymbolByClassId)
+    }
+
+    private fun addDefaultImportCandidates(
+        candidates: MutableSet<ClassId>,
+        imports: List<ImportPath>,
+        shortName: Name,
+    ) {
+        val simpleName = shortName.asString()
+        for (importPath in imports) {
+            if (importPath.isAllUnder) {
+                candidates += ClassId(importPath.fqName, shortName)
+                continue
+            }
+
+            val importedName = importPath.alias?.asString() ?: importPath.fqName.shortName().asString()
+            if (importedName == simpleName) {
+                candidates += ClassId.topLevel(importPath.fqName)
+            }
         }
     }
 
@@ -486,7 +625,7 @@ class CfirCallResolver(
         receiver: CfirExpression,
         name: Name,
     ): CfirClassLikeSymbol<*>? {
-        val qualifierClassifier = receiver.resolvedQualifierClassifier(session) ?: return null
+        val qualifierClassifier = receiver.unwrapSmartcastExpression().resolvedQualifierClassifier(session) ?: return null
         val declaration = qualifierClassifier.cfir as? CfirClassLikeDeclaration ?: return null
         val staticScope = CfirClassStaticScope(declaration)
         var result: CfirClassLikeSymbol<*>? = null
@@ -504,36 +643,35 @@ class CfirCallResolver(
         callInfo: CallInfo,
         source: org.cangnova.cangjie.source.CjSourceElement?,
     ): CfirNamedReference {
-        return if (candidate != null) {
-            createErrorReferenceWithExistingCandidate(
-                candidate = candidate,
-                diagnostic = diagnostic,
-                source = source,
-                resolutionContext = transformer.resolutionContext,
-                resolutionStageRunner = components.resolutionStageRunner,
-            )
-        } else {
-            createErrorReferenceWithErrorCandidate(
+        if (candidate == null) {
+            return createErrorReferenceWithErrorCandidate(
                 callInfo = callInfo,
                 diagnostic = diagnostic,
                 source = source,
                 resolutionContext = transformer.resolutionContext,
                 resolutionStageRunner = components.resolutionStageRunner,
             )
+        } else {
+            return when (diagnostic) {
+                is ConeUnresolvedError,
+                is ConeHiddenCandidateError,
+                -> createErrorReferenceWithErrorCandidate(
+                    callInfo = callInfo,
+                    diagnostic = diagnostic,
+                    source = source,
+                    resolutionContext = transformer.resolutionContext,
+                    resolutionStageRunner = components.resolutionStageRunner,
+                )
+
+                else -> createErrorReferenceWithExistingCandidate(
+                    candidate = candidate,
+                    diagnostic = diagnostic,
+                    source = source,
+                    resolutionContext = transformer.resolutionContext,
+                    resolutionStageRunner = components.resolutionStageRunner,
+                )
+            }
         }
-    }
-
-    private fun CfirExpression.explicitReceiverOrNull() = when (this) {
-        is CfirFunctionCall -> explicitReceiver
-        is CfirQualifiedAccess -> explicitReceiver
-        is CfirPropertyAccess -> explicitReceiver
-        else -> null
-    }
-
-    private fun CfirExpression.typeArgumentsOrEmpty(forceCallKind: CallKind?): List<org.cangnova.cangjie.cfir.types.CfirTypeRef> = when {
-        this is CfirFunctionCall -> typeArguments
-        this is CfirQualifiedAccess && forceCallKind != null -> typeArguments
-        else -> emptyList()
     }
 
     private data class ResolutionResult(

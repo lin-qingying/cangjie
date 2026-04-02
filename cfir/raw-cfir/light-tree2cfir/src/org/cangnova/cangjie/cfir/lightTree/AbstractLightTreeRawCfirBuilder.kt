@@ -10,8 +10,6 @@ import org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder
 import org.cangnova.cangjie.cfir.builder.Context
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.lexer.CjTokens
-import org.cangnova.cangjie.name.CallableId
-import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.psi.ElementTypeUtils.isExpression
 import org.cangnova.cangjie.source.AbstractCjSourceElement
@@ -108,9 +106,5 @@ abstract class AbstractLightTreeRawCfirBuilder(
             }
         }
         return result
-    }
-
-    protected fun callableIdFor(name: Name): CallableId {
-        return if (context.inLocalContext) CallableId(name) else CallableId(packageFqName, name)
     }
 }

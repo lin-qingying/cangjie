@@ -8,26 +8,26 @@
 package org.cangnova.cangjie.cfir.expressions.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
+import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
-class CfirFunctionCallImpl @CfirImplementationDetail constructor(
+open class CfirFunctionCallImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
-    override var annotations: List<CfirAnnotation>,
+    override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
     override var calleeReference: CfirReference,
-    override var explicitReceiver: CfirExpression?,
     override var dispatchReceiver: CfirExpression?,
-    override var arguments: List<CfirExpression>,
-    override var typeArguments: List<CfirTypeRef>,
+    override var explicitReceiver: CfirExpression?,
+    override var typeArguments: MutableOrEmptyList<CfirTypeRef>,
+    override var argumentList: CfirArgumentList,
     override val origin: CfirFunctionCallOrigin,
 ) : CfirFunctionCall() {
 
@@ -35,84 +35,66 @@ class CfirFunctionCallImpl @CfirImplementationDetail constructor(
         annotations.forEach { it.accept(visitor, data) }
         calleeReference.accept(visitor, data)
         explicitReceiver?.accept(visitor, data)
-        dispatchReceiver?.accept(visitor, data)
-        arguments.forEach { it.accept(visitor, data) }
+        if (dispatchReceiver !== explicitReceiver) {
+            dispatchReceiver?.accept(visitor, data)
+        }
         typeArguments.forEach { it.accept(visitor, data) }
-    }
-
-    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-     {
-        this.annotations = newAnnotations
-    }
-
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
-     {
-        this.coneTypeOrNull = newConeTypeOrNull
-    }
-
-    override fun replaceCalleeReference(newCalleeReference: CfirReference)
-     {
-        this.calleeReference = newCalleeReference
-    }
-
-    override fun replaceExplicitReceiver(newExplicitReceiver: CfirExpression?)
-     {
-        this.explicitReceiver = newExplicitReceiver
-    }
-
-    override fun replaceDispatchReceiver(newDispatchReceiver: CfirExpression?)
-     {
-        this.dispatchReceiver = newDispatchReceiver
-    }
-
-    override fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>)
-     {
-        this.typeArguments = newTypeArguments
-    }
-
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
-     {
-        this.annotations = annotations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnnotation }
-        return this
-    }
-
-    override fun <D> transformCalleeReference(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
-     {
-        this.calleeReference = calleeReference.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirReference
-        return this
-    }
-
-    override fun <D> transformExplicitReceiver(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
-     {
-        this.explicitReceiver = explicitReceiver?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression?
-        return this
-    }
-
-    override fun <D> transformDispatchReceiver(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
-     {
-        this.dispatchReceiver = dispatchReceiver?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression?
-        return this
-    }
-
-    override fun <D> transformArguments(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
-     {
-        this.arguments = arguments.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression }
-        return this
-    }
-
-    override fun <D> transformTypeArguments(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
-     {
-        this.typeArguments = typeArguments.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirTypeRef }
-        return this
+        argumentList.accept(visitor, data)
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirFunctionCallImpl {
         transformAnnotations(transformer, data)
         transformCalleeReference(transformer, data)
-        transformExplicitReceiver(transformer, data)
-        transformDispatchReceiver(transformer, data)
-        transformArguments(transformer, data)
+        explicitReceiver = explicitReceiver?.transform(transformer, data)
+        if (dispatchReceiver !== explicitReceiver) {
+            dispatchReceiver = dispatchReceiver?.transform(transformer, data)
+        }
         transformTypeArguments(transformer, data)
+        argumentList = argumentList.transform(transformer, data)
         return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFunctionCallImpl {
+        annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformCalleeReference(transformer: CfirTransformer<D>, data: D): CfirFunctionCallImpl {
+        calleeReference = calleeReference.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformExplicitReceiver(transformer: CfirTransformer<D>, data: D): CfirFunctionCallImpl {
+        explicitReceiver = explicitReceiver?.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformTypeArguments(transformer: CfirTransformer<D>, data: D): CfirFunctionCallImpl {
+        typeArguments.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
+        annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
+        coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun replaceCalleeReference(newCalleeReference: CfirReference) {
+        calleeReference = newCalleeReference
+    }
+
+    override fun replaceDispatchReceiver(newDispatchReceiver: CfirExpression?) {
+        dispatchReceiver = newDispatchReceiver
+    }
+
+    override fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>) {
+        typeArguments = newTypeArguments.toMutableOrEmpty()
+    }
+
+    override fun replaceArgumentList(newArgumentList: CfirArgumentList) {
+        argumentList = newArgumentList
     }
 }

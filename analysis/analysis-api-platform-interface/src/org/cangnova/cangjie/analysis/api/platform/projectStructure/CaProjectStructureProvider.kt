@@ -9,20 +9,20 @@ import org.cangnova.cangjie.analysis.api.CaModule
 /**
  * 项目结构提供器。
  *
- * 该接口负责把 PSI、文件与平台项目模型映射到 Analysis API 的模块世界，
- * 是所有 use-site 分析入口的核心桥梁。
+ * 对齐 Kotlin `KotlinProjectStructureProvider` 的职责，负责把 PSI 元素映射到 Analysis API 模块，
+ * 并暴露当前项目结构中可见的模块与源码文件集合。
  */
 interface CaProjectStructureProvider {
     fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule
 
     /**
-     * 当前项目中对 Analysis API 可见的全部模块。
+     * 当前项目中 Analysis API 可见的全部模块。
      */
     val allModules: List<CaModule>
         get() = emptyList()
 
     /**
-     * 当前项目结构暴露给 Analysis API 的全部源文件根。
+     * 当前项目结构暴露的全部源码文件。
      */
     val allSourceFiles: List<PsiFileSystemItem>
         get() = emptyList()

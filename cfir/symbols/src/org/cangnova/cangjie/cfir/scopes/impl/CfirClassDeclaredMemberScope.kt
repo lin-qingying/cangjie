@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.scopes.impl
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
@@ -12,6 +13,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -40,6 +42,7 @@ class CfirClassDeclaredMemberScope(
         memberIndex.enumConstructors[name]?.forEach(processor)
         memberIndex.functions[name]?.forEach(processor)
         memberIndex.properties[name]?.forEach(processor)
+        memberIndex.variables[name]?.forEach(processor)
     }
 
     private class MemberIndex(
@@ -47,6 +50,7 @@ class CfirClassDeclaredMemberScope(
         val enumConstructors: Map<Name, List<CfirEnumConstructorSymbol>>,
         val functions: Map<Name, List<CfirFunctionSymbol<*>>>,
         val properties: Map<Name, List<CfirPropertySymbol>>,
+        val variables: Map<Name, List<CfirVariableSymbol<*>>>,
     )
 
     private fun buildIndex(declarations: List<CfirDeclaration>): MemberIndex {
@@ -54,6 +58,7 @@ class CfirClassDeclaredMemberScope(
         val enumConstructors = HashMap<Name, MutableList<CfirEnumConstructorSymbol>>()
         val functions = HashMap<Name, MutableList<CfirFunctionSymbol<*>>>()
         val properties = HashMap<Name, MutableList<CfirPropertySymbol>>()
+        val variables = HashMap<Name, MutableList<CfirVariableSymbol<*>>>()
 
         for (declaration in declarations) {
             when (declaration) {
@@ -78,10 +83,19 @@ class CfirClassDeclaredMemberScope(
                     properties.getOrPut(declaration.name) { mutableListOf() }.add(symbol)
                 }
 
+                is CfirFieldVariable -> {
+                    val symbol = declaration.symbol as? CfirVariableSymbol<*> ?: continue
+                    variables.getOrPut(declaration.name) { mutableListOf() }.add(symbol)
+                }
+
                 else -> Unit
             }
         }
 
-        return MemberIndex(classifiers, enumConstructors, functions, properties)
+        return MemberIndex(classifiers, enumConstructors, functions, properties, variables)
+    }
+
+    override fun toString(): String {
+        return "Declared member scope of ${classSymbol.classId}"
     }
 }

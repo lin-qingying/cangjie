@@ -2,8 +2,13 @@ package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
+import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
@@ -26,6 +31,7 @@ class CfirClassUseSiteMemberScope(
     private val classSymbol: CfirClassLikeSymbol<*>,
     private val symbolProvider: CfirSymbolProvider,
     private val extendProvider: CfirExtendProvider? = null,
+    private val directSupertypeProvider: CfirDirectSupertypeProvider? = null,
 ) : CfirTypeScope() {
 
     private val declaredScope = CfirClassDeclaredMemberScope(classSymbol)
@@ -33,15 +39,9 @@ class CfirClassUseSiteMemberScope(
     private val parentScopes: List<CfirClassDeclaredMemberScope> by lazy { buildParentScopes() }
 
     override fun getCallableNames(): Set<Name> = buildSet {
-        for (declaration in classSymbol.cfir.declarations) {
-            when (declaration) {
-                is CfirFunction -> declaration.callableNameOrNull()?.let(::add)
-                is org.cangnova.cangjie.cfir.declarations.CfirProperty -> add(declaration.name)
-                is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> add(declaration.name)
-                else -> Unit
-            }
-        }
+        addDeclaredCallableNames(classSymbol.cfir.declarations, this)
         addAll(extendCallableNames())
+        addAll(parentCallableNames())
     }
 
     override fun getClassifierNames(): Set<Name> = buildSet {
@@ -143,6 +143,7 @@ class CfirClassUseSiteMemberScope(
                 when (declaration) {
                     is CfirFunction -> declaration.callableNameOrNull()?.let(::add)
                     is org.cangnova.cangjie.cfir.declarations.CfirProperty -> add(declaration.name)
+                    is org.cangnova.cangjie.cfir.declarations.CfirFieldVariable -> add(declaration.name)
                     is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> add(declaration.name)
                     else -> Unit
                 }
@@ -173,12 +174,9 @@ class CfirClassUseSiteMemberScope(
         depth: Int,
     ): List<CfirClassDeclaredMemberScope> {
         if (depth >= MAX_DEPTH) return emptyList()
-        val declaration = symbol.cfir
         val result = mutableListOf<CfirClassDeclaredMemberScope>()
 
-        for (superTypeRef in declaration.superTypeRefs) {
-            val resolvedRef = superTypeRef as? CfirResolvedTypeRef ?: continue
-            val classId = resolvedRef.coneType.classIdOrPrimitiveClassId ?: continue
+        for (classId in directParentClassIdsOf(symbol)) {
             val parentSymbol = symbolProvider.getClassLikeSymbolByClassId(classId) ?: continue
             result += CfirClassDeclaredMemberScope(parentSymbol)
             result += buildParentScopesRecursive(parentSymbol, depth + 1)
@@ -186,7 +184,62 @@ class CfirClassUseSiteMemberScope(
         return result
     }
 
+    private fun addDeclaredCallableNames(
+        declarations: List<CfirDeclaration>,
+        destination: MutableSet<Name>,
+    ) {
+        for (declaration in declarations) {
+            when (declaration) {
+                is CfirFunction -> declaration.callableNameOrNull()?.let(destination::add)
+                is CfirProperty -> destination += declaration.name
+                is CfirFieldVariable -> destination += declaration.name
+                is CfirEnumConstructor -> destination += declaration.name
+                else -> Unit
+            }
+        }
+    }
+
+    private fun parentCallableNames(): Set<Name> = buildSet {
+        collectParentCallableNames(
+            symbol = classSymbol,
+            depth = 0,
+            visitedClassIds = linkedSetOf(classSymbol.classId),
+            destination = this,
+        )
+    }
+
+    private fun collectParentCallableNames(
+        symbol: CfirClassLikeSymbol<*>,
+        depth: Int,
+        visitedClassIds: MutableSet<org.cangnova.cangjie.name.ClassId>,
+        destination: MutableSet<Name>,
+    ) {
+        if (depth >= MAX_DEPTH) return
+        for (classId in directParentClassIdsOf(symbol)) {
+            if (!visitedClassIds.add(classId)) continue
+
+            val parentSymbol = symbolProvider.getClassLikeSymbolByClassId(classId) ?: continue
+            addDeclaredCallableNames(parentSymbol.cfir.declarations, destination)
+            collectParentCallableNames(parentSymbol, depth + 1, visitedClassIds, destination)
+        }
+    }
+
+    private fun directParentClassIdsOf(symbol: CfirClassLikeSymbol<*>): List<org.cangnova.cangjie.name.ClassId> {
+        return directSupertypeProvider
+            ?.getDirectSuperTypes(symbol.classId)
+            ?.mapNotNull { it.coneType.classIdOrPrimitiveClassId }
+            ?.takeIf { it.isNotEmpty() }
+            ?: symbol.cfir.superTypeRefs.mapNotNull { superTypeRef ->
+                val resolvedRef = superTypeRef as? CfirResolvedTypeRef ?: return@mapNotNull null
+                resolvedRef.coneType.classIdOrPrimitiveClassId
+            }
+    }
+
     companion object {
         private const val MAX_DEPTH = 32
+    }
+
+    override fun toString(): String {
+        return "Use site scope of ${classSymbol.classId}"
     }
 }

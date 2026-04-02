@@ -1,26 +1,36 @@
-# Cangjie 编译器项目
+# Cangjie 语言前端项目
 
 ## 项目定位
 
-基于 Kotlin/JVM 的仓颉编程语言编译器实现，架构参考 Kotlin K2，功能对齐官方仓颉编译器（C++），覆盖从源码解析到代码生成的完整 12 阶段编译管线（详见 `cjfir-compiler-stages.md`）。
+基于 Kotlin/JVM 的仓颉编程语言前端实现，架构参考 Kotlin K2，功能对齐官方仓颉编译器（C++），覆盖从源码解析到 .cjo 序列化的完整前端管线（详见 `cjfir-compiler-stages.md`）。
 
-## 编译管线（12 阶段）
+## 编译管线
+
+### 核心管线（LOAD_PLUGINS → SAVE_CJO）
 
 ```
 LOAD_PLUGINS → PARSE → CONDITION_COMPILE → IMPORT_PACKAGE → MACRO_EXPAND
-→ CFIR_BUILD → CFIR_RESOLVE → FINALIZE → MANGLING → SAVE_CJO → CFIR2CHIR → CODEGEN
+→ CFIR_BUILD → CFIR_RESOLVE → FINALIZE → MANGLING → SAVE_CJO
+```
+
+### 可选后端（CFIR2CHIR → CODEGEN）
+
+```
+CFIR2CHIR → CODEGEN
 ```
 
 ## 模块结构
 
 当前已实现模块：
 - `cfir` — CFIR 数据模型（类型系统、IR 树、访问者）
+- `macro` — 宏展开模块（收集、执行、替换）
 
 按编译器阶段规划的模块：
 - `cfir-build` — 阶段 6: PSI/LightTree → Raw CFIR
 - `cfir-resolve` — 阶段 7: 多 Phase 语义解析
 - `cfir-serialization` — 阶段 10: .cjo 序列化
-- `chir` — 阶段 11: CHIR 定义和 CFIR→CHIR 转换
+- `chir` — 阶段 11: CHIR 定义和 CFIR→CHIR 转换（可选扩展）
+- `codegen` — 阶段 12: CHIR → LLVM IR → 机器码（可选扩展）
 
 ## external/ 目录
 

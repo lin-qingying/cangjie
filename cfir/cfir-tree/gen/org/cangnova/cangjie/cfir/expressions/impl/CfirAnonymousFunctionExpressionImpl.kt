@@ -8,8 +8,8 @@
 package org.cangnova.cangjie.cfir.expressions.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
@@ -31,37 +31,31 @@ class CfirAnonymousFunctionExpressionImpl @CfirImplementationDetail constructor(
         anonymousFunction.accept(visitor, data)
     }
 
-    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-     {
-    }
-
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
-     {
-    }
-
-    override fun replaceAnonymousFunction(newAnonymousFunction: CfirAnonymousFunction)
-     {
-        this.anonymousFunction = newAnonymousFunction
-    }
-
-    override fun replaceIsTrailingLambda(newIsTrailingLambda: Boolean)
-     {
-        this.isTrailingLambda = newIsTrailingLambda
-    }
-
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirAnonymousFunctionExpression
-     {
-        return this
-    }
-
-    override fun <D> transformAnonymousFunction(transformer: CfirTransformer<D>, data: D): CfirAnonymousFunctionExpression
-     {
-        this.anonymousFunction = anonymousFunction.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnonymousFunction
-        return this
-    }
-
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirAnonymousFunctionExpressionImpl {
         transformAnonymousFunction(transformer, data)
         return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirAnonymousFunctionExpressionImpl {
+        return this
+    }
+
+    override fun <D> transformAnonymousFunction(transformer: CfirTransformer<D>, data: D): CfirAnonymousFunctionExpressionImpl {
+        anonymousFunction = anonymousFunction.transform(transformer, data)
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {}
+
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
+        require(newConeTypeOrNull == coneTypeOrNull) { "${javaClass.simpleName}.replaceConeTypeOrNull() called with invalid type '${newConeTypeOrNull}'. Current type is '$coneTypeOrNull'" }
+    }
+
+    override fun replaceAnonymousFunction(newAnonymousFunction: CfirAnonymousFunction) {
+        anonymousFunction = newAnonymousFunction
+    }
+
+    override fun replaceIsTrailingLambda(newIsTrailingLambda: Boolean) {
+        isTrailingLambda = newIsTrailingLambda
     }
 }

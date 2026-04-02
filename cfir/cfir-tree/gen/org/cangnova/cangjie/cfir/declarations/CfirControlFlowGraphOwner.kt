@@ -26,5 +26,4 @@ interface CfirControlFlowGraphOwner : CfirElement {
         transformer.transformControlFlowGraphOwner(this, data) as E
 
     fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
-
 }

@@ -3,7 +3,6 @@
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.DIAGNOSTICS_LIST
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.ErrorListDiagnosticListRenderer
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.generateDiagnostics
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -30,6 +29,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
@@ -49,8 +49,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMacroExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
-import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQuoteExpression
 import org.cangnova.cangjie.cfir.expressions.CfirRangeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
@@ -104,7 +104,9 @@ fun main(args: Array<String>) {
                 visitAlso<CfirVArrayTypeRef>(it)
             }
             alias<CfirResolvedTypeRef>("ResolvedTypeRefChecker").let {
-                // CFIR: CfirErrorTypeRef is not a subtype of CfirResolvedTypeRef in current tree model.
+                // CFIR: CfirErrorTypeRef is a subtype of CfirResolvedTypeRef in current tree model,
+                // so it should share the same checker entrypoint instead of falling back to visitElement.
+                visitAlso<CfirErrorTypeRef>(it)
             }
         }
         if (task == "checkers" || task == "all") {
@@ -136,8 +138,8 @@ fun main(args: Array<String>) {
                 }
                 alias<CfirLiteralExpression>("LiteralExpressionChecker")
                 alias<CfirFunctionCall>("FunctionCallChecker")
-                alias<CfirPropertyAccess>("PropertyAccessChecker")
-                alias<CfirQualifiedAccess>("QualifiedAccessChecker")
+                alias<CfirNamedAccessExpression>("NamedAccessChecker")
+                alias<CfirQualifiedAccessExpression>("QualifiedAccessChecker")
                 alias<CfirAssignment>("AssignmentChecker")
                 alias<CfirBinaryOp>("BinaryOpChecker")
                 alias<CfirComparisonExpression>("ComparisonExpressionChecker")

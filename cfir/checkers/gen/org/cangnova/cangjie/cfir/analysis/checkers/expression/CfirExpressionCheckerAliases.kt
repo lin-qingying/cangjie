@@ -16,8 +16,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirJumpExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
-import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirRangeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
@@ -29,8 +29,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
 typealias CfirBasicExpressionChecker = CfirExpressionChecker<CfirStatement>
 typealias CfirLiteralExpressionChecker = CfirExpressionChecker<CfirLiteralExpression>
 typealias CfirFunctionCallChecker = CfirExpressionChecker<CfirFunctionCall>
-typealias CfirPropertyAccessChecker = CfirExpressionChecker<CfirPropertyAccess>
-typealias CfirQualifiedAccessChecker = CfirExpressionChecker<CfirQualifiedAccess>
+typealias CfirNamedAccessChecker = CfirExpressionChecker<CfirNamedAccessExpression>
+typealias CfirQualifiedAccessChecker = CfirExpressionChecker<CfirQualifiedAccessExpression>
 typealias CfirAssignmentChecker = CfirExpressionChecker<CfirAssignment>
 typealias CfirBinaryOpChecker = CfirExpressionChecker<CfirBinaryOp>
 typealias CfirComparisonExpressionChecker = CfirExpressionChecker<CfirComparisonExpression>

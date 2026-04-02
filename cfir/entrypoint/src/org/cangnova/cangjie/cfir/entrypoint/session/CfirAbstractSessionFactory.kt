@@ -8,12 +8,15 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.deserialization.ModuleDataProvider
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
 import org.cangnova.cangjie.cfir.extensions.CfirSwitchableExtensionDeclarationsSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirEmptyExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSessionExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.transformers.MacroExpandAction
 import org.cangnova.cangjie.cfir.session.registerCliCompilerOnlyResolveComponents
 import org.cangnova.cangjie.cfir.session.registerResolveComponents
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
@@ -26,9 +29,12 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirLibrarySessionProvider
 import org.cangnova.cangjie.cfir.resolve.CfirDefaultImportsProvider
 
 import org.cangnova.cangjie.cfir.scopes.CfirDefaultImportsProviderHolder
+import org.cangnova.cangjie.cfir.serialization.provider.AbstractCfirDeserializedSymbolProvider
+import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedExtendProvider
 import org.cangnova.cangjie.cfir.session.registerModuleData
 import org.cangnova.cangjie.cfir.session.StructuredProviders
 import org.cangnova.cangjie.cfir.session.DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY
+import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.registerCliCompilerAndCommonComponents
 import org.cangnova.cangjie.cfir.session.registerCommonComponentsAfterExtensionsAreConfigured
 import org.cangnova.cangjie.cfir.session.extendIndexStore
@@ -84,6 +90,7 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
             val symbolProvider = CfirCompositeSymbolProvider(this, providers)
             register(CfirSymbolProvider::class, symbolProvider)
             register(CfirProvider::class, CfirLibrarySessionProvider(symbolProvider))
+            register(CfirExtendProvider::class, createLibraryExtendProvider(providers))
         }
     }
 
@@ -152,6 +159,13 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
             val symbolProvider = CfirCompositeSymbolProvider(this, providersWithShared)
             register(CfirSymbolProvider::class, symbolProvider)
             register(CfirProvider::class, CfirLibrarySessionProvider(symbolProvider))
+            register(
+                CfirExtendProvider::class,
+                combineExtendProviders(
+                    ownProvider = createLibraryExtendProvider(providers),
+                    dependencyProviders = listOfNotNull(sharedLibrarySession.extendProviderOrNull),
+                ),
+            )
         }
     }
 
@@ -168,6 +182,7 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
         context: CONTEXT,
         extensionRegistrars: List<CfirExtensionRegistrar>,
         configuration: CompilerConfiguration,
+        macroExpandAction: MacroExpandAction? = null,
         init: CfirSessionConfigurator.() -> Unit,
         createProviders: (
             CfirSession, CfirCangJieScopeProvider, CfirSymbolProvider,
@@ -182,6 +197,7 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
             registerCliCompilerAndCommonComponents(languageVersionSettings)
             registerResolveComponents(
                 configuration.diagnosticFactoriesStorage ?: error("diagnosticFactoriesStorage is not registered in the configuration"),
+                macroExpandAction,
                 configuration.lookupTracker,
                 configuration.enumMatchTracker,
                 configuration.importTracker,
@@ -197,11 +213,12 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
 
             val cfirProvider = CfirProviderImpl(this, cangjieScopeProvider)
             register(CfirProvider::class, cfirProvider)
+            val sourceExtendProvider = CfirSessionExtendProvider(extendIndexStore)
 
             // 注册 extend 声明提供器（惰性初始化，首次查询时才扫描所有文件）
             register(
                 CfirExtendProvider::class,
-                CfirSessionExtendProvider(extendIndexStore),
+                sourceExtendProvider,
             )
 
             CfirSessionConfigurator(this).apply {
@@ -254,6 +271,16 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
             register(
                 CfirSymbolProvider::class,
                 CfirCompositeSymbolProvider(this, providersList)
+            )
+
+            register(
+                CfirExtendProvider::class,
+                combineExtendProviders(
+                    ownProvider = sourceExtendProvider,
+                    dependencyProviders = moduleData.dependencies
+                        .distinctBy { it.session }
+                        .mapNotNull { it.session.extendProviderOrNull },
+                ),
             )
 
             generatedSymbolsProvider?.let { register(CfirSwitchableExtensionDeclarationsSymbolProvider::class, it) }
@@ -340,4 +367,34 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
         return result
     }
 
+}
+
+private fun createLibraryExtendProvider(providers: List<CfirSymbolProvider>): CfirExtendProvider {
+    val deserializedProviders = providers
+        .flatMap(CfirSymbolProvider::flattenDeserializedProviders)
+        .distinct()
+    return if (deserializedProviders.isEmpty()) {
+        CfirEmptyExtendProvider()
+    } else {
+        CfirDeserializedExtendProvider(deserializedProviders)
+    }
+}
+
+private fun combineExtendProviders(
+    ownProvider: CfirExtendProvider,
+    dependencyProviders: List<CfirExtendProvider>,
+): CfirExtendProvider {
+    val providers = buildList {
+        add(ownProvider)
+        addAll(dependencyProviders.filter { it !== ownProvider })
+    }.distinct()
+    return if (providers.size == 1) providers.single() else CfirCompositeExtendProvider(providers)
+}
+
+private fun CfirSymbolProvider.flattenDeserializedProviders(): List<AbstractCfirDeserializedSymbolProvider> {
+    return when (this) {
+        is CfirCompositeSymbolProvider -> providers.flatMap(CfirSymbolProvider::flattenDeserializedProviders)
+        is AbstractCfirDeserializedSymbolProvider -> listOf(this)
+        else -> emptyList()
+    }
 }

@@ -7,6 +7,7 @@ package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -37,27 +38,19 @@ abstract class CfirExtend : CfirMemberDeclaration() {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformExtend(this, data) as E
 
-    override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+    abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
+    abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
 
-    override abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
+    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirExtend
 
+    abstract override fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirExtend
 
-    override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirExtend
-
-
-    override abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirExtend
-
-
-    override abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirExtend
-
+    abstract override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirExtend
 
     abstract fun <D> transformExtendedTypeRef(transformer: CfirTransformer<D>, data: D): CfirExtend
 
-
     abstract fun <D> transformSuperTypeRefs(transformer: CfirTransformer<D>, data: D): CfirExtend
 
-
     abstract fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirExtend
-
 }

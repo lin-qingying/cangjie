@@ -5,5 +5,5 @@ return a
 
 
 func test():Unit{
-    let a:Int64 = name(1.1)
+        let a:Int64 <!PATTERN_INITIALIZER_TYPE_MISMATCH!>=<!> <!TYPE_MISMATCH!>name(1.1)<!>
 }

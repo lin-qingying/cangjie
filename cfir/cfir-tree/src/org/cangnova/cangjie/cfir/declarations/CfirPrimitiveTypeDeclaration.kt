@@ -1,30 +1,41 @@
 package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
+@OptIn(ResolveStateAccess::class, CfirImplementationDetail::class)
 class CfirPrimitiveTypeDeclaration(
     override val moduleData: CfirModuleData,
     override val symbol: CfirPrimitiveTypeSymbol,
-    val name: Name,
+    override val name: Name,
     val kind: PrimitiveTypeKind,
-    override var annotations: List<CfirAnnotation> = emptyList(),
+    override var annotations: MutableOrEmptyList<CfirAnnotation> = MutableOrEmptyList.empty(),
     override val origin: CfirDeclarationOrigin = CfirDeclarationOrigin.Synthetic.Default,
     override val attributes: CfirDeclarationAttributes = CfirDeclarationAttributes.EMPTY,
-    override var typeParameters: List<CfirTypeParameterRef> = emptyList(),
+    override var typeParameters: MutableList<CfirTypeParameterRef> = mutableListOf(),
     override var status: CfirDeclarationStatus = org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl(),
-    override var declarations: List<CfirDeclaration> = emptyList(),
-    override var superTypeRefs: List<CfirTypeRef> = emptyList(),
+    override var declarations: MutableList<CfirDeclaration> = mutableListOf(),
+    override var superTypeRefs: MutableList<CfirTypeRef> = mutableListOf(),
 ) : CfirClassLikeDeclaration() {
     override val source: CjSourceElement? = null
     override val isLocal: Boolean = false
+
+    init {
+        symbol.bind(this)
+        resolveState = CfirResolvePhase.RAW_CFIR.asResolveState()
+    }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
@@ -34,7 +45,8 @@ class CfirPrimitiveTypeDeclaration(
     }
 
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
-        annotations = newAnnotations
+        annotations = newAnnotations.toMutableOrEmpty()
+
     }
 
     override fun replaceStatus(newStatus: CfirDeclarationStatus) {
@@ -42,12 +54,13 @@ class CfirPrimitiveTypeDeclaration(
     }
 
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirPrimitiveTypeDeclaration {
-        annotations = annotations.map { it.transform<CfirElement, D>(transformer, data) as CfirAnnotation }
+        annotations.transformInplace(transformer, data)
+
         return this
     }
 
     override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirPrimitiveTypeDeclaration {
-        typeParameters = typeParameters.map { it.transform<CfirElement, D>(transformer, data) as CfirTypeParameterRef }
+        typeParameters = typeParameters.map { it.transform<CfirElement, D>(transformer, data) as CfirTypeParameterRef }.toMutableList()
         return this
     }
 
@@ -57,12 +70,12 @@ class CfirPrimitiveTypeDeclaration(
     }
 
     override fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirPrimitiveTypeDeclaration {
-        declarations = declarations.map { it.transform<CfirElement, D>(transformer, data) as CfirDeclaration }
+        declarations = declarations.map { it.transform<CfirElement, D>(transformer, data) as CfirDeclaration }.toMutableList()
         return this
     }
 
     override fun <D> transformSuperTypeRefs(transformer: CfirTransformer<D>, data: D): CfirPrimitiveTypeDeclaration {
-        superTypeRefs = superTypeRefs.map { it.transform<CfirElement, D>(transformer, data) as CfirTypeRef }
+        superTypeRefs = superTypeRefs.map { it.transform<CfirElement, D>(transformer, data) as CfirTypeRef }.toMutableList()
         return this
     }
 

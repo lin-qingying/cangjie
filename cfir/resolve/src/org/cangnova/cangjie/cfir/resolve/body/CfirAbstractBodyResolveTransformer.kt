@@ -193,8 +193,28 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return declarationsTransformer.transformClass(klass, data)
     }
 
+    override fun transformInterface(interfaceDeclaration: CfirInterface, data: ResolutionMode): CfirInterface {
+        return declarationsTransformer.transformInterface(interfaceDeclaration, data)
+    }
+
+    override fun transformStruct(struct: CfirStruct, data: ResolutionMode): CfirStruct {
+        return declarationsTransformer.transformStruct(struct, data)
+    }
+
+    override fun transformEnum(enum: CfirEnum, data: ResolutionMode): CfirEnum {
+        return declarationsTransformer.transformEnum(enum, data)
+    }
+
     override fun transformFunction(function: CfirFunction, data: ResolutionMode): CfirFunction {
         return declarationsTransformer.transformFunction(function, data)
+    }
+
+    override fun transformConstructor(constructor: CfirConstructor, data: ResolutionMode): CfirConstructor {
+        return declarationsTransformer.transformConstructor(constructor, data)
+    }
+
+    override fun transformEnumConstructor(enumConstructor: CfirEnumConstructor, data: ResolutionMode): CfirEnumConstructor {
+        return declarationsTransformer.transformEnumConstructor(enumConstructor, data)
     }
 
     override fun transformNamedFunction(namedFunction: CfirNamedFunction, data: ResolutionMode): CfirNamedFunction {
@@ -207,6 +227,10 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
 
     override fun transformProperty(property: CfirProperty, data: ResolutionMode): CfirProperty {
         return declarationsTransformer.transformProperty(property, data)
+    }
+
+    override fun transformFieldVariable(fieldVariable: CfirFieldVariable, data: ResolutionMode): CfirFieldVariable {
+        return declarationsTransformer.transformFieldVariable(fieldVariable, data)
     }
 
     override fun transformVariable(variable: CfirVariable, data: ResolutionMode): CfirVariable {
@@ -239,18 +263,18 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return expressionsTransformer.transformLiteralExpression(literalExpression, data)
     }
 
-    override fun transformPropertyAccess(
-        propertyAccess: CfirPropertyAccess,
+    override fun transformNamedAccessExpression(
+        namedAccess: CfirNamedAccessExpression,
         data: ResolutionMode,
     ): CfirExpression {
-        return expressionsTransformer.transformPropertyAccess(propertyAccess, data)
+        return expressionsTransformer.transformNamedAccessExpression(namedAccess, data)
     }
 
-    override fun transformQualifiedAccess(
-        qualifiedAccess: CfirQualifiedAccess,
+    override fun transformQualifiedAccessExpression(
+        qualifiedAccess: CfirQualifiedAccessExpression,
         data: ResolutionMode,
     ): CfirExpression {
-        return expressionsTransformer.transformQualifiedAccess(qualifiedAccess, data)
+        return expressionsTransformer.transformQualifiedAccessExpression(qualifiedAccess, data)
     }
 
     override fun transformFunctionCall(

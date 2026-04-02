@@ -29,6 +29,17 @@ abstract class CfirSymbolProvider(val session: CfirSession)  : CfirSessionCompon
     /** 通过 ClassId 查找类符号 */
     abstract fun getClassLikeSymbolByClassId(classId: ClassId):  CfirClassLikeSymbol<*>?
 
+    /**
+     * 查找指定包下、指定短名的顶级类/接口/结构体/枚举/类型别名符号。
+     *
+     * 与 [getClassLikeSymbolByClassId] 不同，此接口用于返回“同名的全部顶级 class-like”，
+     * 以支持作用域枚举与重声明检查等需要完整可见集的场景。
+     */
+    open fun getTopLevelClassifierSymbols(packageFqName: FqName, name: Name): List<CfirClassLikeSymbol<*>> {
+        val classId = ClassId(packageFqName, name)
+        return listOfNotNull(getClassLikeSymbolByClassId(classId))
+    }
+
     /** 查找指定包下的顶级可调用符号 */
     abstract fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>>
 

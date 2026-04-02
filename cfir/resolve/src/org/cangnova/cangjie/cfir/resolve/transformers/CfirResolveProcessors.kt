@@ -10,10 +10,15 @@ fun registerResolveProcessors(
     diagnosticReporter: CfirDiagnosticReporter,
     session: CfirSession,
     scopeSession: ScopeSession = ScopeSession(),
+    macroExpandAction: MacroExpandAction? = null,
 ) {
     registry.registerProcessor(
         CfirResolvePhase.IMPORTS,
         CfirImportResolveProcessor(diagnosticReporter, session, scopeSession),
+    )
+    registry.registerProcessor(
+        CfirResolvePhase.MACRO_EXPAND,
+        CfirMacroExpandResolveProcessor(session, scopeSession, macroExpandAction),
     )
     registry.registerProcessor(
         CfirResolvePhase.SUPER_TYPES,
@@ -33,5 +38,4 @@ fun registerResolveProcessors(
         CfirImplicitTypesResolveProcessor(session, scopeSession),
     )
     registry.registerProcessor(CfirResolvePhase.BODY_RESOLVE, CfirBodyResolveProcessor(session, scopeSession))
-
 }

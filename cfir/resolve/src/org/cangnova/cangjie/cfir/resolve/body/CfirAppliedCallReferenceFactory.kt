@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.references.impl.CfirResolvedNamedReferenceImpl
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeSubstitutor
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.name.Name
 
@@ -19,6 +20,7 @@ internal fun buildAppliedCallableReference(
     name: Name,
     candidate: Candidate,
     substitutedReturnType: ConeCangJieType,
+    finalSubstitutor: ConeSubstitutor,
 ): CfirResolvedNamedReference {
     if (!candidate.symbol.isBound) {
         return CfirResolvedNamedReferenceImpl(null, name, candidate.symbol)
@@ -30,7 +32,8 @@ internal fun buildAppliedCallableReference(
         is CfirEnumConstructor,
         -> candidate.declaredParametersForMapping().mapNotNull { parameter: CfirValueParameter ->
             val paramType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return@mapNotNull null
-            candidate.substitutor.substituteOrSelf(paramType)
+            finalSubstitutor.substituteOrNull(candidate.substitutor.substituteOrSelf(paramType))
+                ?: candidate.substitutor.substituteOrSelf(paramType)
         }
         else -> emptyList()
     }

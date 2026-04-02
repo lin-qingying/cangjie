@@ -53,6 +53,8 @@ class ResultTypeResolver(
     fun findResultType(variableWithConstraints: VariableWithConstraints, direction: ResolveDirection): CangJieTypeMarker {
         findResultTypeOrNull(variableWithConstraints, direction)?.let { return it }
 
+        variableWithConstraints.findConflictFallbackType(direction)?.let { return it }
+
         // no proper constraints
         return variableWithConstraints.typeVariable.getDefaultType(direction, variableWithConstraints.constraints)
     }
@@ -186,7 +188,10 @@ class ResultTypeResolver(
         firstCandidate: CangJieTypeMarker?,
         secondCandidate: CangJieTypeMarker?,
     ): CangJieTypeMarker? {
-        if (firstCandidate == null || secondCandidate == null) return firstCandidate ?: secondCandidate
+        if (firstCandidate == null || secondCandidate == null) {
+            val singleCandidate = firstCandidate ?: secondCandidate ?: return null
+            return singleCandidate.takeIf { isSuitableType(it, this) }
+        }
 
         specialResultForIntersectionType(firstCandidate, secondCandidate)?.let { intersectionWithAlternative ->
             return intersectionWithAlternative
@@ -194,11 +199,7 @@ class ResultTypeResolver(
 
         if (isSuitableType(firstCandidate, this)) return firstCandidate
 
-        return if (isSuitableType(secondCandidate, this)) {
-            secondCandidate
-        } else {
-            firstCandidate
-        }
+        return secondCandidate.takeIf { isSuitableType(it, this) }
     }
 
     context(c: Context)
@@ -226,11 +227,54 @@ class ResultTypeResolver(
             if (!checkConstraint(constraint.type, constraint.kind, resultType)) return false
         }
 
+        if (resultType.typeConstructor().isAnyConstructor() && !variableWithConstraints.isAnyResultTypeAllowed()) {
+            return false
+        }
+
+        if (resultType.typeConstructor().isNothingConstructor() && !variableWithConstraints.isNothingResultTypeAllowed()) {
+            return false
+        }
+
         // if resultType is not Nothing
         if (trivialConstraintTypeInferenceOracle.isSuitableResultedType(resultType)) return true
 
 
         return filteredConstraints.any { it.kind.isUpper() }
+    }
+
+    context(c: Context)
+    private fun VariableWithConstraints.isAnyResultTypeAllowed(): Boolean {
+        return constraints.any { constraint ->
+            constraint.type.typeConstructor().isAnyConstructor()
+        }
+    }
+
+    context(c: Context)
+    private fun VariableWithConstraints.isNothingResultTypeAllowed(): Boolean {
+        return constraints.any { constraint ->
+            constraint.type.typeConstructor().isNothingConstructor()
+        }
+    }
+
+    context(c: Context)
+    private fun VariableWithConstraints.findConflictFallbackType(direction: ResolveDirection): CangJieTypeMarker? {
+        val properConstraints = constraints.filter { it.isProperConstraint() }
+        if (properConstraints.isEmpty()) return null
+
+        val preferredKinds = when (direction) {
+            ResolveDirection.TO_SUBTYPE,
+            ResolveDirection.UNKNOWN,
+            -> arrayOf(ConstraintKind.LOWER, ConstraintKind.EQUALITY, ConstraintKind.UPPER)
+
+            ResolveDirection.TO_SUPERTYPE ->
+                arrayOf(ConstraintKind.UPPER, ConstraintKind.EQUALITY, ConstraintKind.LOWER)
+        }
+
+        for (kind in preferredKinds) {
+            properConstraints.firstOrNull { it.kind == kind }?.type?.let { return it }
+        }
+
+        return null
     }
 
     context(c: Context)

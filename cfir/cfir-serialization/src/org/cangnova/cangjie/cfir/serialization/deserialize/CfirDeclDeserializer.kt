@@ -2,7 +2,9 @@ package org.cangnova.cangjie.cfir.serialization.deserialize
 
 import PackageFormat.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.*
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.builder.buildBindingPattern
@@ -165,19 +167,19 @@ class CfirDeclDeserializer(
         val coneType = typeDeserializer.deserializeTypeFromField(typeFieldValue)
         return CfirResolvedTypeRefImpl(
             source = null,
-            annotations = emptyList(),
+            annotations = MutableOrEmptyList.empty(),
             coneType = coneType,
             delegatedTypeRef = null,
         )
     }
 
     /** 反序列化泛型参数列表 */
-    private fun deserializeTypeParameters(decl: Decl): List<CfirTypeParameter> {
-        val generic = decl.generic ?: return emptyList()
+    private fun deserializeTypeParameters(decl: Decl): MutableList<CfirTypeParameter> {
+        val generic = decl.generic ?: return mutableListOf()
         val len = generic.typeParametersLength
-        if (len == 0) return emptyList()
-        return (0 until len).mapNotNull { i ->
-            val paramIndex = decodeDeclRef(generic.typeParameters(i)) ?: return@mapNotNull null
+        if (len == 0) return mutableListOf()
+        return (0 until len).mapNotNullTo(mutableListOf()) { i ->
+            val paramIndex = decodeDeclRef(generic.typeParameters(i)) ?: return@mapNotNullTo null
             deserializeDecl(paramIndex) as? CfirTypeParameter
         }
     }
@@ -186,19 +188,19 @@ class CfirDeclDeserializer(
     private fun deserializeInheritedTypes(
         getter: (Int) -> UInt,
         length: Int,
-    ): List<CfirResolvedTypeRef> {
-        if (length == 0) return emptyList()
-        return (0 until length).map { buildTypeRef(getter(it)) }
+    ): MutableList<CfirTypeRef> {
+        if (length == 0) return mutableListOf()
+        return (0 until length).mapTo(mutableListOf()) { buildTypeRef(getter(it)) }
     }
 
     /** 反序列化成员声明列表（延迟加载） */
     private fun deserializeBody(
         getter: (Int) -> UInt,
         length: Int,
-    ): List<CfirDeclaration> {
-        if (length == 0) return emptyList()
-        return (0 until length).mapNotNull { i ->
-            val declIndex = decodeDeclRef(getter(i)) ?: return@mapNotNull null
+    ): MutableList<CfirDeclaration> {
+        if (length == 0) return mutableListOf()
+        return (0 until length).mapNotNullTo(mutableListOf()) { i ->
+            val declIndex = decodeDeclRef(getter(i)) ?: return@mapNotNullTo null
             deserializeDecl(declIndex)
         }
     }
@@ -218,13 +220,15 @@ class CfirDeclDeserializer(
         val status = buildStatus(decl)
         val typeParams = deserializeTypeParameters(decl)
         val info = decl.info(ClassInfo()) as? ClassInfo
-        val superTypeRefs = info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) }.orEmpty()
-        val members = info?.let { deserializeBody(it::body, it.bodyLength) }.orEmpty()
+        val superTypeRefs =
+            info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) } ?: mutableListOf()
+        val members = info?.let { deserializeBody(it::body, it.bodyLength) } ?: mutableListOf()
 
         val cfirClass = CfirClassImpl(
             source = null,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
@@ -234,7 +238,8 @@ class CfirDeclDeserializer(
             superTypeRefs = superTypeRefs,
             declarations = members,
             name = name,
-        )
+
+            )
         symbol.bind(cfirClass)
         cfirClass.markResolved()
         return cfirClass
@@ -251,13 +256,15 @@ class CfirDeclDeserializer(
         val status = buildStatus(decl)
         val typeParams = deserializeTypeParameters(decl)
         val info = decl.info(InterfaceInfo()) as? InterfaceInfo
-        val superTypeRefs = info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) }.orEmpty()
-        val members = info?.let { deserializeBody(it::body, it.bodyLength) }.orEmpty()
+        val superTypeRefs =
+            info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) } ?: mutableListOf()
+        val members = info?.let { deserializeBody(it::body, it.bodyLength) } ?: mutableListOf()
 
         val cfirInterface = CfirInterfaceImpl(
             source = null,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
@@ -266,8 +273,8 @@ class CfirDeclDeserializer(
             typeParameters = typeParams,
             symbol = symbol,
             superTypeRefs = superTypeRefs,
-            properties = members.filterIsInstance<CfirProperty>(),
-            functions = members.filterIsInstance<CfirFunction>(),
+            properties = members.filterIsInstance<CfirProperty>().toMutableList(),
+            functions = members.filterIsInstance<CfirFunction>().toMutableList(),
             name = name,
         )
         symbol.bind(cfirInterface)
@@ -282,13 +289,15 @@ class CfirDeclDeserializer(
         val status = buildStatus(decl)
         val typeParams = deserializeTypeParameters(decl)
         val info = decl.info(StructInfo()) as? StructInfo
-        val superTypeRefs = info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) }.orEmpty()
-        val members = info?.let { deserializeBody(it::body, it.bodyLength) }.orEmpty()
+        val superTypeRefs =
+            info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) } ?: mutableListOf()
+        val members = info?.let { deserializeBody(it::body, it.bodyLength) } ?: mutableListOf()
 
         val cfirStruct = CfirStructImpl(
             source = null,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
@@ -312,13 +321,15 @@ class CfirDeclDeserializer(
         val status = buildStatus(decl)
         val typeParams = deserializeTypeParameters(decl)
         val info = decl.info(EnumInfo()) as? EnumInfo
-        val superTypeRefs = info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) }.orEmpty()
-        val members = info?.let { deserializeBody(it::body, it.bodyLength) }.orEmpty()
+        val superTypeRefs =
+            info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) } ?: mutableListOf()
+        val members = info?.let { deserializeBody(it::body, it.bodyLength) } ?: mutableListOf()
 
         val cfirEnum = CfirEnumImpl(
             source = null,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
@@ -365,7 +376,8 @@ class CfirDeclDeserializer(
         val cfirFunc = CfirNamedFunctionImpl(
             source = null,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
@@ -395,7 +407,8 @@ class CfirDeclDeserializer(
         val cfirProp = CfirPropertyImpl(
             source = null,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
@@ -431,7 +444,8 @@ class CfirDeclDeserializer(
         val cfirVar = CfirFieldVariableImpl(
             source = null,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
@@ -467,7 +481,8 @@ class CfirDeclDeserializer(
         val cfirVar = CfirPatternVariableImpl(
             source = null,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
@@ -531,15 +546,16 @@ class CfirDeclDeserializer(
         val extendedTypeRef = buildTypeRef(decl.type)
         val superTypeRefs = if (extendInfo != null) {
             deserializeInheritedTypes(extendInfo::inheritedTypes, extendInfo.inheritedTypesLength)
-        } else emptyList()
+        } else mutableListOf()
         val members = if (extendInfo != null) {
             deserializeBody(extendInfo::body, extendInfo.bodyLength)
-        } else emptyList()
+        } else mutableListOf()
 
         val cfirExtend = CfirExtendImpl(
             source = null,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
@@ -572,13 +588,14 @@ class CfirDeclDeserializer(
         val cfirAlias = CfirTypeAliasImpl(
             source = null,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,
-            declarations = emptyList(),
-            superTypeRefs = emptyList(),
+            declarations = mutableListOf(),
+            superTypeRefs = mutableListOf(),
             status = status,
             typeParameters = typeParams,
             name = name,
@@ -595,7 +612,7 @@ class CfirDeclDeserializer(
         val symbol = CfirTypeParameterSymbol()
 
         // 泛型约束来自 decl.generic.constraints
-        val bounds = mutableListOf<CfirResolvedTypeRef>()
+        val bounds = mutableListOf<CfirTypeRef>()
         val generic = decl.generic
         if (generic != null) {
             for (i in 0 until generic.constraintsLength) {
@@ -608,7 +625,8 @@ class CfirDeclDeserializer(
         val cfirParam = CfirTypeParameterImpl(
             source = null,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             containingDeclarationSymbol = symbol,
@@ -631,7 +649,8 @@ class CfirDeclDeserializer(
         val enumCtor = CfirEnumConstructorImpl(
             source = null,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
@@ -657,7 +676,8 @@ class CfirDeclDeserializer(
         val enumCtor = CfirEnumConstructorImpl(
             source = null,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             symbol = symbol,
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
@@ -706,16 +726,20 @@ class CfirDeclDeserializer(
     }
 
     private fun convertValueParameter(decl: Decl): CfirValueParameter {
+        val info = decl.info(ParamInfo()) as? ParamInfo
+
         val name = Name.identifier(decl.identifier ?: "_")
         val symbol = CfirValueParameterSymbol(CallableId(name))
         val status = buildStatus(decl)
         val typeParams = deserializeTypeParameters(decl)
         val returnTypeRef = buildTypeRef(decl.type)
-
+        val isNamed = info?.isNamedParam ?: false
         val cfirParam = CfirValueParameterImpl(
             source = null,
+            isNamed = isNamed,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             isLocal = false,

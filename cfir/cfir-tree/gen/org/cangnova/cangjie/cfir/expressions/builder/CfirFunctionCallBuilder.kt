@@ -9,11 +9,9 @@ package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
+import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.impl.CfirFunctionCallImpl
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -21,28 +19,28 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
-class CfirFunctionCallBuilder {
-    var source: CjSourceElement? = null
-    val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    var coneTypeOrNull: ConeCangJieType? = null
-    lateinit var calleeReference: CfirReference
-    var explicitReceiver: CfirExpression? = null
-    var dispatchReceiver: CfirExpression? = null
-    val arguments: MutableList<CfirExpression> = mutableListOf()
-    val typeArguments: MutableList<CfirTypeRef> = mutableListOf()
-    lateinit var origin: CfirFunctionCallOrigin
+open class CfirFunctionCallBuilder : CfirAbstractFunctionCallBuilder {
+    override var source: CjSourceElement? = null
+    override val annotations: MutableList<CfirAnnotation> = mutableListOf()
+    override var coneTypeOrNull: ConeCangJieType? = null
+    override lateinit var calleeReference: CfirReference
+    override var dispatchReceiver: CfirExpression? = null
+    override var explicitReceiver: CfirExpression? = null
+    override val typeArguments: MutableList<CfirTypeRef> = mutableListOf()
+    override var argumentList: CfirArgumentList = CfirEmptyArgumentList
+    override var origin: CfirFunctionCallOrigin = CfirFunctionCallOrigin.Regular
 
     @OptIn(CfirImplementationDetail::class)
-    fun build(): CfirFunctionCall {
+    override fun build(): CfirFunctionCall {
         return CfirFunctionCallImpl(
             source,
-            annotations,
+            annotations.toMutableOrEmpty(),
             coneTypeOrNull,
             calleeReference,
-            explicitReceiver,
             dispatchReceiver,
-            arguments,
-            typeArguments,
+            explicitReceiver,
+            typeArguments.toMutableOrEmpty(),
+            argumentList,
             origin,
         )
     }
@@ -67,10 +65,10 @@ inline fun buildFunctionCallCopy(original: CfirFunctionCall, init: CfirFunctionC
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.calleeReference = original.calleeReference
-    copyBuilder.explicitReceiver = original.explicitReceiver
     copyBuilder.dispatchReceiver = original.dispatchReceiver
-    copyBuilder.arguments.addAll(original.arguments)
+    copyBuilder.explicitReceiver = original.explicitReceiver
     copyBuilder.typeArguments.addAll(original.typeArguments)
+    copyBuilder.argumentList = original.argumentList
     copyBuilder.origin = original.origin
     return copyBuilder.apply(init).build()
 }

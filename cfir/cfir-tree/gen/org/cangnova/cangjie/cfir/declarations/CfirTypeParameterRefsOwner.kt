@@ -25,5 +25,4 @@ sealed interface CfirTypeParameterRefsOwner : CfirElement {
         transformer.transformTypeParameterRefsOwner(this, data) as E
 
     fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirTypeParameterRefsOwner
-
 }

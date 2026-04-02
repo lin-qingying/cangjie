@@ -68,6 +68,10 @@ class TypeCheckersDiagnosticComponent(
         checkers.allTypeRefCheckers.check(vArrayTypeRef, data)
     }
 
+    override fun visitErrorTypeRef(errorTypeRef: CfirErrorTypeRef, data: CheckerContext) {
+        checkers.allResolvedTypeRefCheckers.check(errorTypeRef, data)
+    }
+
     private inline fun <reified E : CfirTypeRef> Array<CfirTypeChecker<E>>.check(
         element: E,
         context: CheckerContext

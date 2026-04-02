@@ -29,7 +29,7 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
         if (operatorName !in SUPPORTED) return
 
         val leftLiteral = expression.explicitReceiver as? CfirLiteralExpression ?: return
-        val rightLiteral = expression.arguments.singleOrNull() as? CfirLiteralExpression ?: return
+        val rightLiteral = expression.argumentList.arguments.singleOrNull() as? CfirLiteralExpression ?: return
         val left = CfirIntConstantEvalUtils.parseIntLiteral(leftLiteral) ?: return
         val right = CfirIntConstantEvalUtils.parseIntLiteral(rightLiteral) ?: return
 

@@ -112,7 +112,11 @@ class CfirProviderImpl(
         }
 
         override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
-            state.classifierMap[classId]
+            state.classifierMap[classId] as? CfirClassLikeSymbol<*>
+
+        override fun getTopLevelClassifierSymbols(packageFqName: FqName, name: Name): List<CfirClassLikeSymbol<*>> =
+            state.topLevelClassifierMap[CallableId(packageFqName, name)].orEmpty()
+                .filterIsInstance<CfirClassLikeSymbol<*>>()
 
         override fun getClassIdBySymbol(classSymbol: CfirClassSymbol): ClassId? =
             state.classIdBySymbol[classSymbol]
@@ -121,7 +125,7 @@ class CfirProviderImpl(
             state.enumConstructorOwnerClassIdMap[symbol]
 
         override fun getContainingFile(symbol: org.cangnova.cangjie.cfir.symbols.CfirSymbol<*>): CfirFile? = when (symbol) {
-            is CfirClassLikeSymbol<*> -> state.classIdBySymbol[symbol]?.let(state.classifierContainerFileMap::get)
+            is CfirClassLikeSymbol<*> -> state.classifierContainerFileBySymbol[symbol]
             is CfirCallableSymbol<*> -> state.callableContainerFileMap[symbol]
             else -> null
         }
@@ -240,6 +244,7 @@ class CfirProviderImpl(
                     recordTopLevelEnumConstructors(
                         declaration = declaration,
                         ownerClassId = classId,
+                        containingFile = containingFile,
                     )
                 }
                 for (nested in declaration.declarations) {
@@ -254,12 +259,14 @@ class CfirProviderImpl(
             }
 
             is CfirTypeAlias -> {
-                val classId = computeClassId(packageFqName, declaration.name, containingClass)
-                if (isTopLevel) {
-                    state.classifierInPackage
-                        .getOrPut(packageFqName, ::mutableSetOf)
-                        .add(classId.shortClassName)
-                }
+                recordClassLikeClassifier(
+                    symbol = declaration.symbol as? CfirClassLikeSymbol<*>,
+                    packageFqName = packageFqName,
+                    shortName = declaration.name,
+                    containingClass = containingClass,
+                    containingFile = containingFile,
+                    isTopLevel = isTopLevel,
+                )
             }
 
             // ---- 可调用声明（仅顶层注册）----
@@ -333,10 +340,11 @@ class CfirProviderImpl(
     ) {
         val classId = computeClassId(packageFqName, shortName, containingClass)
         if (symbol != null) {
+            state.classIdBySymbol[symbol] = classId
+            state.classifierContainerFileBySymbol[symbol] = containingFile
             val previousSymbol = state.classifierMap[classId]
             if (previousSymbol == null) {
                 state.classifierMap[classId] = symbol
-                state.classIdBySymbol[symbol] = classId
                 state.classifierContainerFileMap[classId] = containingFile
             } else if (previousSymbol != symbol) {
                 session.nameConflictsTracker?.registerClassifierRedeclaration(
@@ -352,6 +360,13 @@ class CfirProviderImpl(
         if (isTopLevel) {
             state.classifierInPackage.getOrPut(packageFqName, ::mutableSetOf).add(classId.shortClassName)
             state.classesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(classId.shortClassName)
+            if (symbol != null) {
+                val callableId = CallableId(packageFqName, shortName)
+                val symbols = state.topLevelClassifierMap.getOrPut(callableId, ::mutableListOf)
+                if (symbol !in symbols) {
+                    symbols += symbol
+                }
+            }
         }
     }
 
@@ -384,6 +399,7 @@ class CfirProviderImpl(
     private fun recordTopLevelEnumConstructors(
         declaration: CfirEnum,
         ownerClassId: ClassId,
+        containingFile: CfirFile,
     ) {
         declaration.declarations.asSequence()
             .filterIsInstance<CfirEnumConstructor>()
@@ -394,6 +410,8 @@ class CfirProviderImpl(
                 state.callableNamesInPackage.getOrPut(ownerClassId.packageFqName, ::mutableSetOf)
                     .add(enumConstructor.name)
                 state.enumConstructorOwnerClassIdMap[symbol] = ownerClassId
+                state.callableContainerFileMap[symbol] = containingFile
+                state.callableOwnerClassIdMap[symbol] = ownerClassId
             }
     }
 
@@ -402,7 +420,9 @@ class CfirProviderImpl(
         val allSubPackages: MutableSet<FqName> = hashSetOf()
 
         val classifierMap: MutableMap<ClassId, CfirClassLikeSymbol<*>> = hashMapOf()
+        val topLevelClassifierMap: MutableMap<CallableId, MutableList<CfirClassLikeSymbol<*>>> = hashMapOf()
         val classIdBySymbol: MutableMap<CfirClassLikeSymbol<*>, ClassId> = hashMapOf()
+        val classifierContainerFileBySymbol: MutableMap<CfirClassLikeSymbol<*>, CfirFile> = hashMapOf()
         val classifierContainerFileMap: MutableMap<ClassId, CfirFile> = hashMapOf()
         val classifierInPackage: MutableMap<FqName, MutableSet<Name>> = hashMapOf()
         val classesInPackage: MutableMap<FqName, MutableSet<Name>> = hashMapOf()

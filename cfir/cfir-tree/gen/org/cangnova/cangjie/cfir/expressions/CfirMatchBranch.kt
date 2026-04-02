@@ -6,7 +6,6 @@
 package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -31,21 +30,15 @@ abstract class CfirMatchBranch : CfirExpression() {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformMatchBranch(this, data) as E
 
-    override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+    abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
+    abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
 
-    override abstract fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
-
-
-    override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirMatchBranch
-
+    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirMatchBranch
 
     abstract fun <D> transformPattern(transformer: CfirTransformer<D>, data: D): CfirMatchBranch
 
-
     abstract fun <D> transformGuard(transformer: CfirTransformer<D>, data: D): CfirMatchBranch
 
-
     abstract fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirMatchBranch
-
 }

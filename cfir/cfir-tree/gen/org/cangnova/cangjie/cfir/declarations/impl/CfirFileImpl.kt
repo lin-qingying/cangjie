@@ -9,31 +9,43 @@ package org.cangnova.cangjie.cfir.declarations.impl
 
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 
-@OptIn(CfirImplementationDetail::class)
+@OptIn(CfirImplementationDetail::class, ResolveStateAccess::class)
 class CfirFileImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override val moduleData: CfirModuleData,
-    override var annotations: List<CfirAnnotation>,
+    resolvePhase: CfirResolvePhase,
+    override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
     override val symbol: CfirFileSymbol,
     override val name: String,
     override val sourceFile: CjSourceFile?,
     override var packageDirective: CfirPackageDirective,
-    override var imports: List<CfirImport>,
+    override val imports: MutableList<CfirImport>,
     override val sourceFileLinesMapping: CjSourceFileLinesMapping?,
-    override var declarations: List<CfirDeclaration>,
+    override val declarations: MutableList<CfirDeclaration>,
 ) : CfirFile() {
     override var controlFlowGraphReference: CfirControlFlowGraphReference? = null
+
+    init {
+        symbol.bind(this)
+        resolveState = resolvePhase.asResolveState()
+        @Suppress("SENSELESS_COMPARISON")
+        require(source != null || origin != CfirDeclarationOrigin.Source) { "${this::class.simpleName} with Source origin was instantiated without a source element." }
+    }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
@@ -43,46 +55,40 @@ class CfirFileImpl @CfirImplementationDetail constructor(
         declarations.forEach { it.accept(visitor, data) }
     }
 
-    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-     {
-        this.annotations = newAnnotations
-    }
-
-    override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
-     {
-        this.controlFlowGraphReference = newControlFlowGraphReference
-    }
-
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFile
-     {
-        this.annotations = annotations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnnotation }
-        return this
-    }
-
-    override fun <D> transformPackageDirective(transformer: CfirTransformer<D>, data: D): CfirFile
-     {
-        this.packageDirective = packageDirective.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirPackageDirective
-        return this
-    }
-
-    override fun <D> transformImports(transformer: CfirTransformer<D>, data: D): CfirFile
-     {
-        this.imports = imports.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirImport }
-        return this
-    }
-
-    override fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirFile
-     {
-        this.declarations = declarations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirDeclaration }
-        return this
-    }
-
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirFileImpl {
         transformAnnotations(transformer, data)
-        controlFlowGraphReference?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data)
+        controlFlowGraphReference = controlFlowGraphReference?.transform(transformer, data)
         transformPackageDirective(transformer, data)
         transformImports(transformer, data)
         transformDeclarations(transformer, data)
         return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFileImpl {
+        annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformPackageDirective(transformer: CfirTransformer<D>, data: D): CfirFileImpl {
+        packageDirective = packageDirective.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformImports(transformer: CfirTransformer<D>, data: D): CfirFileImpl {
+        imports.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirFileImpl {
+        declarations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
+        annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?) {
+        controlFlowGraphReference = newControlFlowGraphReference
     }
 }

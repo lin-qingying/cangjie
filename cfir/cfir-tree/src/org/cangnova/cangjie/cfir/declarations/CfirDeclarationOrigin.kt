@@ -12,6 +12,8 @@ sealed class CfirDeclarationOrigin(
     sealed class Synthetic : CfirDeclarationOrigin(generated = true) {
         data object Default : Synthetic()
         data object FakeFunction : Synthetic()
+        object Error : Synthetic()
+
     }
 
     object ImplicitDefault : CfirDeclarationOrigin(generated = true)

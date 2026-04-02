@@ -1,34 +1,16 @@
 package org.cangnova.cangjie.cfir.serialization.deserialize
 
-import PackageFormat.ArrayTyInfo
-import PackageFormat.CompositeTyInfo
-import PackageFormat.FullId
-import PackageFormat.FuncTyInfo
-import PackageFormat.GenericTyInfo
-import PackageFormat.SemaTy
-import PackageFormat.TypeKind
+import PackageFormat.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeCStringType
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeDiagnostic
-import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
-import org.cangnova.cangjie.cfir.types.ConePointerType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.ConeStructType
-import org.cangnova.cangjie.cfir.types.ConeTupleType
-import org.cangnova.cangjie.cfir.types.ConeTypeProjection
-import org.cangnova.cangjie.cfir.types.ConeVArrayType
-import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -242,10 +224,10 @@ class CfirTypeDeserializer(
         upperBounds: List<ConeCangJieType>,
     ): CfirTypeParameterSymbol {
         val symbol = CfirTypeParameterSymbol()
-        val boundRefs = upperBounds.map { upperBound ->
+        val boundRefs = upperBounds.mapTo(mutableListOf<CfirTypeRef>()) { upperBound ->
             CfirResolvedTypeRefImpl(
                 source = null,
-                annotations = emptyList(),
+                annotations = MutableOrEmptyList.empty(),
                 coneType = upperBound,
                 delegatedTypeRef = null,
             )
@@ -253,13 +235,14 @@ class CfirTypeDeserializer(
         val declaration = CfirTypeParameterImpl(
             source = null,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             containingDeclarationSymbol = symbol,
             symbol = symbol,
             name = name,
-            bounds = boundRefs as List<CfirResolvedTypeRef>,
+            bounds = boundRefs,
         )
         symbol.bind(declaration)
         return symbol

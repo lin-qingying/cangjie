@@ -25,5 +25,4 @@ abstract class CfirOrPattern : CfirPattern() {
         transformer.transformOrPattern(this, data) as E
 
     abstract fun <D> transformAlternatives(transformer: CfirTransformer<D>, data: D): CfirOrPattern
-
 }

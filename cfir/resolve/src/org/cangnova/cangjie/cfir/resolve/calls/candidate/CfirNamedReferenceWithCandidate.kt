@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
@@ -30,7 +31,14 @@ class CfirErrorReferenceWithCandidate(
     source: CjSourceElement?,
     name: Name,
     candidate: Candidate,
-    val diagnostic: ConeDiagnostic
-) : CfirNamedReferenceWithCandidate(source, name, candidate) {
+    override val diagnostic: ConeDiagnostic
+) : CfirNamedReferenceWithCandidate(source, name, candidate), CfirDiagnosticHolder {
     override val isError: Boolean get() = true
+
+    override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
+        visitor.visitNamedReferenceWithCandidateBase(this, data)
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
+        transformer.transformNamedReferenceWithCandidateBase(this, data) as E
 }

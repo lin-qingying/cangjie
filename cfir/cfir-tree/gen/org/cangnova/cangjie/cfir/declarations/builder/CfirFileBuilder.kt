@@ -10,10 +10,12 @@ package org.cangnova.cangjie.cfir.declarations.builder
 import kotlin.contracts.*
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirFileImpl
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.CjSourceFileLinesMapping
@@ -22,6 +24,7 @@ import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 class CfirFileBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
+    lateinit var resolvePhase: CfirResolvePhase
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
@@ -38,7 +41,8 @@ class CfirFileBuilder {
         return CfirFileImpl(
             source,
             moduleData,
-            annotations,
+            resolvePhase,
+            annotations.toMutableOrEmpty(),
             origin,
             attributes,
             symbol,
@@ -48,9 +52,7 @@ class CfirFileBuilder {
             imports,
             sourceFileLinesMapping,
             declarations,
-        ).also {
-            it.initDefaultResolveState()
-        }
+        )
     }
 
 }
@@ -71,9 +73,10 @@ inline fun buildFileCopy(original: CfirFile, init: CfirFileBuilder.() -> Unit): 
     val copyBuilder = CfirFileBuilder()
     copyBuilder.source = original.source
     copyBuilder.moduleData = original.moduleData
+    copyBuilder.resolvePhase = original.resolvePhase
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
-    copyBuilder.attributes = original.attributes
+    copyBuilder.attributes = original.attributes.copy()
     copyBuilder.name = original.name
     copyBuilder.sourceFile = original.sourceFile
     copyBuilder.packageDirective = original.packageDirective

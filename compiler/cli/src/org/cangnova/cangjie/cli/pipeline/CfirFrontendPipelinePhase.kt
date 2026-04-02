@@ -6,6 +6,22 @@ import org.cangnova.cangjie.CangJieCoreEnvironment
 import org.cangnova.cangjie.CangJieCoreEnvironmentMode
 import org.cangnova.cangjie.CjPsiSourceFile
 import org.cangnova.cangjie.CjSourceFile
+import org.cangnova.cangjie.cfir.DependencyListForCliModule
+import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.entrypoint.configuration.initializeCfirFrontendConfiguration
+import org.cangnova.cangjie.cfir.entrypoint.session.CfirDefaultSessionFactory
+import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
+import org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir
+import org.cangnova.cangjie.cfir.pipeline.AllModulesFrontendOutput
+import org.cangnova.cangjie.cfir.pipeline.CfirSessionConstructionUtils
+import org.cangnova.cangjie.cfir.pipeline.CfirSessionProducer
+import org.cangnova.cangjie.cfir.pipeline.SessionWithSources
+import org.cangnova.cangjie.cfir.pipeline.resolveAndCheckCfir
+import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
+import org.cangnova.cangjie.cfir.resolve.transformers.MacroExpandAction
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cli.common.CollectedCjSources
 import org.cangnova.cangjie.cli.common.GroupedCjSources
 import org.cangnova.cangjie.cli.common.allFiles
@@ -13,17 +29,6 @@ import org.cangnova.cangjie.cli.common.collectCjSources
 import org.cangnova.cangjie.cli.compiler.VfsBasedProjectEnvironment
 import org.cangnova.cangjie.cli.compiler.findFileByPath
 import org.cangnova.cangjie.cli.compiler.forAllFiles
-import org.cangnova.cangjie.cfir.DependencyListForCliModule
-import org.cangnova.cangjie.cfir.entrypoint.configuration.initializeCfirFrontendConfiguration
-import org.cangnova.cangjie.cfir.entrypoint.session.CfirDefaultSessionFactory
-import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
-import org.cangnova.cangjie.cfir.pipeline.AllModulesFrontendOutput
-import org.cangnova.cangjie.cfir.pipeline.CfirSessionProducer
-import org.cangnova.cangjie.cfir.pipeline.CfirSessionConstructionUtils
-import org.cangnova.cangjie.cfir.pipeline.SessionWithSources
-import org.cangnova.cangjie.cfir.pipeline.buildCfirFromCjFiles
-import org.cangnova.cangjie.cfir.pipeline.resolveAndCheckCfir
-import org.cangnova.cangjie.cli.compiler.findFileByPath
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.cangjieSourceRoots
 import org.cangnova.cangjie.config.classpathRoots
@@ -35,6 +40,7 @@ import org.cangnova.cangjie.config.useLightTree
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.source.readSourceFileWithMapping
 import java.io.File
 
 object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, DefaultCfirFrontendPipelineArtifact>(
@@ -61,6 +67,10 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         val sessionFactoryContext = CfirDefaultSessionFactory.Context()
         val extensionRegistrars = emptyList<CfirExtensionRegistrar>()
 
+        val macroExpandAction = MacroExpandAction { session, files ->
+            MacroExpandPhase.expand(session = session, files = files, configuration = configuration)
+        }
+
         val sessionsWithSources = buildSessions(
             configuration = configuration,
             rootModuleName = rootModuleName,
@@ -69,10 +79,17 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
             factory = factory,
             sessionFactoryContext = sessionFactoryContext,
             extensionRegistrars = extensionRegistrars,
+            macroExpandAction = macroExpandAction,
         )
 
         val outputs = sessionsWithSources.map { (session, sessionSources) ->
-            val rawCfirFiles = session.buildCfirFromCjFiles(sessionSources.toCjFiles(environment))
+            val rawCfirFiles = buildRawCfirFiles(
+                session = session,
+                sources = sessionSources,
+                environment = environment,
+                useLightTree = configuration.useLightTree,
+            )
+            recordCfirFiles(session, rawCfirFiles)
             resolveAndCheckCfir(
                 session = session,
                 cfirFiles = rawCfirFiles,
@@ -93,12 +110,6 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         val sources: () -> CollectedCjSources,
     )
 
-    /**
-     * Mirrors Kotlin's `createEnvironmentAndSources` structure:
-     * - source collection is delayed until after environment creation
-     * - `useLightTree` selects between virtual-source collection and PSI-backed source grouping
-     * - the result is discarded if diagnostics already contain errors
-     */
     private fun createEnvironmentAndSources(
         configuration: CompilerConfiguration,
         rootDisposable: Disposable,
@@ -164,6 +175,7 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         factory: CfirDefaultSessionFactory,
         sessionFactoryContext: CfirDefaultSessionFactory.Context,
         extensionRegistrars: List<CfirExtensionRegistrar>,
+        macroExpandAction: MacroExpandAction? = null,
     ): List<SessionWithSources<CjSourceFile>> {
         val classpathPaths = classpathRoots.map { it.absolutePath }
         val moduleGroups = buildModuleGroups(groupedSources, rootModuleName)
@@ -203,6 +215,7 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
                         extensionRegistrars = extensionRegistrars,
                         configuration = configuration,
                         context = sessionFactoryContext,
+                        macroExpandAction = macroExpandAction,
                         init = sessionConfigurator,
                     )
                 },
@@ -228,6 +241,35 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
             result[name] = sources + groupedSources.commonSources
         }
         return result
+    }
+
+    private fun buildRawCfirFiles(
+        session: CfirSession,
+        sources: List<CjSourceFile>,
+        environment: VfsBasedProjectEnvironment,
+        useLightTree: Boolean,
+    ): List<CfirFile> {
+        val firProvider = session.cfirProvider as CfirProviderImpl
+        return if (useLightTree) {
+            val builder = LightTree2Cfir(
+                session = session,
+                scopeProvider = firProvider.cangjieScopeProvider,
+            )
+            sources.map { sourceFile ->
+                val (code, linesMapping) = sourceFile.getContentsAsStream().reader(Charsets.UTF_8).use {
+                    it.readSourceFileWithMapping()
+                }
+                builder.buildCfirFile(code, sourceFile, linesMapping)
+            }
+        } else {
+            val builder = PsiRawCfirBuilder(session, firProvider.cangjieScopeProvider)
+            sources.toCjFiles(environment).map(builder::buildCfirFile)
+        }
+    }
+
+    private fun recordCfirFiles(session: CfirSession, files: List<CfirFile>) {
+        val firProvider = session.cfirProvider as CfirProviderImpl
+        files.forEach(firProvider::recordFile)
     }
 
     private fun List<CjSourceFile>.toCjFiles(environment: VfsBasedProjectEnvironment): List<CjFile> {

@@ -1,5 +1,3 @@
-
-
 enum Option1<T>{
     Some1(T) |
     None1
@@ -30,16 +28,17 @@ func identity1<T>(value: T): T {
 func name():Unit {
   <!CANNOT_INFER_PARAMETER_TYPE!>name1<!>(1)
    let a = A1(1)
-   let b = A(1)
-   let c:A <!PATTERN_INITIALIZER_TYPE_MISMATCH!>=<!> <!CANNOT_INFER_PARAMETER_TYPE!>None1<!>
-    let d:A <!PATTERN_INITIALIZER_TYPE_MISMATCH!>=<!>None1<Int64>
+
+   let b = <!NO_CONSTRUCTOR!>A<!>(1)
+   let c:A = <!CANNOT_INFER_PARAMETER_TYPE!>None1<!>
+    let d:A =<!TYPE_MISMATCH!>None1<Int64><!>
 
     let e = None<Int64>
-    let f:Option1<Int64> <!PATTERN_INITIALIZER_TYPE_MISMATCH!>=<!> <!CANNOT_INFER_PARAMETER_TYPE!>None<!>
+    let f:Option1<Int64> = <!CANNOT_INFER_PARAMETER_TYPE!>None<!>
 
       let g  = <!CANNOT_INFER_PARAMETER_TYPE!>Some2<!>(1)
 
-identity1<Float64>(<!ARGUMENT_TYPE_MISMATCH!>1<!>)
+
     let f = Some<Float64>(<!ARGUMENT_TYPE_MISMATCH!>1<!>)
     let g = None<Int64>
 

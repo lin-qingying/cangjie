@@ -22,14 +22,13 @@ internal class CfirExpressionPatternImpl(
         expression.accept(visitor, data)
     }
 
-    override fun <D> transformExpression(transformer: CfirTransformer<D>, data: D): CfirExpressionPattern
-     {
-        this.expression = expression.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression
+    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirExpressionPatternImpl {
+        transformExpression(transformer, data)
         return this
     }
 
-    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirExpressionPatternImpl {
-        transformExpression(transformer, data)
+    override fun <D> transformExpression(transformer: CfirTransformer<D>, data: D): CfirExpressionPatternImpl {
+        expression = expression.transform(transformer, data)
         return this
     }
 }

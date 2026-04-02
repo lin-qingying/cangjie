@@ -9,8 +9,8 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.Severity
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
@@ -181,8 +181,8 @@ class MutableCheckerContext(
 
     private fun CfirElement.isCallOrAssignmentCandidate(): Boolean {
         return this is CfirFunctionCall ||
-                this is CfirPropertyAccess ||
-                this is CfirQualifiedAccess ||
+                this is CfirNamedAccessExpression ||
+                this is CfirQualifiedAccessExpression ||
                 this is CfirAssignment
     }
 }

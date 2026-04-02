@@ -2,7 +2,8 @@ package org.cangnova.cangjie.cfir.types.builder
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -26,7 +27,7 @@ class CfirErrorTypeRefBuilder {
     fun build(): CfirErrorTypeRef {
         return CfirErrorTypeRefImpl(
             source = source,
-            annotations = annotations.toMutableList(),
+            annotations = annotations.toMutableOrEmpty(),
             typeOrNull = coneType,
             delegatedTypeRef = delegatedTypeRef,
             diagnostic = diagnostic,

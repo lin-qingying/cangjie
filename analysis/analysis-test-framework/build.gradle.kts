@@ -1,4 +1,5 @@
 plugins {
+    kotlin("jvm")
     id("java-test-fixtures")
 }
 
@@ -10,18 +11,14 @@ sourceSets {
 
 dependencies {
     testFixturesApi(project(":analysis:analysis-api"))
-    testFixturesApi(project(":analysis:analysis-api-platform-interface"))
     testFixturesApi(project(":analysis:analysis-api-impl-base"))
-    testFixturesApi(project(":analysis:analysis-api-standalone"))
     testFixturesApi(project(":analysis:analysis-api-cfir"))
-    testFixturesApi(project(":analysis:low-level-api-cfir"))
     testFixturesApi(project(":psi"))
     testFixturesApi(project(":cfir:cfir-tree"))
 
     testFixturesApi(testFixtures(project(":tests:test-infrastructure")))
 
     testFixturesApi(intellijCore())
-
     testFixturesApi(libs.junit.jupiter)
     testFixturesRuntimeOnly(libs.junit.platform.launcher)
 }

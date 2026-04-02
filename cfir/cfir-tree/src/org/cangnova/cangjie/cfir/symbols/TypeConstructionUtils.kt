@@ -3,11 +3,9 @@ package org.cangnova.cangjie.cfir.symbols
 import org.cangnova.cangjie.cfir.types.ConeAttributes
 import org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassifierLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.name.ClassId
 
@@ -32,11 +30,11 @@ fun CfirClassifierSymbol<*>.constructType(
 ): ConeLookupTagBasedType {
     return when (this) {
         is CfirTypeParameterSymbol -> ConeTypeParameterTypeImpl(this.toLookupTag(), attributes)
-        is CfirClassifierSymbolWithClassId<*> -> constructType(typeArguments, attributes)
+        is CfirClassLikeSymbol<*> -> constructType(typeArguments, attributes)
 
     }
 }
-fun CfirClassifierSymbolWithClassId<*>.constructType(
+fun CfirClassLikeSymbol<*>.constructType(
     typeArguments: List<ConeTypeProjection> = emptyList(),
     attributes: ConeAttributes = ConeAttributes.Empty
 ): ConeLookupTagBasedType {

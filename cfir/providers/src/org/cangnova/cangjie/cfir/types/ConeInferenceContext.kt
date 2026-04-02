@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
@@ -108,7 +109,12 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
                 val symbol = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(classId) }.getOrNull()
                     ?: return emptyList()
                 if (!symbol.isBound) return emptyList()
-                symbol.cfir.superTypeRefs.mapNotNull { (it as? CfirResolvedTypeRef)?.coneType }
+                symbol.lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
+                session.directSupertypeProviderOrNull
+                    ?.getDirectSuperTypes(classId)
+                    ?.map { it.coneType }
+                    ?.takeIf { it.isNotEmpty() }
+                    ?: symbol.cfir.superTypeRefs.mapNotNull { (it as? CfirResolvedTypeRef)?.coneType }
             }
             is ConeTypeParameterLookupTag -> {
                 typeParameterSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
@@ -515,10 +521,8 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
 
     override fun typeSubstitutorByTypeConstructor(map: Map<TypeConstructorMarker, CangJieTypeMarker>): TypeSubstitutorMarker {
         @Suppress("UNCHECKED_CAST")
-        return createTypeSubstitutorByTypeConstructor(
+        return createInferenceTypeSubstitutor(
             map = map as Map<TypeConstructorMarker, ConeCangJieType>,
-            context = this,
-            approximateIntegerLiterals = false,
         )
     }
 
@@ -670,5 +674,22 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
 
     override fun TypeConstructorMarker.isFinalClassOrAnnotationClassConstructor(): Boolean {
         return isFinalClassConstructor()
+    }
+}
+
+private fun ConeInferenceContext.createInferenceTypeSubstitutor(
+    map: Map<TypeConstructorMarker, ConeCangJieType>,
+): ConeSubstitutor {
+    if (map.isEmpty()) return ConeEmptySubstitutor
+
+    return object : AbstractConeSubstitutor(this) {
+        override fun substituteType(type: ConeCangJieType): ConeCangJieType? {
+            val constructor = when (type) {
+                is ConeLookupTagBasedType -> type.lookupTag
+                is ConeTypeVariableType -> type.typeConstructor
+                else -> null
+            } ?: return null
+            return map[constructor]
+        }
     }
 }

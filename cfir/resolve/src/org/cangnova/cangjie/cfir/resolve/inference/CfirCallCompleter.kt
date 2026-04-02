@@ -2,15 +2,17 @@ package org.cangnova.cangjie.cfir.resolve.inference
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirLookupTrackerComponent
-import org.cangnova.cangjie.cfir.CfirResolvable
 import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.lookupTracker
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
@@ -22,6 +24,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedLambdaAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeSimpleLeafResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.stages.TypeArgumentMapping
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
@@ -29,6 +32,7 @@ import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintP
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.initialTypeOfCandidate
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.resultType
 import org.cangnova.cangjie.cfir.resolve.typeFromCallee
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
@@ -51,14 +55,15 @@ import org.cangnova.cangjie.cfir.types.ConeSubstitutor
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.cfir.types.coneTypeSafe
 import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.typeApproximator
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.visitors.transformSingle
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.resolve.calls.inference.addEqualityConstraintIfCompatible
-import org.cangnova.cangjie.resolve.calls.inference.addSubtypeConstraintIfCompatible
 import org.cangnova.cangjie.resolve.calls.inference.buildAbstractResultingSubstitutor
 import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionMode
@@ -88,14 +93,21 @@ class CfirCallCompleter(
         resolutionMode: ResolutionMode,
         skipEvenPartialCompletion: Boolean = false,
     ): T where T : CfirResolvable, T : CfirExpression {
-
-        val type = components.typeFromCallee(call)
-
-
-
         val reference = call.calleeReference as? CfirNamedReferenceWithCandidate ?: return call
         val candidate = reference.candidate
-        val initialType = type.initialTypeOfCandidate(candidate)
+        val initialType = when {
+            candidate.callInfo.callKind == CallKind.Function -> candidate.substitutedReturnType()
+            candidate.symbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor -> candidate.substitutedReturnType()
+            else -> components.typeFromCallee(call).initialTypeOfCandidate(candidate)
+        }
+
+        // Annotation types are resolved during type resolution, and generic arguments aren't inferred.
+        // Updating the type of an annotation call is a no-op, it only checks if it's the same as the type of the annotation type ref.
+        // In the case of a generic annotation, we would set it to a type containing type variable types which would cause an exception.
+        // Delegated constructor calls always have type Unit but typeFromCallee returns the type of the superclass.
+        if (call !is CfirAnnotationCall && call !is CfirAnonymousFunctionExpression) {
+            call.resultType = initialType
+        }
 
         session.lookupTracker?.recordTypeResolveAsLookup(initialType, call.source, components.context.file.source)
         addConstraintFromExpectedType(candidate, initialType, resolutionMode)
@@ -157,7 +169,7 @@ class CfirCallCompleter(
             }
 
             resolutionMode.forceFullCompletion &&
-                candidate.isSyntheticFunctionCallThatShouldUseEqualityConstraint(expectedType) -> {
+                    candidate.isSyntheticFunctionCallThatShouldUseEqualityConstraint(expectedType) -> {
                 system.addEqualityConstraintIfCompatible(initialType, expectedType, ConeExpectedTypeConstraintPosition)
                 candidate.markWasExpectedTypeAddedAsEqualityForSyntheticCall()
             }
@@ -168,7 +180,6 @@ class CfirCallCompleter(
             }
 
             else -> {
-//                system.addSubtypeConstraintIfCompatible(initialType, expectedType, ConeExpectedTypeConstraintPosition)
                 system.addSubtypeConstraint(initialType, expectedType, ConeExpectedTypeConstraintPosition)
             }
         }
@@ -249,7 +260,6 @@ class CfirCallCompleter(
             components.session.typeApproximator,
             components.dataFlowAnalyzer,
             components.integerLiteralAndOperatorApproximationTransformer,
-            components.samResolver,
             components.context,
             mode,
         )
@@ -356,7 +366,8 @@ class CfirCallCompleter(
                     withPCLASession,
                     candidate,
                 )
-                val source = parameter.source?.fakeElement(CjFakeSourceElementKind.ImplicitReturnTypeOfLambdaValueParameter)
+                val source =
+                    parameter.source?.fakeElement(CjFakeSourceElementKind.ImplicitReturnTypeOfLambdaValueParameter)
                 val newTypeRef = if (parameter.returnTypeRef is CfirImplicitTypeRef) {
                     approximated.toResolvedTypeRef(source)
                 } else {
@@ -422,28 +433,61 @@ internal fun CfirFunction.isFunctionForExpectTypeFromCastFeature(): Boolean {
 
     return valueParameters.none { it.returnTypeRef.isBadType() }
 }
-
-private fun CfirLookupTrackerComponent.recordTypeResolveAsLookup(
-    type: ConeCangJieType,
+fun CfirLookupTrackerComponent.recordClassLikeLookup(classId: ClassId, source: CjSourceElement?, fileSource: CjSourceElement?) {
+//TODO 排除基本类型
+//    if ( classId !in StandardClassIds.allBuiltinTypes) {
+//        val classFqName = classId.asSingleFqName()
+//        recordLookup(classFqName.shortName().asString(), classFqName.parent().asString(), source, fileSource)
+//    }
+}
+fun CfirLookupTrackerComponent.recordTypeResolveAsLookup(
+    type: ConeCangJieType?,
     source: CjSourceElement?,
     fileSource: CjSourceElement?,
-) = Unit
+) {
+    if (type == null) return
+    if (source == null && fileSource == null) return // TODO: investigate all cases
+    if (type is ConeErrorType) return // TODO: investigate whether some cases should be recorded, e.g. unresolved
+    type.classId?.let { classId ->
+        recordClassLikeLookup(classId, source, fileSource)
+    }
+    type.typeArguments.forEach {
+        recordTypeResolveAsLookup(it.type, source, fileSource)
+    }
+}
 
 private fun CfirTypeRef.resolvedTypeFromPrototype(
     type: ConeCangJieType,
     source: CjSourceElement?,
 ): CfirResolvedTypeRef {
-    return buildResolvedTypeRef {
-        this.source = source ?: this@resolvedTypeFromPrototype.source
-        coneType = type
-        delegatedTypeRef = this@resolvedTypeFromPrototype
+    return when (type) {
+        is ConeErrorType -> buildErrorTypeRef {
+            this.source = source ?: this@resolvedTypeFromPrototype.source
+            coneType = type
+            delegatedTypeRef = this@resolvedTypeFromPrototype
+            diagnostic = type.diagnostic
+        }
+
+        else -> buildResolvedTypeRef {
+            this.source = source ?: this@resolvedTypeFromPrototype.source
+            coneType = type
+            delegatedTypeRef = this@resolvedTypeFromPrototype
+        }
     }
 }
 
 private fun ConeCangJieType.toResolvedTypeRef(source: CjSourceElement?): CfirResolvedTypeRef {
-    return buildResolvedTypeRef {
-        this.source = source
-        coneType = this@toResolvedTypeRef
+    return when (this) {
+        is ConeErrorType -> buildErrorTypeRef {
+            this.source = source
+            coneType = this@toResolvedTypeRef
+            diagnostic = this@toResolvedTypeRef.diagnostic
+        }
+
+        else -> buildResolvedTypeRef {
+            this.source = source
+            coneType = this@toResolvedTypeRef
+        }
     }
 }
 

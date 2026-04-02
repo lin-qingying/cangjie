@@ -25,14 +25,13 @@ class CfirTypePatternImpl @CfirImplementationDetail constructor(
         typeRef.accept(visitor, data)
     }
 
-    override fun <D> transformTypeRef(transformer: CfirTransformer<D>, data: D): CfirTypePattern
-     {
-        this.typeRef = typeRef.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirTypeRef
+    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirTypePatternImpl {
+        transformTypeRef(transformer, data)
         return this
     }
 
-    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirTypePatternImpl {
-        transformTypeRef(transformer, data)
+    override fun <D> transformTypeRef(transformer: CfirTransformer<D>, data: D): CfirTypePatternImpl {
+        typeRef = typeRef.transform(transformer, data)
         return this
     }
 }

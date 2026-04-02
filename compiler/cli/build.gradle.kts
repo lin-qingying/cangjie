@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":compiler:chir"))
     implementation(project(":compiler:codegen"))
     implementation(project(":cfir:entrypoint"))
+    implementation(project(":macro:macro-common"))
 
     compileOnly(intellijCore())
     testImplementation(intellijCore())

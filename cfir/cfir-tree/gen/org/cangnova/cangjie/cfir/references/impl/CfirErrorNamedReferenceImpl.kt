@@ -20,8 +20,7 @@ internal class CfirErrorNamedReferenceImpl(
     override val diagnostic: ConeDiagnostic,
 ) : CfirErrorNamedReference() {
 
-    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
-    }
+    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirErrorNamedReferenceImpl {
         return this

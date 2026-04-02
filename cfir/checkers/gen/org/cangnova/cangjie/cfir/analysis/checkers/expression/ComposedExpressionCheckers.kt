@@ -16,8 +16,8 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
         get() = _literalExpressionCheckers
     override val functionCallCheckers: Set<CfirFunctionCallChecker>
         get() = _functionCallCheckers
-    override val propertyAccessCheckers: Set<CfirPropertyAccessChecker>
-        get() = _propertyAccessCheckers
+    override val namedAccessCheckers: Set<CfirNamedAccessChecker>
+        get() = _namedAccessCheckers
     override val qualifiedAccessCheckers: Set<CfirQualifiedAccessChecker>
         get() = _qualifiedAccessCheckers
     override val assignmentCheckers: Set<CfirAssignmentChecker>
@@ -50,7 +50,7 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
     private val _basicExpressionCheckers: MutableSet<CfirBasicExpressionChecker> = mutableSetOf()
     private val _literalExpressionCheckers: MutableSet<CfirLiteralExpressionChecker> = mutableSetOf()
     private val _functionCallCheckers: MutableSet<CfirFunctionCallChecker> = mutableSetOf()
-    private val _propertyAccessCheckers: MutableSet<CfirPropertyAccessChecker> = mutableSetOf()
+    private val _namedAccessCheckers: MutableSet<CfirNamedAccessChecker> = mutableSetOf()
     private val _qualifiedAccessCheckers: MutableSet<CfirQualifiedAccessChecker> = mutableSetOf()
     private val _assignmentCheckers: MutableSet<CfirAssignmentChecker> = mutableSetOf()
     private val _binaryOpCheckers: MutableSet<CfirBinaryOpChecker> = mutableSetOf()
@@ -71,7 +71,7 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
         _basicExpressionCheckers.addAll(checkers.basicExpressionCheckers)
         _literalExpressionCheckers.addAll(checkers.literalExpressionCheckers)
         _functionCallCheckers.addAll(checkers.functionCallCheckers)
-        _propertyAccessCheckers.addAll(checkers.propertyAccessCheckers)
+        _namedAccessCheckers.addAll(checkers.namedAccessCheckers)
         _qualifiedAccessCheckers.addAll(checkers.qualifiedAccessCheckers)
         _assignmentCheckers.addAll(checkers.assignmentCheckers)
         _binaryOpCheckers.addAll(checkers.binaryOpCheckers)

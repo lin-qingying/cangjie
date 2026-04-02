@@ -31,7 +31,5 @@ abstract class CfirThisReference : CfirPureAbstractElement(), CfirReference {
 
     abstract fun replaceBoundSymbol(newBoundSymbol: CfirThisOwnerSymbol<*>?)
 
-
     abstract fun replaceDiagnostic(newDiagnostic: ConeDiagnostic?)
-
 }

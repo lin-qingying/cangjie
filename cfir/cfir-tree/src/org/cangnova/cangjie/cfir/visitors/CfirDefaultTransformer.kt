@@ -163,12 +163,12 @@ open class CfirDefaultTransformer<in D> : CfirTransformer<D>() {
         return transformExpression(functionCall, data)
     }
 
-    override fun transformPropertyAccess(propertyAccess: CfirPropertyAccess, data: D): CfirExpression {
-        return transformExpression(propertyAccess, data)
+    override fun transformNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression, data: D): CfirExpression {
+        return transformQualifiedAccessExpression(namedAccessExpression, data)
     }
 
-    override fun transformQualifiedAccess(qualifiedAccess: CfirQualifiedAccess, data: D): CfirExpression {
-        return transformExpression(qualifiedAccess, data)
+    override fun transformQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression, data: D): CfirExpression {
+        return transformExpression(qualifiedAccessExpression, data)
     }
 
     override fun transformAssignment(assignment: CfirAssignment, data: D): CfirExpression {

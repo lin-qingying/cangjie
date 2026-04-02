@@ -4,7 +4,7 @@ import org.cangnova.cangjie.cfir.tree.generator.context.AbstractCfirTreeImplemen
 import org.cangnova.cangjie.cfir.tree.generator.model.Element
 import org.cangnova.cangjie.cfir.tree.generator.model.Field
 import org.cangnova.cangjie.cfir.tree.generator.model.Implementation
-import org.cangnova.cangjie.cfir.tree.generator.util.type
+import org.cangnova.cangjie.generators.tree.ImplementationKind
 import org.cangnova.cangjie.generators.tree.config.AbstractImplementationConfigurator
 
 object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator() {
@@ -49,7 +49,9 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
             default("statements") { value = error; withGetter = true }
             publicImplementation()
         }
-
+        impl(functionCall) {
+            kind = ImplementationKind.OpenClass
+        }
         impl(lazyExpression) {
             val error = """error("CfirLazyExpression should be resolved before accessing")"""
             default("source") { value = error; withGetter = true }
@@ -122,6 +124,24 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
             }
         }
 
+        impl(errorNamedValue) {
+
+
+            default("returnTypeRef", "CfirErrorTypeRefImpl(source, MutableOrEmptyList.empty(), null, null, diagnostic)")
+            default("isLocal") {
+                value = "false"
+                withGetter = true
+            }
+            additionalImports(errorTypeRefImplType)
+        }
+        impl(errorFunction) {
+            default("returnTypeRef", "CfirErrorTypeRefImpl(null, MutableOrEmptyList.empty(), null, null, diagnostic)")
+            default("isLocal") {
+                value = "false"
+                withGetter = true
+            }
+            additionalImports(errorTypeRefImplType)
+        }
         // ---------- 具体节点：生成公开实现类 ----------
         concreteElements().forEach { element ->
             impl(element) {
@@ -204,9 +224,9 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         // lazyExpression 已单独配置
         literalExpression,
         stringInterpolation,
-        functionCall,
-        propertyAccess,
-        qualifiedAccess,
+
+        namedAccessExpression,
+        qualifiedAccessExpression,
         assignment,
         binaryOp,
         comparisonExpression,

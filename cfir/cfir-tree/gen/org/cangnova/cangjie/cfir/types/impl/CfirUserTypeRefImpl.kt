@@ -8,19 +8,22 @@
 package org.cangnova.cangjie.cfir.types.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirUserTypeRefImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
-    override var annotations: List<CfirAnnotation>,
-    override var qualifier: List<Name>,
-    override var typeArguments: List<CfirTypeRef>,
+    override var annotations: MutableOrEmptyList<CfirAnnotation>,
+    override val source: CjSourceElement,
+    override val qualifier: MutableList<Name>,
+    override var typeArguments: MutableOrEmptyList<CfirTypeRef>,
 ) : CfirUserTypeRef() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -28,31 +31,27 @@ class CfirUserTypeRefImpl @CfirImplementationDetail constructor(
         typeArguments.forEach { it.accept(visitor, data) }
     }
 
-    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-     {
-        this.annotations = newAnnotations
-    }
-
-    override fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>)
-     {
-        this.typeArguments = newTypeArguments
-    }
-
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirUserTypeRef
-     {
-        this.annotations = annotations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnnotation }
-        return this
-    }
-
-    override fun <D> transformTypeArguments(transformer: CfirTransformer<D>, data: D): CfirUserTypeRef
-     {
-        this.typeArguments = typeArguments.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirTypeRef }
-        return this
-    }
-
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirUserTypeRefImpl {
         transformAnnotations(transformer, data)
         transformTypeArguments(transformer, data)
         return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirUserTypeRefImpl {
+        annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformTypeArguments(transformer: CfirTransformer<D>, data: D): CfirUserTypeRefImpl {
+        typeArguments.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
+        annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>) {
+        typeArguments = newTypeArguments.toMutableOrEmpty()
     }
 }
