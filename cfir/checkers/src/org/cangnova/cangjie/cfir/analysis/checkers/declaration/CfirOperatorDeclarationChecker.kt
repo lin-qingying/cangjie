@@ -1,0 +1,62 @@
+package org.cangnova.cangjie.cfir.analysis.checkers.declaration
+
+import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.modifierByToken
+import org.cangnova.cangjie.cfir.analysis.checkers.realSourceModifiers
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorNameConventions
+import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorString
+
+object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
+    private val unaryOperatorNames: Set<Name> = setOf(
+        OperatorNameConventions.NOT,
+        OperatorNameConventions.UNARY_MINUS,
+        OperatorNameConventions.UNARY_PLUS,
+        OperatorNameConventions.INC,
+        OperatorNameConventions.DEC,
+    )
+
+    private val specialArityOperatorNames: Set<Name> = setOf(
+        OperatorNameConventions.INVOKE,
+        OperatorNameConventions.GET,
+        OperatorNameConventions.SET,
+    )
+
+    private val binaryOperatorNames: Set<Name> =
+        OperatorNameConventions.TOKENS_BY_OPERATOR_NAME.keys - unaryOperatorNames - specialArityOperatorNames
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(declaration: CfirNamedFunction) {
+        if (!declaration.status.isOperator) return
+
+        val expectedParameterCount = expectedParameterCount(declaration.name) ?: return
+        val actualParameterCount = declaration.valueParameters.size
+        if (actualParameterCount == expectedParameterCount) return
+
+        val diagnosticSource = declaration.source
+            ?.realSourceModifiers()
+            ?.modifierByToken(CjTokens.OPERATOR_KEYWORD)
+            ?.source
+            ?: declaration.source
+            ?: return
+
+        reporter.reportOn(
+            source = diagnosticSource,
+            factory = CfirErrors.INVALID_OPERATOR_PARAMETER_COUNT,
+            a = declaration.name.asOperatorString(),
+            b = expectedParameterCount.toString(),
+            c = actualParameterCount.toString(),
+        )
+    }
+
+    private fun expectedParameterCount(name: Name): Int? = when (name) {
+        in unaryOperatorNames -> 0
+        in binaryOperatorNames -> 1
+        else -> null
+    }
+}

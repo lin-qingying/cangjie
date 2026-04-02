@@ -35,7 +35,12 @@
             <option value="$PROJECT_DIR$/analysis/analysis-api" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-cfir" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-impl-base" />
+            <option value="$PROJECT_DIR$/analysis/analysis-api-platform-interface" />
+            <option value="$PROJECT_DIR$/analysis/analysis-api-standalone" />
+            <option value="$PROJECT_DIR$/analysis/analysis-internal-utils" />
             <option value="$PROJECT_DIR$/analysis/analysis-test-framework" />
+            <option value="$PROJECT_DIR$/analysis/cj-references" />
+            <option value="$PROJECT_DIR$/analysis/low-level-api-cfir" />
             <option value="$PROJECT_DIR$/cfir" />
             <option value="$PROJECT_DIR$/cfir/analysis-tests" />
             <option value="$PROJECT_DIR$/cfir/cfir-common" />

@@ -53,5 +53,11 @@ class CfirExtendRuleQueryServiceImpl(
 
     override fun defaultIndependentMembersOfInterface(interfaceClassId: ClassId): List<Name> =
         indexStore.defaultIndependentMembersOfInterface(interfaceClassId)
+
+    override fun targetClassOwnInterfaceClassIds(targetClassId: ClassId): Set<ClassId> =
+        indexStore.targetClassOwnInterfaceClassIds(targetClassId)
+
+    override fun otherPackageExtendedInterfaceClassIds(targetClassId: ClassId, currentPackage: FqName): Set<ClassId> =
+        indexStore.otherPackageExtendedInterfaceClassIds(targetClassId, currentPackage)
 }
 
