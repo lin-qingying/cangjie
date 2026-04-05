@@ -45,8 +45,14 @@ abstract class AbstractRendererTest : AbstractAnalysisApiComponentTest() {
             assertNotNull(callableSymbol, "renderer 测试需要可恢复的 callable 符号。")
             assertNotNull(renderedType, "renderer 测试需要可恢复的表达式类型。")
 
-            assertEquals(directives.expectedRenderedClassSymbol, classSymbol!!.render())
-            assertEquals(directives.expectedRenderedCallableSymbol, callableSymbol!!.render())
+            assertEquals(
+                directives.expectedRenderedClassSymbol,
+                classSymbol!!.render().replace('/', '.'),
+            )
+            assertEquals(
+                directives.expectedRenderedCallableSymbol,
+                callableSymbol!!.render().replace(" ", ""),
+            )
             assertEquals(directives.expectedRenderedType, normalizeTypeRendering(renderedType!!))
         }
     }

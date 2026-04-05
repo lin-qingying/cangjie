@@ -387,8 +387,7 @@ class LightTreeRawCfirExpressionBuilder(
                 CjNodeTypes.VALUE_ARGUMENT_LIST -> {
                     tree.forEachChildren(child) { arg ->
                         if (arg.tokenType == CjNodeTypes.VALUE_ARGUMENT) {
-                            val expr = findFirstExpression(arg)
-                            if (expr != null) argNodes.add(expr)
+                            argNodes.add(arg)
                         }
                     }
                 }
@@ -409,7 +408,7 @@ class LightTreeRawCfirExpressionBuilder(
             }
         }
 
-        val callArguments = argNodes.map { convertExpression(it) }.toMutableList()
+        val callArguments = argNodes.mapNotNull { convertCallArgument(it) }.toMutableList()
         val directTypeArgs = typeArgNodes.map { typeRefNode ->
             convertTypeReference(typeRefNode, tree, source) { it.toSourceElement() }
         }
@@ -435,6 +434,22 @@ class LightTreeRawCfirExpressionBuilder(
             explicitReceiver = receiver
             typeArguments.addAll(typeArgs)
             origin = CfirFunctionCallOrigin.Regular
+        }
+    }
+
+    /**
+     * LightTree 路径下同样需要保留 named argument 的外层语法，
+     * 这样参数映射阶段才能在不依赖 PSI 的情况下恢复参数名前缀。
+     */
+    private fun convertCallArgument(valueArgumentNode: LighterASTNode): CfirExpression? {
+        val expressionNode = findFirstExpression(valueArgumentNode) ?: return null
+        val convertedExpression = convertExpression(expressionNode)
+        val hasName = tree.findChildByType(valueArgumentNode, CjNodeTypes.VALUE_ARGUMENT_NAME) != null
+        if (!hasName) return convertedExpression
+
+        return buildWrappedExpression {
+            source = valueArgumentNode.toSource()
+            expression = convertedExpression
         }
     }
 
@@ -512,8 +527,7 @@ class LightTreeRawCfirExpressionBuilder(
                     CjNodeTypes.VALUE_ARGUMENT_LIST -> {
                         tree.forEachChildren(child) { arg ->
                             if (arg.tokenType == CjNodeTypes.VALUE_ARGUMENT) {
-                                val expr = findFirstExpression(arg)
-                                if (expr != null) argNodes.add(expr)
+                                argNodes.add(arg)
                             }
                         }
                     }
@@ -539,7 +553,7 @@ class LightTreeRawCfirExpressionBuilder(
             } else {
                 buildNamedReference(referenceNameFromText(calleeRef?.asText() ?: "<error>"), calleeRef?.toSource() ?: selector.toSource())
             }
-            val callArguments = argNodes.map { convertExpression(it) }.toMutableList()
+            val callArguments = argNodes.mapNotNull { convertCallArgument(it) }.toMutableList()
             val directTypeArgs = typeArgNodes.map { typeRefNode ->
                 convertTypeReference(typeRefNode, tree, source) { it.toSourceElement() }
             }

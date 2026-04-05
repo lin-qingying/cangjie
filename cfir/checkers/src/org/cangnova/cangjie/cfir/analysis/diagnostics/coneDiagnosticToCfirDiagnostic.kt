@@ -5,11 +5,13 @@ import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.diagnostic.ArgumentPassedTwice
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferTypeParameterType
@@ -22,6 +24,12 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeVisibilityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
+import org.cangnova.cangjie.cfir.diagnostic.MixingNamedAndPositionalArguments
+import org.cangnova.cangjie.cfir.diagnostic.NamedArgumentsNotAllowed
+import org.cangnova.cangjie.cfir.diagnostic.NamedParameterNotFound
+import org.cangnova.cangjie.cfir.diagnostic.NeedNamedArgument
+import org.cangnova.cangjie.cfir.diagnostic.NoValueForParameter
+import org.cangnova.cangjie.cfir.diagnostic.TooManyArguments
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
@@ -279,12 +287,23 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
 ): List<CjDiagnostic> {
-    val genericDiagnostic = source?.let {
-        CfirErrors.UNRESOLVED_REFERENCE.on(it, candidateSymbol.debugName, null, session)
+    val genericDiagnostic = (qualifiedAccessSource ?: source)?.let { diagnosticSource ->
+        when (candidateSymbol.cfir) {
+            is org.cangnova.cangjie.cfir.declarations.CfirConstructor,
+            is CfirEnumConstructor,
+            -> CfirErrors.NO_CONSTRUCTOR.on(diagnosticSource, session)
+
+            else -> CfirErrors.UNRESOLVED_REFERENCE.on(diagnosticSource, candidateSymbol.debugName, null, session)
+        }
     }
 
     val diagnostics = candidate.diagnostics.filter { !it.isSuccess }.mapNotNull { rootCause ->
         when (rootCause) {
+            is ArgumentPassedTwice -> CfirErrors.ARGUMENT_PASSED_TWICE.on(
+                rootCause.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+                session,
+            )
+
             is ArgumentTypeMismatch -> {
                 val expectedType = rootCause.expectedType.substituteTypeVariableTypes(candidate, session)
                 val actualType =
@@ -303,6 +322,41 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                     session = session,
                 )
             }
+
+            is MixingNamedAndPositionalArguments -> CfirErrors.MIXING_NAMED_AND_POSITIONAL_ARGUMENTS.on(
+                rootCause.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+                session,
+            )
+
+            is NamedArgumentsNotAllowed -> CfirErrors.NAMED_ARGUMENTS_NOT_ALLOWED.on(
+                rootCause.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+                rootCause.targetDescription,
+                session,
+            )
+
+            is NamedParameterNotFound -> CfirErrors.NAMED_PARAMETER_NOT_FOUND.on(
+                rootCause.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+                rootCause.name,
+                session,
+            )
+
+            is NeedNamedArgument -> CfirErrors.NEED_NAMED_ARGUMENT.on(
+                rootCause.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+                rootCause.parameter.name,
+                session,
+            )
+
+            is NoValueForParameter -> CfirErrors.NO_VALUE_FOR_PARAMETER.on(
+                qualifiedAccessSource ?: source ?: return@mapNotNull null,
+                rootCause.valueParameter.name,
+                session,
+            )
+
+            is TooManyArguments -> CfirErrors.TOO_MANY_ARGUMENTS.on(
+                rootCause.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+                rootCause.targetName,
+                session,
+            )
 
             else -> genericDiagnostic
         }
@@ -359,6 +413,14 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     callOrAssignmentSource: CjSourceElement?,
     session: CfirSession,
 ): List<CjDiagnostic> {
+    if (candidateSymbols.all { symbol ->
+            symbol.cfir is org.cangnova.cangjie.cfir.declarations.CfirConstructor || symbol.cfir is CfirEnumConstructor
+        }
+    ) {
+        val diagnosticSource = callOrAssignmentSource ?: source ?: return emptyList()
+        return listOfNotNull(CfirErrors.AMBIGUOUS_CONSTRUCTOR_CALL.on(diagnosticSource, name, session))
+    }
+
     @OptIn(ApplicabilityDetail::class)
     if (!applicability.isSuccess) {
         val candidateDiagnostics = candidatesWithErrors.values.map { coneDiagnostic ->
@@ -416,6 +478,9 @@ private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
     mapExtendSuperDiagnostic(source, callOrAssignmentSource, session)?.let { diagnostic ->
         return listOf(diagnostic)
     }
+    if (isConstructorDelegationUnresolved(source, callOrAssignmentSource)) {
+        return emptyList()
+    }
 
     val diagnosticSource = callOrAssignmentSource ?: source ?: return emptyList()
     return listOfNotNull(
@@ -446,6 +511,18 @@ private fun ConeUnresolvedNameError.mapExtendSuperDiagnostic(
     }
 
     return CfirErrors.EXTEND_SUPER_NOT_ALLOWED.on(diagnosticSource, session)
+}
+
+private fun isConstructorDelegationUnresolved(
+    source: CjSourceElement?,
+    callOrAssignmentSource: CjSourceElement?,
+): Boolean {
+    val diagnosticSource = source ?: callOrAssignmentSource ?: return false
+    val psi = diagnosticSource.psi ?: return false
+    val constructor = PsiTreeUtil.getParentOfType(psi, org.cangnova.cangjie.psi.CjConstructor::class.java, false)
+        ?: return false
+    val psiText = psi.text.orEmpty()
+    return constructor.bodyExpression != null && (psiText.contains("this(") || psiText.contains("super("))
 }
 
 private fun ConeUnresolvedNameError.buildInvalidBinaryOperatorDiagnostic(

@@ -954,12 +954,7 @@ class PsiRawCfirBuilder(
             }
 
             // valueArguments 已经包含了 lambdaArguments，不需要再单独处理
-            val allArgs = psi.valueArguments.mapNotNull { arg ->
-                when (arg) {
-                    is CjLambdaArgument -> arg.getLambdaExpression()?.let { convertLambda(it) }
-                    else -> arg.getArgumentExpression()?.let { convertExpression(it) }
-                }
-            }
+            val allArgs = psi.valueArguments.mapNotNull(::convertCallArgument)
 
             val (receiver, reference) = resolveCalleeReference(callee)
 
@@ -974,6 +969,25 @@ class PsiRawCfirBuilder(
                 origin = CfirFunctionCallOrigin.Regular
             }
         }
+
+        /**
+         * 参数映射阶段需要知道调用实参的外层语法（特别是 named argument 前缀），
+         * 因此对命名实参保留一层 wrapped expression，避免在 Raw CFIR 阶段把这部分信息丢掉。
+         */
+        private fun convertCallArgument(argument: ValueArgument): CfirExpression? {
+            val convertedExpression = when (argument) {
+                is CjLambdaArgument -> argument.getLambdaExpression()?.let { convertLambda(it) }
+                else -> argument.getArgumentExpression()?.let { convertExpression(it) }
+            } ?: return null
+
+            if (!argument.isNamed()) return convertedExpression
+
+            return buildWrappedExpression {
+                source = argument.asElement().toCjPsiSourceElement()
+                expression = convertedExpression
+            }
+        }
+
         private fun resolveCalleeReference(callee: CjExpression?): Pair<CfirExpression?, CfirNamedReference> {
             return when (callee) {
                 is CjSimpleNameExpression -> null to buildNamedReference(callee.referencedNameAsName, callee.toCjPsiSourceElement())
@@ -1018,7 +1032,7 @@ class PsiRawCfirBuilder(
                 ?: return buildErrorExpression(psi.toSourceElement(), "Missing selector")
 
             if (selector is CjCallExpression) {
-                val callArguments = selector.valueArguments.mapNotNull { it.getArgumentExpression()?.let { e -> convertExpression(e) } }
+                val callArguments = selector.valueArguments.mapNotNull(::convertCallArgument)
                 val typeArgs = extractCallTypeArguments(selector, selector.calleeExpression)
                 val callee = selector.calleeExpression
                 val ref = if (callee is CjSimpleNameExpression) {

@@ -24,6 +24,8 @@ import org.cangnova.cangjie.psi.CjReferenceExpression
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.psi.CjUnaryExpression
 import org.cangnova.cangjie.psi.CjUserType
+import org.cangnova.cangjie.psi.CjValueArgument
+import org.cangnova.cangjie.psi.CjValueArgumentList
 
 object PositioningStrategies {
     val DEFAULT: PositioningStrategy<PsiElement> = object : PositioningStrategy<PsiElement>() {}
@@ -120,6 +122,37 @@ object PositioningStrategies {
             is CjBinaryExpressionWithTypeRHS -> markElement(element.operationReference)
             is CjUnaryExpression -> markElement(element.operationReference)
             else -> super.mark(element)
+        }
+    }
+
+    val NAME_OF_NAMED_ARGUMENT: PositioningStrategy<PsiElement> = object : PositioningStrategy<PsiElement>() {
+        override fun mark(element: PsiElement): List<TextRange> {
+            val valueArgument = element as? CjValueArgument ?: return super.mark(element)
+            val argumentName = valueArgument.getArgumentName()?.referenceExpression ?: return super.mark(element)
+            return markElement(argumentName)
+        }
+    }
+
+    val VALUE_ARGUMENTS: PositioningStrategy<PsiElement> = object : PositioningStrategy<PsiElement>() {
+        override fun mark(element: PsiElement): List<TextRange> {
+            val arguments = when (element) {
+                is CjCallExpression -> element.valueArgumentList?.arguments.orEmpty()
+                is CjValueArgumentList -> element.arguments
+                else -> emptyList()
+            }
+            if (arguments.isEmpty()) return super.mark(element)
+            return markRange(arguments.first(), arguments.last())
+        }
+    }
+
+    val VALUE_ARGUMENTS_LIST: PositioningStrategy<PsiElement> = object : PositioningStrategy<PsiElement>() {
+        override fun mark(element: PsiElement): List<TextRange> {
+            val argumentList = when (element) {
+                is CjCallExpression -> element.valueArgumentList
+                is CjValueArgumentList -> element
+                else -> null
+            } ?: return VALUE_ARGUMENTS.mark(element)
+            return markElement(argumentList)
         }
     }
 

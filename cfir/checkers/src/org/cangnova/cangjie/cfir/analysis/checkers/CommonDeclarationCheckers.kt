@@ -2,6 +2,8 @@ package org.cangnova.cangjie.cfir.analysis.checkers
 
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCallableDeclarationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirConflictsDeclarationChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirConstructorChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirConstructorDelegationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendDefaultImplementationConflictChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendDuplicateInterfaceChecker
@@ -77,6 +79,11 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirExtendImmutableMemberChecker,
             CfirExtendSpecializationConflictChecker,
             CfirExtendDefaultImplementationConflictChecker,
+        )
+
+    override val constructorCheckers: Set<CfirConstructorChecker>
+        get() = setOf(
+            CfirConstructorDelegationChecker,
         )
 
     override val memberDeclarationCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirMemberDeclarationChecker>

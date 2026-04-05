@@ -4,6 +4,7 @@ import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionExpectedError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionCallExpectedError
@@ -33,6 +34,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirAllCandidatesCollector
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateCollector
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
@@ -51,6 +53,7 @@ import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -110,6 +113,7 @@ class CfirCallResolver(
         var effectiveResult = result
         var expectedCallKind: CallKind? = null
         var expectedCandidates: Collection<Candidate>? = null
+        var matchedClassifier: CfirClassLikeSymbol<*>? = null
         if (result.candidates.isEmpty() && !isCollectionLiteralCall) {
             // 阶段2a：普通函数搜索为空时，先尝试枚举构造器搜索（对齐官方两阶段语义：普通函数完全遮蔽枚举构造器）
             val enumResult = collectCandidates(
@@ -130,17 +134,26 @@ class CfirCallResolver(
                     origin = functionCall.origin,
                     resolutionMode = resolutionMode,
                 )
-                if (variableAccessResult.candidates.isNotEmpty()) {
+                matchedClassifier = findClassifierForCall(functionCall, callee.name)
+                val constructorResult = matchedClassifier?.let { classifier ->
+                    collectClassConstructorCandidates(
+                        functionCall = functionCall,
+                        classifier = classifier,
+                        resolutionMode = resolutionMode,
+                    )
+                }
+                if (constructorResult != null && constructorResult.candidates.isNotEmpty()) {
+                    effectiveResult = constructorResult
+                    matchedClassifier = null
+                } else if (variableAccessResult.candidates.isNotEmpty()) {
                     expectedCallKind = CallKind.NamedValueAccess
                     expectedCandidates = variableAccessResult.candidates
                 }
             }
         }
 
-        val matchedClassifier = if (effectiveResult.candidates.isEmpty() && expectedCandidates == null) {
-            findClassifierForCall(functionCall, callee.name)
-        } else {
-            null
+        if (matchedClassifier == null && effectiveResult.candidates.isEmpty() && expectedCandidates == null) {
+            matchedClassifier = findClassifierForCall(functionCall, callee.name)
         }
 
         val nameReference = createResolvedNamedReference(
@@ -561,6 +574,80 @@ class CfirCallResolver(
         }
 
         return CfirNamedReferenceWithCandidate(source, name, candidate)
+    }
+
+    private fun collectClassConstructorCandidates(
+        functionCall: CfirFunctionCall,
+        classifier: CfirClassLikeSymbol<*>,
+        resolutionMode: ResolutionMode,
+    ): ResolutionResult {
+        val actualClassifier = (classifier as? CfirTypeAliasSymbol)?.fullyExpandedClass(session) ?: classifier
+        val constructorSymbols = actualClassifier.cfir.declarations
+            .filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirConstructor>()
+            .map(CfirConstructor::symbol)
+        if (constructorSymbols.isEmpty()) {
+            return ResolutionResult(
+                info = CallInfo(
+                    callSite = functionCall,
+                    callKind = CallKind.Function,
+                    name = classifier.name,
+                    origin = functionCall.origin,
+                    explicitReceiver = functionCall.explicitReceiver,
+                    arguments = functionCall.argumentList.arguments,
+                    isUsedAsGetClassReceiver = false,
+                    typeArguments = functionCall.typeArguments,
+                    session = session,
+                    containingFile = components.file,
+                    containingDeclarations = transformer.components.containingDeclarations,
+                    resolutionMode = resolutionMode,
+                ),
+                applicability = CandidateApplicability.HIDDEN,
+                candidates = emptyList(),
+                forwardedDiagnostics = emptyList(),
+            )
+        }
+
+        val callInfo = CallInfo(
+            callSite = functionCall,
+            callKind = CallKind.Function,
+            name = classifier.name,
+            origin = functionCall.origin,
+            explicitReceiver = functionCall.explicitReceiver,
+            arguments = functionCall.argumentList.arguments,
+            isUsedAsGetClassReceiver = false,
+            typeArguments = functionCall.typeArguments,
+            session = session,
+            containingFile = components.file,
+            containingDeclarations = transformer.components.containingDeclarations,
+            resolutionMode = resolutionMode,
+        )
+        val candidateFactory = CandidateFactory(transformer.resolutionContext, callInfo)
+        val constructorCandidates = constructorSymbols.map { constructorSymbol ->
+            candidateFactory.createCandidate(
+                callInfo = callInfo,
+                symbol = constructorSymbol,
+                originScope = null,
+            )
+        }
+        val (reducedCandidates, applicability) = reduceCollectedCandidates(
+            candidates = constructorCandidates,
+            collectorApplicability = CandidateApplicability.RESOLVED,
+            isCandidateSuccessful = Candidate::isSuccessful,
+            candidateApplicability = Candidate::lowestApplicability,
+            fullyProcessCandidate = { candidate ->
+                components.resolutionStageRunner.fullyProcessCandidate(candidate, transformer.resolutionContext)
+            },
+            chooseMostSpecific = { currentCandidates ->
+                currentCandidates.singleOrNull()?.let(::setOf)
+                    ?: conflictResolver.chooseMaximallySpecificCandidates(currentCandidates)
+            },
+        )
+        return ResolutionResult(
+            info = callInfo,
+            applicability = applicability,
+            candidates = reducedCandidates,
+            forwardedDiagnostics = emptyList(),
+        )
     }
 
     private fun findClassifierForCall(
