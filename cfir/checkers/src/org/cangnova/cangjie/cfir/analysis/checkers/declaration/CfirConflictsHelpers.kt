@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
 import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
@@ -520,16 +521,18 @@ context(context: CheckerContext)
 private fun createUseSiteMemberScope(classDeclaration: CfirClassLikeDeclaration): CfirTypeScope {
     val classLikeSymbol = classDeclaration.symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
     return when (classDeclaration) {
-        is CfirClass -> context.session.cangjieScopeProvider.getUseSiteMemberScope(
+        is CfirClass -> context.session.cangjieScopeProvider.getDeclarationSiteMemberScope(
             classDeclaration,
             context.session,
             context.scopeSession,
         )
         else -> CfirClassUseSiteMemberScope(
+            session = context.session,
             classLikeSymbol,
             context.session.symbolProvider,
             context.session.extendProvider,
             context.session.directSupertypeProviderOrNull,
+            scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
         )
     }
 }
@@ -551,7 +554,7 @@ private fun CfirClassLikeSymbol<*>.isVisibleInClass(classDeclaration: CfirClassL
     if (cfir.status.visibility != Visibilities.Private) return true
 
     val currentClassId = (classDeclaration.symbol as? CfirClassLikeSymbol<*>)?.classId ?: return true
-    return classId == currentClassId || classId.parentClassId == currentClassId
+    return classId == currentClassId
 }
 
 private fun collectConstructorsForClassLike(classLikeSymbol: CfirClassLikeSymbol<*>): List<Pair<CfirConstructorSymbol, String>> {

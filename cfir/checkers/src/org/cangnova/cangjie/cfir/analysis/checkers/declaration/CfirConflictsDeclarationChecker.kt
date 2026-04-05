@@ -60,8 +60,7 @@ interface CfirPlatformConflictDeclarationsDiagnosticDispatcher : CfirSessionComp
                 -> CfirErrors.CONFLICTING_OVERLOADS
 
                 is CfirClassLikeSymbol<*>
-                    if !conflictingDeclaration.classId.isNestedClass &&
-                        symbols.any { it is CfirClassLikeSymbol<*> } ->
+                    if symbols.any { it is CfirClassLikeSymbol<*> } ->
                     CfirErrors.CLASSIFIER_REDECLARATION
 
                 else -> CfirErrors.REDECLARATION

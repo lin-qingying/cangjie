@@ -126,16 +126,22 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
         createProviders: (CfirSession, CfirCangJieScopeProvider) -> List<CfirSymbolProvider>
     ): CfirSession {
         return CfirDefaultSession(CfirSession.Kind.Library).apply session@{
+            // 1. 绑定所有模块数据
             moduleDataProvider.allModuleData.forEach {
                 it.bindSession(this)
             }
+            // 2. 注册主模块数据（修复 Analysis API 启动崩溃的关键点）
+            registerModuleData(moduleDataProvider.regularDependenciesModuleData)
 
+            // 3. 注册公共组件
             registerCliCompilerAndCommonComponents(languageVersionSettings)
             registerLibrarySessionComponents(context)
 
+            // 4. 注册 ScopeProvider
             val cangjieScopeProvider = createCangJieScopeProviderForLibrarySession()
             register(CfirCangJieScopeProvider::class, cangjieScopeProvider)
 
+            // 5. 配置扩展点
             CfirSessionConfigurator(this).apply {
                 for (extensionRegistrar in extensionRegistrars) {
                     registerExtensions(extensionRegistrar.configure())
@@ -143,8 +149,10 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
             }.configure()
             registerCommonComponentsAfterExtensionsAreConfigured()
 
+            // 6. 构建 Providers 列表
             val providers = createProviders(this@session, cangjieScopeProvider)
 
+            // 7. 注册结构化 Providers
             register(
                 StructuredProviders::class,
                 StructuredProviders(
@@ -154,11 +162,15 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
                 )
             )
 
+            // 8. 最终符号提供器合成（常规库依赖 + 共享库符号）
             val providersWithShared = providers + sharedLibrarySession.symbolProvider.flattenAndFilterOwnProviders()
 
+            // 9. 注册核心 Provider 服务
             val symbolProvider = CfirCompositeSymbolProvider(this, providersWithShared)
             register(CfirSymbolProvider::class, symbolProvider)
             register(CfirProvider::class, CfirLibrarySessionProvider(symbolProvider))
+
+            // 10. 注册 Extend Provider (仓颉特有)
             register(
                 CfirExtendProvider::class,
                 combineExtendProviders(
@@ -213,7 +225,7 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
 
             val cfirProvider = CfirProviderImpl(this, cangjieScopeProvider)
             register(CfirProvider::class, cfirProvider)
-            val sourceExtendProvider = CfirSessionExtendProvider(extendIndexStore)
+            val sourceExtendProvider = CfirSessionExtendProvider(this, extendIndexStore)
 
             // 注册 extend 声明提供器（惰性初始化，首次查询时才扫描所有文件）
             register(

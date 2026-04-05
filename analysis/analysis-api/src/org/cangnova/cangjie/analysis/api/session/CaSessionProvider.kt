@@ -50,6 +50,35 @@ abstract class CaSessionProvider(val project: Project) : Disposable {
         }
     }
 
+    /**
+     * 批量按源码元素执行分析。
+     *
+     * 默认实现保持协议语义正确性：逐元素进入 `analyze`。
+     * 具体平台可覆写为“按 session 分组后批量进入分析域”的高效实现。
+     */
+    open fun <R> analyzeElements(
+        useSiteElements: Collection<CjElement>,
+        action: CaSession.(CjElement) -> R,
+    ): List<R> {
+        return useSiteElements.map { element ->
+            analyze(element) { action(element) }
+        }
+    }
+
+    /**
+     * 批量按 use-site 模块执行分析。
+     *
+     * 默认实现仍逐模块进入 `analyze`；具体平台可按 session 复用优化。
+     */
+    open fun <R> analyzeModules(
+        useSiteModules: Collection<CaModule>,
+        action: CaSession.(CaModule) -> R,
+    ): List<R> {
+        return useSiteModules.map { module ->
+            analyze(module) { action(module) }
+        }
+    }
+
     abstract fun beforeEnteringAnalysis(session: CaSession, useSiteElement: CjElement)
 
     abstract fun beforeEnteringAnalysis(session: CaSession, useSiteModule: CaModule)

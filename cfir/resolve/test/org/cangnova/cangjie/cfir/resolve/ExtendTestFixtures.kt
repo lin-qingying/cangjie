@@ -10,16 +10,21 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.initDefaultResolveState
+import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirExtendImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirFileImpl
+import org.cangnova.cangjie.cfir.declarations.impl.CfirInterfaceImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPackageDirectiveImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
@@ -111,17 +116,20 @@ internal object ExtendTestFixtures {
     fun newTypeParameter(
         moduleData: CfirModuleData,
         name: String,
+        bounds: List<CfirTypeRef> = emptyList(),
     ): CfirTypeParameter {
         val symbol = CfirTypeParameterSymbol()
         val typeParameter = CfirTypeParameterImpl(
             source = null,
             moduleData = moduleData,
+            resolvePhase = org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.BODY_RESOLVE,
             annotations = emptyList(),
-            symbol = symbol,
-            origin = CfirDeclarationOrigin.Source,
+            origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
+            containingDeclarationSymbol = symbol,
+            symbol = symbol,
             name = Name.identifier(name),
-            bounds = emptyList(),
+            bounds = bounds.toMutableList(),
         )
         typeParameter.initDefaultResolveState()
         symbol.bind(typeParameter)
@@ -152,6 +160,56 @@ internal object ExtendTestFixtures {
         symbol.bind(file)
         return file
     }
+
+    fun newClass(
+        moduleData: CfirModuleData,
+        name: String,
+        superTypeRefs: List<CfirTypeRef> = emptyList(),
+        declarations: List<CfirDeclaration> = emptyList(),
+    ): CfirClassImpl {
+        val symbol = CfirClassSymbol()
+        val klass = CfirClassImpl(
+            source = null,
+            moduleData = moduleData,
+            resolvePhase = org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.BODY_RESOLVE,
+            annotations = emptyList<CfirAnnotation>().toMutableList(),
+            origin = CfirDeclarationOrigin.Library,
+            attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
+            status = CfirDeclarationStatusImpl(),
+            typeParameters = mutableListOf(),
+            symbol = symbol,
+            superTypeRefs = superTypeRefs.toMutableList(),
+            declarations = declarations.toMutableList(),
+            name = Name.identifier(name),
+        )
+        klass.initDefaultResolveState()
+        return klass
+    }
+
+    fun newInterface(
+        moduleData: CfirModuleData,
+        name: String,
+        superTypeRefs: List<CfirTypeRef> = emptyList(),
+        declarations: List<CfirDeclaration> = emptyList(),
+    ): CfirInterface {
+        val symbol = CfirInterfaceSymbol()
+        val interfaceDeclaration = CfirInterfaceImpl(
+            source = null,
+            moduleData = moduleData,
+            resolvePhase = org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.BODY_RESOLVE,
+            annotations = emptyList<CfirAnnotation>().toMutableList(),
+            origin = CfirDeclarationOrigin.Library,
+            attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
+            declarations = declarations.toMutableList(),
+            status = CfirDeclarationStatusImpl(),
+            typeParameters = mutableListOf(),
+            symbol = symbol,
+            superTypeRefs = superTypeRefs.toMutableList(),
+            name = Name.identifier(name),
+        )
+        interfaceDeclaration.initDefaultResolveState()
+        return interfaceDeclaration
+    }
 }
-
-

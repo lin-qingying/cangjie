@@ -106,6 +106,40 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/coverage")
         }
 
+        @TestMetadata("accessibility")
+        @TestDataPath("\$PROJECT_ROOT")
+        @Nested
+        inner class Accessibility : AbstractCfirLightTreeDiagnosticsTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/coverage/accessibility")
+            }
+
+            @TestMetadata("cstAccessibleCommonParent.cj")
+            @Test
+            fun testCstAccessibleCommonParent() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/accessibility/cstAccessibleCommonParent.cj")
+            }
+
+            @TestMetadata("typeAccessibleCrossPackagePublic.cj")
+            @Test
+            fun testTypeAccessibleCrossPackagePublic() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/accessibility/typeAccessibleCrossPackagePublic.cj")
+            }
+
+            @TestMetadata("typeAccessibleSamePackage.cj")
+            @Test
+            fun testTypeAccessibleSamePackage() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/accessibility/typeAccessibleSamePackage.cj")
+            }
+
+            @TestMetadata("typeAccessibleSelectiveImport.cj")
+            @Test
+            fun testTypeAccessibleSelectiveImport() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/accessibility/typeAccessibleSelectiveImport.cj")
+            }
+        }
+
         @TestMetadata("declaration-status")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
@@ -149,6 +183,54 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/coverage/extensions")
             }
 
+            @TestMetadata("extendAccessibilityCrossPackageInternal.cj")
+            @Test
+            fun testExtendAccessibilityCrossPackageInternal() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendAccessibilityCrossPackageInternal.cj")
+            }
+
+            @TestMetadata("extendAccessibilityCrossPackagePublic.cj")
+            @Test
+            fun testExtendAccessibilityCrossPackagePublic() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendAccessibilityCrossPackagePublic.cj")
+            }
+
+            @TestMetadata("extendAccessibilityGenericCrossPackage.cj")
+            @Test
+            fun testExtendAccessibilityGenericCrossPackage() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendAccessibilityGenericCrossPackage.cj")
+            }
+
+            @TestMetadata("extendAccessibilityInterfaceNotImported.cj")
+            @Test
+            fun testExtendAccessibilityInterfaceNotImported() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendAccessibilityInterfaceNotImported.cj")
+            }
+
+            @TestMetadata("extendAccessibilityMixedVisibility.cj")
+            @Test
+            fun testExtendAccessibilityMixedVisibility() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendAccessibilityMixedVisibility.cj")
+            }
+
+            @TestMetadata("extendAccessibilitySamePackage.cj")
+            @Test
+            fun testExtendAccessibilitySamePackage() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendAccessibilitySamePackage.cj")
+            }
+
+            @TestMetadata("extendCTypeNotAllowed.cj")
+            @Test
+            fun testExtendCTypeNotAllowed() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendCTypeNotAllowed.cj")
+            }
+
+            @TestMetadata("extendCoreProtection.cj")
+            @Test
+            fun testExtendCoreProtection() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendCoreProtection.cj")
+            }
+
             @TestMetadata("extendDefaultImplementationConflictRich.cj")
             @Test
             fun testExtendDefaultImplementationConflictRich() {
@@ -161,10 +243,58 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
                 runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendDuplicateInterfaceRich.cj")
             }
 
+            @TestMetadata("extendGenericUsageStrict.cj")
+            @Test
+            fun testExtendGenericUsageStrict() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendGenericUsageStrict.cj")
+            }
+
+            @TestMetadata("extendImmutableMemberRestriction.cj")
+            @Test
+            fun testExtendImmutableMemberRestriction() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendImmutableMemberRestriction.cj")
+            }
+
+            @TestMetadata("extendImmutableMutInterface.cj")
+            @Test
+            fun testExtendImmutableMutInterface() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendImmutableMutInterface.cj")
+            }
+
             @TestMetadata("extendNotInterfaceRich.cj")
             @Test
             fun testExtendNotInterfaceRich() {
                 runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendNotInterfaceRich.cj")
+            }
+
+            @TestMetadata("extendOrphanRuleTransitive.cj")
+            @Test
+            fun testExtendOrphanRuleTransitive() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendOrphanRuleTransitive.cj")
+            }
+
+            @TestMetadata("extendSpecializationComplex.cj")
+            @Test
+            fun testExtendSpecializationComplex() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendSpecializationComplex.cj")
+            }
+
+            @TestMetadata("extendStructAndEnum.cj")
+            @Test
+            fun testExtendStructAndEnum() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendStructAndEnum.cj")
+            }
+
+            @TestMetadata("extendSuperNotAllowed.cj")
+            @Test
+            fun testExtendSuperNotAllowed() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendSuperNotAllowed.cj")
+            }
+
+            @TestMetadata("extendTargetSelfInheritedDuplicate.cj")
+            @Test
+            fun testExtendTargetSelfInheritedDuplicate() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendTargetSelfInheritedDuplicate.cj")
             }
 
             @TestMetadata("illegalExtendedTypeRich.cj")
@@ -211,16 +341,40 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/coverage/inheritance")
             }
 
+            @TestMetadata("classNotOpenForInheritanceRich.cj")
+            @Test
+            fun testClassNotOpenForInheritanceRich() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/inheritance/classNotOpenForInheritanceRich.cj")
+            }
+
+            @TestMetadata("classSuperCallAllowed.cj")
+            @Test
+            fun testClassSuperCallAllowed() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/inheritance/classSuperCallAllowed.cj")
+            }
+
             @TestMetadata("inheritedMemberAccess.cj")
             @Test
             fun testInheritedMemberAccess() {
                 runTest("cfir/analysis-tests/testData/diagnostics/coverage/inheritance/inheritedMemberAccess.cj")
             }
 
+            @TestMetadata("overrideInvisibleMemberRich.cj")
+            @Test
+            fun testOverrideInvisibleMemberRich() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/inheritance/overrideInvisibleMemberRich.cj")
+            }
+
             @TestMetadata("overrideReturnType.cj")
             @Test
             fun testOverrideReturnType() {
                 runTest("cfir/analysis-tests/testData/diagnostics/coverage/inheritance/overrideReturnType.cj")
+            }
+
+            @TestMetadata("overrideReturnTypeMismatchRich.cj")
+            @Test
+            fun testOverrideReturnTypeMismatchRich() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/inheritance/overrideReturnTypeMismatchRich.cj")
             }
         }
 
@@ -320,6 +474,12 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/general")
+        }
+
+        @TestMetadata("extendInterfaceParentAcrossFiles.cj")
+        @Test
+        fun testExtendInterfaceParentAcrossFiles() {
+            runTest("cfir/analysis-tests/testData/diagnostics/general/extendInterfaceParentAcrossFiles.cj")
         }
 
         @TestMetadata("extendInterfaceParentAndMemberInFile.cj")
@@ -579,6 +739,50 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         }
     }
 
+    @TestMetadata("stdlib")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Stdlib : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/stdlib")
+        }
+
+        @TestMetadata("core.cj")
+        @Test
+        fun testCore() {
+            runTest("cfir/analysis-tests/testData/diagnostics/stdlib/core.cj")
+        }
+    }
+
+    @TestMetadata("super")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Super : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/super")
+        }
+
+        @TestMetadata("illegalSuperInStructAndEnum.cj")
+        @Test
+        fun testIllegalSuperInStructAndEnum() {
+            runTest("cfir/analysis-tests/testData/diagnostics/super/illegalSuperInStructAndEnum.cj")
+        }
+
+        @TestMetadata("repeated_inheritance.cj")
+        @Test
+        fun testRepeatedInheritance() {
+            runTest("cfir/analysis-tests/testData/diagnostics/super/repeated_inheritance.cj")
+        }
+
+        @TestMetadata("super_func.cj")
+        @Test
+        fun testSuperFunc() {
+            runTest("cfir/analysis-tests/testData/diagnostics/super/super_func.cj")
+        }
+    }
+
     @TestMetadata("type-mismatch")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
@@ -748,6 +952,12 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/visibility")
+        }
+
+        @TestMetadata("invisibleReferenceAndMemberRich.cj")
+        @Test
+        fun testInvisibleReferenceAndMemberRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/visibility/invisibleReferenceAndMemberRich.cj")
         }
 
         @TestMetadata("privateMemberAccess.cj")

@@ -426,6 +426,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformAnnotationCall(annotationCall, data)
     }
 
+    open fun transformSuperReference(superReference: CfirSuperReference, data: D): CfirReference {
+        return transformElement(superReference, data)
+    }
+
+    final override fun visitSuperReference(superReference: CfirSuperReference, data: D): CfirReference {
+        return transformSuperReference(superReference, data)
+    }
+
     open fun transformThisReference(thisReference: CfirThisReference, data: D): CfirReference {
         return transformElement(thisReference, data)
     }
@@ -448,6 +456,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression, data: D): CfirExpression {
         return transformQualifiedAccessExpression(qualifiedAccessExpression, data)
+    }
+
+    open fun transformSuperReceiverExpression(superReceiverExpression: CfirSuperReceiverExpression, data: D): CfirExpression {
+        return transformElement(superReceiverExpression, data)
+    }
+
+    final override fun visitSuperReceiverExpression(superReceiverExpression: CfirSuperReceiverExpression, data: D): CfirExpression {
+        return transformSuperReceiverExpression(superReceiverExpression, data)
     }
 
     open fun transformErrorFunction(errorFunction: CfirErrorFunction, data: D): CfirFunction {

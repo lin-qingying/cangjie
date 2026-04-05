@@ -81,19 +81,9 @@ class CfirDeclarationsResolveTransformer(
 
         context.withContainer(classLike) {
             val resolveDeclarations = {
+                // 接口成员在 CFIR 树中只保留 declarations 这一条主存。
+                // 不能再把它回写到并行镜像列表，否则会重新引入重复遍历。
                 classLike.transformDeclarations(transformer, ResolutionMode.ContextIndependent)
-
-                if (classLike is CfirInterfaceImpl) {
-                    val declarations = classLike.declarations
-                    classLike.properties.apply {
-                        clear()
-                        addAll(declarations.filterIsInstance<CfirProperty>())
-                    }
-                    classLike.functions.apply {
-                        clear()
-                        addAll(declarations.filterIsInstance<CfirFunction>())
-                    }
-                }
             }
 
             when (classLike) {
@@ -375,6 +365,8 @@ class CfirDeclarationsResolveTransformer(
                 }
             }
         return buildList {
+            // 声明解析阶段同样要先看到当前文件顶层声明，保证后续类型与 extend 规则建立在正确的本地符号之上。
+            add(CfirFileDeclaredTopLevelScope(file))
             add(CfirPackageMemberScope(file.packageDirective.packageFqName, symbolProvider))
             add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
             add(CfirExplicitStarImportingScope(imports, symbolProvider))
@@ -447,12 +439,16 @@ class CfirDeclarationsResolveTransformer(
         } catch (_: UninitializedPropertyAccessException) {
             FqName.ROOT
         }
-        val classNesting = context.containers
-            .asSequence()
-            .filterIsInstance<CfirClass>()
-            .map(CfirClass::name)
-            .toList()
-        return classIdForClassNesting(packageFqName, classNesting) ?: ClassId(packageFqName, klass.name)
+
+        // 当前 class-like 自身会出现在容器栈里；只有当它外面还包着别的 class-like，
+        // 才说明它不属于公开类型标识体系，此时不能再为它构造稳定 ClassId。
+        val classLikeContainers = context.containers.filterIsInstance<CfirClassLikeDeclaration>()
+        val hasOuterClassLike = classLikeContainers.any { it !== klass }
+        return if (hasOuterClassLike) {
+            null
+        } else {
+            ClassId(packageFqName, klass.name)
+        }
     }
 
     private fun buildConstructedTypeForClass(klass: CfirClassLikeDeclaration): ConeCangJieType {

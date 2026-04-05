@@ -150,7 +150,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // 不可变类型的 extend 不能定义 mut 属性
-        val EXTEND_IMMUTABLE_MUT_PROPERTY by error<CjDeclaration> {
+        val EXTEND_IMMUTABLE_MUT_PROPERTY by error<CjDeclaration>(PositioningStrategy.MUT_MODIFIER) {
             parameter<Name>("propertyName")
         }
 
@@ -171,6 +171,15 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // extend 体内不允许使用 super 关键字
         val EXTEND_SUPER_NOT_ALLOWED by error<CjExpression>()
+
+        // struct 体内不允许使用 super 关键字
+        val STRUCT_SUPER_NOT_ALLOWED by error<CjExpression>()
+
+        // enum 体内不允许使用 super 关键字
+        val ENUM_SUPER_NOT_ALLOWED by error<CjExpression>()
+
+        // interface 体内不允许使用 super 关键字
+        val INTERFACE_SUPER_NOT_ALLOWED by error<CjExpression>()
     }
 
     /**
@@ -357,13 +366,13 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // 可见性错误：成员在当前上下文不可见
-        val INVISIBLE_MEMBER by error<PsiElement> {
+        val INVISIBLE_MEMBER by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
             parameter<String>("member")
             parameter<String>("visibility")
         }
 
         // 可见性错误：引用在当前上下文不可见
-        val INVISIBLE_REFERENCE by error<PsiElement> {
+        val INVISIBLE_REFERENCE by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
             parameter<String>("reference")
             parameter<String>("visibility")
         }
@@ -376,12 +385,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // override 目标不可见
-        val CANNOT_OVERRIDE_INVISIBLE_MEMBER by error<PsiElement> {
+        val CANNOT_OVERRIDE_INVISIBLE_MEMBER by error<CjNamedDeclaration>(PositioningStrategy.OVERRIDE_MODIFIER) {
             parameter<Name>("memberName")
         }
 
         // 父类未开放继承
-        val CLASS_NOT_OPEN_FOR_INHERITANCE by error<PsiElement> {
+        val CLASS_NOT_OPEN_FOR_INHERITANCE by error<CjTypeReference> {
             parameter<Name>("className")
         }
 

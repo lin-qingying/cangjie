@@ -95,9 +95,21 @@ fun ConeCangJieType.hasSupertypeWithGivenClassId(classId: org.cangnova.cangjie.n
             is ConeIntersectionType -> type.intersectedTypes.any(::visit)
             else -> {
                 val constructor = (type as? ConeRigidType)?.getConstructor() ?: return false
-                with(typeContext) {
-                    constructor.supertypes().filterIsInstance<ConeCangJieType>().any(::visit)
+                val directSupertypes = with(typeContext) {
+                    val unsubstitutedSupertypes = constructor.supertypes().filterIsInstance<ConeCangJieType>()
+                    val inferenceContext = this as? ConeInferenceContext
+                    val substitutor = inferenceContext?.createSubstitutorForSuperTypes(type)
+                    if (substitutor == null || inferenceContext == null) {
+                        unsubstitutedSupertypes
+                    } else {
+                        unsubstitutedSupertypes.map { supertype ->
+                            with(inferenceContext) {
+                                substitutor.safeSubstitute(supertype) as ConeCangJieType
+                            }
+                        }
+                    }
                 }
+                directSupertypes.any(::visit)
             }
         }
     }

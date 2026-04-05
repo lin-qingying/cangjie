@@ -51,6 +51,7 @@ abstract class AbstractLspIntegrationTest {
             environmentFactory = {
                 ServiceLoadedLspTestEnvironment.create()
             },
+            exitHandler = {},
         )
     }
 

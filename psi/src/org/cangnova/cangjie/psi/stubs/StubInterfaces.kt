@@ -352,7 +352,6 @@ interface CangJieExtendStub : CangJieTypeStatementStub<CjExtend> {
 
 
 interface CangJieTypeStatementStub<T : CjTypeStatement> : CangJieClassifierStub, CangJieStubWithFqName<T> {
-    fun isLocal(): Boolean
     fun getSuperNames(): List<String>
 }
 

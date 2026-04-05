@@ -30,7 +30,6 @@ class CfirTypeAliasImpl @CfirImplementationDetail constructor(
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
-    override val isLocal: Boolean,
     override val declarations: MutableList<CfirDeclaration>,
     override val superTypeRefs: MutableList<CfirTypeRef>,
     override val symbol: CfirTypeAliasSymbol,

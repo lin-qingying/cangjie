@@ -5,17 +5,26 @@ import com.intellij.mock.MockProject
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.AnalysisApiServiceRegistrar
+import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import org.cangnova.cangjie.analysis.test.framework.TestWithDisposable
+import org.cangnova.cangjie.analysis.test.framework.analysisApiMainFileName
+import org.cangnova.cangjie.analysis.test.framework.isAnalysisApiMainModule
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModuleStructureProvider
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModuleStructureProviderImpl
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructureProvider
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator
+import org.cangnova.cangjie.analysis.test.framework.test.configurators.registerApplicationServices
+import org.cangnova.cangjie.analysis.test.framework.test.configurators.registerProjectExtensionPoints
+import org.cangnova.cangjie.analysis.test.framework.test.configurators.registerProjectModelServices
+import org.cangnova.cangjie.analysis.test.framework.test.configurators.registerProjectServices
 import org.cangnova.cangjie.analysis.test.services.CaAnalysisApiEnvironmentManager
 import org.cangnova.cangjie.analysis.test.services.CaAnalysisApiEnvironmentManagerImpl
+import org.cangnova.cangjie.analysis.test.services.environmentManager
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.test.directives.model.DirectivesContainer
 import org.cangnova.cangjie.test.services.AssertionsService
 import org.cangnova.cangjie.test.services.MetaInfosCleanupPreprocessor
 import org.cangnova.cangjie.test.services.SourceFileProvider
@@ -25,27 +34,34 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 /**
- * 所有 Analysis API 测试的基类。
+ * 所有 Analysis API 测试的统一基座。
  *
- * 该基类负责：
- * 1. 初始化共享的测试环境与 CoreEnvironment。
- * 2. 注册 Analysis API 所需的 application/project services。
- * 3. 通过测试配置器创建 Analysis API 测试模块结构。
- * 4. 提供 [analyzeForTest] 作为统一的会话进入点。
+ * 该基座负责：
+ * 1. 初始化 headless 测试环境和基础测试服务；
+ * 2. 注册 Analysis API 所需的应用、项目和模型服务；
+ * 3. 通过 configurator 构建统一的测试模块结构；
+ * 4. 暴露以 use-site module 为边界的会话进入方式。
  */
 abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
     abstract val configurator: AnalysisApiTestConfigurator
 
     /**
-     * 额外服务注册器会在配置器自带注册器之后执行。
+     * 额外服务注册器会在 configurator 自带注册器之后执行。
      */
     open val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>>
+        get() = emptyList()
+
+    /**
+     * 允许具体测试把额外的文件或模块指令容器接入框架。
+     */
+    open val additionalDirectives: List<DirectivesContainer>
         get() = emptyList()
 
     protected open fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         throw UnsupportedOperationException(
             "The test case is not fully implemented. " +
-                "'${::doTestByMainFile.name}', '${::doTestByMainModuleAndOptionalMainFile.name}' or '${::doTest.name}' should be overridden",
+                "'${::doTestByMainFile.name}', '${::doTestByMainModuleAndOptionalMainFile.name}' " +
+                "or '${::doTest.name}' should be overridden",
         )
     }
 
@@ -70,34 +86,50 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
     protected val testServices: TestServices
         get() = _testServices ?: error("`testServices` has not been initialized")
 
-    data class ModuleWithMainFile(val mainFile: CjFile?, val module: CjTestModule)
+    data class ModuleWithMainFile(
+        val mainFile: CjFile?,
+        val module: CjTestModule,
+    )
 
     protected fun findMainFileAndModule(testServices: TestServices): ModuleWithMainFile {
-        val moduleStructure = testServices.cjTestModuleStructure
-        val modules = moduleStructure.mainModules
+        val modules = testServices.cjTestModuleStructure.mainModules
+        val explicitMainModules = modules.filter(::isMainModule)
+
+        require(explicitMainModules.size <= 1) {
+            "发现多个 MAIN_MODULE 标记：${explicitMainModules.map { it.name }}"
+        }
 
         val mainModule = modules.singleOrNull()
-            ?: modules.firstOrNull(::isMainModule)
+            ?: explicitMainModules.singleOrNull()
+            ?: modules.firstOrNull { it.name == DEFAULT_MODULE_NAME }
             ?: error("Cannot find the main test module among ${modules.map { it.name }}")
 
-        val mainFile = findMainFile(mainModule)
-        return ModuleWithMainFile(mainFile, mainModule)
+        return ModuleWithMainFile(
+            mainFile = findMainFile(mainModule),
+            module = mainModule,
+        )
     }
 
     protected open fun isMainModule(module: CjTestModule): Boolean {
-        return module.name == DEFAULT_MODULE_NAME
+        return module.testModule.isAnalysisApiMainModule
     }
 
     protected fun findMainFile(module: CjTestModule): CjFile? {
         val cjFiles = module.cjFiles
-        cjFiles.singleOrNull()?.let { return it }
+        module.testModule.analysisApiMainFileName?.let { declaredMainFileName ->
+            return cjFiles.singleOrNull { file ->
+                file.name == declaredMainFileName || file.virtualFile?.name == declaredMainFileName
+            } ?: error("Module `${module.name}` does not contain declared MAIN_FILE_NAME `$declaredMainFileName`.")
+        }
 
+        cjFiles.singleOrNull()?.let { return it }
         return cjFiles.firstOrNull { isMainFile(it, module) }
     }
 
     protected open fun isMainFile(file: CjFile, module: CjTestModule): Boolean {
-        return file.virtualFile.nameWithoutExtension == "main" ||
-            file.virtualFile.nameWithoutExtension == module.name
+        val fileNameWithoutExtension = file.virtualFile?.nameWithoutExtension
+            ?: file.name.substringBeforeLast('.', file.name)
+        return fileNameWithoutExtension == "main" || fileNameWithoutExtension == module.name
     }
 
     protected fun runTest(path: String) {
@@ -105,12 +137,16 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
     }
 
     /**
-     * Analysis API 测试执行主入口。
+     * Analysis API 测试统一执行入口。
      *
-     * 这里按 Kotlin Analysis 测试框架的顺序组织初始化流程，确保：
-     * 1. `test-infrastructure` 的文件预处理先于模块构建。
-     * 2. Analysis API 服务先注册，再初始化项目结构。
-     * 3. 测试模块结构始终通过 provider 暴露，而不是散落在多个 service 中。
+     * 初始化顺序保持为：
+     * 1. 基础测试服务；
+     * 2. 环境管理器；
+     * 3. 应用服务；
+     * 4. 测试模块结构；
+     * 5. 项目级服务与模型服务；
+     * 6. 文件预处理；
+     * 7. 测试体执行。
      */
     protected fun runTest(path: String, block: (TestServices) -> Unit) {
         testDataPath = configurator.computeTestDataPath(Paths.get(path))
@@ -125,19 +161,24 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
 
         val application = environmentManager.getApplication() as MockApplication
         val project = environmentManager.getProject() as MockProject
-        val allRegistrars = configurator.serviceRegistrars + additionalServiceRegistrars
+        val registrars = configurator.serviceRegistrars + additionalServiceRegistrars
 
-        allRegistrars.forEach { it.registerApplicationServices(application, testServices) }
+        registrars.registerApplicationServices(application, testServices)
 
-        val moduleStructure = configurator.createModules(testDataPath, testServices, project)
+        val moduleStructure = configurator.createModules(
+            testDataPath = testDataPath,
+            testServices = testServices,
+            project = project,
+            additionalDirectives = additionalDirectives,
+        )
         testServices.cjTestModuleStructureProvider.registerModuleStructure(moduleStructure)
 
-        allRegistrars.forEach { it.registerProjectExtensionPoints(project, testServices) }
-        allRegistrars.forEach { it.registerProjectServices(project, testServices) }
+        registrars.registerProjectExtensionPoints(project, testServices)
+        registrars.registerProjectServices(project, testServices)
 
         environmentManager.initializeProjectStructure()
 
-        allRegistrars.forEach { it.registerProjectModelServices(project, disposable, testServices) }
+        registrars.registerProjectModelServices(project, disposable, testServices)
 
         moduleStructure.mainModules.forEach { module ->
             configurator.prepareFilesInModule(module, testServices)
@@ -147,8 +188,8 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
     }
 
     /**
-     * Analysis API 测试必须显式注册基础测试服务，否则无法复用既有 test-infrastructure
-     * 的文件预处理与断言体系。
+     * Analysis API 测试必须显式注册基础测试服务，
+     * 才能复用 test-infrastructure 的文件预处理与断言体系。
      */
     private fun registerBaseTestServices(testServices: TestServices) {
         testServices.register(AssertionsService::class, JUnit5Assertions)
@@ -164,6 +205,74 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
 
     protected fun <R> analyzeForTest(contextElement: CjElement, action: CaSession.() -> R): R {
         return analyze(contextElement, action)
+    }
+
+    /**
+     * 按元素批量进入 Analysis API，会按 use-site module 分组复用 session。
+     */
+    protected fun <R> analyzeForTest(
+        contextElements: Collection<CjElement>,
+        action: CaSession.(CjElement) -> R,
+    ): List<R> {
+        return analyzeGroupedByUseSiteModule(
+            items = contextElements,
+            resolveElement = { it },
+            action = action,
+        )
+    }
+
+    /**
+     * 按文件批量进入 Analysis API，会按 use-site module 分组复用 session。
+     */
+    protected fun <R> analyzeFilesForTest(
+        files: Collection<CjFile>,
+        action: CaSession.(CjFile) -> R,
+    ): List<R> {
+        return analyzeGroupedByUseSiteModule(
+            items = files,
+            resolveElement = { it },
+            action = action,
+        )
+    }
+
+    /**
+     * 依据当前测试模块结构，为 PSI 元素定位 use-site 测试模块。
+     */
+    private fun findUseSiteTestModule(element: CjElement): CjTestModule {
+        val containingFile = element.containingFile
+            ?: error("Cannot resolve test module for PSI element without containing file: $element")
+        return testServices.cjTestModuleStructure.requireModuleByFile(containingFile)
+    }
+
+    /**
+     * 以测试声明的 use-site module 为边界批量执行 Analysis API。
+     */
+    private fun <T, R> analyzeGroupedByUseSiteModule(
+        items: Collection<T>,
+        resolveElement: (T) -> CjElement,
+        action: CaSession.(T) -> R,
+    ): List<R> {
+        if (items.isEmpty()) return emptyList()
+
+        val sessionProvider = CaSessionProvider.getInstance(testServices.environmentManager.getProject())
+        val groupedItems = items.withIndex().groupBy(
+            keySelector = { indexedItem ->
+                findUseSiteTestModule(resolveElement(indexedItem.value)).caModule
+            },
+            valueTransform = { indexedItem ->
+                indexedItem.index to indexedItem.value
+            },
+        )
+
+        val results = arrayOfNulls<Any?>(items.size)
+        sessionProvider.analyzeModules(groupedItems.keys) { useSiteModule ->
+            groupedItems.getValue(useSiteModule).forEach { (index, item) ->
+                results[index] = action(item)
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        return results.map { it as R }
     }
 
     companion object {

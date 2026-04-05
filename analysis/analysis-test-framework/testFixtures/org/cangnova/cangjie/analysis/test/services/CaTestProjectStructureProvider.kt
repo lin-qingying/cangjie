@@ -2,15 +2,16 @@ package org.cangnova.cangjie.analysis.test.services
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFileSystemItem
 import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.CaSourceModule
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
 
 /**
  * Analysis API 测试专用的项目结构提供器。
  *
- * 它严格基于测试框架预先构造好的模块图工作。
- * 一旦元素无法映射到测试模块，就直接报错，避免像生产 IDE 平台那样退回到模糊的“内容根外模块”。
+ * 测试平台严格依赖预先构建好的测试模块图，不做 IDE 平台那种“内容根外兜底”推断。
+ * 一旦元素无法映射回测试模块，就直接报错。
  */
 class CaTestProjectStructureProvider(
     private val project: Project,
@@ -18,23 +19,27 @@ class CaTestProjectStructureProvider(
     private val moduleStructure
         get() = CaTestProjectStructureRegistry.get(project)
 
-    override fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule {
-        val containingFile = element.containingFile
-            ?: error("Cannot resolve module for PSI element without containing file: $element")
-        val virtualFile = containingFile.virtualFile
-
-        return moduleStructure.mainModules.firstOrNull { testModule ->
-            when {
-                virtualFile != null && testModule.caModule.contentScope.contains(virtualFile) -> true
-                else -> testModule.psiFiles.any { it == containingFile }
-            }
-        }?.caModule
-            ?: error("Cannot find CaModule for `${containingFile.name}` in Analysis API test project structure.")
+    /**
+     * 测试 project-structure 在单个用例生命周期内是稳定的，
+     * 因而可以直接缓存成只读快照。
+     */
+    private val cachedSnapshot: CaProjectStructureSnapshot by lazy(LazyThreadSafetyMode.NONE) {
+        CaProjectStructureSnapshot(
+            allModules = moduleStructure.allCaModules,
+            allResolvableModules = moduleStructure.allCaModules.filter(CaModule::isResolvable),
+            allSourceLikeModules = moduleStructure.allCaModules.filterIsInstance<CaSourceModule>(),
+            allSourceFiles = moduleStructure.allCjFiles,
+        )
     }
 
-    override val allModules: List<CaModule>
-        get() = moduleStructure.allCaModules
+    override val snapshot: CaProjectStructureSnapshot
+        get() = cachedSnapshot
 
-    override val allSourceFiles: List<PsiFileSystemItem>
-        get() = moduleStructure.allCjFiles
+    override fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule {
+        useSiteModule?.let { return it }
+
+        val containingFile = element.containingFile
+            ?: error("Cannot resolve module for PSI element without containing file: $element")
+        return moduleStructure.requireModuleByFile(containingFile).caModule
+    }
 }

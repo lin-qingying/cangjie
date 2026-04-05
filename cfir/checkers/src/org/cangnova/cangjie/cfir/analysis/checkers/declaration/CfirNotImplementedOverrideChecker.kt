@@ -9,7 +9,14 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.SourceElementPositioningStrategies
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
+import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.descriptors.Visibilities
@@ -19,6 +26,9 @@ import org.cangnova.cangjie.descriptors.Visibilities
  *
  * For non-abstract class/struct declarations, report when inherited abstract members
  * remain without concrete implementation.
+ *
+ * 注意：extend 引入的接口不影响本体的抽象成员实现义务，因此这里使用
+ * 不含 extendProvider 的 scope，只检查类/struct 自身声明的继承关系。
  */
 object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -26,7 +36,7 @@ object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
         if (declaration !is CfirClass && declaration !is CfirStruct) return
         if (declaration.status.isAbstract || declaration.status.isSealed) return
 
-        val classScope = context.createUseSiteMemberScope(declaration)
+        val classScope = createOwnMemberScope(declaration)
         if (!classScope.hasUnimplementedAbstractMember(declaration, context)) return
 
         reporter.reportOn(
@@ -35,6 +45,41 @@ object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
             a = declaration.name,
             positioningStrategy = SourceElementPositioningStrategies.DECLARATION_START_TO_NAME,
         )
+    }
+
+    /**
+     * 创建仅包含本体声明的成员 scope（不含 extend 引入的接口/成员）。
+     * extend 是外部扩展，不应影响类/struct 本体的抽象成员实现检查。
+     */
+    /**
+     * 创建仅包含本体声明的成员 scope（不含 extend 引入的接口/成员）。
+     * extend 是外部扩展，不应影响类/struct 本体的抽象成员实现检查。
+     *
+     * 注意：directSupertypeProvider 也不传，因为 CfirSuperTypeGraphStore 会合并
+     * extend 引入的超类型。传 null 让 scope 退回到 declaration.superTypeRefs，
+     * 这只包含本体直接声明的继承关系。
+     */
+    context(context: CheckerContext)
+    private fun createOwnMemberScope(declaration: CfirClassLikeDeclaration): CfirTypeScope {
+        return when (declaration) {
+            is CfirClass -> context.session.cangjieScopeProvider.getDeclarationSiteMemberScope(
+                declaration,
+                context.session,
+                context.scopeSession,
+            )
+
+            else -> {
+                val classLikeSymbol = declaration.symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
+                CfirClassUseSiteMemberScope(
+                    session = context.session,
+                    classLikeSymbol,
+                    context.session.symbolProvider,
+                    extendProvider = context.session.extendProvider,
+                    directSupertypeProvider = context.session.directSupertypeProviderOrNull,
+                    scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
+                )
+            }
+        }
     }
 }
 
@@ -45,21 +90,6 @@ private fun CfirTypeScope.hasUnimplementedAbstractMember(
     for (name in getCallableNames()) {
         val functionSymbols = mutableListOf<CfirFunctionSymbol<*>>()
         processFunctionsByName(name) { functionSymbols += it }
-        if (ownerDeclaration.name.asString() == "B") {
-            System.err.println(
-                buildString {
-                    appendLine("DEBUG not-implemented owner=${ownerDeclaration.name} function=$name")
-                    functionSymbols.forEach { symbol ->
-                        append("  symbol=").append(symbol)
-                        append(" sig=").append(symbol.stableSignatureKey())
-                        append(" bound=").append(symbol.isBound)
-                        append(" visible=").append(symbol.isVisibleIn(ownerDeclaration, context))
-                        append(" abstract=").append(symbol.isAbstractLike(context))
-                        appendLine()
-                    }
-                }
-            )
-        }
         if (functionSymbols.hasUnimplementedAbstractBySignature(ownerDeclaration, context)) {
             return true
         }

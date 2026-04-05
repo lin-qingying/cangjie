@@ -26,7 +26,7 @@ sealed class CfirCallableDeclaration : CfirMemberDeclaration() {
     abstract override val attributes: CfirDeclarationAttributes
     abstract override val typeParameters: List<CfirTypeParameterRef>
     abstract override val status: CfirDeclarationStatus
-    abstract override val isLocal: Boolean
+    abstract val isLocal: Boolean
     abstract val returnTypeRef: CfirTypeRef
     abstract val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val symbol: CfirCallableSymbol<*>

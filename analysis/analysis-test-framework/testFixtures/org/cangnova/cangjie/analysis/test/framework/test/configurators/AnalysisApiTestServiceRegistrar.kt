@@ -7,10 +7,10 @@ import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.AnalysisApiS
 import org.cangnova.cangjie.test.services.TestServices
 
 /**
- * 测试服务注册器基类（对齐 Kotlin 的 AnalysisApiTestServiceRegistrar）。
+ * Analysis API 测试服务注册器基类。
  *
- * 将 [AnalysisApiServiceRegistrar] 的 DATA 参数固定为 [TestServices]，
- * 提供空默认实现以供子类按需覆盖。
+ * 它将 [AnalysisApiServiceRegistrar] 的数据类型固定为 [TestServices]，
+ * 让测试 configurator 可以直接围绕测试服务容器组织服务注册流程。
  */
 @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
 abstract class AnalysisApiTestServiceRegistrar : AnalysisApiServiceRegistrar<TestServices> {

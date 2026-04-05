@@ -58,6 +58,82 @@ abstract class CaBaseSessionProvider(project: Project) : CaSessionProvider(proje
         beforeEnteringAnalysis(session)
     }
 
+    /**
+     * 基础实现把批量元素分析收敛为“按同一 session 分组后只进入一次分析域”。
+     *
+     * 这保证了：
+     * 1. 同一 use-site session 共享统一 lifetime 与缓存边界；
+     * 2. permission / restricted-analysis / write-action 检查只在批次边界执行一次；
+     * 3. 平台层无需各自手写 session 分组逻辑。
+     */
+    override fun <R> analyzeElements(
+        useSiteElements: Collection<CjElement>,
+        action: CaSession.(CjElement) -> R,
+    ): List<R> {
+        if (useSiteElements.isEmpty()) return emptyList()
+
+        val groupedElements = LinkedHashMap<CaSession, MutableList<Pair<Int, CjElement>>>()
+        useSiteElements.withIndex().forEach { indexedElement ->
+            PsiUtilCore.ensureValid(indexedElement.value)
+            val session = getAnalysisSession(indexedElement.value)
+            groupedElements.getOrPut(session) { mutableListOf() }
+                .add(indexedElement.index to indexedElement.value)
+        }
+
+        val results = arrayOfNulls<Any?>(useSiteElements.size)
+        groupedElements.forEach { (session, entries) ->
+            val representative = entries.first().second
+            beforeEnteringAnalysis(session, representative)
+            try {
+                entries.forEach { (index, element) ->
+                    results[index] = session.action(element)
+                }
+            } catch (throwable: Throwable) {
+                handleAnalysisException(throwable, session, representative)
+            } finally {
+                afterLeavingAnalysis(session, representative)
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        return results.map { it as R }
+    }
+
+    /**
+     * 基础实现把批量模块分析也收敛到 session 粒度。
+     */
+    override fun <R> analyzeModules(
+        useSiteModules: Collection<CaModule>,
+        action: CaSession.(CaModule) -> R,
+    ): List<R> {
+        if (useSiteModules.isEmpty()) return emptyList()
+
+        val groupedModules = LinkedHashMap<CaSession, MutableList<Pair<Int, CaModule>>>()
+        useSiteModules.withIndex().forEach { indexedModule ->
+            val session = getAnalysisSession(indexedModule.value)
+            groupedModules.getOrPut(session) { mutableListOf() }
+                .add(indexedModule.index to indexedModule.value)
+        }
+
+        val results = arrayOfNulls<Any?>(useSiteModules.size)
+        groupedModules.forEach { (session, entries) ->
+            val representative = entries.first().second
+            beforeEnteringAnalysis(session, representative)
+            try {
+                entries.forEach { (index, module) ->
+                    results[index] = session.action(module)
+                }
+            } catch (throwable: Throwable) {
+                handleAnalysisException(throwable, session, representative)
+            } finally {
+                afterLeavingAnalysis(session, representative)
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        return results.map { it as R }
+    }
+
     private fun beforeEnteringAnalysis(session: CaSession) {
         if (!permissionChecker.isAnalysisAllowed()) {
             throw ProhibitedAnalysisException("Analysis is not allowed: ${permissionChecker.getRejectionReason()}")

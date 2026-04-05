@@ -15,13 +15,17 @@ import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.*
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.patterns.builder.*
+import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
+import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.fakeElement
 
 /**
  * LightTree → Raw CFIR 表达式构建器（对齐 PsiRawCfirBuilder 的表达式转换部分）。
@@ -115,10 +119,7 @@ class LightTreeRawCfirExpressionBuilder(
                 isImplicit = false
             }
         }
-        CjNodeTypes.SUPER_EXPRESSION -> buildNamedAccessExpression {
-            source = node.toSource()
-            calleeReference = buildNamedReference(Name.special("<super>"), node.toSource())
-        }
+        CjNodeTypes.SUPER_EXPRESSION -> convertSuperExpression(node)
 
         else -> buildErrorExpression(node.toSourceElement(), "Unsupported expression: ${node.tokenType}")
     }
@@ -603,6 +604,21 @@ class LightTreeRawCfirExpressionBuilder(
             source = node.toSource()
             calleeReference = buildNamedReference(referencedName, node.toSource())
             this.typeArguments.addAll(typeArguments)
+        }
+    }
+
+    /**
+     * 将 `super` 表达式构造成专用接收者节点，
+     * 这样 body resolve 可以按仓颉语义统一推导直接父类型，而不是退化成普通名字访问。
+     */
+    private fun convertSuperExpression(node: LighterASTNode): CfirSuperReceiverExpression {
+        val sourceElement = node.toSource()
+        return buildSuperReceiverExpression {
+            source = sourceElement
+            calleeReference = buildSuperReference {
+                source = sourceElement.fakeElement(CjFakeSourceElementKind.ReferenceInAtomicQualifiedAccess)
+                superTypeRef = buildImplicitTypeRef()
+            }
         }
     }
 

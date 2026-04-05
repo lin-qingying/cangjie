@@ -110,6 +110,29 @@ class CfirExpressionsResolveTransformer(
         return thisReceiverExpression
     }
 
+    override fun transformSuperReceiverExpression(
+        superReceiverExpression: CfirSuperReceiverExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        superReceiverExpression.transformAnnotations(transformer, data)
+
+        val superReference = superReceiverExpression.calleeReference
+        val resolvedSuperTypeRef = resolveSuperTypeRef(superReference.superTypeRef)
+        if (resolvedSuperTypeRef !== superReference.superTypeRef) {
+            superReference.replaceSuperTypeRef(resolvedSuperTypeRef)
+        }
+
+        val owner = context.containingRegularClass
+        val receiverType = when {
+            owner == null -> errorType("`super` is only allowed inside class declarations")
+            resolvedSuperTypeRef is CfirResolvedTypeRef -> resolveExplicitSuperReceiverType(owner, resolvedSuperTypeRef)
+            else -> resolveImplicitSuperReceiverType(owner)
+        }
+
+        superReceiverExpression.replaceConeTypeOrNull(receiverType)
+        return superReceiverExpression
+    }
+
     override fun transformLiteralExpression(
         literalExpression: CfirLiteralExpression,
         data: ResolutionMode,
@@ -1163,6 +1186,58 @@ class CfirExpressionsResolveTransformer(
         }
     }
 
+    /**
+     * `super` 的语义在仓颉里是固定的：
+     * 1. 只能出现在 class 内部；
+     * 2. 绑定到当前 class 声明的直接父 class；
+     * 3. 不能落到接口父类型，也不能从继承链上做兜底推断。
+     *
+     * 这里在进入 tower resolve 前就把接收者类型确定下来，
+     * 避免后续 `ExpressionReceiverValue.scope()` 再遇到未解析的 `super`。
+     */
+    private fun resolveImplicitSuperReceiverType(owner: CfirClass): ConeCangJieType {
+        val directClassSuperTypes = owner.directClassSuperTypes()
+        return when (directClassSuperTypes.size) {
+            1 -> directClassSuperTypes.single()
+            0 -> errorType("`super` requires a direct class supertype in ${owner.name}")
+            else -> errorType("`super` is ambiguous because ${owner.name} declares multiple direct class supertypes")
+        }
+    }
+
+    /**
+     * 预留给未来显式 `super<T>` / `super<Base>` 语法：
+     * 即使语法层已经指定了目标类型，也必须严格受“当前 class 的直接父 class”约束。
+     */
+    private fun resolveExplicitSuperReceiverType(
+        owner: CfirClass,
+        resolvedSuperTypeRef: CfirResolvedTypeRef,
+    ): ConeCangJieType {
+        val requestedType = resolvedSuperTypeRef.coneType
+        if (!requestedType.isDirectClassSuperType()) {
+            return errorType("`super` can only target a direct class supertype of ${owner.name}")
+        }
+
+        val directClassSuperTypes = owner.directClassSuperTypes()
+        if (directClassSuperTypes.none { it == requestedType }) {
+            return errorType("`super` can only target a direct class supertype of ${owner.name}")
+        }
+
+        return requestedType
+    }
+
+    private fun CfirClass.directClassSuperTypes(): List<ConeCangJieType> {
+        return superTypeRefs
+            .filterIsInstance<CfirResolvedTypeRef>()
+            .map(CfirResolvedTypeRef::coneType)
+            .filter { candidate -> candidate.isDirectClassSuperType() }
+    }
+
+    private fun ConeCangJieType.isDirectClassSuperType(): Boolean = when (this) {
+        is ConeClassLikeType -> !isInterface
+        is ConeStructType, is ConeEnumType -> true
+        else -> false
+    }
+
     // ── Small Extension Utilities ─────────────────────────────────────────────
 
     private fun CfirExpression.resolveIndependently() {
@@ -1200,6 +1275,23 @@ class CfirExpressionsResolveTransformer(
 
         access.replaceTypeArguments(resolvedTypeArguments)
         return access
+    }
+
+    private fun resolveSuperTypeRef(typeRef: CfirTypeRef): CfirTypeRef {
+        if (typeRef is CfirResolvedTypeRef || typeRef is CfirImplicitTypeRef) return typeRef
+
+        val additionalTypeParameters = context.containers
+            .asSequence()
+            .filterIsInstance<CfirDeclaration>()
+            .flatMap { extractTypeParameters(it).asSequence() }
+            .toList()
+
+        val config = CfirTypeResolutionConfiguration(
+            useSiteFile = context.file,
+            topContainer = context.containers.lastOrNull(),
+        ).withAdditionalTypeParameters(additionalTypeParameters)
+
+        return specificTypeResolverTransformer.transformTypeRef(typeRef, config)
     }
 
     private fun extractTypeParameters(declaration: CfirDeclaration): List<CfirTypeParameter> = when (declaration) {

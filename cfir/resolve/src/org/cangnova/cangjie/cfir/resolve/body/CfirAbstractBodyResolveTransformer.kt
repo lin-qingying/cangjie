@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.inference.CfirCallCompleter
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.transformers.IntegerLiteralAndOperatorApproximationTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
@@ -18,6 +19,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitSimpleImportingScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitStarImportingScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirFileDeclaredTopLevelScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendProvider
@@ -137,6 +139,8 @@ abstract class CfirAbstractBodyResolveTransformer(
                 }
 
             return buildList {
+                // 当前文件顶层声明必须先于包级/导入级 scope，避免默认导入抢占本地声明。
+                add(CfirFileDeclaredTopLevelScope(file))
                 add(CfirPackageMemberScope(file.packageDirective.packageFqName, symbolProvider))
                 add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
                 add(CfirExplicitStarImportingScope(imports, symbolProvider))
@@ -186,7 +190,9 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
 
     override fun transformFile(file: CfirFile, data: ResolutionMode): CfirFile {
         checkSessionConsistency(file)
-        return declarationsTransformer.transformFile(file, data)
+        return CfirAccessibilityFileScope.with(file) {
+            declarationsTransformer.transformFile(file, data)
+        }
     }
 
     override fun transformClass(klass: CfirClass, data: ResolutionMode): CfirClass {
@@ -268,6 +274,13 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         data: ResolutionMode,
     ): CfirExpression {
         return expressionsTransformer.transformNamedAccessExpression(namedAccess, data)
+    }
+
+    override fun transformSuperReceiverExpression(
+        superReceiverExpression: CfirSuperReceiverExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformSuperReceiverExpression(superReceiverExpression, data)
     }
 
     override fun transformQualifiedAccessExpression(

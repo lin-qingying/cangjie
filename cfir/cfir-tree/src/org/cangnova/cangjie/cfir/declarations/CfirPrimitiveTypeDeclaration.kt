@@ -30,7 +30,6 @@ class CfirPrimitiveTypeDeclaration(
     override var superTypeRefs: MutableList<CfirTypeRef> = mutableListOf(),
 ) : CfirClassLikeDeclaration() {
     override val source: CjSourceElement? = null
-    override val isLocal: Boolean = false
 
     init {
         symbol.bind(this)

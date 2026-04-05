@@ -2,22 +2,12 @@ package org.cangnova.cangjie.lsp.capabilities
 
 import org.eclipse.lsp4j.CodeActionOptions
 import org.eclipse.lsp4j.CompletionOptions
-import org.eclipse.lsp4j.DefinitionOptions
-import org.eclipse.lsp4j.DiagnosticRegistrationOptions
 import org.eclipse.lsp4j.DocumentFormattingOptions
-import org.eclipse.lsp4j.DocumentHighlightOptions
-import org.eclipse.lsp4j.DocumentRangeFormattingOptions
-import org.eclipse.lsp4j.DocumentSymbolOptions
+import org.eclipse.lsp4j.DiagnosticRegistrationOptions
 import org.eclipse.lsp4j.ExecuteCommandOptions
-import org.eclipse.lsp4j.FoldingRangeProviderOptions
-import org.eclipse.lsp4j.HoverOptions
-import org.eclipse.lsp4j.ImplementationRegistrationOptions
-import org.eclipse.lsp4j.InlayHintRegistrationOptions
 import org.eclipse.lsp4j.InitializeResult
-import org.eclipse.lsp4j.ReferenceOptions
 import org.eclipse.lsp4j.RenameOptions
 import org.eclipse.lsp4j.SaveOptions
-import org.eclipse.lsp4j.SelectionRangeRegistrationOptions
 import org.eclipse.lsp4j.SemanticTokensLegend
 import org.eclipse.lsp4j.SemanticTokensServerFull
 import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions
@@ -25,36 +15,35 @@ import org.eclipse.lsp4j.ServerCapabilities
 import org.eclipse.lsp4j.ServerInfo
 import org.eclipse.lsp4j.SignatureHelpOptions
 import org.eclipse.lsp4j.TextDocumentSyncOptions
-import org.eclipse.lsp4j.TypeDefinitionRegistrationOptions
 import org.eclipse.lsp4j.WorkspaceFoldersOptions
 import org.eclipse.lsp4j.WorkspaceServerCapabilities
-import org.eclipse.lsp4j.WorkspaceSymbolOptions
-import org.eclipse.lsp4j.jsonrpc.messages.Either
 
 object CangjieServerCapabilitiesFactory {
     fun createInitializeResult(
         descriptor: CangjieLanguageServerDescriptor,
-        features: CangjieLspFeatureSet,
+        negotiation: CangjieClientCapabilityNegotiation,
     ): InitializeResult {
-        return InitializeResult(
-            createCapabilities(descriptor, features),
-            ServerInfo(descriptor.name, descriptor.version),
-        )
+        return InitializeResult().apply {
+            capabilities = createCapabilities(descriptor, negotiation)
+            serverInfo = ServerInfo(descriptor.name, descriptor.version ?: "1.0.0")
+        }
     }
 
     fun createCapabilities(
         descriptor: CangjieLanguageServerDescriptor,
-        features: CangjieLspFeatureSet,
+        negotiation: CangjieClientCapabilityNegotiation,
     ): ServerCapabilities {
         return ServerCapabilities().apply {
-            positionEncoding = descriptor.positionEncoding
+            positionEncoding = negotiation.positionEncoding
             setTextDocumentSync(TextDocumentSyncOptions().apply {
                 openClose = descriptor.openClose
                 change = descriptor.changeSyncKind
                 setSave(SaveOptions(descriptor.saveIncludeText))
             })
 
-            if (features.hover) setHoverProvider(HoverOptions())
+            val features = negotiation.features
+
+            if (features.hover) setHoverProvider(true)
             if (features.completion) {
                 completionProvider = CompletionOptions(
                     descriptor.completionResolveProvider,
@@ -65,13 +54,13 @@ object CangjieServerCapabilitiesFactory {
                 signatureHelpProvider = SignatureHelpOptions(descriptor.signatureHelpTriggerCharacters)
             }
             if (features.declaration) setDeclarationProvider(true)
-            if (features.definition) setDefinitionProvider(DefinitionOptions())
-            if (features.typeDefinition) setTypeDefinitionProvider(TypeDefinitionRegistrationOptions())
-            if (features.implementation) setImplementationProvider(ImplementationRegistrationOptions())
-            if (features.references) setReferencesProvider(ReferenceOptions())
-            if (features.documentHighlight) setDocumentHighlightProvider(DocumentHighlightOptions())
-            if (features.documentSymbol) setDocumentSymbolProvider(DocumentSymbolOptions())
-            if (features.workspaceSymbol) setWorkspaceSymbolProvider(WorkspaceSymbolOptions(false))
+            if (features.definition) setDefinitionProvider(true)
+            if (features.typeDefinition) setTypeDefinitionProvider(true)
+            if (features.implementation) setImplementationProvider(true)
+            if (features.references) setReferencesProvider(true)
+            if (features.documentHighlight) setDocumentHighlightProvider(true)
+            if (features.documentSymbol) setDocumentSymbolProvider(true)
+            if (features.workspaceSymbol) setWorkspaceSymbolProvider(true)
             if (features.codeAction) {
                 setCodeActionProvider(CodeActionOptions(descriptor.codeActionKinds).apply {
                     resolveProvider = false
@@ -79,11 +68,11 @@ object CangjieServerCapabilitiesFactory {
             }
             if (features.formatting) {
                 setDocumentFormattingProvider(DocumentFormattingOptions())
-                setDocumentRangeFormattingProvider(DocumentRangeFormattingOptions())
+                setDocumentRangeFormattingProvider(true)
             }
             if (features.rename) setRenameProvider(RenameOptions(descriptor.renamePrepareProvider))
-            if (features.foldingRange) setFoldingRangeProvider(FoldingRangeProviderOptions())
-            if (features.selectionRange) setSelectionRangeProvider(SelectionRangeRegistrationOptions())
+            if (features.foldingRange) setFoldingRangeProvider(true)
+            if (features.selectionRange) setSelectionRangeProvider(true)
             if (features.semanticTokens) {
                 semanticTokensProvider = SemanticTokensWithRegistrationOptions(
                     SemanticTokensLegend(
@@ -94,8 +83,8 @@ object CangjieServerCapabilitiesFactory {
                     true,
                 )
             }
-            if (features.inlayHints) setInlayHintProvider(InlayHintRegistrationOptions())
-            if (features.diagnostics) {
+            if (features.inlayHints) setInlayHintProvider(true)
+            if (negotiation.pullDiagnostics) {
                 diagnosticProvider = DiagnosticRegistrationOptions().apply {
                     identifier = descriptor.diagnosticIdentifier
                     setInterFileDependencies(true)
@@ -105,10 +94,12 @@ object CangjieServerCapabilitiesFactory {
             if (descriptor.executeCommands.isNotEmpty()) {
                 executeCommandProvider = ExecuteCommandOptions(descriptor.executeCommands)
             }
-            workspace = WorkspaceServerCapabilities().apply {
-                workspaceFolders = WorkspaceFoldersOptions().apply {
-                    supported = descriptor.workspaceFoldersSupported
-                    setChangeNotifications(Either.forLeft(descriptor.workspaceFolderChangeNotificationsId))
+            if (negotiation.workspaceFolders) {
+                workspace = WorkspaceServerCapabilities().apply {
+                    workspaceFolders = WorkspaceFoldersOptions().apply {
+                        supported = true
+                        setChangeNotifications(true)
+                    }
                 }
             }
         }

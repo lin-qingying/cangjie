@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ParameterResolver
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.exists
+import kotlin.io.path.isRegularFile
 
 /**
  * 手动（非生成）Analysis API 测试的基类（对齐 Kotlin 的 AbstractAnalysisApiExecutionTest）。
@@ -45,10 +46,15 @@ internal class AnalysisApiExecutionTestExtension :
         private val SUPPORTED_PARAMETER_TYPES = listOf(
             TestServices::class.java,
             CjFile::class.java,
+            CjTestModule::class.java,
         )
     }
 
-    private class State(val testServices: TestServices, val mainFile: CjFile?)
+    private class State(
+        val testServices: TestServices,
+        val mainFile: CjFile?,
+        val mainModule: CjTestModule,
+    )
 
     private val cachedState = ThreadLocal<State>()
 
@@ -63,6 +69,7 @@ internal class AnalysisApiExecutionTestExtension :
         return when {
             TestServices::class.java.isAssignableFrom(parameterType) -> state.testServices
             CjFile::class.java.isAssignableFrom(parameterType) -> state.mainFile
+            CjTestModule::class.java.isAssignableFrom(parameterType) -> state.mainModule
             else -> error("Unsupported parameter type $parameterType")
         }
     }
@@ -72,9 +79,9 @@ internal class AnalysisApiExecutionTestExtension :
         val testFilePath = getTestFilePath(testInstance.testDirPathString, context.requiredTestMethod.name)
 
         @Suppress("DEPRECATION")
-        testInstance.performTest(testFilePath.toString()) { testServices, mainFile, _ ->
+        testInstance.performTest(testFilePath.toString()) { testServices, mainFile, mainModule ->
             require(cachedState.get() == null)
-            cachedState.set(State(testServices, mainFile))
+            cachedState.set(State(testServices, mainFile, mainModule))
         }
     }
 
@@ -83,7 +90,32 @@ internal class AnalysisApiExecutionTestExtension :
     }
 
     private fun getTestFilePath(testDirPathString: String, testFileName: String): Path {
-        return Paths.get(testDirPathString, "$testFileName.cj").takeIf { it.exists() }
-            ?: error("Cannot find test file $testFileName.cj in $testDirPathString")
+        val workspaceRoot = locateWorkspaceRoot(Paths.get("").toAbsolutePath().normalize())
+        val candidates = listOf(
+            Paths.get(testDirPathString, "$testFileName.cj"),
+            Paths.get(testDirPathString, "$testFileName.cjs"),
+        )
+
+        candidates.firstOrNull { candidate -> candidate.exists() }?.let { return it }
+        candidates
+            .asSequence()
+            .map { candidate -> workspaceRoot.resolve(candidate).normalize() }
+            .firstOrNull { candidate -> candidate.exists() }
+            ?.let { return it }
+
+        error("Cannot find test file $testFileName.[cj|cjs] in $testDirPathString")
+    }
+
+    /**
+     * 统一从当前工作目录向上定位仓库根目录。
+     *
+     * Gradle 在不同任务和不同 IDE 启动方式下，测试进程的 cwd 可能是仓库根、模块根或临时目录。
+     * 测试框架不应该把 testData 定位语义绑定到这些偶然差异上，因此这里显式以 `settings.gradle.kts`
+     * 作为仓库根锚点。
+     */
+    private fun locateWorkspaceRoot(start: Path): Path {
+        return generateSequence(start) { current -> current.parent }
+            .firstOrNull { candidate -> candidate.resolve("settings.gradle.kts").isRegularFile() }
+            ?: start
     }
 }

@@ -343,17 +343,22 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
     }
 
     private fun fqNameToClassId(fqName: String): ClassId {
-        val (packageFqName, className) = fqName.split(".").let {
-            val packageName = FqName.fromSegments(it.dropLast(1))
-            packageName to it.last()
+        if ('$' in fqName) {
+            assertions.fail {
+                "SCOPE_DUMP does not support nested class FQNs: $fqName. " +
+                    "Cangjie only keeps top-level class-like declarations now."
+            }
         }
 
-        val names = className.split("$")
-        var classId = ClassId(packageFqName, Name.identifier(names.first()))
-        for (name in names.drop(1)) {
-            classId = classId.createNestedClassId(Name.identifier(name))
+        val segments = fqName.split(".")
+        if (segments.isEmpty() || segments.any(String::isBlank)) {
+            assertions.fail { "Invalid SCOPE_DUMP class-like FQ name: $fqName" }
         }
-        return classId
+
+        // 仓颉已经移除嵌套类语义，因此这里始终将最后一段解析为顶层 class-like 名称。
+        val packageFqName = FqName.fromSegments(segments.dropLast(1))
+        val className = segments.last()
+        return ClassId(packageFqName, Name.identifier(className))
     }
 
     private class SymbolCounter {

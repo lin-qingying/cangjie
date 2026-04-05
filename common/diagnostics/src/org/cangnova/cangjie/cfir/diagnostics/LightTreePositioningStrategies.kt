@@ -121,6 +121,18 @@ object LightTreePositioningStrategies {
             return markElement(overrideModifier, startOffset, endOffset, tree, node)
         }
     }
+    val MUT_MODIFIER: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
+        override fun mark(
+            node: LighterASTNode,
+            startOffset: Int,
+            endOffset: Int,
+            tree: FlyweightCapableTreeStructure<LighterASTNode>,
+        ): List<TextRange> {
+            val mutModifier = tree.collectDescendantsOfType(node, CjTokens.MUT_KEYWORD).firstOrNull()
+                ?: return ACTUAL_DECLARATION_NAME.mark(node, startOffset, endOffset, tree)
+            return markElement(mutModifier, startOffset, endOffset, tree, node)
+        }
+    }
 
     val OPERATOR: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(

@@ -6,8 +6,11 @@ import com.intellij.util.AstLoadingFilter
 import org.cangnova.cangjie.CjPsiSourceFile
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceFileLinesMapping
 import org.cangnova.cangjie.source.CjRealPsiSourceElement
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.fakeElement
 import org.cangnova.cangjie.source.toCjPsiSourceElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
@@ -17,7 +20,7 @@ import org.cangnova.cangjie.cfir.expressions.builder.*
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.references.builder.buildThisReference
+import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -90,7 +93,7 @@ class PsiRawCfirBuilder(
         return runOnStubs { file.accept(Visitor(), null) as CfirFile }
     }
 
-    // ===== Visitor（内部类，对齐 Kotlin 的 PsiRawFirBuilder.Visitor）=====
+    // ===== Visitor（私有访问器类型，对齐 Kotlin 的 PsiRawFirBuilder.Visitor）=====
 
     private val visitor = Visitor()
     private val converter = Converter()
@@ -198,9 +201,17 @@ class PsiRawCfirBuilder(
 
         private fun convertClass(psi: CjClassLikeDeclaration, classKind: CfirClassKind): CfirDeclaration {
             val name = psi.nameAsSafeName
-            return withClassName(name) {
-                when (classKind) {
-                CfirClassKind.CLASS -> buildSourceDeclaration(CfirClassSymbol(context.currentClassId!!)) { symbol ->
+            if (!canDeclareTopLevelClassLike()) {
+                return buildInvalidClassLikeDeclaration(
+                    source = psi.toCjPsiSourceElement(),
+                    kind = classKind.name.lowercase(),
+                    name = name,
+                )
+            }
+
+            val classId = topLevelClassId(name)
+            return when (classKind) {
+                CfirClassKind.CLASS -> buildSourceDeclaration(CfirClassSymbol(classId)) { symbol ->
                     buildClass {
                         resolvePhase = CfirResolvePhase.RAW_CFIR
                         val (classTypeParameters, classDeclarations) = withContainerSymbol(symbol) {
@@ -220,7 +231,6 @@ class PsiRawCfirBuilder(
                         origin = CfirDeclarationOrigin.Source
                         moduleData = baseModuleData
                         attributes = declarationAttributes(psi)
-                        isLocal = context.inLocalContext
                         status = convertDeclarationStatus(psi)
                         typeParameters.addAll(classTypeParameters)
                         superTypeRefs.addAll(convertSuperTypeRefs(psi))
@@ -228,7 +238,7 @@ class PsiRawCfirBuilder(
                         this.name = name
                     }
                 }
-                CfirClassKind.INTERFACE -> buildSourceDeclaration(CfirInterfaceSymbol(context.currentClassId!!)) { symbol ->
+                CfirClassKind.INTERFACE -> buildSourceDeclaration(CfirInterfaceSymbol(classId)) { symbol ->
                     buildInterface {
                         resolvePhase = CfirResolvePhase.RAW_CFIR
                         val (classTypeParameters, classDeclarations) = withContainerSymbol(symbol) {
@@ -239,7 +249,6 @@ class PsiRawCfirBuilder(
                         origin = CfirDeclarationOrigin.Source
                         moduleData = baseModuleData
                         attributes = declarationAttributes(psi)
-                        isLocal = context.inLocalContext
                         status = convertDeclarationStatus(psi)
                         typeParameters.addAll(classTypeParameters)
                         superTypeRefs.addAll(convertSuperTypeRefs(psi))
@@ -247,7 +256,7 @@ class PsiRawCfirBuilder(
                         this.name = name
                     }
                 }
-                CfirClassKind.STRUCT -> buildSourceDeclaration(CfirStructSymbol(context.currentClassId!!)) { symbol ->
+                CfirClassKind.STRUCT -> buildSourceDeclaration(CfirStructSymbol(classId)) { symbol ->
                     buildStruct {
                         resolvePhase = CfirResolvePhase.RAW_CFIR
                         val (classTypeParameters, classDeclarations) = withContainerSymbol(symbol) {
@@ -262,7 +271,6 @@ class PsiRawCfirBuilder(
                         origin = CfirDeclarationOrigin.Source
                         moduleData = baseModuleData
                         attributes = declarationAttributes(psi)
-                        isLocal = context.inLocalContext
                         status = convertDeclarationStatus(psi)
                         typeParameters.addAll(classTypeParameters)
                         superTypeRefs.addAll(convertSuperTypeRefs(psi))
@@ -270,7 +278,7 @@ class PsiRawCfirBuilder(
                         this.name = name
                     }
                 }
-                CfirClassKind.ENUM -> buildSourceDeclaration(CfirEnumSymbol(context.currentClassId!!)) { symbol ->
+                CfirClassKind.ENUM -> buildSourceDeclaration(CfirEnumSymbol(classId)) { symbol ->
                     buildEnum {
                         resolvePhase = CfirResolvePhase.RAW_CFIR
                         val (classTypeParameters, classDeclarations) = withContainerSymbol(symbol) {
@@ -290,7 +298,6 @@ class PsiRawCfirBuilder(
                         origin = CfirDeclarationOrigin.Source
                         moduleData = baseModuleData
                         attributes = declarationAttributes(psi)
-                        isLocal = context.inLocalContext
                         status = convertDeclarationStatus(psi)
                         typeParameters.addAll(classTypeParameters)
                         superTypeRefs.addAll(convertSuperTypeRefs(psi))
@@ -298,7 +305,6 @@ class PsiRawCfirBuilder(
                         this.name = name
                         this.isRefEnum = false
                     }
-                }
                 }
             }
         }
@@ -318,7 +324,6 @@ class PsiRawCfirBuilder(
                     moduleData = baseModuleData
 
                     attributes = declarationAttributes(psi)
-                    isLocal = context.inLocalContext
                     status = convertDeclarationStatus(psi)
                     typeParameters.addAll(typeParametersForExtend)
                     this.extendedTypeRef = extendedTypeRef
@@ -562,12 +567,19 @@ class PsiRawCfirBuilder(
             }
         }
 
-        private fun convertTypeAlias(psi: CjTypeAlias): CfirTypeAlias {
+        private fun convertTypeAlias(psi: CjTypeAlias): CfirDeclaration {
             val name = psi.nameAsSafeName
             val expandedType = convertTypeRef(psi.getTypeReference())
 
-            return withClassName(name) {
-                buildSourceDeclaration(CfirTypeAliasSymbol(context.currentClassId!!)) { symbol ->
+            if (!canDeclareTopLevelClassLike()) {
+                return buildInvalidClassLikeDeclaration(
+                    source = psi.toCjPsiSourceElement(),
+                    kind = "typealias",
+                    name = name,
+                )
+            }
+
+            return buildSourceDeclaration(CfirTypeAliasSymbol(topLevelClassId(name))) { symbol ->
                 buildTypeAlias {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     val typeParametersForAlias = convertTypeAliasTypeParameters(psi, symbol)
@@ -577,13 +589,11 @@ class PsiRawCfirBuilder(
                     moduleData = baseModuleData
 
                     attributes = CfirDeclarationAttributes.EMPTY
-                    isLocal = context.inLocalContext
                     status = convertDeclarationStatus(psi)
                     typeParameters.addAll(typeParametersForAlias)
                     this.name = name
                     expandedTypeRef = expandedType
                 }
-            }
             }
         }
 
@@ -727,9 +737,13 @@ class PsiRawCfirBuilder(
                     isImplicit = false
                 }
             }
-            is CjSuperExpression -> buildNamedAccessExpression {
-                source = psi.toCjPsiSourceElement()
-                calleeReference = buildNamedReference(Name.special("<super>"), psi.toCjPsiSourceElement())
+            is CjSuperExpression -> buildSuperReceiverExpression {
+                val sourceElement = psi.toCjPsiSourceElement()
+                source = sourceElement
+                calleeReference = buildSuperReference {
+                    source = sourceElement.fakeElement(CjFakeSourceElementKind.ReferenceInAtomicQualifiedAccess)
+                    superTypeRef = buildImplicitTypeRef()
+                }
             }
             else -> buildErrorExpression(psi.toSourceElement(), "Unsupported expression: ${psi.javaClass.simpleName}")
         }
@@ -1548,6 +1562,29 @@ class PsiRawCfirBuilder(
         private fun convertClassMembers(psi: CjClassLikeDeclaration): List<CfirDeclaration> {
             val typeStatement = psi as? CjTypeStatement ?: return emptyList()
             return typeStatement.body?.declarations?.map { convertDeclaration(it) } ?: emptyList()
+        }
+
+        /**
+         * 仓颉的 class-like 声明只允许出现在文件顶层。
+         * 当 PSI 恢复出非法嵌套/局部 class-like 时，Raw CFIR 必须显式标记为 invalid，
+         * 不能继续为其制造 `ClassId` 并伪装成合法声明。
+         */
+        private fun buildInvalidClassLikeDeclaration(
+            source: AbstractCjSourceElement,
+            kind: String,
+            name: Name,
+        ): CfirDeclaration {
+            return buildSourceDeclaration(CfirInvalidDeclarationSymbol()) { symbol ->
+                buildInvalidDeclaration {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    this.source = source as? CjSourceElement
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    reason = "Cangjie only supports top-level $kind declarations, but found illegal non-top-level declaration: $name"
+                }
+            }
         }
 
         private fun convertDeclarationStatus(psi: CjDeclaration): CfirDeclarationStatus {

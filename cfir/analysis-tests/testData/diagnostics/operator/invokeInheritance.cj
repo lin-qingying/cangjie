@@ -15,7 +15,7 @@ class Cat <: Animal {
     }
 }
 
-class EmptyAnimal {}
+open class EmptyAnimal {}
 class Puppy <: EmptyAnimal {}
 
 func testInheritedInvoke(): Unit {

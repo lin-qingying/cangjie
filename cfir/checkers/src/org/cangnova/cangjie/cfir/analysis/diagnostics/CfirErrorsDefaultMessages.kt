@@ -54,8 +54,50 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.ILLEGAL_EXTENDED_TYPE, "illegal extended type ''{0}''", RENDER_NAME)
         map.put(CfirErrors.EXTEND_DUPLICATE_INTERFACE, "duplicate extend interface ''{0}''", RENDER_NAME)
         map.put(CfirErrors.EXTEND_NOT_INTERFACE, "inherited type ''{0}'' in extend declaration is not an interface", RENDER_NAME)
+        map.put(
+            CfirErrors.EXTEND_INTERFACE_NOT_EXTENDABLE,
+            "interface ''{0}'' cannot be used in an extend declaration",
+            RENDER_NAME,
+        )
         map.put(CfirErrors.EXTEND_ORPHAN_RULE, "extend declaration violates orphan rule for target ''{0}''", RENDER_NAME)
         map.put(CfirErrors.EXTEND_GENERIC_USAGE, "extend type parameter ''{0}'' is unused in extend signatures", RENDER_NAME)
+        map.put(
+            CfirErrors.EXTEND_IMMUTABLE_MUT_INTERFACE,
+            "immutable extend cannot implement interface ''{0}'' because it contains mut property ''{1}''",
+            RENDER_NAME,
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.EXTEND_IMMUTABLE_MUT_PROPERTY,
+            "immutable extend cannot declare mut property ''{0}''",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.EXTEND_IMMUTABLE_INDEX_ASSIGNMENT,
+            "immutable extend cannot declare index assignment operator ''{0}''",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.EXTEND_C_TYPE_NOT_ALLOWED,
+            "foreign interop type ''{0}'' cannot be the target of an extend declaration",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.EXTEND_SUPER_NOT_ALLOWED,
+            "'super' is not allowed inside extend declarations",
+        )
+        map.put(
+            CfirErrors.STRUCT_SUPER_NOT_ALLOWED,
+            "'super' is not allowed inside struct declarations",
+        )
+        map.put(
+            CfirErrors.ENUM_SUPER_NOT_ALLOWED,
+            "'super' is not allowed inside enum declarations",
+        )
+        map.put(
+            CfirErrors.INTERFACE_SUPER_NOT_ALLOWED,
+            "'super' is not allowed inside interface declarations",
+        )
         map.put(CfirErrors.EXTEND_SPECIALIZATION_CONFLICT, "specialization conflict detected for interface ''{0}''", RENDER_NAME)
         map.put(
             CfirErrors.EXTEND_DEFAULT_IMPLEMENTATION_CONFLICT,
@@ -74,6 +116,35 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.NOTHING_TO_OVERRIDE, "Nothing to override.")
         map.put(CfirErrors.OVERRIDE_STATIC_ERROR, "'override' cannot be used to modify a static ''{0}''.", RENDER_STRING)
         map.put(CfirErrors.REDEF_INSTANCE_ERROR, "'redef' cannot be used to modify an instance ''{0}''.", RENDER_STRING)
+        map.put(
+            CfirErrors.INVISIBLE_MEMBER,
+            "Cannot access member ''{0}'': it is ''{1}'' in this context.",
+            RENDER_STRING,
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.INVISIBLE_REFERENCE,
+            "Cannot access reference ''{0}'': it is ''{1}'' in this context.",
+            RENDER_STRING,
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.OVERRIDING_RETURN_TYPE_MISMATCH,
+            "Return type of overriding declaration for ''{2}'' is ''{0}'', but ''{1}'' was expected.",
+            RENDER_TYPE,
+            RENDER_TYPE,
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.CANNOT_OVERRIDE_INVISIBLE_MEMBER,
+            "Cannot override invisible member ''{0}''.",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.CLASS_NOT_OPEN_FOR_INHERITANCE,
+            "Class ''{0}'' is not open for inheritance.",
+            RENDER_NAME,
+        )
         map.put(
             INVALID_OPERATOR_PARAMETER_COUNT,
             "invalid number of parameters for operator ''{0}'': expected {1}, but found {2}",

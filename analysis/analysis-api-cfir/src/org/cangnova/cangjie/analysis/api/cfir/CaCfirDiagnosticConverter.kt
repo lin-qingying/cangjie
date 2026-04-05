@@ -32,8 +32,11 @@ private class CaCfirDiagnostic(
     override val textRanges: Collection<TextRange>
         get() = psiDiagnostic.textRanges
 
+    /**
+     * Analysis API 对外暴露的是稳定的诊断语义名，不泄漏 CFIR 实现前缀。
+     */
     override val factoryName: String
-        get() = psiDiagnostic.factoryName
+        get() = psiDiagnostic.factoryName.removePrefix("CFIR_")
 
     override val severity: CaSeverity
         get() = psiDiagnostic.severity.toCaSeverity()

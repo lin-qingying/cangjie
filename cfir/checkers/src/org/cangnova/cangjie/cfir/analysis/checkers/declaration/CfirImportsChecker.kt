@@ -12,7 +12,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjNodeTypes
@@ -94,66 +93,19 @@ object CfirImportsChecker : CfirFileChecker() {
     private fun canResolvePackageOrClassPrefix(prefixSegments: List<Name>): Boolean {
         val symbolProvider = context.session.symbolProvider
         if (prefixSegments.isEmpty()) return true
-
-        for (packageSize in prefixSegments.size downTo 0) {
-            val packageFqName = FqName.fromSegments(prefixSegments.take(packageSize).map { it.asString() })
-            if (packageSize > 0 && !symbolProvider.hasPackage(packageFqName)) continue
-            if (packageSize == prefixSegments.size) return true
-
-            var classId = ClassId(packageFqName, prefixSegments[packageSize])
-            if (symbolProvider.getClassLikeSymbolByClassId(classId) == null) continue
-
-            var canResolveClassChain = true
-            for (segmentIndex in (packageSize + 1) until prefixSegments.size) {
-                classId = classId.createNestedClassId(prefixSegments[segmentIndex])
-                if (symbolProvider.getClassLikeSymbolByClassId(classId) == null) {
-                    canResolveClassChain = false
-                    break
-                }
-            }
-
-            if (canResolveClassChain) return true
-        }
-
-        return false
+        val packageFqName = FqName.fromSegments(prefixSegments.map { it.asString() })
+        return symbolProvider.hasPackage(packageFqName)
     }
 
     context(context: CheckerContext)
     private fun canResolveTerminalImportTarget(importedFqName: FqName): Boolean {
         val symbolProvider = context.session.symbolProvider
-        val pathSegments = importedFqName.pathSegments()
-        if (pathSegments.isEmpty()) return false
+        val packageFqName = importedFqName.parent()
+        val importedName = importedFqName.shortName()
+        if (!packageFqName.isRoot && !symbolProvider.hasPackage(packageFqName)) return false
 
-        val importedName = pathSegments.last()
-        val parentSegments = pathSegments.dropLast(1)
-
-        for (packageSize in parentSegments.size downTo 0) {
-            val packageFqName = FqName.fromSegments(parentSegments.take(packageSize).map { it.asString() })
-            if (packageSize > 0 && !symbolProvider.hasPackage(packageFqName)) continue
-
-            if (packageSize == parentSegments.size) {
-                if (symbolProvider.getClassLikeSymbolByClassId(ClassId(packageFqName, importedName)) != null) return true
-                if (symbolProvider.getTopLevelCallableSymbols(packageFqName, importedName).isNotEmpty()) return true
-                continue
-            }
-
-            var parentClassId = ClassId(packageFqName, parentSegments[packageSize])
-            if (symbolProvider.getClassLikeSymbolByClassId(parentClassId) == null) continue
-
-            var canResolveParentClass = true
-            for (segmentIndex in (packageSize + 1) until parentSegments.size) {
-                parentClassId = parentClassId.createNestedClassId(parentSegments[segmentIndex])
-                if (symbolProvider.getClassLikeSymbolByClassId(parentClassId) == null) {
-                    canResolveParentClass = false
-                    break
-                }
-            }
-            if (!canResolveParentClass) continue
-
-            if (symbolProvider.getClassLikeSymbolByClassId(parentClassId.createNestedClassId(importedName)) != null) return true
-        }
-
-        return false
+        return symbolProvider.getTopLevelClassifierSymbols(packageFqName, importedName).isNotEmpty() ||
+            symbolProvider.getTopLevelCallableSymbols(packageFqName, importedName).isNotEmpty()
     }
 
     private fun CfirImport.getSourceForImportSegment(indexFromLast: Int): CjSourceElement? {

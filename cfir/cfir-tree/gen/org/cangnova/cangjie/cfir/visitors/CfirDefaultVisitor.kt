@@ -100,11 +100,17 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitCall(call: CfirCall, data: D): R =
         visitStatement(call, data)
 
+    override fun visitSuperReference(superReference: CfirSuperReference, data: D): R =
+        visitReference(superReference, data)
+
     override fun visitThisReference(thisReference: CfirThisReference, data: D): R =
         visitReference(thisReference, data)
 
     override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression, data: D): R =
         visitQualifiedAccessExpression(namedAccessExpression, data)
+
+    override fun visitSuperReceiverExpression(superReceiverExpression: CfirSuperReceiverExpression, data: D): R =
+        visitQualifiedAccessExpression(superReceiverExpression, data)
 
     override fun visitAssignment(assignment: CfirAssignment, data: D): R =
         visitExpression(assignment, data)

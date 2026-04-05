@@ -20,6 +20,7 @@ abstract class ExpressionCheckers {
     open val functionCallCheckers: Set<CfirFunctionCallChecker> = emptySet()
     open val namedAccessCheckers: Set<CfirNamedAccessChecker> = emptySet()
     open val qualifiedAccessCheckers: Set<CfirQualifiedAccessChecker> = emptySet()
+    open val superReceiverExpressionCheckers: Set<CfirSuperReceiverExpressionChecker> = emptySet()
     open val assignmentCheckers: Set<CfirAssignmentChecker> = emptySet()
     open val binaryOpCheckers: Set<CfirBinaryOpChecker> = emptySet()
     open val comparisonExpressionCheckers: Set<CfirComparisonExpressionChecker> = emptySet()
@@ -39,6 +40,7 @@ abstract class ExpressionCheckers {
     @CheckersComponentInternal internal val allFunctionCallCheckers: Array<CfirFunctionCallChecker> by lazy { (functionCallCheckers + qualifiedAccessCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirFunctionCallChecker> }
     @CheckersComponentInternal internal val allNamedAccessCheckers: Array<CfirNamedAccessChecker> by lazy { (namedAccessCheckers + qualifiedAccessCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirNamedAccessChecker> }
     @CheckersComponentInternal internal val allQualifiedAccessCheckers: Array<CfirQualifiedAccessChecker> by lazy { (qualifiedAccessCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirQualifiedAccessChecker> }
+    @CheckersComponentInternal internal val allSuperReceiverExpressionCheckers: Array<CfirSuperReceiverExpressionChecker> by lazy { (superReceiverExpressionCheckers + qualifiedAccessCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirSuperReceiverExpressionChecker> }
     @CheckersComponentInternal internal val allAssignmentCheckers: Array<CfirAssignmentChecker> by lazy { (assignmentCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirAssignmentChecker> }
     @CheckersComponentInternal internal val allBinaryOpCheckers: Array<CfirBinaryOpChecker> by lazy { (binaryOpCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirBinaryOpChecker> }
     @CheckersComponentInternal internal val allComparisonExpressionCheckers: Array<CfirComparisonExpressionChecker> by lazy { (comparisonExpressionCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirComparisonExpressionChecker> }

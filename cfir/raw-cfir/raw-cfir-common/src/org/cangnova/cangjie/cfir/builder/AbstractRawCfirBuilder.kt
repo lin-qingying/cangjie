@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef as buildImplicitTypeRefNode
 import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
@@ -51,12 +52,8 @@ abstract class AbstractRawCfirBuilder<T : Any>(
 
     protected fun <R> withLocalContext(block: () -> R): R = context.withLocalContext(block)
 
-    protected fun <R> withClassName(name: Name, block: () -> R): R = context.withClassName(name, block)
-
     protected val inLocalContext: Boolean
         get() = context.inLocalContext
-
-    protected val currentClassId get() = context.currentClassId
 
     protected fun pushContainerSymbol(symbol: CfirSymbol<*>) = context.pushContainerSymbol(symbol)
 
@@ -86,6 +83,25 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         } else {
             CallableId(packageFqName, name)
         }
+    }
+
+    /**
+     * 仓颉只有顶层 class-like 声明具备稳定的 `ClassId`。
+     * 一旦位于局部作用域或另一个 class-like 容器内，就不应再构造 `ClassId`。
+     */
+    protected fun canDeclareTopLevelClassLike(): Boolean {
+        return !context.inLocalContext && containerSymbolIfAny !is CfirClassLikeSymbol<*>
+    }
+
+    /**
+     * 为顶层 class-like 声明创建 `ClassId`。
+     * 调用方必须先通过 [canDeclareTopLevelClassLike] 校验语境。
+     */
+    protected fun topLevelClassId(name: Name): ClassId {
+        check(canDeclareTopLevelClassLike()) {
+            "Only top-level class-like declarations may have a ClassId in Cangjie: $name"
+        }
+        return ClassId(packageFqName, name)
     }
 
     protected fun currentDispatchReceiverType(): ConeSimpleCangJieType? {

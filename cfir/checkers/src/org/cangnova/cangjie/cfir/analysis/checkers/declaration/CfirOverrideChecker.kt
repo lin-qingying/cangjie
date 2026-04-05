@@ -18,8 +18,13 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
 /**
  * Override checker aligned to Kotlin FIR order:
  * 1) check override target existence
- * 2) check visibility compatibility
- * 3) check return type compatibility
+ * 2) check override-target visibility
+ * 3) check visibility compatibility
+ * 4) check return type compatibility
+ *
+ * 中文说明：
+ * 这里处理的是“声明级继承规则”，因此应放在 declaration checker 层。
+ * 解析阶段只负责把可见性失败保留在引用/候选上，不在这里反向改写解析语义。
  */
 object CfirOverrideChecker : CfirClassLikeChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -39,7 +44,7 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
 
             if (overriddenCandidates.isEmpty()) {
                 reporter.reportOn(
-                source = callable.source,
+                    source = callable.source,
                     factory = CfirErrors.NOTHING_TO_OVERRIDE,
                 )
                 continue
@@ -47,10 +52,11 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
 
             val visibleOverriddenSymbols = overriddenCandidates.filter { it.isVisibleIn(declaration, context) }
             if (visibleOverriddenSymbols.isEmpty()) {
-                // Same as Kotlin FIR: invisible base members are treated as "nothing to override".
+                // 这里区分“没有候选”和“有候选但全部不可见”，避免把继承可见性语义退化成 NOTHING_TO_OVERRIDE。
                 reporter.reportOn(
                     source = callable.source,
-                    factory = CfirErrors.NOTHING_TO_OVERRIDE,
+                    factory = CfirErrors.CANNOT_OVERRIDE_INVISIBLE_MEMBER,
+                    a = overriddenCandidates.first().name,
                 )
                 continue
             }

@@ -1,0 +1,96 @@
+# analysis-api-platform-interface
+
+## org/cangnova/cangjie/analysis/api/platform/CaPlatformSettings.kt
+package org.cangnova.cangjie.analysis.api.platform
+public interface CaPlatformSettings
+CaPlatformSettings.public val allowUseSiteLibraryModuleAnalysis: Boolean
+CaPlatformSettings.public companion object
+CaPlatformSettings.Companion.public fun getInstance(project: Project): CaPlatformSettings
+## org/cangnova/cangjie/analysis/api/platform/compat/CaPlatformAliases.kt
+package org.cangnova.cangjie.analysis.api.platform.compat
+public typealias CaPlatformLifetimeTokenFactory
+public typealias CaPlatformPermissionChecker
+## org/cangnova/cangjie/analysis/api/platform/lifetime/CaLifetimeTokenFactory.kt
+package org.cangnova.cangjie.analysis.api.platform.lifetime
+public interface CaLifetimeTokenFactory
+CaLifetimeTokenFactory.public fun create(project: Project): CaLifetimeToken
+CaLifetimeTokenFactory.public companion object
+CaLifetimeTokenFactory.Companion.public fun getInstance(project: Project): CaLifetimeTokenFactory
+## org/cangnova/cangjie/analysis/api/platform/lifetime/CaLifetimeTracker.kt
+package org.cangnova.cangjie.analysis.api.platform.lifetime
+public interface CaLifetimeTracker
+CaLifetimeTracker.public val currentToken: CaLifetimeToken?
+CaLifetimeTracker.public companion object
+CaLifetimeTracker.Companion.public fun getInstance(project: Project): CaLifetimeTracker
+## org/cangnova/cangjie/analysis/api/platform/modification/CaModificationTracker.kt
+package org.cangnova.cangjie.analysis.api.platform.modification
+public interface CaModificationTracker
+CaModificationTracker.public val modificationCount: Long
+CaModificationTracker.public fun getModuleModificationCount(module: CaModule): Long
+CaModificationTracker.public companion object
+CaModificationTracker.Companion.public fun getInstance(project: Project): CaModificationTracker?
+## org/cangnova/cangjie/analysis/api/platform/modification/CaSessionInvalidationService.kt
+package org.cangnova.cangjie.analysis.api.platform.modification
+public interface CaSessionInvalidationService
+CaSessionInvalidationService.public fun invalidate(modules: Set<CaModule>)
+CaSessionInvalidationService.public companion object
+CaSessionInvalidationService.Companion.public fun getInstance(project: Project): CaSessionInvalidationService?
+## org/cangnova/cangjie/analysis/api/platform/permissions/CaAnalysisPermissionChecker.kt
+package org.cangnova.cangjie.analysis.api.platform.permissions
+public interface CaAnalysisPermissionChecker
+CaAnalysisPermissionChecker.public fun isAnalysisAllowed(): Boolean
+CaAnalysisPermissionChecker.public fun getRejectionReason(): String
+CaAnalysisPermissionChecker.public companion object
+CaAnalysisPermissionChecker.Companion.public fun getInstance(project: Project): CaAnalysisPermissionChecker
+## org/cangnova/cangjie/analysis/api/platform/permissions/CaAnalysisPermissionOptions.kt
+package org.cangnova.cangjie.analysis.api.platform.permissions
+public interface CaAnalysisPermissionOptions
+CaAnalysisPermissionOptions.public val defaultIsAnalysisAllowedOnEdt: Boolean
+CaAnalysisPermissionOptions.public val defaultIsAnalysisAllowedInWriteAction: Boolean
+CaAnalysisPermissionOptions.public companion object
+CaAnalysisPermissionOptions.Companion.public fun getInstance(): CaAnalysisPermissionOptions
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaContentScopeRefiner.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public interface CaContentScopeRefiner
+CaContentScopeRefiner.public fun getRefinedContentScope(module: CaModule, baseContentScope: GlobalSearchScope): GlobalSearchScope
+CaContentScopeRefiner.public companion object
+CaContentScopeRefiner.Companion.public fun getInstance(project: Project): CaContentScopeRefiner?
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaModuleProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public interface CaModuleProvider
+CaModuleProvider.public val snapshot: CaProjectStructureSnapshot
+CaModuleProvider.public val allModules: List<CaModule>
+CaModuleProvider.public val resolvableModules: List<CaModule>
+CaModuleProvider.public val sourceLikeModules: List<CaModule>
+CaModuleProvider.public fun getModuleByStableName(stableModuleName: String): CaModule?
+CaModuleProvider.public fun getModuleByDescription(moduleDescription: String): CaModule?
+CaModuleProvider.public companion object
+CaModuleProvider.Companion.public fun getInstance(project: Project): CaModuleProvider
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaProjectStructureProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public data class CaProjectStructureSnapshot( val allModules: List<CaModule>, val allResolvableModules: List<CaModule>, val allSourceLikeModules: List<CaModule>, val allSourceFiles: List<PsiFileSystemItem>, )
+CaProjectStructureSnapshot.public fun getModuleByStableName(stableModuleName: String): CaModule?
+CaProjectStructureSnapshot.public fun requireModuleByStableName(stableModuleName: String): CaModule
+CaProjectStructureSnapshot.public fun getModuleByDescription(moduleDescription: String): CaModule?
+public interface CaProjectStructureProvider
+CaProjectStructureProvider.public fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule
+CaProjectStructureProvider.public fun getModule(item: PsiFileSystemItem, useSiteModule: CaModule? = null): CaModule
+CaProjectStructureProvider.public val snapshot: CaProjectStructureSnapshot
+CaProjectStructureProvider.public val allModules: List<CaModule>
+CaProjectStructureProvider.public val allResolvableModules: List<CaModule>
+CaProjectStructureProvider.public val allSourceLikeModules: List<CaModule>
+CaProjectStructureProvider.public val allSourceFiles: List<PsiFileSystemItem>
+CaProjectStructureProvider.public companion object
+CaProjectStructureProvider.Companion.public fun getInstance(project: Project): CaProjectStructureProvider
+CaProjectStructureProvider.Companion.public fun getModule(project: Project, element: PsiElement, useSiteModule: CaModule? = null): CaModule
+## org/cangnova/cangjie/analysis/api/platform/restrictedAnalysis/CaRestrictedAnalysisException.kt
+package org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis
+public abstract class CaRestrictedAnalysisException(cause: Throwable) : RuntimeException(cause)
+## org/cangnova/cangjie/analysis/api/platform/restrictedAnalysis/CaRestrictedAnalysisService.kt
+package org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis
+public interface CaRestrictedAnalysisService
+CaRestrictedAnalysisService.public val isAnalysisRestricted: Boolean
+CaRestrictedAnalysisService.public val isRestrictedAnalysisAllowed: Boolean
+CaRestrictedAnalysisService.public fun rejectRestrictedAnalysis(): Nothing
+CaRestrictedAnalysisService.public companion object
+CaRestrictedAnalysisService.Companion.public fun getInstance(project: Project): CaRestrictedAnalysisService?

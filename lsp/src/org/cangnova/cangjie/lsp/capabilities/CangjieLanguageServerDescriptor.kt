@@ -5,7 +5,10 @@ import org.eclipse.lsp4j.PositionEncodingKind
 import org.eclipse.lsp4j.TextDocumentSyncKind
 
 /**
- * LSP 服务器静态描述。
+ * 语言服务器的静态能力描述。
+ *
+ * 这个对象只描述协议层“可以声明什么”，不直接代表最终启用的能力；
+ * 最终可见能力还要再与 Analysis facade 的支持矩阵求交。
  */
 data class CangjieLanguageServerDescriptor(
     val name: String = "Cangjie Language Server",
@@ -26,6 +29,13 @@ data class CangjieLanguageServerDescriptor(
     ),
     val renamePrepareProvider: Boolean = true,
     val diagnosticIdentifier: String = "cangjie",
+    /**
+     * pull diagnostics 只有在客户端与服务端对刷新、缓存和结果增量语义完全对齐后才应启用。
+     *
+     * 当前默认关闭，服务端继续通过 `publishDiagnostics` 提供诊断，
+     * 避免在端到端验证尚未完成前过早声明 `diagnosticProvider`。
+     */
+    val pullDiagnosticsEnabled: Boolean = false,
     val semanticTokenTypes: List<String> = listOf(
         "namespace",
         "type",

@@ -104,6 +104,15 @@ object PositioningStrategies {
             return markElement(modifier)
         }
     }
+    val MUT_MODIFIER: PositioningStrategy<PsiElement> = object : PositioningStrategy<PsiElement>() {
+        override fun mark(element: PsiElement): List<TextRange> {
+            val modifierOwner = element as? CjModifierListOwner
+                ?: return ACTUAL_DECLARATION_NAME.mark(element)
+            val modifier = modifierOwner.modifierList?.getModifier(CjTokens.MUT_KEYWORD)
+                ?: return ACTUAL_DECLARATION_NAME.mark(element)
+            return markElement(modifier)
+        }
+    }
 
     val OPERATOR: PositioningStrategy<CjExpression> = object : PositioningStrategy<CjExpression>() {
         override fun mark(element: CjExpression) = when (element) {

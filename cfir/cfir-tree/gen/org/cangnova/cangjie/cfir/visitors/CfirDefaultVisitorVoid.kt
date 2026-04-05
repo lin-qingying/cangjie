@@ -127,12 +127,20 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitStatement(call)
     }
 
+    override fun visitSuperReference(superReference: CfirSuperReference) {
+        visitReference(superReference)
+    }
+
     override fun visitThisReference(thisReference: CfirThisReference) {
         visitReference(thisReference)
     }
 
     override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression) {
         visitQualifiedAccessExpression(namedAccessExpression)
+    }
+
+    override fun visitSuperReceiverExpression(superReceiverExpression: CfirSuperReceiverExpression) {
+        visitQualifiedAccessExpression(superReceiverExpression)
     }
 
     override fun visitAssignment(assignment: CfirAssignment) {

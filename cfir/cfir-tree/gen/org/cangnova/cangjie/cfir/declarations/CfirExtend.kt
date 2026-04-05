@@ -23,7 +23,6 @@ abstract class CfirExtend : CfirMemberDeclaration() {
     abstract override val annotations: List<CfirAnnotation>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
-    abstract override val isLocal: Boolean
     abstract override val symbol: CfirExtendSymbol
     abstract override val status: CfirDeclarationStatus
     abstract override val typeParameters: List<CfirTypeParameter>

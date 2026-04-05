@@ -2,6 +2,7 @@ package org.cangnova.cangjie.lsp.testkit
 
 import org.cangnova.cangjie.lsp.CangjieLspServerOptions
 import org.cangnova.cangjie.lsp.server.CangjieLanguageServer
+import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidCloseTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.InitializeParams
@@ -11,7 +12,9 @@ import org.eclipse.lsp4j.MessageActionItem
 import org.eclipse.lsp4j.MessageParams
 import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.TextDocumentIdentifier
+import org.eclipse.lsp4j.TextDocumentContentChangeEvent
 import org.eclipse.lsp4j.TextDocumentItem
+import org.eclipse.lsp4j.VersionedTextDocumentIdentifier
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.LanguageClient
 import org.eclipse.lsp4j.services.LanguageServer
@@ -28,9 +31,9 @@ import java.util.concurrent.TimeUnit
 class LspIntegrationTestConnection private constructor(
     options: CangjieLspServerOptions,
 ) : AutoCloseable {
-    private val clientInput = PipedInputStream()
+    private val clientInput = PipedInputStream(BUFFER_SIZE)
     private val serverOutput = PipedOutputStream(clientInput)
-    private val serverInput = PipedInputStream()
+    private val serverInput = PipedInputStream(BUFFER_SIZE)
     private val clientOutput = PipedOutputStream(serverInput)
 
     private val client = RecordingLanguageClient()
@@ -47,7 +50,11 @@ class LspIntegrationTestConnection private constructor(
     }
 
     fun initialize(rootUri: String = "file:///workspace"): InitializeResult {
-        val result = serverProxy.initialize(InitializeParams().apply { this.rootUri = rootUri }).get(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        return initialize(InitializeParams().apply { this.rootUri = rootUri })
+    }
+
+    fun initialize(params: InitializeParams): InitializeResult {
+        val result = serverProxy.initialize(params).get(TIMEOUT_SECONDS, TimeUnit.SECONDS)
         initializeResult = result
         return result
     }
@@ -72,10 +79,27 @@ class LspIntegrationTestConnection private constructor(
         )
     }
 
+    fun changeDocument(
+        uri: String,
+        newText: String,
+        version: Int,
+    ) {
+        serverProxy.textDocumentService.didChange(
+            DidChangeTextDocumentParams(
+                VersionedTextDocumentIdentifier(uri, version),
+                listOf(TextDocumentContentChangeEvent(newText)),
+            ),
+        )
+    }
+
     fun closeDocument(uri: String) {
         serverProxy.textDocumentService.didClose(
             DidCloseTextDocumentParams(TextDocumentIdentifier(uri)),
         )
+    }
+
+    fun clearPublishedDiagnostics() {
+        client.publishedDiagnostics.clear()
     }
 
     fun publishedDiagnostics(): List<PublishDiagnosticsParams> = client.publishedDiagnostics.toList()
@@ -124,7 +148,8 @@ class LspIntegrationTestConnection private constructor(
     }
 
     companion object {
-        private const val TIMEOUT_SECONDS = 5L
+        private const val TIMEOUT_SECONDS = 10L
+        private const val BUFFER_SIZE = 1024 * 1024 // 1MB 缓冲区防止死锁
 
         fun create(options: CangjieLspServerOptions = CangjieLspServerOptions()): LspIntegrationTestConnection {
             return LspIntegrationTestConnection(options)

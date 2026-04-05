@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.buildImplicitThisReference
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassStaticScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirCompositeTypeScope
@@ -270,22 +271,33 @@ private fun collectTypeScopes(
             val symbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return
             val declaration = symbol.cfir
 
-            val scope = when (declaration) {
-                is CfirClass -> session.cangjieScopeProvider.getUseSiteMemberScope(declaration, session, scopeSession)
-                is CfirExtend -> CfirClassUseSiteMemberScope(
+            val rawScope = when (declaration) {
+                is CfirClass -> CfirClassUseSiteMemberScope(
+                    session,
                     symbol,
                     session.symbolProvider,
                     session.extendProvider,
                     session.directSupertypeProviderOrNull,
+                    ownerType = type,
+                )
+                is CfirExtend -> CfirClassUseSiteMemberScope(
+                    session,
+                    symbol,
+                    session.symbolProvider,
+                    session.extendProvider,
+                    session.directSupertypeProviderOrNull,
+                    ownerType = type,
                 )
                 else -> CfirClassUseSiteMemberScope(
+                    session,
                     symbol,
                     session.symbolProvider,
                     session.extendProvider,
                     session.directSupertypeProviderOrNull,
+                    ownerType = type,
                 )
             }
-            destination += scope
+            destination += CfirClassSubstitutionScope(session, rawScope, type)
         }
     }
 }

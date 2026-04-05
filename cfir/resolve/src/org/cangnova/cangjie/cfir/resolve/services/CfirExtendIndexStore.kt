@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.services
 
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -17,6 +18,7 @@ import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.services.CfirExtendInheritedInterfaceSemantic
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
@@ -36,7 +38,9 @@ class CfirExtendIndexStore : CfirSessionComponent {
     private var modelsByPackage: Map<FqName, List<CfirExtendSemanticModel>> = emptyMap()
     private var modelsByOrigin: Map<CfirExtendSemanticOrigin, List<CfirExtendSemanticModel>> = emptyMap()
     private var modelByDeclaration: Map<CfirExtend, CfirExtendSemanticModel> = emptyMap()
+    private var containingExtendByCallableSymbol: Map<CfirCallableSymbol<*>, CfirExtend> = emptyMap()
     private var defaultIndependentMembersByInterface: Map<ClassId, List<Name>> = emptyMap()
+    private var interfaceClosureByClassId: Map<ClassId, Set<ClassId>> = emptyMap()
     private var targetClassOwnInterfacesByClassId: Map<ClassId, Set<ClassId>> = emptyMap()
 
     @Synchronized
@@ -56,7 +60,9 @@ class CfirExtendIndexStore : CfirSessionComponent {
         modelsByTargetClassId = next.filter { it.targetClassId != null }.groupBy { it.targetClassId!! }
         modelsByPackage = next.groupBy { it.packageFqName }
         modelsByOrigin = next.groupBy { it.origin }
+        containingExtendByCallableSymbol = buildContainingExtendIndex(next)
         defaultIndependentMembersByInterface = buildDefaultIndependentMembersMap(next, resolver)
+        interfaceClosureByClassId = buildInterfaceClosureMap(next, resolver)
         targetClassOwnInterfacesByClassId = buildTargetClassOwnInterfacesMap(next, resolver)
     }
 
@@ -70,18 +76,67 @@ class CfirExtendIndexStore : CfirSessionComponent {
 
     fun modelsByOrigin(origin: CfirExtendSemanticOrigin): List<CfirExtendSemanticModel> = modelsByOrigin[origin].orEmpty()
 
+    fun containingExtendOf(symbol: CfirCallableSymbol<*>): CfirExtend? = containingExtendByCallableSymbol[symbol]
+
     fun defaultIndependentMembersOfInterface(interfaceClassId: ClassId): List<Name> =
         defaultIndependentMembersByInterface[interfaceClassId].orEmpty()
 
     fun targetClassOwnInterfaceClassIds(targetClassId: ClassId): Set<ClassId> =
         targetClassOwnInterfacesByClassId[targetClassId].orEmpty()
 
+    /**
+     * 返回单条 extend 声明直接接口及其传递父接口组成的稳定闭包。
+     *
+     * orphan rule 必须与索引层缓存的闭包语义保持一致，不能在 checker 里重新递归 provider，
+     * 否则会出现 duplicate/orphan 两套规则对同一声明看到不同接口集合的问题。
+     */
+    fun inheritedInterfaceClosureClassIdsOf(declaration: Any): Set<ClassId> {
+        val model = modelForDeclaration(declaration) ?: return emptySet()
+        return buildLinkedSet {
+            for (interfaceClassId in model.inheritedInterfaceClassIds) {
+                addAll(interfaceClosureByClassId[interfaceClassId].orEmpty())
+            }
+        }
+    }
+
     fun otherPackageExtendedInterfaceClassIds(targetClassId: ClassId, currentPackage: FqName): Set<ClassId> {
         return modelsForClass(targetClassId)
             .asSequence()
             .filter { it.packageFqName != currentPackage }
-            .flatMap { it.inheritedInterfaceClassIds.asSequence() }
+            .flatMap { model ->
+                model.inheritedInterfaceClassIds.asSequence().flatMap { interfaceClassId ->
+                    interfaceClosureByClassId[interfaceClassId].orEmpty().asSequence()
+                }
+            }
             .toSet()
+    }
+
+    fun isFirstExtendForTarget(declaration: Any, targetClassId: ClassId): Boolean {
+        val myModel = modelByDeclaration[declaration] ?: return true
+        val allModels = modelsForClass(targetClassId)
+        return allModels.firstOrNull() === myModel
+    }
+
+    private inline fun buildLinkedSet(build: LinkedHashSet<ClassId>.() -> Unit): Set<ClassId> =
+        linkedSetOf<ClassId>().apply(build)
+
+    /**
+     * 建立 extend 成员到 owner extend 的稳定索引。
+     *
+     * substitution scope 必须通过 providers 直接拿到 owner extend，才能在 scope 层
+     * 完成声明复制与类型实参替换，不能退化成运行期遍历所有 extend 做反查。
+     */
+    private fun buildContainingExtendIndex(
+        models: List<CfirExtendSemanticModel>,
+    ): Map<CfirCallableSymbol<*>, CfirExtend> {
+        val result = linkedMapOf<CfirCallableSymbol<*>, CfirExtend>()
+        for (model in models) {
+            for (declaration in model.declaration.declarations) {
+                val callableDeclaration = declaration as? CfirCallableDeclaration ?: continue
+                result[callableDeclaration.symbol] = model.declaration
+            }
+        }
+        return result
     }
 
     private fun CfirExtend.toSemanticModel(
@@ -120,6 +175,29 @@ class CfirExtendIndexStore : CfirSessionComponent {
         { it.targetClassId?.asString() ?: "" },
         { it.inheritedInterfaceSemanticKeys.joinToString(separator = "|") },
     )
+
+    /**
+     * 构建接口闭包缓存。
+     *
+     * 键为接口 ClassId，值为“自身 + 所有父接口”的传递闭包。
+     * orphan rule 与 duplicate 检查都依赖这里的统一语义，不能退化成仅看直接父接口。
+     */
+    private fun buildInterfaceClosureMap(
+        models: List<CfirExtendSemanticModel>,
+        resolver: CfirTypeResolver,
+    ): Map<ClassId, Set<ClassId>> {
+        val interfaceIds = models
+            .asSequence()
+            .flatMap { model -> model.inheritedInterfaceClassIds.asSequence() }
+            .toSortedSet(compareBy(ClassId::asString))
+        if (interfaceIds.isEmpty()) return emptyMap()
+
+        val memo = linkedMapOf<ClassId, Set<ClassId>>()
+        for (interfaceId in interfaceIds) {
+            collectInterfaceClosure(interfaceId, resolver, memo, linkedSetOf())
+        }
+        return memo
+    }
 
     private fun buildDefaultIndependentMembersMap(
         models: List<CfirExtendSemanticModel>,
@@ -179,22 +257,36 @@ class CfirExtendIndexStore : CfirSessionComponent {
         resolver: CfirTypeResolver,
     ): Set<ClassId> {
         val result = linkedSetOf<ClassId>()
-        val superTypeRefs = when (declaration) {
-            is CfirClass -> declaration.superTypeRefs
-            is CfirStruct -> declaration.superTypeRefs
-            is CfirEnum -> declaration.superTypeRefs
-            is CfirInterface -> declaration.superTypeRefs
-            else -> emptyList()
-        }
-        for (superTypeRef in superTypeRefs) {
+        val memo = linkedMapOf<ClassId, Set<ClassId>>()
+        for (superTypeRef in declaration.superTypeRefsOrEmpty()) {
             val classId = superTypeRef.toClassIdOrNull() ?: continue
-            val superDeclaration = resolver.resolveClass(classId) ?: continue
-            if (superDeclaration.classKindOrNull() == CfirClassKind.INTERFACE) {
-                result.add(classId)
-                // 递归收集父接口
-                result.addAll(collectOwnInterfaceClassIds(superDeclaration, resolver))
-            }
+            result.addAll(collectInterfaceClosure(classId, resolver, memo, linkedSetOf()))
         }
+        return result
+    }
+
+    private fun collectInterfaceClosure(
+        classId: ClassId,
+        resolver: CfirTypeResolver,
+        memo: MutableMap<ClassId, Set<ClassId>>,
+        visiting: MutableSet<ClassId>,
+    ): Set<ClassId> {
+        memo[classId]?.let { cached -> return cached }
+        if (!visiting.add(classId)) return emptySet()
+
+        val declaration = resolver.resolveClass(classId)
+        val result = linkedSetOf<ClassId>()
+        if (declaration?.classKindOrNull() == CfirClassKind.INTERFACE) {
+            result += classId
+        }
+
+        for (superTypeRef in declaration.superTypeRefsOrEmpty()) {
+            val superClassId = superTypeRef.toClassIdOrNull() ?: continue
+            result += collectInterfaceClosure(superClassId, resolver, memo, visiting)
+        }
+
+        visiting.remove(classId)
+        memo[classId] = result
         return result
     }
 
@@ -278,5 +370,13 @@ private fun CfirClassLikeDeclaration.typeParametersOrEmpty(): List<CfirTypeParam
     is CfirInterface -> typeParameters
     is CfirStruct -> typeParameters
     is CfirEnum -> typeParameters
+    else -> emptyList()
+}
+
+private fun CfirClassLikeDeclaration?.superTypeRefsOrEmpty(): List<CfirTypeRef> = when (this) {
+    is CfirClass -> superTypeRefs
+    is CfirInterface -> superTypeRefs
+    is CfirStruct -> superTypeRefs
+    is CfirEnum -> superTypeRefs
     else -> emptyList()
 }

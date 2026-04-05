@@ -1,12 +1,16 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.collectors.components
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.toCfirDiagnostics
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
@@ -15,8 +19,11 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
+import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
 import org.cangnova.cangjie.cfir.references.CfirErrorReference
+import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
@@ -148,6 +155,16 @@ class ErrorNodeDiagnosticCollectorComponent(
         processConeTypeDiagnostic(subscriptExpression, subscriptExpression.coneTypeOrNull, source, data)
     }
 
+    /**
+     * `super` 接收者表达式拥有独立的 CFIR 节点类型，因此其错误类型不会自然落入
+     * 普通 qualified access 的错误提取路径。这里显式补上该入口，保证 `super`
+     * 相关的语义错误能够进入统一的 ConeDiagnostic -> 前端诊断映射流程。
+     */
+    override fun visitSuperReceiverExpression(superReceiverExpression: CfirSuperReceiverExpression, data: CheckerContext) {
+        val source = superReceiverExpression.source as? CjSourceElement ?: return
+        processConeTypeDiagnostic(superReceiverExpression, superReceiverExpression.coneTypeOrNull, source, data)
+    }
+
 
 
     // ── 错误引用处理 ──────────────────────────────────────────────────────────
@@ -165,6 +182,19 @@ class ErrorNodeDiagnosticCollectorComponent(
             // Use the source of the enclosing FirQualifiedAccess if it is exactly the call to the erroneous callee.
             it.toReference(session) == reference
         }
+
+        if (((reference is CfirNamedReference && reference.name.asString() == "<super>") || reference is CfirSuperReference) &&
+            context.findClosestDeclaration<CfirExtend>() != null
+        ) {
+            with(context) {
+                reporter.reportOn(
+                    source = source ?: callOrAssignment?.source,
+                    factory = CfirErrors.EXTEND_SUPER_NOT_ALLOWED,
+                )
+            }
+            return
+        }
+
         // Don't report duplicated unresolved reference on annotation entry (already reported on its type)
 //        if (source?.elementType == CjNodeTypes.ANNOTATION_ENTRY && diagnostic is ConeUnresolvedNameError) return
         // Already reported in FirConventionFunctionCallChecker
@@ -172,6 +202,7 @@ class ErrorNodeDiagnosticCollectorComponent(
             diagnostic is ConeUnresolvedNameError
         ) return
 
+        // If the receiver cannot be resolved, we skip reporting any further problems for this call.
         // If the receiver cannot be resolved, we skip reporting any further problems for this call.
         if (callOrAssignment is CfirQualifiedAccessExpression) {
             if (callOrAssignment.dispatchReceiver.cannotBeResolved() ||
@@ -300,14 +331,23 @@ class ErrorNodeDiagnosticCollectorComponent(
     }
 
     /**
-     * 判断一个表达式是否因为 unresolved 系列错误而无法解析。
+     * 判断一个表达式是否因为错误而无法解析。
+     *
+     * 对齐 K2 FirErrorNodeDiagnosticCollectorComponent.cannotBeResolved()。
+     * 当接收者类型为 [ConeErrorType] 且诊断属于以下类别时返回 true：
+     * - unresolved 系列：名字/引用/符号无法解析
+     * - super 相关：super 不可用（如 extend 体内）
      * null 表达式（无接收者）视为"可以解析"，返回 false。
      */
     private fun CfirExpression?.cannotBeResolved(): Boolean {
-        val diagnostic = (this?.coneTypeOrNull as? ConeErrorType)?.diagnostic ?: return false
-        return diagnostic is ConeUnresolvedNameError     ||
-                diagnostic is ConeUnresolvedReferenceError ||
-                diagnostic is ConeUnresolvedSymbolError
+        return when (val diagnostic = (this?.coneTypeOrNull as? ConeErrorType)?.diagnostic) {
+            is ConeUnresolvedNameError,
+            is ConeUnresolvedReferenceError,
+            is ConeUnresolvedSymbolError -> true
+            is org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic ->
+                diagnostic.kind == org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind.SuperNotAllowed
+            else -> false
+        }
     }
 
     // ── 内部数据类 ────────────────────────────────────────────────────────────

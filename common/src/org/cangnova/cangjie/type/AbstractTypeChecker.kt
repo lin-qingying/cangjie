@@ -340,7 +340,7 @@ object AbstractTypeChecker {
                     TypeCheckerState.SupertypesPolicy.None
                 }
                 ctx.argumentsCount(current) == 0 -> RIGID_SUPERTYPES_POLICY
-                else -> RIGID_SUPERTYPES_POLICY
+                else -> ctx.substitutionSupertypePolicy(current)
             }
         }
         return result

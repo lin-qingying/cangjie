@@ -16,5 +16,5 @@ func name1(): Unit {
 func name(): Unit {
     let a = B()
 
-    <!UNRESOLVED_REFERENCE!>a[0]<!> = 1
+    a[0] <!UNRESOLVED_REFERENCE!>=<!> 1
 }

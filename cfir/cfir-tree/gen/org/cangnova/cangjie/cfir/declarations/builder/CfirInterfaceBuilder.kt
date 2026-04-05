@@ -28,14 +28,11 @@ class CfirInterfaceBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
-    var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
-    val declarations: MutableList<CfirDeclaration> = mutableListOf()
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var symbol: CfirInterfaceSymbol
     val superTypeRefs: MutableList<CfirTypeRef> = mutableListOf()
-    val properties: MutableList<CfirProperty> = mutableListOf()
-    val functions: MutableList<CfirFunction> = mutableListOf()
+    val declarations: MutableList<CfirDeclaration> = mutableListOf()
     lateinit var name: Name
 
     @OptIn(CfirImplementationDetail::class)
@@ -47,14 +44,11 @@ class CfirInterfaceBuilder {
             annotations.toMutableOrEmpty(),
             origin,
             attributes,
-            isLocal,
-            declarations,
             status,
             typeParameters,
             symbol,
             superTypeRefs,
-            properties,
-            functions,
+            declarations,
             name,
         )
     }
@@ -81,13 +75,10 @@ inline fun buildInterfaceCopy(original: CfirInterface, init: CfirInterfaceBuilde
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
-    copyBuilder.isLocal = original.isLocal
-    copyBuilder.declarations.addAll(original.declarations)
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)
-    copyBuilder.properties.addAll(original.properties)
-    copyBuilder.functions.addAll(original.functions)
+    copyBuilder.declarations.addAll(original.declarations)
     copyBuilder.name = original.name
     return copyBuilder.apply(init).build()
 }

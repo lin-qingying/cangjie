@@ -12,7 +12,7 @@ import org.cangnova.cangjie.lsp.CangjieLspEnvironment
 object ServiceLoadedLspTestEnvironment {
     fun create(
         mode: CangJieCoreEnvironmentMode = CangJieCoreEnvironmentMode.UnitTest,
-        pluginXmlPaths: List<String> = listOf(ANALYSIS_API_IMPL_BASE_PLUGIN_XML),
+        pluginXmlPaths: List<String> = emptyList(),
     ): CangjieLspEnvironment {
         val environment = CangjieLspEnvironment.create(mode)
         val application = environment.coreEnvironment.applicationEnvironment.application as? MockApplication
@@ -27,6 +27,4 @@ object ServiceLoadedLspTestEnvironment {
 
         return environment
     }
-
-    const val ANALYSIS_API_IMPL_BASE_PLUGIN_XML: String = "META-INF/analysis-api/cangjie-analysis-api-impl-base.xml"
 }

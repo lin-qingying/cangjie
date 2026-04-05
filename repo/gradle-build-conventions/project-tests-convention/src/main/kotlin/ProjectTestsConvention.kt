@@ -1,6 +1,8 @@
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
@@ -79,6 +81,8 @@ open class ProjectTestsExtension(
         mainClassName: String,
         generateTestsInBuildDirectory: Boolean = false,
         doNotSetFixturesSourceSetDependency: Boolean = false,
+        generatorClasspathSourceSetName: String? = null,
+        excludeGeneratorSourceSetOutput: Boolean = false,
         body: JavaExec.() -> Unit = {},
     ): TaskProvider<JavaExec> {
         val taskName = "generate" +
@@ -91,12 +95,48 @@ open class ProjectTestsExtension(
             description = "Generate tests using $mainClassName"
             mainClass.set(mainClassName)
 
+            /**
+             * 生成器任务的类路径需要与“生成器类真正声明在哪个 source set”保持一致。
+             *
+             * 默认策略仍然兼容旧模块：
+             * 1. 明确指定 `generatorClasspathSourceSetName` 时，严格使用该 source set；
+             * 2. 旧参数 `doNotSetFixturesSourceSetDependency` 为真时，退回 `test`；
+             * 3. 否则优先使用当前模块的 `testFixtures`，再退回 `test`。
+             *
+             * 这样可以支持 Kotlin analysis 那种“三层结构”：
+             * - testData 在 API 模块
+             * - 抽象用例在 impl-base 的 testFixtures
+             * - backend runner 在当前模块的 test source set
+             */
             val classpathSourceSet = when {
+                generatorClasspathSourceSetName != null -> sourceSets.getByName(generatorClasspathSourceSetName)
                 doNotSetFixturesSourceSetDependency -> sourceSets.getByName("test")
                 sourceSets.findByName("testFixtures") != null -> sourceSets.getByName("testFixtures")
                 else -> sourceSets.getByName("test")
             }
-            classpath = classpathSourceSet.runtimeClasspath
+            /**
+             * 某些 generated-tests 场景下，生成器类来自“外部依赖模块的 testFixtures”，
+             * 而当前模块只提供 tests-gen 输出目录。
+             *
+             * 这时若把当前 source set 的 output 放回 generator classpath，会形成：
+             * `compileTestKotlin -> generateTests -> test runtimeClasspath -> testClasses`
+             * 的环。这里提供显式开关，让生成器只依赖外部运行时依赖，而不依赖当前模块测试产物。
+             */
+            val generatorClasspath: FileCollection = if (excludeGeneratorSourceSetOutput) {
+                /**
+                 * 这里不能继续使用 `SourceSet.runtimeClasspath.minus(output)`。
+                 * 尽管文件集合被减掉了 output，本身仍会保留对当前 source set 输出任务的 build 依赖，
+                 * 进而形成 `compileTestKotlin -> generateTests -> testClasses` 的环。
+                 *
+                 * 因此这里显式退回到底层 runtimeClasspath configuration，只保留“依赖产物”本身。
+                 */
+                val dependencyRuntimeClasspath: Configuration =
+                    project.configurations.getByName(classpathSourceSet.runtimeClasspathConfigurationName)
+                dependencyRuntimeClasspath
+            } else {
+                classpathSourceSet.runtimeClasspath
+            }
+            classpath = generatorClasspath
 
             if (!generateTestsInBuildDirectory) {
                 args(project.rootDir.absolutePath)
@@ -143,4 +183,3 @@ private fun Test.addInnerClassPatternsForExplicitClassIncludes() {
         }
     }
 }
-

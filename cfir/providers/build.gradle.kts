@@ -10,7 +10,6 @@ dependencies {
     api(project(":cfir:cfir-cones"))
 //    api(project(":common:diagnostics"))
 //    api(project(":cfir:checkers"))
-    api(project(":cfir:symbols"))
     api(project(":common"))
     api(project(":util"))
 

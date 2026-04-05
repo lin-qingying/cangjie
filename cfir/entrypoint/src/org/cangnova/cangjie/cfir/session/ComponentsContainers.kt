@@ -21,12 +21,14 @@ import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
 import org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents
 import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.calls.visibility.CfirModuleVisibilityChecker
 import org.cangnova.cangjie.cfir.resolve.services.CfirImportBindingStore
 import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
 import org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendRuleQueryServiceImpl
+import org.cangnova.cangjie.cfir.resolve.services.CfirTypeAwareSupertypeProviderImpl
 import org.cangnova.cangjie.cfir.session.services.CfirExtendRuleQueryService
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.sourcesToPathsMapper
@@ -262,6 +264,7 @@ private fun CfirSession.registerCoreResolveServices(
     val superTypeGraphStore = CfirSuperTypeGraphStore()
     register(CfirSuperTypeGraphStore::class, superTypeGraphStore)
     register(CfirDirectSupertypeProvider::class, superTypeGraphStore)
+    register(CfirTypeAwareSupertypeProvider::class, CfirTypeAwareSupertypeProviderImpl(this))
     register(CfirModuleVisibilityChecker::class, CfirModuleVisibilityChecker.Standard(this))
 
     val extendIndexStore = CfirExtendIndexStore()

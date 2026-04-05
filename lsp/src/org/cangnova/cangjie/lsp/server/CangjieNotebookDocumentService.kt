@@ -5,16 +5,27 @@ import org.eclipse.lsp4j.DidCloseNotebookDocumentParams
 import org.eclipse.lsp4j.DidOpenNotebookDocumentParams
 import org.eclipse.lsp4j.DidSaveNotebookDocumentParams
 import org.eclipse.lsp4j.services.NotebookDocumentService
+import java.util.logging.Logger
 
 /**
  * Notebook 当前只提供框架占位。
  */
 class CangjieNotebookDocumentService : NotebookDocumentService {
-    override fun didOpen(params: DidOpenNotebookDocumentParams) {}
+    private val logger = Logger.getLogger(CangjieNotebookDocumentService::class.java.name)
 
-    override fun didChange(params: DidChangeNotebookDocumentParams) {}
+    override fun didOpen(params: DidOpenNotebookDocumentParams) {
+        logger.info("====> didOpen (notebook)")
+    }
 
-    override fun didSave(params: DidSaveNotebookDocumentParams) {}
+    override fun didChange(params: DidChangeNotebookDocumentParams) {
+        logger.info("====> didChange (notebook)")
+    }
 
-    override fun didClose(params: DidCloseNotebookDocumentParams) {}
+    override fun didSave(params: DidSaveNotebookDocumentParams) {
+        logger.info("====> didSave (notebook)")
+    }
+
+    override fun didClose(params: DidCloseNotebookDocumentParams) {
+        logger.info("====> didClose (notebook)")
+    }
 }

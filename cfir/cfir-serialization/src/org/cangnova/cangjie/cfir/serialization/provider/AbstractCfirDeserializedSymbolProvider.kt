@@ -68,11 +68,7 @@ abstract class AbstractCfirDeserializedSymbolProvider(
             return null
         }
 
-        val loaded = if (classId.isNestedClass) {
-            loadNestedClassSymbol(classId)
-        } else {
-            loadTopLevelClassSymbol(classId)
-        }
+        val loaded = loadTopLevelClassSymbol(classId)
 
         if (loaded == null) {
             missingClasses += classId
@@ -134,12 +130,7 @@ abstract class AbstractCfirDeserializedSymbolProvider(
         extendCache[packageFqName]?.let { return it }
 
         val deserializers = getOrCreateDeserializers(packageFqName.asString()) ?: return emptyList()
-        val declIndices = deserializers.header.topLevelNameToIndices.values
-            .asSequence()
-            .flatten()
-            .distinct()
-            .sorted()
-            .toList()
+        val declIndices = deserializers.header.topLevelExtendIndices
         val loaded = declIndices.mapNotNull { declIndex ->
             deserializers.declDeserializer.deserializeDecl(declIndex) as? CfirExtend
         }
@@ -173,9 +164,8 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     }
 
     private fun mayHaveClassifier(classId: ClassId): Boolean {
-        val topLevelClassId = classId.outermostClassId
-        val names = symbolNamesProvider.getTopLevelClassifierNamesInPackage(topLevelClassId.packageFqName)
-        return names == null || topLevelClassId.shortClassName in names
+        val names = symbolNamesProvider.getTopLevelClassifierNamesInPackage(classId.packageFqName)
+        return names == null || classId.shortClassName in names
     }
 
     private fun loadTopLevelClassSymbol(classId: ClassId): CfirClassLikeSymbol<*>? {
@@ -197,24 +187,6 @@ abstract class AbstractCfirDeserializedSymbolProvider(
         }
 
         return null
-    }
-
-    private fun loadNestedClassSymbol(classId: ClassId): CfirClassLikeSymbol<*>? {
-        val outerClassId = classId.outerClassId ?: return null
-        val outer = getClassLikeSymbolByClassId(outerClassId) ?: return null
-        val nestedName = classId.shortClassName
-        if (outer !is CfirClassLikeSymbol<*>) return null
-        return outer.cfir.declarations
-            .asSequence()
-            .mapNotNull { declaration ->
-                (declaration as? CfirClassLikeDeclaration)
-                    ?.takeIf { it.symbol is CfirClassLikeSymbol<*> }
-            }
-            .firstOrNull { declSymbolName(it) == nestedName.asString() }
-            ?.let { nested ->
-                registerEnumConstructorOwnersIfNeeded(classId, nested)
-                (nested.symbol as? CfirClassLikeSymbol<*>)?.also { classIdBySymbolCache.putIfAbsent(it, classId) }
-            }
     }
 
     private fun registerEnumConstructorOwnersIfNeeded(classId: ClassId, klass: CfirClassLikeDeclaration) {

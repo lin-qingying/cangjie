@@ -913,7 +913,7 @@ open class CangJieExpressionParsing(
      * Grammar:
      * ```
      * superExpression
-     *   : "super" ("<" type ">")? labelReference?
+     *   : "super"
      *   ;
      * ```
      */
@@ -924,20 +924,6 @@ open class CangJieExpressionParsing(
         val superReference = mark()
         advance()
         superReference.done(REFERENCE_EXPRESSION)
-        if (at(LT)) {
-            val supertype = mark()
-            builder.disableNewlines()
-            advance()
-            cangJieParsing.parseTypeRef()
-            if (at(GT)) {
-                advance()
-                supertype.drop()
-            } else {
-                supertype.rollbackTo()
-            }
-            builder.restoreNewlinesState()
-        }
-        parseLabelReferenceWithNoWhitespace()
         mark.done(SUPER_EXPRESSION)
     }
 

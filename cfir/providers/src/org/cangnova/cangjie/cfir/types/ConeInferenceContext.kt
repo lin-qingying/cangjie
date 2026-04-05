@@ -1,18 +1,22 @@
 package org.cangnova.cangjie.cfir.types
 
+import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
+import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
+import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.name.ClassId
@@ -110,9 +114,10 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
                     ?: return emptyList()
                 if (!symbol.isBound) return emptyList()
                 symbol.lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
-                session.directSupertypeProviderOrNull
-                    ?.getDirectSuperTypes(classId)
-                    ?.map { it.coneType }
+                declarationSelfType(symbol)
+                    ?.let { declarationSelfType ->
+                        session.typeAwareSupertypeProviderOrNull?.getDirectSupertypes(declarationSelfType)
+                    }
                     ?.takeIf { it.isNotEmpty() }
                     ?: symbol.cfir.superTypeRefs.mapNotNull { (it as? CfirResolvedTypeRef)?.coneType }
             }
@@ -123,8 +128,14 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
 
             // 结构类型/原始类型默认以 Any 为父类型
             is ConeAnyType -> emptyList()
-            is ConePrimitiveType -> if (kind == PrimitiveTypeKind.NOTHING) emptyList() else listOf(ConeAnyType)
-            else -> listOf(ConeAnyType)
+            is ConePrimitiveType -> if (kind == PrimitiveTypeKind.NOTHING) {
+                emptyList()
+            } else {
+                session.typeAwareSupertypeProviderOrNull
+                    ?.getDirectSupertypes(this)
+                    .orEmpty()
+            }
+            else -> listOf()
         }
     }
 
@@ -228,6 +239,59 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
 
 
     // =========================================================================
+    // 可访问性检查
+    // =========================================================================
+
+    /**
+     * 判断类型构造器对应的类型声明是否可访问。
+     * 对齐 C++ ImportManager::IsTyAccessible。
+     */
+    override fun TypeConstructorMarker.isTypeAccessible(): Boolean {
+        // 非名义类型（原始类型、函数类型、元组类型等）始终可访问
+        val lookupTag = this as? ConeClassLikeLookupTag ?: return true
+        val symbol = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(lookupTag.classId) }
+            .getOrNull() ?: return true
+        if (!symbol.isBound) return true
+        val declaration = symbol.cfir as? org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration ?: return true
+
+        // === 模块级检查 ===
+        val visibility = declaration.status.visibility
+        when {
+            visibility == Visibilities.Public || visibility == Visibilities.Protected -> { /* 继续文件级检查 */ }
+            visibility == Visibilities.Internal -> {
+                if (declaration.moduleData != session.moduleData) return false
+                // 同模块 internal → 继续文件级检查
+            }
+            else -> return false  // Private, Local 等
+        }
+
+        // === 文件级检查（对齐 C++ IsDeclAccessible）===
+        val file = CfirAccessibilityFileScope.get() ?: return true
+        val filePackage = file.packageDirective.packageFqName
+        val declPackage = lookupTag.classId.packageFqName
+
+        // 同包 → 可访问
+        if (filePackage == declPackage) return true
+
+        // 检查 import 可见性
+        val bindings = session.importBindingStoreOrNull?.getBindings(file) ?: return true
+        for (binding in bindings.imports) {
+            for (target in binding.targets) {
+                when (target) {
+                    is CfirResolvedImportTarget.ClassLike -> {
+                        if (target.classId == lookupTag.classId) return true
+                    }
+                    is CfirResolvedImportTarget.Package -> {
+                        if (target.fqName == declPackage) return true
+                    }
+                    else -> {}
+                }
+            }
+        }
+        return false
+    }
+
+    // =========================================================================
     // 简单类型谓词
     // =========================================================================
 
@@ -237,6 +301,26 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
 
     override fun CangJieTypeMarker.isFunctionType(): Boolean {
         return this is ConeFuncType
+    }
+
+    override fun CangJieTypeMarker.isTupleType(): Boolean {
+        return this is ConeTupleType
+    }
+
+    override fun CangJieTypeMarker.extractElementsForTupleType(): List<CangJieTypeMarker> {
+        require(this is ConeTupleType)
+        return elementTypes
+    }
+
+    override fun createFunctionType(parameterTypes: List<CangJieTypeMarker>, returnType: CangJieTypeMarker): CangJieTypeMarker {
+        return ConeFuncType(
+            parameterTypes = parameterTypes.map { it as ConeCangJieType },
+            returnType = returnType as ConeCangJieType,
+        )
+    }
+
+    override fun createTupleType(elementTypes: List<CangJieTypeMarker>): CangJieTypeMarker {
+        return ConeTupleType(elementTypes.map { it as ConeCangJieType })
     }
 
     override fun CangJieTypeMarker.isSpecial(): Boolean {
@@ -634,7 +718,21 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
     }
 
     override fun substitutionSupertypePolicy(type: RigidTypeMarker): TypeCheckerState.SupertypesPolicy {
-        return TypeCheckerState.SupertypesPolicy.Direct
+        require(type is ConeCangJieType)
+        val substitutor = createSubstitutorForSuperTypes(type) ?: return TypeCheckerState.SupertypesPolicy.Direct
+
+        return object : TypeCheckerState.SupertypesPolicy.DoCustomTransform() {
+            override fun transformType(
+                state: TypeCheckerState,
+                type: CangJieTypeMarker,
+            ): RigidTypeMarker {
+                val concreteSupertype = with(this@ConeInferenceContext) {
+                    substitutor.safeSubstitute(type) as ConeCangJieType
+                }
+                return concreteSupertype as? RigidTypeMarker
+                    ?: error("Concrete supertype should remain rigid: $concreteSupertype")
+            }
+        }
     }
 
     override fun RigidTypeMarker.typeDepth(): Int {

@@ -36,6 +36,7 @@ class CfirDeserializedSymbolProvider(
             pkg = pkg,
             header = header,
             moduleData = libraryModuleData,
+            cjoManager = cjoManager,
         )
         val typeDeserializer = CfirTypeDeserializer(context)
         val declDeserializer = CfirDeclDeserializer(context, typeDeserializer)

@@ -1,28 +1,30 @@
 package org.cangnova.cangjie.analysis.api.cfir.session
 
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacadeService
 import org.cangnova.cangjie.analysis.api.impl.base.sessions.CaBaseSessionProvider
+import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
 import org.cangnova.cangjie.psi.CjElement
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * CFIR 实现的会话提供器（对齐 Kotlin 的 KaFirSessionProvider）。
+ * CFIR Analysis API 会话提供器。
  *
- * 继承 [CaBaseSessionProvider]，负责创建、缓存和管理 [CaCfirSession]。
+ * 它位于 `analysis-api-cfir` 这一层，只负责：
+ * 1. 根据 use-site 元素或模块选择对应 Analysis API session。
+ * 2. 维护 Analysis API session 级缓存。
+ * 3. 把失效请求同步到底层 `CaCfirResolutionFacadeService`。
  *
- * 核心流程：
- * 1. getAnalysisSession(element) → 通过 [CaProjectStructureProvider] 解析模块 → 委托到模块重载
- * 2. getAnalysisSession(module) → 检查取消 → 从缓存获取或创建
- * 3. createAnalysisSession(module) → 获取 resolution facade → 创建 token → 构建 session
+ * 具体的 CFIR session 构建、Raw CFIR 生成与 resolve 流程全部留在 low-level 模块中。
  */
-class CaCfirSessionProvider(project: Project) : CaBaseSessionProvider(project) {
-
+class CaCfirSessionProvider(
+    project: Project,
+) : CaBaseSessionProvider(project), CaSessionInvalidationService {
     private val cache = ConcurrentHashMap<CaModule, CaCfirSession>()
 
     private val resolutionFacadeService by lazy(LazyThreadSafetyMode.PUBLICATION) {
@@ -34,7 +36,7 @@ class CaCfirSessionProvider(project: Project) : CaBaseSessionProvider(project) {
     }
 
     override fun getAnalysisSession(useSiteElement: CjElement): CaSession {
-        val module = projectStructureProvider.getModule(useSiteElement, useSiteModule = null)
+        val module = resolveUseSiteModule(useSiteElement)
         return getAnalysisSession(module)
     }
 
@@ -49,6 +51,52 @@ class CaCfirSessionProvider(project: Project) : CaBaseSessionProvider(project) {
         return session
     }
 
+    override fun invalidate(modules: Set<CaModule>) {
+        modules.forEach(cache::remove)
+        resolutionFacadeService.invalidate(modules)
+    }
+
+    /**
+     * CFIR 批量元素分析优先按 project-structure 恢复 use-site module，
+     * 再复用统一的模块批量入口。
+     *
+     * 这样模块选择、session cache 和 low-level facade 获取会沿同一条链工作，
+     * 不再先“元素 -> session”逐个解析，再在基类里反推 session 分组。
+     */
+    override fun <R> analyzeElements(
+        useSiteElements: Collection<CjElement>,
+        action: CaSession.(CjElement) -> R,
+    ): List<R> {
+        if (useSiteElements.isEmpty()) return emptyList()
+
+        val groupedElements = useSiteElements.withIndex().groupBy(
+            keySelector = { indexedElement ->
+                resolveUseSiteModule(indexedElement.value)
+            },
+            valueTransform = { indexedElement ->
+                indexedElement.index to indexedElement.value
+            },
+        )
+
+        val results = arrayOfNulls<Any?>(useSiteElements.size)
+        analyzeModules(groupedElements.keys) { useSiteModule ->
+            groupedElements.getValue(useSiteModule).forEach { (index, element) ->
+                results[index] = action(element)
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        return results.map { it as R }
+    }
+
+    override fun clearCaches() {
+        invalidate(cache.keys.toSet())
+    }
+
+    override fun dispose() {
+        clearCaches()
+    }
+
     private fun createAnalysisSession(useSiteModule: CaModule): CaCfirSession {
         val resolutionFacade = resolutionFacadeService.getResolutionFacade(useSiteModule)
         val token = tokenFactory.create(project)
@@ -61,39 +109,15 @@ class CaCfirSessionProvider(project: Project) : CaBaseSessionProvider(project) {
 
     private fun checkSessionValidity(session: CaCfirSession) {
         require(session.token.isValid()) {
-            "An analysis session acquired via `getAnalysisSession` must be valid."
+            "通过 `getAnalysisSession` 获取的 Analysis API session 必须保持有效。"
         }
     }
 
-    override fun beforeEnteringAnalysis(session: CaSession, useSiteElement: CjElement) {
-        super.beforeEnteringAnalysis(session, useSiteElement)
-    }
-
-    override fun beforeEnteringAnalysis(session: CaSession, useSiteModule: CaModule) {
-        super.beforeEnteringAnalysis(session, useSiteModule)
-    }
-
-    override fun afterLeavingAnalysis(session: CaSession, useSiteElement: CjElement) {
-        super.afterLeavingAnalysis(session, useSiteElement)
-    }
-
-    override fun afterLeavingAnalysis(session: CaSession, useSiteModule: CaModule) {
-        super.afterLeavingAnalysis(session, useSiteModule)
-    }
-
     /**
-     * 使指定模块的 session 缓存失效。
-     * 当模块发生变化（源码修改、依赖变化等）时调用。
+     * 元素到 use-site module 的恢复必须始终走平台 project-structure 服务，
+     * 保证 CFIR session provider 与平台模块图使用同一份结构事实。
      */
-    fun invalidate(modules: Set<CaModule>) {
-        modules.forEach { cache.remove(it) }
-    }
-
-    override fun clearCaches() {
-        cache.clear()
-    }
-
-    override fun dispose() {
-        clearCaches()
+    private fun resolveUseSiteModule(useSiteElement: CjElement): CaModule {
+        return projectStructureProvider.getModule(useSiteElement, useSiteModule = null)
     }
 }

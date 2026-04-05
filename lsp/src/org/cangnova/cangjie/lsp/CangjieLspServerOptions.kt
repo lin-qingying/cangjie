@@ -14,4 +14,12 @@ data class CangjieLspServerOptions(
     val environmentMode: CangJieCoreEnvironmentMode = CangJieCoreEnvironmentMode.Production,
     val environmentFactory: () -> CangjieLspEnvironment = { CangjieLspEnvironment.create(environmentMode) },
     val analysisFacadeFactory: (CangjieAnalysisLifecycleContext) -> CangjieAnalysisFacade = { AnalysisApiCangjieAnalysisFacade(it) },
+    /**
+     * 进程退出策略。
+     *
+     * 标准独立进程模式下应退出整个 JVM；
+     * 但在测试、嵌入式宿主或同进程桥接场景中，必须允许替换为受控策略，
+     * 否则一次 `exit` RPC 会连同宿主进程一起杀掉。
+     */
+    val exitHandler: (Int) -> Unit = { code -> System.exit(code) },
 )

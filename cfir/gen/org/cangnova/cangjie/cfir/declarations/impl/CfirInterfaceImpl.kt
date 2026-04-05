@@ -30,8 +30,6 @@ class CfirInterfaceImpl @CfirImplementationDetail constructor(
     override var typeParameters: List<CfirTypeParameter>,
     override val symbol: CfirInterfaceSymbol,
     override var superTypeRefs: List<CfirTypeRef>,
-    override var properties: List<CfirProperty>,
-    override var functions: List<CfirFunction>,
     override val name: Name,
 ) : CfirInterface() {
     override var controlFlowGraphReference: CfirControlFlowGraphReference? = null
@@ -42,8 +40,6 @@ class CfirInterfaceImpl @CfirImplementationDetail constructor(
         controlFlowGraphReference?.accept(visitor, data)
         typeParameters.forEach { it.accept(visitor, data) }
         superTypeRefs.forEach { it.accept(visitor, data) }
-        properties.forEach { it.accept(visitor, data) }
-        functions.forEach { it.accept(visitor, data) }
     }
 
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
@@ -91,26 +87,12 @@ class CfirInterfaceImpl @CfirImplementationDetail constructor(
         return this
     }
 
-    override fun <D> transformProperties(transformer: CfirTransformer<D>, data: D): CfirInterface
-     {
-        this.properties = properties.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirProperty }
-        return this
-    }
-
-    override fun <D> transformFunctions(transformer: CfirTransformer<D>, data: D): CfirInterface
-     {
-        this.functions = functions.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirFunction }
-        return this
-    }
-
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirInterfaceImpl {
         transformAnnotations(transformer, data)
         transformDeclarations(transformer, data)
         controlFlowGraphReference?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data)
         transformTypeParameters(transformer, data)
         transformSuperTypeRefs(transformer, data)
-        transformProperties(transformer, data)
-        transformFunctions(transformer, data)
         return this
     }
 }

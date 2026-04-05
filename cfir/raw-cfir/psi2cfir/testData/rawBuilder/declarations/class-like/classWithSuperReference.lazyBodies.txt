@@ -1,0 +1,9 @@
+FILE: classWithSuperReference.cj
+    internal? open class Base {
+        init()
+        internal? open func value(): R|Int64|
+    }
+    internal? class Box <: R|Base| {
+        init()
+        internal? override func value(): R|Int64|
+    }

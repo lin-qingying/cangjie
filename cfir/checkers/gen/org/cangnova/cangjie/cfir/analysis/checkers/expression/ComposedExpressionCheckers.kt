@@ -20,6 +20,8 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
         get() = _namedAccessCheckers
     override val qualifiedAccessCheckers: Set<CfirQualifiedAccessChecker>
         get() = _qualifiedAccessCheckers
+    override val superReceiverExpressionCheckers: Set<CfirSuperReceiverExpressionChecker>
+        get() = _superReceiverExpressionCheckers
     override val assignmentCheckers: Set<CfirAssignmentChecker>
         get() = _assignmentCheckers
     override val binaryOpCheckers: Set<CfirBinaryOpChecker>
@@ -52,6 +54,7 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
     private val _functionCallCheckers: MutableSet<CfirFunctionCallChecker> = mutableSetOf()
     private val _namedAccessCheckers: MutableSet<CfirNamedAccessChecker> = mutableSetOf()
     private val _qualifiedAccessCheckers: MutableSet<CfirQualifiedAccessChecker> = mutableSetOf()
+    private val _superReceiverExpressionCheckers: MutableSet<CfirSuperReceiverExpressionChecker> = mutableSetOf()
     private val _assignmentCheckers: MutableSet<CfirAssignmentChecker> = mutableSetOf()
     private val _binaryOpCheckers: MutableSet<CfirBinaryOpChecker> = mutableSetOf()
     private val _comparisonExpressionCheckers: MutableSet<CfirComparisonExpressionChecker> = mutableSetOf()
@@ -73,6 +76,7 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
         _functionCallCheckers.addAll(checkers.functionCallCheckers)
         _namedAccessCheckers.addAll(checkers.namedAccessCheckers)
         _qualifiedAccessCheckers.addAll(checkers.qualifiedAccessCheckers)
+        _superReceiverExpressionCheckers.addAll(checkers.superReceiverExpressionCheckers)
         _assignmentCheckers.addAll(checkers.assignmentCheckers)
         _binaryOpCheckers.addAll(checkers.binaryOpCheckers)
         _comparisonExpressionCheckers.addAll(checkers.comparisonExpressionCheckers)

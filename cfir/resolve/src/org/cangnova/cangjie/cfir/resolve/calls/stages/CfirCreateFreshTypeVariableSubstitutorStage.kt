@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
-import org.cangnova.cangjie.cfir.constraints.CfirTypeSubstitutorByMap
+import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner

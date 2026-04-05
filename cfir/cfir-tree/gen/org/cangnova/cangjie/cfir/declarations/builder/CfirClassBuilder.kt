@@ -28,7 +28,6 @@ class CfirClassBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
-    var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var symbol: CfirClassSymbol
@@ -45,7 +44,6 @@ class CfirClassBuilder {
             annotations.toMutableOrEmpty(),
             origin,
             attributes,
-            isLocal,
             status,
             typeParameters,
             symbol,
@@ -77,7 +75,6 @@ inline fun buildClassCopy(original: CfirClass, init: CfirClassBuilder.() -> Unit
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
-    copyBuilder.isLocal = original.isLocal
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)
