@@ -18,6 +18,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoConstructorError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingInvokeOperatorError
 import org.cangnova.cangjie.cfir.diagnostic.ConeResolutionToClassifierError
+import org.cangnova.cangjie.cfir.diagnostic.ConeVisibilityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
@@ -62,6 +63,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjFieldVariable
+import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjReturnExpression
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
@@ -83,6 +85,7 @@ import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjRealSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.source.text
 import org.cangnova.cangjie.source.toCjPsiSourceElement
 import org.cangnova.cangjie.type.model.TypeParameterMarker
@@ -98,6 +101,7 @@ fun ConeDiagnostic.toCfirDiagnostics(
         is ConeInapplicableCandidateError -> mapInapplicableCandidateError(session, source, callOrAssignmentSource)
         is ConeAmbiguityError -> mapConeAmbiguityError(source, callOrAssignmentSource, session)
         is ConeUnresolvedNameError -> mapConeUnresolvedNameError(source, callOrAssignmentSource, session)
+        is ConeVisibilityError -> listOfNotNull(mapConeVisibilityError(source, callOrAssignmentSource, session))
         else -> listOfNotNull(mapOtherDiagnostic(source, valueParameter, callOrAssignmentSource, session))
     }
 }
@@ -409,6 +413,10 @@ private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
     callOrAssignmentSource: CjSourceElement?,
     session: CfirSession,
 ): List<CjDiagnostic> {
+    mapExtendSuperDiagnostic(source, callOrAssignmentSource, session)?.let { diagnostic ->
+        return listOf(diagnostic)
+    }
+
     val diagnosticSource = callOrAssignmentSource ?: source ?: return emptyList()
     return listOfNotNull(
         CfirErrors.UNRESOLVED_REFERENCE.on(
@@ -419,6 +427,25 @@ private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
         ),
         buildInvalidBinaryOperatorDiagnostic(diagnosticSource, session),
     )
+}
+
+private fun ConeUnresolvedNameError.mapExtendSuperDiagnostic(
+    source: CjSourceElement?,
+    callOrAssignmentSource: CjSourceElement?,
+    session: CfirSession,
+): CjDiagnostic? {
+    val diagnosticSource = source ?: callOrAssignmentSource ?: return null
+    val psi = diagnosticSource.psi ?: return null
+    val unresolvedName = name.asString()
+    val sourceText = psi.text
+    if (unresolvedName != "super" && unresolvedName != "<super>" && !sourceText.contains("super")) {
+        return null
+    }
+    if (PsiTreeUtil.getParentOfType(psi, CjExtend::class.java, false) == null) {
+        return null
+    }
+
+    return CfirErrors.EXTEND_SUPER_NOT_ALLOWED.on(diagnosticSource, session)
 }
 
 private fun ConeUnresolvedNameError.buildInvalidBinaryOperatorDiagnostic(
@@ -438,6 +465,49 @@ private fun ConeUnresolvedNameError.buildInvalidBinaryOperatorDiagnostic(
         rightType.renderInvalidBinaryOperatorType(session),
         session,
     )
+}
+
+private fun ConeVisibilityError.mapConeVisibilityError(
+    source: CjSourceElement?,
+    callOrAssignmentSource: CjSourceElement?,
+    session: CfirSession,
+): CjDiagnostic? {
+    val diagnosticSource = source ?: callOrAssignmentSource ?: return null
+
+    // 可见性失败来自解析阶段候选筛选，这里只负责把已有 cone 诊断稳定映射到前端诊断。
+    val invisibleSymbol = symbol
+    val invisibleName = when (invisibleSymbol) {
+        is CfirCallableSymbol<*> -> invisibleSymbol.name.asString()
+        is CfirClassLikeSymbol<*> -> invisibleSymbol.classId.shortClassName.asString()
+        else -> invisibleSymbol.toString()
+    }
+    val visibilityText = when (invisibleSymbol) {
+        is CfirCallableSymbol<*> -> invisibleSymbol.cfir.status.visibility.externalDisplayName
+        is CfirClassLikeSymbol<*> -> invisibleSymbol.visibilityDisplayName()
+        else -> "invisible"
+    }
+    val isMemberAccess = when (invisibleSymbol) {
+        is CfirCallableSymbol<*> -> session.symbolProvider.getContainingClassId(invisibleSymbol) != null
+        else -> false
+    }
+
+    return if (isMemberAccess) {
+        CfirErrors.INVISIBLE_MEMBER.on(diagnosticSource, invisibleName, visibilityText, session)
+    } else {
+        CfirErrors.INVISIBLE_REFERENCE.on(diagnosticSource, invisibleName, visibilityText, session)
+    }
+}
+
+private fun CfirClassLikeSymbol<*>.visibilityDisplayName(): String {
+    val declaration = cfir
+    return when (declaration) {
+        is CfirClass -> declaration.status.visibility.externalDisplayName
+        is CfirInterface -> declaration.status.visibility.externalDisplayName
+        is CfirStruct -> declaration.status.visibility.externalDisplayName
+        is CfirEnum -> declaration.status.visibility.externalDisplayName
+        is CfirTypeAlias -> declaration.status.visibility.externalDisplayName
+        else -> "invisible"
+    }
 }
 
 private fun ConeDiagnostic.mapOtherDiagnostic(
@@ -473,6 +543,9 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
                 CfirErrors.SUPER_TYPES_SELF_REFERENCE.on(diagnosticSource, diagnosticSource.toApproxTypeName(), session)
 
             DiagnosticKind.DuplicateSupertype -> null
+
+            DiagnosticKind.SuperNotAllowed ->
+                CfirErrors.EXTEND_SUPER_NOT_ALLOWED.on(diagnosticSource, session)
 
             else -> null
         }

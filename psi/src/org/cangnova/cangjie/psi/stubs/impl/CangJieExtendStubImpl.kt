@@ -57,8 +57,6 @@ open class CangJieExtendStubImpl(
 
     override fun getName(): String? = StringRef.toString(name)
 
-    override fun isLocal(): Boolean = true
-
     override fun getSuperNames(): List<String> {
         val result = ArrayList<String>()
         for (ref in superNames) {

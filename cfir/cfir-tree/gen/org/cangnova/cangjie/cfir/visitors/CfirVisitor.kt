@@ -172,6 +172,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitAnnotationCall(annotationCall: CfirAnnotationCall, data: D): R =
         visitElement(annotationCall, data)
 
+    open fun visitSuperReference(superReference: CfirSuperReference, data: D): R =
+        visitElement(superReference, data)
+
     open fun visitThisReference(thisReference: CfirThisReference, data: D): R =
         visitElement(thisReference, data)
 
@@ -180,6 +183,9 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression, data: D): R =
         visitElement(qualifiedAccessExpression, data)
+
+    open fun visitSuperReceiverExpression(superReceiverExpression: CfirSuperReceiverExpression, data: D): R =
+        visitElement(superReceiverExpression, data)
 
     open fun visitErrorFunction(errorFunction: CfirErrorFunction, data: D): R =
         visitElement(errorFunction, data)

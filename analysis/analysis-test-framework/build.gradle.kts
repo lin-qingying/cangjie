@@ -13,6 +13,7 @@ dependencies {
     testFixturesApi(project(":analysis:analysis-api"))
     testFixturesApi(project(":analysis:analysis-api-impl-base"))
     testFixturesApi(project(":analysis:analysis-api-cfir"))
+    testFixturesApi(project(":analysis:analysis-api-standalone"))
     testFixturesApi(project(":psi"))
     testFixturesApi(project(":cfir:cfir-tree"))
 

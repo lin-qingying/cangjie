@@ -32,7 +32,7 @@ internal object AnalysisApiDiagnostics {
     }
 
     private fun CaDiagnosticWithPsi<*>.lspRanges(document: LspTextDocument) =
-        effectiveRanges().map { range -> document.rangeOf(range.startOffset, range.endOffset) }
+        effectiveRanges().map { range -> document.analysisRangeOf(range.startOffset, range.endOffset) }
 
     private fun CaDiagnosticWithPsi<*>.effectiveRanges(): List<TextRange> {
         val fromDiagnostic = textRanges.filterNot { it.isEmpty }

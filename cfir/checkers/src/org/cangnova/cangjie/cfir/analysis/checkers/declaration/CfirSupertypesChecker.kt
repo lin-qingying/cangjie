@@ -33,7 +33,10 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
         checkDuplicateSupertypes(declaration)
         when (declaration) {
             is CfirInterface -> checkInterfaceSupertypes(declaration)
-            is CfirClass, is CfirStruct, is CfirEnum -> checkMultipleConcreteSupertypes(declaration)
+            is CfirClass, is CfirStruct, is CfirEnum -> {
+                checkConcreteSupertypesOpenForInheritance(declaration)
+                checkMultipleConcreteSupertypes(declaration)
+            }
             else -> Unit
         }
     }
@@ -105,6 +108,26 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
             b = concreteSupers.map { it.name },
         )
     }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkConcreteSupertypesOpenForInheritance(declaration: CfirClassLikeDeclaration) {
+        val ownerKey = declaration.classLikeIdentityKey()
+
+        for (superTypeRef in declaration.superTypeRefs) {
+            val superDeclaration = superTypeRef.toResolvedSuperDeclaration(context) ?: continue
+            if (superDeclaration.classKindOrNull() == CfirClassKind.INTERFACE) continue
+            if (ownerKey != null && ownerKey == superDeclaration.classLikeIdentityKey()) continue
+            if (!superDeclaration.requiresOpenForInheritance()) continue
+
+            // 这是直接继承规则，属于 declaration checker 的职责；
+            // 这里不借用类型不匹配等兜底诊断，而是稳定产出专门的继承语义错误。
+            reporter.reportOn(
+                source = superTypeRef.source,
+                factory = CfirErrors.CLASS_NOT_OPEN_FOR_INHERITANCE,
+                a = superDeclaration.classLikeName(),
+            )
+        }
+    }
 }
 
 private data class ConcreteSupertype(
@@ -175,6 +198,15 @@ private fun CfirClassLikeDeclaration.classLikeIdentityKey(): String? = when (thi
     is CfirStruct -> "struct:${symbol.classId}"
     is CfirEnum -> "enum:${symbol.classId}"
     is CfirTypeAlias -> null
+}
+
+private fun CfirClassLikeDeclaration.requiresOpenForInheritance(): Boolean = when (this) {
+    is CfirPrimitiveTypeDeclaration -> true
+    is CfirStruct -> true
+    is CfirEnum -> true
+    is CfirClass -> !status.isOpen && !status.isAbstract && !status.isSealed
+    is CfirInterface -> false
+    is CfirTypeAlias -> false
 }
 
 private val org.cangnova.cangjie.cfir.types.PrimitiveTypeKind.classId: ClassId

@@ -1,7 +1,10 @@
 package org.cangnova.cangjie.analysis.test.framework.test.configurators
 
 /**
- * 测试配置器工厂基类（对齐 Kotlin 的 AnalysisApiTestConfiguratorFactory）。
+ * Analysis API 测试 configurator 工厂基础层。
+ *
+ * 该工厂负责把“前端、宿主模式、session 模式、模块种类”折叠成具体 configurator。
+ * 这与 Kotlin Analysis 测试框架保持同一职责边界：生成矩阵，不承载具体测试逻辑。
  */
 abstract class AnalysisApiTestConfiguratorFactory {
     abstract fun createConfigurator(data: AnalysisApiTestConfiguratorFactoryData): AnalysisApiTestConfigurator
@@ -26,7 +29,7 @@ data class AnalysisApiTestConfiguratorFactoryData(
     val analysisApiMode: AnalysisApiMode,
 )
 
-fun AnalysisApiTestConfiguratorFactoryData.defaultExtension(): String = when (this.moduleKind) {
+fun AnalysisApiTestConfiguratorFactoryData.defaultExtension(): String = when (moduleKind) {
     TestModuleKind.ScriptSource -> "cjs"
     else -> "cj"
 }
@@ -39,6 +42,7 @@ enum class AnalysisSessionMode(val suffix: String) {
 enum class AnalysisApiMode(val suffix: String) {
     Ide("Ide"),
     Standalone("Standalone"),
+    LspCompatible("LspCompatible"),
 }
 
 enum class FrontendKind(val suffix: String) {

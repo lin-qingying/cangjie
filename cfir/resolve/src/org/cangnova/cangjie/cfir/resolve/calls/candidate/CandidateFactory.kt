@@ -10,7 +10,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.builder.buildErrorNamedValue
 import org.cangnova.cangjie.cfir.declarations.builder.buildErrorFunction
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
-
 import org.cangnova.cangjie.cfir.resolve.calls.ConeAtomWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtomWithSingleChild

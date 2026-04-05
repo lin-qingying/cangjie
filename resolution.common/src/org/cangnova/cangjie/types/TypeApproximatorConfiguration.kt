@@ -29,11 +29,6 @@ abstract class TypeApproximatorConfiguration {
     open val approximateDefinitelyNotNullTypes: Boolean get() = false
     open val intersectionStrategy: IntersectionStrategy get() = IntersectionStrategy.TO_COMMON_SUPERTYPE
     open val approximateIntersectionTypesInContravariantPositions get() = false
-    open val approximateLocalTypes get() = false
-
-    open fun shouldApproximateLocalType(ctx: TypeSystemInferenceExtensionContext, type: CangJieTypeMarker): Boolean =
-        true
-
     open val convertToNonRawVersionAfterApproximationInK2 get() = false
 
     open val approximateAnonymous get() = false
@@ -51,7 +46,6 @@ abstract class TypeApproximatorConfiguration {
     }
 
     abstract class PublicDeclaration(
-        override val approximateLocalTypes: Boolean,
         override val approximateAnonymous: Boolean,
     ) : TypeApproximatorConfiguration() {
         override val approximateAllFlexible: Boolean get() = false
@@ -61,9 +55,8 @@ abstract class TypeApproximatorConfiguration {
 
         override fun shouldApproximateTypeVariableBasedType(marker: TypeVariableTypeConstructorMarker): Boolean = false
 
-        object SaveAnonymousTypes : PublicDeclaration(approximateLocalTypes = false, approximateAnonymous = false)
-        object ApproximateAnonymousTypes : PublicDeclaration(approximateLocalTypes = false, approximateAnonymous = true)
-        object ApproximateLocalAndAnonymousTypes : PublicDeclaration(approximateLocalTypes = true, approximateAnonymous = true)
+        object SaveAnonymousTypes : PublicDeclaration(approximateAnonymous = false)
+        object ApproximateAnonymousTypes : PublicDeclaration(approximateAnonymous = true)
     }
 
     /**

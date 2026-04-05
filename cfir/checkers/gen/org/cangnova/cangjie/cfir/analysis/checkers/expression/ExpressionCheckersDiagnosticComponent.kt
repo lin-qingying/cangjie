@@ -52,6 +52,10 @@ class ExpressionCheckersDiagnosticComponent(
         checkers.allQualifiedAccessCheckers.check(qualifiedAccessExpression, data)
     }
 
+    override fun visitSuperReceiverExpression(superReceiverExpression: CfirSuperReceiverExpression, data: CheckerContext) {
+        checkers.allSuperReceiverExpressionCheckers.check(superReceiverExpression, data)
+    }
+
     override fun visitAssignment(assignment: CfirAssignment, data: CheckerContext) {
         checkers.allAssignmentCheckers.check(assignment, data)
     }

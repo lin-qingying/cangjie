@@ -61,7 +61,7 @@ class CjTypeAliasElementType(debugName: String) :
     override fun createStub(psi: CjTypeAlias, parentStub: StubElement<*>): CangJieTypeAliasStub {
         val name = StringRef.fromString(psi.name)
         val fqName = StringRef.fromString(psi.safeFqNameForLazyResolve()?.asString())
-        val classId = StubUtils.createNestedClassId(parentStub, psi)
+        val classId = StubUtils.createClassId(parentStub, psi)
 
         return CangJieTypeAliasStubImpl(parentStub, name, fqName, classId)
     }

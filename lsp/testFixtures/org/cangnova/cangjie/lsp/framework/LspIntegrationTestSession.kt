@@ -21,12 +21,24 @@ class LspIntegrationTestSession(
         connection.openDocument(uri, text, version, languageId)
     }
 
+    fun changeDocument(
+        uri: String,
+        newText: String,
+        version: Int,
+    ) {
+        connection.changeDocument(uri, newText, version)
+    }
+
     fun closeDocument(uri: String) {
         connection.closeDocument(uri)
     }
 
     fun awaitDiagnosticsCount(expectedCount: Int) {
         connection.awaitDiagnosticsCount(expectedCount)
+    }
+
+    fun clearPublishedDiagnostics() {
+        connection.clearPublishedDiagnostics()
     }
 
     fun publishedDiagnostics(): List<PublishDiagnosticsParams> = connection.publishedDiagnostics()

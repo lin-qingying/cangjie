@@ -17,5 +17,6 @@ enum class DiagnosticKind {
     AmbiguousLabel,
     UnresolvedLabel,
     LabelNameClash,
+    SuperNotAllowed,
     Other,
 }

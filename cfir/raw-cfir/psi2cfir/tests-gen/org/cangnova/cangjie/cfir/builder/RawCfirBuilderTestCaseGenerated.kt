@@ -188,6 +188,11 @@ class RawCfirBuilderTestCaseGenerated : AbstractRawCfirBuilderTestCase() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/classWithModifiers.cj")
             }
 
+            @TestMetadata("classWithSuperReference.cj")
+            fun testClassWithSuperReference() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/classWithSuperReference.cj")
+            }
+
             @TestMetadata("classWithSupertype.cj")
             fun testClassWithSupertype() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/classWithSupertype.cj")

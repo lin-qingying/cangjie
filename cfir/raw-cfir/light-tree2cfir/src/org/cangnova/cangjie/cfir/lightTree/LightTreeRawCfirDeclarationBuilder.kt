@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 import org.cangnova.cangjie.source.toSourceLinesMapping
 import org.cangnova.cangjie.cfir.symbols.*
@@ -136,12 +137,17 @@ class LightTreeRawCfirDeclarationBuilder(
         val modifiers = LightTreeModifierList.from(tree, node)
         val superTypes = extractSuperTypeRefs(node)
 
+        if (!canDeclareTopLevelClassLike()) {
+            return buildInvalidClassLikeDeclaration(
+                source = node.toSource(),
+                kind = classKind.name.lowercase(),
+                name = name,
+            )
+        }
 
-        // 枚举：将 ENUM_CONSTRUCTOR 放在声明列表前面
-
-        return withClassName(name) {
-            when (classKind) {
-            CfirClassKind.CLASS -> buildSourceDeclaration(CfirClassSymbol(context.currentClassId!!)) { symbol ->
+        val classId = topLevelClassId(name)
+        return when (classKind) {
+            CfirClassKind.CLASS -> buildSourceDeclaration(CfirClassSymbol(classId)) { symbol ->
                 buildClass {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
@@ -158,7 +164,6 @@ class LightTreeRawCfirDeclarationBuilder(
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
                     attributes = declarationAttributes(node)
-                    isLocal = context.inLocalContext
                     status = modifiers.toDeclarationStatusForCurrentContext()
                     this.typeParameters.addAll(typeParams)
                     this.superTypeRefs.addAll(superTypes)
@@ -166,7 +171,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.name = name
                 }
             }
-            CfirClassKind.INTERFACE -> buildSourceDeclaration(CfirInterfaceSymbol(context.currentClassId!!)) { symbol ->
+            CfirClassKind.INTERFACE -> buildSourceDeclaration(CfirInterfaceSymbol(classId)) { symbol ->
                 buildInterface {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
@@ -177,7 +182,6 @@ class LightTreeRawCfirDeclarationBuilder(
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
                     attributes = declarationAttributes(node)
-                    isLocal = context.inLocalContext
                     status = modifiers.toDeclarationStatusForCurrentContext()
                     this.typeParameters.addAll(typeParams)
                     this.superTypeRefs.addAll(superTypes)
@@ -185,7 +189,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.name = name
                 }
             }
-            CfirClassKind.STRUCT -> buildSourceDeclaration(CfirStructSymbol(context.currentClassId!!)) { symbol ->
+            CfirClassKind.STRUCT -> buildSourceDeclaration(CfirStructSymbol(classId)) { symbol ->
                 buildStruct {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
@@ -202,7 +206,6 @@ class LightTreeRawCfirDeclarationBuilder(
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
                     attributes = declarationAttributes(node)
-                    isLocal = context.inLocalContext
                     status = modifiers.toDeclarationStatusForCurrentContext()
                     this.typeParameters.addAll(typeParams)
                     this.superTypeRefs.addAll(superTypes)
@@ -210,7 +213,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.name = name
                 }
             }
-            CfirClassKind.ENUM -> buildSourceDeclaration(CfirEnumSymbol(context.currentClassId!!)) { symbol ->
+            CfirClassKind.ENUM -> buildSourceDeclaration(CfirEnumSymbol(classId)) { symbol ->
                 buildEnum {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
@@ -233,7 +236,6 @@ class LightTreeRawCfirDeclarationBuilder(
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
                     attributes = declarationAttributes(node)
-                    isLocal = context.inLocalContext
                     status = modifiers.toDeclarationStatusForCurrentContext()
                     this.typeParameters.addAll(typeParams)
                     this.superTypeRefs.addAll(superTypes)
@@ -241,7 +243,6 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.name = name
                     this.isRefEnum = false
                 }
-            }
             }
         }
     }
@@ -303,7 +304,6 @@ class LightTreeRawCfirDeclarationBuilder(
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 attributes = declarationAttributes(node)
-                isLocal = context.inLocalContext
                 status = modifiers.toDeclarationStatusForCurrentContext()
                 this.typeParameters.addAll(typeParams)
                 this.extendedTypeRef = extendedType
@@ -538,27 +538,32 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== 类型别名 =====
 
-    private fun convertTypeAlias(node: LighterASTNode): CfirTypeAlias {
+    private fun convertTypeAlias(node: LighterASTNode): CfirDeclaration {
         val name = extractName(node)
         val modifiers = LightTreeModifierList.from(tree, node)
         val expandedType = extractReturnTypeRef(node)
 
-        return withClassName(name) {
-            buildSourceDeclaration(CfirTypeAliasSymbol(context.currentClassId!!)) { symbol ->
-                buildTypeAlias {
-                    resolvePhase = CfirResolvePhase.RAW_CFIR
-                    val typeParams = extractTypeParameters(node, symbol)
-                    source = node.toSource()
-                    this.symbol = symbol
-                    origin = CfirDeclarationOrigin.Source
-                    moduleData = baseModuleData
-                    attributes = CfirDeclarationAttributes.EMPTY
-                    isLocal = context.inLocalContext
-                    status = modifiers.toDeclarationStatusForCurrentContext()
-                    this.typeParameters.addAll(typeParams)
-                    this.name = name
-                    expandedTypeRef = expandedType
-                }
+        if (!canDeclareTopLevelClassLike()) {
+            return buildInvalidClassLikeDeclaration(
+                source = node.toSource(),
+                kind = "typealias",
+                name = name,
+            )
+        }
+
+        return buildSourceDeclaration(CfirTypeAliasSymbol(topLevelClassId(name))) { symbol ->
+            buildTypeAlias {
+                resolvePhase = CfirResolvePhase.RAW_CFIR
+                val typeParams = extractTypeParameters(node, symbol)
+                source = node.toSource()
+                this.symbol = symbol
+                origin = CfirDeclarationOrigin.Source
+                moduleData = baseModuleData
+                attributes = CfirDeclarationAttributes.EMPTY
+                status = modifiers.toDeclarationStatusForCurrentContext()
+                this.typeParameters.addAll(typeParams)
+                this.name = name
+                expandedTypeRef = expandedType
             }
         }
     }
@@ -955,6 +960,28 @@ class LightTreeRawCfirDeclarationBuilder(
             }
         }
         return declarations
+    }
+
+    /**
+     * LightTree 路径与 PSI 路径保持同一语言约束：
+     * 非顶层 class-like 不再继续构造 `ClassId`，而是直接转为 invalid declaration。
+     */
+    private fun buildInvalidClassLikeDeclaration(
+        source: org.cangnova.cangjie.source.AbstractCjSourceElement,
+        kind: String,
+        name: Name,
+    ): CfirDeclaration {
+        return buildSourceDeclaration(CfirInvalidDeclarationSymbol()) { symbol ->
+            buildInvalidDeclaration {
+                resolvePhase = CfirResolvePhase.RAW_CFIR
+                this.source = source as? CjSourceElement
+                this.symbol = symbol
+                origin = CfirDeclarationOrigin.Source
+                moduleData = baseModuleData
+                attributes = CfirDeclarationAttributes.EMPTY
+                reason = "Cangjie only supports top-level $kind declarations, but found illegal non-top-level declaration: $name"
+            }
+        }
     }
 
     /** 提取返回类型引用 */

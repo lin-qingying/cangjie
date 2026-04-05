@@ -58,6 +58,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirSpawnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirStringInterpolation
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
+import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSynchronizedExpression
 import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
@@ -140,6 +141,7 @@ fun main(args: Array<String>) {
                 alias<CfirFunctionCall>("FunctionCallChecker")
                 alias<CfirNamedAccessExpression>("NamedAccessChecker")
                 alias<CfirQualifiedAccessExpression>("QualifiedAccessChecker")
+                alias<CfirSuperReceiverExpression>("SuperReceiverExpressionChecker")
                 alias<CfirAssignment>("AssignmentChecker")
                 alias<CfirBinaryOp>("BinaryOpChecker")
                 alias<CfirComparisonExpression>("ComparisonExpressionChecker")

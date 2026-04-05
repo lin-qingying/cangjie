@@ -41,7 +41,7 @@ object CfirDiagnosticsDirectives : SimpleDirectivesContainer(){
 
 
     val SCOPE_DUMP by stringDirective(
-        description = "Dump scope information for specified class-like FQNs. Syntax: SCOPE_DUMP: pkg.ClassLike:foo;bar. Empty value means dump all class-like declarations in current test files.",
+        description = "Dump scope information for specified top-level class-like FQNs. Syntax: SCOPE_DUMP: pkg.ClassLike:foo;bar. Nested-class syntax is unsupported because Cangjie no longer models nested class declarations. Empty value means dump all class-like declarations in current test files.",
     )
 
     val IGNORE_LEAKED_INTERNAL_TYPES by stringDirective(

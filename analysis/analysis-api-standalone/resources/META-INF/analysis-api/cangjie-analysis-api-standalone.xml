@@ -1,0 +1,41 @@
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="/META-INF/analysis-api/cangjie-analysis-api-impl-base.xml"/>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <projectService
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandalonePlatformState"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneAnalysisPermissionChecker"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneRestrictedAnalysisService"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandalonePlatformSettings"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneProjectStructureProvider"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneModuleProvider"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneContentScopeRefiner"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneModificationTracker"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneSessionInvalidationService"
+    />
+  </extensions>
+</idea-plugin>

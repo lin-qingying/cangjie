@@ -25,7 +25,6 @@ abstract class CfirStruct : CfirClassLikeDeclaration(), CfirControlFlowGraphOwne
     abstract override val annotations: List<CfirAnnotation>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
-    abstract override val isLocal: Boolean
     abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
     abstract override val status: CfirDeclarationStatus
     abstract override val typeParameters: List<CfirTypeParameter>

@@ -62,4 +62,41 @@ class LspDocumentStoreTest {
             document.rangeOf(7, 10),
         )
     }
+
+    @Test
+    fun `applies incremental change using crlf positions`() {
+        val store = LspDocumentStore()
+        store.open(TextDocumentItem("file:///sample.cj", "cangjie", 1, "alpha\r\nbeta\r\ngamma"))
+
+        val updated = store.applyChanges(
+            DidChangeTextDocumentParams(
+                VersionedTextDocumentIdentifier("file:///sample.cj", 2),
+                listOf(
+                    TextDocumentContentChangeEvent(
+                        Range(Position(1, 1), Position(1, 3)),
+                        "ET",
+                    ),
+                ),
+            ),
+        )
+
+        assertEquals("alpha\r\nbETa\r\ngamma", updated.text)
+    }
+
+    @Test
+    fun `converts offsets back to lsp ranges with crlf text`() {
+        val document = LspTextDocument(
+            uri = "file:///sample.cj",
+            languageId = "cangjie",
+            version = 1,
+            text = "alpha\r\nbeta\r\ngamma",
+        )
+
+        assertEquals(Position(1, 0), document.positionAt(7))
+        assertEquals(
+            Range(Position(1, 1), Position(1, 3)),
+            document.rangeOf(8, 10),
+        )
+        assertEquals(8, document.offsetAt(Position(1, 1)))
+    }
 }

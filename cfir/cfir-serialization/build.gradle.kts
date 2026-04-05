@@ -8,7 +8,7 @@ dependencies {
     api(project(":cfir:cfir-common"))
     api(project(":cfir:cfir-cones"))
     api(project(":cfir:cfir-tree"))
-    api(project(":cfir:symbols"))
+    api(project(":cfir:providers"))
     implementation(project(":flatbuffers-gen"))
     implementation(project(":common"))
     implementation(project(":util"))

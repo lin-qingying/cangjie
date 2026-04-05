@@ -25,15 +25,12 @@ abstract class CfirInterface : CfirClassLikeDeclaration(), CfirControlFlowGraphO
     abstract override val annotations: List<CfirAnnotation>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
-    abstract override val isLocal: Boolean
-    abstract override val declarations: List<CfirDeclaration>
     abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
     abstract override val status: CfirDeclarationStatus
     abstract override val typeParameters: List<CfirTypeParameter>
     abstract override val symbol: CfirInterfaceSymbol
     abstract override val superTypeRefs: List<CfirTypeRef>
-    abstract val properties: List<CfirProperty>
-    abstract val functions: List<CfirFunction>
+    abstract override val declarations: List<CfirDeclaration>
     abstract override val name: Name
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
@@ -51,15 +48,11 @@ abstract class CfirInterface : CfirClassLikeDeclaration(), CfirControlFlowGraphO
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirInterface
 
-    abstract override fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirInterface
-
     abstract override fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirInterface
 
     abstract override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirInterface
 
     abstract override fun <D> transformSuperTypeRefs(transformer: CfirTransformer<D>, data: D): CfirInterface
 
-    abstract fun <D> transformProperties(transformer: CfirTransformer<D>, data: D): CfirInterface
-
-    abstract fun <D> transformFunctions(transformer: CfirTransformer<D>, data: D): CfirInterface
+    abstract override fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirInterface
 }

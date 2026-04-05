@@ -1,0 +1,52 @@
+# analysis-api-impl-base
+
+## org/cangnova/cangjie/analysis/api/impl/base/CaBaseSession.kt
+package org.cangnova.cangjie.analysis.api.impl.base
+public abstract class CaBaseSession( final override val token: CaLifetimeToken, resolver: CaResolver, symbolRelationProvider: CaSymbolRelationProvider, symbolProvider: CaSymbolProvider, symbolInformationProvider: CaSymbolInformationProvider, annotationProvider: CaAnnotationProvider, signatureProvider: CaSignatureProvider, diagnosticProvider: CaDiagnosticProvider, scopeProvider: CaScopeProvider, analysisScopeProvider: CaAnalysisScopeProvider, defaultImportProvider: CaDefaultImportProvider, completionCandidateChecker: CaCompletionCandidateChecker, expressionTypeProvider: CaExpressionTypeProvider, expressionInformationProvider: CaExpressionInformationProvider, evaluator: CaEvaluator, dataFlowProvider: CaDataFlowProvider, typeProvider: CaTypeProvider, typeInformationProvider: CaTypeInformationProvider, typeRelationChecker: CaTypeRelationChecker, typeCreator: CaTypeCreator, substitutorProvider: CaSubstitutorProvider, signatureSubstitutor: CaSignatureSubstitutor, referenceShortener: CaReferenceShortener, importOptimizer: CaImportOptimizer, renderer: CaRenderer, visibilityChecker: CaVisibilityChecker, originalPsiProvider: CaOriginalPsiProvider, sourceProvider: CaSourceProvider, cInteropComponent: CaCInteropComponent, docProvider: CaDocProvider, ) : CaSession, CaResolver
+## org/cangnova/cangjie/analysis/api/impl/base/projectStructure/AnalysisApiServiceRegistrar.kt
+package org.cangnova.cangjie.analysis.api.impl.base.projectStructure
+public interface AnalysisApiServiceRegistrar<in DATA>
+AnalysisApiServiceRegistrar.public fun registerApplicationServices(application: MockApplication, data: DATA)
+AnalysisApiServiceRegistrar.public fun registerProjectExtensionPoints(project: MockProject, data: DATA)
+AnalysisApiServiceRegistrar.public fun registerProjectServices(project: MockProject, data: DATA)
+AnalysisApiServiceRegistrar.public fun registerProjectModelServices(project: MockProject, disposable: Disposable, data: DATA)
+public abstract class AnalysisApiSimpleServiceRegistrar : AnalysisApiServiceRegistrar<Any>
+AnalysisApiSimpleServiceRegistrar.public open fun registerApplicationServices(application: MockApplication)
+AnalysisApiSimpleServiceRegistrar.public open fun registerProjectExtensionPoints(project: MockProject)
+AnalysisApiSimpleServiceRegistrar.public open fun registerProjectServices(project: MockProject)
+AnalysisApiSimpleServiceRegistrar.public open fun registerProjectModelServices(project: MockProject, disposable: Disposable)
+AnalysisApiSimpleServiceRegistrar.public final override fun registerApplicationServices(application: MockApplication, data: Any)
+AnalysisApiSimpleServiceRegistrar.public final override fun registerProjectExtensionPoints(project: MockProject, data: Any)
+AnalysisApiSimpleServiceRegistrar.public final override fun registerProjectServices(project: MockProject, data: Any)
+AnalysisApiSimpleServiceRegistrar.public final override fun registerProjectModelServices(project: MockProject, disposable: Disposable, data: Any)
+## org/cangnova/cangjie/analysis/api/impl/base/projectStructure/CaIdeProjectStructure.kt
+package org.cangnova.cangjie.analysis.api.impl.base.projectStructure
+public class CaIdeProjectStructureProvider( project: Project, ) : CaProjectStructureProvider
+CaIdeProjectStructureProvider.public override val snapshot: CaProjectStructureSnapshot
+CaIdeProjectStructureProvider.public override fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule
+public class CaIdeModuleProvider( project: Project, ) : CaModuleProvider
+CaIdeModuleProvider.public override val snapshot: CaProjectStructureSnapshot
+CaIdeModuleProvider.public override fun getModuleByStableName(stableModuleName: String): CaModule?
+public class CaIdeContentScopeRefiner( project: Project, ) : CaContentScopeRefiner
+CaIdeContentScopeRefiner.public override fun getRefinedContentScope(module: CaModule, baseContentScope: GlobalSearchScope): GlobalSearchScope
+public class CaIdeModificationTracker( project: Project, ) : CaModificationTracker
+CaIdeModificationTracker.public override val modificationCount: Long
+CaIdeModificationTracker.public override fun getModuleModificationCount(module: CaModule): Long
+public class CaIdeSessionInvalidationService( project: Project, ) : CaSessionInvalidationService
+CaIdeSessionInvalidationService.public override fun invalidate(modules: Set<CaModule>)
+## org/cangnova/cangjie/analysis/api/impl/base/projectStructure/PluginStructureProvider.kt
+package org.cangnova.cangjie.analysis.api.impl.base.projectStructure
+public object PluginStructureProvider
+PluginStructureProvider.public fun registerApplicationServices(application: MockApplication, pluginRelativePath: String)
+PluginStructureProvider.public fun registerProjectServices(project: MockProject, pluginRelativePath: String)
+## org/cangnova/cangjie/analysis/api/impl/base/sessions/CaBaseSessionProvider.kt
+package org.cangnova.cangjie.analysis.api.impl.base.sessions
+public abstract class CaBaseSessionProvider(project: Project) : CaSessionProvider(project)
+CaBaseSessionProvider.public override fun beforeEnteringAnalysis(session: CaSession, useSiteElement: CjElement)
+CaBaseSessionProvider.public override fun beforeEnteringAnalysis(session: CaSession, useSiteModule: CaModule)
+CaBaseSessionProvider.public override fun <R> analyzeElements( useSiteElements: Collection<CjElement>, action: CaSession.(CjElement) -> R, ): List<R>
+CaBaseSessionProvider.public override fun <R> analyzeModules( useSiteModules: Collection<CaModule>, action: CaSession.(CaModule) -> R, ): List<R>
+CaBaseSessionProvider.public override fun handleAnalysisException(throwable: Throwable, session: CaSession, useSiteElement: CjElement): Nothing
+CaBaseSessionProvider.public override fun handleAnalysisException(throwable: Throwable, session: CaSession, useSiteModule: CaModule): Nothing
+CaBaseSessionProvider.public override fun afterLeavingAnalysis(session: CaSession, useSiteElement: CjElement)
+CaBaseSessionProvider.public override fun afterLeavingAnalysis(session: CaSession, useSiteModule: CaModule)

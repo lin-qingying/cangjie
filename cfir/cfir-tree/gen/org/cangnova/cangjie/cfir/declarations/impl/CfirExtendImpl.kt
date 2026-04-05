@@ -28,7 +28,6 @@ class CfirExtendImpl @CfirImplementationDetail constructor(
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
-    override val isLocal: Boolean,
     override val symbol: CfirExtendSymbol,
     override var status: CfirDeclarationStatus,
     override val typeParameters: MutableList<CfirTypeParameter>,

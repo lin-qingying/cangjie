@@ -41,7 +41,7 @@ fun Throwable.wrapIntoFileAnalysisExceptionIfNeeded(
     linesMapping: (Int) -> Pair<Int, Int>?,
 ) = when {
     filePath == null || fileSource == null -> when (this) {
-        is SourceCodeAnalysisException -> error("Sourceless FirFile contains a FirElement with a real source element")
+        is SourceCodeAnalysisException -> error("Sourceless CfirFile contains a CfirElement with a real source element")
         else -> this
     }
     this is SourceCodeAnalysisException -> when {

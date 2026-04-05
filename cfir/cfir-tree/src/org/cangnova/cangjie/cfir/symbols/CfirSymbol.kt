@@ -63,13 +63,11 @@ sealed class CfirClassifierSymbol<D : CfirDeclaration> : CfirThisOwnerSymbol<D>(
 
 }
 /**
- * 持有 [ClassId] 的分类器符号抽象基类（class、interface、struct、enum、typealias 共用）。
+ * 持有 [ClassId] 的分类器符号抽象基类。
  *
- * 统一封装了 lookup tag 的创建逻辑：
- * - 局部声明（isLocal）：使用固定符号 tag，因为局部声明没有稳定的全局路径。
- * - 顶层/嵌套声明：直接由 ClassId 派生 tag，可在全局符号表中查找。
- *
- * 子类只需提供 [classId]，无需重复实现 [toLookupTag]。
+ * 仓颉只有顶层 class-like 声明拥有稳定的 [ClassId]。
+ * 因此这里不再区分 Kotlin 式的嵌套或局部 class-like 变体，
+ * lookup tag 统一直接由顶层 [ClassId] 派生。
  */
 sealed class CfirClassLikeSymbol<D : CfirClassLikeDeclaration>(
     classId: ClassId,
@@ -94,9 +92,10 @@ sealed class CfirClassLikeSymbol<D : CfirClassLikeDeclaration>(
 //) : CfirClassLikeSymbol<D>(classId)
 
 /**
- * class 符号，对应仓颉中引用语义的具名类型声明。
+ * class 符号，对应仓颉中的顶层引用语义类型声明。
  *
- * 可以包含构造器、方法、属性、字段变量、嵌套类型等任意成员。
+ * class 成员只包含构造器、函数、属性和字段变量，
+ * 不再承载任何嵌套 class-like 语义。
  */
 class CfirClassSymbol(
     override val classId: ClassId ,

@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.CompletionList
 import org.eclipse.lsp4j.CompletionParams
 import org.eclipse.lsp4j.DefinitionParams
+import org.eclipse.lsp4j.DeclarationParams
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DocumentFormattingParams
 import org.eclipse.lsp4j.DocumentHighlight
@@ -28,6 +29,8 @@ import org.eclipse.lsp4j.PrepareRenameResult
 import org.eclipse.lsp4j.Range
 import org.eclipse.lsp4j.ReferenceParams
 import org.eclipse.lsp4j.RenameParams
+import org.eclipse.lsp4j.SelectionRange
+import org.eclipse.lsp4j.SelectionRangeParams
 import org.eclipse.lsp4j.SemanticTokens
 import org.eclipse.lsp4j.SemanticTokensParams
 import org.eclipse.lsp4j.SemanticTokensRangeParams
@@ -35,7 +38,9 @@ import org.eclipse.lsp4j.SignatureHelp
 import org.eclipse.lsp4j.SignatureHelpParams
 import org.eclipse.lsp4j.SymbolInformation
 import org.eclipse.lsp4j.TextEdit
+import org.eclipse.lsp4j.TypeDefinitionParams
 import org.eclipse.lsp4j.WorkspaceEdit
+import org.eclipse.lsp4j.WorkspaceDocumentDiagnosticReport
 import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.WorkspaceSymbol
 import org.eclipse.lsp4j.WorkspaceSymbolParams
@@ -65,10 +70,28 @@ interface CangjieAnalysisFacade : AutoCloseable {
     ) {
     }
 
+    /**
+     * 工作区结构刷新后，允许分析后端重新绑定打开文档的快照模块。
+     *
+     * LSP 外层不再自己猜测哪些 snapshot 需要重建，而是把“结构已更新”这一事实显式通知给语义层。
+     */
+    fun didRefreshProjectStructure(context: CangjieAnalysisRequestContext) {}
+
     fun collectDiagnostics(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
     ): List<Diagnostic>
+
+    /**
+     * 统一收集工作区级诊断。
+     *
+     * 这里要求后端同时覆盖：
+     * 1. 打开文档对应的内存快照；
+     * 2. 工作区内未打开但仍可见的磁盘源码文件。
+     */
+    fun collectWorkspaceDiagnostics(
+        context: CangjieAnalysisRequestContext,
+    ): List<WorkspaceDocumentDiagnosticReport>
 
     fun completion(
         context: CangjieAnalysisRequestContext,
@@ -88,10 +111,28 @@ interface CangjieAnalysisFacade : AutoCloseable {
         params: SignatureHelpParams,
     ): SignatureHelp?
 
+    fun declaration(
+        context: CangjieAnalysisRequestContext,
+        document: LspTextDocument,
+        params: DeclarationParams,
+    ): Either<List<Location>, List<LocationLink>>
+
     fun definition(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: DefinitionParams,
+    ): Either<List<Location>, List<LocationLink>>
+
+    fun typeDefinition(
+        context: CangjieAnalysisRequestContext,
+        document: LspTextDocument,
+        params: TypeDefinitionParams,
+    ): Either<List<Location>, List<LocationLink>>
+
+    fun implementation(
+        context: CangjieAnalysisRequestContext,
+        document: LspTextDocument,
+        params: org.eclipse.lsp4j.ImplementationParams,
     ): Either<List<Location>, List<LocationLink>>
 
     fun references(
@@ -146,6 +187,12 @@ interface CangjieAnalysisFacade : AutoCloseable {
         document: LspTextDocument,
         params: FoldingRangeRequestParams,
     ): List<FoldingRange>
+
+    fun selectionRanges(
+        context: CangjieAnalysisRequestContext,
+        document: LspTextDocument,
+        params: SelectionRangeParams,
+    ): List<SelectionRange>
 
     fun semanticTokensFull(
         context: CangjieAnalysisRequestContext,

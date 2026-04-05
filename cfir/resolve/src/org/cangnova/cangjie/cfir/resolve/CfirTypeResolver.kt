@@ -4,6 +4,7 @@ import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
@@ -239,43 +240,71 @@ class CfirTypeResolverImpl(
         shortName: Name,
         configuration: TypeResolutionConfiguration,
     ): ClassId? {
-        val candidates = LinkedHashSet<ClassId>()
-
         for (scope in configuration.scopes) {
+            var resolvedFromScope: ClassId? = null
             scope.processClassifiersByName(shortName) { classifier ->
-                val classId = when (classifier) {
-                    is org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*> -> classifier.classId
-                    else -> null
+                when (classifier) {
+                    is org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*> ->
+                        resolvedFromScope = resolvedFromScope ?: classifier.classId
                 }
-                if (classId != null) {
-                    candidates += classId
-                }
+            }
+            if (resolvedFromScope != null) {
+                // scope 已经给出了真实符号，这里不能再退回 provider 重新按 ClassId 查询，
+                // 否则当前文件尚未入索引时，同文件声明仍会被默认导入覆盖。
+                return resolvedFromScope
             }
         }
 
         val file = configuration.useSiteFile
+        val packageCandidates = LinkedHashSet<ClassId>()
+        val explicitImportCandidates = LinkedHashSet<ClassId>()
         if (file != null) {
+            findSameFileTopLevelClassifier(file, shortName)?.let { declaration ->
+                return declaration.symbol.classId
+            }
+
+            // 与 file importing scopes 的顺序保持一致：
+            // 当前文件顶层声明优先于同包其他声明；同包声明优先于显式导入，显式导入优先于默认导入。
+            // 这样可以保证无包源码里的本地 `Box` / `Hashable` 不会被 `std.core.*` 中的同名声明抢先解析。
+            packageCandidates += ClassId(file.packageDirective.packageFqName, shortName)
+
             val simpleName = shortName.asString()
             for (importInfo in file.imports) {
                 val importedFqName = importInfo.importedFqName ?: continue
                 if (importInfo.isAllUnder) {
-                    candidates += ClassId(importedFqName, shortName)
+                    explicitImportCandidates += ClassId(importedFqName, shortName)
                     continue
                 }
                 val importedName = importInfo.aliasName?.asString() ?: importedFqName.shortName().asString()
                 if (importedName == simpleName) {
-                    candidates += ClassId.topLevel(importedFqName)
+                    explicitImportCandidates += ClassId.topLevel(importedFqName)
                 }
             }
-            candidates += ClassId(file.packageDirective.packageFqName, shortName)
         }
 
+        val defaultImportCandidates = LinkedHashSet<ClassId>()
         val defaultImportsProvider = session.defaultImportsProvider
         val defaultImports = defaultImportsProvider.getDefaultImports(includeLowPriorityImports = true)
             .filter { it.fqName !in defaultImportsProvider.excludedImports }
-        addDefaultImportCandidates(candidates, defaultImports, shortName)
+        addDefaultImportCandidates(defaultImportCandidates, defaultImports, shortName)
 
-        return candidates.firstOrNull { resolveClass(it) != null }
+        return sequenceOf(
+            packageCandidates,
+            explicitImportCandidates,
+            defaultImportCandidates,
+        ).flatMap { it.asSequence() }
+            .firstOrNull { resolveClass(it) != null }
+    }
+
+    private fun findSameFileTopLevelClassifier(
+        file: CfirFile,
+        shortName: Name,
+    ): CfirClassLikeDeclaration? {
+        return file.declarations
+            .asSequence()
+            .filterIsInstance<CfirClassLikeDeclaration>()
+            .filter { declaration -> declaration.name == shortName }
+            .firstOrNull()
     }
 
     private fun addDefaultImportCandidates(
@@ -296,4 +325,3 @@ class CfirTypeResolverImpl(
         }
     }
 }
-

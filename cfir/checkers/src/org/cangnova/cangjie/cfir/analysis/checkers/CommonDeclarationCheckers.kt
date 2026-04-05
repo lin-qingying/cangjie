@@ -6,6 +6,8 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendDefaultImplementationConflictChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendDuplicateInterfaceChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendGenericUsageChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendImmutableMemberChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendImmutableMutInterfaceChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendInterfaceKindChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendOrphanRuleChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendSpecializationConflictChecker
@@ -71,6 +73,8 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirExtendDuplicateInterfaceChecker,
             CfirExtendOrphanRuleChecker,
             CfirExtendGenericUsageChecker,
+            CfirExtendImmutableMutInterfaceChecker,
+            CfirExtendImmutableMemberChecker,
             CfirExtendSpecializationConflictChecker,
             CfirExtendDefaultImplementationConflictChecker,
         )

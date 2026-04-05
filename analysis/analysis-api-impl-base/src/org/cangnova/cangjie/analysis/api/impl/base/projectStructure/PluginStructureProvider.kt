@@ -1,80 +1,218 @@
 package org.cangnova.cangjie.analysis.api.impl.base.projectStructure
 
-import com.intellij.ide.plugins.ContainerDescriptor
-import com.intellij.ide.plugins.PluginXmlPathResolver
-import com.intellij.ide.plugins.RawPluginDescriptor
-import com.intellij.ide.plugins.ReadModuleContext
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockComponentManager
 import com.intellij.mock.MockProject
 import com.intellij.openapi.extensions.DefaultPluginDescriptor
-import com.intellij.util.xml.dom.NoOpXmlInterner
+import org.w3c.dom.Element
+import org.w3c.dom.Node
 import java.io.InputStream
+import javax.xml.parsers.DocumentBuilderFactory
 
 /**
- * XML 服务描述文件加载器（对齐 Kotlin 的 PluginStructureProvider）。
+ * headless 容器中的插件结构装配器。
  *
- * 从 classpath 上的 XML 文件中解析 service 声明，
- * 通过反射注册到 [MockApplication]/[MockProject]（绕过 Kotlin `internal` 限制）。
+ * Analysis API、CFIR、references、standalone 等能力已拆成独立模块，
+ * 测试环境和 headless 容器必须复用同一套 `META-INF/analysis-api/` XML 装配协议。
+ *
+ * 该装配器直接从 classpath 解析插件 XML，并把服务注册到 `MockComponentManager`：
+ * 1. 支持 `xi:include`；
+ * 2. 支持 `applicationService` / `projectService`；
+ * 3. 保持 XML 声明顺序；
+ * 4. 避免再次回到“测试环境手工注册一批服务”的碎片化写法。
  */
-@Suppress("UnstableApiUsage")
 object PluginStructureProvider {
     private val fakePluginDescriptor = DefaultPluginDescriptor("cangjie-analysis-api-loader")
 
-    private object ReadContext : ReadModuleContext {
-        override val interner get() = NoOpXmlInterner
-        override val isMissingIncludeIgnored: Boolean get() = false
+    private enum class ServiceContainerTag(val tagName: String) {
+        APPLICATION("applicationService"),
+        PROJECT("projectService"),
     }
 
-    private class ResourceDataLoader(val classLoader: ClassLoader) : com.intellij.ide.plugins.DataLoader {
-        override fun load(path: String, pluginDescriptorSourceOnly: Boolean): InputStream? =
-            classLoader.getResource(path)?.openStream()
-
-        override fun toString(): String = "resources data loader"
-    }
-
-    private fun loadPluginDescriptor(
-        pluginRelativePath: String,
-        componentManager: MockComponentManager,
-    ): RawPluginDescriptor {
-        return PluginXmlPathResolver.DEFAULT_PATH_RESOLVER.resolvePath(
-            readContext = ReadContext,
-            dataLoader = ResourceDataLoader(componentManager.javaClass.classLoader),
-            relativePath = pluginRelativePath,
-            readInto = null,
-        ) ?: RawPluginDescriptor()
-    }
+    private data class ServiceDescriptor(
+        val containerTag: ServiceContainerTag,
+        val serviceInterface: String?,
+        val serviceImplementation: String,
+    )
 
     fun registerApplicationServices(application: MockApplication, pluginRelativePath: String) {
-        registerServices(application, pluginRelativePath, RawPluginDescriptor::appContainerDescriptor)
+        registerServices(application, pluginRelativePath, ServiceContainerTag.APPLICATION)
     }
 
     fun registerProjectServices(project: MockProject, pluginRelativePath: String) {
-        registerServices(project, pluginRelativePath, RawPluginDescriptor::projectContainerDescriptor)
+        registerServices(project, pluginRelativePath, ServiceContainerTag.PROJECT)
     }
 
-    private inline fun registerServices(
+    private fun registerServices(
         componentManager: MockComponentManager,
         pluginRelativePath: String,
-        containerDescriptor: RawPluginDescriptor.() -> ContainerDescriptor,
+        containerTag: ServiceContainerTag,
     ) {
-        val pluginDescriptor = loadPluginDescriptor(pluginRelativePath, componentManager)
-        for (serviceDescriptor in pluginDescriptor.containerDescriptor().services) {
-            val serviceImplementationClass =
-                componentManager.loadClass<Any>(serviceDescriptor.serviceImplementation, fakePluginDescriptor)
-            val serviceInterface = serviceDescriptor.serviceInterface
-            if (serviceInterface != null) {
-                val serviceInterfaceClass =
-                    componentManager.loadClass<Any>(serviceInterface, fakePluginDescriptor)
-                @Suppress("UNCHECKED_CAST")
-                componentManager.registerServiceWithInterface(serviceInterfaceClass  , serviceImplementationClass as Class<Any>)
-            } else {
-                componentManager.registerService(serviceImplementationClass)
+        val classLoader = componentManager.javaClass.classLoader
+        val serviceDescriptors = loadServiceDescriptors(
+            pluginRelativePath = normalizeResourcePath(pluginRelativePath),
+            classLoader = classLoader,
+            visitedResources = linkedSetOf(),
+        )
+
+        serviceDescriptors
+            .asSequence()
+            .filter { descriptor -> descriptor.containerTag == containerTag }
+            .forEach { descriptor ->
+                val implementationClass = componentManager.loadClass<Any>(
+                    descriptor.serviceImplementation,
+                    fakePluginDescriptor,
+                )
+
+                val serviceInterface = descriptor.serviceInterface
+                if (serviceInterface != null) {
+                    val serviceInterfaceClass = componentManager.loadClass<Any>(serviceInterface, fakePluginDescriptor)
+                    @Suppress("UNCHECKED_CAST")
+                    componentManager.registerServiceWithInterface(
+                        serviceInterfaceClass,
+                        implementationClass as Class<Any>,
+                    )
+                } else {
+                    componentManager.registerService(implementationClass)
+                }
+            }
+    }
+
+    private fun loadServiceDescriptors(
+        pluginRelativePath: String,
+        classLoader: ClassLoader,
+        visitedResources: MutableSet<String>,
+    ): List<ServiceDescriptor> {
+        if (!visitedResources.add(pluginRelativePath)) {
+            return emptyList()
+        }
+
+        val rootElement = loadRootElement(pluginRelativePath, classLoader) ?: return emptyList()
+        return collectServiceDescriptors(rootElement, pluginRelativePath, classLoader, visitedResources)
+    }
+
+    private fun collectServiceDescriptors(
+        rootElement: Element,
+        currentResourcePath: String,
+        classLoader: ClassLoader,
+        visitedResources: MutableSet<String>,
+    ): List<ServiceDescriptor> {
+        val descriptors = mutableListOf<ServiceDescriptor>()
+        val childNodes = rootElement.childNodes
+
+        for (index in 0 until childNodes.length) {
+            val child = childNodes.item(index)
+            if (child.nodeType != Node.ELEMENT_NODE) {
+                continue
+            }
+
+            val childElement = child as Element
+            when {
+                childElement.matchesTag("include") -> {
+                    val includePath = childElement.getAttribute("href")
+                    if (includePath.isNotBlank()) {
+                        val resolvedIncludePath = resolveIncludePath(currentResourcePath, includePath)
+                        descriptors += loadServiceDescriptors(resolvedIncludePath, classLoader, visitedResources)
+                    }
+                }
+
+                childElement.matchesTag(ServiceContainerTag.APPLICATION.tagName) -> {
+                    childElement.toServiceDescriptor(ServiceContainerTag.APPLICATION)?.let(descriptors::add)
+                }
+
+                childElement.matchesTag(ServiceContainerTag.PROJECT.tagName) -> {
+                    childElement.toServiceDescriptor(ServiceContainerTag.PROJECT)?.let(descriptors::add)
+                }
+
+                else -> {
+                    descriptors += collectServiceDescriptors(
+                        rootElement = childElement,
+                        currentResourcePath = currentResourcePath,
+                        classLoader = classLoader,
+                        visitedResources = visitedResources,
+                    )
+                }
             }
         }
+
+        return descriptors
     }
-    // 规避重载解析歧义
-    private fun <T> MockComponentManager.registerServiceWithInterface(interfaceClass: Class<T>, implementationClass: Class<T>) {
+
+    private fun loadRootElement(resourcePath: String, classLoader: ClassLoader): Element? {
+        return openResource(resourcePath, classLoader)?.use { inputStream ->
+            documentBuilderFactory.newDocumentBuilder().parse(inputStream).documentElement
+        }
+    }
+
+    private fun openResource(resourcePath: String, classLoader: ClassLoader): InputStream? {
+        return classLoader.getResource(resourcePath)?.openStream()
+    }
+
+    private fun resolveIncludePath(currentResourcePath: String, includePath: String): String {
+        val normalizedIncludePath = normalizeResourcePath(includePath)
+        if (includePath.startsWith("/")) {
+            return normalizedIncludePath
+        }
+
+        val currentDirectory = currentResourcePath.substringBeforeLast('/', missingDelimiterValue = "")
+        return normalizeResourcePath(
+            buildString {
+                if (currentDirectory.isNotEmpty()) {
+                    append(currentDirectory)
+                    append('/')
+                }
+                append(normalizedIncludePath)
+            },
+        )
+    }
+
+    private fun normalizeResourcePath(resourcePath: String): String {
+        val rawSegments = resourcePath.replace('\\', '/').split('/')
+        val normalizedSegments = ArrayDeque<String>()
+
+        rawSegments.forEach { segment ->
+            when {
+                segment.isEmpty() || segment == "." -> Unit
+                segment == ".." -> if (normalizedSegments.isNotEmpty()) normalizedSegments.removeLast()
+                else -> normalizedSegments.addLast(segment)
+            }
+        }
+
+        return normalizedSegments.joinToString("/")
+    }
+
+    private fun Element.matchesTag(expectedTagName: String): Boolean {
+        return localName == expectedTagName ||
+            tagName == expectedTagName ||
+            tagName.endsWith(":$expectedTagName")
+    }
+
+    private fun Element.toServiceDescriptor(containerTag: ServiceContainerTag): ServiceDescriptor? {
+        val serviceImplementation = getAttribute("serviceImplementation")
+        if (serviceImplementation.isBlank()) {
+            return null
+        }
+
+        val serviceInterface = getAttribute("serviceInterface").ifBlank { null }
+        return ServiceDescriptor(
+            containerTag = containerTag,
+            serviceInterface = serviceInterface,
+            serviceImplementation = serviceImplementation,
+        )
+    }
+
+    /**
+     * 显式包一层泛型入口，避免 `MockComponentManager.registerService`
+     * 因类型擦除产生重载歧义。
+     */
+    private fun <T> MockComponentManager.registerServiceWithInterface(
+        interfaceClass: Class<T>,
+        implementationClass: Class<T>,
+    ) {
         registerService(interfaceClass, implementationClass)
+    }
+
+    private val documentBuilderFactory = DocumentBuilderFactory.newInstance().apply {
+        isNamespaceAware = true
     }
 }

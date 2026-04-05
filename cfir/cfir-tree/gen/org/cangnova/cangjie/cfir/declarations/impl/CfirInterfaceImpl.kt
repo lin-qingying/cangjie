@@ -30,14 +30,11 @@ class CfirInterfaceImpl @CfirImplementationDetail constructor(
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
-    override val isLocal: Boolean,
-    override val declarations: MutableList<CfirDeclaration>,
     override var status: CfirDeclarationStatus,
     override val typeParameters: MutableList<CfirTypeParameter>,
     override val symbol: CfirInterfaceSymbol,
     override val superTypeRefs: MutableList<CfirTypeRef>,
-    override val properties: MutableList<CfirProperty>,
-    override val functions: MutableList<CfirFunction>,
+    override val declarations: MutableList<CfirDeclaration>,
     override val name: Name,
 ) : CfirInterface() {
     override var controlFlowGraphReference: CfirControlFlowGraphReference? = null
@@ -51,32 +48,23 @@ class CfirInterfaceImpl @CfirImplementationDetail constructor(
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
-        declarations.forEach { it.accept(visitor, data) }
         controlFlowGraphReference?.accept(visitor, data)
         typeParameters.forEach { it.accept(visitor, data) }
         superTypeRefs.forEach { it.accept(visitor, data) }
-        properties.forEach { it.accept(visitor, data) }
-        functions.forEach { it.accept(visitor, data) }
+        declarations.forEach { it.accept(visitor, data) }
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirInterfaceImpl {
         transformAnnotations(transformer, data)
-        transformDeclarations(transformer, data)
         controlFlowGraphReference = controlFlowGraphReference?.transform(transformer, data)
         transformTypeParameters(transformer, data)
         transformSuperTypeRefs(transformer, data)
-        transformProperties(transformer, data)
-        transformFunctions(transformer, data)
+        transformDeclarations(transformer, data)
         return this
     }
 
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirInterfaceImpl {
         annotations.transformInplace(transformer, data)
-        return this
-    }
-
-    override fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirInterfaceImpl {
-        declarations.transformInplace(transformer, data)
         return this
     }
 
@@ -94,13 +82,8 @@ class CfirInterfaceImpl @CfirImplementationDetail constructor(
         return this
     }
 
-    override fun <D> transformProperties(transformer: CfirTransformer<D>, data: D): CfirInterfaceImpl {
-        properties.transformInplace(transformer, data)
-        return this
-    }
-
-    override fun <D> transformFunctions(transformer: CfirTransformer<D>, data: D): CfirInterfaceImpl {
-        functions.transformInplace(transformer, data)
+    override fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirInterfaceImpl {
+        declarations.transformInplace(transformer, data)
         return this
     }
 

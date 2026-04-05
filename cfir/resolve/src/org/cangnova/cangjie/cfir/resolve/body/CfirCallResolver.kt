@@ -576,30 +576,52 @@ class CfirCallResolver(
     }
 
     private fun resolveTopLevelClassifierByShortName(name: Name): CfirClassLikeSymbol<*>? {
-        val candidates = LinkedHashSet<ClassId>()
         val file = components.file
+        val packageCandidates = LinkedHashSet<ClassId>()
+        val explicitImportCandidates = LinkedHashSet<ClassId>()
+
+        findSameFileTopLevelClassifier(file, name)?.let { declaration ->
+            return declaration.symbol
+        }
 
         for (importInfo in file.imports) {
             val importedFqName = importInfo.importedFqName ?: continue
             if (importInfo.isAllUnder) {
-                candidates += ClassId(importedFqName, name)
+                explicitImportCandidates += ClassId(importedFqName, name)
                 continue
             }
 
             val importedName = importInfo.aliasName?.asString() ?: importedFqName.shortName().asString()
             if (importedName == name.asString()) {
-                candidates += ClassId.topLevel(importedFqName)
+                explicitImportCandidates += ClassId.topLevel(importedFqName)
             }
         }
 
-        candidates += ClassId(file.packageDirective.packageFqName, name)
+        packageCandidates += ClassId(file.packageDirective.packageFqName, name)
 
+        val defaultImportCandidates = LinkedHashSet<ClassId>()
         val defaultImportsProvider = session.defaultImportsProvider
         val defaultImports = defaultImportsProvider.getDefaultImports(includeLowPriorityImports = true)
             .filter { it.fqName !in defaultImportsProvider.excludedImports }
-        addDefaultImportCandidates(candidates, defaultImports, name)
+        addDefaultImportCandidates(defaultImportCandidates, defaultImports, name)
 
-        return candidates.firstNotNullOfOrNull(components.symbolProvider::getClassLikeSymbolByClassId)
+        return sequenceOf(
+            packageCandidates,
+            explicitImportCandidates,
+            defaultImportCandidates,
+        ).flatMap { it.asSequence() }
+            .firstNotNullOfOrNull(components.symbolProvider::getClassLikeSymbolByClassId)
+    }
+
+    private fun findSameFileTopLevelClassifier(
+        file: org.cangnova.cangjie.cfir.declarations.CfirFile,
+        shortName: Name,
+    ): CfirClassLikeDeclaration? {
+        return file.declarations
+            .asSequence()
+            .filterIsInstance<CfirClassLikeDeclaration>()
+            .filter { declaration -> declaration.name == shortName }
+            .firstOrNull()
     }
 
     private fun addDefaultImportCandidates(

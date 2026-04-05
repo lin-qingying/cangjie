@@ -44,7 +44,6 @@ open class CjClass : CjTypeStatement {
 
     override val typeName: String
         get() = "class"
-    override val isLocal: Boolean get() = stub?.isLocal() ?: CjPsiUtil.isLocal(this)
     override val superTypeListEntries: List<CjSuperTypeListEntry> get() = getSuperTypeList()?.entries.orEmpty()
 
     override fun toString(): String {

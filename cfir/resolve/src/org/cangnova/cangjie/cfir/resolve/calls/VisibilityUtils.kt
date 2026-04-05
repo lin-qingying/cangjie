@@ -60,7 +60,7 @@ private fun canSeePrivateMemberOf(
     return containingDeclarations.asSequence()
         .filterIsInstance<CfirClassLikeDeclaration>()
         .map { it.symbol.classId }
-        .any { it == ownerClassId || it.isNestedWithin(ownerClassId) }
+        .any { it == ownerClassId }
 }
 
 private fun canSeeProtectedMemberOf(
@@ -70,14 +70,5 @@ private fun canSeeProtectedMemberOf(
     return containingDeclarations.asSequence()
         .filterIsInstance<CfirClassLikeDeclaration>()
         .map { it.symbol.classId }
-        .any { it == ownerClassId || it.isNestedWithin(ownerClassId) }
-}
-
-private fun ClassId.isNestedWithin(owner: ClassId): Boolean {
-    var current: ClassId? = this
-    while (current != null) {
-        if (current == owner) return true
-        current = current.outerClassId
-    }
-    return false
+        .any { it == ownerClassId }
 }

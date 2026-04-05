@@ -30,7 +30,6 @@ class CfirClassImpl @CfirImplementationDetail constructor(
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
-    override val isLocal: Boolean,
     override var status: CfirDeclarationStatus,
     override val typeParameters: MutableList<CfirTypeParameter>,
     override val symbol: CfirClassSymbol,

@@ -3,7 +3,8 @@ package org.cangnova.cangjie.lsp.capabilities
 /**
  * LSP 框架层对外暴露的特性矩阵。
  *
- * 真实运行时能力 = descriptor.features 与 analysisFacade.supportedFeatures 的交集。
+ * 真实运行时能力 = `descriptor.features` 与 `analysisFacade.supportedFeatures` 的交集。
+ * 这样协议层声明和语义实现层能力可以独立演进，但最终对客户端呈现的仍是一致能力面。
  */
 data class CangjieLspFeatureSet(
     val completion: Boolean = false,

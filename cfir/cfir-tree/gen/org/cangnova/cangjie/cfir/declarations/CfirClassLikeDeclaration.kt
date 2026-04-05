@@ -26,7 +26,6 @@ sealed class CfirClassLikeDeclaration : CfirMemberDeclaration() {
     abstract override val attributes: CfirDeclarationAttributes
     abstract override val typeParameters: List<CfirTypeParameterRef>
     abstract override val status: CfirDeclarationStatus
-    abstract override val isLocal: Boolean
     abstract override val symbol: CfirClassLikeSymbol<*>
     abstract val declarations: List<CfirDeclaration>
     abstract val name: Name

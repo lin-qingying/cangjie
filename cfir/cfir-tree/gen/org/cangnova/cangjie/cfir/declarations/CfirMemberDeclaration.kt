@@ -25,7 +25,6 @@ sealed class CfirMemberDeclaration : CfirDeclaration(), CfirTypeParameterRefsOwn
     abstract override val attributes: CfirDeclarationAttributes
     abstract override val typeParameters: List<CfirTypeParameterRef>
     abstract val status: CfirDeclarationStatus
-    abstract val isLocal: Boolean
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitMemberDeclaration(this, data)

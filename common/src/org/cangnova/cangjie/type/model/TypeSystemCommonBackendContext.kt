@@ -10,7 +10,7 @@
  * - 删除 makeNullable()：仓颉无可空类型
  * - 删除 getPrimitiveType() / getPrimitiveArrayType()：JVM 字节码映射产物
  * - 删除 isUnderKotlinPackage()：仓颉无 kotlin.* 包
- * - 删除 isInnerClass()：仓颉无嵌套类
+ * - 删除类型层级相关 API：仓颉的 `ClassId` 仅服务于顶层 class-like 声明
  * - 删除 isInlineClass()：仓颉无 inline class，值类型通过 isValueTypeConstructor() 判断
  * - 删除 getValueClassProperties()：同上，inline class / value class 是 Kotlin 概念
  * - 删除 isFinalClassOrEnumEntryOrAnnotationClassConstructor() 中的 EnumEntry 部分：

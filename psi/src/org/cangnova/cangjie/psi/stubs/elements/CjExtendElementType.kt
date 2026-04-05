@@ -99,7 +99,7 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
         val fqName = psi.fqName
 
         val superNames = psi.getSuperNames()
-        val classId = StubUtils.createNestedClassId(parentStub!!, psi)
+        val classId = StubUtils.createClassId(parentStub!!, psi)
         return CangJieExtendStubImpl(
             CjStubElementTypes.EXTEND,
             parentStub as StubElement<*>?,

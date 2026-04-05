@@ -42,7 +42,6 @@ import org.cangnova.cangjie.lexer.CjTokens.STATIC_KEYWORD
 import java.util.EnumSet
 
 internal enum class CangJieTarget(val description: String, val isDefault: Boolean = true) {
-    LOCAL_CLASS("local class", false),
     CLASS("class"),
     EXTEND("extend"),
     CLASS_ONLY("class", false),
@@ -90,7 +89,6 @@ internal enum class CangJieTarget(val description: String, val isDefault: Boolea
     ;
 
     companion object {
-        val LOCAL_CLASS_LIST = listOf(LOCAL_CLASS, CLASS)
         val CLASS_LIST = listOf(CLASS_ONLY, CLASS)
         val STRUCT_LIST = listOf(STRUCT, CLASS)
         val INTERFACE_LIST = listOf(INTERFACE, CLASS)
@@ -101,10 +99,10 @@ internal enum class CangJieTarget(val description: String, val isDefault: Boolea
         val FILE_LIST = listOf(FILE)
 
         fun classActualTargets(owner: CfirClassLikeDeclaration): List<CangJieTarget> = when (owner) {
-            is CfirClass -> if (owner.isLocal) LOCAL_CLASS_LIST else CLASS_LIST
+            is CfirClass -> CLASS_LIST
             is CfirStruct -> STRUCT_LIST
             is CfirInterface -> INTERFACE_LIST
-            is CfirEnum -> if (owner.isLocal) LOCAL_CLASS_LIST else ENUM_LIST
+            is CfirEnum -> ENUM_LIST
             else -> CLASS_LIST
         }
     }
@@ -139,7 +137,6 @@ internal val possibleTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
     ),
     ABSTRACT_KEYWORD to EnumSet.of(
         CangJieTarget.CLASS_ONLY,
-        CangJieTarget.LOCAL_CLASS,
     ),
     MUT_KEYWORD to EnumSet.of(
         CangJieTarget.INTERFACE_MEMBER_FUNCTION,
@@ -148,7 +145,6 @@ internal val possibleTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
     ),
     OPEN_KEYWORD to EnumSet.of(
         CangJieTarget.CLASS_ONLY,
-        CangJieTarget.LOCAL_CLASS,
         CangJieTarget.INTERFACE,
         CangJieTarget.MEMBER_PROPERTY,
         CangJieTarget.MEMBER_FUNCTION,
@@ -200,6 +196,7 @@ internal val possibleTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
         CangJieTarget.MEMBER_FUNCTION,
         CangJieTarget.INTERFACE_MEMBER_FUNCTION,
         CangJieTarget.STRUCT_MEMBER_FUNCTION,
+        CangJieTarget.EXTEND_MEMBER_FUNCTION,
     ),
 )
 
@@ -225,7 +222,6 @@ private fun always(target: CangJieTarget, vararg targets: CangJieTarget): Target
 internal val possibleParentTargetPredicateMap: Map<CjKeywordToken, TargetAllowedPredicate> = mapOf(
     OVERRIDE_KEYWORD to always(
         CangJieTarget.CLASS_ONLY,
-        CangJieTarget.LOCAL_CLASS,
         CangJieTarget.STRUCT,
         CangJieTarget.INTERFACE,
         CangJieTarget.ENUM,
@@ -233,12 +229,10 @@ internal val possibleParentTargetPredicateMap: Map<CjKeywordToken, TargetAllowed
     ),
     PROTECTED_KEYWORD to always(
         CangJieTarget.CLASS_ONLY,
-        CangJieTarget.LOCAL_CLASS,
         CangJieTarget.ENUM,
     ),
     INTERNAL_KEYWORD to always(
         CangJieTarget.CLASS_ONLY,
-        CangJieTarget.LOCAL_CLASS,
         CangJieTarget.STRUCT,
         CangJieTarget.ENUM,
         CangJieTarget.ENUM_ENTRY,
@@ -246,7 +240,6 @@ internal val possibleParentTargetPredicateMap: Map<CjKeywordToken, TargetAllowed
     ),
     PRIVATE_KEYWORD to always(
         CangJieTarget.CLASS_ONLY,
-        CangJieTarget.LOCAL_CLASS,
         CangJieTarget.STRUCT,
         CangJieTarget.INTERFACE,
         CangJieTarget.ENUM,
@@ -302,7 +295,10 @@ internal fun CheckerContext.actualParentTargets(): List<CangJieTarget> = when (v
 
 internal fun List<CangJieTarget>.firstOrThisDescription(): String = firstOrNull()?.description ?: "this"
 
-private fun CheckerContext.closestContainingTypeDeclaration(): CfirDeclaration? = findClosestDeclaration()
+private fun CheckerContext.closestContainingTypeDeclaration(): CfirDeclaration? =
+    findClosestDeclaration<CfirDeclaration> { declaration ->
+        declaration is CfirClassLikeDeclaration || declaration is CfirExtend
+    }
 
 private fun CheckerContext.classifyFunctionTargets(function: CfirFunction): List<CangJieTarget> = when {
     function is CfirAnonymousFunction -> AnnotationTargetLists.T_FUNCTION_EXPRESSION.defaultTargets

@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirAssignmentType
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirBasicExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirConstEvalArithmeticChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirErrorExpressionChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirIllegalSuperReferenceChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirFunctionCallChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirIfExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirIfConditionTypeMismatchChecker
@@ -14,8 +15,10 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirLiteralNumeric
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirLoopConditionTypeMismatchChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirMatchExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirMatchExhaustivenessChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirQualifiedAccessChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirReturnExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirReturnTypeMismatchChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirSuperReceiverExpressionChecker
 
 object CommonExpressionCheckers : ExpressionCheckers() {
     override val basicExpressionCheckers: Set<CfirBasicExpressionChecker>
@@ -46,5 +49,10 @@ object CommonExpressionCheckers : ExpressionCheckers() {
 //            CfirArgumentTypeMismatchChecker,
             CfirConstEvalArithmeticChecker,
         )
-}
 
+    override val qualifiedAccessCheckers: Set<CfirQualifiedAccessChecker>
+        get() = emptySet()
+
+    override val superReceiverExpressionCheckers: Set<CfirSuperReceiverExpressionChecker>
+        get() = setOf(CfirIllegalSuperReferenceChecker)
+}

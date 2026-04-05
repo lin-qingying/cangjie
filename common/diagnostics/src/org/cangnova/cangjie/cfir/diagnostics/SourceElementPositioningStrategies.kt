@@ -24,6 +24,10 @@ object SourceElementPositioningStrategies {
         LightTreePositioningStrategies.OVERRIDE_MODIFIER,
         PositioningStrategies.OVERRIDE_MODIFIER,
     )
+    val MUT_MODIFIER = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.MUT_MODIFIER,
+        PositioningStrategies.MUT_MODIFIER,
+    )
     val VARIABLE_INITIALIZER: AbstractSourceElementPositioningStrategy = DEFAULT
     val PATTERN_VARIABLE_INITIALIZER: AbstractSourceElementPositioningStrategy = SourceElementPositioningStrategy(
         LightTreePositioningStrategies.INITIALIZER_EQ,

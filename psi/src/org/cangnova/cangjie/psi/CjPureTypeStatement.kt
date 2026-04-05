@@ -25,7 +25,6 @@ package org.cangnova.cangjie.psi
 
 interface CjPureTypeStatement : CjPureElement, CjDeclarationContainer {
     fun getName(): String?
-    val isLocal: Boolean
 
     val superTypeListEntries: List<CjSuperTypeListEntry>
 

@@ -13,6 +13,33 @@
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker"
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.permissions.CaBaseAnalysisPermissionChecker"
     />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.restrictedAnalysis.CaBaseRestrictedAnalysisService"
+    />
+    <projectService
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeProjectStructureState"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeProjectStructureProvider"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeModuleProvider"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeContentScopeRefiner"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeModificationTracker"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeSessionInvalidationService"
+    />
 
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.lifetime.CaLifetimeTracker"

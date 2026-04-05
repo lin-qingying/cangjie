@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.references.CfirThisReference
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedErrorReference
@@ -89,6 +90,11 @@ fun BodyResolveComponents.typeFromCallee(calleeReference: CfirReference): ConeCa
             }
         }
 
+        is CfirSuperReference -> {
+            calleeReference.superTypeRef.coneTypeOrNull
+                ?: ConeErrorType(ConeSimpleDiagnostic("Unresolved super type", DiagnosticKind.Other))
+        }
+
         else -> errorWithAttachment("Failed to extract type from: ${calleeReference::class.simpleName}") {
             withCfirEntry("reference", calleeReference)
         }
@@ -138,10 +144,14 @@ fun createConeDiagnosticForCandidateWithError(
     applicability: CandidateApplicability,
     candidate: Candidate,
 ): org.cangnova.cangjie.cfir.types.ConeDiagnostic {
+    val visibilityError = candidate.diagnostics.firstOrNull { it is VisibilityError } as? VisibilityError
+    if (visibilityError != null) {
+        return ConeVisibilityError(visibilityError.symbol)
+    }
+
     return when (applicability) {
         CandidateApplicability.HIDDEN -> ConeHiddenCandidateError(candidate)
         CandidateApplicability.VISIBILITY_ERROR -> {
-            val visibilityError = candidate.diagnostics.firstOrNull { it is VisibilityError } as? VisibilityError
             ConeVisibilityError(visibilityError?.symbol ?: candidate.symbol)
         }
 

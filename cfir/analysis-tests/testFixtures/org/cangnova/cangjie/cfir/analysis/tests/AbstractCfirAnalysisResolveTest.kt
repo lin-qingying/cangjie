@@ -68,7 +68,7 @@ abstract class AbstractCfirAnalysisResolveTest : AbstractCfirAnalysisTestCase() 
 
         session.register(
             CfirExtendProvider::class,
-            CfirSessionExtendProvider(session.extendIndexStore),
+            CfirSessionExtendProvider(session, session.extendIndexStore),
         )
 
         // 使用 CfirTotalResolveProcessor 替代手动遍历

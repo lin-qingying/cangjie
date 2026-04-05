@@ -212,12 +212,12 @@ object CfirTree : AbstractCfirTreeBuilder() {
             "status",
             declarationStatus, withReplace = true, withTransform = true
         )
-        +field("isLocal", boolean)
     }
 
     val callableDeclaration: Element by sealedElement(Declaration, name = "CallableDeclaration") {
         parent(memberDeclaration)
         +declaredSymbol(callableSymbolType)
+        +field("isLocal", boolean)
         +field(
             "returnTypeRef",
             typeRef, withReplace = true, withTransform = true
@@ -252,9 +252,10 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
 
     /**
-     * class 声明节点，对应仓颉中引用语义的具名类型。
+     * class 声明节点，对应仓颉中的顶层引用语义具名类型。
      *
-     * 可以包含任意类型的成员声明：构造器、方法、属性、字段变量、嵌套类型等。
+     * class 成员只包含构造器、函数、属性和字段变量。
+     * 这里的成员列表只描述当前 class 的直接成员，不承载额外的类型声明层级。
      */
     val classDeclaration: Element by element(Declaration, name = "Class") {
         parent(classLikeDeclaration)
@@ -276,8 +277,9 @@ object CfirTree : AbstractCfirTreeBuilder() {
      * - 不能包含字段变量（fieldVariable）
      * - 成员只能是属性（property）和方法（function），均可为抽象或带默认实现
      *
-     * 用独立的 properties / functions 字段而非通用 declarations 列表，
-     * 使类型系统在静态层面就排除了非法成员，无需运行时检查。
+     * 这里统一使用 declarations 作为接口成员的唯一树形存储。
+     * interface 专属的“属性/函数分类”只能是派生视图，不能再作为并行子节点列表，
+     * 否则 visitor/transformer/renderer 会把同一成员遍历多次，破坏整棵 CFIR 树的单一子节点语义。
      */
     val interfaceDeclaration: Element by element(Declaration, name = "Interface") {
         parent(classLikeDeclaration)
@@ -286,8 +288,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +FieldSets.typeParameters
         +declaredSymbol(interfaceSymbolType)
         +listField("superTypeRefs", typeRef, withTransform = true)
-        +listField("properties", property, withTransform = true)
-        +listField("functions", function, withTransform = true)
+        +FieldSets.declarations
         +field("name", nameType)
     }
 
@@ -555,6 +556,12 @@ object CfirTree : AbstractCfirTreeBuilder() {
             withBindThis = false
         }
     }
+    val superReference: Element by element(Reference) {
+        parent(reference)
+
+        +field("superTypeRef", typeRef, withReplace = true)
+    }
+
     val thisReference: Element by element(Reference, name = "ThisReference") {
         parent(reference)
         +referencedSymbol(
@@ -588,6 +595,18 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +FieldSets.typeArguments {
             withTransform = true
         }
+    }
+
+    /**
+     * `super` 接收者表达式。
+     *
+     * 将 `super` 从普通名字访问中独立出来，
+     * 以便在 body resolve 阶段统一解析当前 dispatch receiver 对应的直接父类型。
+     */
+    val superReceiverExpression: Element by element(Expression) {
+        parent(qualifiedAccessExpression)
+
+        +field("calleeReference", superReference)
     }
     val errorFunction: Element by element(Declaration) {
         parent(function)

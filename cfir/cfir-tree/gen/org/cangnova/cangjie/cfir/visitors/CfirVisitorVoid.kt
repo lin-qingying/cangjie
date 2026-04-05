@@ -426,6 +426,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(annotationCall)
     }
 
+    final override fun visitSuperReference(superReference: CfirSuperReference, data: Nothing?) {
+        visitSuperReference(superReference)
+    }
+
+    open fun visitSuperReference(superReference: CfirSuperReference) {
+        visitElement(superReference)
+    }
+
     final override fun visitThisReference(thisReference: CfirThisReference, data: Nothing?) {
         visitThisReference(thisReference)
     }
@@ -448,6 +456,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression) {
         visitElement(qualifiedAccessExpression)
+    }
+
+    final override fun visitSuperReceiverExpression(superReceiverExpression: CfirSuperReceiverExpression, data: Nothing?) {
+        visitSuperReceiverExpression(superReceiverExpression)
+    }
+
+    open fun visitSuperReceiverExpression(superReceiverExpression: CfirSuperReceiverExpression) {
+        visitElement(superReceiverExpression)
     }
 
     final override fun visitErrorFunction(errorFunction: CfirErrorFunction, data: Nothing?) {

@@ -171,6 +171,7 @@ private class CfirDefaultReferenceRenderer : CfirReferenceRenderer {
             append("this")
             reference.boundSymbol?.let { append(" -> ").append(it) }
         }
+        is CfirSuperReference -> "super"
         is CfirErrorReference -> "ERROR_REF(${reference.reason})"
         is CfirControlFlowGraphReference -> "<cfg-ref>"
     }
@@ -394,8 +395,7 @@ class CfirRenderer(
             } else ""
             println("${prefix}interface ${iface.name.asString()}$typeParams$supers {")
             printer.pushIndent()
-            iface.properties.forEach { it.accept(this) }
-            iface.functions.forEach { it.accept(this) }
+            iface.declarations.forEach { it.accept(this) }
             printer.popIndent()
             println("}")
         }
@@ -662,6 +662,10 @@ class CfirRenderer(
             } else {
                 println("QUALIFIED_ACCESS($ref)")
             }
+        }
+
+        override fun visitSuperReceiverExpression(superReceiverExpression: CfirSuperReceiverExpression) {
+            visitQualifiedAccessExpression(superReceiverExpression)
         }
 
         override fun visitAssignment(assignment: CfirAssignment ) {

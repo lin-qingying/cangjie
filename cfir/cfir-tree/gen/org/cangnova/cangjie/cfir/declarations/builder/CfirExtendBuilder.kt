@@ -27,7 +27,6 @@ class CfirExtendBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
-    var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     lateinit var symbol: CfirExtendSymbol
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
@@ -44,7 +43,6 @@ class CfirExtendBuilder {
             annotations.toMutableOrEmpty(),
             origin,
             attributes,
-            isLocal,
             symbol,
             status,
             typeParameters,
@@ -76,7 +74,6 @@ inline fun buildExtendCopy(original: CfirExtend, init: CfirExtendBuilder.() -> U
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
-    copyBuilder.isLocal = original.isLocal
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.extendedTypeRef = original.extendedTypeRef

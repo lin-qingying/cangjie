@@ -13,18 +13,19 @@ import org.junit.jupiter.api.Test
 class CfirSessionExtendProviderTest {
     @Test
     fun `provider does not rebuild index implicitly before extensions phase`() {
+        val (session, _) = ExtendTestFixtures.newSessionAndModule()
         val packageFqName = FqName("sample.pkg")
         val targetClassId = ClassId(packageFqName, Name.identifier("Target"))
 
         val store = CfirExtendIndexStore()
-        val provider = CfirSessionExtendProvider(store)
+        val provider = CfirSessionExtendProvider(session, store)
 
         assertEquals(emptyList<CfirExtend>(), provider.getExtendsForClass(targetClassId))
     }
 
     @Test
     fun `provider reads extends for class and package from index store`() {
-        val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
         val packageFqName = FqName("sample.pkg")
         val targetClassId = ClassId(packageFqName, Name.identifier("Target"))
         val otherClassId = ClassId(packageFqName, Name.identifier("Other"))
@@ -42,7 +43,7 @@ class CfirSessionExtendProviderTest {
         val file = ExtendTestFixtures.newFile(moduleData, packageFqName, listOf(targetExtend, otherExtend))
 
         val store = CfirExtendIndexStore().also { it.rebuild(listOf(file), NoopTypeResolver) }
-        val provider = CfirSessionExtendProvider(store)
+        val provider = CfirSessionExtendProvider(session, store)
 
         assertEquals(listOf(targetExtend), provider.getExtendsForClass(targetClassId))
         assertEquals(listOf(targetExtend, otherExtend), provider.getExtendsInPackage(packageFqName))
@@ -50,7 +51,7 @@ class CfirSessionExtendProviderTest {
 
     @Test
     fun `provider resolves builtin extends by builtin short name`() {
-        val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
         val packageFqName = FqName("std.core")
         val int64ClassId = ClassId(packageFqName, Name.identifier("Int64"))
 
@@ -62,7 +63,7 @@ class CfirSessionExtendProviderTest {
         val file = ExtendTestFixtures.newFile(moduleData, packageFqName, listOf(int64Extend))
 
         val store = CfirExtendIndexStore().also { it.rebuild(listOf(file), NoopTypeResolver) }
-        val provider = CfirSessionExtendProvider(store)
+        val provider = CfirSessionExtendProvider(session, store)
 
         assertEquals(listOf(int64Extend), provider.getExtendsForBuiltinType(org.cangnova.cangjie.cfir.types.PrimitiveTypeKind.INT64))
     }

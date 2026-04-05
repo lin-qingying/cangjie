@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
@@ -27,7 +28,7 @@ import org.cangnova.cangjie.name.ClassId
 
 internal fun CheckerContext.createUseSiteMemberScope(declaration: CfirClassLikeDeclaration): CfirTypeScope {
     return when (declaration) {
-        is CfirClass -> session.cangjieScopeProvider.getUseSiteMemberScope(
+        is CfirClass -> session.cangjieScopeProvider.getDeclarationSiteMemberScope(
             declaration,
             session,
             scopeSession,
@@ -36,20 +37,24 @@ internal fun CheckerContext.createUseSiteMemberScope(declaration: CfirClassLikeD
         is CfirStruct -> {
             val symbol = declaration.symbol as CfirClassLikeSymbol<*>
             CfirClassUseSiteMemberScope(
+                session = session,
                 classSymbol = symbol,
                 symbolProvider = session.symbolProvider,
                 extendProvider = session.extendProvider,
                 directSupertypeProvider = session.directSupertypeProviderOrNull,
+                scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
             )
         }
 
         else -> {
             val symbol = declaration.symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
             CfirClassUseSiteMemberScope(
+                session = session,
                 classSymbol = symbol,
                 symbolProvider = session.symbolProvider,
                 extendProvider = session.extendProvider,
                 directSupertypeProvider = session.directSupertypeProviderOrNull,
+                scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
             )
         }
     }
@@ -137,7 +142,10 @@ internal fun CfirCallableSymbol<*>.isVisibleIn(
     context: CheckerContext,
 ): Boolean {
     if (!isBound) return true
-    if (cfir.status.visibility != Visibilities.Private) return true
+    // override / abstract-member 语义使用“派生类视角”的可见性：
+    // private-like 成员只能在声明它的同一类体内参与 override / implementation 计算，
+    // 其余继承链可见成员继续保留给 checker 层判断。
+    if (!Visibilities.isPrivate(cfir.status.visibility)) return true
 
     val ownerClassId = ownerClassId(context) ?: return true
     val currentClassId = (ownerDeclaration.symbol as? CfirClassLikeSymbol<*>)?.classId ?: return true

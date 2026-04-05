@@ -25,7 +25,11 @@ class LspDocumentStore {
         var updatedText = current.text
         params.contentChanges.forEach { change ->
             updatedText = change.range?.let { range ->
-                LspTextDocument.applyRangeChange(updatedText, range, change.text)
+                LspTextDocument.applyRangeChange(
+                    text = updatedText,
+                    range = range,
+                    replacement = change.text,
+                )
             } ?: change.text
         }
 
