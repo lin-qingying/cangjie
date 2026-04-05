@@ -41,6 +41,18 @@ object SourceElementPositioningStrategies {
         LightTreePositioningStrategies.OPERATOR,
         PositioningStrategies.OPERATOR
     )
+    val NAME_OF_NAMED_ARGUMENT = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.NAME_OF_NAMED_ARGUMENT,
+        PositioningStrategies.NAME_OF_NAMED_ARGUMENT
+    )
+    val VALUE_ARGUMENTS = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.VALUE_ARGUMENTS,
+        PositioningStrategies.VALUE_ARGUMENTS
+    )
+    val VALUE_ARGUMENTS_LIST = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.VALUE_ARGUMENTS_LIST,
+        PositioningStrategies.VALUE_ARGUMENTS_LIST
+    )
     val REFERENCED_NAME_BY_QUALIFIED = SourceElementPositioningStrategy(
         LightTreePositioningStrategies.REFERENCED_NAME_BY_QUALIFIED,
         PositioningStrategies.REFERENCED_NAME_BY_QUALIFIED

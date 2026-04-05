@@ -80,6 +80,19 @@ object CfirErrors : CjDiagnosticsContainer() {
     val DEPRECATED_MODIFIER_PAIR: CjDiagnosticFactory2<CjKeywordToken, CjKeywordToken> = CjDiagnosticFactory2("CFIR_DEPRECATED_MODIFIER_PAIR", Severity.WARNING, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val CANNOT_WEAKEN_ACCESS_PRIVILEGE: CjDiagnosticFactory2<Name, Visibility> = CjDiagnosticFactory2("CFIR_CANNOT_WEAKEN_ACCESS_PRIVILEGE", Severity.ERROR, SourceElementPositioningStrategies.ACTUAL_DECLARATION_NAME, CjNamedDeclaration::class, getRendererFactory())
 
+    // CallResolution
+    val NO_VALUE_FOR_PARAMETER: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_NO_VALUE_FOR_PARAMETER", Severity.ERROR, SourceElementPositioningStrategies.VALUE_ARGUMENTS_LIST, PsiElement::class, getRendererFactory())
+    val TOO_MANY_ARGUMENTS: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_TOO_MANY_ARGUMENTS", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val NAMED_PARAMETER_NOT_FOUND: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_NAMED_PARAMETER_NOT_FOUND", Severity.ERROR, SourceElementPositioningStrategies.NAME_OF_NAMED_ARGUMENT, PsiElement::class, getRendererFactory())
+    val ARGUMENT_PASSED_TWICE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_ARGUMENT_PASSED_TWICE", Severity.ERROR, SourceElementPositioningStrategies.NAME_OF_NAMED_ARGUMENT, PsiElement::class, getRendererFactory())
+    val NAMED_ARGUMENTS_NOT_ALLOWED: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_NAMED_ARGUMENTS_NOT_ALLOWED", Severity.ERROR, SourceElementPositioningStrategies.NAME_OF_NAMED_ARGUMENT, PsiElement::class, getRendererFactory())
+    val MIXING_NAMED_AND_POSITIONAL_ARGUMENTS: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_MIXING_NAMED_AND_POSITIONAL_ARGUMENTS", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val NEED_NAMED_ARGUMENT: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_NEED_NAMED_ARGUMENT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val AMBIGUOUS_CONSTRUCTOR_CALL: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_AMBIGUOUS_CONSTRUCTOR_CALL", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
+    val RECURSIVE_CONSTRUCTOR_CALL: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_RECURSIVE_CONSTRUCTOR_CALL", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
+    val ILLEGAL_THIS_OR_SUPER_CALL: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_ILLEGAL_THIS_OR_SUPER_CALL", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
+    val EXPLICIT_SUPER_CALL_REQUIRED: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_EXPLICIT_SUPER_CALL_REQUIRED", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+
     // Match
     val NON_EXHAUSTIVE_MATCH: CjDiagnosticFactory1<Collection<String>> = CjDiagnosticFactory1("CFIR_NON_EXHAUSTIVE_MATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 

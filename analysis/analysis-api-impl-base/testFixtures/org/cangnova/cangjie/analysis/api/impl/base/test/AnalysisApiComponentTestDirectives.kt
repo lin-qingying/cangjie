@@ -125,6 +125,31 @@ object AnalysisApiComponentTestDirectives : SimpleDirectivesContainer() {
         applicability = DirectiveApplicability.File,
     )
 
+    val EXPECTED_REFERENCE_SHORTENING_OPERATION by stringDirective(
+        description = "引用缩短计划中的公开操作，格式为 expression|shortName|status|requiredImport。",
+        applicability = DirectiveApplicability.File,
+    )
+
+    val EXPECTED_RETAINED_IMPORT by stringDirective(
+        description = "导入优化后应保留的 import 文本。",
+        applicability = DirectiveApplicability.File,
+    )
+
+    val EXPECTED_DUPLICATE_IMPORT by stringDirective(
+        description = "导入优化后应识别为重复的 import 文本。",
+        applicability = DirectiveApplicability.File,
+    )
+
+    val EXPECTED_UNUSED_IMPORT by stringDirective(
+        description = "导入优化后应识别为未使用的 import 文本。",
+        applicability = DirectiveApplicability.File,
+    )
+
+    val EXPECTED_MISSING_IMPORT by stringDirective(
+        description = "导入优化后应建议补齐的 import 文本。",
+        applicability = DirectiveApplicability.File,
+    )
+
     val FILE_SCOPE_AVAILABLE_NAME by stringDirective(
         description = "文件作用域公开暴露的可查询名字。",
         applicability = DirectiveApplicability.File,

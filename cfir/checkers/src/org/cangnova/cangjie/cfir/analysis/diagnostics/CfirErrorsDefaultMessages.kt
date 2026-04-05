@@ -146,6 +146,57 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_NAME,
         )
         map.put(
+            CfirErrors.NO_VALUE_FOR_PARAMETER,
+            "No value passed for parameter ''{0}''.",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.TOO_MANY_ARGUMENTS,
+            "Too many arguments for ''{0}''.",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.NAMED_PARAMETER_NOT_FOUND,
+            "No parameter named ''{0}''.",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.ARGUMENT_PASSED_TWICE,
+            "Argument already passed for this parameter.",
+        )
+        map.put(
+            CfirErrors.NAMED_ARGUMENTS_NOT_ALLOWED,
+            "Named arguments are not allowed for {0}.",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.MIXING_NAMED_AND_POSITIONAL_ARGUMENTS,
+            "Positional argument cannot appear after named argument.",
+        )
+        map.put(
+            CfirErrors.NEED_NAMED_ARGUMENT,
+            "Missing argument prefix for named parameter ''{0}''.",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.AMBIGUOUS_CONSTRUCTOR_CALL,
+            "Ambiguous constructor call for ''{0}''.",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.RECURSIVE_CONSTRUCTOR_CALL,
+            "Recursive constructor call detected.",
+        )
+        map.put(
+            CfirErrors.ILLEGAL_THIS_OR_SUPER_CALL,
+            "Illegal place of calling ''{0}''.",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.EXPLICIT_SUPER_CALL_REQUIRED,
+            "Explicit super constructor call is required.",
+        )
+        map.put(
             INVALID_OPERATOR_PARAMETER_COUNT,
             "invalid number of parameters for operator ''{0}'': expected {1}, but found {2}",
             RENDER_STRING,

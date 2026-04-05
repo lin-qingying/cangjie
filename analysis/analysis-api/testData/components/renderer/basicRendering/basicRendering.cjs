@@ -3,7 +3,7 @@
 // TARGET_FUNCTION: greet
 // TARGET_CALL: buildUser()
 // EXPECTED_RENDERED_CLASS_SYMBOL: sample.renderer.script.User
-// EXPECTED_RENDERED_CALLABLE_SYMBOL: greet(value: User): User
+// EXPECTED_RENDERED_CALLABLE_SYMBOL: greet(value:User):User
 // EXPECTED_RENDERED_TYPE: sample.renderer.script.User
 
 package sample.renderer.script
@@ -17,4 +17,8 @@ func greet(value: User): User {
 
 func buildUser(): User {
     return User()
+}
+
+func consume(): User {
+    return buildUser()
 }

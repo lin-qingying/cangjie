@@ -154,6 +154,61 @@ object LightTreePositioningStrategies {
         }
     }
 
+    val NAME_OF_NAMED_ARGUMENT: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
+        override fun mark(
+            node: LighterASTNode,
+            startOffset: Int,
+            endOffset: Int,
+            tree: FlyweightCapableTreeStructure<LighterASTNode>,
+        ): List<TextRange> {
+            val valueArgumentName = when (node.tokenType) {
+                CjNodeTypes.VALUE_ARGUMENT -> tree.findChildByType(node, CjNodeTypes.VALUE_ARGUMENT_NAME)
+                else -> null
+            } ?: return super.mark(node, startOffset, endOffset, tree)
+
+            val referencedName = tree.findDescendantByType(valueArgumentName, CjNodeTypes.REFERENCE_EXPRESSION)
+                ?: valueArgumentName
+            return markElement(referencedName, startOffset, endOffset, tree, node)
+        }
+    }
+
+    val VALUE_ARGUMENTS: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
+        override fun mark(
+            node: LighterASTNode,
+            startOffset: Int,
+            endOffset: Int,
+            tree: FlyweightCapableTreeStructure<LighterASTNode>,
+        ): List<TextRange> {
+            val argumentNodes = when (node.tokenType) {
+                CjNodeTypes.CALL_EXPRESSION -> tree.findChildByType(node, CjNodeTypes.VALUE_ARGUMENT_LIST)
+                    ?.let { listNode -> tree.childrenOfType(listNode, CjNodeTypes.VALUE_ARGUMENT) }
+                    .orEmpty()
+
+                CjNodeTypes.VALUE_ARGUMENT_LIST -> tree.childrenOfType(node, CjNodeTypes.VALUE_ARGUMENT)
+                else -> emptyList()
+            }
+            if (argumentNodes.isEmpty()) return super.mark(node, startOffset, endOffset, tree)
+            return markRange(argumentNodes.first(), argumentNodes.last(), startOffset, endOffset, tree, node)
+        }
+    }
+
+    val VALUE_ARGUMENTS_LIST: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
+        override fun mark(
+            node: LighterASTNode,
+            startOffset: Int,
+            endOffset: Int,
+            tree: FlyweightCapableTreeStructure<LighterASTNode>,
+        ): List<TextRange> {
+            val valueArgumentList = when (node.tokenType) {
+                CjNodeTypes.CALL_EXPRESSION -> tree.findChildByType(node, CjNodeTypes.VALUE_ARGUMENT_LIST)
+                CjNodeTypes.VALUE_ARGUMENT_LIST -> node
+                else -> null
+            } ?: return VALUE_ARGUMENTS.mark(node, startOffset, endOffset, tree)
+
+            return markElement(valueArgumentList, startOffset, endOffset, tree, node)
+        }
+    }
+
     val REFERENCE_BY_QUALIFIED: LightTreePositioningStrategy = FindReferencePositioningStrategy(false)
     val REFERENCED_NAME_BY_QUALIFIED: LightTreePositioningStrategy = FindReferencePositioningStrategy(true)
 
@@ -210,6 +265,15 @@ private fun FlyweightCapableTreeStructure<LighterASTNode>.firstExpressionChild(n
     return getChildrenArray(node)
         .filterNotNull()
         .firstOrNull { it.isExpressionLike() || it.tokenType == CjNodeTypes.PARENTHESIZED }
+}
+
+private fun FlyweightCapableTreeStructure<LighterASTNode>.childrenOfType(
+    node: LighterASTNode,
+    tokenType: IElementType,
+): List<LighterASTNode> {
+    return getChildrenArray(node)
+        .filterNotNull()
+        .filter { it.tokenType == tokenType }
 }
 
 private fun FlyweightCapableTreeStructure<LighterASTNode>.lastExpressionChild(node: LighterASTNode): LighterASTNode? {

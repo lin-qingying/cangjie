@@ -267,6 +267,59 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
     }
 
     /**
+     * 调用解析（CallResolution）相关的诊断
+     * 处理参数映射、命名参数与构造器调用阶段的绑定错误。
+     */
+    val CALL_RESOLUTION by object : DiagnosticGroup("CallResolution") {
+        // 缺少必填参数
+        val NO_VALUE_FOR_PARAMETER by error<PsiElement>(PositioningStrategy.VALUE_ARGUMENTS_LIST) {
+            parameter<Name>("parameterName")
+        }
+
+        // 实参个数超出可调用目标可接受范围
+        val TOO_MANY_ARGUMENTS by error<PsiElement> {
+            parameter<Name>("targetName")
+        }
+
+        // 命名参数名在目标参数列表中不存在
+        val NAMED_PARAMETER_NOT_FOUND by error<PsiElement>(PositioningStrategy.NAME_OF_NAMED_ARGUMENT) {
+            parameter<Name>("parameterName")
+        }
+
+        // 同一个参数被多次传入
+        val ARGUMENT_PASSED_TWICE by error<PsiElement>(PositioningStrategy.NAME_OF_NAMED_ARGUMENT)
+
+        // 命名参数前缀出现，但目标参数不支持 named argument
+        val NAMED_ARGUMENTS_NOT_ALLOWED by error<PsiElement>(PositioningStrategy.NAME_OF_NAMED_ARGUMENT) {
+            parameter<String>("targetDescription")
+        }
+
+        // 命名实参与位置实参混用顺序非法
+        val MIXING_NAMED_AND_POSITIONAL_ARGUMENTS by error<PsiElement>()
+
+        // 形参被声明为命名参数，但调用时未带参数名前缀
+        val NEED_NAMED_ARGUMENT by error<PsiElement> {
+            parameter<Name>("parameterName")
+        }
+
+        // 构造器候选存在但调用发生歧义
+        val AMBIGUOUS_CONSTRUCTOR_CALL by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<Name>("className")
+        }
+
+        // 构造器委托调用形成递归
+        val RECURSIVE_CONSTRUCTOR_CALL by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED)
+
+        // this/super 构造器委托调用出现在非法位置
+        val ILLEGAL_THIS_OR_SUPER_CALL by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<String>("calleeName")
+        }
+
+        // 父类不存在可隐式调用的无参构造器，要求显式 super(...)
+        val EXPLICIT_SUPER_CALL_REQUIRED by error<PsiElement>()
+    }
+
+    /**
      * 模式匹配（Match）相关的诊断
      * 处理when表达式和模式匹配的完整性检查
      */

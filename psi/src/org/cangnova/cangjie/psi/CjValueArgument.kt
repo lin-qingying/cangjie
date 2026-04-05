@@ -62,7 +62,7 @@ open class CjValueArgument :
     }
 
     override fun isNamed(): Boolean {
-        return false
+        return getArgumentName() != null
     }
 
     override fun asElement(): CjValueArgument {

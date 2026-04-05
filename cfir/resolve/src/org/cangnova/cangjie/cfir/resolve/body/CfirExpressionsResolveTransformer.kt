@@ -88,6 +88,15 @@ class CfirExpressionsResolveTransformer(
         return (expression.transformChildren(transformer, data) as CfirExpression)
     }
 
+    override fun transformWrappedExpression(
+        wrappedExpression: CfirWrappedExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        wrappedExpression.transformChildren(transformer, data)
+        wrappedExpression.replaceConeTypeOrNull(wrappedExpression.expression.coneTypeOrNull)
+        return wrappedExpression
+    }
+
     private fun transformThisReceiverExpression(
         thisReceiverExpression: CfirThisReceiverExpression,
         data: ResolutionMode,

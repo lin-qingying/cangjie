@@ -29,6 +29,22 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         }
     }
 
+    @TestMetadata("call")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Call : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/call")
+        }
+
+        @TestMetadata("namedArgumentsAndArityRich.cj")
+        @Test
+        fun testNamedArgumentsAndArityRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/call/namedArgumentsAndArityRich.cj")
+        }
+    }
+
     @TestMetadata("const-eval")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
@@ -94,6 +110,22 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         @Test
         fun testRepeatedBoundTypeParameter() {
             runTest("cfir/analysis-tests/testData/diagnostics/constraints/repeatedBoundTypeParameter.cj")
+        }
+    }
+
+    @TestMetadata("constructor")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Constructor : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/constructor")
+        }
+
+        @TestMetadata("delegationAndConstructorsRich.cj")
+        @Test
+        fun testDelegationAndConstructorsRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/constructor/delegationAndConstructorsRich.cj")
         }
     }
 

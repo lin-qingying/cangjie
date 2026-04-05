@@ -22,8 +22,10 @@ import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjImportInfo
+import org.cangnova.cangjie.psi.CjImportDirective
 import org.cangnova.cangjie.psi.CjReferenceExpression
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
+import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 
 /**
  * CFIR 补全候选决策实现。
@@ -106,6 +108,7 @@ internal fun CaCfirSession.collectReferenceShorteningPlan(file: CjFile): CaRefer
         val operations = PsiTreeUtil.collectElementsOfType(file, CjDotQualifiedExpression::class.java)
             .mapNotNull { expression ->
                 val target = resolveShorteningTarget(expression) ?: return@mapNotNull null
+                if (!target.canBeShortenedAsStandaloneReference()) return@mapNotNull null
                 val shortName = target.shortNameOrNull() ?: return@mapNotNull null
                 if (expression.text == shortName.asString()) return@mapNotNull null
                 val decision = checkCompletionCandidate(target, expression)
@@ -132,7 +135,9 @@ internal fun CaCfirSession.collectReferenceShorteningPlan(file: CjFile): CaRefer
 internal fun CaCfirSession.collectImportOptimizationPlan(file: CjFile): CaImportOptimizationPlan {
     return getOrCreateImportOptimizationPlan(file) {
         val currentImports = file.importDirectivesItem
+        // 导入优化只应统计“实际代码体中的引用名”，不能把 import 自身的短名误判为已使用。
         val referencedNames = PsiTreeUtil.collectElementsOfType(file, CjSimpleNameExpression::class.java)
+            .filter { reference -> reference.getStrictParentOfType<CjImportDirective>() == null }
             .map(CjSimpleNameExpression::referencedNameAsName)
             .toSet()
         val duplicateImports = linkedSetOf<CjImportInfo>()
@@ -170,9 +175,25 @@ private fun CaCfirSession.resolveShorteningTarget(expression: CjDotQualifiedExpr
     val selector = expression.selectorExpression
     return when (selector) {
         is CjReferenceExpression -> with(this) { selector.resolveToSymbol() }
-        is CjCallExpression -> with(this) { selector.resolveToCall()?.target }
+        is CjCallExpression -> with(this) {
+            // 调用表达式本身是最稳定的 low-level 语义锚点；
+            // qualified expression 作为兼容锚点保留，用于覆盖已经建立的 call-info 快照索引。
+            selector.resolveToCall()?.target ?: expression.resolveToCall()?.target
+        }
         else -> null
     }
+}
+
+/**
+ * 引用缩短计划当前只建模“可以被独立短名替代”的公开语义：
+ * 1. class-like 符号可以直接缩短到短类名；
+ * 2. 顶层 callable 可以缩短到短函数名，并按需补 import；
+ * 3. 成员 callable、包前缀等仍依赖接收者或层级结构，不进入本轮规划模型。
+ */
+private fun CaSymbol.canBeShortenedAsStandaloneReference(): Boolean = when (this) {
+    is CaClassLikeSymbol -> true
+    is CaCallableSymbol -> callableId?.classId == null
+    else -> false
 }
 
 private fun CaCfirSession.isDirectlyReachable(symbol: CaSymbol, file: CjFile): Boolean {

@@ -108,6 +108,20 @@ object GeneratedAnalysisApiTestRegistry {
             includedFilePatternProvider = exactStemPattern("defaultImports"),
         ),
         GeneratedAnalysisApiModel(
+            baseName = "ReferenceShorteningPlanTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.references.AbstractReferenceShorteningPlanTest",
+            modelRelativePath = "analysis/analysis-api/testData/components/references/referenceShortening",
+            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            includedFilePatternProvider = exactStemPattern("referenceShortening"),
+        ),
+        GeneratedAnalysisApiModel(
+            baseName = "ImportOptimizationPlanTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.imports.AbstractImportOptimizationPlanTest",
+            modelRelativePath = "analysis/analysis-api/testData/components/imports/importOptimization",
+            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            includedFilePatternProvider = exactStemPattern("importOptimization"),
+        ),
+        GeneratedAnalysisApiModel(
             baseName = "SignatureSubstitutionTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.substitutors.AbstractSignatureSubstitutionTest",
             modelRelativePath = "analysis/analysis-api/testData/components/substitutors/signatureSubstitution",
@@ -120,6 +134,27 @@ object GeneratedAnalysisApiTestRegistry {
             modelRelativePath = "analysis/analysis-api/testData/types/typePointers/consistency",
             supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
             includedFilePatternProvider = exactStemPattern("typePointerRestoration"),
+        ),
+        GeneratedAnalysisApiModel(
+            baseName = "SymbolPointerRestoreTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.sessions.AbstractSymbolPointerRestoreTest",
+            modelRelativePath = "analysis/analysis-api/testData/sessions/symbolPointers",
+            supportedModuleKinds = listOf(TestModuleKind.Source),
+            includedFilePatternProvider = exactStemPattern("symbolPointerRestore"),
+        ),
+        GeneratedAnalysisApiModel(
+            baseName = "RestrictedAnalysisRejectionTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.restrictedAnalysis.AbstractRestrictedAnalysisRejectionTest",
+            modelRelativePath = "analysis/analysis-api/testData/restrictedAnalysis/restriction",
+            supportedModuleKinds = listOf(TestModuleKind.Source),
+            includedFilePatternProvider = exactStemPattern("restrictedAnalysisRejection"),
+        ),
+        GeneratedAnalysisApiModel(
+            baseName = "RestrictedAnalysisExceptionWrappingTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.restrictedAnalysis.AbstractRestrictedAnalysisExceptionWrappingTest",
+            modelRelativePath = "analysis/analysis-api/testData/restrictedAnalysis/exceptionWrapping",
+            supportedModuleKinds = listOf(TestModuleKind.Source),
+            includedFilePatternProvider = exactStemPattern("restrictedAnalysisException"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "ProjectStructureTest",
