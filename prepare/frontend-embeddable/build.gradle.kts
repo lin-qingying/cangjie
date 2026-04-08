@@ -8,7 +8,7 @@ import org.gradle.kotlin.dsl.named
 
 plugins {
     `java-library`
-    alias(libs.plugins.shadow)
+    id("com.gradleup.shadow")
 }
 
 description = "仓颉前端 embeddable shaded/relocated 公开工件。"
