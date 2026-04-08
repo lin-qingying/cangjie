@@ -1,3 +1,4 @@
+// FILE: extendMemberUsages.cj
 // TARGET_KIND: EXTEND_MEMBER
 // TARGET_NAME: prettyPrint
 // EXPECTED_USAGE_COUNT: 2

@@ -148,6 +148,8 @@ public interface CaVisibilityChecker : CaLifetimeOwner
 CaVisibilityChecker.public fun CaSymbol.isVisible(): Boolean
 public interface CaReferenceShortener : CaLifetimeOwner
 CaReferenceShortener.public fun CjFile.collectReferenceShorteningPlan(): CaReferenceShorteningPlan
+CaReferenceShortener.public fun CjFile.collectReferenceShortenings( selection: TextRange = textRange, ): CaReferenceShorteningCommand
+CaReferenceShortener.public fun CjElement.collectReferenceShorteningsInElement(): CaReferenceShorteningCommand
 public interface CaImportOptimizer : CaLifetimeOwner
 CaImportOptimizer.public fun CjFile.collectImportOptimizationPlan(): CaImportOptimizationPlan
 public interface CaRenderer : CaLifetimeOwner
@@ -241,6 +243,12 @@ CaReferenceShorteningOperation.public val decision: CaCompletionCandidateDecisio
 public interface CaReferenceShorteningPlan : CaLifetimeOwner
 CaReferenceShorteningPlan.public val file: CjFile
 CaReferenceShorteningPlan.public val operations: List<CaReferenceShorteningOperation>
+public interface CaReferenceShorteningCommand : CaLifetimeOwner
+CaReferenceShorteningCommand.public val file: CjFile
+CaReferenceShorteningCommand.public val selection: TextRange
+CaReferenceShorteningCommand.public val operations: List<CaReferenceShorteningOperation>
+CaReferenceShorteningCommand.public val importsToAdd: Set<ImportPath>
+CaReferenceShorteningCommand.public val isEmpty: Boolean
 public interface CaImportOptimizationPlan : CaLifetimeOwner
 CaImportOptimizationPlan.public val file: CjFile
 CaImportOptimizationPlan.public val retainedImports: List<CjImportInfo>
@@ -279,6 +287,9 @@ public fun CaLifetimeToken.assertIsValidAndAccessible()
 public abstract class CaIllegalLifetimeOwnerAccessException : IllegalStateException()
 public class CaInvalidLifetimeOwnerAccessException(override val message: String) : CaIllegalLifetimeOwnerAccessException()
 public class CaInaccessibleLifetimeOwnerAccessException(override val message: String) : CaIllegalLifetimeOwnerAccessException()
+## org/cangnova/cangjie/analysis/api/lightDeclarations/CaLightDeclarationDocumentation.kt
+package org.cangnova.cangjie.analysis.api.lightDeclarations
+public fun CaSession.documentation(lightDeclaration: CaLightDeclaration): String?
 ## org/cangnova/cangjie/analysis/api/lightDeclarations/CaLightDeclarations.kt
 package org.cangnova.cangjie.analysis.api.lightDeclarations
 public enum class CaLightDeclarationKind

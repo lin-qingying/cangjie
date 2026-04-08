@@ -1,0 +1,77 @@
+name: auto-bump-patch-version
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-bump-patch-version-main
+  cancel-in-progress: true
+
+jobs:
+  bump-version:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Ensure Gradle wrapper is executable
+        shell: bash
+        run: chmod +x ./gradlew
+
+      - name: Bump cangjieVersion patch
+        id: bump
+        shell: bash
+        run: |
+          before="$(grep '^cangjieVersion=' gradle.properties | cut -d'=' -f2-)"
+          if [[ ! "$before" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(.*)$ ]]; then
+            echo "Unsupported cangjieVersion format: $before" >&2
+            exit 1
+          fi
+
+          major="${BASH_REMATCH[1]}"
+          minor="${BASH_REMATCH[2]}"
+          patch="${BASH_REMATCH[3]}"
+          suffix="${BASH_REMATCH[4]}"
+          next="${major}.${minor}.$((patch + 1))${suffix}"
+
+          awk -v next="$next" '
+            BEGIN { updated = 0 }
+            /^cangjieVersion=/ {
+              print "cangjieVersion=" next
+              updated = 1
+              next
+            }
+            { print }
+            END {
+              if (updated == 0) {
+                exit 1
+              }
+            }
+          ' gradle.properties > gradle.properties.tmp
+          mv gradle.properties.tmp gradle.properties
+          after="$(grep '^cangjieVersion=' gradle.properties | cut -d'=' -f2-)"
+          echo "before=$before" >> "$GITHUB_OUTPUT"
+          echo "after=$after" >> "$GITHUB_OUTPUT"
+
+      - name: Commit bumped version
+        shell: bash
+        run: |
+          if git diff --quiet -- gradle.properties; then
+            echo "No version change detected."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gradle.properties
+          git commit -m "chore: bump patch version to ${{ steps.bump.outputs.after }} [skip ci]"
+          git push origin "${GITHUB_REF_NAME}"

@@ -53,7 +53,16 @@ internal class CaCfirBinaryModuleResolutionStrategyProvider(
 ) : CaCfirModuleResolutionStrategyProvider {
     override fun getKind(module: CaModule): CaCfirModuleResolutionStrategy {
         return when {
-            module == useSiteModule || module is CaLibrarySourceModule -> CaCfirModuleResolutionStrategy.LAZY
+            /**
+             * binary-like use-site module 不能再被错误地下沉为 LAZY。
+             *
+             * - `CaLibrarySourceModule` 仍然是源码视图，保持 `LAZY`
+             * - `CaLibraryModule` / `CaBuiltinsModule` 自身与其同类依赖都应走 `STATIC`
+             *
+             * 否则像 builtins light declaration / decompiled PSI 这类场景会尝试为
+             * binary module 构建 source session，并在 `CaCfirSessionCache` 中直接失败。
+             */
+            module is CaLibrarySourceModule -> CaCfirModuleResolutionStrategy.LAZY
             module is CaBuiltinsModule || module is CaLibraryModule -> CaCfirModuleResolutionStrategy.STATIC
             else -> cannotProvideResolutionStrategy(module, useSiteModule)
         }

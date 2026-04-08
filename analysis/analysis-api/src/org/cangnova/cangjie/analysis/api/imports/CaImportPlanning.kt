@@ -1,11 +1,13 @@
 package org.cangnova.cangjie.analysis.api.imports
 
+import com.intellij.openapi.util.TextRange
 import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateDecision
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjExpression
+import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjImportInfo
 
@@ -43,6 +45,26 @@ interface CaReferenceShorteningOperation : CaLifetimeOwner {
 interface CaReferenceShorteningPlan : CaLifetimeOwner {
     val file: CjFile
     val operations: List<CaReferenceShorteningOperation>
+}
+
+/**
+ * 面向指定选择范围的引用缩短命令。
+ *
+ * 与 [CaReferenceShorteningPlan] 的区别在于：
+ * 1. plan 描述“文件内所有可缩短操作”的全量快照；
+ * 2. command 描述“当前选择范围内实际要处理的操作集合”。
+ *
+ * 这对应 Kotlin analysis 中 `shortenRange / shortenWholeFile` 的公共结果形态，
+ * 也是后续真正执行 PSI 改写时的统一输入。
+ */
+interface CaReferenceShorteningCommand : CaLifetimeOwner {
+    val file: CjFile
+    val selection: TextRange
+    val operations: List<CaReferenceShorteningOperation>
+    val importsToAdd: Set<ImportPath>
+
+    val isEmpty: Boolean
+        get() = operations.isEmpty()
 }
 
 /**
