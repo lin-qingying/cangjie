@@ -48,11 +48,21 @@ abstract class AbstractContainingDeclarationProviderByReferenceTest : AbstractAn
     }
 
     private fun render(symbol: CaSymbol): String {
-        return when (symbol) {
-            is CaCallableSymbol -> symbol.callableId?.toString() ?: symbol.name?.asString() ?: "Unnamed"
+        val rendered = when (symbol) {
+            is CaCallableSymbol -> {
+                val extendContainer = symbol.containingDeclaration as? CaExtendSymbol
+                if (extendContainer != null) {
+                    val packageName = extendContainer.extendId.substringBefore(':')
+                    val receiverType = extendContainer.extendId.substringAfter(':').substringBefore("<:")
+                    "$packageName.$receiverType.${symbol.name?.asString() ?: "Unnamed"}"
+                } else {
+                    symbol.callableId?.toString() ?: symbol.name?.asString() ?: "Unnamed"
+                }
+            }
             is CaClassLikeSymbol -> symbol.classId?.toString() ?: symbol.name?.asString() ?: "Unnamed"
             is CaExtendSymbol -> symbol.extendId
             else -> symbol.name?.asString() ?: "Unnamed"
         }
+        return rendered.replace('/', '.')
     }
 }

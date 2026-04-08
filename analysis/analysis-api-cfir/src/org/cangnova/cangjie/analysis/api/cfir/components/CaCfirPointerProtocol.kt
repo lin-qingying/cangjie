@@ -65,6 +65,15 @@ internal data class CaCfirCallableSymbolRestoreKey(
         (session as? CaCfirSession)?.restoreCallablePublicSymbol(callableId, kind)
 }
 
+internal data class CaCfirExtendMemberCallableSymbolRestoreKey(
+    val extendId: String,
+    val callableName: Name,
+    val kind: CaCfirCallableSymbolKind,
+) : CaCfirSymbolRestoreKey {
+    override fun restore(session: CaSession): CaSymbol? =
+        (session as? CaCfirSession)?.restoreExtendMemberCallablePublicSymbol(extendId, callableName, kind)
+}
+
 internal data class CaCfirPropertyAccessorSymbolRestoreKey(
     val ownerRestoreKey: CaCfirSymbolRestoreKey,
     val kind: CaCfirPropertyAccessorKind,
@@ -164,6 +173,8 @@ internal fun CaSymbol.createRestoreKey(): CaCfirSymbolRestoreKey = when (this) {
         val cacheKey = publicSymbolCacheKeyOrNull()
         when (cacheKey) {
             is CaCfirCallableSymbolCacheKey -> CaCfirCallableSymbolRestoreKey(cacheKey.callableId, cacheKey.kind)
+            is CaCfirExtendMemberCallableSymbolCacheKey ->
+                CaCfirExtendMemberCallableSymbolRestoreKey(cacheKey.extendId, cacheKey.callableName, cacheKey.kind)
             is CaCfirPsiSymbolCacheKey -> CaCfirPsiSymbolRestoreKey(cacheKey.psi.createPointer(), cacheKey.kind)
             else -> error("Unsupported callable restore protocol for `${this::class.simpleName}`")
         }

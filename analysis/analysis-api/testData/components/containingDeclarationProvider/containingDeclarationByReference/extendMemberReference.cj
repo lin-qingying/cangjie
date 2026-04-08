@@ -1,7 +1,7 @@
 // FILE: extendMemberReference.cj
 // TARGET_NAME: prettyPrint
 // EXPECTED_CONTAINING_DECLARATION: sample.containing.reference.Document.prettyPrint
-// EXPECTED_CONTAINING_DECLARATION: sample.containing.reference:Document<:
+// EXPECTED_CONTAINING_DECLARATION: sample.containing.reference:Document<:Printable
 package sample.containing.reference
 
 interface Printable {
