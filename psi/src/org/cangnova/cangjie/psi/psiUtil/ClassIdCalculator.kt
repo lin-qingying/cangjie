@@ -24,35 +24,40 @@
 
 package org.cangnova.cangjie.psi.psiUtil
 
-import org.cangnova.cangjie.name.*
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration
 import org.cangnova.cangjie.psi.CjFile
 
 internal object ClassIdCalculator {
+    /**
+     * 仅为顶层 class-like 声明计算 `ClassId`。
+     *
+     * 一旦声明外层仍存在其他 class-like 容器，就直接返回 `null`，
+     * 防止 PSI 回退路径重新构造出不应进入公开类型标识体系的声明。
+     */
     fun calculateClassId(declaration: CjClassLikeDeclaration): ClassId? {
-        var CjFile: CjFile? = null
-        val containingClasses = mutableListOf<CjClassLikeDeclaration>()
+        var cjFile: CjFile? = null
+        var seenSelf = false
 
         for (element in declaration.parentsWithSelf) {
             when (element) {
                 is CjClassLikeDeclaration -> {
-                    containingClasses += element
+                    if (!seenSelf) {
+                        seenSelf = true
+                    } else {
+                        return null
+                    }
                 }
+
                 is CjFile -> {
-                    CjFile = element
+                    cjFile = element
                     break
                 }
             }
         }
 
-        if (CjFile == null) return null
-        val relativeClassName = FqName.fromSegments(
-            containingClasses.asReversed().map { containingClass ->
-                containingClass.name ?: SpecialNames.NO_NAME_PROVIDED.asString()
-            },
-        )
-
-        return ClassId(CjFile.packageFqName, relativeClassName )
+        val file = cjFile ?: return null
+        val className = declaration.nameAsSafeName
+        return ClassId(file.packageFqName, className)
     }
 }

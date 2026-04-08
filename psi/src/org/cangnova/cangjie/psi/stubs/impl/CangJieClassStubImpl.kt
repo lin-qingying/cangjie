@@ -41,9 +41,6 @@ open class CangJieClassStubImpl(
     private val classId: ClassId?,
     private val name: StringRef?,
     private val superNames: Array<StringRef>,
-//    private val isInterface: Boolean,
-
-    private val isLocal: Boolean,
 //    private val isTopLevel: Boolean,
 ) : CangJieStubBaseImpl<CjClass>(parent, type), CangJieClassStub {
 
@@ -54,7 +51,6 @@ open class CangJieClassStubImpl(
 
 //    override fun isInterface() = isInterface
 
-    override fun isLocal() = isLocal
     override fun getName() = StringRef.toString(name)
 
     override fun getSuperNames(): List<String> {

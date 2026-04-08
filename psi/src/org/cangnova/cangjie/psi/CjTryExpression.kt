@@ -40,6 +40,12 @@ class CjTryExpression(node: ASTNode) : CjExpressionImpl(node) {
         get() = findChildByType<PsiElement>(CjNodeTypes.BLOCK) as CjBlockExpression
     val catchClauses: List<CjCatchClause>
         get() = findChildrenByType(CjNodeTypes.CATCH)
+    /**
+     * `handle` 在语法上属于 `try` 的后缀子结构，而不是独立表达式。
+     * 直接暴露列表，便于 raw-CFIR/CFIR 沿官方 AST 形状继续构建。
+     */
+    val handleClauses: List<CjHandleClause>
+        get() = findChildrenByType(CjNodeTypes.HANDLE)
     val finallyBlock: CjFinallySection?
         get() = findChildByType<PsiElement>(CjNodeTypes.FINALLY) as CjFinallySection?
     val tryKeyword: PsiElement?

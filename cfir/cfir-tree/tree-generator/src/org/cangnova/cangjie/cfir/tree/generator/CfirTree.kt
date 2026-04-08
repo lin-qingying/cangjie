@@ -35,7 +35,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     val structSymbolType = type("symbols", "CfirStructSymbol")
     val enumSymbolType = type("symbols", "CfirEnumSymbol")
     val classLikeSymbolType = type("symbols", "CfirClassLikeSymbol").withArgs(TreeTypeRef.Star)
-    val cfirClassifierSymbolWithClassId = type("symbols", "CfirClassifierSymbolWithClassId").withArgs(TreeTypeRef.Star)
+//    val cfirClassifierSymbolWithClassId = type("symbols", "CfirClassifierSymbolWithClassId").withArgs(TreeTypeRef.Star)
 
     val typeAliasSymbolType = type("symbols", "CfirTypeAliasSymbol")
     val typeParameterSymbolType = type("symbols", "CfirTypeParameterSymbol")
@@ -54,7 +54,9 @@ object CfirTree : AbstractCfirTreeBuilder() {
     val valueParameterSymbolType = type("symbols", "CfirValueParameterSymbol")
     val fieldVariableSymbolType = type("symbols", "CfirFieldVariableSymbol")
     val patternVariableSymbolType = type("symbols", "CfirPatternVariableSymbol")
+    val patternBindingVariableSymbolType = type("symbols", "CfirPatternBindingSymbol")
     val enumConstructorSymbolType = type("symbols", "CfirEnumConstructorSymbol")
+    val nameValueSymbolType = type("symbols", "CfirNamedValueSymbol")
 
     // ---- 其他符号类型 ----
     val fileSymbolType = type("symbols", "CfirFileSymbol")
@@ -69,7 +71,6 @@ object CfirTree : AbstractCfirTreeBuilder() {
     private val binaryOpKindType = generatedType("expressions", "CfirBinaryOpKind", TypeKind.Class)
     private val comparisonOpType = generatedType("expressions", "CfirComparisonOp", TypeKind.Class)
     private val typeOperationKindType = generatedType("expressions", "CfirTypeOperationKind", TypeKind.Class)
-    private val jumpKindType = generatedType("expressions", "CfirJumpKind", TypeKind.Class)
     private val stringType = type("kotlin", "String", exactPackage = true, kind = TypeKind.Class)
     private val booleanType = type("kotlin", "Boolean", exactPackage = true, kind = TypeKind.Class)
     private val anyType = type("kotlin", "Any", exactPackage = true, kind = TypeKind.Class)
@@ -80,6 +81,8 @@ object CfirTree : AbstractCfirTreeBuilder() {
         val typeArguments = fieldSet(
             listField("typeArguments", typeRef, useMutableOrEmpty = true, withReplace = true, withTransform = true)
         )
+        val name = fieldSet(field(nameType))
+
         val declarations = fieldSet(
             listField("declarations", declaration, withTransform = true) {
                 useInBaseTransformerDetection = false
@@ -109,16 +112,17 @@ object CfirTree : AbstractCfirTreeBuilder() {
      *
      * 包含 resolveState 状态机，用于管理 lazy resolve。
      */
-    val elementWithResolveState: Element by element(Other, name = "ElementWithResolveState") {
+    val elementWithResolveState: Element by element(Other ) {
         kind = ImplementationKind.AbstractClass
-        parent(rootElement)
         +field("moduleData", moduleDataType)
-        +field("resolveState", resolveStateType, isChild = false) {
-            isFinal = true
-            isVolatile = true
-            isMutable = true
+        +field("resolvePhase", resolvePhaseType) { isParameter = true; }
+
+        +field("resolveState", resolveStateType) {
+            isMutable = true; isVolatile = true; isFinal = true
             implementationDefaultStrategy = AbstractField.ImplementationDefaultStrategy.Lateinit
-            additionalAnnotations.add(resolveStateAccessType)
+            customInitializationCall = "resolvePhase.asResolveState()"
+            arbitraryImportables += phaseAsResolveStateExtentionImport
+            optInAnnotation = resolveStateAccessType
         }
     }
 
@@ -131,17 +135,23 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("controlFlowGraphReference", controlFlowGraphReference, withReplace = true, nullable = true)
     }
 
+    val wrappedExpression: Element by element(Expression) {
+        parent(expression)
+
+        +field(expression)
+    }
+
     /**
      * 可解析节点接口。
      *
      * 所有持有 calleeReference 的节点都应实现此接口，以便：
      * 1. 解析阶段可以统一替换 calleeReference（NamedReference → ResolvedNamedReference）
      * 2. Visitor/Transformer 可以通过 visitResolvable / transformResolvable 统一处理
-     * 3. 避免在 functionCall、propertyAccess、qualifiedAccess 等节点中重复定义相同字段
+     * 3. 避免在 functionCall、propertyAccess、qualifiedAccessExpression 等节点中重复定义相同字段
      */
-    val resolvable: Element by element(Other, name = "Resolvable") {
-        kind = ImplementationKind.Interface
-        parent(rootElement)
+    val resolvable: Element by sealedElement(Expression ) {
+
+
         +field("calleeReference", reference, withReplace = true, withTransform = true)
     }
 
@@ -166,23 +176,26 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("importedName", nameType, nullable = true)
     }
 
-    val annotation: Element by element(Declaration, name = "Annotation") {
-        parent(rootElement)
+    val annotation: Element by element(Expression, name = "Annotation") {
+        parent(expression)
+
         +field("typeRef", typeRef, withTransform = true)
         +listField("arguments", rootElement, withTransform = true)
     }
 
-    val statement: Element by element(Expression, name = "Statement") {
-        kind = ImplementationKind.Interface
-        parent(rootElement)
+    val statement: Element by element(Expression ) {
+
         parent(annotationContainer)
     }
     val typeParameterRef: Element by element(Declaration) {
         +referencedSymbol(typeParameterSymbolType)
     }
     val declaration: Element by sealedElement(Declaration) {
+        kind = ImplementationKind.AbstractClass
+
         parent(elementWithResolveState)
-        parent(statement)
+        parent(annotationContainer)
+
         +declaredSymbol(symbolType)
         +field("origin", declarationOriginType)
         +field("attributes", declarationAttributesType)
@@ -199,12 +212,12 @@ object CfirTree : AbstractCfirTreeBuilder() {
             "status",
             declarationStatus, withReplace = true, withTransform = true
         )
-        +field("isLocal", boolean)
     }
 
     val callableDeclaration: Element by sealedElement(Declaration, name = "CallableDeclaration") {
         parent(memberDeclaration)
         +declaredSymbol(callableSymbolType)
+        +field("isLocal", boolean)
         +field(
             "returnTypeRef",
             typeRef, withReplace = true, withTransform = true
@@ -217,8 +230,9 @@ object CfirTree : AbstractCfirTreeBuilder() {
 
     val classLikeDeclaration: Element by sealedElement(Declaration, name = "ClassLikeDeclaration") {
         parent(memberDeclaration)
-        +declaredSymbol(cfirClassifierSymbolWithClassId)
+        +declaredSymbol(classLikeSymbolType)
         +FieldSets.declarations
+        +field("name", nameType)
 
         +listField("superTypeRefs", typeRef, withTransform = true)
 
@@ -238,9 +252,10 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
 
     /**
-     * class 声明节点，对应仓颉中引用语义的具名类型。
+     * class 声明节点，对应仓颉中的顶层引用语义具名类型。
      *
-     * 可以包含任意类型的成员声明：构造器、方法、属性、字段变量、嵌套类型等。
+     * class 成员只包含构造器、函数、属性和字段变量。
+     * 这里的成员列表只描述当前 class 的直接成员，不承载额外的类型声明层级。
      */
     val classDeclaration: Element by element(Declaration, name = "Class") {
         parent(classLikeDeclaration)
@@ -262,8 +277,9 @@ object CfirTree : AbstractCfirTreeBuilder() {
      * - 不能包含字段变量（fieldVariable）
      * - 成员只能是属性（property）和方法（function），均可为抽象或带默认实现
      *
-     * 用独立的 properties / functions 字段而非通用 declarations 列表，
-     * 使类型系统在静态层面就排除了非法成员，无需运行时检查。
+     * 这里统一使用 declarations 作为接口成员的唯一树形存储。
+     * interface 专属的“属性/函数分类”只能是派生视图，不能再作为并行子节点列表，
+     * 否则 visitor/transformer/renderer 会把同一成员遍历多次，破坏整棵 CFIR 树的单一子节点语义。
      */
     val interfaceDeclaration: Element by element(Declaration, name = "Interface") {
         parent(classLikeDeclaration)
@@ -272,8 +288,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +FieldSets.typeParameters
         +declaredSymbol(interfaceSymbolType)
         +listField("superTypeRefs", typeRef, withTransform = true)
-        +listField("properties", property, withTransform = true)
-        +listField("functions", function, withTransform = true)
+        +FieldSets.declarations
         +field("name", nameType)
     }
 
@@ -312,12 +327,19 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("isRefEnum", booleanType)
     }
 
+    /**
+     * enum constructor 既是可调用声明，也是 ADT payload 的唯一声明源。
+     *
+     * 这里显式保存 `valueParameters`，让调用解析、模式匹配、冲突检测共享同一份
+     * 参数真相表，避免继续把 payload 信息折叠进 `returnTypeRef` 后再到处反推。
+     */
     val enumConstructor: Element by element(Declaration, name = "EnumConstructor") {
         parent(callableDeclaration)
         +declaredSymbol(enumConstructorSymbolType)
         +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +FieldSets.typeParameters
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
+        +listField("valueParameters", valueParameter, withTransform = true)
         +field("name", nameType)
     }
 
@@ -342,6 +364,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
 
     val function: Element by sealedElement(Declaration, name = "Function") {
         parent(callableDeclaration)
+        parent(targetElement)
         parent(controlFlowGraphOwner)
         customParentInVisitor = callableDeclaration
         +declaredSymbol(functionSymbolType)
@@ -423,11 +446,26 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("pattern", pattern, withTransform = true)
     }
 
+    /**
+     * 模式内部的具名绑定变量。
+     *
+     * 该节点对应官方 C++ `VarPattern` / 具名 `TypePattern` 中真正进入作用域的绑定，
+     * 与外层 `PatternVariable` 容器分离，避免多个绑定名共用同一个 symbol。
+     */
+    val patternBindingVariable: Element by element(Declaration, name = "PatternBindingVariable") {
+        parent(variable)
+        +declaredSymbol(patternBindingVariableSymbolType)
+        +FieldSets.typeParameters
+        +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
+        +field("name", nameType)
+    }
+
     val valueParameter: Element by element(Declaration, name = "ValueParameter") {
         parent(variable)
         parent(controlFlowGraphOwner)
         +declaredSymbol(valueParameterSymbolType)
 
+        +field("isNamed",booleanType, withReplace = false)
         +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +FieldSets.typeParameters
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
@@ -470,7 +508,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
         )
     }
 
-    val expression: Element by sealedElement(Expression) {
+    val expression: Element by element(Expression) {
         parent(statement)
         +field("coneTypeOrNull", coneTypeType, nullable = true, withReplace = true)
     }
@@ -510,20 +548,40 @@ object CfirTree : AbstractCfirTreeBuilder() {
      * 继承 resolvable，calleeReference 由父接口提供，无需重复声明。
      * 解析阶段会将 calleeReference 从 NamedReference 替换为 ResolvedNamedReference。
      */
-    val functionCall: Element by element(Expression, name = "FunctionCall") {
-        parent(expression)
-        parent(resolvable)
-        +field("explicitReceiver", expression, nullable = true, withReplace = true, withTransform = true)
-        +field("dispatchReceiver", expression, nullable = true, withReplace = true, withTransform = true)
+    val functionCall: Element by element(Expression ) {
+        parent(qualifiedAccessExpression)
+        parent(call)
 
-        +listField("arguments", expression, withTransform = true)
-        +FieldSets.typeArguments
         +field("origin", functionCallOrigin)
 
     }
     val errorNamedReference: Element by element(Reference) {
         parent(namedReference)
         parent(diagnosticHolder)
+    }
+    val argumentList: Element by element(Expression) {
+        +listField("arguments", expression, withTransform = true)
+    }
+    val call: Element by sealedElement(Expression) {
+        parent(statement)
+
+        +field(argumentList, withReplace = true)
+    }
+    val annotationCall: Element by element(Expression) {
+        parent(annotation)
+        parent(call)
+        parent(resolvable)
+
+//        +field("argumentMapping", annotationArgumentMapping, withReplace = true, isChild = false)
+//        +field("annotationResolvePhase", annotationResolvePhaseType, withReplace = true)
+        +referencedSymbol("containingDeclarationSymbol", cfirSymbolType.withArgs(TreeTypeRef.Star)) {
+            withBindThis = false
+        }
+    }
+    val superReference: Element by element(Reference) {
+        parent(reference)
+
+        +field("superTypeRef", typeRef, withReplace = true)
     }
 
     val thisReference: Element by element(Reference, name = "ThisReference") {
@@ -539,30 +597,51 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
 
     /**
-     * 属性访问表达式（不带类型参数的成员访问）。
+     * 名称访问表达式（不带类型参数的成员访问）。
      */
-    val propertyAccess: Element by element(Expression, name = "PropertyAccess") {
-        parent(expression)
-        parent(resolvable)
+    val namedAccessExpression: Element by element(Expression ) {
+        parent(qualifiedAccessExpression)
+
         +field("explicitReceiver", expression, nullable = true, withTransform = true)
     }
 
     /**
      * 带类型参数的限定访问表达式（如 foo<T>、Foo.bar<T>）。
      */
-    val qualifiedAccess: Element by element(Expression, name = "QualifiedAccess") {
+    val qualifiedAccessExpression: Element by element(Expression ) {
         parent(expression)
         parent(resolvable)
         +field("dispatchReceiver", expression, nullable = true, withReplace = true)
 
         +field("explicitReceiver", expression, nullable = true, withTransform = true)
-        +FieldSets.typeArguments
+        +FieldSets.typeArguments {
+            withTransform = true
+        }
+    }
+
+    /**
+     * `super` 接收者表达式。
+     *
+     * 将 `super` 从普通名字访问中独立出来，
+     * 以便在 body resolve 阶段统一解析当前 dispatch receiver 对应的直接父类型。
+     */
+    val superReceiverExpression: Element by element(Expression) {
+        parent(qualifiedAccessExpression)
+
+        +field("calleeReference", superReference)
     }
     val errorFunction: Element by element(Declaration) {
         parent(function)
         parent(diagnosticHolder)
 
         +declaredSymbol(errorFunctionSymbolType)
+    }
+    val errorNamedValue: Element by element(Declaration) {
+        parent(callableDeclaration)
+        parent(diagnosticHolder)
+
+        +field("name", nameType)
+        +declaredSymbol(errorNamedValueSymbolType)
     }
     val assignment: Element by element(Expression, name = "Assignment") {
         parent(expression)
@@ -627,8 +706,34 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("body", block, withTransform = true)
     }
 
+    /**
+     * effect command pattern。
+     *
+     * 它和 match/catch pattern 同样带有“绑定名 + 多个类型”的结构，
+     * 但语义只服务于 try/handle，因此不接到通用 pattern 分派上，避免污染现有模式匹配路径。
+     */
+    val commandTypePattern: Element by element(Pattern, name = "CommandTypePattern") {
+        parent(rootElement)
+        +field("bindingName", nameType, nullable = true)
+        +field("isWildcard", booleanType)
+        +listField("typeRefs", typeRef, withTransform = true)
+    }
+
+    /**
+     * try expression 下的 handle 子句。
+     *
+     * 这里保持和官方 AST 一致，作为 TryExpression 的直属分支，
+     * 不把 handle 退化成 catch 或独立表达式。
+     */
+    val handleClause: Element by element(Expression, name = "HandleClause") {
+        parent(expression)
+        +field("commandPattern", commandTypePattern, withTransform = true)
+        +field("body", block, withTransform = true)
+    }
+
     val loopExpression: Element by element(Expression, name = "LoopExpression") {
         parent(expression)
+        parent(targetElement)
         +field("condition", expression, withTransform = true)
         +field("body", block, withTransform = true)
         +field("isDoWhile", booleanType)
@@ -644,6 +749,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     val tryExpression: Element by element(Expression, name = "TryExpression") {
         parent(expression)
         +field("tryBlock", block, withTransform = true)
+        +listField("handlers", handleClause, withTransform = true)
         +listField("catches", catchClause, withTransform = true)
         +field("finallyBlock", block, nullable = true, withTransform = true)
     }
@@ -653,14 +759,55 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("exception", expression, withTransform = true)
     }
 
-    val returnExpression: Element by element(Expression, name = "ReturnExpression") {
+    val performExpression: Element by element(Expression, name = "PerformExpression") {
         parent(expression)
-        +field("result", expression, nullable = true, withTransform = true)
+        +field("expression", expression, withTransform = true)
     }
 
-    val jumpExpression: Element by element(Expression, name = "JumpExpression") {
+    val resumeExpression: Element by element(Expression, name = "ResumeExpression") {
         parent(expression)
-        +field("kind", jumpKindType)
+        +field("withExpression", expression, nullable = true, withTransform = true)
+        +field("throwingExpression", expression, nullable = true, withTransform = true)
+    }
+
+    val returnExpression: Element by element(Expression, name = "ReturnExpression") {
+        needTransformOtherChildren()
+
+        parent(jump.withArgs("E" to function))
+
+        +field("result", expression,  withTransform = true)
+    }
+
+    /**
+     * jump 基类。
+     *
+     * 当前先对齐 loop jump 体系，把 `break` / `continue` 从单节点枚举分派
+     * 提升为独立 CFIR 节点，避免 target 已经框架化后仍然依赖 `kind` 做语义分叉。
+     *
+     * `return` 后续也可以继续接到这套 target 体系上，但第一步先把循环跳转拆实。
+     */
+    val jump: Element by sealedElement(Expression, name = "Jump") {
+        val e = +param("E", targetElement)
+        parent(expression)
+        +field("target", jumpTargetType.withArgs(e))
+    }
+
+    /**
+     * 循环跳转抽象层。
+     *
+     * 这里只负责携带“跳到哪个循环”的 target；具体是 `break` 还是 `continue`
+     * 交由不同 concrete 节点表达，而不是再回退到枚举字段。
+     */
+    val loopJump: Element by sealedElement(Expression, name = "LoopJump") {
+        parent(jump.withArgs("E" to loopExpression))
+    }
+
+    val breakExpression: Element by element(Expression, name = "BreakExpression") {
+        parent(loopJump)
+    }
+
+    val continueExpression: Element by element(Expression, name = "ContinueExpression") {
+        parent(loopJump)
     }
 
     /**
@@ -714,6 +861,10 @@ object CfirTree : AbstractCfirTreeBuilder() {
     val tupleLiteral: Element by element(Expression, name = "TupleLiteral") {
         parent(expression)
         +listField("elements", expression, withTransform = true)
+    }
+
+    val targetElement: Element by element(Other, name = "TargetElement") {
+        kind = ImplementationKind.Interface
     }
 
     val spawnExpression: Element by element(Expression, name = "SpawnExpression") {
@@ -777,7 +928,20 @@ object CfirTree : AbstractCfirTreeBuilder() {
         parent(pattern)
         +field("name", nameType)
         +field("typeRef", typeRef, nullable = true, withTransform = true)
+        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = false, isChild = false)
         +field("nestedPattern", pattern, nullable = true, withTransform = true)
+    }
+
+    /**
+     * 对齐官方 parser 的 `VarOrEnumPattern` 中间态。
+     *
+     * 语法阶段先保留裸名字的歧义信息，resolve 阶段再决定它究竟是 binding pattern
+     * 还是 enum constructor pattern，避免 parser 过早降级成单一路径。
+     */
+    val varOrEnumPattern: Element by element(Pattern, name = "VarOrEnumPattern") {
+        parent(pattern)
+        +field("name", nameType)
+        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = false, isChild = false)
     }
 
     val tuplePattern: Element by element(Pattern, name = "TuplePattern") {
@@ -795,11 +959,14 @@ object CfirTree : AbstractCfirTreeBuilder() {
         parent(pattern)
         +field("typeRef", typeRef, withTransform = true)
         +field("bindingName", nameType, nullable = true)
+        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = false, isChild = false)
     }
 
     val typeRef: Element by sealedElement(TypeRef) {
-        parent(rootElement)
+
         parent(annotationContainer)
+        +FieldSets.annotations
+
     }
 
     val resolvedTypeRef: Element by element(TypeRef, name = "ResolvedTypeRef") {
@@ -807,9 +974,15 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("coneType", coneTypeType)
         +field("delegatedTypeRef", typeRef, nullable = true, isChild = false)
     }
+    val unresolvedTypeRef: Element by sealedElement(TypeRef) {
+        parent(typeRef)
+
+        +field("source", sourceElementType, nullable = false)
+    }
 
     val userTypeRef: Element by element(TypeRef, name = "UserTypeRef") {
-        parent(typeRef)
+        parent(unresolvedTypeRef)
+
         +listField("qualifier", nameType)
         +FieldSets.typeArguments
     }

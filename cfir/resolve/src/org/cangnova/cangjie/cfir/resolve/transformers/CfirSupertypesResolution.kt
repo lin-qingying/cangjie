@@ -3,12 +3,16 @@ package org.cangnova.cangjie.cfir.resolve.transformers
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
+import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
@@ -27,30 +31,39 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
+import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphEdge
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.LocalClassesNavigationInfo
-import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassStaticScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitSimpleImportingScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitStarImportingScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirFileDeclaredTopLevelScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.extendIndexStoreOrNull
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.superTypeGraphStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classId
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRefCopy
@@ -73,6 +86,18 @@ internal class CfirSupertypeResolverProcessor(
 ) {
     override val transformer: CfirSupertypeResolverTransformer =
         CfirSupertypeResolverTransformer(session, scopeSession)
+
+    override fun beforePhase() {
+        super.beforePhase()
+
+        val files = (runCatching { session.cfirProvider }.getOrNull() as? CfirProviderImpl)?.getAllFiles().orEmpty()
+        if (files.isEmpty()) return
+
+        session.superTypeGraphStoreOrNull?.let { graphStore ->
+            graphStore.clearExtended()
+            CfirExtendSupertypesCollector(session, scopeSession, graphStore).collect(files)
+        }
+    }
 }
 
 internal class CfirSupertypeResolverTransformer(
@@ -128,8 +153,6 @@ sealed class SupertypeComputationStatus {
 
 open class SupertypeComputationSession {
     private val fileScopes: MutableMap<CfirFile, ScopePersistentList> = linkedMapOf()
-    private val nestedClassScopes: MutableMap<CfirClassLikeDeclaration, ScopePersistentList> = linkedMapOf()
-    private val staticNestedClassScopes: MutableMap<CfirClassLikeDeclaration, ScopePersistentList> = linkedMapOf()
     private val resolvedExpandedTypeRefs: MutableMap<CfirTypeAlias, CfirResolvedTypeRef> = linkedMapOf()
     private val computationStatus: MutableMap<CfirClassLikeDeclaration, SupertypeComputationStatus> =
         linkedMapOf<CfirClassLikeDeclaration, SupertypeComputationStatus>().withDefault { SupertypeComputationStatus.NotComputed }
@@ -146,16 +169,6 @@ open class SupertypeComputationSession {
 
     fun getOrPutFileScope(file: CfirFile, builder: () -> ScopePersistentList): ScopePersistentList =
         fileScopes.getOrPut(file, builder)
-
-    fun getOrPutScopeForNestedClasses(
-        declaration: CfirClassLikeDeclaration,
-        builder: () -> ScopePersistentList,
-    ): ScopePersistentList = nestedClassScopes.getOrPut(declaration, builder)
-
-    fun getOrPutScopeForStaticNestedClasses(
-        declaration: CfirClassLikeDeclaration,
-        builder: () -> ScopePersistentList,
-    ): ScopePersistentList = staticNestedClassScopes.getOrPut(declaration, builder)
 
     fun startComputingSupertypes(classLikeDeclaration: CfirClassLikeDeclaration) {
         computationStatus[classLikeDeclaration] = SupertypeComputationStatus.Computing
@@ -251,7 +264,11 @@ open class SupertypeComputationSession {
         } else {
             "Loop in supertype definition for ${owner.symbol.classId.asString()}"
         }
-        return createErrorTypeRef(typeRef.source, message)
+        return createErrorTypeRef(
+            sourceElement = typeRef.source,
+            message = message,
+            kind = if (owner is CfirTypeAlias) DiagnosticKind.Other else DiagnosticKind.LoopInSupertype,
+        )
     }
 
     private fun reachesAny(
@@ -326,7 +343,6 @@ internal open class CfirSupertypeResolverVisitor(
     override fun visitClass(klass: CfirClass, data: Any?) {
         withClassLike(klass) {
             resolveSpecificClassLikeSupertypes(klass, klass.superTypeRefs, resolveRecursively = true)
-            recordSupertypesIfNeeded(klass)
             visitDeclarationContent(klass, data)
         }
     }
@@ -376,83 +392,22 @@ internal open class CfirSupertypeResolverVisitor(
 
     private fun prepareFileScopes(file: CfirFile): ScopePersistentList {
         return supertypeComputationSession.getOrPutFileScope(file) {
-            createImportingScopes(file, session).asReversed().toPersistentList()
+            // 这里返回的顺序必须与 TypeResolutionConfiguration 的契约一致：
+            // 高优先级 scope 在前，低优先级 scope 在后。
+            // SUPER_TYPES 阶段如果把它反转，就会让默认导入先于当前文件声明命中，
+            // 从而把本地 `Box/Hashable` 解析成 `std.core.*`。
+            createImportingScopes(file, session).toPersistentList()
         }
     }
 
-    private fun prepareScopeForNestedClasses(
-        classLikeDeclaration: CfirClassLikeDeclaration,
-        forStaticNestedClass: Boolean,
-    ): ScopePersistentList {
-        return if (forStaticNestedClass) {
-            supertypeComputationSession.getOrPutScopeForStaticNestedClasses(classLikeDeclaration) {
-                calculateScopes(classLikeDeclaration, true)
-            }
-        } else {
-            supertypeComputationSession.getOrPutScopeForNestedClasses(classLikeDeclaration) {
-                calculateScopes(classLikeDeclaration, false)
-            }
-        }
-    }
-
-    private fun calculateScopes(
-        outerClass: CfirClassLikeDeclaration,
-        forStaticNestedClass: Boolean,
-    ): ScopePersistentList {
-        resolveAllSupertypesForOuterClass(outerClass)
-        return prepareScopes(outerClass, forStaticNestedClass).pushAll(createOtherScopesForNestedClasses(outerClass))
-    }
-
-    protected open fun resolveAllSupertypesForOuterClass(outerClass: CfirClassLikeDeclaration) {
-        when (outerClass) {
-            is CfirTypeAlias -> resolveTypeAliasSupertype(outerClass)
-            else -> resolveAllSupertypes(outerClass, outerClass.superTypeRefs)
-        }
-    }
-
-    private fun resolveAllSupertypes(
-        classLikeDeclaration: CfirClassLikeDeclaration,
-        supertypeRefs: List<CfirTypeRef>,
-        visited: MutableSet<CfirClassLikeDeclaration> = mutableSetOf(),
-    ) {
-        if (!visited.add(classLikeDeclaration)) return
-        val supertypes = resolveSpecificClassLikeSupertypes(classLikeDeclaration, supertypeRefs, true).map(CfirResolvedTypeRef::coneType)
-        for (supertype in supertypes) {
-            val referencedDeclaration = supertype.toReferencedDeclaration(session) ?: continue
-            resolveAllSupertypes(referencedDeclaration, supertypeComputationSession.supertypeRefs(referencedDeclaration), visited)
-        }
-    }
-
-    private fun createOtherScopesForNestedClasses(klass: CfirClassLikeDeclaration): Collection<CfirScope> {
-        val scopes = mutableListOf<CfirScope>()
-        scopes += buildStaticScope(klass, scopeSession)
-        for (supertypeRef in supertypeComputationSession.supertypeRefs(klass)) {
-            val referencedDeclaration = supertypeRef.coneTypeOrNull?.toReferencedDeclaration(session) ?: continue
-            scopes += buildStaticScope(referencedDeclaration, scopeSession)
-        }
-        return scopes
-    }
-
-    private fun prepareScopes(
-        classLikeDeclaration: CfirClassLikeDeclaration,
-        forStaticNestedClass: Boolean,
-    ): ScopePersistentList {
-        val result = when {
-            classLikeDeclaration.symbol.classId.isNestedClass -> {
-                val outerClassId = classLikeDeclaration.symbol.classId.outerClassId ?: return persistentListOf()
-                val outerClass = session.cfirProvider.getClassByClassId(outerClassId)
-                    ?: session.symbolProvider.getClassLikeSymbolByClassId(outerClassId)?.cfir
-                    ?: return persistentListOf()
-                prepareScopeForNestedClasses(outerClass, classLikeDeclaration.isStaticallyNested() || forStaticNestedClass)
-            }
-
-            else -> {
-                @OptIn(PrivateForInline::class)
-                useSiteFile?.let(::prepareFileScopes) ?: persistentListOf()
-            }
-        }
-
-        return if (forStaticNestedClass) result else result.pushIfNotNull(classLikeDeclaration.typeParametersScope())
+    /**
+     * supertype 解析始终从 use-site 文件导入作用域起步，
+     * 再附加当前声明自身的类型参数作用域。
+     */
+    private fun prepareScopes(classLikeDeclaration: CfirClassLikeDeclaration): ScopePersistentList {
+        @OptIn(PrivateForInline::class)
+        val fileScopes = useSiteFile?.let(::prepareFileScopes) ?: persistentListOf()
+        return fileScopes.pushIfNotNull(classLikeDeclaration.typeParametersScope())
     }
 
     private fun resolveTypeAliasSupertype(typeAlias: CfirTypeAlias): CfirResolvedTypeRef {
@@ -476,7 +431,7 @@ internal open class CfirSupertypeResolverVisitor(
                 supertypeSupplier = supertypeComputationSession.supertypesSupplier,
                 expandTypeAliases = false,
             ),
-            createTypeResolutionConfiguration(typeAlias, prepareScopes(typeAlias, false)),
+            createTypeResolutionConfiguration(typeAlias, prepareScopes(typeAlias)),
         )
         val resolvedTypeRef = when (resolvedExpandedType) {
             is CfirResolvedTypeRef -> resolvedExpandedType
@@ -536,6 +491,7 @@ internal open class CfirSupertypeResolverVisitor(
                     createErrorTypeRef(
                         classLikeDeclaration.source,
                         "Loop in supertype definition for ${classLikeDeclaration.symbol.classId.asString()}",
+                        DiagnosticKind.LoopInSupertype,
                     )
                 )
             }
@@ -550,8 +506,12 @@ internal open class CfirSupertypeResolverVisitor(
                 supertypeSupplier = supertypeComputationSession.supertypesSupplier,
                 expandTypeAliases = false,
             ),
-            createTypeResolutionConfiguration(classLikeDeclaration, prepareScopes(classLikeDeclaration, false)),
-        )
+            createTypeResolutionConfiguration(classLikeDeclaration, prepareScopes(classLikeDeclaration)),
+        ).map { ref ->
+            if (ref.coneType is ConeErrorType) ref.toErrorTypeRef() else ref
+        }.let { resolvedRefs ->
+            resolvedRefs.withImplicitStdCoreSupertypes(classLikeDeclaration, session)
+        }.markDuplicateSupertypes()
         supertypeComputationSession.storeSupertypes(classLikeDeclaration, resolvedTypeRefs)
         return resolvedTypeRefs
     }
@@ -568,16 +528,71 @@ internal open class CfirSupertypeResolverVisitor(
         ).withAdditionalTypeParameters(classLikeDeclaration.typeParametersForResolution())
     }
 
-    private fun recordSupertypesIfNeeded(klass: CfirClass) {
-        val graphStore = session.superTypeGraphStoreOrNull ?: return
-        val edges = supertypeComputationSession.getResolvedSupertypeRefs(klass).map { ref ->
-            CfirSuperTypeGraphEdge(
-                renderedType = ref.renderReadable(),
-                resolvedClassSymbol = ref.toReferencedDeclaration(session)?.symbol as? org.cangnova.cangjie.cfir.symbols.CfirClassSymbol,
-            )
-        }
-        graphStore.record(klass, edges)
+}
+
+/**
+ * 在“非标准库编译”模式下，源码里未显式写出的标准父类型需要在此阶段补齐。
+ *
+ * 设计约束：
+ * 1. 规则只用于 `std.core` 自举，避免把普通源码声明整体改写成显式 `Object/Any` 继承图；
+ * 2. 只补“缺失的槽位”，不覆盖用户已经显式声明的继承关系；
+ * 3. class 默认补直接父 class：普通 class -> Object，Object -> Any，Any -> 无；
+ * 4. interface / struct / enum 在完全没有显式父类型时默认补 Any，但 Any 自身不能补成 `Any : Any` 自环。
+ */
+private fun List<CfirResolvedTypeRef>.withImplicitStdCoreSupertypes(
+    declaration: CfirClassLikeDeclaration,
+    session: CfirSession,
+): List<CfirResolvedTypeRef> {
+    if (session.languageVersionSettings.getFlag(AnalysisFlags.stdlibCompilation)) return this
+    if (declaration.symbol.classId.packageFqName != StandardNames.FqNames.core) return this
+
+    val implicitRefs = when (declaration) {
+        is CfirClass -> declaration.implicitClassSupertypes(this)
+        is CfirInterface, is CfirStruct, is CfirEnum ->
+            if (declaration.symbol.classId != StdlibClassIds.Any && isEmpty()) {
+                listOf(implicitStdCoreTypeRef(StdlibClassIds.Any))
+            } else {
+                emptyList()
+            }
+        else -> emptyList()
     }
+
+    if (implicitRefs.isEmpty()) return this
+    return this + implicitRefs
+}
+
+private fun CfirClass.implicitClassSupertypes(
+    resolvedDirectSuperTypes: List<CfirResolvedTypeRef>,
+): List<CfirResolvedTypeRef> {
+    val classId = symbol.classId
+    if (classId == StdlibClassIds.Any) return emptyList()
+
+    val hasExplicitConcreteSuper = resolvedDirectSuperTypes
+        .map(CfirResolvedTypeRef::coneType)
+        .any(ConeCangJieType::isConcreteSuperClassifier)
+
+    if (hasExplicitConcreteSuper) return emptyList()
+
+    return when (classId) {
+        StdlibClassIds.Object -> listOf(implicitStdCoreTypeRef(StdlibClassIds.Any))
+        else -> listOf(implicitStdCoreTypeRef(StdlibClassIds.Object))
+    }
+}
+
+private fun ConeCangJieType.isConcreteSuperClassifier(): Boolean = when (this) {
+    is ConeClassLikeType -> !isInterface
+    is ConeStructType, is ConeEnumType -> true
+    else -> false
+}
+
+private fun implicitStdCoreTypeRef(classId: ClassId): CfirResolvedTypeRef {
+    val implicitType = when (classId) {
+        // `std.core.Any` 是根接口，补图时必须保留 interface 身份，
+        // 否则后续“具体父类”判定会把它误当成 class。
+        StdlibClassIds.Any -> ConeClassLikeType(classId.toLookupTag(), isInterface = true)
+        else -> ConeClassLikeType(classId.toLookupTag())
+    }
+    return implicitType.toCfirResolvedTypeRef()
 }
 
 private class CfirApplySupertypesTransformer(
@@ -622,6 +637,11 @@ private class CfirApplySupertypesTransformer(
         return transformDeclarationContent(enum, null) as CfirEnum
     }
 
+    override fun transformExtend(extend: CfirExtend, data: Any?): CfirExtend {
+        extend.replaceResolvePhase(CfirResolvePhase.SUPER_TYPES)
+        return transformDeclarationContent(extend, null) as CfirExtend
+    }
+
     override fun transformTypeAlias(typeAlias: CfirTypeAlias, data: Any?): CfirTypeAlias {
         if (typeAlias.expandedTypeRef !is CfirResolvedTypeRef) {
             val expanded = supertypeComputationSession.expandTypealiasInPlace(supertypeComputationSession.getResolvedExpandedTypeRef(typeAlias))
@@ -632,24 +652,120 @@ private class CfirApplySupertypesTransformer(
     }
 
     private fun applyResolvedSupertypesToClassLike(classLikeDeclaration: CfirClassLikeDeclaration) {
-        if (classLikeDeclaration.superTypeRefs.all { it is CfirResolvedTypeRef }) return
         val resolvedRefs = supertypeComputationSession.getResolvedSupertypeRefs(classLikeDeclaration)
             .map(supertypeComputationSession::expandTypealiasInPlace)
-        classLikeDeclaration.replaceSuperTypeRefs(resolvedRefs)
+        if (classLikeDeclaration.superTypeRefs.any { it !is CfirResolvedTypeRef }) {
+            classLikeDeclaration.replaceSuperTypeRefs(resolvedRefs)
+        }
+        recordResolvedSupertypes(classLikeDeclaration, resolvedRefs)
+    }
+
+    private fun recordResolvedSupertypes(
+        classLikeDeclaration: CfirClassLikeDeclaration,
+        resolvedRefs: List<CfirResolvedTypeRef>,
+    ) {
+        val graphStore = session.superTypeGraphStoreOrNull ?: return
+        graphStore.recordDeclared(classLikeDeclaration, resolvedRefs.map { ref ->
+            CfirSuperTypeGraphEdge(
+                typeRef = ref,
+                renderedType = ref.renderReadable(),
+                resolvedClassSymbol = ref.toReferencedDeclaration(session)?.symbol
+                    as? org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*>,
+            )
+        })
     }
 }
 
-private fun buildStaticScope(
-    declaration: CfirClassLikeDeclaration,
-    scopeSession: ScopeSession,
-): CfirContainingNamesAwareScope {
-    val key = "supertype-static:" + declaration.symbol.classId.asString()
-    return scopeSession.getOrBuild(key, StaticScopeKey) {
-        CfirClassStaticScope(declaration)
+private class CfirExtendSupertypesCollector(
+    private val session: CfirSession,
+    private val scopeSession: ScopeSession,
+    private val graphStore: org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore,
+) : CfirDefaultVisitor<Unit, CfirTypeResolutionConfiguration>() {
+    private val typeResolverTransformer = CfirSpecificTypeResolverTransformer(session)
+    private val classDeclarationsStack: ArrayDeque<CfirClassLikeDeclaration> = ArrayDeque()
+    private var useSiteFile: CfirFile? = null
+
+    fun collect(files: List<CfirFile>) {
+        files.forEach { file ->
+            val configuration = CfirTypeResolutionConfiguration.EMPTY
+                .withUseSiteFile(file)
+                // extend 超类型采集与正式 SUPER_TYPES 解析必须共享同一套作用域优先级，
+                // 否则索引阶段会先把本地类型错误解析成默认导入类型，后续所有 extend 规则都会被污染。
+                .withScopes(createImportingScopes(file, session).toPersistentList())
+            withFile(file) {
+                file.declarations.forEach { declaration ->
+                    declaration.accept(this, configuration)
+                }
+            }
+        }
+    }
+
+    override fun visitElement(element: CfirElement, data: CfirTypeResolutionConfiguration) = Unit
+
+    override fun visitClass(klass: CfirClass, data: CfirTypeResolutionConfiguration) {
+        visitNestedContainer(klass, data)
+    }
+
+    override fun visitInterface(`interface`: CfirInterface, data: CfirTypeResolutionConfiguration) {
+        visitNestedContainer(`interface`, data)
+    }
+
+    override fun visitStruct(struct: CfirStruct, data: CfirTypeResolutionConfiguration) {
+        visitNestedContainer(struct, data)
+    }
+
+    override fun visitEnum(enum: CfirEnum, data: CfirTypeResolutionConfiguration) {
+        visitNestedContainer(enum, data)
+    }
+
+    override fun visitExtend(extend: CfirExtend, data: CfirTypeResolutionConfiguration) {
+        val configuration = data
+            .withUseSiteFile(useSiteFile ?: data.useSiteFile ?: return)
+            .withTopContainer(extend)
+            .withContainingClassDeclarations(classDeclarationsStack.filterIsInstance<CfirClass>())
+            .withAdditionalTypeParameters(extend.typeParameters)
+
+        extend.transformExtendedTypeRef(typeResolverTransformer, configuration)
+        extend.transformSuperTypeRefs(typeResolverTransformer, configuration)
+
+        val ownerClassId = (extend.extendedTypeRef as? CfirResolvedTypeRef)?.coneType?.classIdOrPrimitiveClassId ?: return
+        val edges = extend.superTypeRefs.mapNotNull { ref ->
+            val resolvedRef = ref as? CfirResolvedTypeRef ?: return@mapNotNull null
+            CfirSuperTypeGraphEdge(
+                typeRef = resolvedRef,
+                renderedType = resolvedRef.renderReadable(),
+                resolvedClassSymbol = resolvedRef.toReferencedDeclaration(session)?.symbol
+                    as? org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*>,
+            )
+        }
+        graphStore.recordExtended(ownerClassId, edges)
+    }
+
+    private fun visitNestedContainer(
+        declaration: CfirClassLikeDeclaration,
+        data: CfirTypeResolutionConfiguration,
+    ) {
+        val configuration = data.withAdditionalTypeParameters(declaration.typeParametersForResolution())
+        classDeclarationsStack.addLast(declaration)
+        try {
+            declaration.declarations.forEach { child ->
+                child.accept(this, configuration)
+            }
+        } finally {
+            classDeclarationsStack.removeLast()
+        }
+    }
+
+    private inline fun withFile(file: CfirFile, block: () -> Unit) {
+        val previous = useSiteFile
+        useSiteFile = file
+        try {
+            block()
+        } finally {
+            useSiteFile = previous
+        }
     }
 }
-
-private object StaticScopeKey : org.cangnova.cangjie.cfir.ScopeSessionKey<String, CfirContainingNamesAwareScope>()
 
 private fun createImportingScopes(file: CfirFile, session: CfirSession): List<CfirScope> {
     val symbolProvider: CfirSymbolProvider = session.symbolProvider
@@ -660,6 +776,8 @@ private fun createImportingScopes(file: CfirFile, session: CfirSession): List<Cf
         .map(ImportPath::toImport)
 
     return buildList {
+        // supertype 解析与 body/declaration 解析必须共享同一套文件级名字优先级。
+        add(CfirFileDeclaredTopLevelScope(file))
         add(CfirPackageMemberScope(file.packageDirective.packageFqName, symbolProvider))
         add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
         add(CfirExplicitStarImportingScope(imports, symbolProvider))
@@ -691,19 +809,24 @@ private fun CfirClassLikeDeclaration.typeParametersForResolution(): List<CfirTyp
     is CfirTypeAlias -> typeParameters
 }
 
-private fun CfirClassLikeDeclaration.isStaticallyNested(): Boolean = when (this) {
-    is CfirClass -> status.isStatic
-    is org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration -> true
-    is CfirTypeAlias -> true
-    is CfirInterface, is CfirStruct, is CfirEnum -> true
-}
-
 private fun CfirClassLikeDeclaration.replaceSuperTypeRefs(newRefs: List<CfirTypeRef>) {
     when (this) {
-        is CfirClassImpl -> superTypeRefs = newRefs
-        is CfirInterfaceImpl -> superTypeRefs = newRefs
-        is CfirStructImpl -> superTypeRefs = newRefs
-        is CfirEnumImpl -> superTypeRefs = newRefs
+        is CfirClassImpl -> superTypeRefs.apply {
+            clear()
+            addAll(newRefs)
+        }
+        is CfirInterfaceImpl -> superTypeRefs.apply {
+            clear()
+            addAll(newRefs)
+        }
+        is CfirStructImpl -> superTypeRefs.apply {
+            clear()
+            addAll(newRefs)
+        }
+        is CfirEnumImpl -> superTypeRefs.apply {
+            clear()
+            addAll(newRefs)
+        }
         else -> Unit
     }
 }
@@ -740,6 +863,53 @@ private fun createErrorTypeRef(
     source = sourceElement
 
     diagnostic = ConeSimpleDiagnostic(message, kind)
+}
+
+private fun CfirResolvedTypeRef.toErrorTypeRef(): CfirResolvedTypeRef {
+    val errorType = coneType as? ConeErrorType ?: return this
+    return buildErrorTypeRef {
+        source = this@toErrorTypeRef.source
+        coneType = errorType
+        annotations += this@toErrorTypeRef.annotations
+        delegatedTypeRef = this@toErrorTypeRef.delegatedTypeRef ?: this@toErrorTypeRef
+        diagnostic = errorType.diagnostic
+    }
+}
+
+private fun List<CfirResolvedTypeRef>.markDuplicateSupertypes(): List<CfirResolvedTypeRef> {
+    val firstIndexByKey = linkedMapOf<String, Int>()
+    val duplicates = mutableSetOf<Int>()
+
+    forEachIndexed { index, ref ->
+        val key = ref.duplicateKey() ?: return@forEachIndexed
+        val previous = firstIndexByKey.putIfAbsent(key, index)
+        if (previous != null) {
+            duplicates += previous
+        }
+    }
+
+    if (duplicates.isEmpty()) return this
+
+    return mapIndexed { index, ref ->
+        if (index !in duplicates || ref is CfirErrorTypeRef) return@mapIndexed ref
+        buildErrorTypeRef {
+            source = ref.source
+            annotations += ref.annotations
+            coneType = ref.coneType
+            delegatedTypeRef = ref.delegatedTypeRef ?: ref
+            diagnostic = ConeSimpleDiagnostic("Duplicate supertype: ${ref.renderReadable()}", DiagnosticKind.DuplicateSupertype)
+        }
+    }
+}
+
+private fun CfirResolvedTypeRef.duplicateKey(): String? {
+    return when (val type = coneType) {
+        is ConePrimitiveType -> "primitive:${type.kind.typeName}"
+        is ConeClassLikeType -> "class:${type.classId}"
+        is ConeStructType -> "struct:${type.classId}"
+        is ConeEnumType -> "enum:${type.classId}"
+        else -> null
+    }
 }
 
 private fun CfirTypeRef.renderReadable(): String = when (this) {

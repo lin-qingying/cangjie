@@ -6,8 +6,6 @@
 package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.CfirResolvable
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -18,15 +16,15 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.functionCall]
  */
-abstract class CfirFunctionCall : CfirExpression(), CfirResolvable {
+abstract class CfirFunctionCall : CfirQualifiedAccessExpression(), CfirCall {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract override val calleeReference: CfirReference
-    abstract val explicitReceiver: CfirExpression?
-    abstract val dispatchReceiver: CfirExpression?
-    abstract val arguments: List<CfirExpression>
-    abstract val typeArguments: List<CfirTypeRef>
+    abstract override val dispatchReceiver: CfirExpression?
+    abstract override val explicitReceiver: CfirExpression?
+    abstract override val typeArguments: List<CfirTypeRef>
+    abstract override val argumentList: CfirArgumentList
     abstract val origin: CfirFunctionCallOrigin
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
@@ -36,39 +34,23 @@ abstract class CfirFunctionCall : CfirExpression(), CfirResolvable {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformFunctionCall(this, data) as E
 
-    override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+    abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
+    abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
 
-    override abstract fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+    abstract override fun replaceCalleeReference(newCalleeReference: CfirReference)
 
+    abstract override fun replaceDispatchReceiver(newDispatchReceiver: CfirExpression?)
 
-    override abstract fun replaceCalleeReference(newCalleeReference: CfirReference)
+    abstract override fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>)
 
+    abstract override fun replaceArgumentList(newArgumentList: CfirArgumentList)
 
-    abstract fun replaceExplicitReceiver(newExplicitReceiver: CfirExpression?)
+    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
 
+    abstract override fun <D> transformCalleeReference(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
 
-    abstract fun replaceDispatchReceiver(newDispatchReceiver: CfirExpression?)
+    abstract override fun <D> transformExplicitReceiver(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
 
-
-    abstract fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>)
-
-
-    override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
-
-
-    override abstract fun <D> transformCalleeReference(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
-
-
-    abstract fun <D> transformExplicitReceiver(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
-
-
-    abstract fun <D> transformDispatchReceiver(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
-
-
-    abstract fun <D> transformArguments(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
-
-
-    abstract fun <D> transformTypeArguments(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
-
+    abstract override fun <D> transformTypeArguments(transformer: CfirTransformer<D>, data: D): CfirFunctionCall
 }

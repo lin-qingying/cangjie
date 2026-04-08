@@ -1,9 +1,0 @@
-## Resolution Stages > CfirCheckArguments
-owner: OK(5/5): CfirNamedFunctionSymbol(applyFunc)
-- CONSTRAINT (Int64) -> Int64 <: (Int64) -> Int64
-- CONSTRAINT Int64 <: Int64
-
-
-## Call Completion
-owner: OK(5/5): CfirNamedFunctionSymbol(applyFunc)
-<empty>

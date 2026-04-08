@@ -6,7 +6,6 @@
 package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -33,24 +32,17 @@ abstract class CfirForInExpression : CfirLoopExpression() {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformForInExpression(this, data) as E
 
-    override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+    abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
+    abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
 
-    override abstract fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirForInExpression
 
-
-    override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirForInExpression
-
-
-    override abstract fun <D> transformCondition(transformer: CfirTransformer<D>, data: D): CfirForInExpression
-
+    abstract override fun <D> transformCondition(transformer: CfirTransformer<D>, data: D): CfirForInExpression
 
     abstract fun <D> transformVariable(transformer: CfirTransformer<D>, data: D): CfirForInExpression
 
-
     abstract fun <D> transformIterable(transformer: CfirTransformer<D>, data: D): CfirForInExpression
 
-
-    override abstract fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirForInExpression
-
+    abstract override fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirForInExpression
 }

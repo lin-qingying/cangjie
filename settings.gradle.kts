@@ -24,9 +24,13 @@ include(":compiler")
 include(":compiler:config")
 include(":compiler:phaser")
 include(":compiler:arguments")
-include(":compiler:cli-arguments-generator")
+include(":compiler:frontend-arguments-generator")
+include(":compiler:frontend")
+include(":prepare:frontend")
+include(":prepare:frontend-embeddable")
 
 include(":util")
+include(":lsp")
 // PSI 模块
 include(":psi")
 
@@ -38,7 +42,6 @@ include(":cfir:cfir-common")
 include(":cfir:semantics")
 include(":cfir:cfir-cones")
 include(":common:diagnostics")
-include(":cfir:symbols")
 include(":cfir:resolve")
 include(":cfir:cfir-tree")
 include(":cfir:checkers")
@@ -53,15 +56,30 @@ include(":cfir:raw-cfir:raw-cfir-common")
 
 // Analysis API，对齐 Kotlin analysis/analysis-api
 include(":analysis:analysis-api")
+include(":analysis:analysis-api-platform-interface")
 include(":analysis:analysis-api-impl-base")
+include(":analysis:analysis-api-standalone")
 include(":analysis:analysis-api-cfir")
+include(":analysis:low-level-api-cfir")
+include(":analysis:analysis-internal-utils")
+include(":analysis:cj-references")
+include(":analysis:stubs")
+include(":analysis:decompiled")
+include(":analysis:decompiled:decompiler-to-file-stubs")
+include(":analysis:decompiled:decompiler-to-stubs")
+include(":analysis:decompiled:decompiler-to-psi")
+include(":analysis:decompiled:light-declarations-for-decompiled")
+
+include(":analysis:light-declarations")
+
+include(":analysis:symbol-light-declarations")
+include(":analysis:analysis-tools")
 
 
 include(":analysis:analysis-test-framework")
 include(":tests")
 include(":tests:test-infrastructure")
 
-include(":compiler:cli")
 include(":compiler:chir")
 include(":compiler:codegen")
 
@@ -74,6 +92,11 @@ include(":flatbuffers-gen")
 
 
 include(":cfir:analysis-tests")
+
+// 宏展开模块
+include(":macro:macro-common")
+include(":macro:macro-process")
+include(":macro:macro-stub")
 
 
 include("cfir:diagnostic-renderers")

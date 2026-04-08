@@ -264,6 +264,10 @@ int COALESCING_Id = 110;
     int FILE_KEYWORD_Id = 212;
 
     int VARARG_KEYWORD_Id = 213;
+    int HANDLE_KEYWORD_Id = 214;
+    int PERFORM_KEYWORD_Id = 215;
+    int RESUME_KEYWORD_Id = 216;
+    int THROWING_KEYWORD_Id = 217;
 
 
     IElementType DOC_COMMENT = CDocTokens.CDOC;
@@ -514,6 +518,10 @@ int COALESCING_Id = 110;
     CjKeywordToken MACRO_KEYWORD = CjKeywordToken.keyword("macro", MACRO_KEYWORD_Id);
     CjKeywordToken CATCH_KEYWORD = CjKeywordToken.keyword("catch", CATCH_KEYWORD_Id);
     CjKeywordToken FINALLY_KEYWORD = CjKeywordToken.keyword("finally", FINALLY_KEYWORD_Id);
+    CjKeywordToken HANDLE_KEYWORD = CjKeywordToken.keyword("handle", HANDLE_KEYWORD_Id);
+    CjKeywordToken PERFORM_KEYWORD = CjKeywordToken.keyword("perform", PERFORM_KEYWORD_Id);
+    CjKeywordToken RESUME_KEYWORD = CjKeywordToken.keyword("resume", RESUME_KEYWORD_Id);
+    CjKeywordToken THROWING_KEYWORD = CjKeywordToken.keyword("throwing", THROWING_KEYWORD_Id);
     CjModifierKeywordToken REDEF_KEYWORD = CjModifierKeywordToken.keywordModifier("redef", REDEF_KEYWORD_Id);
     CjKeywordToken QUOTE_KEYWORD = CjKeywordToken.keyword("quote", QUOTE_KEYWORD_Id);
     //    特殊修饰符
@@ -677,7 +685,7 @@ int COALESCING_Id = 110;
 
                     IMPORT_KEYWORD,
                     OVERRIDE_KEYWORD, PRIVATE_KEYWORD, PUBLIC_KEYWORD, PROTECTED_KEYWORD, INTERNAL_KEYWORD,
-                    CATCH_KEYWORD, FINALLY_KEYWORD,
+                    CATCH_KEYWORD, FINALLY_KEYWORD, HANDLE_KEYWORD, PERFORM_KEYWORD, RESUME_KEYWORD, THROWING_KEYWORD,
                     INIT_KEYWORD,
                     STATIC_KEYWORD,
                     REDEF_KEYWORD,

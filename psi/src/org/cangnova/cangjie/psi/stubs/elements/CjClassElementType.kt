@@ -24,7 +24,7 @@
 package org.cangnova.cangjie.psi.stubs.elements
 
 import org.cangnova.cangjie.psi.CjClass
-import org.cangnova.cangjie.psi.psiUtil.StubUtils.createNestedClassId
+import org.cangnova.cangjie.psi.psiUtil.StubUtils.createClassId
 import org.cangnova.cangjie.psi.psiUtil.StubUtils.deserializeClassId
 import org.cangnova.cangjie.psi.psiUtil.StubUtils.serializeClassId
 import org.cangnova.cangjie.psi.psiUtil.getSuperNames
@@ -56,7 +56,7 @@ class CjClassElementType(debugName: String) :
         val fqName = psi.safeFqNameForLazyResolve()
 
         val superNames = psi.getSuperNames()
-        val classId = createNestedClassId(parentStub, psi)
+        val classId = createClassId(parentStub, psi)
         return CangJieClassStubImpl(
             stubType,
             parentStub,
@@ -64,7 +64,6 @@ class CjClassElementType(debugName: String) :
             classId,
             StringRef.fromString(psi.name),
             wrapStrings(superNames),
-            psi.isLocal,
         )
     }
 
@@ -77,10 +76,6 @@ class CjClassElementType(debugName: String) :
 
         serializeClassId(dataStream, stub.getClassId())
 
-        //        dataStream.writeBoolean(stub.isInterface());
-        dataStream.writeBoolean(stub.isLocal())
-
-        //        dataStream.writeBoolean(stub.isTopLevel());
         val superNames = stub.getSuperNames()
         dataStream.writeVarInt(superNames.size)
         for (name in superNames) {
@@ -95,10 +90,6 @@ class CjClassElementType(debugName: String) :
 
         val classId = deserializeClassId(dataStream)
 
-        //        bool isTrait = dataStream.readBoolean();
-        val isLocal = dataStream.readBoolean()
-
-        //        bool isTopLevel = dataStream.readBoolean();
         val superCount = dataStream.readVarInt()
         val superNames = StringRef.createArray(superCount)
         for (i in 0..<superCount) {
@@ -112,7 +103,6 @@ class CjClassElementType(debugName: String) :
             classId,
             name,
             superNames,
-            isLocal,
         )
     }
 

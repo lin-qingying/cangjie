@@ -264,7 +264,7 @@ PSI 和 CFIR 是两棵独立的树。PSI 是**源码的语法镜像**（保留�
 | 模块 | 职责 | 依赖 |
 |---|---|---|
 | `:compiler:pipeline` | 12 阶段管线编排：定义阶段顺序、阶段间数据传递、错误中断策略 | `:cfir:entrypoint`, 各阶段模块 |
-| `:compiler:cli` | 命令行入口：参数解析、环境初始化、管线调用、诊断输出 | `:compiler:pipeline`, `:compiler:config` |
+| `:compiler:frontend` | 前端基础设施入口：参数模型、环境初始化、前端管线调用、诊断输出接缝 | `:compiler:pipeline`, `:compiler:config` |
 | `:compiler:plugins` | 插件系统：插件加载、MetaTransform 注册、扩展点管理 | `:compiler:config` |
 
 ---
@@ -296,7 +296,7 @@ PSI 和 CFIR 是两棵独立的树。PSI 是**源码的语法镜像**（保留�
 
 ```mermaid
 graph TD
-    cli[":compiler:cli"]
+    frontend[":compiler:frontend"]
     pipeline[":compiler:pipeline"]
     macro[":compiler:macro\n:compiler:condition-compile"]
     entrypoint[":cfir:entrypoint"]
@@ -443,7 +443,7 @@ include(":cfir:entrypoint")
 // include(":backend:codegen")              // 阶段 12
 
 // ===== 编译驱动 =====
-include(":compiler:cli")
+include(":compiler:frontend")
 // include(":compiler:pipeline")
 // include(":compiler:plugins")              // 阶段 1
 
@@ -478,7 +478,7 @@ include(":dependencies:intellij-core")
 | `:cfir:checkers` | `:cfir:checkers` | 不变，反转依赖方向 |
 | `:cfir:diagnostic-renderers` | `:cfir:diagnostics:renderers` | 归入诊断子系统 |
 | `:compiler:frontend.common` | 删除或合入 `:cfir:session` | 当前只有 1 个文件 |
-| `:compiler:cli` | `:compiler:cli` | 不变 |
+| `:compiler:frontend` | `:compiler:frontend` | 接收原 `cli` 的前端职责 |
 | 无 | `:cfir:symbols` | 新增，从 tree 中拆出符号提供者 |
 | 无 | `:cfir:semantics` | 新增，resolve/checkers 共享的纯函数 |
 | 无 | `:cfir:entrypoint` | 新增，CFIR 流程编排 |

@@ -9,8 +9,9 @@ package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.impl.CfirLiteralExpressionImpl
@@ -29,7 +30,7 @@ class CfirLiteralExpressionBuilder {
     fun build(): CfirLiteralExpression {
         return CfirLiteralExpressionImpl(
             source,
-            annotations,
+            annotations.toMutableOrEmpty(),
             coneTypeOrNull,
             kind,
             value,

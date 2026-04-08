@@ -1,4 +1,6 @@
 package org.cangnova.cangjie.cfir
+fun <T> List<T>?.toMutableOrEmpty(): MutableOrEmptyList<T> =
+    if (isNullOrEmpty()) MutableOrEmptyList.empty() else MutableOrEmptyList(this.toMutableList())
 
 @JvmInline
 value class MutableOrEmptyList<out T>(internal val list: MutableList<@UnsafeVariance T>?) : List<T> {

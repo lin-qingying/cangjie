@@ -69,8 +69,6 @@ abstract class CjTypeStatement :
     override val superTypeListEntries: List<CjSuperTypeListEntry>
         get() = getSuperTypeList()?.entries.orEmpty()
 
-    override val isLocal: Boolean
-        get() = stub?.isLocal() ?: CjPsiUtil.isLocal(this)
     override val declarations: List<CjDeclaration>
         get() = body?.declarations.orEmpty()
 

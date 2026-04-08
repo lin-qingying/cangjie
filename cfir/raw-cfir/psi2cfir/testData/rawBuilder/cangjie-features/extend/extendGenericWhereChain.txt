@@ -5,6 +5,7 @@ FILE: extendGenericWhereChain.cj
     }
     public enum Wrapper<T> {
         Item(R|T|)
+        init()
     }
     extend<T> R|Wrapper<R|T|>| <: R|Display| {
     }

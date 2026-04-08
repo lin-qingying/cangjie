@@ -23,14 +23,13 @@
  */
 
 package org.cangnova.cangjie.psi
-import org.cangnova.cangjie.name.*
 
-import org.cangnova.cangjie.lexer.CjTokens
-import org.cangnova.cangjie.psi.psiUtil.getChildrenOfType
-import org.cangnova.cangjie.psi.stubs.CangJieExtendStub
-import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.stubs.CangJieExtendStub
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
 class CjExtend : CjTypeStatement {
     private val _stub: CangJieExtendStub?
@@ -46,29 +45,16 @@ class CjExtend : CjTypeStatement {
     constructor(node: ASTNode) : super(node)
     constructor(stub: CangJieExtendStub) : super(stub, CjStubElementTypes.EXTEND)
 
-//    override val fqName: FqName?
-//        get() = super.fqName
-
     override fun getName(): String? {
-        // 优先从 stub 获取名称，避免触发 AST 加载
-        _stub?.getName()?.let { return it }
+        _stub?.name?.let { return it }
         return getExtendName()
     }
 
     private fun getExtendName(): String? {
         return when (val type = receiverTypeReceiver?.typeElement) {
-            is CjUserType -> {
-                type.referencedName
-            }
-
-            is CjOptionType -> {
-                  "Option"
-            }
-
-            is CjBasicType -> {
-                type.name
-            }
-
+            is CjUserType -> type.referencedName
+            is CjOptionType -> "Option"
+            is CjBasicType -> type.name
             else -> null
         }
     }
@@ -76,100 +62,46 @@ class CjExtend : CjTypeStatement {
     override fun getNameIdentifier(): PsiElement? {
         return when (val type = receiverTypeReceiver?.typeElement) {
             is CjUserType -> type.referenceExpression?.identifier
-            is CjBasicType -> type  // 基本类型本身就是标识符
-            is CjOptionType -> type  // Option 类型本身
+            is CjBasicType -> type
+            is CjOptionType -> type
             else -> null
         }
     }
 
-    // 被扩展类型
+    /**
+     * 被扩展的接收者类型。
+     *
+     * 对 stub-backed PSI，直接读取首个 `TYPE_REFERENCE` 子节点，避免无谓展开 AST。
+     */
     val receiverTypeReceiver: CjTypeReference?
         get() {
-            val stub = stub
             if (stub != null) {
-
-                val childTypeReferences = getStubOrPsiChildrenAsList(CjStubElementTypes.TYPE_REFERENCE)
-                return if (childTypeReferences.isNotEmpty()) {
-                    childTypeReferences[0]
-                } else {
-                    null
-                }
+                return getStubOrPsiChildrenAsList(CjStubElementTypes.TYPE_REFERENCE).firstOrNull()
             }
             return getReceiverTypeRefByTree()
         }
+
     override val nameAsSafeName: Name
-        get() = receiverTypeReceiver?.text?.let {
-            if (it.isEmpty()) {
-                Name.ERROR_NAME
-            } else {
-                Name.identifier(it)
-            }
+        get() = receiverTypeReceiver?.text?.let { text ->
+            if (text.isEmpty()) Name.ERROR_NAME else Name.identifier(text)
         } ?: Name.ERROR_NAME
+
     override val nameAsName: Name
-        get() = name?.let { Name.identifier(it) } ?: Name.ERROR_NAME
+        get() = name?.let(Name::identifier) ?: Name.ERROR_NAME
 
     /**
-     * 生成扩展的唯一标识符
+     * `extend` 的稳定身份。
      *
-     * 遵循编译器的 name mangling 策略，格式：
-     * ```
-     * packageName:ExtendedType<:Interface1&Interface2&...
-     * ```
-     *
-     * 关键点：
-     * 1. 使用包名前缀区分不同包中的同名扩展
-     * 2. 使用类型的规范化文本表示（而非简单名）
-     * 3. 接口列表按字典序排序，确保一致性
-     * 4. 不包含源码位置信息（textOffset、textRange、text），避免格式化导致 ID 变化
-     *
-     * 对应编译器实现: ASTMangler.cpp::MangleExtendDecl
-     *
-     * @return 扩展的唯一标识符
+     * 优先使用 stub 中已经固化好的 ID；否则再根据当前 PSI 文本按统一算法构造。
      */
     fun getExtendId(): String {
-        val parts = mutableListOf<String>()
-
-        // 1. 包名前缀（用于区分不同包中的同名扩展）
-        val packageName = fqName?.asString() ?: ""
-        parts.add(packageName)
-        parts.add(":")
-
-        // 2. 被扩展类型的规范化表示
-        val extendedTypeName = receiverTypeReceiver?.text ?: "Unknown"
-        parts.add(extendedTypeName)
-
-        // 3. 分隔符（对应编译器的 MANGLE_LT_COLON_PREFIX）
-        parts.add("<:")
-
-        // 4. 排序的接口列表（用 & 连接）
-        val interfaces = getSortedSupernames()
-        parts.add(interfaces)
-
-        // 注意：暂不包含泛型约束，因为当前 PSI 层不易获取完整的约束信息
-        // 如需支持，可在后续从 descriptor 层获取
-
-        return parts.joinToString("")
-    }
-
-    /**
-     * 获取排序后的接口名称列表
-     *
-     * 对应编译器实现中的接口排序逻辑：
-     * ```cpp
-     * std::stable_sort(inherits.begin(), inherits.end());
-     * ```
-     *
-     * @return 排序后的接口名称，用 & 连接
-     */
-    private fun getSortedSupernames(): String {
-        val list = findChildByType<CjSuperTypeList>(CjNodeTypes.SUPER_TYPE_LIST)
-            ?: return ""
-
-        val names = list.getChildrenOfType<CjSuperTypeEntry>()
-            .map { it.children[0].text }
-            .sorted()  // 按字典序排序，确保一致性
-
-        return names.joinToString("&")
+        _stub?.extendId.takeIf { !it.isNullOrBlank() }?.let { return it }
+        val packageFqName = (containingFile as? CjFile)?.packageFqName
+        return buildExtendId(
+            packageFqName = packageFqName,
+            receiverTypeText = receiverTypeReceiver?.text,
+            superTypeTexts = superTypeListEntries.mapNotNull { entry -> entry.typeReference?.text },
+        )
     }
 
     private fun getReceiverTypeRefByTree(): CjTypeReference? {

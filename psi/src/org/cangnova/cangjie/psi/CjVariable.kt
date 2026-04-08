@@ -32,6 +32,7 @@ import com.intellij.lang.ASTNode
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.psi.PsiElement
+import com.intellij.psi.search.SearchScope
 import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.tree.TokenSet
@@ -115,6 +116,7 @@ class CjPatternVariable : CjVariable<CangJieVariableStub> {
             CjStubElementTypes.BINDING_PATTERN,
             CjStubElementTypes.TUPLE_PATTERN,
             CjStubElementTypes.ENUM_PATTERN,
+            CjStubElementTypes.TYPE_PATTERN,
             CjStubElementTypes.WILDCARD_PATTERN
         )
 
@@ -236,6 +238,19 @@ class CjPatternVariable : CjVariable<CangJieVariableStub> {
         }
 
         return initializer != null
+    }
+
+    /**
+     * 模式变量的 use-scope 由声明位置决定，而不是由具体名字节点决定。
+     *
+     * `find usages` 搜索 `CjBindingPattern` / `CjTypePattern` 时会委托到这里，
+     * 因此必须与普通声明共享同一套作用域策略。
+     */
+    override fun getUseScope(): SearchScope {
+        return computeCangJieDeclarationUseScope(
+            declaration = this,
+            defaultScope = super.getUseScope(),
+        )
     }
 // CjVariable 是模式匹配声明，可能包含多个绑定。请从 CjBindingPattern 获取 fqName。
     override val nameAsSafeName: Name

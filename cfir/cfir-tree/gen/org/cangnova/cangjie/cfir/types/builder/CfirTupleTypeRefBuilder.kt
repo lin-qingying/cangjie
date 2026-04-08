@@ -9,8 +9,9 @@ package org.cangnova.cangjie.cfir.types.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirTupleTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.impl.CfirTupleTypeRefImpl
@@ -26,7 +27,7 @@ class CfirTupleTypeRefBuilder {
     fun build(): CfirTupleTypeRef {
         return CfirTupleTypeRefImpl(
             source,
-            annotations,
+            annotations.toMutableOrEmpty(),
             elementTypeRefs,
         )
     }

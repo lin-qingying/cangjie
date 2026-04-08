@@ -62,8 +62,10 @@ class LightTreeModifierList(
     // ===== 其他修饰符 =====
 
     val isStatic: Boolean get() = hasModifier(CjTokens.STATIC_KEYWORD)
+    val isConst: Boolean get() = hasModifier(CjTokens.CONST_KEYWORD)
     val isMut: Boolean get() = hasModifier(CjTokens.MUT_KEYWORD)
     val isOverride: Boolean get() = hasModifier(CjTokens.OVERRIDE_KEYWORD)
+    val isRedef: Boolean get() = hasModifier(CjTokens.REDEF_KEYWORD)
     val isOperator: Boolean get() = hasModifier(CjTokens.OPERATOR_KEYWORD)
     val isUnsafe: Boolean get() = hasModifier(CjTokens.UNSAFE_KEYWORD)
     val isForeign: Boolean get() = hasModifier(CjTokens.FOREIGN_KEYWORD)
@@ -71,8 +73,12 @@ class LightTreeModifierList(
     /**
      * 转换为 [CfirDeclarationStatus]，与 [AbstractRawCfirBuilder.buildDeclarationStatus] 对齐。
      */
-    fun toDeclarationStatus(inLocalContext: Boolean): CfirDeclarationStatus {
-        val defaultVisibility = if (inLocalContext) Visibilities.Local else Visibilities.Internal
+    fun toDeclarationStatus(inLocalContext: Boolean, inInterfaceContext: Boolean): CfirDeclarationStatus {
+        val defaultVisibility = when {
+            inLocalContext -> Visibilities.Local
+            inInterfaceContext -> Visibilities.Public
+            else -> Visibilities.Internal
+        }
         val effectiveVisibility = if (isVisibilityExplicit) visibility else defaultVisibility
         val status = CfirDeclarationStatusImpl(
             visibility = effectiveVisibility,
@@ -84,8 +90,10 @@ class LightTreeModifierList(
         status.isVisibilityExplicit = isVisibilityExplicit
         status.isModalityExplicit = isModalityExplicit
         status.isStatic = isStatic
+        status.isConst = isConst
         status.isMut = isMut
         status.isOverride = isOverride
+        status.isRedef = isRedef
         status.isOperator = isOperator
         status.isUnsafe = isUnsafe
         status.isForeign = isForeign

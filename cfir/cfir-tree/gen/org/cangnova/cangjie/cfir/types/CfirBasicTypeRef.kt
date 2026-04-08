@@ -6,7 +6,7 @@
 package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.name.Name
@@ -27,9 +27,7 @@ abstract class CfirBasicTypeRef : CfirTypeRef() {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformBasicTypeRef(this, data) as E
 
-    override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+    abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
-
-    override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirBasicTypeRef
-
+    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirBasicTypeRef
 }

@@ -3,6 +3,7 @@
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirErrorNamedValue
 import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
@@ -11,6 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -50,6 +52,8 @@ abstract class ReturnTypeCalculator {
 
 private val CfirCallableDeclaration.returnTypeRefOrNull: CfirTypeRef?
     get() = when (this) {
+        is CfirValueParameter -> returnTypeRef
+
         is CfirMainFunction -> returnTypeRef
         is CfirMacroDeclaration -> returnTypeRef
         is CfirFinalizer -> returnTypeRef
@@ -57,9 +61,9 @@ private val CfirCallableDeclaration.returnTypeRefOrNull: CfirTypeRef?
         is CfirEnumConstructor -> returnTypeRef
         is CfirProperty -> returnTypeRef
         is CfirFieldVariable -> returnTypeRef
+        is CfirPatternBindingVariable -> returnTypeRef
         is CfirPatternVariable -> returnTypeRef
         is CfirVariable -> null
-        is CfirValueParameter -> returnTypeRef
         is CfirFunction -> returnTypeRef
-
+        is CfirErrorNamedValue -> returnTypeRef
     }

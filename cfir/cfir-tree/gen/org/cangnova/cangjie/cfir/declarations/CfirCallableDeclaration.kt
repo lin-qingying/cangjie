@@ -7,6 +7,7 @@ package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
@@ -25,7 +26,7 @@ sealed class CfirCallableDeclaration : CfirMemberDeclaration() {
     abstract override val attributes: CfirDeclarationAttributes
     abstract override val typeParameters: List<CfirTypeParameterRef>
     abstract override val status: CfirDeclarationStatus
-    abstract override val isLocal: Boolean
+    abstract val isLocal: Boolean
     abstract val returnTypeRef: CfirTypeRef
     abstract val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val symbol: CfirCallableSymbol<*>
@@ -37,24 +38,17 @@ sealed class CfirCallableDeclaration : CfirMemberDeclaration() {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformCallableDeclaration(this, data) as E
 
-    override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+    abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
-
-    override abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
-
+    abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
 
     abstract fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
 
+    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirCallableDeclaration
 
-    override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirCallableDeclaration
+    abstract override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirCallableDeclaration
 
-
-    override abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirCallableDeclaration
-
-
-    override abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirCallableDeclaration
-
+    abstract override fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirCallableDeclaration
 
     abstract fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirCallableDeclaration
-
 }

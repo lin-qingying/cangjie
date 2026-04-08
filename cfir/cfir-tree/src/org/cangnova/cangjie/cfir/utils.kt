@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.renderer.CfirRenderer
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
@@ -35,6 +36,8 @@ inline fun <R> whileAnalysing(session: CfirSession, element: CfirElement, block:
         session.exceptionHandler.handleExceptionOnElementAnalysis(element, throwable)
     }
 }
+fun CfirElement.render(): String =
+   CfirRenderer().renderElementAsString(this)
 
 inline fun <R> withFileAnalysisExceptionWrapping(file: CfirFile, block: () -> R): R {
     return try {
@@ -79,39 +82,39 @@ fun <R : CfirTypeRef> R.copyWithNewSource(newSource: CjSourceElement): R {
 
         is CfirUserTypeRef -> CfirUserTypeRefImpl(
             source = newSource,
-            annotations = typeRef.annotations,
-            qualifier = typeRef.qualifier,
-            typeArguments = typeRef.typeArguments,
+            annotations = typeRef.annotations.toMutableOrEmpty(),
+            qualifier = typeRef.qualifier.toMutableList(),
+            typeArguments = typeRef.typeArguments.toMutableOrEmpty(),
         )
 
         is CfirFunctionTypeRef -> CfirFunctionTypeRefImpl(
             source = newSource,
-            annotations = typeRef.annotations,
-            parameterTypeRefs = typeRef.parameterTypeRefs,
+            annotations = typeRef.annotations.toMutableOrEmpty(),
+            parameterTypeRefs = typeRef.parameterTypeRefs.toMutableList(),
             returnTypeRef = typeRef.returnTypeRef,
         )
 
         is CfirTupleTypeRef -> CfirTupleTypeRefImpl(
             source = newSource,
-            annotations = typeRef.annotations,
-            elementTypeRefs = typeRef.elementTypeRefs,
+            annotations = typeRef.annotations.toMutableOrEmpty(),
+            elementTypeRefs = typeRef.elementTypeRefs.toMutableList(),
         )
 
         is CfirVArrayTypeRef -> CfirVArrayTypeRefImpl(
             source = newSource,
-            annotations = typeRef.annotations,
+            annotations = typeRef.annotations.toMutableOrEmpty(),
             elementTypeRef = typeRef.elementTypeRef,
             sizeLiteral = typeRef.sizeLiteral,
         )
 
         is CfirBasicTypeRef -> CfirBasicTypeRefImpl(
             source = newSource,
-            annotations = typeRef.annotations,
+            annotations = typeRef.annotations.toMutableOrEmpty(),
             name = typeRef.name,
         )
 
         is CfirImplicitTypeRef -> CfirImplicitTypeRefImpl(
-            annotations = typeRef.annotations,
+            annotations = typeRef.annotations.toMutableOrEmpty(),
         )
 
         else -> error("copyWithNewSource is not implemented for ${typeRef::class.qualifiedName}")

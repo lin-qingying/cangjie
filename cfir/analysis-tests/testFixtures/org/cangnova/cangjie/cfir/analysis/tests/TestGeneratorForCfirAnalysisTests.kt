@@ -5,18 +5,34 @@ import java.io.File
 /**
  * Test generator for CFIR analysis diagnostics tests on the new test framework.
  *
- * It scans `cfir/analysis-tests/testData/diagnostics` and generates a nested
- * suite with recursive directory support.
+ * It scans diagnostics test roots and generates nested suites with recursive
+ * directory support.
  */
 object TestGeneratorForCfirAnalysisTests {
     @JvmStatic
     fun main(args: Array<String>) {
         val projectRoot = if (args.isNotEmpty()) File(args[0]) else File(System.getProperty("user.dir"))
-        generateDiagnosticsSuite(projectRoot)
+        generateDiagnosticsSuite(
+            projectRoot = projectRoot,
+            relativeTestDataRoot = "cfir/analysis-tests/testData/diagnostics",
+            outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnosticsTestGenerated.kt",
+            generatedClassName = "CfirAnalysisDiagnosticsTestGenerated",
+        )
+        generateDiagnosticsSuite(
+            projectRoot = projectRoot,
+            relativeTestDataRoot = "cfir/analysis-tests/testData/diagnostics2",
+            outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2TestGenerated.kt",
+            generatedClassName = "CfirAnalysisDiagnostics2TestGenerated",
+        )
     }
 
-    private fun generateDiagnosticsSuite(projectRoot: File) {
-        val testDataRoot = projectRoot.resolve("cfir/analysis-tests/testData/diagnostics")
+    private fun generateDiagnosticsSuite(
+        projectRoot: File,
+        relativeTestDataRoot: String,
+        outputRelativePath: String,
+        generatedClassName: String,
+    ) {
+        val testDataRoot = projectRoot.resolve(relativeTestDataRoot)
         require(testDataRoot.exists()) { "testData root not found: ${testDataRoot.path}" }
 
         val rootRel = projectRoot.toPath().relativize(testDataRoot.toPath()).toString().replace('\\', '/')
@@ -29,9 +45,7 @@ object TestGeneratorForCfirAnalysisTests {
             .filter { it.isDirectory }
             .sortedBy { it.name }
 
-        val outputFile = projectRoot.resolve(
-            "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnosticsTestGenerated.kt",
-        )
+        val outputFile = projectRoot.resolve(outputRelativePath)
         outputFile.parentFile.mkdirs()
         outputFile.writeText(
             renderSuite(
@@ -39,6 +53,7 @@ object TestGeneratorForCfirAnalysisTests {
                 rootFiles = rootFiles,
                 subDirs = subDirs,
                 projectRoot = projectRoot,
+                generatedClassName = generatedClassName,
             ),
             Charsets.UTF_8,
         )
@@ -50,6 +65,7 @@ object TestGeneratorForCfirAnalysisTests {
         rootFiles: List<File>,
         subDirs: List<File>,
         projectRoot: File,
+        generatedClassName: String,
     ): String = buildString {
         appendLine("package org.cangnova.cangjie.cfir.analysis.tests")
         appendLine()
@@ -66,7 +82,7 @@ object TestGeneratorForCfirAnalysisTests {
         appendLine("@TestDataPath(\"\\${'$'}PROJECT_ROOT\")")
         appendLine("@OptIn(ObsoleteTestInfrastructure::class)")
         appendLine("@ObsoleteTestInfrastructure")
-        appendLine("class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {")
+        appendLine("class $generatedClassName : AbstractCfirLightTreeDiagnosticsTest() {")
         appendLine("    @Test")
         appendLine("    fun testAllFilesPresent() {")
         appendLine("        assertAllFilesPresentByMetadata(this, \"$rootRel\")")

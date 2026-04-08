@@ -1,0 +1,6 @@
+// RUN_PIPELINE_TILL: FRONTEND
+<!DEPRECATED_MODIFIER_PAIR!>abstract<!> <!DEPRECATED_MODIFIER_PAIR!>open<!> class AbstractOpen
+
+<!DEPRECATED_MODIFIER_PAIR!>sealed<!> <!DEPRECATED_MODIFIER_PAIR!>public<!> class PublicSealed
+
+<!DEPRECATED_MODIFIER_PAIR!>sealed<!> <!DEPRECATED_MODIFIER_PAIR!>open<!> class OpenSealed

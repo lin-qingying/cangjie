@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.transformers.MacroExpandAction
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.LanguageVersionSettings
@@ -105,6 +106,7 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
         extensionRegistrars: List<CfirExtensionRegistrar>,
         configuration: CompilerConfiguration,
         context: Context = Context(),
+        macroExpandAction: MacroExpandAction? = null,
         init: CfirSessionConfigurator.() -> Unit = {},
     ): CfirSession {
         return super.createSourceSession(
@@ -112,6 +114,7 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
             context,
             extensionRegistrars,
             configuration,
+            macroExpandAction,
             init,
             createProviders = { session, cangjieScopeProvider, symbolProvider, generatedSymbolsProvider ->
                 val providers = context.additionalSourceProviders(

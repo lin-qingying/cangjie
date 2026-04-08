@@ -40,6 +40,9 @@ class CfirExtendRuleQueryServiceImpl(
             .toList()
     }
 
+    override fun inheritedInterfaceClosureClassIdsOf(declaration: Any): Set<ClassId> =
+        indexStore.inheritedInterfaceClosureClassIdsOf(declaration)
+
     override fun inheritedInterfaceSemanticKeysOf(declaration: Any): List<String> =
         indexStore.modelForDeclaration(declaration)?.inheritedInterfaceSemanticKeys.orEmpty()
 
@@ -53,5 +56,13 @@ class CfirExtendRuleQueryServiceImpl(
 
     override fun defaultIndependentMembersOfInterface(interfaceClassId: ClassId): List<Name> =
         indexStore.defaultIndependentMembersOfInterface(interfaceClassId)
-}
 
+    override fun targetClassOwnInterfaceClassIds(targetClassId: ClassId): Set<ClassId> =
+        indexStore.targetClassOwnInterfaceClassIds(targetClassId)
+
+    override fun otherPackageExtendedInterfaceClassIds(targetClassId: ClassId, currentPackage: FqName): Set<ClassId> =
+        indexStore.otherPackageExtendedInterfaceClassIds(targetClassId, currentPackage)
+
+    override fun isFirstExtendForTarget(declaration: Any, targetClassId: ClassId): Boolean =
+        indexStore.isFirstExtendForTarget(declaration, targetClassId)
+}

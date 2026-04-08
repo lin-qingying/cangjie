@@ -1,0 +1,5 @@
+FILE: effectTryHandleOfficial.cj
+    internal? class TextCommand {
+        init()
+    }
+    <element: CfirMainFunction>

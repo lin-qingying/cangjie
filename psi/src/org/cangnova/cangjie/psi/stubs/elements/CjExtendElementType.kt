@@ -51,6 +51,7 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
 
     override fun serialize(stub: CangJieExtendStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
+        dataStream.writeName(stub.extendId)
 
         val fqName = stub.getFqName()
         dataStream.writeName(fqName?.asString())
@@ -68,6 +69,7 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
 
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJieExtendStub {
         val name = dataStream.readName()
+        val extendId = dataStream.readName()
         val qualifiedName = dataStream.readName()
 
         val classId = StubUtils.deserializeClassId(dataStream)
@@ -87,6 +89,7 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
             qualifiedName,
             classId,
             name,
+            extendId,
             superNames,
             receiverTypeName = StringRef.toString(receiverTypeName) ?: ""
         )
@@ -99,13 +102,14 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
         val fqName = psi.fqName
 
         val superNames = psi.getSuperNames()
-        val classId = StubUtils.createNestedClassId(parentStub!!, psi)
+        val classId = StubUtils.createClassId(parentStub!!, psi)
         return CangJieExtendStubImpl(
             CjStubElementTypes.EXTEND,
             parentStub as StubElement<*>?,
             StringRef.fromString(fqName?.asString()),
             classId,
             StringRef.fromString(psi.name),
+            StringRef.fromString(psi.getExtendId()),
             Utils.wrapStrings(superNames),
             receiverTypeName = receiverTypeName
         )

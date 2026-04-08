@@ -55,7 +55,7 @@ val TestServices.sourceFileProvider: SourceFileProvider by TestServices.testServ
 
 fun TestFile.toLightTreeShortName() = name.substringAfterLast('/').substringAfterLast('\\')
 val TestFile.isCjFile: Boolean
-    get() = name.endsWith(".cj")
+    get() = name.endsWith(".cj") || name.endsWith(".cjs")
 fun SourceFileProvider.getCjFilesForSourceFiles(testFiles: Collection<TestFile>, project: Project, findViaVfs: Boolean = false): Map<TestFile, CjFile> {
     return testFiles.mapNotNull {
         if (!it.isCjFile) return@mapNotNull null

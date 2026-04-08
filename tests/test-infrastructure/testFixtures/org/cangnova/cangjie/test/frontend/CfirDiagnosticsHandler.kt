@@ -2,7 +2,6 @@ package org.cangnova.cangjie.test.frontend
 
 import com.intellij.openapi.util.TextRange
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.CfirResolvable
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -28,7 +27,8 @@ import org.cangnova.cangjie.cfir.diagnostics.rendering.BaseDiagnosticRendererFac
 import org.cangnova.cangjie.cfir.diagnostics.rendering.CjDiagnosticRenderers.TO_STRING
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -200,10 +200,10 @@ class CfirDiagnosticsHandler(
                 super.visitFunctionCall(functionCall)
             }
 
-            override fun visitPropertyAccess(propertyAccess: CfirPropertyAccess) {
+            override fun visitNamedAccessExpression(propertyAccess: CfirNamedAccessExpression) {
                 val reference = propertyAccess.calleeReference as? CfirNamedReference ?: return
                 consumer.reportContainingCallableOwner(propertyAccess, reference)
-                super.visitPropertyAccess(propertyAccess)
+                super.visitNamedAccessExpression(propertyAccess)
             }
         }.let(cfirFile::accept)
 

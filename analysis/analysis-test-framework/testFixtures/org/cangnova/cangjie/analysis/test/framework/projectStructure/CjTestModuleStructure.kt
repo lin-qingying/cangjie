@@ -1,31 +1,115 @@
 package org.cangnova.cangjie.analysis.test.framework.projectStructure
 
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiFile
 import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.test.model.TestModuleStructure
 import org.cangnova.cangjie.test.services.TestService
 import org.cangnova.cangjie.test.services.TestServices
-import org.cangnova.cangjie.psi.CjFile
 
 /**
- * 测试模块结构（对齐 Kotlin 的 KtTestModuleStructure）。
+ * Analysis API 测试模块结构。
  *
- * 持有测试中所有模块的信息，作为 [TestService] 注册到 [TestServices]。
+ * 对齐 Kotlin `KtTestModuleStructure` 的职责，保存原始 `TestModuleStructure`
+ * 与 Analysis API 模块图之间的映射关系。
  */
 class CjTestModuleStructure(
+    val testModuleStructure: TestModuleStructure,
     val mainModules: List<CjTestModule>,
 ) : TestService {
     val project: Project
         get() = mainModules.first().caModule.project
 
-    val allCjFiles: List<CjFile>
-        get() = mainModules.flatMap { it.cjFiles }
+    /**
+     * 测试框架内部使用的文件到模块索引。
+     *
+     * Analysis API 测试数据在单个用例生命周期内是静态的，
+     * 因此这里显式缓存：
+     * 1. 物理/内存 PSI 文件实例
+     * 2. VirtualFile URL
+     *
+     * 后续所有“PSI -> 测试模块”恢复都应复用该索引，
+     * 而不是在 provider、base test、configurator 里各自遍历 `mainModules`。
+     */
+    private val moduleIndex: ModuleIndex by lazy(LazyThreadSafetyMode.NONE) {
+        val byPsiFile = linkedMapOf<PsiFile, CjTestModule>()
+        val byVirtualFileUrl = linkedMapOf<String, CjTestModule>()
+        mainModules.forEach { testModule ->
+            testModule.psiFiles.forEach { psiFile ->
+                byPsiFile[psiFile] = testModule
+                psiFile.virtualFile?.url?.let { fileUrl ->
+                    val previous = byVirtualFileUrl.put(fileUrl, testModule)
+                    check(previous == null || previous === testModule) {
+                        "Analysis API 测试模块结构中出现重复文件映射 `$fileUrl`。"
+                    }
+                }
+            }
+        }
+        ModuleIndex(
+            byPsiFile = byPsiFile,
+            byVirtualFileUrl = byVirtualFileUrl,
+        )
+    }
 
-    val allCaModules: List<CaModule>
-        get() = mainModules.map { it.caModule }
+    val allCjFiles: List<CjFile> by lazy(LazyThreadSafetyMode.NONE) {
+        mainModules.flatMap(CjTestModule::cjFiles)
+    }
+
+    val allCaModules: List<CaModule> by lazy(LazyThreadSafetyMode.NONE) {
+        mainModules.flatMap(CjTestModule::allCaModules).distinct()
+    }
 
     fun getModule(moduleName: String): CjTestModule =
         mainModules.first { it.name == moduleName }
+
+    /**
+     * 按 PSI 文件恢复测试模块。
+     */
+    fun findModuleByFile(file: PsiFile): CjTestModule? {
+        return moduleIndex.byPsiFile[file]
+            ?: file.virtualFile?.url?.let(moduleIndex.byVirtualFileUrl::get)
+    }
+
+    /**
+     * 按 PSI 文件恢复测试模块；不存在时直接报错。
+     */
+    fun requireModuleByFile(file: PsiFile): CjTestModule {
+        return findModuleByFile(file)
+            ?: error("Cannot find CjTestModule for `${file.name}` in Analysis API test module structure.")
+    }
+
+    private data class ModuleIndex(
+        val byPsiFile: Map<PsiFile, CjTestModule>,
+        val byVirtualFileUrl: Map<String, CjTestModule>,
+    )
 }
 
-val TestServices.cjTestModuleStructure: CjTestModuleStructure
+abstract class CjTestModuleStructureProvider : TestService {
+    protected abstract val testServices: TestServices
+
+    abstract fun registerModuleStructure(moduleStructure: CjTestModuleStructure)
+
+    abstract fun getModuleStructure(): CjTestModuleStructure
+}
+
+class CjTestModuleStructureProviderImpl(
+    override val testServices: TestServices,
+) : CjTestModuleStructureProvider() {
+    private lateinit var moduleStructure: CjTestModuleStructure
+
+    override fun registerModuleStructure(moduleStructure: CjTestModuleStructure) {
+        require(!this::moduleStructure.isInitialized) {
+            "CjTestModuleStructure 已经注册，测试框架不允许重复覆盖。"
+        }
+        this.moduleStructure = moduleStructure
+    }
+
+    override fun getModuleStructure(): CjTestModuleStructure = moduleStructure
+}
+
+val TestServices.cjTestModuleStructureProvider: CjTestModuleStructureProvider
     by TestServices.testServiceAccessor()
+
+val TestServices.cjTestModuleStructure: CjTestModuleStructure
+    get() = cjTestModuleStructureProvider.getModuleStructure()

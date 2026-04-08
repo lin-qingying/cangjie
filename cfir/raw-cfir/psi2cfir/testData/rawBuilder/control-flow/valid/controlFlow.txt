@@ -3,18 +3,18 @@ FILE: controlFlow.cj
         IF {
             condition:
                 COMPARISON(GT) {
-                    QUALIFIED_ACCESS(x)
+                    NAMED_ACCESS(x)
                     INT(0)
                 }
             then:
                 RETURN {
-                    QUALIFIED_ACCESS(x)
+                    NAMED_ACCESS(x)
                 }
             else:
                 RETURN {
-                    FUNCTION_CALL(unaryMinus) {
+                    FUNCTION_CALL(*operator_unaryMinus) {
                         receiver:
-                            QUALIFIED_ACCESS(x)
+                            NAMED_ACCESS(x)
                     }
                 }
         }
@@ -26,17 +26,17 @@ FILE: controlFlow.cj
         WHILE {
             condition:
                 COMPARISON(LT) {
-                    QUALIFIED_ACCESS(i)
+                    NAMED_ACCESS(i)
                     INT(10)
                 }
             body:
                 ASSIGNMENT {
                     lValue:
-                        QUALIFIED_ACCESS(i)
+                        NAMED_ACCESS(i)
                     rValue:
-                        FUNCTION_CALL(plus) {
+                        FUNCTION_CALL(*operator_plus) {
                             receiver:
-                                QUALIFIED_ACCESS(i)
+                                NAMED_ACCESS(i)
                             arguments:
                                 INT(1)
                         }

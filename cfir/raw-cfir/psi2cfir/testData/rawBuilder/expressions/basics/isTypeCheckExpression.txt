@@ -2,7 +2,7 @@ FILE: isTypeCheckExpression.cj
     internal? func checkType(obj: R|Object|): R|Bool| {
         RETURN {
             TYPE_OP(IS, R|String|) {
-                QUALIFIED_ACCESS(obj)
+                NAMED_ACCESS(obj)
             }
         }
     }

@@ -4,9 +4,21 @@ import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContextForProvider
 import org.cangnova.cangjie.cfir.analysis.checkers.context.MutableCheckerContext
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitor
 import org.cangnova.cangjie.cfir.whileAnalysing
@@ -51,10 +63,91 @@ abstract class AbstractDiagnosticCollectorVisitor(
         visitWithDeclaration(declaration)
     }
 
+    override fun visitClass(klass: CfirClass, data: Nothing?) {
+        withAnnotationContainer(klass) {
+            visitWithDeclaration(klass)
+        }
+    }
+
+    override fun visitInterface(`interface`: CfirInterface, data: Nothing?) {
+        withAnnotationContainer(`interface`) {
+            visitWithDeclaration(`interface`)
+        }
+    }
+
+    override fun visitStruct(struct: CfirStruct, data: Nothing?) {
+        withAnnotationContainer(struct) {
+            visitWithDeclaration(struct)
+        }
+    }
+
+    override fun visitEnum(enum: CfirEnum, data: Nothing?) {
+        withAnnotationContainer(enum) {
+            visitWithDeclaration(enum)
+        }
+    }
+
+    override fun visitExtend(extend: CfirExtend, data: Nothing?) {
+        withAnnotationContainer(extend) {
+            visitWithDeclaration(extend)
+        }
+    }
+
     override fun visitExpression(expression: CfirExpression, data: Nothing?) {
         withStatement(expression) {
             checkElement(expression)
             expression.acceptChildren(this, null)
+        }
+    }
+
+    // --- Call/Assignment 栈管理（对齐 K2 AbstractDiagnosticCollectorVisitor）---
+    // 将 function call / assignment 推入 callsOrAssignments 栈，
+    // 使 ErrorNodeDiagnosticCollectorComponent 能通过接收者错误检查抑制级联诊断。
+
+    override fun visitFunctionCall(functionCall: CfirFunctionCall, data: Nothing?) {
+        withCallOrAssignment(functionCall) {
+            super.visitFunctionCall(functionCall, data)
+        }
+    }
+
+    override fun visitAssignment(assignment: CfirAssignment, data: Nothing?) {
+        withCallOrAssignment(assignment) {
+            super.visitAssignment(assignment, data)
+        }
+    }
+
+    @OptIn(PrivateForInline::class)
+    inline fun <R> withCallOrAssignment(callOrAssignment: CfirStatement, block: () -> R): R {
+        val existingContext = context
+        context = context.addCallOrAssignment(callOrAssignment)
+        try {
+            return block()
+        } finally {
+            existingContext.dropCallOrAssignment()
+            context = existingContext
+        }
+    }
+
+    override fun visitMainFunction(mainFunction: CfirMainFunction, data: Nothing?) {
+        withAnnotationContainer(mainFunction) {
+            visitWithDeclaration(mainFunction)
+        }
+    }
+
+    override fun visitMacroDeclaration(macroDeclaration: CfirMacroDeclaration, data: Nothing?) {
+        withAnnotationContainer(macroDeclaration) {
+            visitWithDeclaration(macroDeclaration)
+        }
+    }
+    override fun visitNamedFunction(namedFunction: CfirNamedFunction, data: Nothing?) {
+        withAnnotationContainer(namedFunction) {
+            visitWithDeclaration(namedFunction)
+        }
+    }
+
+    override fun visitConstructor(constructor: CfirConstructor, data: Nothing?) {
+        withAnnotationContainer(constructor) {
+            visitWithDeclaration(constructor)
         }
     }
 
@@ -159,4 +252,3 @@ abstract class AbstractDiagnosticCollectorVisitor(
     }
 
 }
-

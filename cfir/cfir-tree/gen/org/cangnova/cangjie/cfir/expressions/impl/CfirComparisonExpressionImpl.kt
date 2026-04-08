@@ -8,18 +8,21 @@
 package org.cangnova.cangjie.cfir.expressions.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonOp
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirComparisonExpressionImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
-    override var annotations: List<CfirAnnotation>,
+    override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
     override val operation: CfirComparisonOp,
     override var left: CfirExpression,
@@ -32,38 +35,33 @@ class CfirComparisonExpressionImpl @CfirImplementationDetail constructor(
         right.accept(visitor, data)
     }
 
-    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-     {
-        this.annotations = newAnnotations
-    }
-
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
-     {
-        this.coneTypeOrNull = newConeTypeOrNull
-    }
-
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirComparisonExpression
-     {
-        this.annotations = annotations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnnotation }
-        return this
-    }
-
-    override fun <D> transformLeft(transformer: CfirTransformer<D>, data: D): CfirComparisonExpression
-     {
-        this.left = left.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression
-        return this
-    }
-
-    override fun <D> transformRight(transformer: CfirTransformer<D>, data: D): CfirComparisonExpression
-     {
-        this.right = right.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression
-        return this
-    }
-
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirComparisonExpressionImpl {
         transformAnnotations(transformer, data)
         transformLeft(transformer, data)
         transformRight(transformer, data)
         return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirComparisonExpressionImpl {
+        annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformLeft(transformer: CfirTransformer<D>, data: D): CfirComparisonExpressionImpl {
+        left = left.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformRight(transformer: CfirTransformer<D>, data: D): CfirComparisonExpressionImpl {
+        right = right.transform(transformer, data)
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
+        annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
+        coneTypeOrNull = newConeTypeOrNull
     }
 }

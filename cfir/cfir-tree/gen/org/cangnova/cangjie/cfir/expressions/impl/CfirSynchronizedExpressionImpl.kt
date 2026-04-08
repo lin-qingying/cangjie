@@ -8,18 +8,21 @@
 package org.cangnova.cangjie.cfir.expressions.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSynchronizedExpression
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirSynchronizedExpressionImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
-    override var annotations: List<CfirAnnotation>,
+    override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
     override var monitor: CfirExpression,
     override var body: CfirBlock,
@@ -31,38 +34,33 @@ class CfirSynchronizedExpressionImpl @CfirImplementationDetail constructor(
         body.accept(visitor, data)
     }
 
-    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-     {
-        this.annotations = newAnnotations
-    }
-
-    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
-     {
-        this.coneTypeOrNull = newConeTypeOrNull
-    }
-
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirSynchronizedExpression
-     {
-        this.annotations = annotations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnnotation }
-        return this
-    }
-
-    override fun <D> transformMonitor(transformer: CfirTransformer<D>, data: D): CfirSynchronizedExpression
-     {
-        this.monitor = monitor.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression
-        return this
-    }
-
-    override fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirSynchronizedExpression
-     {
-        this.body = body.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirBlock
-        return this
-    }
-
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirSynchronizedExpressionImpl {
         transformAnnotations(transformer, data)
         transformMonitor(transformer, data)
         transformBody(transformer, data)
         return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirSynchronizedExpressionImpl {
+        annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformMonitor(transformer: CfirTransformer<D>, data: D): CfirSynchronizedExpressionImpl {
+        monitor = monitor.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirSynchronizedExpressionImpl {
+        body = body.transform(transformer, data)
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
+        annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
+        coneTypeOrNull = newConeTypeOrNull
     }
 }

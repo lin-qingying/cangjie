@@ -1,7 +1,7 @@
 // RUN_PIPELINE_TILL: FRONTEND
-import <!IMPORT_CONFLICT, IMPORT_TARGET_NOT_FOUND!>alpha.one.Duplicate<!>
-import <!IMPORT_TARGET_NOT_FOUND!>beta.two.Duplicate<!>
-import <!IMPORT_TARGET_NOT_FOUND!>gamma.three.Other<!>
+import <!IMPORT_CONFLICT!><!UNRESOLVED_IMPORT!>alpha<!>.one.Duplicate<!>
+import <!UNRESOLVED_IMPORT!>beta<!>.two.Duplicate
+import <!UNRESOLVED_IMPORT!>gamma<!>.three.Other
 
 func importConflictSuite(): Unit {
 }

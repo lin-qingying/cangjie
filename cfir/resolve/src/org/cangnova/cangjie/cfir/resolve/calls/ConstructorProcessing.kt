@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.resolve.calls
 
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedClass
@@ -48,6 +49,7 @@ private fun CfirScope.processConstructorsByName(
         if (!seen.add(matchedSymbol)) return@processClassifiersByName
 
         val declaration = matchedSymbol.cfir as? CfirClassLikeDeclaration ?: return@processClassifiersByName
+        if (declaration is CfirEnum) return@processClassifiersByName
         if (!constructorFilter.accepts(declaration)) return@processClassifiersByName
 
         declaration.declarations

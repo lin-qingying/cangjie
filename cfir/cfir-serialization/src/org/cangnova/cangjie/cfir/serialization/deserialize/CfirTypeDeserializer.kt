@@ -1,37 +1,17 @@
 package org.cangnova.cangjie.cfir.serialization.deserialize
 
-import PackageFormat.ArrayTyInfo
-import PackageFormat.CompositeTyInfo
-import PackageFormat.FullId
-import PackageFormat.FuncTyInfo
-import PackageFormat.GenericTyInfo
-import PackageFormat.SemaTy
-import PackageFormat.TypeKind
+import PackageFormat.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeCStringType
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeDiagnostic
-import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
-import org.cangnova.cangjie.cfir.types.ConePointerType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.ConeStructType
-import org.cangnova.cangjie.cfir.types.ConeTupleType
-import org.cangnova.cangjie.cfir.types.ConeTypeProjection
-import org.cangnova.cangjie.cfir.types.ConeVArrayType
-import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
-import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 private fun simpleDiagnostic(reason: String): ConeDiagnostic = object : ConeDiagnostic {
@@ -128,23 +108,13 @@ class CfirTypeDeserializer(
         }
     }
 
-    private fun resolveClassId(fullId: FullId): ClassId {
-        val pkgName = if (fullId.pkgId == 0) {
-            context.header.fullPkgName
-        } else {
-            val importIndex = fullId.pkgId - 1
-            context.header.imports.getOrElse(importIndex) { "" }
-        }
-        val declName = fullId.decl ?: "???"
-        return ClassId(FqName(pkgName), Name.identifier(declName))
-    }
-
     private fun convertClassType(semaTy: SemaTy, isInterface: Boolean): ConeCangJieType {
         val info = semaTy.info(CompositeTyInfo()) as? CompositeTyInfo
             ?: return errorType("Class/Interface missing CompositeTyInfo")
         val fullId = info.declPtr
             ?: return errorType("CompositeTyInfo missing declPtr")
-        val classId = resolveClassId(fullId)
+        val classId = context.fullIdResolver.resolveClassId(fullId)
+            ?: return errorType("Cannot resolve class FullId: ${context.fullIdResolver.describe(fullId)}")
         return ConeClassLikeType(
             lookupTag = ConeClassLikeLookupTagImpl(classId),
             typeArguments = deserializeTypeArgs(semaTy),
@@ -158,7 +128,8 @@ class CfirTypeDeserializer(
             ?: return errorType("Struct missing CompositeTyInfo")
         val fullId = info.declPtr
             ?: return errorType("CompositeTyInfo missing declPtr")
-        val classId = resolveClassId(fullId)
+        val classId = context.fullIdResolver.resolveClassId(fullId)
+            ?: return errorType("Cannot resolve struct FullId: ${context.fullIdResolver.describe(fullId)}")
         return ConeStructType(
             lookupTag = ConeClassLikeLookupTagImpl(classId),
             typeArguments = deserializeTypeArgs(semaTy),
@@ -170,7 +141,8 @@ class CfirTypeDeserializer(
             ?: return errorType("Enum missing CompositeTyInfo")
         val fullId = info.declPtr
             ?: return errorType("CompositeTyInfo missing declPtr")
-        val classId = resolveClassId(fullId)
+        val classId = context.fullIdResolver.resolveClassId(fullId)
+            ?: return errorType("Cannot resolve enum FullId: ${context.fullIdResolver.describe(fullId)}")
         return ConeEnumType(
             lookupTag = ConeClassLikeLookupTagImpl(classId),
             typeArguments = deserializeTypeArgs(semaTy),
@@ -219,7 +191,10 @@ class CfirTypeDeserializer(
     private fun convertGenericType(semaTy: SemaTy): ConeCangJieType {
         val info = semaTy.info(GenericTyInfo()) as? GenericTyInfo
             ?: return errorType("Generic missing GenericTyInfo")
-        val name = Name.identifier(info.declPtr?.decl ?: "T")
+        val fullId = info.declPtr
+            ?: return errorType("GenericTyInfo missing declPtr")
+        val name = context.fullIdResolver.resolveDeclarationName(fullId)
+            ?: return errorType("Cannot resolve generic parameter FullId: ${context.fullIdResolver.describe(fullId)}")
         val upperBounds = (0 until info.upperBoundsLength).map {
             deserializeTypeFromField(info.upperBounds(it))
         }
@@ -242,10 +217,10 @@ class CfirTypeDeserializer(
         upperBounds: List<ConeCangJieType>,
     ): CfirTypeParameterSymbol {
         val symbol = CfirTypeParameterSymbol()
-        val boundRefs = upperBounds.map { upperBound ->
+        val boundRefs = upperBounds.mapTo(mutableListOf<CfirTypeRef>()) { upperBound ->
             CfirResolvedTypeRefImpl(
                 source = null,
-                annotations = emptyList(),
+                annotations = MutableOrEmptyList.empty(),
                 coneType = upperBound,
                 delegatedTypeRef = null,
             )
@@ -253,13 +228,14 @@ class CfirTypeDeserializer(
         val declaration = CfirTypeParameterImpl(
             source = null,
             moduleData = context.moduleData,
-            annotations = emptyList(),
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
             containingDeclarationSymbol = symbol,
             symbol = symbol,
             name = name,
-            bounds = boundRefs as List<CfirResolvedTypeRef>,
+            bounds = boundRefs,
         )
         symbol.bind(declaration)
         return symbol

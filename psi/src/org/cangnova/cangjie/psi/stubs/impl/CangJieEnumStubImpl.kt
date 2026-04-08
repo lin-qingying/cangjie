@@ -41,9 +41,7 @@ open class CangJieEnumStubImpl(
     private val classId: ClassId?,
     private val name: StringRef?,
     private val superNames: Array<StringRef>,
-
-    private val isLocal: Boolean,
- private val isNonExhaustive: Boolean
+    private val isNonExhaustive: Boolean
 ) : CangJieStubBaseImpl<CjEnum>(parent, type), CangJieEnumStub {
 
     override fun getFqName(): FqName? {
@@ -51,7 +49,6 @@ open class CangJieEnumStubImpl(
         return FqName(stringRef)
     }
 
-    override fun isLocal() = isLocal
     override fun getName() = StringRef.toString(name)
     override fun isNonExhaustive(): Boolean {
         return isNonExhaustive

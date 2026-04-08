@@ -7,22 +7,18 @@ import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.psi.CjElement
 
 /**
- * 分析会话提供器（对齐 Kotlin 的 KaSessionProvider）。
+ * 分析会话提供器。
  *
- * 负责创建和管理 [CaSession] 的生命周期。
- * 使用三阶段钩子：beforeEnteringAnalysis → action → afterLeavingAnalysis。
+ * 对齐 Kotlin `KaSessionProvider`，负责创建并管理 [CaSession] 的生命周期。
+ * `analyze()` 本身不负责额外同步；真正的并发约束应由 token、生命周期追踪器和平台层服务承担。
  */
 abstract class CaSessionProvider(val project: Project) : Disposable {
-
-    /** 获取分析会话 */
     abstract fun getAnalysisSession(useSiteElement: CjElement): CaSession
+
     abstract fun getAnalysisSession(useSiteModule: CaModule): CaSession
 
     /**
-     * 在 [CaSession] 上下文中执行分析操作。
-     *
-     * inline 确保每次调用展开到字节码，避免 lambda 分配开销。
-     * synchronized 块防止非本地暂停调用。
+     * 在 [CaSession] 上下文中执行分析动作。
      */
     inline fun <R> analyze(
         useSiteElement: CjElement,
@@ -31,10 +27,7 @@ abstract class CaSessionProvider(val project: Project) : Disposable {
         val analysisSession = getAnalysisSession(useSiteElement)
         beforeEnteringAnalysis(analysisSession, useSiteElement)
         return try {
-            val lock = Any()
-            synchronized(lock) {
-                analysisSession.action()
-            }
+            analysisSession.action()
         } catch (throwable: Throwable) {
             handleAnalysisException(throwable, analysisSession, useSiteElement)
         } finally {
@@ -49,10 +42,7 @@ abstract class CaSessionProvider(val project: Project) : Disposable {
         val analysisSession = getAnalysisSession(useSiteModule)
         beforeEnteringAnalysis(analysisSession, useSiteModule)
         return try {
-            val lock = Any()
-            synchronized(lock) {
-                analysisSession.action()
-            }
+            analysisSession.action()
         } catch (throwable: Throwable) {
             handleAnalysisException(throwable, analysisSession, useSiteModule)
         } finally {
@@ -60,19 +50,47 @@ abstract class CaSessionProvider(val project: Project) : Disposable {
         }
     }
 
-    /** 进入分析前的钩子（权限检查、生命周期追踪等） */
+    /**
+     * 批量按源码元素执行分析。
+     *
+     * 默认实现保持协议语义正确性：逐元素进入 `analyze`。
+     * 具体平台可覆写为“按 session 分组后批量进入分析域”的高效实现。
+     */
+    open fun <R> analyzeElements(
+        useSiteElements: Collection<CjElement>,
+        action: CaSession.(CjElement) -> R,
+    ): List<R> {
+        return useSiteElements.map { element ->
+            analyze(element) { action(element) }
+        }
+    }
+
+    /**
+     * 批量按 use-site 模块执行分析。
+     *
+     * 默认实现仍逐模块进入 `analyze`；具体平台可按 session 复用优化。
+     */
+    open fun <R> analyzeModules(
+        useSiteModules: Collection<CaModule>,
+        action: CaSession.(CaModule) -> R,
+    ): List<R> {
+        return useSiteModules.map { module ->
+            analyze(module) { action(module) }
+        }
+    }
+
     abstract fun beforeEnteringAnalysis(session: CaSession, useSiteElement: CjElement)
+
     abstract fun beforeEnteringAnalysis(session: CaSession, useSiteModule: CaModule)
 
-    /** 异常处理（实现必须抛出异常） */
     abstract fun handleAnalysisException(throwable: Throwable, session: CaSession, useSiteElement: CjElement): Nothing
+
     abstract fun handleAnalysisException(throwable: Throwable, session: CaSession, useSiteModule: CaModule): Nothing
 
-    /** 离开分析后的钩子（资源清理） */
     abstract fun afterLeavingAnalysis(session: CaSession, useSiteElement: CjElement)
+
     abstract fun afterLeavingAnalysis(session: CaSession, useSiteModule: CaModule)
 
-    /** 清除缓存 */
     abstract fun clearCaches()
 
     companion object {

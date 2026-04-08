@@ -1,0 +1,5 @@
+// RUN_PIPELINE_TILL: FRONTEND
+class Host {}
+
+extend Host <: <!EXTEND_INTERFACE_NOT_EXTENDABLE!>Any<!> {}
+extend Host <: <!EXTEND_INTERFACE_NOT_EXTENDABLE!>CType<!> {}

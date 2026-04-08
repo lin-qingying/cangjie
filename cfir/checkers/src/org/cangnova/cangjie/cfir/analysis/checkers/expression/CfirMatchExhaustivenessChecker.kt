@@ -17,6 +17,7 @@ object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker( ) {
     override fun check(expression: CfirMatchExpression) {
         val source = expression.source as? AbstractCjSourceElement ?: return
         val subjectType = expression.subject?.coneTypeOrNull ?: return
+        if (expression.hasPatternLegalityProblem(context)) return
 
         context.session.enumMatchTracker?.reportEnumUsageInMatch(context.containingFilePath, subjectType)
 

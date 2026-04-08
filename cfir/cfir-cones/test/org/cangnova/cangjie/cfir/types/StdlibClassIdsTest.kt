@@ -7,11 +7,14 @@ import org.junit.jupiter.api.Test
 class StdlibClassIdsTest {
 
     @Test
-    fun `all ClassIds belong to std-core package`() {
+    fun `all ClassIds belong to std-core or stdx-effect packages`() {
         val corePackage = StandardNames.FqNames.core
+        val effectPackage = StandardNames.FqNames.effect
         for (classId in StdlibClassIds.allClassIds) {
-            assertEquals(corePackage, classId.packageFqName,
-                "${classId.shortClassName} should be in std.core")
+            assertTrue(
+                classId.packageFqName == corePackage || classId.packageFqName == effectPackage,
+                "${classId.shortClassName} should be in std.core or stdx.effect",
+            )
         }
     }
 
@@ -35,6 +38,7 @@ class StdlibClassIdsTest {
         assertTrue(all.contains(StdlibClassIds.Option))
         assertTrue(all.contains(StdlibClassIds.Range))
         assertTrue(all.contains(StdlibClassIds.Exception))
+        assertTrue(all.contains(StdlibClassIds.Error))
         assertTrue(all.contains(StdlibClassIds.Resource))
         assertTrue(all.contains(StdlibClassIds.Comparable))
         assertTrue(all.contains(StdlibClassIds.Equatable))
@@ -42,7 +46,9 @@ class StdlibClassIdsTest {
         assertTrue(all.contains(StdlibClassIds.Iterable))
         assertTrue(all.contains(StdlibClassIds.ToString))
         assertTrue(all.contains(StdlibClassIds.Future))
-        assertEquals(14, all.size)
+        assertTrue(all.contains(StdlibClassIds.Command))
+        assertTrue(all.contains(StdlibClassIds.Resumption))
+        assertEquals(17, all.size)
     }
 
     @Test

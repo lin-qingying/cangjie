@@ -22,20 +22,17 @@ class CfirThisReferenceImpl @CfirImplementationDetail constructor(
     override var diagnostic: ConeDiagnostic?,
 ) : CfirThisReference() {
 
-    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
-    }
-
-    override fun replaceBoundSymbol(newBoundSymbol: CfirThisOwnerSymbol<*>?)
-     {
-        this.boundSymbol = newBoundSymbol
-    }
-
-    override fun replaceDiagnostic(newDiagnostic: ConeDiagnostic?)
-     {
-        this.diagnostic = newDiagnostic
-    }
+    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirThisReferenceImpl {
         return this
+    }
+
+    override fun replaceBoundSymbol(newBoundSymbol: CfirThisOwnerSymbol<*>?) {
+        boundSymbol = newBoundSymbol
+    }
+
+    override fun replaceDiagnostic(newDiagnostic: ConeDiagnostic?) {
+        diagnostic = newDiagnostic
     }
 }

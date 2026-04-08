@@ -6,17 +6,17 @@ FILE: breakAndContinue.cj
         WHILE {
             condition:
                 COMPARISON(LT) {
-                    QUALIFIED_ACCESS(i)
+                    NAMED_ACCESS(i)
                     INT(100)
                 }
             body:
                 ASSIGNMENT {
                     lValue:
-                        QUALIFIED_ACCESS(i)
+                        NAMED_ACCESS(i)
                     rValue:
-                        FUNCTION_CALL(plus) {
+                        FUNCTION_CALL(*operator_plus) {
                             receiver:
-                                QUALIFIED_ACCESS(i)
+                                NAMED_ACCESS(i)
                             arguments:
                                 INT(1)
                         }
@@ -24,7 +24,7 @@ FILE: breakAndContinue.cj
                 IF {
                     condition:
                         COMPARISON(GT) {
-                            QUALIFIED_ACCESS(i)
+                            NAMED_ACCESS(i)
                             INT(50)
                         }
                     then:
@@ -33,7 +33,7 @@ FILE: breakAndContinue.cj
                 IF {
                     condition:
                         COMPARISON(GT) {
-                            QUALIFIED_ACCESS(i)
+                            NAMED_ACCESS(i)
                             INT(90)
                         }
                     then:

@@ -25,7 +25,7 @@
 package org.cangnova.cangjie.psi.stubs.elements
 
 import org.cangnova.cangjie.psi.CjEnum
-import org.cangnova.cangjie.psi.psiUtil.StubUtils.createNestedClassId
+import org.cangnova.cangjie.psi.psiUtil.StubUtils.createClassId
 import org.cangnova.cangjie.psi.psiUtil.StubUtils.deserializeClassId
 import org.cangnova.cangjie.psi.psiUtil.StubUtils.serializeClassId
 import org.cangnova.cangjie.psi.psiUtil.getSuperNames
@@ -55,7 +55,6 @@ class CjEnumElementType(debugName: String) : CjStubElementType<CangJieEnumStub, 
 
         serializeClassId(dataStream, stub.getClassId())
 
-        dataStream.writeBoolean(stub.isLocal())
         dataStream.writeBoolean(stub.isNonExhaustive())
 //        dataStream.writeBoolean(stub.isTopLevel())
 
@@ -76,9 +75,7 @@ class CjEnumElementType(debugName: String) : CjStubElementType<CangJieEnumStub, 
 
         val classId = deserializeClassId(dataStream)
 
-
-        val isLocal = dataStream.readBoolean()
- val isNonExhaustive = dataStream.readBoolean()
+        val isNonExhaustive = dataStream.readBoolean()
         val superCount = dataStream.readVarInt()
         val superNames = StringRef.createArray(superCount)
         for (i in 0 until superCount) {
@@ -92,7 +89,6 @@ class CjEnumElementType(debugName: String) : CjStubElementType<CangJieEnumStub, 
             classId,
             name,
             superNames,
-            isLocal,
             isNonExhaustive
         )
     }
@@ -101,7 +97,7 @@ class CjEnumElementType(debugName: String) : CjStubElementType<CangJieEnumStub, 
         val fqName = psi.safeFqNameForLazyResolve()
 
         val superNames = psi.getSuperNames()
-        val classId = createNestedClassId(parentStub!!, psi)
+        val classId = createClassId(parentStub!!, psi)
         val isNonExhaustive = psi.isNonExhaustive
         return CangJieEnumStubImpl(
             CjStubElementTypes.ENUM,
@@ -110,7 +106,6 @@ class CjEnumElementType(debugName: String) : CjStubElementType<CangJieEnumStub, 
             classId,
             StringRef.fromString(psi.name),
             wrapStrings(superNames),
-            psi.isLocal,
             isNonExhaustive
         )
     }

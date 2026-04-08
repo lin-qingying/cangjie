@@ -32,12 +32,13 @@ import com.intellij.psi.stubs.StubElement
 
 class CangJieImportDirectiveStubImpl(
     parent: StubElement<*>,
+    private val packageFqName: FqName?,
     private val importItems: List<CangJieImportDirectiveStub.ImportItemInfo>
 ) : CangJieStubBaseImpl<CjImportDirective>(parent, CjStubElementTypes.IMPORT_DIRECTIVE),
     CangJieImportDirectiveStub {
 
-    override fun getPackageFqName(): FqName {
-        return psi.containingCjFile.packageFqName
+    override fun getPackageFqName(): FqName? {
+        return packageFqName
     }
 
     override fun getImportItems(): List<CangJieImportDirectiveStub.ImportItemInfo> {

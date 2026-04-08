@@ -9,10 +9,12 @@ package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirInterfaceImpl
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
@@ -22,17 +24,15 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirInterfaceBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
+    lateinit var resolvePhase: CfirResolvePhase
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
-    var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
-    val declarations: MutableList<CfirDeclaration> = mutableListOf()
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var symbol: CfirInterfaceSymbol
     val superTypeRefs: MutableList<CfirTypeRef> = mutableListOf()
-    val properties: MutableList<CfirProperty> = mutableListOf()
-    val functions: MutableList<CfirFunction> = mutableListOf()
+    val declarations: MutableList<CfirDeclaration> = mutableListOf()
     lateinit var name: Name
 
     @OptIn(CfirImplementationDetail::class)
@@ -40,21 +40,17 @@ class CfirInterfaceBuilder {
         return CfirInterfaceImpl(
             source,
             moduleData,
-            annotations,
+            resolvePhase,
+            annotations.toMutableOrEmpty(),
             origin,
             attributes,
-            isLocal,
-            declarations,
             status,
             typeParameters,
             symbol,
             superTypeRefs,
-            properties,
-            functions,
+            declarations,
             name,
-        ).also {
-            it.initDefaultResolveState()
-        }
+        )
     }
 
 }
@@ -75,16 +71,14 @@ inline fun buildInterfaceCopy(original: CfirInterface, init: CfirInterfaceBuilde
     val copyBuilder = CfirInterfaceBuilder()
     copyBuilder.source = original.source
     copyBuilder.moduleData = original.moduleData
+    copyBuilder.resolvePhase = original.resolvePhase
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
-    copyBuilder.attributes = original.attributes
-    copyBuilder.isLocal = original.isLocal
-    copyBuilder.declarations.addAll(original.declarations)
+    copyBuilder.attributes = original.attributes.copy()
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)
-    copyBuilder.properties.addAll(original.properties)
-    copyBuilder.functions.addAll(original.functions)
+    copyBuilder.declarations.addAll(original.declarations)
     copyBuilder.name = original.name
     return copyBuilder.apply(init).build()
 }

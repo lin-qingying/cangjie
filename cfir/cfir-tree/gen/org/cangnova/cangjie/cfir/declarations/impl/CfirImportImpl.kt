@@ -23,8 +23,7 @@ class CfirImportImpl @CfirImplementationDetail constructor(
     override val aliasSource: CjSourceElement?,
 ) : CfirImport() {
 
-    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
-    }
+    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirImportImpl {
         return this

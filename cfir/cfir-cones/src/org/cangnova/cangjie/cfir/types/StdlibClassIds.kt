@@ -13,6 +13,7 @@ import org.cangnova.cangjie.name.FqName
 object StdlibClassIds {
 
     private val core: FqName get() = StandardNames.FqNames.core
+    private val effect: FqName get() = StandardNames.FqNames.effect
 
     // ---- std.core 核心类型 ----
 
@@ -23,6 +24,7 @@ object StdlibClassIds {
     @JvmField val Option = ClassId(core, StandardNames.OPTION)
     @JvmField val Range = ClassId(core, StandardNames.RANGE)
     @JvmField val Exception = ClassId(core, StandardNames.EXCEPTION)
+    @JvmField val Error = ClassId(core, StandardNames.ERROR)
     @JvmField val Resource = ClassId(core, StandardNames.RESOURCE)
 
     // ---- std.core 核心接口 ----
@@ -34,10 +36,16 @@ object StdlibClassIds {
     @JvmField val ToString = ClassId(core, StandardNames.TOSTRING)
     @JvmField val Future = ClassId(core, StandardNames.FUTURE)
 
+    // ---- stdx.effect effect handlers ----
+
+    @JvmField val Command = ClassId(effect, StandardNames.COMMAND)
+    @JvmField val Resumption = ClassId(effect, StandardNames.RESUMPTION)
+
     /** 所有标准库核心类型 ClassId 集合 */
     @JvmField
     val allClassIds: Set<ClassId> = setOf(
-        Object, Any, String, Array, Option, Range, Exception, Resource,
+        Object, Any, String, Array, Option, Range, Exception, Error, Resource,
         Comparable, Equatable, Countable, Iterable, ToString, Future,
+        Command, Resumption,
     )
 }

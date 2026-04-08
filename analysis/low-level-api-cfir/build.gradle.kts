@@ -1,0 +1,20 @@
+plugins {
+    kotlin("jvm")
+    id("analysis-coverage-convention")
+}
+
+dependencies {
+    compileOnly(intellijCore())
+
+    api(project(":analysis:analysis-api"))
+    api(project(":analysis:analysis-api-platform-interface"))
+    api(project(":psi"))
+    api(project(":cfir:cfir-common"))
+    api(project(":cfir:cfir-tree"))
+    api(project(":cfir:entrypoint"))
+    api(project(":cfir:resolve"))
+    api(project(":cfir:checkers"))
+    api(project(":cfir:providers"))
+    api(project(":cfir:raw-cfir:psi2cfir"))
+    api(project(":common:diagnostics"))
+}

@@ -8,6 +8,7 @@ package org.cangnova.cangjie.cfir.declarations
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -40,21 +41,15 @@ abstract class CfirFile : CfirDeclaration(), CfirControlFlowGraphOwner {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformFile(this, data) as E
 
-    override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+    abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
+    abstract override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 
-    override abstract fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
-
-
-    override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFile
-
+    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFile
 
     abstract fun <D> transformPackageDirective(transformer: CfirTransformer<D>, data: D): CfirFile
 
-
     abstract fun <D> transformImports(transformer: CfirTransformer<D>, data: D): CfirFile
 
-
     abstract fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirFile
-
 }

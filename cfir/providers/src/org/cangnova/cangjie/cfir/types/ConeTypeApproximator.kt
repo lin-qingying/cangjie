@@ -78,13 +78,13 @@ class ConeTypeApproximator(
          * 条件：
          *  - 是类类型（不是 captured / intersection 等复杂类型）
          *  - 没有泛型参数
-         *  - 不是 local type / anonymous type
+         *  - 不是 anonymous type
          *
          * 说明：
          * 这种类型已经是“稳定类型”，不需要近似
          */
         if (this is ConeClassLikeType && this.typeArguments.isEmpty() &&
-            this.lookupTag.let { !it.isLocalType() && !it.isAnonymous() }
+            this.lookupTag.let { !it.isAnonymous() }
         ) {
             return true
         }

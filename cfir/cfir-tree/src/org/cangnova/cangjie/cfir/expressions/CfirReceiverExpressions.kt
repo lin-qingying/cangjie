@@ -1,7 +1,6 @@
 package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.references.CfirThisReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReferenceCopy
 import org.cangnova.cangjie.cfir.types.CfirTypeRef

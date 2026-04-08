@@ -6,6 +6,7 @@
 package org.cangnova.cangjie.cfir.patterns
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -19,6 +20,7 @@ abstract class CfirTypePattern : CfirPattern() {
     abstract override val source: CjSourceElement?
     abstract val typeRef: CfirTypeRef
     abstract val bindingName: Name?
+    abstract val bindingVariable: CfirPatternBindingVariable?
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitTypePattern(this, data)
@@ -28,5 +30,4 @@ abstract class CfirTypePattern : CfirPattern() {
         transformer.transformTypePattern(this, data) as E
 
     abstract fun <D> transformTypeRef(transformer: CfirTransformer<D>, data: D): CfirTypePattern
-
 }

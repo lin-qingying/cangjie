@@ -1,7 +1,0 @@
-Command: ./gradlew.bat :resolution.common:test
-
-Result: PASS
-
-Notes:
-- Reached successful green state after adding the missing generic `InferenceLogger` callbacks and the module's first logger contract test.
-- Focused red/green history for `InferenceLoggerTest` was verified first; final module-wide verification also passed.

@@ -1,12 +1,13 @@
 plugins {
     kotlin("jvm")
 }
-
+//不能依赖resolve模块，如果需要resolve模块的东西，应该将其声明移动到providers或semantics
 dependencies {
     api(project(":cfir:cfir-common"))
     api(project(":cfir:cfir-tree"))
-    api(project(":cfir:symbols"))
     api(project(":cfir:providers"))
+    api(project(":cfir:providers"))
+ 
 
     api(project(":cfir:semantics"))
 

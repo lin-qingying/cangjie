@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import java.math.BigInteger
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 
@@ -20,7 +21,9 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
     private val TIMES = OperatorNameConventions.TIMES
     private val DIV = OperatorNameConventions.DIV
     private val REM = OperatorNameConventions.REM
-    private val SUPPORTED = setOf(PLUS, MINUS, TIMES, DIV, REM)
+    private val LEFT_SHIFT = OperatorNameConventions.LEFT_SHIFT
+    private val RIGHT_SHIFT = OperatorNameConventions.RIGHT_SHIFT
+    private val SUPPORTED = setOf(PLUS, MINUS, TIMES, DIV, REM, LEFT_SHIFT, RIGHT_SHIFT)
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
@@ -29,9 +32,15 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
         if (operatorName !in SUPPORTED) return
 
         val leftLiteral = expression.explicitReceiver as? CfirLiteralExpression ?: return
-        val rightLiteral = expression.arguments.singleOrNull() as? CfirLiteralExpression ?: return
         val left = CfirIntConstantEvalUtils.parseIntLiteral(leftLiteral) ?: return
-        val right = CfirIntConstantEvalUtils.parseIntLiteral(rightLiteral) ?: return
+        val rightExpression = expression.argumentList.arguments.singleOrNull() ?: return
+
+        if (operatorName == LEFT_SHIFT || operatorName == RIGHT_SHIFT) {
+            checkShiftConstant(expression, source, rightExpression)
+            return
+        }
+
+        val right = CfirIntConstantEvalUtils.parseSignedIntExpression(rightExpression) ?: return
 
         if ((operatorName == DIV || operatorName == REM) && right.value == BigInteger.ZERO) {
             reporter.reportOn(source, CfirErrors.CONST_EVAL_DIVIDE_BY_ZERO, operatorName.asString())
@@ -50,6 +59,24 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
         val range = CfirIntConstantEvalUtils.rangeForLiteralTargetType(expression.coneTypeOrNull) ?: return
         if (!range.contains(result)) {
             reporter.reportOn(source, CfirErrors.CONST_EVAL_ARITHMETIC_OVERFLOW, operatorName.asString())
+        }
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkShiftConstant(
+        expression: CfirFunctionCall,
+        source: AbstractCjSourceElement,
+        rightExpression: CfirExpression,
+    ) {
+        val right = CfirIntConstantEvalUtils.parseSignedIntExpression(rightExpression) ?: return
+        if (right.value < BigInteger.ZERO) {
+            reporter.reportOn(source, CfirErrors.CONST_EVAL_NEGATIVE_SHIFT_COUNT)
+            return
+        }
+
+        val bitWidth = CfirIntConstantEvalUtils.bitWidthForIntegerType(expression.coneTypeOrNull) ?: return
+        if (right.value >= BigInteger.valueOf(bitWidth.toLong())) {
+            reporter.reportOn(source, CfirErrors.CONST_EVAL_SHIFT_COUNT_OVERFLOW)
         }
     }
 

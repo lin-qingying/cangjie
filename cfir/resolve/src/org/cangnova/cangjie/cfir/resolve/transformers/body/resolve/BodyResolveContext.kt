@@ -526,13 +526,13 @@ abstract class CfirInferenceSession {
         bodyResolveContext: BodyResolveContext,
     ): ConstraintStorage? = null
 
-    open fun customCompletionModeInsteadOfFull(call: org.cangnova.cangjie.cfir.CfirResolvable): ConstraintSystemCompletionMode? = null
+    open fun customCompletionModeInsteadOfFull(call: org.cangnova.cangjie.cfir.expressions.CfirResolvable): ConstraintSystemCompletionMode? = null
 
     open fun <T> processPartiallyResolvedCall(
         call: T,
         resolutionMode: org.cangnova.cangjie.cfir.resolve.ResolutionMode,
         completionMode: ConstraintSystemCompletionMode,
-    ) where T : org.cangnova.cangjie.cfir.CfirResolvable, T : org.cangnova.cangjie.cfir.expressions.CfirExpression {
+    ) where T : org.cangnova.cangjie.cfir.expressions.CfirResolvable, T : org.cangnova.cangjie.cfir.expressions.CfirExpression {
     }
 
     open fun runLambdaCompletion(
