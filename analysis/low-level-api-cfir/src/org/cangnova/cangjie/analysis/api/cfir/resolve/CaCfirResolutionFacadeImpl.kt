@@ -27,6 +27,7 @@ import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjReferenceExpression
 import org.cangnova.cangjie.source.psi
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 
 /**
  * 默认的 CFIR low-level 解析 facade 实现。
@@ -130,8 +131,16 @@ internal class CaCfirResolutionFacadeImpl internal constructor(
     override fun getClassDefaultType(declaration: CjClassLikeDeclaration): ConeCangJieType? =
         semanticQueries.getClassDefaultType(declaration)
 
-    override fun getCallableReturnType(symbol: CfirCallableSymbol<*>): ConeCangJieType? =
-        symbol.resolvedReturnTypeRef.coneType
+    override fun getCallableReturnType(symbol: CfirCallableSymbol<*>): ConeCangJieType? {
+        val directType = symbol.resolvedReturnTypeRef.coneType
+        if (directType !is ConeErrorType) {
+            return directType
+        }
+
+        val sourceDeclaration = sourceNavigationProvider.findPsi(symbol) as? CjCallableDeclaration
+            ?: return directType
+        return semanticQueries.getDeclarationReturnType(sourceDeclaration) ?: directType
+    }
 
     override fun getClassLikeDefaultType(symbol: CfirClassLikeSymbol<*>): ConeCangJieType? =
         symbol.constructType()

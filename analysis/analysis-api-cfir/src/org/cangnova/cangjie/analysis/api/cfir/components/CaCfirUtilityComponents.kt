@@ -374,6 +374,12 @@ internal class CaCfirVisibilityChecker(
                 val restoredSymbol = when (this@isVisible) {
                     is CaCfirCallableSymbolBase<*> -> when (val cacheKey = publicSymbolCacheKeyOrNull()) {
                         is CaCfirCallableSymbolCacheKey -> analysisSession.restoreCallablePublicSymbol(cacheKey.callableId, cacheKey.kind)
+                        is CaCfirExtendMemberCallableSymbolCacheKey ->
+                            analysisSession.restoreExtendMemberCallablePublicSymbol(
+                                extendId = cacheKey.extendId,
+                                callableName = cacheKey.callableName,
+                                kind = cacheKey.kind,
+                            )
                         is CaCfirPsiSymbolCacheKey -> psi?.let { psiElement ->
                             analysisSession.lookupSymbolsByPsi(psiElement)
                                 .map(analysisSession::getPublicSymbol)

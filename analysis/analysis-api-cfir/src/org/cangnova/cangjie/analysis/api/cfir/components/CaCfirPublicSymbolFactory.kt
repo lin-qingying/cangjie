@@ -59,6 +59,8 @@ import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.buildExtendId
 import org.cangnova.cangjie.psi.CjExtend
+import org.cangnova.cangjie.psi.CjCallableDeclaration
+import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjPropertyAccessor
 import org.cangnova.cangjie.psi.CjScript
@@ -84,6 +86,12 @@ internal data class CaCfirExtendSymbolCacheKey(
 
 internal data class CaCfirCallableSymbolCacheKey(
     val callableId: CallableId,
+    val kind: CaCfirCallableSymbolKind,
+) : CaCfirPublicSymbolCacheKey
+
+internal data class CaCfirExtendMemberCallableSymbolCacheKey(
+    val extendId: String,
+    val callableName: Name,
     val kind: CaCfirCallableSymbolKind,
 ) : CaCfirPublicSymbolCacheKey
 
@@ -396,6 +404,20 @@ private fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSess
         }
     }
 
+    val extendDeclaration = (psi as? CjCallableDeclaration)?.getStrictParentOfType<CjExtend>()
+    if (extendDeclaration != null) {
+        return CaCfirExtendMemberCallableSymbolCacheKey(
+            extendId = extendDeclaration.getExtendId(),
+            callableName = callableId.callableName,
+            kind = when (this) {
+                is CfirNamedFunctionSymbol -> CaCfirCallableSymbolKind.NAMED_FUNCTION
+                is CfirPropertySymbol -> CaCfirCallableSymbolKind.PROPERTY
+                is CfirFieldVariableSymbol -> CaCfirCallableSymbolKind.FIELD
+                else -> return null
+            },
+        )
+    }
+
     return when (this) {
         is CfirAnonymousFunctionSymbol -> psi?.let { CaCfirPsiSymbolCacheKey(it, CaCfirPsiSymbolKind.ANONYMOUS_FUNCTION) }
         is CfirNamedFunctionSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.NAMED_FUNCTION)
@@ -437,6 +459,21 @@ internal fun CaCfirSession.restoreCallablePublicSymbol(
     }
 
     return null
+}
+
+internal fun CaCfirSession.restoreExtendMemberCallablePublicSymbol(
+    extendId: String,
+    callableName: Name,
+    kind: CaCfirCallableSymbolKind,
+): CaCallableSymbol? {
+    val extendSymbol = restoreExtendPublicSymbol(extendId) ?: return null
+    val candidates = with(this) {
+        extendSymbol.declaredMemberScope.getCallableSymbols(callableName)
+    }
+    val expectedKey = CaCfirExtendMemberCallableSymbolCacheKey(extendId, callableName, kind)
+    return candidates.singleOrNull { candidate ->
+        candidate.publicSymbolCacheKeyOrNull() == expectedKey
+    }
 }
 
 private fun CfirFile.findCallableSymbol(
