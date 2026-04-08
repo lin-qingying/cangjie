@@ -43,7 +43,7 @@ internal class CaCfirModuleResolveComponents(
         sessionProvider.getSession(module)
     }
 
-    val cfirFiles: List<CfirFile> by lazy(LazyThreadSafetyMode.NONE) {
+    private val rawCfirFiles: List<CfirFile> by lazy(LazyThreadSafetyMode.NONE) {
         globalResolveComponents.getSourceFiles(module).map { cjFile ->
             PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL).buildCfirFile(cjFile).also { cfirFile ->
                 val cfirProvider = session.cfirProvider as? CfirProviderImpl
@@ -54,6 +54,20 @@ internal class CaCfirModuleResolveComponents(
                 cfirProvider.recordFile(cfirFile)
             }
         }
+    }
+
+    /**
+     * module 级 resolved snapshot。
+     *
+     * facade / semantic queries / diagnostics 必须共享同一轮 `runResolution(...)` 的结果，
+     * 不能再让一条链消费 raw files、另一条链消费 resolved files。
+     */
+    private val resolutionSnapshot by lazy(LazyThreadSafetyMode.NONE) {
+        session.runResolution(rawCfirFiles)
+    }
+
+    val cfirFiles: List<CfirFile> by lazy(LazyThreadSafetyMode.NONE) {
+        resolutionSnapshot.second
     }
 
     val diagnostics: DiagnosticBuckets by lazy(LazyThreadSafetyMode.NONE) {
@@ -133,7 +147,7 @@ internal class CaCfirModuleResolveComponents(
             CfirSessionExtendProvider(session, session.extendIndexStore),
         )
 
-        val (scopeSession, resolvedFiles) = session.runResolution(cfirFiles)
+        val (scopeSession, resolvedFiles) = resolutionSnapshot
         val checkerCollector = DiagnosticsCollectorImpl()
         session.runCheckers(
             scopeSession = scopeSession,
