@@ -16,10 +16,18 @@ import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferTypeParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
+import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
+import org.cangnova.cangjie.cfir.diagnostic.ConeCommandIncompatibleTypeError
+import org.cangnova.cangjie.cfir.diagnostic.ConeEnumTypeCannotBeUsedAsConstructorError
+import org.cangnova.cangjie.cfir.diagnostic.ConeEffectsFeatureDisabledError
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
+import org.cangnova.cangjie.cfir.diagnostic.ConeImplicitResumeOutsideHandlerError
+import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingHandleBlockError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoConstructorError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingInvokeOperatorError
 import org.cangnova.cangjie.cfir.diagnostic.ConeResolutionToClassifierError
+import org.cangnova.cangjie.cfir.diagnostic.ConeResumeNoWithError
+import org.cangnova.cangjie.cfir.diagnostic.ConeResumeThrowingMismatchTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeVisibilityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
@@ -58,6 +66,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
@@ -377,6 +386,12 @@ private fun argumentTypeMismatch(
     session: CfirSession,
 ): CjDiagnostic? {
     if (source == null) return null
+    specificTypeMismatchDiagnostic(
+        source = source,
+        expectedType = expectedType,
+        actualType = actualType,
+        session = session,
+    )?.let { return it }
 
     if (anonymousFunction != null) {
         if (session.languageVersionSettings.supportsFeature(LanguageFeature.LambdaReturnTypeMismatchAsArgumentTypeMismatch)) {
@@ -452,7 +467,7 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     }
 
     val diagnosticSource = callOrAssignmentSource ?: source ?: return emptyList()
-    return listOfNotNull(CfirErrors.UNRESOLVED_REFERENCE.on(diagnosticSource, name.asString(), null, session))
+    return listOfNotNull(CfirErrors.AMBIGUOUS_FUNCTION_CALL.on(diagnosticSource, name, session))
 }
 
 private data class DiagnosticIdentityKey(
@@ -478,8 +493,8 @@ private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
     mapExtendSuperDiagnostic(source, callOrAssignmentSource, session)?.let { diagnostic ->
         return listOf(diagnostic)
     }
-    if (isConstructorDelegationUnresolved(source, callOrAssignmentSource)) {
-        return emptyList()
+    mapGenericUpperBoundAccessDiagnostic(source, callOrAssignmentSource, session)?.let { diagnostic ->
+        return listOf(diagnostic)
     }
 
     val diagnosticSource = callOrAssignmentSource ?: source ?: return emptyList()
@@ -492,6 +507,40 @@ private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
         ),
         buildInvalidBinaryOperatorDiagnostic(diagnosticSource, session),
     )
+}
+
+/**
+ * 当接收者是类型参数而名称解析失败时，我们优先把它归类为“upper bounds 中没有该成员/方法”，
+ * 而不是继续落到通用 unresolved。
+ */
+private fun ConeUnresolvedNameError.mapGenericUpperBoundAccessDiagnostic(
+    source: CjSourceElement?,
+    callOrAssignmentSource: CjSourceElement?,
+    session: CfirSession,
+): CjDiagnostic? {
+    val typeParameterType = receiverType as? ConeTypeParameterType ?: return null
+    val diagnosticSource = source ?: callOrAssignmentSource ?: return null
+    val missingName = name
+    val typeParameterName = typeParameterType.lookupTag.name
+
+    val hostText = callOrAssignmentSource?.text?.toString().orEmpty()
+    val looksLikeMethodCall = argumentTypes.isNotEmpty() || hostText.contains("${missingName.asString()}(")
+
+    return if (!looksLikeMethodCall) {
+        CfirErrors.GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS.on(
+            diagnosticSource,
+            missingName,
+            typeParameterName,
+            session,
+        )
+    } else {
+        CfirErrors.GENERIC_NO_METHOD_MATCH_IN_UPPER_BOUNDS.on(
+            diagnosticSource,
+            missingName,
+            typeParameterName,
+            session,
+        )
+    }
 }
 
 private fun ConeUnresolvedNameError.mapExtendSuperDiagnostic(
@@ -511,18 +560,6 @@ private fun ConeUnresolvedNameError.mapExtendSuperDiagnostic(
     }
 
     return CfirErrors.EXTEND_SUPER_NOT_ALLOWED.on(diagnosticSource, session)
-}
-
-private fun isConstructorDelegationUnresolved(
-    source: CjSourceElement?,
-    callOrAssignmentSource: CjSourceElement?,
-): Boolean {
-    val diagnosticSource = source ?: callOrAssignmentSource ?: return false
-    val psi = diagnosticSource.psi ?: return false
-    val constructor = PsiTreeUtil.getParentOfType(psi, org.cangnova.cangjie.psi.CjConstructor::class.java, false)
-        ?: return false
-    val psiText = psi.text.orEmpty()
-    return constructor.bodyExpression != null && (psiText.contains("this(") || psiText.contains("super("))
 }
 
 private fun ConeUnresolvedNameError.buildInvalidBinaryOperatorDiagnostic(
@@ -602,8 +639,57 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
         is ConeResolutionToClassifierError,
         -> CfirErrors.NO_CONSTRUCTOR.on(diagnosticSource, session)
 
+        is ConeEnumTypeCannotBeUsedAsConstructorError ->
+            CfirErrors.ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR.on(
+                diagnosticSource,
+                enumName,
+                session,
+            )
+
         is ConeNoMatchingInvokeOperatorError -> CfirErrors.NO_MATCHING_OPERATOR_INVOKE.on(
             diagnosticSource, name.asString(), receiverType, session
+        )
+
+        is ConeEffectsFeatureDisabledError -> CfirErrors.EFFECTS_FEATURE_DISABLED.on(
+            diagnosticSource,
+            constructName,
+            session,
+        )
+
+        is ConeCommandIncompatibleTypeError -> CfirErrors.COMMAND_INCOMPATIBLE_TYPE.on(
+            diagnosticSource,
+            actualType ?: ConeErrorType(ConeSimpleDiagnostic("unknown effect command type")),
+            session,
+        )
+
+        is ConeCommandHandleTypeError -> CfirErrors.COMMAND_HANDLE_TYPE_ERROR.on(
+            diagnosticSource,
+            actualType ?: ConeErrorType(ConeSimpleDiagnostic("unknown handler command type")),
+            session,
+        )
+
+        is ConeImplicitResumeOutsideHandlerError -> CfirErrors.IMPLICIT_RESUME_OUTSIDE_HANDLER.on(
+            diagnosticSource,
+            session,
+        )
+
+        is ConeResumeNoWithError -> CfirErrors.RESUME_NO_WITH.on(
+            diagnosticSource,
+            resumptionType,
+            session,
+        )
+
+        is ConeResumeThrowingMismatchTypeError -> CfirErrors.RESUME_THROWING_MISMATCH_TYPE.on(
+            diagnosticSource,
+            actualType ?: ConeErrorType(ConeSimpleDiagnostic("unknown resume throwing type")),
+            session,
+        )
+
+        is ConeMismatchingHandleBlockError -> CfirErrors.MISMATCHING_HANDLE_BLOCK.on(
+            diagnosticSource,
+            actualType,
+            expectedType,
+            session,
         )
 
         is ConeSimpleDiagnostic -> when (kind) {
@@ -621,8 +707,18 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
 
             DiagnosticKind.DuplicateSupertype -> null
 
+            DiagnosticKind.GenericTypeWithoutTypeArgument ->
+                CfirErrors.GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT.on(
+                    diagnosticSource,
+                    diagnosticSource.toApproxTypeName(),
+                    session,
+                )
+
             DiagnosticKind.SuperNotAllowed ->
                 CfirErrors.EXTEND_SUPER_NOT_ALLOWED.on(diagnosticSource, session)
+
+            DiagnosticKind.JumpOutsideLoop ->
+                CfirErrors.INVALID_LOOP_CONTROL.on(source ?: diagnosticSource, session)
 
             else -> null
         }
@@ -685,6 +781,13 @@ private fun typeMismatchDiagnostic(
     session: CfirSession,
 ): CjDiagnostic? {
     val diagnosticSource = source ?: return null
+    specificTypeMismatchDiagnostic(
+        source = diagnosticSource,
+        expectedType = expectedType,
+        actualType = actualType,
+        session = session,
+    )?.let { return it }
+
     val typeMismatchTarget = diagnosticSource.typeMismatchTarget() ?: callOrAssignmentSource.typeMismatchTarget()
     return when (typeMismatchTarget) {
         is TypeMismatchTarget.ReturnExpression -> CfirErrors.RETURN_TYPE_MISMATCH.on(

@@ -7,6 +7,12 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/cfir/symbols/cangjie.cfir.symbols.iml" filepath="$PROJECT_DIR$/.idea/modules/cfir/symbols/cangjie.cfir.symbols.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/cfir/symbols/cangjie.cfir.symbols.main.iml" filepath="$PROJECT_DIR$/.idea/modules/cfir/symbols/cangjie.cfir.symbols.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/cfir/symbols/cangjie.cfir.symbols.test.iml" filepath="$PROJECT_DIR$/.idea/modules/cfir/symbols/cangjie.cfir.symbols.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/compiler/cli/cangjie.compiler.cli.iml" filepath="$PROJECT_DIR$/.idea/modules/compiler/cli/cangjie.compiler.cli.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/compiler/cli-arguments-generator/cangjie.compiler.cli-arguments-generator.iml" filepath="$PROJECT_DIR$/.idea/modules/compiler/cli-arguments-generator/cangjie.compiler.cli-arguments-generator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/compiler/cli-arguments-generator/cangjie.compiler.cli-arguments-generator.main.iml" filepath="$PROJECT_DIR$/.idea/modules/compiler/cli-arguments-generator/cangjie.compiler.cli-arguments-generator.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/compiler/cli-arguments-generator/cangjie.compiler.cli-arguments-generator.test.iml" filepath="$PROJECT_DIR$/.idea/modules/compiler/cli-arguments-generator/cangjie.compiler.cli-arguments-generator.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/compiler/cli/cangjie.compiler.cli.main.iml" filepath="$PROJECT_DIR$/.idea/modules/compiler/cli/cangjie.compiler.cli.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/compiler/cli/cangjie.compiler.cli.test.iml" filepath="$PROJECT_DIR$/.idea/modules/compiler/cli/cangjie.compiler.cli.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/repo/gradle-build-conventions/generators/gradle-build-conventions.generators.main.iml" filepath="$PROJECT_DIR$/.idea/modules/repo/gradle-build-conventions/generators/gradle-build-conventions.generators.main.iml" />
     </modules>
   </component>

@@ -191,9 +191,15 @@
       <module name="cangjie.compiler.config" options="-proc:none" />
       <module name="cangjie.compiler.config.main" options="-proc:none" />
       <module name="cangjie.compiler.config.test" options="-proc:none" />
+      <module name="cangjie.compiler.frontend" options="-proc:none" />
+      <module name="cangjie.compiler.frontend-arguments-generator" options="-proc:none" />
+      <module name="cangjie.compiler.frontend-arguments-generator.main" options="-proc:none" />
+      <module name="cangjie.compiler.frontend-arguments-generator.test" options="-proc:none" />
       <module name="cangjie.compiler.frontend.common" options="-proc:none" />
       <module name="cangjie.compiler.frontend.common.main" options="-proc:none" />
       <module name="cangjie.compiler.frontend.common.test" options="-proc:none" />
+      <module name="cangjie.compiler.frontend.main" options="-proc:none" />
+      <module name="cangjie.compiler.frontend.test" options="-proc:none" />
       <module name="cangjie.compiler.main" options="-proc:none" />
       <module name="cangjie.compiler.phaser" options="-proc:none" />
       <module name="cangjie.compiler.phaser.main" options="-proc:none" />
@@ -233,6 +239,12 @@
       <module name="cangjie.macro.macro-stub" options="-proc:none" />
       <module name="cangjie.macro.macro-stub.main" options="-proc:none" />
       <module name="cangjie.macro.macro-stub.test" options="-proc:none" />
+      <module name="cangjie.prepare.frontend" options="-proc:none" />
+      <module name="cangjie.prepare.frontend-embeddable" options="-proc:none" />
+      <module name="cangjie.prepare.frontend-embeddable.main" options="-proc:none" />
+      <module name="cangjie.prepare.frontend-embeddable.test" options="-proc:none" />
+      <module name="cangjie.prepare.frontend.main" options="-proc:none" />
+      <module name="cangjie.prepare.frontend.test" options="-proc:none" />
       <module name="cangjie.psi" options="-proc:none" />
       <module name="cangjie.psi.main" options="-proc:none" />
       <module name="cangjie.psi.test" options="-proc:none" />
