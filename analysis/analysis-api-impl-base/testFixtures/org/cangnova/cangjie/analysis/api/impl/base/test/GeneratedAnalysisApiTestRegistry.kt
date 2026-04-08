@@ -129,6 +129,13 @@ object GeneratedAnalysisApiTestRegistry {
             includedFilePatternProvider = exactStemPattern("cdoc"),
         ),
         GeneratedAnalysisApiModel(
+            baseName = "FindUsagesTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.usages.AbstractFindUsagesTest",
+            modelRelativePath = "analysis/analysis-api/testData/usages/findUsages",
+            supportedModuleKinds = listOf(TestModuleKind.Source),
+            includedFilePatternProvider = allFilesPattern(),
+        ),
+        GeneratedAnalysisApiModel(
             baseName = "SignatureSubstitutionTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.substitutors.AbstractSignatureSubstitutionTest",
             modelRelativePath = "analysis/analysis-api/testData/components/substitutors/signatureSubstitution",
@@ -222,6 +229,10 @@ object GeneratedAnalysisApiTestRegistry {
 
     private fun exactStemPattern(fileStem: String): (TestModuleKind) -> String = { moduleKind ->
         "^$fileStem\\.${moduleKind.defaultTestFileExtension()}$"
+    }
+
+    private fun allFilesPattern(): (TestModuleKind) -> String = { moduleKind ->
+        "^.+\\.${moduleKind.defaultTestFileExtension()}$"
     }
 
     private fun TestModuleKind.defaultTestFileExtension(): String = "cj"

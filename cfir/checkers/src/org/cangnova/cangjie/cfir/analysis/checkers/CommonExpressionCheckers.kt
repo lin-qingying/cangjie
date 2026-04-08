@@ -5,7 +5,9 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirAssignmentChec
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirAssignmentTypeMismatchChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirBasicExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirConstEvalArithmeticChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirConstructorDelegationCallChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirErrorExpressionChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirGenericBareClassifierAccessChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirIllegalSuperReferenceChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirFunctionCallChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirIfExpressionChecker
@@ -13,8 +15,12 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirIfConditionTyp
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirLiteralExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirLiteralNumericOverflowChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirLoopConditionTypeMismatchChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirImmutableFunctionCannotAccessMutableFunctionChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirImmutableFunctionCannotModifyFieldChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirMatchCaseTypeChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirMatchExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirMatchExhaustivenessChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirMatchPatternLegalityChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirQualifiedAccessChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirReturnExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirReturnTypeMismatchChecker
@@ -33,10 +39,17 @@ object CommonExpressionCheckers : ExpressionCheckers() {
         get() = emptySet()
 
     override val matchExpressionCheckers: Set<CfirMatchExpressionChecker>
-        get() = setOf(CfirMatchExhaustivenessChecker)
+        get() = setOf(
+            CfirMatchCaseTypeChecker,
+            CfirMatchPatternLegalityChecker,
+            CfirMatchExhaustivenessChecker,
+        )
 
     override val assignmentCheckers: Set<CfirAssignmentChecker>
-        get() = setOf(CfirAssignmentTypeMismatchChecker)
+        get() = setOf(
+            CfirAssignmentTypeMismatchChecker,
+            CfirImmutableFunctionCannotModifyFieldChecker,
+        )
 
     override val returnExpressionCheckers: Set<CfirReturnExpressionChecker>
         get() = setOf(CfirReturnTypeMismatchChecker)
@@ -48,10 +61,14 @@ object CommonExpressionCheckers : ExpressionCheckers() {
         get() = setOf(
 //            CfirArgumentTypeMismatchChecker,
             CfirConstEvalArithmeticChecker,
+            CfirConstructorDelegationCallChecker,
+            CfirImmutableFunctionCannotAccessMutableFunctionChecker,
         )
 
     override val qualifiedAccessCheckers: Set<CfirQualifiedAccessChecker>
-        get() = emptySet()
+        get() = setOf(
+            CfirGenericBareClassifierAccessChecker,
+        )
 
     override val superReceiverExpressionCheckers: Set<CfirSuperReceiverExpressionChecker>
         get() = setOf(CfirIllegalSuperReferenceChecker)
