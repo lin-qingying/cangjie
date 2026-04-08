@@ -7,6 +7,8 @@ plugins {
     id("project-tests-convention")
 }
 
+description = "CFIR-backed implementation of the Cangjie frontend analysis API."
+
 sourceSets {
     "main" { projectDefault() }
     "test" {

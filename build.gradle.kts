@@ -98,26 +98,28 @@ tasks.matching { it.name == "checkAnalysisFramework" }.configureEach {
 }
 
 val publicPublicationArtifacts = linkedMapOf(
-    ":prepare:frontend" to "cangjie-frontend",
-    ":prepare:frontend-embeddable" to "cangjie-frontend-embeddable",
-    ":prepare:test-infrastructure" to "cangjie-frontend-test-infrastructure",
-    ":prepare:analysis-test-framework" to "cangjie-frontend-analysis-test-framework",
-    ":compiler:arguments" to "cangjie-frontend-arguments-description",
-    ":common" to "cangjie-frontend-common",
-    ":psi" to "cangjie-frontend-psi",
-    ":common:diagnostics" to "cangjie-frontend-common-diagnostics",
-    ":analysis:analysis-api" to "cangjie-frontend-analysis-api",
-    ":analysis:analysis-api-platform-interface" to "cangjie-frontend-analysis-api-platform-interface",
-    ":analysis:analysis-api-impl-base" to "cangjie-frontend-analysis-api-impl-base",
-    ":analysis:analysis-api-standalone" to "cangjie-frontend-analysis-api-standalone",
-    ":analysis:analysis-api-cfir" to "cangjie-frontend-analysis-api-cfir",
+    ":prepare:frontend" to ("cangjie-frontend" to "Published Cangjie frontend runtime facade."),
+    ":prepare:frontend-embeddable" to ("cangjie-frontend-embeddable" to "Embeddable Cangjie frontend runtime with shaded and relocated host dependencies."),
+    ":prepare:test-infrastructure" to ("cangjie-frontend-test-infrastructure" to "Published Cangjie frontend compiler test infrastructure."),
+    ":prepare:analysis-test-framework" to ("cangjie-frontend-analysis-test-framework" to "Published Cangjie frontend analysis API test framework."),
+    ":compiler:arguments" to ("cangjie-frontend-arguments-description" to "Cangjie frontend argument model and generated argument descriptions."),
+    ":common" to ("cangjie-frontend-common" to "Shared Cangjie frontend language model and core infrastructure."),
+    ":psi" to ("cangjie-frontend-psi" to "Cangjie PSI, lexer, parser and source syntax infrastructure."),
+    ":common:diagnostics" to ("cangjie-frontend-common-diagnostics" to "Cangjie frontend diagnostics model, factories, collectors and renderers."),
+    ":analysis:analysis-api" to ("cangjie-frontend-analysis-api" to "Public Cangjie frontend analysis API."),
+    ":analysis:analysis-api-platform-interface" to ("cangjie-frontend-analysis-api-platform-interface" to "Platform abstraction layer for the Cangjie frontend analysis API."),
+    ":analysis:analysis-api-impl-base" to ("cangjie-frontend-analysis-api-impl-base" to "Base implementation layer for the Cangjie frontend analysis API."),
+    ":analysis:analysis-api-standalone" to ("cangjie-frontend-analysis-api-standalone" to "Standalone entrypoints for consuming the Cangjie frontend analysis API."),
+    ":analysis:analysis-api-cfir" to ("cangjie-frontend-analysis-api-cfir" to "CFIR-backed implementation of the Cangjie frontend analysis API."),
 )
 
 extensions.extraProperties["cangjiePublicProjectPaths"] = publicPublicationArtifacts.keys.toSet()
 
-publicPublicationArtifacts.forEach { (projectPath, artifactId) ->
+publicPublicationArtifacts.forEach { (projectPath, publication) ->
+    val (artifactId, publicationDescription) = publication
     project(projectPath).run {
         extensions.extraProperties["cangjiePublicationArtifactId"] = artifactId
+        extensions.extraProperties["cangjiePublicationDescription"] = publicationDescription
         pluginManager.apply("cangjie-publishing")
     }
 }
