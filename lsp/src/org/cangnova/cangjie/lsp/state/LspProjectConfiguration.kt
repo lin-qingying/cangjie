@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.lsp.state
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
 import org.eclipse.lsp4j.InitializeParams
 import org.eclipse.lsp4j.WorkspaceFolder
 import java.io.File
@@ -40,7 +42,7 @@ data class LspProjectConfiguration(
             params: InitializeParams,
             workspaceFoldersOverride: List<WorkspaceFolder>? = null,
         ): LspProjectConfiguration {
-            val initializationOptions = params.initializationOptions as? Map<*, *> ?: emptyMap<Any, Any>()
+            val initializationOptions = normalizeInitializationOptions(params.initializationOptions)
             val workspaceFolders = workspaceFoldersOverride
                 ?: params.workspaceFolders
                 ?: params.rootUri?.let { listOf(WorkspaceFolder(it, inferWorkspaceName(it))) }
@@ -132,6 +134,16 @@ data class LspProjectConfiguration(
             val trimmed = uri.trimEnd('/')
             val slashIndex = trimmed.lastIndexOf('/')
             return if (slashIndex >= 0) trimmed.substring(slashIndex + 1) else trimmed
+        }
+
+        private fun normalizeInitializationOptions(raw: Any?): Map<*, *> {
+            val gson = Gson()
+            return when (raw) {
+                is Map<*, *> -> raw
+                is JsonElement -> runCatching { gson.fromJson(raw, Map::class.java) as? Map<*, *> }.getOrNull().orEmpty()
+                is String -> runCatching { gson.fromJson(raw, Map::class.java) as? Map<*, *> }.getOrNull().orEmpty()
+                else -> runCatching { gson.fromJson(gson.toJson(raw), Map::class.java) as? Map<*, *> }.getOrNull().orEmpty()
+            }
         }
 
         private fun setOrClearSystemProperty(

@@ -68,10 +68,7 @@ class CangjieServerContext(
      * 然后再进入 Analysis API 语义层。
      */
     fun refreshProjectStructure() {
-        projectStructureState.configure(
-            workspaceState = workspaceState,
-            documentStore = documentStore,
-        )
+        projectStructureState.configure(workspaceState = workspaceState)
     }
 
     /**
@@ -96,6 +93,23 @@ class CangjieServerContext(
     ) {
         val activeClient = client ?: return
         activeClient.publishDiagnostics(createPublishDiagnosticsParams(document, diagnostics))
+    }
+
+    /**
+     * 统一重发当前所有打开文档的诊断。
+     *
+     * LSP 工作区 overlay 下，某个文件的变更会影响同模块内其他打开文件；
+     * 因此诊断刷新必须以“所有打开文档”为单位，而不能只重发当前文档。
+     */
+    fun republishOpenDiagnostics() {
+        if (!enabledFeatures.diagnostics) return
+
+        documentStore.all().forEach { document ->
+            requestExecutor.compute {
+                val diagnostics = collectDiagnostics(document)
+                publishDiagnostics(document, diagnostics)
+            }.join()
+        }
     }
 
     fun createPublishDiagnosticsParams(

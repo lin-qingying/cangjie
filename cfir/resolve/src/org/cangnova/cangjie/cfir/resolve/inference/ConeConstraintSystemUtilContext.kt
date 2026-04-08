@@ -1,7 +1,9 @@
 package org.cangnova.cangjie.cfir.resolve.inference
 
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaParameterType
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForPostponedAtom
+import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.resolve.calls.ConeLambdaWithTypeVariableAsExpectedTypeAtom
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeFixVariableConstraintPosition
@@ -14,6 +16,7 @@ import org.cangnova.cangjie.resolve.calls.inference.components.PostponedArgument
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintPosition
 import org.cangnova.cangjie.resolve.calls.inference.model.FixVariableConstraintPosition
 import org.cangnova.cangjie.resolve.calls.model.PostponedAtomWithRevisableExpectedType
+import org.cangnova.cangjie.source.text
 import org.cangnova.cangjie.type.model.CangJieTypeMarker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.type.model.TypeVariableMarker
@@ -33,6 +36,11 @@ object ConeConstraintSystemUtilContext : ConstraintSystemUtilContext {
     override fun CangJieTypeMarker.unCapture(): CangJieTypeMarker = this
 
     override fun CangJieTypeMarker.refineType(): CangJieTypeMarker = this
+
+    override fun TypeVariableMarker.hasOnlyInputTypesAttribute(): Boolean {
+        if (this !is ConeTypeParameterBasedTypeVariable) return false
+        return typeParameterSymbol.cfir.hasOnlyInputTypesAnnotation()
+    }
 
     override fun createArgumentConstraintPosition(argument: PostponedAtomWithRevisableExpectedType): ConstraintPosition {
         require(argument is ConeLambdaWithTypeVariableAsExpectedTypeAtom || argument is org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedCallableReferenceAtom) {
@@ -96,5 +104,18 @@ object ConeConstraintSystemUtilContext : ConstraintSystemUtilContext {
         return ConeTypeVariableForPostponedAtom(
             PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_PREFIX_FOR_CR_PARAMETER_TYPE + index,
         )
+    }
+}
+
+/**
+ * `OnlyInputTypes` 属于类型参数声明元数据，不应该散落在约束系统主流程里到处判断。
+ *
+ * 当前 first-party 前端的“类型参数注解 -> CFIR annotations”入口还没完全对齐；
+ * 这里先把语义查询集中起来，等入口补齐后即可直接生效。
+ */
+private fun CfirTypeParameter.hasOnlyInputTypesAnnotation(): Boolean {
+    return annotations.any { annotation ->
+        val annotationText = annotation.typeRef.source?.text?.toString().orEmpty()
+        annotationText == "OnlyInputTypes" || annotationText.endsWith(".OnlyInputTypes")
     }
 }

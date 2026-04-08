@@ -68,7 +68,7 @@ class ResolutionStageRunner {
 
         while (!finished) {
             sink.continuation!!.resume(Unit)
-            if (!candidate.isSuccessful) {
+            if (stopOnFirstError && !candidate.isSuccessful) {
                 break
             }
         }

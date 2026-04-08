@@ -75,7 +75,7 @@ class CfirBuiltinSymbolProvider(
         fqName == StandardNames.BASIC_PACKAGE_FQ_NAME
 
     override fun getContainingClassId(symbol: CfirCallableSymbol<*>): ClassId? =
-        containingClassIdsByCallable[symbol]
+        containingClassIdsByCallable[symbol.unwrapCallableForDeclarationMetadataLookup()]
 
     private fun buildPrimitiveDeclaration(kind: PrimitiveTypeKind): CfirPrimitiveTypeDeclaration {
         val symbol = CfirPrimitiveTypeSymbol(kind.classId, kind)

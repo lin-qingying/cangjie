@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    id("analysis-coverage-convention")
 }
 
 dependencies {
@@ -10,4 +11,9 @@ dependencies {
     api(project(":analysis:analysis-internal-utils"))
     implementation(project(":common"))
     implementation(project(":psi"))
+
+    testImplementation(intellijCore())
+    testImplementation(testFixtures(project(":analysis:analysis-test-framework")))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }

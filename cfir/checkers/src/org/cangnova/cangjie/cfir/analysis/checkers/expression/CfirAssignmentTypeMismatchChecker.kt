@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagnostic
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -30,6 +31,16 @@ object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
         val rValueType = expression.rValue.coneTypeOrNull ?: return
         if (lValueType is ConeErrorType || rValueType is ConeErrorType) return
         val rValueSource = expression.rValue.source as? AbstractCjSourceElement ?: return
+        specificTypeMismatchDiagnostic(
+            source = rValueSource,
+            expectedType = lValueType,
+            actualType = rValueType,
+            session = context.session,
+        )?.let { diagnostic ->
+            reporter.report(diagnostic, context)
+            return
+        }
+
         if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, rValueType, lValueType) != true) {
             reporter.reportOn(
                 rValueSource, CfirErrors.ASSIGNMENT_TYPE_MISMATCH,

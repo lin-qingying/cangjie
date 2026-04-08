@@ -8,6 +8,7 @@ package org.cangnova.cangjie.cfir.visitors
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.CfirTargetElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.expressions.*
@@ -306,6 +307,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(patternVariable)
     }
 
+    final override fun visitPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable, data: Nothing?) {
+        visitPatternBindingVariable(patternBindingVariable)
+    }
+
+    open fun visitPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable) {
+        visitElement(patternBindingVariable)
+    }
+
     final override fun visitValueParameter(valueParameter: CfirValueParameter, data: Nothing?) {
         visitValueParameter(valueParameter)
     }
@@ -562,6 +571,22 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(catch)
     }
 
+    final override fun visitCommandTypePattern(commandTypePattern: CfirCommandTypePattern, data: Nothing?) {
+        visitCommandTypePattern(commandTypePattern)
+    }
+
+    open fun visitCommandTypePattern(commandTypePattern: CfirCommandTypePattern) {
+        visitElement(commandTypePattern)
+    }
+
+    final override fun visitHandleClause(handleClause: CfirHandleClause, data: Nothing?) {
+        visitHandleClause(handleClause)
+    }
+
+    open fun visitHandleClause(handleClause: CfirHandleClause) {
+        visitElement(handleClause)
+    }
+
     final override fun visitLoopExpression(loopExpression: CfirLoopExpression, data: Nothing?) {
         visitLoopExpression(loopExpression)
     }
@@ -594,6 +619,22 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(throwExpression)
     }
 
+    final override fun visitPerformExpression(performExpression: CfirPerformExpression, data: Nothing?) {
+        visitPerformExpression(performExpression)
+    }
+
+    open fun visitPerformExpression(performExpression: CfirPerformExpression) {
+        visitElement(performExpression)
+    }
+
+    final override fun visitResumeExpression(resumeExpression: CfirResumeExpression, data: Nothing?) {
+        visitResumeExpression(resumeExpression)
+    }
+
+    open fun visitResumeExpression(resumeExpression: CfirResumeExpression) {
+        visitElement(resumeExpression)
+    }
+
     final override fun visitReturnExpression(returnExpression: CfirReturnExpression, data: Nothing?) {
         visitReturnExpression(returnExpression)
     }
@@ -602,12 +643,36 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(returnExpression)
     }
 
-    final override fun visitJumpExpression(jumpExpression: CfirJumpExpression, data: Nothing?) {
-        visitJumpExpression(jumpExpression)
+    final override fun <E : CfirTargetElement> visitJump(jump: CfirJump<E>, data: Nothing?) {
+        visitJump(jump)
     }
 
-    open fun visitJumpExpression(jumpExpression: CfirJumpExpression) {
-        visitElement(jumpExpression)
+    open fun <E : CfirTargetElement> visitJump(jump: CfirJump<E>) {
+        visitElement(jump)
+    }
+
+    final override fun visitLoopJump(loopJump: CfirLoopJump, data: Nothing?) {
+        visitLoopJump(loopJump)
+    }
+
+    open fun visitLoopJump(loopJump: CfirLoopJump) {
+        visitElement(loopJump)
+    }
+
+    final override fun visitBreakExpression(breakExpression: CfirBreakExpression, data: Nothing?) {
+        visitBreakExpression(breakExpression)
+    }
+
+    open fun visitBreakExpression(breakExpression: CfirBreakExpression) {
+        visitElement(breakExpression)
+    }
+
+    final override fun visitContinueExpression(continueExpression: CfirContinueExpression, data: Nothing?) {
+        visitContinueExpression(continueExpression)
+    }
+
+    open fun visitContinueExpression(continueExpression: CfirContinueExpression) {
+        visitElement(continueExpression)
     }
 
     final override fun visitAnonymousFunction(anonymousFunction: CfirAnonymousFunction, data: Nothing?) {
@@ -656,6 +721,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitTupleLiteral(tupleLiteral: CfirTupleLiteral) {
         visitElement(tupleLiteral)
+    }
+
+    final override fun visitTargetElement(targetElement: CfirTargetElement, data: Nothing?) {
+        visitTargetElement(targetElement)
+    }
+
+    open fun visitTargetElement(targetElement: CfirTargetElement) {
+        visitElement(targetElement)
     }
 
     final override fun visitSpawnExpression(spawnExpression: CfirSpawnExpression, data: Nothing?) {
@@ -752,6 +825,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitBindingPattern(bindingPattern: CfirBindingPattern) {
         visitElement(bindingPattern)
+    }
+
+    final override fun visitVarOrEnumPattern(varOrEnumPattern: CfirVarOrEnumPattern, data: Nothing?) {
+        visitVarOrEnumPattern(varOrEnumPattern)
+    }
+
+    open fun visitVarOrEnumPattern(varOrEnumPattern: CfirVarOrEnumPattern) {
+        visitElement(varOrEnumPattern)
     }
 
     final override fun visitTuplePattern(tuplePattern: CfirTuplePattern, data: Nothing?) {

@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.renderer
 
 import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.analysis.api.renderer.declarations.impl.CaDeclarationRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForSource
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.expectedRenderedCallableSymbol
 import org.cangnova.cangjie.analysis.api.impl.base.test.expectedRenderedClassSymbol
@@ -39,21 +41,40 @@ abstract class AbstractRendererTest : AbstractAnalysisApiComponentTest() {
                 mainFile.packageFqName,
                 Name.identifier(directives.targetFunctionName),
             ).singleOrNull()
-            val renderedType = targetCall.expressionType?.render()
+            val expressionType = targetCall.expressionType
 
             assertNotNull(classSymbol, "renderer 测试需要可恢复的 class-like 符号。")
             assertNotNull(callableSymbol, "renderer 测试需要可恢复的 callable 符号。")
-            assertNotNull(renderedType, "renderer 测试需要可恢复的表达式类型。")
+            assertNotNull(expressionType, "renderer 测试需要可恢复的表达式类型。")
+
+            val resolvedClassSymbol = classSymbol!!
+            val resolvedCallableSymbol = callableSymbol!!
+            val resolvedExpressionType = expressionType!!
+
+            val explicitClassRendering = resolvedClassSymbol.render(CaDeclarationRendererForSource.WITH_QUALIFIED_NAMES)
+            val explicitCallableRendering = resolvedCallableSymbol.render(CaDeclarationRendererForSource.WITH_QUALIFIED_NAMES)
+            val explicitTypeRendering = normalizeTypeRendering(
+                resolvedExpressionType.render(CaTypeRendererForSource.WITH_QUALIFIED_NAMES),
+            )
 
             assertEquals(
                 directives.expectedRenderedClassSymbol,
-                classSymbol!!.render().replace('/', '.'),
+                explicitClassRendering,
             )
             assertEquals(
                 directives.expectedRenderedCallableSymbol,
-                callableSymbol!!.render().replace(" ", ""),
+                explicitCallableRendering,
             )
-            assertEquals(directives.expectedRenderedType, normalizeTypeRendering(renderedType!!))
+            assertEquals(directives.expectedRenderedType, explicitTypeRendering)
+
+            /**
+             * `render()` / `CaType.render()` 依然保留为默认入口，
+             * 但它们的语义必须严格委托到公开 source preset，
+             * 不能再偷偷维护另一套默认字符串格式。
+             */
+            assertEquals(explicitClassRendering, resolvedClassSymbol.render())
+            assertEquals(explicitCallableRendering, resolvedCallableSymbol.render())
+            assertEquals(explicitTypeRendering, normalizeTypeRendering(resolvedExpressionType.render()))
         }
     }
 }

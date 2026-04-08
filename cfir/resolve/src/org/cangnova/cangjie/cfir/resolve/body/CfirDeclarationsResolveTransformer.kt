@@ -15,7 +15,6 @@ import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
@@ -31,6 +30,7 @@ import org.cangnova.cangjie.cfir.types.IdealTypeResolver
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -194,9 +194,23 @@ class CfirDeclarationsResolveTransformer(
                 context.addNonLocalScope(CfirTypeParameterScopeImpl(enumConstructor.typeParameters))
             }
 
-            if (enumConstructor.returnTypeRef !is CfirImplicitTypeRef) {
+            enumConstructor.valueParameters.forEach { parameter ->
+                parameter.replaceReturnTypeRef(
+                    resolveExplicitTypeRefIfNeeded(parameter.returnTypeRef, enumConstructor.typeParameters),
+                )
+            }
+
+            val returnTypeRef = enumConstructor.returnTypeRef
+            if (returnTypeRef is CfirImplicitTypeRef) {
+                val ownerEnum = context.containers.filterIsInstance<CfirEnum>().lastOrNull()
+                val ownerType = ownerEnum?.let(::buildConstructedTypeForClass)
+                    ?: ConeErrorType(ConeSimpleDiagnostic("enum constructor has no owning enum"))
                 enumConstructor.replaceReturnTypeRef(
-                    resolveExplicitTypeRefIfNeeded(enumConstructor.returnTypeRef, enumConstructor.typeParameters),
+                    returnTypeRef.resolvedTypeFromPrototype(ownerType, returnTypeRef.source),
+                )
+            } else {
+                enumConstructor.replaceReturnTypeRef(
+                    resolveExplicitTypeRefIfNeeded(returnTypeRef, enumConstructor.typeParameters),
                 )
             }
         }
@@ -270,6 +284,17 @@ class CfirDeclarationsResolveTransformer(
         return declaration
     }
 
+    override fun transformPatternBindingVariable(
+        patternBindingVariable: CfirPatternBindingVariable,
+        data: ResolutionMode,
+    ): CfirPatternBindingVariable {
+        patternBindingVariable.replaceReturnTypeRef(
+            resolveExplicitTypeRefIfNeeded(patternBindingVariable.returnTypeRef, patternBindingVariable.typeParameters),
+        )
+        bumpPhase(patternBindingVariable)
+        return patternBindingVariable
+    }
+
     override fun transformPatternVariable(
         patternVariable: CfirPatternVariable,
         data: ResolutionMode,
@@ -311,31 +336,16 @@ class CfirDeclarationsResolveTransformer(
             }
         }
 
-        val pvSymbol = patternVariable.symbol as? CfirPatternVariableSymbol
-        if (pvSymbol != null) {
-            val bindingNames = collectBindingNames(patternVariable.pattern)
-            for (name in bindingNames) {
-                context.storeVariable(name, pvSymbol)
-            }
-        }
+        patternVariable.transformPattern(transformer, ResolutionMode.ContextIndependent)
+        resolvePatternBindingTypes(
+            pattern = patternVariable.pattern,
+            expectedType = patternVariable.returnTypeRef.coneTypeOrNull,
+            typeResolver = specificTypeResolverTransformer,
+        )
+        registerPatternBindings(patternVariable.pattern)
 
         bumpPhase(patternVariable)
         return patternVariable
-    }
-
-    private fun collectBindingNames(pattern: CfirPattern): List<Name> {
-        return when (pattern) {
-            is CfirBindingPattern -> {
-                val names = mutableListOf(pattern.name)
-                pattern.nestedPattern?.let { names.addAll(collectBindingNames(it)) }
-                names
-            }
-            is CfirTuplePattern -> pattern.elements.flatMap { collectBindingNames(it) }
-            is CfirEnumPattern -> pattern.arguments.flatMap { collectBindingNames(it) }
-            is CfirTypePattern -> listOfNotNull(pattern.bindingName)
-            is CfirWildcardPattern, is CfirConstPattern -> emptyList()
-            else -> emptyList()
-        }
     }
 
     override fun transformBlock(block: CfirBlock, data: ResolutionMode): CfirExpression {

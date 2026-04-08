@@ -78,17 +78,17 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
 
         // -------- 声明节点 --------
         file, classDeclaration, interfaceDeclaration,structDeclaration,enumDeclaration,  enumConstructor, extend, typeAlias, namedFunction, anonymousFunction, mainFunction, macroDeclaration, finalizer,
-        invalidDeclaration, property, fieldVariable, patternVariable, valueParameter, typeParameter,
+        invalidDeclaration, property, fieldVariable, patternVariable, patternBindingVariable, valueParameter, typeParameter,
 
         // -------- 语句 / 表达式节点 --------
         block,
         literalExpression, stringInterpolation, functionCall, namedAccessExpression, qualifiedAccessExpression, assignment, binaryOp,
         comparisonExpression, typeOperator, ifExpression, matchExpression, matchBranch, catchClause, loopExpression, forInExpression, tryExpression,
-        throwExpression, returnExpression, jumpExpression, anonymousFunctionExpression, rangeExpression, arrayLiteral, tupleLiteral,
+        throwExpression, returnExpression, breakExpression, continueExpression, anonymousFunctionExpression, rangeExpression, arrayLiteral, tupleLiteral,
         spawnExpression, synchronizedExpression, unsafeExpression, quoteExpression, macroExpression, subscriptExpression, errorExpression,
 
         // -------- 模式节点 --------
-        constPattern, wildcardPattern, bindingPattern, tuplePattern, enumPattern, typePattern,
+        constPattern, wildcardPattern, bindingPattern, varOrEnumPattern, tuplePattern, enumPattern, typePattern,
 
         // -------- 类型引用节点 --------
         resolvedTypeRef, userTypeRef, basicTypeRef, implicitTypeRef, functionTypeRef, tupleTypeRef, varrayTypeRef,

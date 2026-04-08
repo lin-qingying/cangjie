@@ -2,7 +2,7 @@ package org.cangnova.cangjie.analysis.api.scopes
 
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.name.Name
 
@@ -43,5 +43,5 @@ interface CaScope : CaLifetimeOwner {
     /**
      * 查询指定名字在当前作用域内可见的所有 class-like 符号。
      */
-    fun getClassifierSymbols(name: Name): List<CaClassLikeSymbol>
+    fun getClassifierSymbols(name: Name): List<CaClassifierSymbol>
 }

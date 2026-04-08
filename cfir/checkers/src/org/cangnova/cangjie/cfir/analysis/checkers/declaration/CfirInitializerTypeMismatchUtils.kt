@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory3
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -19,9 +20,20 @@ fun checkTypeMismatch(
     expectedType: ConeCangJieType,
     actualType: ConeCangJieType,
     source: AbstractCjSourceElement,
+    preferredSpecializedSource: AbstractCjSourceElement? = null,
     diagnosticFactory: CjDiagnosticFactory3<ConeCangJieType, ConeCangJieType, Boolean>,
 ) {
     if (actualType is ConeErrorType || expectedType is ConeErrorType) return
+    specificTypeMismatchDiagnostic(
+        source = preferredSpecializedSource ?: source,
+        expectedType = expectedType,
+        actualType = actualType,
+        session = context.session,
+    )?.let { diagnostic ->
+        reporter.report(diagnostic, context)
+        return
+    }
+
     val normalizedActualType = actualType.normalizeForSubtypeCheck()
     val normalizedExpectedType = expectedType.normalizeForSubtypeCheck()
     if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, normalizedActualType, normalizedExpectedType) == true) return

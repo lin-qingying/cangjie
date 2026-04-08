@@ -38,6 +38,14 @@ interface ConstraintSystemUtilContext {
      */
     fun CangJieTypeMarker.refineType(): CangJieTypeMarker
 
+    /**
+     * 判断类型变量是否携带 `OnlyInputTypes` 语义。
+     *
+     * 这是约束系统与前端声明元数据之间的桥接点：
+     * 约束系统只负责在 fix/completion 阶段触发检查，是否需要检查由具体前端实现判定。
+     */
+    fun TypeVariableMarker.hasOnlyInputTypesAttribute(): Boolean
+
     // ---- 延迟参数输入类型解析（PostponedArgumentInputTypesResolver） ----
 
     /**

@@ -3,7 +3,7 @@ FILE: stringInterpolation.cj
         RETURN {
             STRING_INTERPOLATION {
                 STRING("Hello, ")
-                QUALIFIED_ACCESS(name)
+                NAMED_ACCESS(name)
                 STRING("!")
             }
         }

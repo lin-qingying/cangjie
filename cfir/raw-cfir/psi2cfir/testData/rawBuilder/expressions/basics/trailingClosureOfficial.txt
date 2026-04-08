@@ -1,7 +1,7 @@
 FILE: trailingClosureOfficial.cj
     internal? func f(a: R|Int64|, fn: R|(R|Int64|) -> R|Int64||): <implicit> {
         FUNCTION_CALL(fn) {
-            QUALIFIED_ACCESS(a)
+            NAMED_ACCESS(a)
         }
     }
     internal? func f2(fn: R|(R|Int64|) -> R|Int64||): <implicit> {
@@ -13,31 +13,32 @@ FILE: trailingClosureOfficial.cj
         FUNCTION_CALL(f) {
             INT(1)
             LAMBDA(i: <implicit>) {
-                FUNCTION_CALL(times) {
+                FUNCTION_CALL(*operator_times) {
                     receiver:
-                        QUALIFIED_ACCESS(i)
+                        NAMED_ACCESS(i)
                     arguments:
-                        QUALIFIED_ACCESS(i)
+                        NAMED_ACCESS(i)
                 }
             }
         }
-        FUNCTION_CALL(f(1)) {
+        FUNCTION_CALL(f) {
+            INT(1)
             LAMBDA(i: <implicit>) {
-                FUNCTION_CALL(times) {
+                FUNCTION_CALL(*operator_times) {
                     receiver:
-                        QUALIFIED_ACCESS(i)
+                        NAMED_ACCESS(i)
                     arguments:
-                        QUALIFIED_ACCESS(i)
+                        NAMED_ACCESS(i)
                 }
             }
         }
         FUNCTION_CALL(f2) {
             LAMBDA(i: <implicit>) {
-                FUNCTION_CALL(times) {
+                FUNCTION_CALL(*operator_times) {
                     receiver:
-                        QUALIFIED_ACCESS(i)
+                        NAMED_ACCESS(i)
                     arguments:
-                        QUALIFIED_ACCESS(i)
+                        NAMED_ACCESS(i)
                 }
             }
         }

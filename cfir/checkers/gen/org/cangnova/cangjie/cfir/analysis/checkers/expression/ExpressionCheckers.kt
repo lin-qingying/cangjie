@@ -30,7 +30,7 @@ abstract class ExpressionCheckers {
     open val tryExpressionCheckers: Set<CfirTryExpressionChecker> = emptySet()
     open val throwExpressionCheckers: Set<CfirThrowExpressionChecker> = emptySet()
     open val returnExpressionCheckers: Set<CfirReturnExpressionChecker> = emptySet()
-    open val jumpExpressionCheckers: Set<CfirJumpExpressionChecker> = emptySet()
+    open val loopJumpCheckers: Set<CfirLoopJumpChecker> = emptySet()
     open val rangeExpressionCheckers: Set<CfirRangeExpressionChecker> = emptySet()
     open val subscriptExpressionCheckers: Set<CfirSubscriptExpressionChecker> = emptySet()
     open val errorExpressionCheckers: Set<CfirErrorExpressionChecker> = emptySet()
@@ -50,7 +50,7 @@ abstract class ExpressionCheckers {
     @CheckersComponentInternal internal val allTryExpressionCheckers: Array<CfirTryExpressionChecker> by lazy { (tryExpressionCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirTryExpressionChecker> }
     @CheckersComponentInternal internal val allThrowExpressionCheckers: Array<CfirThrowExpressionChecker> by lazy { (throwExpressionCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirThrowExpressionChecker> }
     @CheckersComponentInternal internal val allReturnExpressionCheckers: Array<CfirReturnExpressionChecker> by lazy { (returnExpressionCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirReturnExpressionChecker> }
-    @CheckersComponentInternal internal val allJumpExpressionCheckers: Array<CfirJumpExpressionChecker> by lazy { (jumpExpressionCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirJumpExpressionChecker> }
+    @CheckersComponentInternal internal val allLoopJumpCheckers: Array<CfirLoopJumpChecker> by lazy { (loopJumpCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirLoopJumpChecker> }
     @CheckersComponentInternal internal val allRangeExpressionCheckers: Array<CfirRangeExpressionChecker> by lazy { (rangeExpressionCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirRangeExpressionChecker> }
     @CheckersComponentInternal internal val allSubscriptExpressionCheckers: Array<CfirSubscriptExpressionChecker> by lazy { (subscriptExpressionCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirSubscriptExpressionChecker> }
     @CheckersComponentInternal internal val allErrorExpressionCheckers: Array<CfirErrorExpressionChecker> by lazy { (errorExpressionCheckers + basicExpressionCheckers).toTypedArray() as Array<CfirErrorExpressionChecker> }

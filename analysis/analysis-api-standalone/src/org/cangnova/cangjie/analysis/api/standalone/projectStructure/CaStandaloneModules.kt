@@ -11,16 +11,12 @@ import org.cangnova.cangjie.analysis.api.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.CaNotUnderContentRootModule
-import org.cangnova.cangjie.analysis.api.CaScriptDependencyModule
-import org.cangnova.cangjie.analysis.api.CaScriptModule
 import org.cangnova.cangjie.analysis.api.CaSourceModule
 import org.cangnova.cangjie.analysis.api.CaTargetPlatform
+import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
 
 /**
- * Standalone 平台模块实现基类。
- *
- * 它们是纯数据模块对象，不依赖 IDE content root 或 workspace model，
- * 适用于 CLI、批处理分析和测试框架自建项目图。
+ * Standalone 平台模块基类。
  */
 sealed class CaStandaloneModule(
     final override val project: Project,
@@ -67,20 +63,10 @@ class CaStandaloneBuiltinsModule(
     project: Project,
     scopeRoots: List<PsiFileSystemItem> = emptyList(),
     override val builtinsName: String = "<builtins>",
-) : CaStandaloneModule(project, scopeRoots), CaBuiltinsModule
-
-class CaStandaloneScriptModule(
-    override val name: String,
-    override val languageVersionSettings: LanguageVersionSettings,
-    project: Project,
-    override val psiRoots: List<PsiFileSystemItem>,
-) : CaStandaloneModule(project, psiRoots), CaScriptModule
-
-class CaStandaloneScriptDependencyModule(
-    override val scriptName: String,
-    project: Project,
-    scopeRoots: List<PsiFileSystemItem>,
-) : CaStandaloneModule(project, scopeRoots), CaScriptDependencyModule
+) : CaStandaloneModule(project, scopeRoots), CaBuiltinsModule {
+    override val contentScope: GlobalSearchScope
+        get() = CaBuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)
+}
 
 class CaStandaloneDanglingFileModule(
     override val name: String,

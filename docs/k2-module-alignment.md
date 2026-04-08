@@ -106,8 +106,8 @@
 
 | 仓颉模块 | Kotlin K2 模块 | 关系 | 说明 |
 |---|---|---|---|
-| `:compiler:cli` | `compiler/cli` | 1:1 | 命令行入口 |
-| `:compiler:pipeline`（规划） | `compiler/cli`（内部） | 对应 | K2 的管线编排在 cli 模块内部。仓颉规划独立出来 |
+| `:compiler:frontend` | `compiler/cli` | 调整后对应 | Kotlin 将前端编排放在 cli 模块内，仓颉现改为无 CLI 语义的前端基础设施模块 |
+| `:compiler:pipeline`（规划） | `compiler/cli`（内部） | 对应 | K2 的管线编排在 cli 模块内部。仓颉若未来独立出来，将建立在 frontend 模块之上 |
 | `:compiler:plugins`（规划） | `compiler/plugin-api` | 对应 | K2 的编译器插件 API。仓颉的插件系统（MetaTransform）机制不同 |
 | — | `compiler/frontend` | 无对应 | K1 旧前端。仓颉无此历史包袱 |
 | — | `compiler/frontend.common` | 部分对应 cfir-common | K2 的前端通用设施（SourceElement 桥接等）。仓颉目前放在 `cfir-common` 中 |
@@ -130,7 +130,7 @@
 | — | `analysis/analysis-api-platform-interface` | 暂无对应 | 平台接口层。仓颉单目标暂不需要 |
 | — | `analysis/low-level-api-fir` | 暂无对应 | FIR 底层访问 API（惰性解析调度、模块级缓存）。仓颉可能在 `analysis-api-cfir` 内部实现 |
 | — | `analysis/analysis-internal-utils` | 暂无对应 | 分析内部工具。仓颉规模较小暂不需要 |
-| — | `analysis/symbol-light-classes` | 无对应 | Kotlin→Java 的 Light Class 生成。仓颉无 Java 互操作 |
+| — | `analysis/symbol-light-declarations` | 无对应 | 仓颉的只读声明视图投影，不涉及 Java PSI 互操作 |
 | — | `analysis/decompiled` | 无对应 | .class 反编译支持。仓颉无 JVM 目标 |
 
 ### 测试基础设施
@@ -155,7 +155,7 @@
 | `compiler/ir/backend.jvm` / `backend.js` / `backend.native` / `backend.wasm` | 平台后端，仓颉统一走 LLVM |
 | `compiler/ir/ir.psi2ir` | K1 → IR 桥接，仓颉无 K1 |
 | `compiler/ir/serialization.jvm` / `.js` / `.native` | 平台 klib 序列化，仓颉用 .cjo |
-| `compiler/light-classes` / `analysis/symbol-light-classes` | Kotlin → Java Light Class，仓颉无 JVM |
+| `compiler/light-classes` / `analysis/symbol-light-declarations` | Kotlin → Java Light Class；仓颉改为非 Java 的 declaration view 体系 |
 | `analysis/analysis-api-fe10` | K1 分析后端，仓颉无 K1 |
 | `analysis/decompiled` / `analysis/stubs` | .class 反编译/桩，仓颉无 JVM |
 | `compiler/javac-wrapper` | Java 编译器包装，仓颉无 Java 互操作 |

@@ -15,6 +15,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
@@ -174,12 +175,12 @@ internal fun CaCfirSession.collectImportOptimizationPlan(file: CjFile): CaImport
 private fun CaCfirSession.resolveShorteningTarget(expression: CjDotQualifiedExpression): CaSymbol? {
     val selector = expression.selectorExpression
     return when (selector) {
-        is CjReferenceExpression -> with(this) { selector.resolveToSymbol() }
         is CjCallExpression -> with(this) {
-            // 调用表达式本身是最稳定的 low-level 语义锚点；
-            // qualified expression 作为兼容锚点保留，用于覆盖已经建立的 call-info 快照索引。
-            selector.resolveToCall()?.target ?: expression.resolveToCall()?.target
+            selector.referenceExpression?.resolveToSymbol()
+                ?: selector.resolveToCall()?.target
+                ?: expression.resolveToCall()?.target
         }
+        is CjReferenceExpression -> with(this) { selector.resolveToSymbol() }
         else -> null
     }
 }
@@ -205,14 +206,14 @@ private fun CaCfirSession.isDirectlyReachable(symbol: CaSymbol, file: CjFile): B
 }
 
 private fun CaSymbol.shortNameOrNull(): Name? = when (this) {
-    is CaClassLikeSymbol -> classId.shortClassName
+    is CaClassLikeSymbol -> classId?.shortClassName
     is CaCallableSymbol -> callableId?.callableName
-    is CaPackageSymbol -> name.takeUnless(String::isEmpty)?.let(Name.Companion::identifier)
-    else -> name?.let(Name.Companion::identifier)
+    is CaPackageSymbol -> name
+    else -> name
 }
 
 private fun CaSymbol.asTopLevelImportPath(): ImportPath? = when (this) {
-    is CaClassLikeSymbol -> ImportPath(classId.asSingleFqName(), false)
+    is CaClassLikeSymbol -> classId?.let { ImportPath(it.asSingleFqName(), false) }
     is CaCallableSymbol -> callableId
         ?.takeIf { it.classId == null }
         ?.let { ImportPath(it.asSingleFqName(), false) }

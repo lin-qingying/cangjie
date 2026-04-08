@@ -125,11 +125,13 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
     ): List<CfirTypeParameterRef> {
         if (declaration !is CfirTypeParameterRefsOwner) return emptyList()
         if (declaration.typeParameters.isNotEmpty()) return declaration.typeParameters
-        if (declaration !is CfirEnumConstructor) return emptyList()
+        if (declaration !is org.cangnova.cangjie.cfir.declarations.CfirConstructor &&
+            declaration !is CfirEnumConstructor
+        ) {
+            return emptyList()
+        }
 
-        val enumConstructorSymbol = candidate.symbol as? CfirEnumConstructorSymbol ?: return emptyList()
-        val ownerClassId = session.symbolProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
-            ?: session.cfirProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
+        val ownerClassId = ownerClassIdForCallable(session, candidate)
             ?: return emptyList()
         val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
             ?: session.cfirProvider.getClassByClassId(ownerClassId)
@@ -139,5 +141,26 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             is CfirTypeParameterRefsOwner -> ownerDeclaration.typeParameters
             else -> emptyList()
         }
+    }
+
+    /**
+     * 构造器调用需要把 owner class 的类型参数也纳入候选约束系统。
+     *
+     * enum constructor 之前已经做了单独补齐；普通 class/struct constructor 若不走这里，
+     * `Box<T>()` 这类调用里的 `T` 就不会注册成 fresh variable，后续同构造器泛型约束无法下沉到实参级。
+     */
+    private fun ownerClassIdForCallable(
+        session: CfirSession,
+        candidate: Candidate,
+    ): org.cangnova.cangjie.name.ClassId? {
+        val callableSymbol = candidate.symbol as? org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*> ?: return null
+
+        return session.symbolProvider.getContainingClassId(callableSymbol)
+            ?: session.cfirProvider.getContainingClassId(callableSymbol)
+            ?: run {
+                val enumConstructorSymbol = callableSymbol as? CfirEnumConstructorSymbol ?: return@run null
+                session.symbolProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
+                    ?: session.cfirProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
+            }
     }
 }

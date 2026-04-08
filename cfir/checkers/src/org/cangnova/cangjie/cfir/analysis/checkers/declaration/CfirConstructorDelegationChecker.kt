@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.session.cfirProvider
@@ -50,7 +51,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
             .filter { delegation -> delegation.call !== firstStatementDelegation?.call }
             .forEach { delegation ->
                 reporter.reportOn(
-                    source = delegation.call.source ?: declaration.source,
+                    source = delegation.call.delegationDiagnosticSource() ?: declaration.source,
                     factory = CfirErrors.ILLEGAL_THIS_OR_SUPER_CALL,
                     a = delegation.kind.keyword,
                 )
@@ -74,18 +75,18 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
 
         when {
             candidates.isEmpty() -> reporter.reportOn(
-                source = call.source ?: declaration.source,
+                source = call.delegationDiagnosticSource() ?: declaration.source,
                 factory = CfirErrors.NO_CONSTRUCTOR,
             )
 
             candidates.size > 1 -> reporter.reportOn(
-                source = call.source ?: declaration.source,
+                source = call.delegationDiagnosticSource() ?: declaration.source,
                 factory = CfirErrors.AMBIGUOUS_CONSTRUCTOR_CALL,
                 a = owner.classLikeName(),
             )
 
             declaration.hasDelegationCycle(constructors) -> reporter.reportOn(
-                source = call.source ?: declaration.source,
+                source = call.delegationDiagnosticSource() ?: declaration.source,
                 factory = CfirErrors.RECURSIVE_CONSTRUCTOR_CALL,
             )
         }
@@ -99,7 +100,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
     ) {
         val superDeclaration = owner.directConcreteSuperDeclaration(context) ?: run {
             reporter.reportOn(
-                source = call.source ?: declaration.source,
+                source = call.delegationDiagnosticSource() ?: declaration.source,
                 factory = CfirErrors.NO_CONSTRUCTOR,
             )
             return
@@ -109,12 +110,12 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
 
         when {
             candidates.isEmpty() -> reporter.reportOn(
-                source = call.source ?: declaration.source,
+                source = call.delegationDiagnosticSource() ?: declaration.source,
                 factory = CfirErrors.NO_CONSTRUCTOR,
             )
 
             candidates.size > 1 -> reporter.reportOn(
-                source = call.source ?: declaration.source,
+                source = call.delegationDiagnosticSource() ?: declaration.source,
                 factory = CfirErrors.AMBIGUOUS_CONSTRUCTOR_CALL,
                 a = superDeclaration.classLikeName(),
             )
@@ -152,15 +153,32 @@ private data class ConstructorDelegationCall(
     val call: CfirFunctionCall,
 )
 
+/**
+ * 构造器 delegation 相关诊断都应该尽量锚定在 `this` / `super` 关键字本身，
+ * 这样既贴近 Kotlin FIR 的报错体验，也能避免把整段调用都染成同一类构造器语义错误。
+ */
+private fun CfirFunctionCall.delegationDiagnosticSource() = calleeReference.source ?: source
+
 private fun CfirElement?.asDelegationCallOrNull(): ConstructorDelegationCall? {
     if (this is CfirWrappedExpression) {
         return expression.asDelegationCallOrNull()
     }
     val call = this as? CfirFunctionCall ?: return null
-    val calleeName = (call.calleeReference as? CfirNamedReference)?.name?.asString() ?: return null
-    return when (calleeName) {
-        "this" -> ConstructorDelegationCall(DelegationKind.THIS, call)
-        "super" -> ConstructorDelegationCall(DelegationKind.SUPER, call)
+    return when (call.origin.toDelegationKindOrNull()) {
+        DelegationKind.THIS -> ConstructorDelegationCall(DelegationKind.THIS, call)
+        DelegationKind.SUPER -> ConstructorDelegationCall(DelegationKind.SUPER, call)
+        null -> when ((call.calleeReference as? CfirNamedReference)?.name?.asString()) {
+            "this" -> ConstructorDelegationCall(DelegationKind.THIS, call)
+            "super" -> ConstructorDelegationCall(DelegationKind.SUPER, call)
+            else -> null
+        }
+    }
+}
+
+private fun CfirFunctionCallOrigin.toDelegationKindOrNull(): DelegationKind? {
+    return when (this) {
+        CfirFunctionCallOrigin.ConstructorDelegationThis -> DelegationKind.THIS
+        CfirFunctionCallOrigin.ConstructorDelegationSuper -> DelegationKind.SUPER
         else -> null
     }
 }

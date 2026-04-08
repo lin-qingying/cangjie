@@ -9,6 +9,7 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.targetCallText
 import org.cangnova.cangjie.analysis.api.resolution.CaCallKind
 import org.cangnova.cangjie.analysis.api.resolution.CaCallOrigin
 import org.cangnova.cangjie.analysis.api.resolution.successfulFunctionCallOrNull
+import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjFile
@@ -39,7 +40,7 @@ abstract class AbstractResolveCallTest : AbstractAnalysisApiComponentTest() {
             assertEquals(CaCallKind.FUNCTION, successfulCall!!.kind)
             assertEquals(CaCallOrigin.REGULAR, successfulCall.origin)
             assertEquals(directives.expectedCallableName, successfulCall.calleeName?.asString())
-            assertEquals(directives.expectedCallableName, successfulCall.target?.name)
+            assertEquals(directives.expectedCallableName, successfulCall.target?.name?.asString())
             assertEquals(
                 directives.expectedExplicitReceiverType,
                 successfulCall.explicitReceiverType?.render()?.let(::normalizeTypeRendering),

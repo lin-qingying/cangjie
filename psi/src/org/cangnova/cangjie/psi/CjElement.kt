@@ -30,6 +30,8 @@ import org.cangnova.cangjie.psi.psiUtil.parentSubstitute
 import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.lang.ASTNode
 import com.intellij.lang.Language
+import com.intellij.model.psi.PsiSymbolDeclaration
+import com.intellij.model.psi.PsiSymbolReference
 import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
@@ -184,6 +186,14 @@ open class CjElementImpl(node: ASTNode) : ASTWrapperPsiElement(node), CjElement 
 //        if(this is CjBasicType) return emptyArray()
 
         return CangJieReferenceProvidersService.getReferencesFromProviders(this)
+    }
+
+    override fun getOwnReferences(): Collection<PsiSymbolReference> {
+        return cangJieOwnReferences()
+    }
+
+    override fun getOwnDeclarations(): Collection<PsiSymbolDeclaration> {
+        return cangJieOwnDeclarations()
     }
 
     /**

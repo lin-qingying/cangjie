@@ -21,15 +21,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
-import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
-import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
-import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
-import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
-import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
-import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
-import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
+import org.cangnova.cangjie.cfir.patterns.bindingOccurrences
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
@@ -106,11 +100,11 @@ private fun groupTopLevelByName(declarations: List<CfirDeclaration>): Map<Name, 
             }
 
             is CfirPatternVariable -> {
-                val symbol = declaration.symbol as? CfirCallableSymbol<*> ?: continue
-                if (!symbol.isCollectable()) continue
-                for (bindingName in collectBindingNames(declaration.pattern)) {
-                    val presentation = bindingName.asString()
-                    groups.getOrPut(bindingName, ::DeclarationBuckets).properties += symbol to presentation
+                for (bindingVariable in declaration.pattern.bindingVariables()) {
+                    val symbol = bindingVariable.symbol as? CfirCallableSymbol<*> ?: continue
+                    if (!symbol.isCollectable()) continue
+                    val presentation = bindingVariable.name.asString()
+                    groups.getOrPut(bindingVariable.name, ::DeclarationBuckets).properties += symbol to presentation
                 }
             }
 
@@ -129,21 +123,6 @@ private fun groupTopLevelByName(declarations: List<CfirDeclaration>): Map<Name, 
     }
 
     return groups
-}
-
-private fun collectBindingNames(pattern: CfirPattern): List<Name> {
-    return when (pattern) {
-        is CfirBindingPattern -> buildList {
-            add(pattern.name)
-            pattern.nestedPattern?.let { addAll(collectBindingNames(it)) }
-        }
-
-        is CfirTuplePattern -> pattern.elements.flatMap(::collectBindingNames)
-        is CfirEnumPattern -> pattern.arguments.flatMap(::collectBindingNames)
-        is CfirTypePattern -> listOfNotNull(pattern.bindingName)
-        is CfirOrPattern -> pattern.alternatives.firstOrNull()?.let(::collectBindingNames).orEmpty()
-        is CfirWildcardPattern, is CfirConstPattern, is CfirExpressionPattern -> emptyList()
-    }
 }
 
 internal class CfirDeclarationCollector<D : CfirSymbol<*>>(
@@ -316,21 +295,23 @@ internal fun CfirDeclarationCollector<CfirSymbol<*>>.collectClassMembers(classDe
             }
 
             is CfirPatternVariable -> {
-                val declaredVariable = declaration.symbol as? CfirCallableSymbol<*> ?: continue
-                if (!declaredVariable.isCollectable()) continue
+                for (bindingVariable in declaration.pattern.bindingVariables()) {
+                    val declaredVariable = bindingVariable.symbol as? CfirCallableSymbol<*> ?: continue
+                    if (!declaredVariable.isCollectable()) continue
 
-                val representation = CfirRedeclarationPresenter.represent(declaredVariable) ?: continue
-                collect(declaredVariable, representation, otherDeclarations)
+                    val representation = CfirRedeclarationPresenter.represent(declaredVariable) ?: continue
+                    collect(declaredVariable, representation, otherDeclarations)
 
-                useSiteScope.processCallablesByName(declaredVariable.name) { anotherCallable ->
-                    if (
-                        anotherCallable != declaredVariable &&
-                        anotherCallable !is CfirFunctionSymbol<*> &&
-                        anotherCallable.isCollectable() &&
-                        anotherCallable.isVisibleInClass(classDeclaration, context)
-                    ) {
-                        val anotherRepresentation = CfirRedeclarationPresenter.represent(anotherCallable) ?: return@processCallablesByName
-                        collect(anotherCallable, anotherRepresentation, otherDeclarations)
+                    useSiteScope.processCallablesByName(bindingVariable.name) { anotherCallable ->
+                        if (
+                            anotherCallable != declaredVariable &&
+                            anotherCallable !is CfirFunctionSymbol<*> &&
+                            anotherCallable.isCollectable() &&
+                            anotherCallable.isVisibleInClass(classDeclaration, context)
+                        ) {
+                            val anotherRepresentation = CfirRedeclarationPresenter.represent(anotherCallable) ?: return@processCallablesByName
+                            collect(anotherCallable, anotherRepresentation, otherDeclarations)
+                        }
                     }
                 }
             }
@@ -625,7 +606,10 @@ internal object CfirRedeclarationPresenter {
                 constructorRepresentation(ownerClassName, constructor.valueParameters.map(CfirVariable::returnTypeRef))
             }
 
-            is CfirEnumConstructorSymbol -> constructorRepresentation(symbol.name, emptyList())
+            is CfirEnumConstructorSymbol -> {
+                val enumConstructor = symbol.cfir
+                constructorRepresentation(symbol.name, enumConstructor.valueParameters.map(CfirVariable::returnTypeRef))
+            }
 
             is CfirFunctionSymbol<*> -> {
                 val function = symbol.cfir

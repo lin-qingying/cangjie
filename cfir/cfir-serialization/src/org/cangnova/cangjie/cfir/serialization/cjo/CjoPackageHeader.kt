@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.serialization.cjo
 
 import PackageFormat.DeclKind
+import PackageFormat.ImportSpec
 import PackageFormat.Package
 import org.cangnova.cangjie.name.Name
 
@@ -16,6 +17,9 @@ class CjoPackageHeader(
     val moduleName: String,
     /** 导入包列表，顺序与官方 C++ `importedFullPackageNames` 一致。 */
     val imports: List<String>,
+    /** package 涓墍鏈夋簮鏂囦欢鍚嶇О锛岀敤浜?decompiled facade/multifile 鎺ㄥ銆?*/
+    val allFiles: List<String>,
+    val fileImportEntries: List<CjoImportEntry>,
     /** 包类型（Normal/Macro/Foreign/Mock）。 */
     val kind: UByte,
     /** 包访问级别。 */
@@ -46,6 +50,13 @@ class CjoPackageHeader(
      */
     val topLevelExtendIndices: List<Int>,
 ) {
+    val decompiledImportTexts: List<String>
+        get() = if (fileImportEntries.isNotEmpty()) {
+            fileImportEntries.map(CjoImportEntry::renderForDecompiledText)
+        } else {
+            imports
+        }
+
     companion object {
         private val CLASSIFIER_KINDS = setOf(
             DeclKind.ClassDecl,
@@ -65,6 +76,18 @@ class CjoPackageHeader(
             val fullPkgName = pkg.fullPkgName ?: ""
             val moduleName = pkg.moduleName ?: ""
             val imports = (0 until pkg.importsLength).map { pkg.imports(it) ?: "" }
+            val allFiles = (0 until pkg.allFilesLength)
+                .map { pkg.allFiles(it) ?: "" }
+                .filter(String::isNotBlank)
+            val fileImportEntries = linkedMapOf<String, CjoImportEntry>()
+            for (fileIndex in 0 until pkg.allFileImportsLength) {
+                val importsOfFile = pkg.allFileImports(fileIndex) ?: continue
+                for (importIndex in 0 until importsOfFile.importSpecsLength) {
+                    val importSpec = importsOfFile.importSpecs(importIndex) ?: continue
+                    val entry = CjoImportEntry.fromImportSpec(importSpec)
+                    fileImportEntries.putIfAbsent(entry.renderForDecompiledText(), entry)
+                }
+            }
             val classNames = mutableSetOf<Name>()
             val callableNames = mutableSetOf<Name>()
             val fullIdReferenceKeyToIndex = linkedMapOf<String, Int>()
@@ -106,6 +129,8 @@ class CjoPackageHeader(
                 fullPkgName = fullPkgName,
                 moduleName = moduleName,
                 imports = imports,
+                allFiles = allFiles,
+                fileImportEntries = fileImportEntries.values.toList(),
                 kind = pkg.kind,
                 access = pkg.access,
                 topLevelClassNames = classNames,
@@ -114,6 +139,74 @@ class CjoPackageHeader(
                 topLevelNameToIndices = nameToIndices,
                 topLevelClassifierNameToIndices = classifierNameToIndices,
                 topLevelExtendIndices = topLevelExtendIndices,
+            )
+        }
+    }
+}
+
+data class CjoImportEntry(
+    val prefixPaths: List<String>,
+    val identifier: String,
+    val aliasName: String?,
+    val isAllUnder: Boolean,
+    val hasDoubleColon: Boolean,
+    val isDecl: Boolean,
+    val withImplicitExport: Boolean,
+) {
+    /**
+     * 仅返回“可作为逻辑导入目标”的路径主体。
+     *
+     * 对 all-under import，这里故意不带 `.*`，便于上层投影到
+     * `ImportItemInfo(importedFqName, isAllUnder, alias)` 这类结构化表示。
+     */
+    fun renderImportedPath(): String {
+        return buildString {
+            prefixPaths.forEachIndexed { index, path ->
+                append(path)
+                if (isAllUnder && index == prefixPaths.lastIndex) return@forEachIndexed
+                if (index == 0 && hasDoubleColon) {
+                    append("::")
+                } else {
+                    append(".")
+                }
+            }
+            if (!isAllUnder) {
+                append(identifier)
+            }
+        }
+    }
+
+    /**
+     * 返回用于 decompiled 文本展示的完整 import 文本片段。
+     */
+    fun renderForDecompiledText(): String {
+        return buildString {
+            append(renderImportedPath())
+            if (isAllUnder) {
+                append(".*")
+            }
+            aliasName?.takeIf(String::isNotBlank)?.let { alias ->
+                append(" as ")
+                append(alias)
+            }
+        }
+    }
+
+    companion object {
+        fun fromImportSpec(importSpec: ImportSpec): CjoImportEntry {
+            val prefixPaths = (0 until importSpec.prefixPathsLength)
+                .map { prefixIndex -> importSpec.prefixPaths(prefixIndex) ?: "" }
+                .filter(String::isNotBlank)
+            val identifier = importSpec.identifier ?: ""
+            val aliasName = importSpec.asIdentifier?.takeIf(String::isNotBlank)
+            return CjoImportEntry(
+                prefixPaths = prefixPaths,
+                identifier = identifier,
+                aliasName = aliasName,
+                isAllUnder = identifier == "*",
+                hasDoubleColon = importSpec.hasDoubleColon,
+                isDecl = importSpec.isDecl,
+                withImplicitExport = importSpec.withImplicitExport,
             )
         }
     }

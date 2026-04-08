@@ -279,6 +279,9 @@ internal class CaCfirSession private constructor(
     internal fun lookupSourcePsi(symbol: CfirSymbol<*>): PsiElement? =
         symbolQueryService.lookupSourcePsi(symbol)
 
+    internal fun lookupSymbolsByPsi(psi: PsiElement): List<CfirSymbol<*>> =
+        symbolQueryService.lookupSymbolsByPsi(psi)
+
     internal fun lookupContainingFile(symbol: CfirSymbol<*>): CjFile? =
         symbolQueryService.lookupContainingFile(symbol)
 

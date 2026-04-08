@@ -108,6 +108,9 @@ internal class CaCfirResolutionFacadeImpl internal constructor(
     override fun findSourcePsi(symbol: CfirSymbol<*>): PsiElement? =
         sourceNavigationProvider.findPsi(symbol)
 
+    override fun getDeclarationSymbols(psi: PsiElement): List<CfirSymbol<*>> =
+        semanticQueries.getDeclarationSymbols(psi)
+
     override fun getContainingFile(symbol: CfirSymbol<*>): CjFile? =
         sourceNavigationProvider.getContainingFile(symbol)
 

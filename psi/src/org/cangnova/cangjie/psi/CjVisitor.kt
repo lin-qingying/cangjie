@@ -123,6 +123,10 @@ open class CjVisitor<R, D> : PsiElementVisitor() {
         return visitCasePattern(element, data)
     }
 
+    open fun visitPatternByVarOrEnum(element: CjVarOrEnumPattern, data: D): R? {
+        return visitCasePattern(element, data)
+    }
+
     open fun visitMatchConditionWithExpression(condition: CjMatchConditionWithExpression, data: D): R? {
         return visitCasePattern(condition, data)
     }
@@ -169,15 +173,6 @@ open class CjVisitor<R, D> : PsiElementVisitor() {
     }
 
 
-
-    open fun visitCallableReferenceExpression(expression: CjCallableReferenceExpression, data: D): R? {
-        return visitDoubleColonExpression(expression, data)
-    }
-
-    open fun visitDoubleColonExpression(expression: CjDoubleColonExpression, data: D): R? {
-        return visitExpression(expression, data)
-    }
-
     open fun visitRangeExpression(expression: CjRangeExpression, data: D): R? {
         return visitExpression(expression, data)
     }
@@ -212,6 +207,14 @@ open class CjVisitor<R, D> : PsiElementVisitor() {
 
     open fun visitCatchSection(catchClause: CjCatchClause, data: D): R? {
         return visitCjElement(catchClause, data)
+    }
+
+    open fun visitHandleClause(handleClause: CjHandleClause, data: D): R? {
+        return visitCjElement(handleClause, data)
+    }
+
+    open fun visitCommandTypePattern(commandTypePattern: CjCommandTypePattern, data: D): R? {
+        return visitCjElement(commandTypePattern, data)
     }
 
     open fun visitFinallySection(finallySection: CjFinallySection, data: D): R? {
@@ -259,6 +262,14 @@ open class CjVisitor<R, D> : PsiElementVisitor() {
     }
 
     open fun visitThrowExpression(expression: CjThrowExpression, data: D): R? {
+        return visitExpression(expression, data)
+    }
+
+    open fun visitPerformExpression(expression: CjPerformExpression, data: D): R? {
+        return visitExpression(expression, data)
+    }
+
+    open fun visitResumeExpression(expression: CjResumeExpression, data: D): R? {
         return visitExpression(expression, data)
     }
 

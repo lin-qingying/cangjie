@@ -350,7 +350,6 @@ class Candidate(
     val constraintSystem: ConstraintSystemImpl
         get() = system
 
-    private var cachedSyntheticEnumConstructorParameters: List<CfirValueParameter>? = null
     private var cachedSyntheticCallableValueParameters: List<CfirValueParameter>? = null
 
     fun declaredParametersForMapping(): List<CfirValueParameter> {
@@ -358,7 +357,7 @@ class Candidate(
         return when (val declaration = symbol.cfir) {
             is CfirFunction -> declaration.valueParameters
             is CfirConstructor -> declaration.valueParameters
-            is CfirEnumConstructor -> enumConstructorParametersForMapping(declaration)
+            is CfirEnumConstructor -> declaration.valueParameters
             is CfirVariable -> callableValueParametersForMapping(declaration)
             else -> emptyList()
         }
@@ -403,49 +402,6 @@ class Candidate(
             is CfirEnum -> ownerDeclaration.typeParameters
             else -> emptyList()
         }
-    }
-
-    private fun enumConstructorParametersForMapping(declaration: CfirEnumConstructor): List<CfirValueParameter> {
-        cachedSyntheticEnumConstructorParameters?.let { return it }
-
-        val payloadTypes = when (val payloadTypeRef = declaration.returnTypeRef) {
-            is CfirResolvedTypeRef -> when (val payloadType = payloadTypeRef.coneType) {
-                is ConeTupleType -> payloadType.elementTypes
-                else -> listOf(payloadType)
-            }
-            else -> emptyList()
-        }
-
-        if (payloadTypes.isEmpty()) {
-            cachedSyntheticEnumConstructorParameters = emptyList()
-            return emptyList()
-        }
-
-        val syntheticParameters = payloadTypes.mapIndexed { index, payloadType ->
-            val parameterName = Name.identifier("enumCtorArg$index")
-            val parameterSymbol = CfirValueParameterSymbol(CallableId(parameterName))
-            buildValueParameter {
-                source = declaration.source
-                moduleData = declaration.moduleData
-                resolvePhase = CfirResolvePhase.BODY_RESOLVE
-                origin = CfirDeclarationOrigin.Synthetic.Error
-                attributes = CfirDeclarationAttributes.EMPTY
-                isLocal = true
-                isNamed = false
-                dispatchReceiverType = null
-                symbol = parameterSymbol
-                status = CfirDeclarationStatusImpl.DEFAULT
-                returnTypeRef = buildResolvedTypeRef {
-                    source = declaration.returnTypeRef.source
-                    coneType = payloadType
-                }
-                name = parameterName
-                defaultValue = null
-            }
-        }
-
-        cachedSyntheticEnumConstructorParameters = syntheticParameters
-        return syntheticParameters
     }
 
     private fun callableValueReturnType(declaration: CfirVariable): ConeCangJieType? {

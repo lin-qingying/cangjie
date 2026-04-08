@@ -15,14 +15,24 @@ import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.scopes.CaScope
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjMatchEntry
 import org.cangnova.cangjie.psi.CjReferenceExpression
+import org.cangnova.cangjie.psi.CjSimpleNameExpression
+import org.cangnova.cangjie.psi.CjVarOrEnumPattern
+import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
+import org.cangnova.cangjie.psi.stubs.elements.getAllBindings
 
 /**
  * CFIR resolver 组件。
@@ -34,12 +44,65 @@ internal class CaCfirResolver(
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaResolver, CaCfirSessionComponent {
     override fun CjReferenceExpression.resolveToSymbols(): Collection<CaSymbol> = withValidityAssertion {
-        analysisSession.resolveSymbols(this@resolveToSymbols)
+        val resolvedSymbols = analysisSession.resolveSymbols(this@resolveToSymbols)
             .map(analysisSession::getPublicSymbol)
+            .distinctSymbols()
+
+        val matchBranchBindings = restoreMatchBranchPatternBindings(this@resolveToSymbols).distinctSymbols()
+        if (matchBranchBindings.isNotEmpty()) {
+            return@withValidityAssertion matchBranchBindings
+        }
+
+        resolvedSymbols
     }
 
     override fun CjElement.resolveToCall() = withValidityAssertion {
         analysisSession.queryCallInfo(this@resolveToCall)?.asCaCallInfo(analysisSession, token)
+    }
+
+    /**
+     * `match` 分支中的模式绑定属于源码局部声明。
+     *
+     * 它们在当前仓库里还没有完全通过 low-level reference 索引稳定暴露，
+     * 但其语义边界在 PSI 上是明确的：只能解析到当前分支条件侧声明的具名绑定。
+     * 因此这里直接基于 `CjMatchEntry.conditions` 恢复同分支 binding symbol，
+     * 保证不同分支的同名绑定不会混淆。
+     */
+    private fun restoreMatchBranchPatternBindings(reference: CjReferenceExpression): Collection<CaSymbol> {
+        val simpleName = reference as? CjSimpleNameExpression ?: return emptyList()
+        val matchEntry = simpleName.getStrictParentOfType<CjMatchEntry>() ?: return emptyList()
+        val arrow = matchEntry.arrow ?: return emptyList()
+        if (simpleName.textOffset <= arrow.textOffset) {
+            return emptyList()
+        }
+
+        val resolved = matchEntry.conditions.asSequence()
+            .flatMap { condition ->
+                sequence {
+                    yieldAll(condition.getAllBindings().asSequence())
+                    yieldAll(com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(condition, CjVarOrEnumPattern::class.java).asSequence())
+                }
+            }
+            .filter { declaration -> declaration.name == simpleName.referencedName }
+            .mapNotNull { declaration ->
+                resolvePatternBindingSymbolByPsi(declaration)
+                    ?: (declaration as? CjVarOrEnumPattern)?.reference?.let(::resolvePatternBindingSymbolByPsi)
+            }
+            .toList()
+        return resolved
+    }
+
+    private fun Collection<CaSymbol>.distinctSymbols(): List<CaSymbol> {
+        return distinctBy { symbol ->
+            symbol.publicSymbolCacheKeyOrNull() ?: "${symbol::class.qualifiedName}@${System.identityHashCode(symbol)}"
+        }
+    }
+
+    private fun resolvePatternBindingSymbolByPsi(psi: com.intellij.psi.PsiElement): CaPatternBindingSymbol? {
+        return analysisSession.lookupSymbolsByPsi(psi)
+            .map(analysisSession::getPublicSymbol)
+            .filterIsInstance<CaPatternBindingSymbol>()
+            .firstOrNull()
     }
 }
 
@@ -50,30 +113,9 @@ internal class CaCfirSymbolRelationProvider(
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), org.cangnova.cangjie.analysis.api.components.CaSymbolRelationProvider {
     override fun CaSymbol.isEquivalentTo(other: CaSymbol): Boolean = withValidityAssertion {
-        when {
-            this@isEquivalentTo === other -> true
-            this@isEquivalentTo is CaPackageSymbol && other is CaPackageSymbol ->
-                this@isEquivalentTo.fqName == other.fqName
-
-            this@isEquivalentTo is org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol &&
-                other is org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol ->
-                this@isEquivalentTo.file == other.file
-
-            this@isEquivalentTo is CaClassLikeSymbol && other is CaClassLikeSymbol ->
-                this@isEquivalentTo.classId == other.classId
-
-            this@isEquivalentTo is org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol &&
-                other is org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol -> {
-                val leftCallableId = this@isEquivalentTo.callableId
-                val rightCallableId = other.callableId
-                when {
-                    leftCallableId != null && rightCallableId != null -> leftCallableId == rightCallableId
-                    else -> this@isEquivalentTo === other
-                }
-            }
-
-            else -> false
-        }
+        this@isEquivalentTo === other ||
+            (this@isEquivalentTo.publicSymbolCacheKeyOrNull() != null &&
+                this@isEquivalentTo.publicSymbolCacheKeyOrNull() == other.publicSymbolCacheKeyOrNull())
     }
 }
 
@@ -114,7 +156,7 @@ internal class CaCfirScopeProvider(
 ) : CaBaseSessionComponent<CaCfirSession>(), CaScopeProvider, CaCfirSessionComponent {
     override fun CjFile.getFileScope(): CaScope = withValidityAssertion {
         analysisSession.queryFileScope(this@getFileScope).asAnalysisScope(
-            extraSymbols = listOf(with(analysisSession) { this@getFileScope.fileSymbol() }),
+            extraSymbols = listOf(with(analysisSession) { this@getFileScope.symbol }),
         )
     }
 
@@ -137,15 +179,24 @@ internal class CaCfirScopeProvider(
     override val CaClassLikeSymbol.declaredMemberScope: CaScope
         get() = withValidityAssertion {
             val classSymbol = requireClassLikeSymbol(this@declaredMemberScope)
-            analysisSession.queryDeclaredMemberScope(classSymbol.classId)?.asAnalysisScope()
-                ?: error("无法为 `${classSymbol.classId.asString()}` 构建 declared-member 作用域快照。")
+            val classId = classSymbol.classId ?: error("Local/anonymous class-like symbols do not expose declared-member scope.")
+            analysisSession.queryDeclaredMemberScope(classId)?.asAnalysisScope()
+                ?: error("无法为 `${classId.asString()}` 构建 declared-member 作用域快照。")
+        }
+
+    override val org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol.declaredMemberScope: CaScope
+        get() = withValidityAssertion {
+            val extendSymbol = this@declaredMemberScope as? CaCfirExtendSymbolImpl
+                ?: error("Only CFIR extend symbols can expose declared-member scope: ${this@declaredMemberScope::class.simpleName}")
+            extendSymbol.backingSymbol.cfir.declarations.asDeclarationListScope()
         }
 
     override val CaClassLikeSymbol.memberScope: CaScope
         get() = withValidityAssertion {
             val classSymbol = requireClassLikeSymbol(this@memberScope)
-            analysisSession.queryMemberScope(classSymbol.classId)?.asAnalysisScope()
-                ?: error("无法为 `${classSymbol.classId.asString()}` 构建 use-site member 作用域快照。")
+            val classId = classSymbol.classId ?: error("Local/anonymous class-like symbols do not expose use-site member scope.")
+            analysisSession.queryMemberScope(classId)?.asAnalysisScope()
+                ?: error("无法为 `${classId.asString()}` 构建 use-site member 作用域快照。")
         }
 
     override val org.cangnova.cangjie.analysis.api.types.CaType.scope: CaScope?
@@ -153,8 +204,8 @@ internal class CaCfirScopeProvider(
             analysisSession.queryTypeScope(this@scope.requireCfirConeType("成员作用域查询"))?.asAnalysisScope()
         }
 
-    private fun requireClassLikeSymbol(symbol: CaClassLikeSymbol): CaCfirClassLikeSymbolImpl {
-        return symbol as? CaCfirClassLikeSymbolImpl
+    private fun requireClassLikeSymbol(symbol: CaClassLikeSymbol): CaCfirClassLikeSymbolBase<*> {
+        return symbol as? CaCfirClassLikeSymbolBase<*>
             ?: error("仅 CFIR class-like 符号支持成员作用域查询：${symbol::class.simpleName}")
     }
 
@@ -180,9 +231,34 @@ internal class CaCfirScopeProvider(
             },
             classifierLookup = { name ->
                 getClassifierSymbols(name).map { symbol ->
-                    analysisSession.getPublicSymbol(symbol) as CaClassLikeSymbol
+                    analysisSession.getPublicSymbol(symbol) as CaClassifierSymbol
                 }
             },
+        )
+    }
+
+    private fun List<org.cangnova.cangjie.cfir.declarations.CfirDeclaration>.asDeclarationListScope(): CaScope {
+        val publicSymbols = mapNotNull { declaration ->
+            when (declaration) {
+                is org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration ->
+                    analysisSession.getPublicSymbol(declaration.symbol) as? CaDeclarationSymbol
+                is org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration ->
+                    analysisSession.getPublicSymbol(declaration.symbol) as? CaDeclarationSymbol
+                is org.cangnova.cangjie.cfir.declarations.CfirTypeParameter ->
+                    analysisSession.getPublicSymbol(declaration.symbol) as? CaDeclarationSymbol
+                is org.cangnova.cangjie.cfir.declarations.CfirExtend ->
+                    analysisSession.getPublicSymbol(declaration.symbol) as? CaDeclarationSymbol
+                else -> null
+            }
+        }
+        val symbolsByName = publicSymbols.groupBy { symbol -> symbol.name ?: Name.special("<anonymous>") }
+        return CaCfirScopeImpl(
+            indexedNames = symbolsByName.keys,
+            eagerSymbols = publicSymbols,
+            token = token,
+            symbolLookup = { name -> symbolsByName[name].orEmpty() },
+            callableLookup = { name -> symbolsByName[name].orEmpty().filterIsInstance<CaCallableSymbol>() },
+            classifierLookup = { name -> symbolsByName[name].orEmpty().filterIsInstance<CaClassifierSymbol>() },
         )
     }
 }

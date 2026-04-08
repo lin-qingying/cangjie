@@ -201,7 +201,7 @@ K2 无对应模块，为仓颉语言独有的编译阶段。
 | Gradle 路径 | 职责 | K2 对齐 | 依赖 |
 |---|---|---|---|
 | `:compiler:frontend.common` | 前端共享设施：SourceElement 等 PSI ↔ CFIR 桥接类型 | `compiler/frontend.common` | `:compiler:config`, `:util` |
-| `:compiler:cli` | 命令行入口，串联全部 12 个阶段 | `compiler/cli` | 全部编译器模块 |
+| `:compiler:frontend` | 前端基础设施入口，承载前端管线与环境能力 | `compiler/frontend` | 前端相关模块 |
 
 ---
 
@@ -292,7 +292,7 @@ include(":dependencies:intellij-core")
 
 // ===== 编译器配置 =====
 include(":compiler:config")
-include(":compiler:cli")
+include(":compiler:frontend")
 include(":compiler:frontend.common")
 
 // ===== PSI =====

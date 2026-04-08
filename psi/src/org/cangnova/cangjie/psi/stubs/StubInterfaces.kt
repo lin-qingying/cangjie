@@ -212,6 +212,13 @@ interface CangJieTypePatternStub : CangJiePatternStub<CjTypePattern>, NamedStub<
 interface CangJieEnumPatternStub : CangJiePatternStub<CjEnumPattern>
 
 /**
+ * 裸名字歧义模式 Stub。
+ *
+ * 仅保存源码中的名字文本，语义阶段再决定它究竟是 binding 还是 enum constructor。
+ */
+interface CangJieVarOrEnumPatternStub : CangJiePatternStub<CjVarOrEnumPattern>, NamedStub<CjVarOrEnumPattern>
+
+/**
  * 通配符模式 Stub
  *
  * 如 `let _ = ignored` 中的 `_`

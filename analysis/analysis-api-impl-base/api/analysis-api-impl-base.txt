@@ -3,6 +3,17 @@
 ## org/cangnova/cangjie/analysis/api/impl/base/CaBaseSession.kt
 package org.cangnova.cangjie.analysis.api.impl.base
 public abstract class CaBaseSession( final override val token: CaLifetimeToken, resolver: CaResolver, symbolRelationProvider: CaSymbolRelationProvider, symbolProvider: CaSymbolProvider, symbolInformationProvider: CaSymbolInformationProvider, annotationProvider: CaAnnotationProvider, signatureProvider: CaSignatureProvider, diagnosticProvider: CaDiagnosticProvider, scopeProvider: CaScopeProvider, analysisScopeProvider: CaAnalysisScopeProvider, defaultImportProvider: CaDefaultImportProvider, completionCandidateChecker: CaCompletionCandidateChecker, expressionTypeProvider: CaExpressionTypeProvider, expressionInformationProvider: CaExpressionInformationProvider, evaluator: CaEvaluator, dataFlowProvider: CaDataFlowProvider, typeProvider: CaTypeProvider, typeInformationProvider: CaTypeInformationProvider, typeRelationChecker: CaTypeRelationChecker, typeCreator: CaTypeCreator, substitutorProvider: CaSubstitutorProvider, signatureSubstitutor: CaSignatureSubstitutor, referenceShortener: CaReferenceShortener, importOptimizer: CaImportOptimizer, renderer: CaRenderer, visibilityChecker: CaVisibilityChecker, originalPsiProvider: CaOriginalPsiProvider, sourceProvider: CaSourceProvider, cInteropComponent: CaCInteropComponent, docProvider: CaDocProvider, ) : CaSession, CaResolver
+## org/cangnova/cangjie/analysis/api/impl/base/components/CaBaseSessionComponent.kt
+package org.cangnova.cangjie.analysis.api.impl.base.components
+public abstract class CaBaseSessionComponent<T : CaSession> : CaSessionComponent
+CaBaseSessionComponent.public abstract val analysisSessionProvider: () -> T
+CaBaseSessionComponent.public val analysisSession: T
+CaBaseSessionComponent.public final override val token: CaLifetimeToken
+## org/cangnova/cangjie/analysis/api/impl/base/components/CaBaseSymbolProvider.kt
+package org.cangnova.cangjie.analysis.api.impl.base.components
+public abstract class CaBaseSymbolProvider<T : CaSession> : CaBaseSessionComponent<T>(), CaSymbolProvider
+CaBaseSymbolProvider.public override val CjDeclaration.symbol: CaDeclarationSymbol
+CaBaseSymbolProvider.public class}")
 ## org/cangnova/cangjie/analysis/api/impl/base/projectStructure/AnalysisApiServiceRegistrar.kt
 package org.cangnova.cangjie.analysis.api.impl.base.projectStructure
 public interface AnalysisApiServiceRegistrar<in DATA>
@@ -20,7 +31,7 @@ AnalysisApiSimpleServiceRegistrar.public final override fun registerProjectExten
 AnalysisApiSimpleServiceRegistrar.public final override fun registerProjectServices(project: MockProject, data: Any)
 AnalysisApiSimpleServiceRegistrar.public final override fun registerProjectModelServices(project: MockProject, disposable: Disposable, data: Any)
 ## org/cangnova/cangjie/analysis/api/impl/base/projectStructure/CaIdeProjectStructure.kt
-package org.cangnova.cangjie.analysis.api.impl.base.projectStructure
+package <root>
 public class CaIdeProjectStructureProvider( project: Project, ) : CaProjectStructureProvider
 CaIdeProjectStructureProvider.public override val snapshot: CaProjectStructureSnapshot
 CaIdeProjectStructureProvider.public override fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule
@@ -39,6 +50,7 @@ package org.cangnova.cangjie.analysis.api.impl.base.projectStructure
 public object PluginStructureProvider
 PluginStructureProvider.public fun registerApplicationServices(application: MockApplication, pluginRelativePath: String)
 PluginStructureProvider.public fun registerProjectServices(project: MockProject, pluginRelativePath: String)
+PluginStructureProvider.public class.java.name, fakePluginDescriptor).classLoader
 ## org/cangnova/cangjie/analysis/api/impl/base/sessions/CaBaseSessionProvider.kt
 package org.cangnova.cangjie.analysis.api.impl.base.sessions
 public abstract class CaBaseSessionProvider(project: Project) : CaSessionProvider(project)

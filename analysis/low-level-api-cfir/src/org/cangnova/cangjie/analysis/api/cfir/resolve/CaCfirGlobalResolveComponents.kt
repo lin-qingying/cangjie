@@ -9,8 +9,6 @@ import org.cangnova.cangjie.analysis.api.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.CaNotUnderContentRootModule
-import org.cangnova.cangjie.analysis.api.CaScriptDependencyModule
-import org.cangnova.cangjie.analysis.api.CaScriptModule
 import org.cangnova.cangjie.analysis.api.CaSourceModule
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.name.Name
@@ -92,8 +90,6 @@ internal class CaCfirGlobalResolveComponents(
         return when (module) {
             is CaLibraryModule,
             is CaBuiltinsModule,
-            is CaScriptDependencyModule -> false
-
             is CaSourceModule,
             is CaLibrarySourceModule,
             is CaNotUnderContentRootModule -> true
@@ -117,7 +113,6 @@ internal class CaCfirGlobalResolveComponents(
      */
     fun createResolutionStrategyProvider(useSiteModule: CaModule): CaCfirModuleResolutionStrategyProvider {
         return when (useSiteModule) {
-            is CaScriptModule -> CaCfirScriptModuleResolutionStrategyProvider(useSiteModule)
             is CaDanglingFileModule -> {
                 val contextProvider = useSiteModule.contextModule?.let(::createResolutionStrategyProvider)
                     ?: CaCfirSourceModuleResolutionStrategyProvider(useSiteModule)

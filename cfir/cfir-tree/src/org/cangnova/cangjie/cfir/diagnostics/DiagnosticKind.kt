@@ -11,6 +11,8 @@ enum class DiagnosticKind {
     LoopInSupertype,
     DuplicateSupertype,
     ReturnNotAllowed,
+    JumpOutsideLoop,
+    NotLoopLabel,
     UnresolvedSupertype,
     CannotInferParameterType,
     EnumInitializerError,
@@ -18,5 +20,6 @@ enum class DiagnosticKind {
     UnresolvedLabel,
     LabelNameClash,
     SuperNotAllowed,
+    GenericTypeWithoutTypeArgument,
     Other,
 }

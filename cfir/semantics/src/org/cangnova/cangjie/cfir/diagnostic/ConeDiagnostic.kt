@@ -139,6 +139,69 @@ object ConeNoConstructorError : ConeDiagnostic {
     override val reason: String = "No constructor found"
 }
 
+/**
+ * enum 类型名不能像 class / struct 那样直接作为类型构造器调用。
+ *
+ * 官方 C++ Sema 在 call-kind 划分里也把 enum constructor 与普通 type constructor
+ * 明确区分开来；这里单独建模，避免把 `A(1)` 这类错误继续混成普通无构造器调用。
+ */
+data class ConeEnumTypeCannotBeUsedAsConstructorError(
+    val enumName: Name,
+) : ConeDiagnostic {
+    override val reason: String =
+        "enum type '${enumName.asString()}' cannot be used as a type constructor; use an enum constructor instead"
+}
+
+/**
+ * effects 特性在 PSI 层始终建树，但是否允许进入语义阶段由 CFIR 控制。
+ * 因此这里单独建模 feature gate 诊断，避免把 effect 语法再次退回 parser 层。
+ */
+data class ConeEffectsFeatureDisabledError(
+    val constructName: String,
+) : ConeDiagnostic {
+    override val reason: String = "effects feature is disabled for '$constructName'"
+}
+
+data class ConeCommandIncompatibleTypeError(
+    val actualType: ConeCangJieType?,
+) : ConeDiagnostic {
+    override val reason: String =
+        "performed expression must implement 'stdx.effect.Command<T>', actual type is '${actualType ?: "<unknown>"}'"
+}
+
+data class ConeCommandHandleTypeError(
+    val actualType: ConeCangJieType?,
+) : ConeDiagnostic {
+    override val reason: String =
+        "the command handle type must implement 'stdx.effect.Command<T>', actual type is '${actualType ?: "<unknown>"}'"
+}
+
+object ConeImplicitResumeOutsideHandlerError : ConeDiagnostic {
+    override val reason: String = "'resume' outside of an immediate handler must have a resumption argument"
+}
+
+data class ConeResumeNoWithError(
+    val resumptionType: ConeCangJieType,
+) : ConeDiagnostic {
+    override val reason: String =
+        "a resumption of non-Unit type '$resumptionType' must have a 'with' or 'throwing' clause"
+}
+
+data class ConeResumeThrowingMismatchTypeError(
+    val actualType: ConeCangJieType?,
+) : ConeDiagnostic {
+    override val reason: String =
+        "the type of 'resume throwing' must be a subtype of std.core.Exception or std.core.Error, actual type is '${actualType ?: "<unknown>"}'"
+}
+
+data class ConeMismatchingHandleBlockError(
+    val actualType: ConeCangJieType,
+    val expectedType: ConeCangJieType,
+) : ConeDiagnostic {
+    override val reason: String =
+        "the type of this handle block is '$actualType', which mismatches the smallest common supertype '$expectedType' of previous branches"
+}
+
 object ConeNoImplicitDefaultConstructorOnExpectClass : ConeDiagnostic {
     override val reason: String = "No implicit default constructor on expect-like declaration"
 }

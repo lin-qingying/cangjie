@@ -36,12 +36,12 @@ class CjoFullIdResolverTest {
         val resolver = fixture.context.fullIdResolver
 
         assertEquals(
-            "main.pkg.LocalOuter.LocalInner",
+            "main.pkg.LocalLeaf",
             resolver.resolveClassId(createFullId(pkgId = -2, index = 2u))?.asFqNameString(),
         )
         assertEquals(
-            "dep.pkg.Outer.Inner",
-            resolver.resolveClassId(createFullId(pkgId = 0, decl = "dep::Outer.Inner"))?.asFqNameString(),
+            "dep.pkg.Outer",
+            resolver.resolveClassId(createFullId(pkgId = 0, decl = "dep::Outer"))?.asFqNameString(),
         )
         assertEquals(
             "dep.pkg.Leaf",
@@ -66,16 +66,31 @@ class CjoFullIdResolverTest {
         val deserializer = CfirTypeDeserializer(fixture.context)
 
         assertEquals(
-            "main.pkg.LocalOuter.LocalInner",
+            "main.pkg.LocalLeaf",
             deserializer.deserializeType(0).requireResolvedClassId().asFqNameString(),
         )
         assertEquals(
-            "dep.pkg.Outer.Inner",
+            "dep.pkg.Outer",
             deserializer.deserializeType(1).requireResolvedClassId().asFqNameString(),
         )
         assertEquals(
             "dep.pkg.Leaf",
             deserializer.deserializeType(2).requireResolvedClassId().asFqNameString(),
+        )
+    }
+
+    @Test
+    fun `resolver rejects nested class like declarations because cangjie has no nested classes`() {
+        val fixture = FullIdTestFixture.createWithNestedClassLikeDeclarations()
+        val resolver = fixture.context.fullIdResolver
+
+        assertEquals(
+            null,
+            resolver.resolveClassId(createFullId(pkgId = -2, index = 2u)),
+        )
+        assertEquals(
+            null,
+            resolver.resolveClassId(createFullId(pkgId = 0, decl = "dep::Outer.Inner")),
         )
     }
 
@@ -93,16 +108,73 @@ class CjoFullIdResolverTest {
                             DeclSpec(
                                 identifier = "Outer",
                                 exportId = "dep::Outer",
+                            ),
+                            DeclSpec(
+                                identifier = "Leaf",
+                                exportId = null,
+                            ),
+                        ),
+                    ),
+                )
+
+                tempDir.resolve("main.cjo").writeBytes(
+                    buildPackageBytes(
+                        fullPackageName = "main.pkg",
+                        imports = listOf("dep.pkg"),
+                        decls = listOf(
+                            DeclSpec(
+                                identifier = "LocalOuter",
+                                exportId = "main::LocalOuter",
+                            ),
+                            DeclSpec(
+                                identifier = "LocalLeaf",
+                                exportId = "main::LocalLeaf",
+                            ),
+                        ),
+                        types = listOf(
+                            TypeSpec(fullIdPkgId = -2, fullIdIndex = 2u),
+                            TypeSpec(fullIdPkgId = 0, fullIdDecl = "dep::Outer"),
+                            TypeSpec(fullIdPkgId = 0, fullIdDecl = "Leaf"),
+                        ),
+                    ),
+                )
+
+                val searchPath = CjoSearchPath { envName ->
+                    when (envName) {
+                        "CANGJIE_LIBRARY", "CANGJIE_STDLIB_MODULE" -> tempDir.absolutePath
+                        else -> null
+                    }
+                }
+                val cjoManager = CjoManager(searchPath)
+                val pkg = requireNotNull(cjoManager.loadPackage("main.pkg"))
+                val header = requireNotNull(cjoManager.loadPackageHeader("main.pkg"))
+
+                return FullIdTestFixture(
+                    CfirDeserializationContext(
+                        pkg = pkg,
+                        header = header,
+                        moduleData = TestModuleData,
+                        cjoManager = cjoManager,
+                    ),
+                )
+            }
+
+            fun createWithNestedClassLikeDeclarations(): FullIdTestFixture {
+                val tempDir = createTempDirectory("cjo-fullid-nested-test").toFile()
+
+                tempDir.resolve("dep.cjo").writeBytes(
+                    buildPackageBytes(
+                        fullPackageName = "dep.pkg",
+                        decls = listOf(
+                            DeclSpec(
+                                identifier = "Outer",
+                                exportId = "dep::Outer",
                                 bodyFormattedDeclIndices = uintArrayOf(2u),
                             ),
                             DeclSpec(
                                 identifier = "Inner",
                                 exportId = "dep::Outer.Inner",
                                 isTopLevel = false,
-                            ),
-                            DeclSpec(
-                                identifier = "Leaf",
-                                exportId = null,
                             ),
                         ),
                     ),
@@ -123,11 +195,6 @@ class CjoFullIdResolverTest {
                                 exportId = "main::LocalOuter.LocalInner",
                                 isTopLevel = false,
                             ),
-                        ),
-                        types = listOf(
-                            TypeSpec(fullIdPkgId = -2, fullIdIndex = 2u),
-                            TypeSpec(fullIdPkgId = 0, fullIdDecl = "dep::Outer.Inner"),
-                            TypeSpec(fullIdPkgId = 0, fullIdDecl = "Leaf"),
                         ),
                     ),
                 )

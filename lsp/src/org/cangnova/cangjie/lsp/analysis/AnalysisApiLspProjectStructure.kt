@@ -3,11 +3,14 @@ package org.cangnova.cangjie.lsp.analysis
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.StandardFileSystems
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.analysis.api.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.CaSourceModule
@@ -23,7 +26,6 @@ import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStru
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
 import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
-import org.cangnova.cangjie.lsp.state.LspDocumentStore
 import org.cangnova.cangjie.lsp.state.LspTextDocument
 import org.cangnova.cangjie.lsp.state.LspWorkspaceModuleDefinition
 import org.cangnova.cangjie.lsp.state.LspWorkspaceState
@@ -48,7 +50,14 @@ import kotlin.io.path.isRegularFile
 class AnalysisApiLspProjectStructureState(
     private val project: Project,
 ) : CaSessionInvalidationService {
-    private data class SnapshotEntry(
+    private data class OpenDocumentSnapshotEntry(
+        val document: LspTextDocument,
+        val psiFile: CjFile,
+        val normalizedPath: Path?,
+    )
+
+    private data class DanglingSnapshotEntry(
+        val document: LspTextDocument,
         val module: CaLspDanglingFileModule,
         val psiFile: CjFile,
     )
@@ -57,7 +66,16 @@ class AnalysisApiLspProjectStructureState(
         val definition: LspWorkspaceModuleDefinition,
         val module: CaLspSourceModule,
         val sourceFiles: List<CjFile>,
+        val sourceDocumentUris: List<String>,
         val sourceRootPaths: List<Path>,
+        val documentUris: Set<String>,
+    )
+
+    private data class WorkspaceSourceFileEntry(
+        val path: Path,
+        val psiFile: CjFile,
+        val contentVirtualFile: VirtualFile?,
+        val documentUri: String?,
     )
 
     private val psiManager: PsiManager = PsiManager.getInstance(project)
@@ -65,19 +83,22 @@ class AnalysisApiLspProjectStructureState(
     private val moduleModificationCounts = ConcurrentHashMap<CaModule, AtomicLong>()
 
     private val workspaceModulesByName = linkedMapOf<String, WorkspaceModuleEntry>()
-    private val snapshotsByUri = ConcurrentHashMap<String, SnapshotEntry>()
+    private val workspaceModuleByDocumentUri = ConcurrentHashMap<String, CaLspSourceModule>()
+    private val openSnapshotsByUri = ConcurrentHashMap<String, OpenDocumentSnapshotEntry>()
+    private val danglingSnapshotsByUri = ConcurrentHashMap<String, DanglingSnapshotEntry>()
+    private val documentUriByPsiFile = ConcurrentHashMap<CjFile, String>()
     private val modulesByPsiFile = ConcurrentHashMap<CjFile, CaModule>()
 
     val allModules: List<CaModule>
         get() = buildList {
             addAll(workspaceModulesByName.values.map(WorkspaceModuleEntry::module))
-            addAll(snapshotsByUri.values.map(SnapshotEntry::module))
+            addAll(danglingSnapshotsByUri.values.map(DanglingSnapshotEntry::module))
         }
 
     val allSourceFiles: List<PsiFileSystemItem>
         get() = buildList {
             workspaceModulesByName.values.flatMapTo(this) { it.sourceFiles }
-            snapshotsByUri.values.mapTo(this) { it.psiFile }
+            danglingSnapshotsByUri.values.mapTo(this) { it.psiFile }
         }.distinct()
 
     val allResolvableModules: List<CaModule>
@@ -104,28 +125,51 @@ class AnalysisApiLspProjectStructureState(
      * 这样同一份源码在任一时刻只会有一个真实 use-site 入口，不会同时混入磁盘旧文本和内存快照。
      */
     @Synchronized
-    internal fun configure(
-        workspaceState: LspWorkspaceState,
-        documentStore: LspDocumentStore,
-    ) {
-        val previousModules = workspaceModulesByName.values.mapTo(linkedSetOf()) { it.module }
+    internal fun configure(workspaceState: LspWorkspaceState) {
+        val previousModules = buildSet {
+            addAll(workspaceModulesByName.values.map(WorkspaceModuleEntry::module))
+            addAll(danglingSnapshotsByUri.values.map(DanglingSnapshotEntry::module))
+        }
         val newEntries = buildWorkspaceModuleEntries(
             definitions = workspaceState.projectConfiguration().workspaceModules,
-            documentStore = documentStore,
+            openSnapshots = openSnapshotsByUri.values.toList(),
         )
+        val workspaceDocumentUris = newEntries.flatMapTo(linkedSetOf()) { it.documentUris }
 
         workspaceModulesByName.clear()
-        modulesByPsiFile.entries.removeIf { entry -> entry.value is CaLspSourceModule }
+        workspaceModuleByDocumentUri.clear()
+        danglingSnapshotsByUri.clear()
+        documentUriByPsiFile.clear()
+        modulesByPsiFile.clear()
 
         newEntries.forEach { entry ->
             workspaceModulesByName[entry.definition.name] = entry
             entry.sourceFiles.forEach { psiFile ->
                 modulesByPsiFile[psiFile] = entry.module
             }
+            entry.sourceFiles.zip(entry.sourceDocumentUris).forEach { (psiFile, documentUri) ->
+                documentUriByPsiFile[psiFile] = documentUri
+            }
+            entry.documentUris.forEach { documentUri ->
+                workspaceModuleByDocumentUri[documentUri] = entry.module
+            }
+        }
+        val danglingEntries = buildDanglingSnapshotEntries(
+            openSnapshots = openSnapshotsByUri.values
+                .filterNot { snapshot -> snapshot.document.uri in workspaceDocumentUris }
+                .sortedBy { snapshot -> snapshot.document.uri },
+        )
+        danglingEntries.forEach { entry ->
+            danglingSnapshotsByUri[entry.document.uri] = entry
+            modulesByPsiFile[entry.psiFile] = entry.module
+            documentUriByPsiFile[entry.psiFile] = entry.document.uri
         }
 
-        val currentWorkspaceModules = workspaceModulesByName.values.mapTo(linkedSetOf()) { it.module }
-        invalidate(previousModules + currentWorkspaceModules + snapshotsByUri.values.map { it.module })
+        val currentModules = buildSet {
+            addAll(workspaceModulesByName.values.map(WorkspaceModuleEntry::module))
+            addAll(danglingEntries.map(DanglingSnapshotEntry::module))
+        }
+        invalidate(previousModules + currentModules)
     }
 
     /**
@@ -176,48 +220,56 @@ class AnalysisApiLspProjectStructureState(
      * 打开文档优先返回真实 LSP 文档 URI；工作区磁盘文件则回退到规范化后的 `file:` URI。
      */
     internal fun documentUriOf(psiFile: CjFile): String? {
-        val snapshotUri = snapshotsByUri.entries.firstOrNull { (_, entry) -> entry.psiFile == psiFile }?.key
-        if (snapshotUri != null) return snapshotUri
+        documentUriByPsiFile[psiFile]?.let { return it }
         return psiFile.virtualFile?.path?.let(Path::of)?.toUri()?.toString()
     }
 
     /**
-     * 注册或更新打开文档的快照模块。
+     * 注册或更新打开文档的 PSI 快照。
      *
-     * 每次文档打开、修改、保存后都必须重新注册，确保 use-site 文本、上下文模块和失效边界保持同步。
+     * 这里仅维护“当前文本 -> PSI”的事实，不在此处直接决定模块形态。
+     * 工作区内 overlay 与工作区外 dangling 的区分统一延迟到 [configure]。
      */
-    internal fun registerSnapshot(document: LspTextDocument, psiFile: CjFile): CaLspDanglingFileModule {
-        val contextModule = findWorkspaceModuleForUri(document.uri)
-        val module = CaLspDanglingFileModule(
-            project = project,
-            documentUri = document.uri,
-            psiFile = psiFile,
-            contextModule = contextModule,
+    @Synchronized
+    internal fun upsertOpenDocumentSnapshot(
+        document: LspTextDocument,
+        psiFile: CjFile,
+    ) {
+        val previousEntry = openSnapshotsByUri.put(
+            document.uri,
+            OpenDocumentSnapshotEntry(
+                document = document,
+                psiFile = psiFile,
+                normalizedPath = document.uri.uriToPathOrNull()?.normalize(),
+            ),
         )
-
-        val previousEntry = snapshotsByUri.put(document.uri, SnapshotEntry(module, psiFile))
-        previousEntry?.psiFile?.let(modulesByPsiFile::remove)
-        modulesByPsiFile[psiFile] = module
-
-        invalidate(
-            buildSet {
-                previousEntry?.module?.let(::add)
-                add(module)
-                contextModule?.let(::add)
-            },
-        )
-        return module
+        previousEntry?.psiFile?.let(documentUriByPsiFile::remove)
+        documentUriByPsiFile[psiFile] = document.uri
     }
 
     /**
-     * 关闭打开文档的快照模块。
+     * 删除打开文档的 PSI 快照。
      *
-     * 关闭后，后续对同一路径的分析将重新落回工作区磁盘源码模块。
+     * 文档关闭后，工作区内文件会在下一次 [configure] 时自动回退到磁盘 PSI；
+     * 工作区外文档则不再暴露为 dangling module。
      */
-    internal fun closeDocument(uri: String) {
-        val removedEntry = snapshotsByUri.remove(uri) ?: return
-        modulesByPsiFile.remove(removedEntry.psiFile)
-        invalidate(setOf(removedEntry.module) + listOfNotNull(removedEntry.module.contextModule))
+    @Synchronized
+    internal fun removeOpenDocumentSnapshot(uri: String) {
+        val removedEntry = openSnapshotsByUri.remove(uri) ?: return
+        documentUriByPsiFile.remove(removedEntry.psiFile)
+    }
+
+    internal fun openDocumentSnapshot(uri: String): LspOpenDocumentAnalysisSnapshot? {
+        val entry = openSnapshotsByUri[uri] ?: return null
+        return LspOpenDocumentAnalysisSnapshot(
+            document = entry.document,
+            psiFile = entry.psiFile,
+        )
+    }
+
+    internal fun useSiteModuleForOpenDocument(uri: String): CaModule? {
+        workspaceModuleByDocumentUri[uri]?.let { return it }
+        return danglingSnapshotsByUri[uri]?.module
     }
 
     override fun invalidate(modules: Set<CaModule>) {
@@ -236,65 +288,115 @@ class AnalysisApiLspProjectStructureState(
 
     private fun buildWorkspaceModuleEntries(
         definitions: List<LspWorkspaceModuleDefinition>,
-        documentStore: LspDocumentStore,
+        openSnapshots: List<OpenDocumentSnapshotEntry>,
     ): List<WorkspaceModuleEntry> {
-        val openDocumentPaths = documentStore.all()
-            .mapNotNull { document -> document.uri.uriToPathOrNull()?.normalize() }
-            .toSet()
+        val openSnapshotsByPath = linkedMapOf<Path, OpenDocumentSnapshotEntry>()
+        openSnapshots.forEach { snapshot ->
+            snapshot.normalizedPath?.let { path -> openSnapshotsByPath[path] = snapshot }
+        }
 
         return definitions.map { definition ->
             val sourceRootPaths = definition.sourceRootUris
                 .mapNotNull(String::uriToPathOrNull)
                 .map(Path::normalize)
                 .distinct()
-            val sourceFiles = sourceRootPaths
+            val sourceFileEntries = sourceRootPaths
                 .asSequence()
-                .flatMap { root -> collectSourceFiles(root, openDocumentPaths).asSequence() }
-                .distinctBy { file -> file.virtualFile?.path ?: file.name }
+                .flatMap { root -> collectWorkspaceSourceFiles(root, openSnapshotsByPath).asSequence() }
+                .distinctBy(WorkspaceSourceFileEntry::path)
+                .sortedBy { entry -> entry.path.toString() }
                 .toList()
+            val sourceFiles = sourceFileEntries.map(WorkspaceSourceFileEntry::psiFile)
 
             val module = CaLspSourceModule(
                 project = project,
                 name = definition.name,
                 psiRoots = sourceFiles,
+                sourceRootPaths = sourceRootPaths,
             )
             WorkspaceModuleEntry(
                 definition = definition,
                 module = module,
                 sourceFiles = sourceFiles,
+                sourceDocumentUris = sourceFileEntries.map { fileEntry ->
+                    fileEntry.documentUri ?: fileEntry.path.toUri().toString()
+                },
                 sourceRootPaths = sourceRootPaths,
+                documentUris = sourceFileEntries.mapNotNull(WorkspaceSourceFileEntry::documentUri).toSet(),
             )
         }
     }
 
-    private fun collectSourceFiles(
+    private fun buildDanglingSnapshotEntries(
+        openSnapshots: List<OpenDocumentSnapshotEntry>,
+    ): List<DanglingSnapshotEntry> {
+        return openSnapshots.map { snapshot ->
+            val contextModule = snapshot.normalizedPath?.let(::findWorkspaceModuleForPath)
+            DanglingSnapshotEntry(
+                document = snapshot.document,
+                module = CaLspDanglingFileModule(
+                    project = project,
+                    documentUri = snapshot.document.uri,
+                    psiFile = snapshot.psiFile,
+                    contextModule = contextModule,
+                    contentVirtualFile = snapshot.normalizedPath?.let(::findLocalVirtualFile),
+                ),
+                psiFile = snapshot.psiFile,
+            )
+        }
+    }
+
+    private fun collectWorkspaceSourceFiles(
         root: Path,
-        openDocumentPaths: Set<Path>,
-    ): List<CjFile> {
+        openSnapshotsByPath: Map<Path, OpenDocumentSnapshotEntry>,
+    ): List<WorkspaceSourceFileEntry> {
         if (!Files.exists(root)) return emptyList()
 
-        val candidatePaths = if (Files.isDirectory(root)) {
-            Files.walk(root).use { stream ->
-                stream
-                    .filter { path -> path.isRegularFile() }
-                    .filter { path ->
-                        val fileName = path.fileName.toString()
-                        fileName.endsWith(".cj") || fileName.endsWith(".cjs")
-                    }
-                    .toList()
-            }
-        } else {
-            listOf(root)
-        }
+        val candidatePaths = linkedSetOf<Path>()
+        candidatePaths += collectSourceFilePaths(root)
+        openSnapshotsByPath.keys
+            .filter { path -> isUnder(root, path) && path.isCangjieSourceFilePath() && Files.exists(path) }
+            .forEach(candidatePaths::add)
 
         return candidatePaths.mapNotNull { filePath ->
             val normalizedPath = filePath.normalize()
-            if (normalizedPath in openDocumentPaths) {
-                return@mapNotNull null
+            val openSnapshot = openSnapshotsByPath[normalizedPath]
+            if (openSnapshot != null) {
+                return@mapNotNull WorkspaceSourceFileEntry(
+                    path = normalizedPath,
+                    psiFile = openSnapshot.psiFile,
+                    contentVirtualFile = findLocalVirtualFile(normalizedPath),
+                    documentUri = openSnapshot.document.uri,
+                )
             }
 
-            val virtualFile = StandardFileSystems.local().findFileByPath(normalizedPath.toString()) ?: return@mapNotNull null
-            psiManager.findFile(virtualFile) as? CjFile
+            val virtualFile = findLocalVirtualFile(normalizedPath)
+            val psiFile = when {
+                virtualFile != null -> (psiManager.findFile(virtualFile) as? CjFile) ?: createDiskPsiFile(normalizedPath)
+                else -> createDiskPsiFile(normalizedPath)
+            } ?: return@mapNotNull null
+            WorkspaceSourceFileEntry(
+                path = normalizedPath,
+                psiFile = psiFile,
+                contentVirtualFile = virtualFile,
+                documentUri = normalizedPath.toUri().toString(),
+            )
+        }
+    }
+
+    private fun collectSourceFilePaths(root: Path): List<Path> {
+        if (!Files.exists(root)) return emptyList()
+
+        return if (Files.isDirectory(root)) {
+            Files.walk(root).use { stream ->
+                stream
+                    .filter { path -> path.isRegularFile() }
+                    .filter { path -> path.isCangjieSourceFilePath() }
+                    .map(Path::normalize)
+                    .toList()
+            }
+        } else {
+            listOf(root.normalize()).filter(Path::isCangjieSourceFilePath)
         }
     }
 
@@ -318,10 +420,31 @@ class AnalysisApiLspProjectStructureState(
         return target == normalizedRoot || target.startsWith(normalizedRoot)
     }
 
+    private fun findLocalVirtualFile(path: Path): VirtualFile? {
+        val localFileSystem = StandardFileSystems.local()
+        return localFileSystem.findFileByPath(path.toString())
+            ?: localFileSystem.refreshAndFindFileByPath(path.toString())
+    }
+
+    private fun createDiskPsiFile(path: Path): CjFile? {
+        if (!Files.exists(path) || !path.isRegularFile()) return null
+        val psiFile = PsiFileFactory.getInstance(project).createFileFromText(
+            path.fileName.toString(),
+            CangJieFileType.INSTANCE,
+            Files.readString(path),
+        )
+        return psiFile as? CjFile
+    }
+
     companion object {
         fun getInstance(project: Project): AnalysisApiLspProjectStructureState = project.service()
     }
 }
+
+internal data class LspOpenDocumentAnalysisSnapshot(
+    val document: LspTextDocument,
+    val psiFile: CjFile,
+)
 
 /**
  * LSP 工作区源码模块。
@@ -333,6 +456,7 @@ internal class CaLspSourceModule(
     override val project: Project,
     override val name: String,
     psiRoots: List<PsiFileSystemItem>,
+    private val sourceRootPaths: List<Path>,
 ) : CaSourceModule {
     override val languageVersionSettings: LanguageVersionSettings
         get() = LanguageVersionSettings.DEFAULT
@@ -345,10 +469,8 @@ internal class CaLspSourceModule(
     override val targetPlatform: CaTargetPlatform
         get() = CaTargetPlatform.LSP
 
-    override val baseContentScope: GlobalSearchScope = GlobalSearchScope.filesWithoutLibrariesScope(
-        project,
-        this.psiRoots.mapNotNull { it.virtualFile },
-    )
+    override val baseContentScope: GlobalSearchScope =
+        buildSourceModuleContentScope(project, sourceRootPaths)
 
     override val stableModuleName: String
         get() = "lsp-source:$name"
@@ -368,6 +490,7 @@ internal class CaLspDanglingFileModule(
     val documentUri: String,
     private val psiFile: CjFile,
     override val contextModule: CaModule?,
+    private val contentVirtualFile: VirtualFile?,
 ) : CaDanglingFileModule {
     override val name: String
         get() = documentUri
@@ -386,13 +509,35 @@ internal class CaLspDanglingFileModule(
         get() = CaTargetPlatform.LSP
 
     override val baseContentScope: GlobalSearchScope
-        get() = GlobalSearchScope.filesWithoutLibrariesScope(project, listOfNotNull(psiFile.virtualFile))
+        get() = GlobalSearchScope.filesWithoutLibrariesScope(project, listOfNotNull(contentVirtualFile ?: psiFile.virtualFile))
 
     override val stableModuleName: String
         get() = documentUri
 
     override val moduleDescription: String
         get() = "LSP dangling file $documentUri"
+}
+
+private fun buildSourceModuleContentScope(
+    project: Project,
+    sourceRootPaths: List<Path>,
+): GlobalSearchScope {
+    if (sourceRootPaths.isEmpty()) {
+        return GlobalSearchScope.EMPTY_SCOPE
+    }
+
+    return object : GlobalSearchScope(project) {
+        override fun contains(file: VirtualFile): Boolean {
+            val filePath = runCatching { Path.of(file.path).normalize() }.getOrNull() ?: return false
+            return sourceRootPaths.any { root ->
+                filePath == root || filePath.startsWith(root)
+            }
+        }
+
+        override fun isSearchInModuleContent(aModule: com.intellij.openapi.module.Module): Boolean = false
+
+        override fun isSearchInLibraries(): Boolean = false
+    }
 }
 
 internal class AnalysisApiLspProjectStructureProvider(
@@ -484,6 +629,11 @@ internal class AnalysisApiLspSessionInvalidationService(
     override fun invalidate(modules: Set<CaModule>) {
         state.invalidate(modules)
     }
+}
+
+private fun Path.isCangjieSourceFilePath(): Boolean {
+    val fileName = fileName?.toString().orEmpty()
+    return fileName.endsWith(".cj") || fileName.endsWith(".cjs")
 }
 
 /**

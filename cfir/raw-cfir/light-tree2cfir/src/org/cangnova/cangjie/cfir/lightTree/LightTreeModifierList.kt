@@ -62,6 +62,7 @@ class LightTreeModifierList(
     // ===== 其他修饰符 =====
 
     val isStatic: Boolean get() = hasModifier(CjTokens.STATIC_KEYWORD)
+    val isConst: Boolean get() = hasModifier(CjTokens.CONST_KEYWORD)
     val isMut: Boolean get() = hasModifier(CjTokens.MUT_KEYWORD)
     val isOverride: Boolean get() = hasModifier(CjTokens.OVERRIDE_KEYWORD)
     val isRedef: Boolean get() = hasModifier(CjTokens.REDEF_KEYWORD)
@@ -89,6 +90,7 @@ class LightTreeModifierList(
         status.isVisibilityExplicit = isVisibilityExplicit
         status.isModalityExplicit = isModalityExplicit
         status.isStatic = isStatic
+        status.isConst = isConst
         status.isMut = isMut
         status.isOverride = isOverride
         status.isRedef = isRedef

@@ -202,6 +202,8 @@ public interface CjNodeTypes {
     IElementType RETURN = new CjNodeType("RETURN", CjReturnExpression.class);
 
     IElementType THROW = new CjNodeType("THROW", CjThrowExpression.class);
+    IElementType PERFORM = new CjNodeType("PERFORM", CjPerformExpression.class);
+    IElementType RESUME = new CjNodeType("RESUME", CjResumeExpression.class);
     IElementType THEN = new CjNodeType("THEN", CjContainerNodeForControlStructureBody.class);
 
     IElementType ELSE = new CjNodeType("ELSE", CjContainerNodeForControlStructureBody.class);
@@ -215,7 +217,9 @@ public interface CjNodeTypes {
     IElementType TRY_RESOURCE_LIST = new CjNodeType("TRY_RESOURCE_LIST", CjTryResourceList.class);
 
     IElementType CATCH = new CjNodeType("CATCH", CjCatchClause.class);
+    IElementType HANDLE = new CjNodeType("HANDLE", CjHandleClause.class);
     IElementType FINALLY = new CjNodeType("FINALLY", CjFinallySection.class);
+    IElementType COMMAND_TYPE_PATTERN = new CjNodeType("COMMAND_TYPE_PATTERN", CjCommandTypePattern.class);
 
 
     IElementType WHILE = new CjNodeType("WHILE", CjWhileExpression.class);
@@ -243,6 +247,7 @@ public interface CjNodeTypes {
     IElementType BINDING_PATTERN = CjStubElementTypes.BINDING_PATTERN;
     IElementType TUPLE_PATTERN = CjStubElementTypes.TUPLE_PATTERN;
     IElementType ENUM_PATTERN = CjStubElementTypes.ENUM_PATTERN;
+    IElementType VAR_OR_ENUM_PATTERN = CjStubElementTypes.VAR_OR_ENUM_PATTERN;
     IElementType WILDCARD_PATTERN = CjStubElementTypes.WILDCARD_PATTERN;
     IElementType TYPE_PATTERN = CjStubElementTypes.TYPE_PATTERN;
     IElementType CONSTANT_PATTERN = CjStubElementTypes.CONSTANT_PATTERN;
@@ -277,4 +282,3 @@ public interface CjNodeTypes {
 
 
 }
-

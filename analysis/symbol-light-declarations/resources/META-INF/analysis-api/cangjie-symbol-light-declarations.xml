@@ -1,0 +1,8 @@
+<idea-plugin>
+  <extensions defaultExtensionNs="com.intellij">
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationProvider"
+        serviceImplementation="org.cangnova.cangjie.analysis.light.declarations.symbol.CaSymbolLightDeclarationProvider"
+    />
+  </extensions>
+</idea-plugin>

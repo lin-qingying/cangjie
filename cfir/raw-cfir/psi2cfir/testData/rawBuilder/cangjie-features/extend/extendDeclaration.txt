@@ -3,7 +3,7 @@ FILE: extendDeclaration.cj
         internal? func isPositive(): R|Bool| {
             RETURN {
                 COMPARISON(GT) {
-                    QUALIFIED_ACCESS(<this>)
+                    <element: CfirThisReceiverExpression>
                     INT(0)
                 }
             }

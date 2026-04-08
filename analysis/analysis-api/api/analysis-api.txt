@@ -46,11 +46,6 @@ public interface CaBuiltinsModule : CaModule
 CaBuiltinsModule.public val builtinsName: String
 CaBuiltinsModule.public override val moduleDescription: String
 CaBuiltinsModule.public override val stableModuleName: String?
-public interface CaScriptModule : CaSourceModule
-CaScriptModule.public override val moduleDescription: String
-public interface CaScriptDependencyModule : CaModule
-CaScriptDependencyModule.public val scriptName: String
-CaScriptDependencyModule.public override val moduleDescription: String
 public interface CaDanglingFileModule : CaSourceModule
 CaDanglingFileModule.public val contextModule: CaModule?
 CaDanglingFileModule.public override val moduleDescription: String
@@ -94,12 +89,6 @@ CaResolver.public fun CjReferenceExpression.resolveToSymbol(): CaSymbol?
 CaResolver.public fun CjElement.resolveToCall(): CaCallInfo?
 public interface CaSymbolRelationProvider : CaLifetimeOwner
 CaSymbolRelationProvider.public fun CaSymbol.isEquivalentTo(other: CaSymbol): Boolean
-public interface CaSymbolProvider : CaLifetimeOwner
-CaSymbolProvider.public fun CjFile.fileSymbol(): CaFileSymbol
-CaSymbolProvider.public fun getPackageSymbol(fqName: FqName): CaPackageSymbol?
-CaSymbolProvider.public fun getClassLikeSymbol(classId: ClassId): CaClassLikeSymbol?
-CaSymbolProvider.public fun getTopLevelClassLikeSymbols(packageFqName: FqName, name: Name): List<CaClassLikeSymbol>
-CaSymbolProvider.public fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CaCallableSymbol>
 public interface CaSymbolInformationProvider : CaLifetimeOwner
 CaSymbolInformationProvider.public fun CaSymbol.createPointer(): CaSymbolPointer<CaSymbol>
 public interface CaAnnotationProvider : CaLifetimeOwner
@@ -108,9 +97,7 @@ public interface CaSignatureProvider : CaLifetimeOwner
 CaSignatureProvider.public val CjCallableDeclaration.signature: CaSignature
 CaSignatureProvider.public val CaCallableSymbol.signature: CaSignature?
 public interface CaTypeProvider : CaLifetimeOwner
-CaTypeProvider.public val CaCallableSymbol.returnType: CaType?
 CaTypeProvider.public val CaClassLikeSymbol.defaultType: CaType
-CaTypeProvider.public val CaClassLikeSymbol.superTypes: List<CaType>
 public interface CaTypeInformationProvider : CaLifetimeOwner
 CaTypeInformationProvider.public fun CaType.createPointer(): CaTypePointer<CaType>
 CaTypeInformationProvider.public val CaType.isErrorType: Boolean
@@ -148,6 +135,7 @@ CaScopeProvider.public fun CjFile.getFileScope(): CaScope
 CaScopeProvider.public fun getPackageScope(packageFqName: FqName): CaScope?
 CaScopeProvider.public val CaPackageSymbol.packageScope: CaScope
 CaScopeProvider.public val CaClassLikeSymbol.declaredMemberScope: CaScope
+CaScopeProvider.public val CaExtendSymbol.declaredMemberScope: CaScope
 CaScopeProvider.public val CaClassLikeSymbol.memberScope: CaScope
 CaScopeProvider.public val CaType.scope: CaScope?
 public interface CaAnalysisScopeProvider : CaLifetimeOwner
@@ -164,7 +152,11 @@ public interface CaImportOptimizer : CaLifetimeOwner
 CaImportOptimizer.public fun CjFile.collectImportOptimizationPlan(): CaImportOptimizationPlan
 public interface CaRenderer : CaLifetimeOwner
 CaRenderer.public fun CaSymbol.render(): String
+CaRenderer.public fun CaDeclarationSymbol.render( renderer: CaDeclarationRenderer = CaDeclarationRendererForSource.WITH_QUALIFIED_NAMES, ): String
+CaRenderer.public fun CaDeclarationSymbol.renderDebug( renderer: CaDeclarationRenderer = CaDeclarationRendererForDebug.WITH_QUALIFIED_NAMES, ): String
 CaRenderer.public fun CaType.render(): String
+CaRenderer.public fun CaType.render( renderer: CaTypeRenderer = CaTypeRendererForSource.WITH_QUALIFIED_NAMES, position: CaTypeRendererPosition = CaTypeRendererPosition.INVARIANT, ): String
+CaRenderer.public fun CaType.renderDebug( renderer: CaTypeRenderer = CaTypeRendererForDebug.WITH_QUALIFIED_NAMES, position: CaTypeRendererPosition = CaTypeRendererPosition.INVARIANT, ): String
 public interface CaOriginalPsiProvider : CaLifetimeOwner
 CaOriginalPsiProvider.public fun CaSymbol.getOriginalPsi(): PsiElement?
 public interface CaSourceProvider : CaLifetimeOwner
@@ -182,6 +174,32 @@ CaDataFlowInfo.public val expressionType: CaType?
 CaDataFlowInfo.public val compileTimeValue: CaCompileTimeValue?
 CaDataFlowInfo.public val isPureReference: Boolean
 CaDataFlowInfo.public val stability: CaDataFlowStability
+## org/cangnova/cangjie/analysis/api/decompiled/CaDecompiledServices.kt
+package org.cangnova.cangjie.analysis.api.decompiled
+public interface CaDecompiledBinaryIndex
+CaDecompiledBinaryIndex.public fun getBinaryFiles(module: CaLibraryModule): List<VirtualFile>
+CaDecompiledBinaryIndex.public fun getBinaryFiles(module: CaBuiltinsModule): List<VirtualFile>
+CaDecompiledBinaryIndex.public fun findBinaryFile(module: CaLibraryModule, packageFqName: FqName): VirtualFile?
+CaDecompiledBinaryIndex.public fun findBinaryFile(module: CaBuiltinsModule, packageFqName: FqName): VirtualFile?
+CaDecompiledBinaryIndex.public fun findOwningModule(binaryFile: VirtualFile): CaModule?
+CaDecompiledBinaryIndex.public companion object
+CaDecompiledBinaryIndex.Companion.public fun getInstance(project: Project): CaDecompiledBinaryIndex
+public interface CaDecompiledPsiProvider
+CaDecompiledPsiProvider.public fun getDecompiledFile(binaryFile: VirtualFile): CjDecompiledFile?
+CaDecompiledPsiProvider.public fun findDecompiledFile(module: CaLibraryModule, packageFqName: FqName): CjDecompiledFile?
+CaDecompiledPsiProvider.public fun findDecompiledFile(module: CaBuiltinsModule, packageFqName: FqName): CjDecompiledFile?
+CaDecompiledPsiProvider.public companion object
+CaDecompiledPsiProvider.Companion.public fun getInstance(project: Project): CaDecompiledPsiProvider
+public interface CaDecompiledTextRenderer
+CaDecompiledTextRenderer.public fun render(binaryFile: VirtualFile): String?
+CaDecompiledTextRenderer.public fun render(file: CjDecompiledFile): String
+CaDecompiledTextRenderer.public companion object
+CaDecompiledTextRenderer.Companion.public fun getInstance(project: Project): CaDecompiledTextRenderer
+public abstract class CaBuiltinsVirtualFileProvider
+CaBuiltinsVirtualFileProvider.public abstract fun getBuiltinVirtualFiles(): Set<VirtualFile>
+CaBuiltinsVirtualFileProvider.public abstract fun createBuiltinsScope(project: Project): GlobalSearchScope
+CaBuiltinsVirtualFileProvider.public companion object
+CaBuiltinsVirtualFileProvider.Companion.public fun getInstance(): CaBuiltinsVirtualFileProvider
 ## org/cangnova/cangjie/analysis/api/diagnostics/CaDiagnostic.kt
 package org.cangnova.cangjie.analysis.api.diagnostics
 public enum class CaSeverity
@@ -261,6 +279,40 @@ public fun CaLifetimeToken.assertIsValidAndAccessible()
 public abstract class CaIllegalLifetimeOwnerAccessException : IllegalStateException()
 public class CaInvalidLifetimeOwnerAccessException(override val message: String) : CaIllegalLifetimeOwnerAccessException()
 public class CaInaccessibleLifetimeOwnerAccessException(override val message: String) : CaIllegalLifetimeOwnerAccessException()
+## org/cangnova/cangjie/analysis/api/lightDeclarations/CaLightDeclarations.kt
+package org.cangnova.cangjie.analysis.api.lightDeclarations
+public enum class CaLightDeclarationKind
+public enum class CaLightDeclarationOriginKind
+public data class CaLightDeclarationOrigin( val kind: CaLightDeclarationOriginKind, val description: String, val containingFile: CjFile?, val sourceElement: PsiElement?, )
+public interface CaLightDeclaration : CaLifetimeOwner
+CaLightDeclaration.public val kind: CaLightDeclarationKind
+CaLightDeclaration.public val name: String?
+CaLightDeclaration.public val module: CaModule?
+CaLightDeclaration.public val annotations: List<CaAnnotation>
+CaLightDeclaration.public val origin: CaLightDeclarationOrigin
+public interface CaLightClassLikeDeclaration : CaLightDeclaration
+CaLightClassLikeDeclaration.public val classId: ClassId?
+CaLightClassLikeDeclaration.public val typeParameters: List<Name>
+CaLightClassLikeDeclaration.public val superTypes: List<CaType>
+CaLightClassLikeDeclaration.public val members: List<CaLightDeclaration>
+public interface CaLightExtendDeclaration : CaLightDeclaration
+CaLightExtendDeclaration.public val extendId: String
+CaLightExtendDeclaration.public val targetClassId: ClassId?
+CaLightExtendDeclaration.public val extendedType: CaType
+CaLightExtendDeclaration.public val typeParameters: List<Name>
+CaLightExtendDeclaration.public val superTypes: List<CaType>
+CaLightExtendDeclaration.public val members: List<CaLightDeclaration>
+public interface CaLightCallableDeclaration : CaLightDeclaration
+CaLightCallableDeclaration.public val callableId: CallableId?
+CaLightCallableDeclaration.public val signature: CaSignature?
+public interface CaLightDeclarationProvider
+CaLightDeclarationProvider.public fun getLightDeclaration(symbol: CaSymbol): CaLightDeclaration?
+CaLightDeclarationProvider.public fun getLightDeclarations(file: CjFile, useSiteModule: CaModule? = null): List<CaLightDeclaration>
+CaLightDeclarationProvider.public fun getLightDeclarations(module: CaModule): List<CaLightDeclaration>
+CaLightDeclarationProvider.public fun getPackageLightDeclaration(packageFqName: FqName, useSiteModule: CaModule): CaLightDeclaration?
+CaLightDeclarationProvider.public fun findLightDeclarations(packageFqName: FqName, name: Name, useSiteModule: CaModule): List<CaLightDeclaration>
+CaLightDeclarationProvider.public companion object
+CaLightDeclarationProvider.Companion.public fun getInstance(project: Project): CaLightDeclarationProvider
 ## org/cangnova/cangjie/analysis/api/permissions/CaAnalysisPermissionRegistry.kt
 package org.cangnova.cangjie.analysis.api.permissions
 public interface CaAnalysisPermissionRegistry
@@ -270,6 +322,197 @@ CaAnalysisPermissionRegistry.public var isAnalysisAllowedOnEdt: Boolean
 CaAnalysisPermissionRegistry.public var isAnalysisAllowedInWriteAction: Boolean
 CaAnalysisPermissionRegistry.public companion object
 CaAnalysisPermissionRegistry.Companion.public fun getInstance(): CaAnalysisPermissionRegistry
+## org/cangnova/cangjie/analysis/api/renderer/base/CaAnnotationRenderer.kt
+package org.cangnova.cangjie.analysis.api.renderer.base
+public fun interface CaAnnotationRenderer
+public object CaAnnotationRendererForSource
+CaAnnotationRendererForSource.public val WITH_QUALIFIED_NAMES: CaAnnotationRenderer
+CaAnnotationRendererForSource.public val WITH_SHORT_NAMES: CaAnnotationRenderer
+## org/cangnova/cangjie/analysis/api/renderer/base/CaKeywordsRenderer.kt
+package org.cangnova.cangjie.analysis.api.renderer.base
+public fun interface CaKeywordsRenderer
+## org/cangnova/cangjie/analysis/api/renderer/base/CaPrettyPrinter.kt
+package org.cangnova.cangjie.analysis.api.renderer.base
+public inline fun prettyPrint(block: CaPrettyPrinter.() -> Unit): String
+## org/cangnova/cangjie/analysis/api/renderer/declarations/CaCallableSignatureRenderers.kt
+package org.cangnova.cangjie.analysis.api.renderer.declarations
+public fun interface CaTypeParametersRenderer
+public fun interface CaTypeParametersFilter
+public object CaTypeParametersRendererForSource
+CaTypeParametersRendererForSource.public val WITH_BOUNDS_IN_WHERE_CLAUSE: CaTypeParametersRenderer
+public fun interface CaCallableParameterRenderer
+public object CaCallableParameterRendererForSource
+CaCallableParameterRendererForSource.public val PARAMETERS_IN_PARENS: CaCallableParameterRenderer
+public fun interface CaCallableReceiverRenderer
+public object CaCallableReceiverRendererForSource
+CaCallableReceiverRendererForSource.public val AS_TYPE_WITH_IN_APPROXIMATION: CaCallableReceiverRenderer
+public fun interface CaCallableReturnTypeRenderer
+public object CaCallableReturnTypeRendererForSource
+CaCallableReturnTypeRendererForSource.public val WITH_OUT_APPROXIMATION: CaCallableReturnTypeRenderer
+public fun interface CaCallableSignatureRenderer
+public object CaCallableSignatureRendererForSource
+CaCallableSignatureRendererForSource.public val FOR_SOURCE: CaCallableSignatureRenderer
+public fun interface CaParameterDefaultValueRenderer
+## org/cangnova/cangjie/analysis/api/renderer/declarations/CaClassifierRenderers.kt
+package org.cangnova.cangjie.analysis.api.renderer.declarations
+public fun interface CaSuperTypeRenderer
+public fun interface CaSuperTypeListRenderer
+public fun interface CaSuperTypesFilter
+public object CaSuperTypeRendererForSource
+CaSuperTypeRendererForSource.public val WITH_OUT_APPROXIMATION: CaSuperTypeRenderer
+public object CaSuperTypeListRendererForSource
+CaSuperTypeListRendererForSource.public val AS_LIST: CaSuperTypeListRenderer
+public fun interface CaRendererBodyMemberScopeProvider
+public fun interface CaRendererBodyMemberScopeSorter
+public fun interface CaClassifierBodyRenderer
+public object CaClassifierBodyRendererForSource
+CaClassifierBodyRendererForSource.public val NO_BODY: CaClassifierBodyRenderer
+CaClassifierBodyRendererForSource.public val BODY_WITH_MEMBERS: CaClassifierBodyRenderer
+CaClassifierBodyRendererForSource.public val BODY_WITH_MEMBERS_OR_EMPTY_BRACES: CaClassifierBodyRenderer
+## org/cangnova/cangjie/analysis/api/renderer/declarations/CaDeclarationBodyRenderers.kt
+package org.cangnova.cangjie.analysis.api.renderer.declarations
+public fun interface CaVariableInitializerRenderer
+public fun interface CaFunctionLikeBodyRenderer
+public fun interface CaPropertyAccessorBodyRenderer
+public fun interface CaPropertyAccessorsRenderer
+## org/cangnova/cangjie/analysis/api/renderer/declarations/CaDeclarationModifierProviders.kt
+package org.cangnova.cangjie.analysis.api.renderer.declarations
+public fun interface CaRendererVisibilityModifierProvider
+public fun interface CaRendererModalityModifierProvider
+public fun interface CaRendererOtherModifiersProvider
+## org/cangnova/cangjie/analysis/api/renderer/declarations/CaDeclarationRenderingOptions.kt
+package org.cangnova.cangjie.analysis.api.renderer.declarations
+public fun interface CaDeclarationNameRenderer
+public interface CaRendererCodeStyle
+CaRendererCodeStyle.public val spaceAfterColon: Boolean
+CaRendererCodeStyle.public val spaceAfterComma: Boolean
+public object CaRecommendedRendererCodeStyle : CaRendererCodeStyle
+CaRecommendedRendererCodeStyle.public override val spaceAfterColon: Boolean
+CaRecommendedRendererCodeStyle.public override val spaceAfterComma: Boolean
+public fun interface CaCallableReturnTypeFilter
+public fun interface CaDeclarationModifiersRenderer
+public object CaDeclarationModifiersRendererForSource
+CaDeclarationModifiersRendererForSource.public val NO_IMPLICIT_MODIFIERS: CaDeclarationModifiersRenderer
+CaDeclarationModifiersRendererForSource.public val WITH_IMPLICIT_MODIFIERS: CaDeclarationModifiersRenderer
+## org/cangnova/cangjie/analysis/api/renderer/declarations/CaDeclarationSymbolRenderers.kt
+package org.cangnova.cangjie.analysis.api.renderer.declarations
+public fun interface CaClassLikeSymbolRenderer
+public fun interface CaTypeAliasSymbolRenderer
+public fun interface CaNamedFunctionSymbolRenderer
+public fun interface CaConstructorSymbolRenderer
+public fun interface CaPropertySymbolRenderer
+public fun interface CaFieldSymbolRenderer
+public fun interface CaLocalVariableSymbolRenderer
+public fun interface CaEnumEntrySymbolRenderer
+public fun interface CaValueParameterSymbolRenderer
+public fun interface CaTypeParameterSymbolRenderer
+public fun interface CaScriptSymbolRenderer
+public fun interface CaExtendSymbolRenderer
+public fun interface CaFunctionLikeKeywordRenderer
+## org/cangnova/cangjie/analysis/api/renderer/declarations/impl/CaDeclarationRendererForDebug.kt
+package org.cangnova.cangjie.analysis.api.renderer.declarations.impl
+public object CaDeclarationRendererForDebug
+CaDeclarationRendererForDebug.public val WITH_QUALIFIED_NAMES: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_QUALIFIED_NAMES_WITH_MEMBERS: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_QUALIFIED_NAMES_WITH_MEMBERS_OR_EMPTY_BRACES: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_QUALIFIED_NAMES_WITH_BODY: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_QUALIFIED_NAMES_WITH_MEMBERS_AND_BODY: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_QUALIFIED_NAMES_WITH_PLACEHOLDER_BODIES: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_QUALIFIED_NAMES_WITH_INITIALIZERS: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_QUALIFIED_NAMES_WITH_DEFAULT_PARAMETER_VALUES: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_QUALIFIED_NAMES_WITH_ALL_DETAILS: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_QUALIFIED_NAMES_WITH_PLACEHOLDER_DETAILS: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_QUALIFIED_NAMES_RAW_SIGNATURES: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_QUALIFIED_NAMES_WITHOUT_SUPER_TYPES: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_QUALIFIED_NAMES_WITHOUT_TYPE_PARAMETERS: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_WITH_MEMBERS: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_WITH_MEMBERS_OR_EMPTY_BRACES: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_WITH_BODY: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_WITH_MEMBERS_AND_BODY: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_WITH_PLACEHOLDER_BODIES: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_WITH_INITIALIZERS: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_WITH_DEFAULT_PARAMETER_VALUES: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_WITH_ALL_DETAILS: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_WITH_PLACEHOLDER_DETAILS: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_RAW_SIGNATURES: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_WITHOUT_SUPER_TYPES: CaDeclarationRenderer
+CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_WITHOUT_TYPE_PARAMETERS: CaDeclarationRenderer
+## org/cangnova/cangjie/analysis/api/renderer/declarations/impl/CaDeclarationRendererForSource.kt
+package org.cangnova.cangjie.analysis.api.renderer.declarations.impl
+public object CaDeclarationRendererForSource
+CaDeclarationRendererForSource.public val WITH_QUALIFIED_NAMES: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_QUALIFIED_NAMES_WITH_MEMBERS: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_QUALIFIED_NAMES_WITH_MEMBERS_OR_EMPTY_BRACES: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_QUALIFIED_NAMES_WITH_BODY: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_QUALIFIED_NAMES_WITH_MEMBERS_AND_BODY: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_QUALIFIED_NAMES_WITH_PLACEHOLDER_BODIES: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_QUALIFIED_NAMES_WITH_INITIALIZERS: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_QUALIFIED_NAMES_WITH_DEFAULT_PARAMETER_VALUES: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_QUALIFIED_NAMES_WITH_ALL_DETAILS: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_QUALIFIED_NAMES_WITH_PLACEHOLDER_DETAILS: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_QUALIFIED_NAMES_RAW_SIGNATURES: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_QUALIFIED_NAMES_WITHOUT_SUPER_TYPES: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_QUALIFIED_NAMES_WITHOUT_TYPE_PARAMETERS: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_SHORT_NAMES: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_SHORT_NAMES_WITH_MEMBERS: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_SHORT_NAMES_WITH_MEMBERS_OR_EMPTY_BRACES: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_SHORT_NAMES_WITH_BODY: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_SHORT_NAMES_WITH_MEMBERS_AND_BODY: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_SHORT_NAMES_WITH_PLACEHOLDER_BODIES: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_SHORT_NAMES_WITH_INITIALIZERS: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_SHORT_NAMES_WITH_DEFAULT_PARAMETER_VALUES: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_SHORT_NAMES_WITH_ALL_DETAILS: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_SHORT_NAMES_WITH_PLACEHOLDER_DETAILS: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_SHORT_NAMES_RAW_SIGNATURES: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_SHORT_NAMES_WITHOUT_SUPER_TYPES: CaDeclarationRenderer
+CaDeclarationRendererForSource.public val WITH_SHORT_NAMES_WITHOUT_TYPE_PARAMETERS: CaDeclarationRenderer
+## org/cangnova/cangjie/analysis/api/renderer/types/CaCompositeTypeRenderers.kt
+package org.cangnova.cangjie.analysis.api.renderer.types
+public fun interface CaUsualClassTypeRenderer
+public fun interface CaTupleTypeRenderer
+public fun interface CaIntersectionTypeRenderer
+public fun interface CaUnionTypeRenderer
+## org/cangnova/cangjie/analysis/api/renderer/types/CaFunctionTypeRenderers.kt
+package org.cangnova.cangjie.analysis.api.renderer.types
+public fun interface CaFunctionalTypeKindRenderer
+public fun interface CaFunctionalTypeParameterListRenderer
+public fun interface CaFunctionalTypeReturnTypeRenderer
+public object CaFunctionalTypeRendererForSource
+CaFunctionalTypeRendererForSource.public val WITH_KIND_KEYWORDS: CaFunctionalTypeRenderer
+CaFunctionalTypeRendererForSource.public val WITHOUT_KIND_KEYWORDS: CaFunctionalTypeRenderer
+## org/cangnova/cangjie/analysis/api/renderer/types/CaTypeRenderer.kt
+package org.cangnova.cangjie.analysis.api.renderer.types
+public enum class CaTypeRendererPosition
+public fun interface CaClassTypeQualifierRenderer
+public fun interface CaTypeNameRenderer
+public fun interface CaTypeArgumentRenderer
+public fun interface CaTypeArgumentsRenderer
+public fun interface CaRendererTypeApproximator
+public fun interface CaFunctionalTypeRenderer
+public fun interface CaErrorTypeRenderer
+## org/cangnova/cangjie/analysis/api/renderer/types/impl/CaTypeRendererForDebug.kt
+package org.cangnova.cangjie.analysis.api.renderer.types.impl
+public object CaTypeRendererForDebug
+CaTypeRendererForDebug.public val WITH_QUALIFIED_NAMES: CaTypeRenderer
+CaTypeRendererForDebug.public val WITH_SHORT_NAMES: CaTypeRenderer
+CaTypeRendererForDebug.public val WITH_QUALIFIED_NAMES_WITHOUT_TYPE_ARGUMENTS: CaTypeRenderer
+CaTypeRendererForDebug.public val WITH_SHORT_NAMES_WITHOUT_TYPE_ARGUMENTS: CaTypeRenderer
+CaTypeRendererForDebug.public val WITH_QUALIFIED_NAMES_WITHOUT_FUNCTION_KIND_KEYWORDS: CaTypeRenderer
+CaTypeRendererForDebug.public val WITH_SHORT_NAMES_WITHOUT_FUNCTION_KIND_KEYWORDS: CaTypeRenderer
+CaTypeRendererForDebug.public val WITH_QUALIFIED_NAMES_WITHOUT_PARAMETER_NAMES: CaTypeRenderer
+CaTypeRendererForDebug.public val WITH_SHORT_NAMES_WITHOUT_PARAMETER_NAMES: CaTypeRenderer
+## org/cangnova/cangjie/analysis/api/renderer/types/impl/CaTypeRendererForSource.kt
+package org.cangnova.cangjie.analysis.api.renderer.types.impl
+public object CaTypeRendererForSource
+CaTypeRendererForSource.public val WITH_QUALIFIED_NAMES: CaTypeRenderer
+CaTypeRendererForSource.public val WITH_SHORT_NAMES: CaTypeRenderer
+CaTypeRendererForSource.public val WITH_QUALIFIED_NAMES_WITHOUT_TYPE_ARGUMENTS: CaTypeRenderer
+CaTypeRendererForSource.public val WITH_SHORT_NAMES_WITHOUT_TYPE_ARGUMENTS: CaTypeRenderer
+CaTypeRendererForSource.public val WITH_QUALIFIED_NAMES_WITHOUT_FUNCTION_KIND_KEYWORDS: CaTypeRenderer
+CaTypeRendererForSource.public val WITH_SHORT_NAMES_WITHOUT_FUNCTION_KIND_KEYWORDS: CaTypeRenderer
+CaTypeRendererForSource.public val WITH_QUALIFIED_NAMES_WITHOUT_PARAMETER_NAMES: CaTypeRenderer
+CaTypeRendererForSource.public val WITH_SHORT_NAMES_WITHOUT_PARAMETER_NAMES: CaTypeRenderer
 ## org/cangnova/cangjie/analysis/api/resolution/CaCall.kt
 package org.cangnova.cangjie.analysis.api.resolution
 public interface CaCallInfo : CaLifetimeOwner
@@ -309,7 +552,7 @@ CaScope.public val symbols: List<CaSymbol>
 CaScope.public val availableNames: Set<Name>
 CaScope.public fun getSymbols(name: Name): List<CaSymbol>
 CaScope.public fun getCallableSymbols(name: Name): List<CaCallableSymbol>
-CaScope.public fun getClassifierSymbols(name: Name): List<CaClassLikeSymbol>
+CaScope.public fun getClassifierSymbols(name: Name): List<CaClassifierSymbol>
 ## org/cangnova/cangjie/analysis/api/session/CaPointerRestoration.kt
 package org.cangnova.cangjie.analysis.api.session
 public fun <S : CaSymbol> CaSession.restoreSymbol(pointer: CaSymbolPointer<S>): S?
@@ -339,15 +582,29 @@ package org.cangnova.cangjie.analysis.api.signatures
 public interface CaValueParameterSignature : CaLifetimeOwner
 CaValueParameterSignature.public val name: Name?
 CaValueParameterSignature.public val type: CaType?
-CaValueParameterSignature.public val typeText: String?
 CaValueParameterSignature.public val annotations: List<CaAnnotation>
 public interface CaSignature : CaLifetimeOwner
 CaSignature.public val declarationName: Name?
 CaSignature.public val typeParameters: List<Name>
 CaSignature.public val valueParameters: List<CaValueParameterSignature>
 CaSignature.public val returnType: CaType?
-CaSignature.public val returnTypeText: String?
 CaSignature.public val annotations: List<CaAnnotation>
+## org/cangnova/cangjie/analysis/api/stubs/CaStubServices.kt
+package org.cangnova.cangjie.analysis.api.stubs
+public interface CaStubFileProvider
+CaStubFileProvider.public fun getFileStubKind(file: CjFile): CangJieFileStubKind?
+CaStubFileProvider.public fun getTopLevelClassifierNames(file: CjFile): Set<Name>
+CaStubFileProvider.public fun getTopLevelCallableNames(file: CjFile): Set<Name>
+public interface CaStubPackageIndex
+CaStubPackageIndex.public fun getAvailablePackages(): Set<FqName>
+CaStubPackageIndex.public fun getTopLevelClassifierNames(packageFqName: FqName): Set<Name>
+CaStubPackageIndex.public fun getTopLevelCallableNames(packageFqName: FqName): Set<Name>
+public interface CaStubIndexFacade
+CaStubIndexFacade.public val fileProvider: CaStubFileProvider
+CaStubIndexFacade.public val packageIndex: CaStubPackageIndex
+CaStubIndexFacade.public fun getClassMemberNames(classId: ClassId): Set<Name>
+CaStubIndexFacade.public companion object
+CaStubIndexFacade.Companion.public fun getInstance(project: Project): CaStubIndexFacade
 ## org/cangnova/cangjie/analysis/api/substitution/CaTypeSubstitution.kt
 package org.cangnova.cangjie.analysis.api.substitution
 public interface CaTypeSubstitutor : CaLifetimeOwner
@@ -356,26 +613,158 @@ CaTypeSubstitutor.public fun substitute(type: CaType): CaType
 public interface CaSubstitutedSignature : CaSignature
 CaSubstitutedSignature.public val substitutor: CaTypeSubstitutor
 CaSubstitutedSignature.public val original: CaSignature
+## org/cangnova/cangjie/analysis/api/symbols/CaCallableSymbol.kt
+package org.cangnova.cangjie.analysis.api.symbols
+public interface CaCallableSymbol : CaDeclarationSymbol
+CaCallableSymbol.public val callableId: CallableId?
+CaCallableSymbol.public val receiverType: CaType?
+CaCallableSymbol.public val returnType: CaType
+## org/cangnova/cangjie/analysis/api/symbols/CaClassLikeSymbol.kt
+package org.cangnova.cangjie.analysis.api.symbols
+public interface CaClassifierSymbol : CaDeclarationSymbol
+public interface CaClassLikeSymbol : CaClassifierSymbol, CaNamedSymbol, CaTypeParameterOwnerSymbol
+CaClassLikeSymbol.public val classId: ClassId?
+public interface CaClassSymbol : CaClassLikeSymbol, CaDeclarationContainerSymbol
+CaClassSymbol.public val classKind: CaClassKind
+CaClassSymbol.public val superTypes: List<CaType>
+public enum class CaClassKind
+public interface CaTypeAliasSymbol : CaClassLikeSymbol
+CaTypeAliasSymbol.public val expandedType: CaType
+public interface CaTypeParameterSymbol : CaClassifierSymbol, CaNamedSymbol
+CaTypeParameterSymbol.public val upperBounds: List<CaType>
+public interface CaExtendSymbol : CaDeclarationSymbol, CaDeclarationContainerSymbol, CaTypeParameterOwnerSymbol
+CaExtendSymbol.public val extendId: String
+CaExtendSymbol.public val targetClassId: ClassId?
+CaExtendSymbol.public val extendedType: CaType
+CaExtendSymbol.public val superTypes: List<CaType>
+## org/cangnova/cangjie/analysis/api/symbols/CaDeclarationSymbol.kt
+package org.cangnova.cangjie.analysis.api.symbols
+public interface CaDeclarationSymbol : CaSymbol
+CaDeclarationSymbol.public val psi: PsiElement?
+CaDeclarationSymbol.public val containingDeclaration: CaSymbol?
+CaDeclarationSymbol.public val visibility: CaSymbolVisibility
+CaDeclarationSymbol.public val isVisibilityExplicit: Boolean
+CaDeclarationSymbol.public val modality: CaSymbolModality?
+CaDeclarationSymbol.public val isModalityExplicit: Boolean
+public enum class CaSymbolVisibility
+public enum class CaSymbolModality
+## org/cangnova/cangjie/analysis/api/symbols/CaFileSymbol.kt
+package org.cangnova.cangjie.analysis.api.symbols
+public interface CaFileSymbol : CaSymbol, CaDeclarationContainerSymbol, CaNamedSymbol
+CaFileSymbol.public val file: CjFile
+CaFileSymbol.public val packageFqName: FqName
+CaFileSymbol.public override val name: Name
+## org/cangnova/cangjie/analysis/api/symbols/CaFunctionSymbol.kt
+package org.cangnova.cangjie.analysis.api.symbols
+public interface CaFunctionSymbol : CaCallableSymbol, CaTypeParameterOwnerSymbol, CaValueParameterOwnerSymbol
+CaFunctionSymbol.public val isStatic: Boolean
+CaFunctionSymbol.public val isConst: Boolean
+CaFunctionSymbol.public val isMutating: Boolean
+CaFunctionSymbol.public val isOverride: Boolean
+CaFunctionSymbol.public val isOperator: Boolean
+CaFunctionSymbol.public val isUnsafe: Boolean
+CaFunctionSymbol.public val isForeign: Boolean
+public interface CaNamedFunctionSymbol : CaFunctionSymbol, CaNamedSymbol
+public interface CaMainFunctionSymbol : CaNamedFunctionSymbol
+public interface CaMacroSymbol : CaNamedFunctionSymbol
+public interface CaAnonymousFunctionSymbol : CaFunctionSymbol
+public interface CaConstructorSymbol : CaFunctionSymbol
+CaConstructorSymbol.public val isPrimary: Boolean
+CaConstructorSymbol.public val containingClassId: ClassId?
+public interface CaFinalizerSymbol : CaFunctionSymbol
+CaFinalizerSymbol.public val containingClassId: ClassId?
+## org/cangnova/cangjie/analysis/api/symbols/CaPackageSymbol.kt
+package org.cangnova.cangjie.analysis.api.symbols
+public interface CaPackageSymbol : CaSymbol, CaNamedSymbol
+CaPackageSymbol.public val fqName: FqName
+CaPackageSymbol.public override val name: Name
+## org/cangnova/cangjie/analysis/api/symbols/CaPropertyAccessorSymbol.kt
+package org.cangnova.cangjie.analysis.api.symbols
+public interface CaPropertyAccessorSymbol : CaFunctionSymbol
+CaPropertyAccessorSymbol.public val owningProperty: CaPropertySymbol
+CaPropertyAccessorSymbol.public val isDefault: Boolean
+CaPropertyAccessorSymbol.public val isGetter: Boolean
+public interface CaPropertyGetterSymbol : CaPropertyAccessorSymbol
+public interface CaPropertySetterSymbol : CaPropertyAccessorSymbol
+CaPropertySetterSymbol.public val parameter: CaValueParameterSymbol
+## org/cangnova/cangjie/analysis/api/symbols/CaScriptSymbol.kt
+package org.cangnova.cangjie.analysis.api.symbols
+public interface CaScriptSymbol : CaDeclarationSymbol, CaDeclarationContainerSymbol, CaNamedSymbol
+CaScriptSymbol.public val fileSymbol: CaFileSymbol?
 ## org/cangnova/cangjie/analysis/api/symbols/CaSymbol.kt
 package org.cangnova.cangjie.analysis.api.symbols
 public interface CaSymbol : CaLifetimeOwner
 CaSymbol.public val containingModule: CaModule
-CaSymbol.public val name: String?
-public interface CaPackageSymbol : CaSymbol
-CaPackageSymbol.public val fqName: FqName
-CaPackageSymbol.public override val name: String
-public interface CaFileSymbol : CaSymbol
-CaFileSymbol.public val file: CjFile
-CaFileSymbol.public val packageFqName: FqName
-CaFileSymbol.public override val name: String
-public interface CaDeclarationSymbol : CaSymbol
-CaDeclarationSymbol.public val psi: PsiElement?
-public interface CaClassLikeSymbol : CaDeclarationSymbol
-CaClassLikeSymbol.public val classId: ClassId
-CaClassLikeSymbol.public override val name: String
-public interface CaCallableSymbol : CaDeclarationSymbol
-CaCallableSymbol.public val callableId: CallableId?
-CaCallableSymbol.public override val name: String?
+CaSymbol.public val origin: CaSymbolOrigin
+CaSymbol.public val location: CaSymbolLocation
+public val CaSymbol.name: Name?
+public val CaSymbol.isTopLevel: Boolean
+public val CaSymbol.isLocal: Boolean
+public enum class CaSymbolOrigin
+public enum class CaSymbolLocation
+## org/cangnova/cangjie/analysis/api/symbols/CaSymbolProvider.kt
+package org.cangnova.cangjie.analysis.api.symbols
+public interface CaSymbolProvider : CaLifetimeOwner
+CaSymbolProvider.public val CjDeclaration.symbol: CaDeclarationSymbol
+CaSymbolProvider.public val CjFile.symbol: CaFileSymbol
+CaSymbolProvider.public val CjScript.symbol: CaScriptSymbol
+CaSymbolProvider.public val CjTypeStatement.classSymbol: CaClassSymbol
+CaSymbolProvider.public val CjExtend.symbol: CaExtendSymbol
+CaSymbolProvider.public val CjTypeAlias.symbol: CaTypeAliasSymbol
+CaSymbolProvider.public val CjNamedFunction.symbol: CaNamedFunctionSymbol
+CaSymbolProvider.public val CjFunctionLiteral.symbol: CaAnonymousFunctionSymbol
+CaSymbolProvider.public val CjConstructor<*>.symbol: CaConstructorSymbol
+CaSymbolProvider.public val CjMacroDeclaration.symbol: CaMacroSymbol
+CaSymbolProvider.public val CjFinalizer.symbol: CaFinalizerSymbol
+CaSymbolProvider.public val CjProperty.symbol: CaPropertySymbol
+CaSymbolProvider.public val CjPropertyAccessor.symbol: CaPropertyAccessorSymbol
+CaSymbolProvider.public val CjFieldVariable.symbol: CaFieldSymbol
+CaSymbolProvider.public val CjEnumConstructor.symbol: CaEnumEntrySymbol
+CaSymbolProvider.public val CjPatternVariable.symbol: CaPatternVariableSymbol
+CaSymbolProvider.public val CjBindingPattern.symbol: CaPatternBindingSymbol
+CaSymbolProvider.public val CjParameter.symbol: CaVariableSymbol
+CaSymbolProvider.public val CjTypeParameter.symbol: CaTypeParameterSymbol
+CaSymbolProvider.public fun getPackageSymbol(fqName: FqName): CaPackageSymbol?
+CaSymbolProvider.public fun getClassLikeSymbol(classId: ClassId): CaClassLikeSymbol?
+CaSymbolProvider.public fun getClassSymbol(classId: ClassId): CaClassSymbol?
+CaSymbolProvider.public fun getTypeAliasSymbol(classId: ClassId): CaTypeAliasSymbol?
+CaSymbolProvider.public fun getTopLevelClassLikeSymbols(packageFqName: FqName, name: Name): List<CaClassLikeSymbol>
+CaSymbolProvider.public fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CaCallableSymbol>
+CaSymbolProvider.public fun getTopLevelExtendSymbols(packageFqName: FqName): List<CaExtendSymbol>
+CaSymbolProvider.public fun getExtendSymbols(targetClassId: ClassId): List<CaExtendSymbol>
+## org/cangnova/cangjie/analysis/api/symbols/CaVariableSymbol.kt
+package org.cangnova.cangjie.analysis.api.symbols
+public interface CaVariableSymbol : CaCallableSymbol, CaNamedSymbol
+CaVariableSymbol.public val isVal: Boolean
+public interface CaPropertySymbol : CaVariableSymbol, CaTypeParameterOwnerSymbol, CaDeclarationContainerSymbol
+CaPropertySymbol.public val isStatic: Boolean
+CaPropertySymbol.public val isConst: Boolean
+CaPropertySymbol.public val isMutating: Boolean
+CaPropertySymbol.public val isOverride: Boolean
+CaPropertySymbol.public val isUnsafe: Boolean
+CaPropertySymbol.public val isForeign: Boolean
+CaPropertySymbol.public val getter: CaPropertyGetterSymbol?
+CaPropertySymbol.public val setter: CaPropertySetterSymbol?
+public interface CaFieldSymbol : CaVariableSymbol
+CaFieldSymbol.public val isStatic: Boolean
+CaFieldSymbol.public val isConst: Boolean
+public interface CaLocalVariableSymbol : CaVariableSymbol
+public interface CaPatternVariableSymbol : CaLocalVariableSymbol
+public interface CaPatternBindingSymbol : CaLocalVariableSymbol
+public interface CaEnumEntrySymbol : CaVariableSymbol
+public interface CaParameterSymbol : CaVariableSymbol
+public interface CaValueParameterSymbol : CaParameterSymbol
+CaValueParameterSymbol.public val isNamed: Boolean
+CaValueParameterSymbol.public val hasDefaultValue: Boolean
+## org/cangnova/cangjie/analysis/api/symbols/markers/markers.kt
+package org.cangnova.cangjie.analysis.api.symbols.markers
+public interface CaNamedSymbol : CaSymbol
+CaNamedSymbol.public val name: Name
+public interface CaDeclarationContainerSymbol : CaSymbol
+public interface CaTypeParameterOwnerSymbol : CaSymbol
+CaTypeParameterOwnerSymbol.public val typeParameters: List<CaTypeParameterSymbol>
+public interface CaValueParameterOwnerSymbol : CaSymbol
+CaValueParameterOwnerSymbol.public val valueParameters: List<CaValueParameterSymbol>
 ## org/cangnova/cangjie/analysis/api/symbols/pointers/CaSymbolPointer.kt
 package org.cangnova.cangjie.analysis.api.symbols.pointers
 public interface CaSymbolPointer<out S : CaSymbol>

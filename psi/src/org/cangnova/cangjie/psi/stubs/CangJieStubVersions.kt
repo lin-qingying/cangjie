@@ -26,7 +26,12 @@ package org.cangnova.cangjie.psi.stubs
 
 object CangJieStubVersions {
 
-    const val SOURCE_STUB_VERSION = 201
+    /**
+     * 202:
+     * - extend stub 显式持久化稳定 extendId
+     * - decompiled compiled stub 与 source stub 统一使用同一套 extend identity 协议
+     */
+    const val SOURCE_STUB_VERSION = 202
 
     private const val BINARY_STUB_VERSION = SOURCE_STUB_VERSION
 

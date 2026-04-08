@@ -11,8 +11,10 @@ import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -143,9 +145,18 @@ internal fun CfirCallableSymbol<*>.isVisibleIn(
 ): Boolean {
     if (!isBound) return true
     // override / abstract-member 语义使用“派生类视角”的可见性：
-    // private-like 成员只能在声明它的同一类体内参与 override / implementation 计算，
-    // 其余继承链可见成员继续保留给 checker 层判断。
-    if (!Visibilities.isPrivate(cfir.status.visibility)) return true
+    // private-like 成员只能在声明它的同一类体内参与 override / implementation 计算；
+    // internal 按“当前类所在包 + 子包”判断，protected 在仓颉里按模块可见处理。
+    when (cfir.status.visibility) {
+        Visibilities.Public, Visibilities.Protected -> return true
+        Visibilities.Internal -> {
+            val currentFile = context.session.cfirProvider.getContainingFile(ownerDeclaration.symbol) ?: return true
+            val declarationFile = context.session.cfirProvider.getContainingFile(this) ?: return true
+            val currentPackage = currentFile.packageDirective.packageFqName
+            val declarationPackage = declarationFile.packageDirective.packageFqName
+            return canAccessPackageInternalDeclaration(currentPackage, declarationPackage)
+        }
+    }
 
     val ownerClassId = ownerClassId(context) ?: return true
     val currentClassId = (ownerDeclaration.symbol as? CfirClassLikeSymbol<*>)?.classId ?: return true

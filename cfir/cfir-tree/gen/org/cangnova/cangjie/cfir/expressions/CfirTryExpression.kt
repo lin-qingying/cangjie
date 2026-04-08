@@ -19,6 +19,7 @@ abstract class CfirTryExpression : CfirExpression() {
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract val tryBlock: CfirBlock
+    abstract val handlers: List<CfirHandleClause>
     abstract val catches: List<CfirCatch>
     abstract val finallyBlock: CfirBlock?
 
@@ -36,6 +37,8 @@ abstract class CfirTryExpression : CfirExpression() {
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirTryExpression
 
     abstract fun <D> transformTryBlock(transformer: CfirTransformer<D>, data: D): CfirTryExpression
+
+    abstract fun <D> transformHandlers(transformer: CfirTransformer<D>, data: D): CfirTryExpression
 
     abstract fun <D> transformCatches(transformer: CfirTransformer<D>, data: D): CfirTryExpression
 

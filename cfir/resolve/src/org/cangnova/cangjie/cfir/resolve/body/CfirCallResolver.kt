@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
+import org.cangnova.cangjie.cfir.diagnostic.ConeEnumTypeCannotBeUsedAsConstructorError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionExpectedError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionCallExpectedError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoConstructorError
@@ -512,7 +513,16 @@ class CfirCallResolver(
 
             candidates.isEmpty() -> {
                 when {
-                    matchedClassifier != null && callInfo.callKind == CallKind.Function -> ConeNoConstructorError
+                    matchedClassifier != null && callInfo.callKind == CallKind.Function -> {
+                        val actualClassifier = (matchedClassifier as? CfirTypeAliasSymbol)?.fullyExpandedClass(session)
+                            ?: matchedClassifier
+                        val actualDeclaration = actualClassifier.cfir as? CfirClassLikeDeclaration
+                        if (actualDeclaration is org.cangnova.cangjie.cfir.declarations.CfirEnum) {
+                            ConeEnumTypeCannotBeUsedAsConstructorError(actualClassifier.name)
+                        } else {
+                            ConeNoConstructorError
+                        }
+                    }
                     name.asString() == "invoke" && explicitReceiver is CfirLiteralExpression ->
                         ConeFunctionExpectedError(
                             explicitReceiver.value?.toString() ?: "",
@@ -582,6 +592,29 @@ class CfirCallResolver(
         resolutionMode: ResolutionMode,
     ): ResolutionResult {
         val actualClassifier = (classifier as? CfirTypeAliasSymbol)?.fullyExpandedClass(session) ?: classifier
+        val actualDeclaration = actualClassifier.cfir as? CfirClassLikeDeclaration
+        if (actualDeclaration is org.cangnova.cangjie.cfir.declarations.CfirEnum) {
+            return ResolutionResult(
+                info = CallInfo(
+                    callSite = functionCall,
+                    callKind = CallKind.Function,
+                    name = classifier.name,
+                    origin = functionCall.origin,
+                    explicitReceiver = functionCall.explicitReceiver,
+                    arguments = functionCall.argumentList.arguments,
+                    isUsedAsGetClassReceiver = false,
+                    typeArguments = functionCall.typeArguments,
+                    session = session,
+                    containingFile = components.file,
+                    containingDeclarations = transformer.components.containingDeclarations,
+                    resolutionMode = resolutionMode,
+                ),
+                applicability = CandidateApplicability.HIDDEN,
+                candidates = emptyList(),
+                forwardedDiagnostics = emptyList(),
+            )
+        }
+
         val constructorSymbols = actualClassifier.cfir.declarations
             .filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirConstructor>()
             .map(CfirConstructor::symbol)
@@ -631,7 +664,9 @@ class CfirCallResolver(
         }
         val (reducedCandidates, applicability) = reduceCollectedCandidates(
             candidates = constructorCandidates,
-            collectorApplicability = CandidateApplicability.RESOLVED,
+            // 这些候选是当前函数内即时创建的，并没有像 tower collector 那样预先跑过 stages。
+            // 必须先完整处理后，再根据适用性做筛选。
+            collectorApplicability = CandidateApplicability.HIDDEN,
             isCandidateSuccessful = Candidate::isSuccessful,
             candidateApplicability = Candidate::lowestApplicability,
             fullyProcessCandidate = { candidate ->

@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.SourceElementPositioningStrategies
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -61,6 +62,7 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
                 continue
             }
 
+            checkParameterNamingCompatibility(callable, visibleOverriddenSymbols)
             checkVisibilityCompatibility(callable, visibleOverriddenSymbols)
             checkReturnTypeCompatibility(callable, visibleOverriddenSymbols)
         }
@@ -74,6 +76,27 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
         if (status.isRedef && !status.isStatic) return false
         if (status.isOverride && status.isStatic) return false
         return true
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkParameterNamingCompatibility(
+        declaration: CfirCallableDeclaration,
+        overriddenSymbols: List<CfirCallableSymbol<*>>,
+    ) {
+        val function = declaration as? CfirFunction ?: return
+        val overriddenPair = overriddenSymbols.firstNotNullOfOrNull { overridden ->
+            (overridden.cfir as? CfirFunction)?.let { it to overridden }
+        } ?: return
+        val overriddenFunction = overriddenPair.first
+        val overriddenSymbol = overriddenPair.second
+
+        if (!function.hasMismatchedParameterNamingAgainst(overriddenFunction)) return
+
+        reporter.reportOn(
+            source = declaration.source,
+            factory = CfirErrors.PARAM_NAMED_MISMATCHED,
+            a = overriddenSymbol.name,
+        )
     }
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -142,5 +165,14 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
             )
             return
         }
+    }
+}
+
+private fun CfirFunction.hasMismatchedParameterNamingAgainst(overridden: CfirFunction): Boolean {
+    if (valueParameters.size != overridden.valueParameters.size) return false
+
+    return valueParameters.zip(overridden.valueParameters).any { (current, parent) ->
+        current.isNamed != parent.isNamed ||
+                (current.isNamed && parent.isNamed && current.name != parent.name)
     }
 }

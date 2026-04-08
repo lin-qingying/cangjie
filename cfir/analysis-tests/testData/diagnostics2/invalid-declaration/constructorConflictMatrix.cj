@@ -1,0 +1,17 @@
+// RUN_PIPELINE_TILL: FRONTEND
+class Box {
+    init(value: Int64) {}
+}
+
+class AmbiguousBox {
+    <!CONFLICTING_OVERLOADS!>init(value: Int64, left!: Int64 = 0)<!> {}
+    <!CONFLICTING_OVERLOADS!>init(value: Int64, right!: Int64 = 0)<!> {}
+}
+
+func testNoValueForConstructor(): Unit {
+    Box<!NO_VALUE_FOR_PARAMETER!>()<!>
+}
+
+func testAmbiguousConstructorCall(): Unit {
+    <!AMBIGUOUS_CONSTRUCTOR_CALL!>AmbiguousBox<!>(1)
+}

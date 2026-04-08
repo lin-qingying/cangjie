@@ -2,8 +2,8 @@
 // TARGET_CLASS: User
 // TARGET_FUNCTION: greet
 // TARGET_CALL: buildUser()
-// EXPECTED_RENDERED_CLASS_SYMBOL: sample.renderer.User
-// EXPECTED_RENDERED_CALLABLE_SYMBOL: greet(value:User):User
+// EXPECTED_RENDERED_CLASS_SYMBOL: class sample.renderer.User
+// EXPECTED_RENDERED_CALLABLE_SYMBOL: func greet(value: sample.renderer.User): sample.renderer.User
 // EXPECTED_RENDERED_TYPE: sample.renderer.User
 
 package sample.renderer

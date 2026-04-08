@@ -6,6 +6,7 @@ Format:
 All paths are relative to `cfir/raw-cfir/psi2cfir/testData/rawBuilder/`.
 
 - `Group/cangjie-features/extend`: cangjie-features/extend/extendDeclaration.cj, cangjie-features/extend/extendGenericWhereChain.cj, cangjie-features/extend/extendWithWhereOfficial.cj
+- `Group/cangjie-features/effects`: cangjie-features/effects/effectTryHandleOfficial.cj
 - `Group/cangjie-features/match`: cangjie-features/match/matchExpressionOfficial.cj, cangjie-features/match/matchRichPatternsOfficial.cj
 - `Group/cangjie-features/spawn`: cangjie-features/spawn/spawnExpressionOfficial.cj
 - `Group/cangjie-features/varray`: cangjie-features/varray/varrayTypeRef.cj

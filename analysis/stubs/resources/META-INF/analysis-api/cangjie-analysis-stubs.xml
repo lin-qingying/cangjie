@@ -1,0 +1,19 @@
+<idea-plugin>
+  <extensions defaultExtensionNs="com.intellij">
+    <projectService
+        serviceImplementation="org.cangnova.cangjie.analysis.stubs.CaStubPlatformState"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.stubs.CaStubFileProvider"
+        serviceImplementation="org.cangnova.cangjie.analysis.stubs.CaStubFileProviderImpl"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.stubs.CaStubPackageIndex"
+        serviceImplementation="org.cangnova.cangjie.analysis.stubs.CaStubPackageIndexImpl"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.stubs.CaStubIndexFacade"
+        serviceImplementation="org.cangnova.cangjie.analysis.stubs.CaStubIndexFacadeImpl"
+    />
+  </extensions>
+</idea-plugin>

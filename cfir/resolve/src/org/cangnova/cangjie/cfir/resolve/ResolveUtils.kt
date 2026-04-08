@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.references.CfirThisReference
+import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedErrorReference
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
@@ -68,6 +69,15 @@ fun BodyResolveComponents.typeFromCallee(calleeReference: CfirReference): ConeCa
             when (candidate.callInfo.callKind) {
                 CallKind.NamedValueAccess -> typeFromNamedValueCandidate(candidate)
                 else -> typeFromSymbol(candidate.symbol)
+            }
+        }
+
+        is CfirResolvedAppliedCallableReference -> {
+            if (calleeReference.resolvedSymbol.cfir is CfirEnumConstructor) {
+                calleeReference.substitutedReturnType
+                    ?: typeFromSymbol(calleeReference.resolvedSymbol)
+            } else {
+                typeFromSymbol(calleeReference.resolvedSymbol)
             }
         }
 

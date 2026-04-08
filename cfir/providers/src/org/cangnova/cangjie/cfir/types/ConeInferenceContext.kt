@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.cfir.common.moduleData
+import org.cangnova.cangjie.cfir.common.canSeeInternalsOf
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
@@ -9,6 +10,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -254,22 +256,30 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
         if (!symbol.isBound) return true
         val declaration = symbol.cfir as? org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration ?: return true
 
-        // === 模块级检查 ===
+        // === 可见性语义检查 ===
+        val file = CfirAccessibilityFileScope.get() ?: return true
+        val filePackage = file.packageDirective.packageFqName
+        val declPackage = lookupTag.classId.packageFqName
         val visibility = declaration.status.visibility
         when {
-            visibility == Visibilities.Public || visibility == Visibilities.Protected -> { /* 继续文件级检查 */ }
+            visibility == Visibilities.Public -> Unit
+            visibility == Visibilities.Protected -> {
+                if (
+                    declaration.moduleData != session.moduleData &&
+                    !session.moduleData.canSeeInternalsOf(declaration.moduleData)
+                ) {
+                    return false
+                }
+            }
             visibility == Visibilities.Internal -> {
-                if (declaration.moduleData != session.moduleData) return false
-                // 同模块 internal → 继续文件级检查
+                if (!canAccessPackageInternalDeclaration(filePackage, declPackage)) {
+                    return false
+                }
             }
             else -> return false  // Private, Local 等
         }
 
-        // === 文件级检查（对齐 C++ IsDeclAccessible）===
-        val file = CfirAccessibilityFileScope.get() ?: return true
-        val filePackage = file.packageDirective.packageFqName
-        val declPackage = lookupTag.classId.packageFqName
-
+        // === 名字可达性检查（对齐 C++ IsDeclAccessible）===
         // 同包 → 可访问
         if (filePackage == declPackage) return true
 

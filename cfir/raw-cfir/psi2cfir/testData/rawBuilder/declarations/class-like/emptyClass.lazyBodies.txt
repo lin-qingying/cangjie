@@ -1,3 +1,4 @@
 FILE: emptyClass.cj
     internal? class Empty {
+        init()
     }

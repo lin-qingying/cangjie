@@ -313,7 +313,7 @@
 | `llvm-interop-api` | 8 Kt | ✅ | `LlvmBindings` 235 行，200+ 方法；`LlvmBuilder` 275 行；Context/Module 完整 |
 | `llvm-interop-jni` | 3 Kt + 9 C++ | ✅ | 全部 native 方法有 C++ 实现，覆盖 Context/Module/Builder/Types/Values/Bitcode |
 
-### 6.4 `:compiler:cli` — CLI 入口（15 个文件，1,028 行）
+### 6.4 `:compiler:frontend` — 前端基础设施入口（15 个文件，1,028 行）
 
 | 组件 | 实现质量 | 说明 |
 |------|---------|------|

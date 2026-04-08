@@ -25,6 +25,7 @@ import org.cangnova.cangjie.psi.CjParameter
  */
 internal class CaCfirSessionSemanticCacheStore {
     private val sourcePsiCache = linkedMapOf<CfirSymbol<*>, PsiElement?>()
+    private val psiSymbolsCache = linkedMapOf<PsiElement, List<CfirSymbol<*>>>()
     private val containingFileCache = linkedMapOf<CfirSymbol<*>, CjFile?>()
     private val callInfoCache = linkedMapOf<PsiElement, CaCfirCallInfoSnapshot?>()
     private val diagnosticsCache = linkedMapOf<CaCfirDiagnosticsQueryKey, List<CjPsiDiagnostic>>()
@@ -54,6 +55,11 @@ internal class CaCfirSessionSemanticCacheStore {
         symbol: CfirSymbol<*>,
         create: () -> CjFile?,
     ): CjFile? = getOrCreateCachedValue(containingFileCache, symbol, create)
+
+    fun getOrCreatePsiSymbols(
+        psi: PsiElement,
+        create: () -> List<CfirSymbol<*>>,
+    ): List<CfirSymbol<*>> = getOrCreateCachedValue(psiSymbolsCache, psi, create)
 
     fun getOrCreateCallInfo(
         element: PsiElement,

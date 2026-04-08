@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -60,6 +61,7 @@ private val CfirCallableDeclaration.returnTypeRefOrNull: CfirTypeRef?
         is CfirEnumConstructor -> returnTypeRef
         is CfirProperty -> returnTypeRef
         is CfirFieldVariable -> returnTypeRef
+        is CfirPatternBindingVariable -> returnTypeRef
         is CfirPatternVariable -> returnTypeRef
         is CfirVariable -> null
         is CfirFunction -> returnTypeRef

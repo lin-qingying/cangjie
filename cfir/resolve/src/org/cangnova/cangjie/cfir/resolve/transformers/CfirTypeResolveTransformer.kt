@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -182,6 +183,15 @@ class CfirTypeResolveTransformer(
         fieldVariable.transformReturnTypeRef(this, data)
         bumpPhase(fieldVariable)
         return fieldVariable
+    }
+
+    override fun transformPatternBindingVariable(
+        patternBindingVariable: CfirPatternBindingVariable,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirPatternBindingVariable {
+        patternBindingVariable.transformReturnTypeRef(this, data)
+        bumpPhase(patternBindingVariable)
+        return patternBindingVariable
     }
 
     override fun transformPatternVariable(patternVariable: CfirPatternVariable, data: CfirTypeResolutionConfiguration): CfirPatternVariable {

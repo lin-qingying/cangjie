@@ -1,515 +1,449 @@
-# CFIR Diagnostics 对照官方 C++ 语义的测试覆盖缺口
+# CFIR diagnostics 测试覆盖缺口（更新于 2026-04-06）
 
 ## 结论摘要
 
-当前 `cfir/analysis-tests/testData/diagnostics` 一共约 115 个 `.cj` 用例，覆盖重点明显偏向：
+当前 `cfir/analysis-tests/testData/diagnostics` 已经不是“基础语义几乎没测”的状态。
+前一轮补齐后，下列语义已经有了比较明确的回归保护：
 
-- `operator/*`
-- `coverage/extensions/*`
-- `type-mismatch/*`
-- `coverage/imports/*`
-- `coverage/supertypes/*`
-- `coverage/match/*`（目前基本只到穷尽性）
+- `generic-access/*`：裸泛型类型名、上界成员/方法访问失败
+- `initialization/*`：局部变量先用后初始化、类字段未初始化
+- `constructor/*`：构造器 delegation 位置、递归、显式 `super` 要求、构造器歧义
+- `super/*`：`struct` / `enum` / `interface` 中非法 `super`
+- `coverage/inheritance/*`：`class not open`、不可见 override、返回类型不匹配
+- `pattern/*` 与 `coverage/match/*`：基础 pattern 合法性 + 穷尽性
+- `mut/*`：immutable 函数修改字段、调用 `mut` 成员
+- `visibility/*`：`private/protected/internal` 访问矩阵
 
-和 `external/cangjie_compiler` 的 C++ 语义实现相比，当前缺的不是零散一个两个诊断名，而是几整块语义域：
+现在剩下的缺口，主要不再是“这些基础负例完全没有”，而是四类问题：
 
-1. 泛型类型实参缺失、泛型上界成员解析失败
-2. 可见性/访问控制的负例覆盖
-3. 非 `open` 继承、override 返回类型负例
-4. `super/this` 在 struct/enum/constructor 中的非法使用
-5. 构造器规则
-6. 初始化/先用后初始化
-7. 命名参数与调用歧义
-8. match/pattern 的错误语义
-9. immutable/mut 语义
-10. 常量求值的边界错误（尤其 shift/mod）
-
-下面按“本项目已有诊断但没测到”和“官方已有语义但本项目还没形成稳定 coverage”两层来列。
+1. `checker` 框架里已经有诊断名，但 `testData/diagnostics` 还没有直接断言到。
+2. 某些 checker 已经实现，但没有接入 `Common*Checkers` 注册链路。
+3. 一些目录已经有 smoke test，但语义面仍然偏薄，只覆盖了主路径，没覆盖边角分支。
+4. 官方 C++ 里稳定存在的语义域，当前 CFIR 仍未形成对应 producer 或测试目录。
 
 ---
 
-## 对照方法
+## 对照依据
 
-本次对照主要基于三类证据：
+本次结论基于以下仓库内证据：
 
-1. 当前测试面：`cfir/analysis-tests/testData/diagnostics/**/*`
-2. 本项目诊断定义与 producer：
-   - `cfir/checkers/gen/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirErrors.kt`
-   - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/**/*`
-   - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt`
-3. 官方 C++ 语义基线：
-   - `external/cangjie_compiler/include/cangjie/Basic/DiagnosticSema.def`
-   - `external/cangjie_compiler/include/cangjie/Basic/DiagRefactor/DiagnosticSema.def`
-   - `external/cangjie_compiler/src/Sema/**/*`
-
-注意：本项目和官方实现的诊断名不完全一致，下面统一按“语义等价”对齐，而不是按名字生硬一一对应。
-
----
-
-## A. 已有 CFIR 诊断定义，但当前 analysis-tests 没把语义测透
-
-这一组最值得优先补，因为它们说明“项目侧已经承认该语义”，但 `analysis-tests` 还没有把回归保护建起来。
-
-### 1. 泛型类型缺失实参
-
-- 官方语义：
-  - `sema_generic_type_without_type_argument`
-  - 定义位置：`external/cangjie_compiler/include/cangjie/Basic/DiagnosticSema.def:137`
-  - 触发路径示例：
-    - `external/cangjie_compiler/src/Sema/TypeCheckType.cpp:241`
-    - `external/cangjie_compiler/src/Sema/TypeCheckExpr/NameReferenceExpr.cpp:45`
-    - `external/cangjie_compiler/src/Sema/TypeCheckExpr/NameReferenceExpr.cpp:624`
-- 本项目对应语义：
-  - `GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT`
-  - 定义位置：`cfir/checkers/gen/.../CfirErrors.kt:104`
-- 当前状态：
-  - 诊断名已定义，但 `cfir/analysis-tests/testData/diagnostics` 中没有任何 inline 断言命中它。
-  - 这不是小缺口，而是“泛型名在类型位置 / 表达式位置 / 成员访问位置缺实参”整个负例面都没建起来。
-
-建议新增最小语义组：
-
-```cj
-// 建议文件：type-mismatch/genericTypeWithoutArgumentsRich.cj
-class Box<T> {
-    let value: T
-}
-
-func takeBox(v: <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>Box<!>): Unit {}
-
-func useTypePosition(): Unit {
-    let x: <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>Box<!>
-}
-
-func useQualifier(): Unit {
-    let _ = <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>Box<!>.value
-}
-```
-
-说明：这组用例要覆盖三种位置，不要只测变量声明一种，因为官方 C++ 在 type check 和 name reference 两边都会报。
-
-### 2. override 返回类型负例
-
-- 官方语义：
-  - `sema_return_type_invariance`
-  - 定义位置：`external/cangjie_compiler/include/cangjie/Basic/DiagnosticSema.def:239`
-  - producer：`external/cangjie_compiler/src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:1394`
-- 本项目对应语义：
-  - `OVERRIDING_RETURN_TYPE_MISMATCH`
-  - producer：`cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirOverrideChecker.kt:132`
-- 当前状态：
-  - 只有正例：`cfir/analysis-tests/testData/diagnostics/coverage/inheritance/overrideReturnType.cj`
-  - 没有任何负例断言。
-
-建议新增：
-
-```cj
-// 建议文件：coverage/inheritance/overrideReturnTypeMismatchRich.cj
-open class Base {}
-class Derived <: Base {}
-
-open class Parent {
-    open func value(): Derived {
-        return Derived()
-    }
-}
-
-class Child <: Parent {
-    <!OVERRIDING_RETURN_TYPE_MISMATCH!>override func value(): Base<!> {
-        return Base()
-    }
-}
-```
-
-说明：现在的 suite 只证明“协变成功”，没有证明“不协变时会稳定失败”。
-
-### 3. struct / enum 中非法 `super`
-
-- 官方语义：
-  - `sema_use_super_in_interface`
-  - `sema_super_use_error_inside_non_class`
-  - 定义位置：
-    - `external/cangjie_compiler/include/cangjie/Basic/DiagnosticSema.def:199`
-    - `external/cangjie_compiler/include/cangjie/Basic/DiagnosticSema.def:200`
-- 本项目对应语义：
-  - `STRUCT_SUPER_NOT_ALLOWED`
-  - `ENUM_SUPER_NOT_ALLOWED`
-  - producer：
-    - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirIllegalSuperReferenceChecker.kt:33`
-    - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirIllegalSuperReferenceChecker.kt:38`
-- 当前状态：
-  - 现在只有 `super/repeated_inheritance.cj` 覆盖了 `INTERFACE_SUPER_NOT_ALLOWED`
-  - struct / enum 两条 producer 都没有真正 inline 断言。
-
-建议新增：
-
-```cj
-// 建议文件：super/illegalSuperInStructAndEnum.cj
-struct S {
-    func f(): Unit {
-        <!STRUCT_SUPER_NOT_ALLOWED!>super<!>.toString()
-    }
-}
-
-enum E {
-    | A
-
-    func f(): Unit {
-        <!ENUM_SUPER_NOT_ALLOWED!>super<!>.toString()
-    }
-}
-```
-
-说明：这里不能再复用 interface 场景，因为 producer 是分支独立实现。
-
-### 4. `extend` 到 C/Java 边界类型
-
-- 官方语义：
-  - `sema_c_type_cannot_extend_interface`
-  - `sema_extend_a_java_type`
-  - 定义位置：
-    - `external/cangjie_compiler/include/cangjie/Basic/DiagRefactor/DiagnosticSema.def:156`
-    - `external/cangjie_compiler/include/cangjie/Basic/DiagRefactor/DiagnosticSema.def:213`
-- 本项目对应语义：
-  - `EXTEND_C_TYPE_NOT_ALLOWED`
-  - producer：`cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirExtendCheckers.kt:50`
-- 当前状态：
-  - 已有占位文件：`cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendCTypeNotAllowed.cj`
-  - 但文件里明确写的是 TODO，实际没有 inline 诊断断言。
-
-建议把占位文件升级为真覆盖：
-
-```cj
-// 建议直接补现有文件：coverage/extensions/extendCTypeNotAllowed.cj
-@C
-class NativeBox {}
-
-interface Printable {}
-
-extend <!EXTEND_C_TYPE_NOT_ALLOWED!>NativeBox<!> <: Printable {}
-```
-
-说明：这是最明确的“文件已经在，但 coverage 还没真的落地”。
-
-### 5. 已声明但尚未形成 producer 的语义型诊断
-
-这一组要特别标出来，因为它们不是“单纯没写测试”，而是“定义已存在，但在 `cfir/checkers` 下看不到真正 reporter 使用点”，因此后续应先补语义 producer，再补 analysis-tests。
-
-涉及的典型诊断：
-
-- `GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT`
-- `INVISIBLE_MEMBER`
-- `INVISIBLE_REFERENCE`
-- `CANNOT_OVERRIDE_INVISIBLE_MEMBER`
-- `CLASS_NOT_OPEN_FOR_INHERITANCE`
-
-其中：
-
-- `OVERRIDING_RETURN_TYPE_MISMATCH`、`STRUCT_SUPER_NOT_ALLOWED`、`ENUM_SUPER_NOT_ALLOWED` 已经有 producer，只是没测透。
-- 上面这五个更偏“诊断名已注册，但当前 `cfir/checkers/src` 中还没有对等 producer”。
-
-这意味着：
-
-1. 这些点依然应该进入 coverage 清单
-2. 但它们不能只靠补 `.cj` 文件解决，必须连 producer 一起补
+- 测试数据：`cfir/analysis-tests/testData/diagnostics/**/*`
+- 诊断定义：`cfir/checkers/gen/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirErrors.kt`
+- 声明/表达式 checker 注册：
+  - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonDeclarationCheckers.kt`
+  - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonExpressionCheckers.kt`
+  - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonTypeCheckers.kt`
+- 默认 session 注册入口：
+  - `cfir/entrypoint/src/org/cangnova/cangjie/cfir/entrypoint/checkers/CheckersContainers.kt`
+  - `tests/test-infrastructure/testFixtures/org/cangnova/cangjie/test/frontend/CfirFrontendFacade.kt`
+- 官方语义基线：
+  - `external/cangjie_compiler/include/cangjie/Basic/DiagnosticSema.def`
+  - `external/cangjie_compiler/include/cangjie/Basic/DiagRefactor/DiagnosticSema.def`
 
 ---
 
-## B. 官方 C++ 已有稳定语义，但当前 CFIR analysis-tests 仍是块级空白
-
-这一组不一定已经有同名 CFIR 诊断；有些甚至说明本项目前端诊断实现还没长到这个阶段。但从“对齐官方语义”的角度，这些测试迟早都要补。
-
-### 6. 构造器规则整块缺失
-
-官方语义至少包括：
-
-- `sema_no_match_constructor`：`DiagnosticSema.def:88`
-- `sema_ambiguous_constructor_match`：`DiagnosticSema.def:91`
-- `sema_recursive_constructor_call`：`DiagRefactor/DiagnosticSema.def:46`
-- `sema_no_non_param_constructor_in_super_class`：`DiagRefactor/DiagnosticSema.def:135`
-- `sema_invalid_this_call_outside_ctor`：`DiagnosticSema.def:208`
-- `sema_illegal_place_of_calling_this_or_super`：`DiagnosticSema.def:217`
-
-当前 suite 的实际情况：
-
-- `enum/errorSimpleEnum.cj` 只零散打到 `NO_CONSTRUCTOR`
-- 没有把“构造器调用规则”当作一个语义域来覆盖
-
-建议最少拆成三份：
-
-```cj
-// constructor/noMatchingConstructorRich.cj
-class Box {
-    init(v: Int64) {}
-}
-
-func f(): Unit {
-    let _ = <!NO_CONSTRUCTOR 或官方对应语义诊断!>Box()<!>
-}
-```
-
-```cj
-// constructor/superCallPlacementRich.cj
-open class Base {
-    init(v: Int64) {}
-}
-
-class Child <: Base {
-    init() {
-        let x = 1
-        <!官方 sema_illegal_place_of_calling_this_or_super 对应语义!>super(1)<!>
-    }
-}
-```
-
-```cj
-// constructor/recursiveThisCallRich.cj
-class Loop {
-    init() {
-        <!官方 sema_recursive_constructor_call 对应语义!>this()<!>
-    }
-}
-```
-
-说明：构造器是官方诊断大户，但当前 `analysis-tests` 里没有形成单独目录。
-
-### 7. 初始化与先用后初始化
-
-官方语义：
-
-- `sema_used_before_initialization`：`DiagnosticSema.def:24`
-- `sema_class_uninitialized_field`：`DiagnosticSema.def:186`
-
-当前 suite：
-
-- 没有 `initialization/*`
-- 没有“字段未初始化”“局部先用后赋值”“构造阶段成员访问早于初始化完成”等用例面
-
-建议：
-
-```cj
-// initialization/usedBeforeInitializationRich.cj
-func f(): Int64 {
-    let v: Int64
-    return <!官方 sema_used_before_initialization 对应语义!>v<!>
-}
-```
-
-```cj
-// initialization/classFieldNotInitializedRich.cj
-class Holder {
-    let value: Int64
-
-    init() {
-    }
-}
-```
-
-说明：这是语义正确性的硬约束，不是锦上添花。
-
-### 8. 命名参数与调用歧义
-
-官方语义：
-
-- `sema_unknown_named_argument`：`DiagnosticSema.def:100`
-- `sema_multiple_named_argument`：`DiagnosticSema.def:101`
-- `sema_invalid_named_arguments`：`DiagnosticSema.def:102`
-- `sema_unsupport_named_argument`：`DiagnosticSema.def:103`
-- `sema_unordered_arguments`：`DiagRefactor/DiagnosticSema.def:33`
-- `sema_param_named_mismatched`：`DiagRefactor/DiagnosticSema.def:34`
-- 以及函数/构造器歧义：`sema_ambiguous_match`、`sema_ambiguous_constructor_match`
-
-当前 suite：
-
-- 主要还是 `ARGUMENT_TYPE_MISMATCH`
-- 几乎没有“参数绑定层”的负例
-
-建议：
-
-```cj
-// call/namedArgumentsRich.cj
-func foo(a: Int64, b: Int64): Unit {}
-
-func test(): Unit {
-    <!官方 sema_unknown_named_argument 对应语义!>foo(c: 1, b: 2)<!>
-    <!官方 sema_multiple_named_argument 对应语义!>foo(a: 1, a: 2)<!>
-    <!官方 sema_unordered_arguments 对应语义!>foo(a: 1, 2)<!>
-}
-```
-
-说明：这一块如果不补，后续 call resolver 调整很容易回归到“仍有 TYPE_MISMATCH，但参数绑定已经错了”的状态。
-
-### 9. 泛型上界成员访问失败
-
-官方语义：
-
-- `sema_generic_no_member_match_in_upper_bounds`
-- `sema_generic_no_method_match_in_upper_bounds`
-- producer：
-  - `external/cangjie_compiler/src/Sema/TypeCheckExpr/NameReferenceExpr.cpp:772`
-  - `external/cangjie_compiler/src/Sema/TypeCheckCall.cpp:2594`
-
-当前 suite：
-
-- 只有正例：`type-mismatch/whereUpperBoundMemberAccess.cj`
-- 没有任何负例验证“上界里找不到成员/方法时如何报”
-
-建议：
-
-```cj
-// type-mismatch/whereUpperBoundMemberAccessNegative.cj
-interface Named {
-    func name(): String
-}
-
-func badField<T>(value: T): Int64 where T <: Named {
-    return <!官方 generic_no_member_match_in_upper_bounds 对应语义!>value.id<!>
-}
-
-func badCall<T>(value: T): Unit where T <: Named {
-    <!官方 generic_no_method_match_in_upper_bounds 对应语义!>value.reset()<!>
-}
-```
-
-说明：这和普通 `UNRESOLVED_REFERENCE` 不是一回事；官方是把它当成“约束环境内的成员解析失败”单独建模的。
-
-### 10. match / pattern 错误语义仍然太薄
-
-官方语义：
-
-- `sema_tuple_pattern_not_match`：`DiagnosticSema.def:63`
-- `sema_pattern_not_match`：`DiagnosticSema.def:105`
-- `sema_not_overload_in_match`：`DiagnosticSema.def:106`
-- `sema_enum_pattern_param_size_error`：`DiagnosticSema.def:112`
-- `sema_match_case_has_no_type`：`DiagnosticSema.def:116`
-
-当前 suite：
-
-- 只有 `coverage/match/nonExhaustiveMatchRich.cj`
-- 以及 `coverage/match/booleanExhaustiveness.cj`
-
-建议：
-
-```cj
-// match/patternErrorsRich.cj
-enum Option<T> {
-    | Some(T)
-    | None
-}
-
-func test(v: Option<Int64>): Int64 {
-    match (v) {
-        case Some() => 1 // 官方：enum pattern 参数个数错误
-        case (a, b) => 2 // 官方：tuple pattern not match
-        case 1 => 3      // 官方：pattern not match
-    }
-}
-```
-
-说明：当前 coverage 只测“是不是穷尽”，没有测“pattern 自身是否合法”。
-
-### 11. immutable / mut 语义缺口
-
-官方语义：
-
-- `sema_cannot_modify_var`：`DiagnosticSema.def:235`
-- `sema_incompatible_mut_modifier_between_struct_and_interface`：`DiagnosticSema.def:273`
-- `sema_immutable_function_cannot_access_mutable_function`：`DiagnosticSema.def:275`
-
-当前 suite：
-
-- 已覆盖的是 extend 体系下的 `extendImmutableMutInterface.cj`、`extendImmutableMemberRestriction.cj`
-- 没覆盖对象方法/属性层面的 immutable 规则
-
-建议：
-
-```cj
-// mut/immutableFunctionRulesRich.cj
-struct Counter {
-    var value: Int64 = 0
-
-    mut func inc(): Unit {
-        value = value + 1
-    }
-
-    func readOnly(): Unit {
-        <!官方 sema_immutable_function_cannot_access_mutable_function 对应语义!>inc()<!>
-        <!官方 sema_cannot_modify_var 对应语义!>value = 1<!>
-    }
-}
-```
-
-说明：extend 语义和成员函数语义不是一层规则，不能互相替代。
-
-### 12. 常量求值边界：`mod` / shift 计数
-
-官方语义：
-
-- `sema_mod_zero`：`DiagnosticSema.def:43`
-- `sema_shift_count_overflow`：`DiagnosticSema.def:45`
-- `sema_negative_shift_count`：`DiagnosticSema.def:46`
-
-当前 suite：
-
-- 只有：
-  - `const-eval/constEvalDivideByZero.cj`
-  - `const-eval/constEvalArithmeticOverflow.cj`
-- `mod by zero`、`负 shift`、`过大 shift` 都没有
-
-建议：
-
-```cj
-// const-eval/constEvalShiftAndModRich.cj
-const let a = <!官方 sema_mod_zero 对应语义!>5 % 0<!>
-const let b = <!官方 sema_negative_shift_count 对应语义!>1 << -1<!>
-const let c = <!官方 sema_shift_count_overflow 对应语义!>1 << 999999<!>
-```
-
-说明：这类边界值最容易在常量折叠和解释器实现重构时掉回归。
+## 一、各种检查视角：总体覆盖现状与全局缺口
+
+### 1. 当前目录分布明显不均衡
+
+截至本次盘点，`testData/diagnostics` 下共有 `135` 个 `.cj` 文件。
+其中最集中的目录是：
+
+- `coverage/*`：42
+- `operator/*`：26
+- `type-mismatch/*`：17
+
+而明显偏薄的目录是：
+
+- `call/*`：1
+- `constructor/*`：2
+- `pattern/*`：1
+- `mut/*`：1
+- `generic-access/*`：2
+- `interop/*`：1
+- `effects/*`：2
+- `coverage/invalid/*`：0
+
+这说明当前 suite 的重心仍然偏在“基础解析 + operator + extend + 基础 type mismatch”上，真正偏薄的是：
+
+- 调用绑定与歧义
+- 声明状态分支
+- effect handler 边角语义
+- interop 全域语义
+- range / jump / throw / try / catch 语义
+- invalid declaration 语义
+
+### 2. 从 `CfirErrors` 总表看，仍有 13 个诊断没有被直接 inline 断言
+
+当前 `CfirErrors.kt` 共定义 `103` 个诊断，`testData/diagnostics` 里直接断言到了 `90` 个，尚未直接断言到的有：
+
+- `BUILDER_INFERENCE_MULTI_LAMBDA_RESTRICTION`
+- `DEPRECATED_MODIFIER_CONTAINING_DECLARATION`
+- `DEPRECATED_MODIFIER_FOR_TARGET`
+- `DEPRECATED_MODIFIER_PAIR`
+- `EXTEND_IMMUTABLE_INDEX_ASSIGNMENT`
+- `INFERRED_TYPE_VARIABLE_INTO_EMPTY_INTERSECTION`
+- `INFERRED_TYPE_VARIABLE_INTO_POSSIBLE_EMPTY_INTERSECTION`
+- `MISMATCHING_HANDLE_BLOCK`
+- `MUT_ONLY_ON_FUNCTION`
+- `NEW_INFERENCE_ERROR`
+- `NO_CONSTRUCTOR`
+- `STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE`
+
+这 13 个里，真正值得优先关注的是三组：
+
+- 声明状态与构造器：`DEPRECATED_MODIFIER_*`、`DEPRECATED_MODIFIER_PAIR`、`NO_CONSTRUCTOR`、`MUT_ONLY_ON_FUNCTION`、`STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE`
+- effect 语义：`MISMATCHING_HANDLE_BLOCK`
+- 推断语义：`NEW_INFERENCE_ERROR`、`BUILDER_INFERENCE_MULTI_LAMBDA_RESTRICTION`、`INFERRED_TYPE_VARIABLE_INTO_*`
+
+说明：
+`TYPE_INFERENCE_ONLY_INPUT_TYPES_ERROR` 目前保留在框架模型里，但已明确不作为当前仓颉 first-party 语义检查的一部分推进。
+原因是官方仓颉实现与公开文档都没有提供类型参数注解入口的证据，因此当前不应继续为它补 producer 或回归。
+
+### 3. 框架级空白比“单个用例缺失”更值得优先处理
+
+有两类缺口不是补一个 `.cj` 文件就能解决的：
+
+- `CommonDeclarationCheckers.memberDeclarationCheckers` 当前为空。
+  - 结果：`CfirStaticModifierCompatibilityChecker`、`CfirMutModifierApplicabilityChecker` 虽然已经实现，但默认 diagnostics 流水线不会执行。
+  - 直接受影响诊断：`STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE`、`MUT_ONLY_ON_FUNCTION`
+- `coverage/invalid/` 目录为空，`CommonDeclarationCheckers.invalidDeclarationCheckers` 也为空。
+  - 这意味着 invalid declaration 这条链路当前既没有 checker 注册，也没有测试目录承接。
+
+除此之外，还有两条“各种检查”层面的结构性空白：
+
+- `CommonTypeCheckers` 当前只有 `CfirTypeProjectionModifierChecker` 一条规则。
+  - 但 `testData/diagnostics` 中没有专门承接 type projection / type-ref modifier 语义的目录或回归样例。
+  - 这意味着类型引用层的 modifier compatibility 目前没有显式的名称级保护。
+- `CommonLanguageVersionSettingsCheckers` 当前为空。
+  - 语言版本开关相关的语义当前没有 checker 层建模，也没有独立的 diagnostics 回归目录。
+
+### 4. 官方 C++ 已有但当前 CFIR 仍未进入测试面的整块语义
+
+按官方语义基线对照，当前仍明显缺块级覆盖的包括：
+
+- `inout`
+- `common/specific`
+- `mock`
+- Java / ObjC / 更完整的 FFI interop
+- `range`
+- `throw/catch`
+- `jump`（`break` / `continue` 非法使用）
+- 更细粒度的 effect handler 语义
+
+其中前四类在 `docs/diagnostics-gap-vs-official-cpp-sema-status-2026-04-06.md` 中已经被明确标记为后置项；后四类则已经到了可以进入 `analysis-tests` 目录建回归的阶段。
 
 ---
 
-## 优先级建议
+## 二、声明检查视角：当前还缺什么
 
-如果按“最小成本、最大收益”的顺序补，我建议是：
+### 1. `CfirModifierChecker` 只测到了“错误/冗余/重复”，没测到“弃用分支”
 
-1. 先补已有 producer 但没测试的：
-   - `OVERRIDING_RETURN_TYPE_MISMATCH`
-   - `STRUCT_SUPER_NOT_ALLOWED`
-   - `ENUM_SUPER_NOT_ALLOWED`
-   - `EXTEND_C_TYPE_NOT_ALLOWED`
-2. 再补已有诊断定义但 producer 未落地的：
-   - `GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT`
-   - `INVISIBLE_MEMBER`
-   - `INVISIBLE_REFERENCE`
-   - `CLASS_NOT_OPEN_FOR_INHERITANCE`
-   - `CANNOT_OVERRIDE_INVISIBLE_MEMBER`
-3. 最后补官方语义整块空白：
-   - constructor
-   - initialization
-   - named arguments / ambiguity
-   - pattern errors
-   - immutable rules
-   - const-eval 边界
+已有覆盖：
+
+- `WRONG_MODIFIER_TARGET`
+- `WRONG_MODIFIER_CONTAINING_DECLARATION`
+- `REDUNDANT_MODIFIER`
+- `REDUNDANT_MODIFIER_FOR_TARGET`
+- `REPEATED_MODIFIER`
+- `OVERRIDE_STATIC_ERROR`
+- `REDEF_INSTANCE_ERROR`
+
+仍缺的直接断言：
+
+- `DEPRECATED_MODIFIER_FOR_TARGET`
+- `DEPRECATED_MODIFIER_CONTAINING_DECLARATION`
+- `DEPRECATED_MODIFIER_PAIR`
+
+也就是说，当前 `coverage/declaration-status/modifierCheckerRich.cj` 主要覆盖的是“非法”和“冗余”，还没有把“语义仍允许但已经弃用”的分支拉起来。
+
+### 2. 构造器语义已有主路径，但缺直接 `NO_CONSTRUCTOR` 负例
+
+当前 `constructor/*` 已经覆盖：
+
+- `EXPLICIT_SUPER_CALL_REQUIRED`
+- `ILLEGAL_THIS_OR_SUPER_CALL`
+- `RECURSIVE_CONSTRUCTOR_CALL`
+- `AMBIGUOUS_CONSTRUCTOR_CALL`
+- `NO_VALUE_FOR_PARAMETER`
+
+但 `CfirConstructorDelegationChecker` 里真正的 `NO_CONSTRUCTOR` 分支还没有被直接 inline 断言。
+
+这会留下一个回归空窗：
+
+- `this(...)` 找不到同类构造器
+- `super(...)` 找不到父类匹配构造器
+
+当前 suite 里构造器错误更偏向“参数数目不对”和“歧义”，缺真正的“无可选构造器”负例。
+
+### 3. `memberDeclarationCheckers` 里两条声明状态规则实现了，但默认根本没跑
+
+受影响 checker：
+
+- `CfirStaticModifierCompatibilityChecker`
+- `CfirMutModifierApplicabilityChecker`
+
+原因：
+
+- `CommonDeclarationCheckers.memberDeclarationCheckers` 当前返回 `emptySet()`
+
+结果：
+
+- `STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE` 不会出现在默认 diagnostics 中
+- `MUT_ONLY_ON_FUNCTION` 不会出现在默认 diagnostics 中
+
+这不是“缺测试文件”，而是“注册链路没接上”。在这个问题解决之前，补 `.cj` 也不会生效。
+
+### 4. `extend` 不可变分支仍有一条诊断没有闭环
+
+当前 `coverage/extensions/*` 已经把以下 extend 语义测得比较深：
+
+- 目标合法性
+- 接口合法性
+- duplicate interface
+- orphan rule
+- generic usage
+- immutable `mut prop`
+- specialization conflict
+- default implementation conflict
+- C type 边界
+
+但 `EXTEND_IMMUTABLE_INDEX_ASSIGNMENT` 还没有测试断言。
+
+这里要特别说明：这条诊断不是单纯“漏写了用例”。
+当前 `CfirExtendSemanticsSupport.isImmutableTarget()` 只把 `enum` 视为 immutable，而 `isImmutableNonEnumTarget()` 又显式排除了 `enum`，因此 `CfirExtendImmutableMemberChecker` 的 index-assignment 分支在现有语义下事实上不可达。
+
+结论：
+
+- 这条不是“先补测试”的问题。
+- 应先收敛 extend immutable 语义设计，再决定是否保留该诊断和如何构造可触发用例。
+
+### 5. 初始化检查已有核心覆盖，但还缺更完整的生命周期场景
+
+当前已覆盖：
+
+- `USED_BEFORE_INITIALIZATION`
+- `CLASS_UNINITIALIZED_FIELD`
+
+还缺的生命周期语义：
+
+- 全局 / static 初始化顺序导致的 used-before-init
+- `try/catch/finally`、循环、多分支 merge 下的初始化状态回归
+- 构造器中更复杂的字段流分析
+
+当前 `initialization/*` 更偏“核心冒烟”，还不是“生命周期语义矩阵”。
+
+### 6. 声明 checker 扩展点里仍有整排空位
+
+在 `CommonDeclarationCheckers` 中，以下扩展点当前没有任何具体 checker：
+
+- `invalidDeclarationCheckers`
+- `callableDeclarationCheckers`
+- `memberDeclarationCheckers`
+- `propertyCheckers`
+- `typeAliasCheckers`
+- `valueParameterCheckers`
+- `mainFunctionCheckers`
+- `anonymousFunctionCheckers`
+- `enumConstructorCheckers`
+
+这意味着这些声明种类的语义，要么仍依赖 resolver/cone 诊断兜底，要么根本还没进入 checker 层建模。
+
+---
+
+## 三、表达式检查视角：当前还缺什么
+
+### 1. `call/*` 只有一份文件，调用绑定语义明显偏薄
+
+当前 `call/namedArgumentsAndArityRich.cj` 已覆盖：
+
+- `NO_VALUE_FOR_PARAMETER`
+- `TOO_MANY_ARGUMENTS`
+- `NAMED_ARGUMENTS_NOT_ALLOWED`
+- `NAMED_PARAMETER_NOT_FOUND`
+- `ARGUMENT_PASSED_TWICE`
+- `MIXING_NAMED_AND_POSITIONAL_ARGUMENTS`
+- `NEED_NAMED_ARGUMENT`
+
+但对照官方语义，仍明显缺：
+
+- `sema_ambiguous_match`：普通函数调用歧义
+- `sema_ambiguous_func_ref`：函数引用歧义
+- `sema_param_named_mismatched`：参数名不匹配
+
+也就是说，当前 `call/*` 还主要是“参数绑定错误”，没有真正覆盖“候选选择/引用绑定”的分支。
+
+### 2. const-eval 只覆盖到 `+ - * / %` 的一部分，shift/range 边界仍空白
+
+当前 `CfirConstEvalArithmeticChecker` 只处理：
+
+- `+`
+- `-`
+- `*`
+- `/`
+- `%`
+
+当前 suite 已覆盖：
+
+- `CONST_EVAL_DIVIDE_BY_ZERO`
+- `CONST_EVAL_ARITHMETIC_OVERFLOW`
+
+仍缺的官方常量边界语义：
+
+- `sema_mod_zero`
+- `sema_shift_count_overflow`
+- `sema_negative_shift_count`
+
+这说明这里不只是测试缺失，还是实现面尚未长到 shift 语义。
+
+### 3. pattern legality 已有基础覆盖，但还没进入“高级错误语义”
+
+当前 `pattern/patternLegalityRich.cj` 已覆盖：
+
+- `TUPLE_PATTERN_NOT_MATCH`
+- `PATTERN_NOT_MATCH`
+- `ENUM_PATTERN_PARAM_SIZE_ERROR`
+
+仍缺的官方 pattern 语义：
+
+- `sema_not_overload_in_match`
+- `sema_match_case_has_no_type`
+
+加上 `coverage/match/*` 目前主要还是穷尽性，因此 match/pattern 域整体仍然偏“基础合法性 + 穷尽性”，还没把错误语义的深层分支补齐。
+
+### 4. effect handlers 已有 smoke coverage，但缺完整语义矩阵
+
+当前 `effects/*` 已覆盖：
+
+- `EFFECTS_FEATURE_DISABLED`
+- `COMMAND_INCOMPATIBLE_TYPE`
+- `COMMAND_HANDLE_TYPE_ERROR`
+- `IMPLICIT_RESUME_OUTSIDE_HANDLER`
+- `RESUME_NO_WITH`
+- `RESUME_THROWING_MISMATCH_TYPE`
+
+仍缺的直接断言或完整语义：
+
+- `MISMATCHING_HANDLE_BLOCK`
+- `sema_resumption_handle_type_error`
+- `sema_resumption_incorrect_return_type`
+- `sema_command_resumption_mismatch`
+- `sema_resume_wrong_resumption_type`
+- `sema_return_in_try_handle_block`
+
+其中 `MISMATCHING_HANDLE_BLOCK` 已经映射进 `CfirErrors`，但当前 `effectsSemanticsRich.cj` 里只有示例函数，没有 inline 断言；其余几项则还看不到对应 producer 或稳定用例。
+
+### 5. 推断诊断已经接入映射，但 suite 还没有直接保护
+
+`coneDiagnosticToCfirDiagnostic.kt` 当前已经映射了这些推断诊断：
+
+- `NEW_INFERENCE_ERROR`
+- `BUILDER_INFERENCE_MULTI_LAMBDA_RESTRICTION`
+- `INFERRED_TYPE_VARIABLE_INTO_EMPTY_INTERSECTION`
+- `INFERRED_TYPE_VARIABLE_INTO_POSSIBLE_EMPTY_INTERSECTION`
+
+但 `testData/diagnostics` 里没有任何直接 inline 断言。
+其中 `TYPE_INFERENCE_ONLY_INPUT_TYPES_ERROR` 已降为保留模型，不再纳入当前批次的直接覆盖目标。
+
+这会导致一个问题：
+
+- 当前 `type-mismatch/*` 虽然很多，但更偏最终表象诊断
+- 一旦后续约束求解器、intersection 归约或 builder inference 行为变化，缺少“内部推断诊断名称级”的回归保护
+
+### 6. 表达式 checker 扩展点仍有大面积空白
+
+`CommonExpressionCheckers` 当前没有具体实现的扩展点包括：
+
+- `namedAccessCheckers`
+- `binaryOpCheckers`
+- `comparisonExpressionCheckers`
+- `typeOperatorCheckers`
+- `tryExpressionCheckers`
+- `throwExpressionCheckers`
+- `jumpExpressionCheckers`
+- `rangeExpressionCheckers`
+- `subscriptExpressionCheckers`
+- `errorExpressionCheckers`
+
+需要注意：
+
+- `operator/*`、`subscript*` 等目录并不是完全没测。
+- 但它们目前主要依赖 resolver / cone 诊断，而不是 expression checker 层的稳定回归。
+
+换句话说，当前 suite 对“表达式语义结果”有覆盖，但对“表达式 checker 分层”覆盖仍不均匀。
+
+### 7. 官方已有、当前目录仍明显缺席的表达式语义
+
+按官方 `DiagnosticSema.def` / `DiagRefactor/DiagnosticSema.def` 对照，当前 `testData/diagnostics` 里还没有形成完整覆盖的表达式语义包括：
+
+- `sema_invalid_loop_control`
+- `sema_step_non_zero_range`
+- `sema_inconsistency_range_elemType`
+- `sema_range_step_not_int64`
+- `sema_throw_expr_with_wrong_type`
+- `sema_except_catch_type_error`
+
+这几项分别对应：
+
+- `jumpExpressionCheckers`
+- `rangeExpressionCheckers`
+- `throwExpressionCheckers`
+- `tryExpressionCheckers`
+
+而这些扩展点当前正好也都还是空的。
+
+---
+
+## 四、建议的补齐顺序
+
+如果按照“框架优先、收益最大”的顺序推进，建议分三批做：
+
+### 第一批：先补注册链路与可直接落地的缺口
+
+- 接上 `memberDeclarationCheckers`，让以下规则真正生效：
+  - `CfirStaticModifierCompatibilityChecker`
+  - `CfirMutModifierApplicabilityChecker`
+- 新增直接断言用例：
+  - `NO_CONSTRUCTOR`
+  - `DEPRECATED_MODIFIER_FOR_TARGET`
+  - `DEPRECATED_MODIFIER_CONTAINING_DECLARATION`
+  - `DEPRECATED_MODIFIER_PAIR`
+  - `MISMATCHING_HANDLE_BLOCK`
+
+### 第二批：补薄弱但已进入实现面的语义域
+
+- `call/*`：普通调用歧义、函数引用歧义、参数名不匹配
+- `pattern/*`：`not overload in match`、`match case has no type`
+- `const-eval/*`：`mod zero`、negative shift、shift overflow
+- `initialization/*`：更复杂的生命周期流分析场景
+
+### 第三批：新建目录承接还没正式进场的官方语义
+
+- `jump/`
+- `range/`
+- `throw/`
+- `try/`
+- `effects/advanced/` 或继续扩展 `effects/*`
+- `interop/advanced/`
+- `common-specific/`
+- `mock/`
+- `inout/`
 
 ---
 
 ## 最终判断
 
-从“对齐官方 C++ 语义”的角度看，当前 `cfir/analysis-tests/testData/diagnostics` 已经不再是“没有测试”，而是“覆盖重心偏在基础算子、extend 规则、基础 type mismatch 上”；真正缺的是：
+当前 `cfir/analysis-tests/testData/diagnostics` 的主要问题，已经不是“完全没有语义测试”，而是：
 
-- 诊断层级更高的 call/constructor 语义
-- 初始化与对象生命周期语义
-- 模式匹配错误语义
-- 泛型约束环境下的成员解析语义
-- 可见性与 immutable 的负例语义
+- 回归点很多，但分布不均
+- checker 层与 resolver 层覆盖不平衡
+- 声明状态和 effect/推断边角诊断还没被名称级保护
+- 一些官方稳定语义域仍未进入 CFIR 测试目录
 
-如果后续要系统补齐，不建议继续零散加单文件；更合理的做法是按语义域新建目录：
+因此，后续不建议继续只按“哪里红了补哪里”的方式零散加文件。
+更合理的策略是同时维护两条清单：
 
-- `constructor/`
-- `initialization/`
-- `call/`
-- `match/`
-- `mut/`
-- `generic-access/`
+- `checker` 清单：看哪些诊断名还没被直接断言
+- 语义域清单：看哪些官方语义域还没有独立目录和回归矩阵
 
-这样才能把当前“覆盖有点多，但面仍然不均匀”的问题真正纠正掉。
+只有两条线同时推进，`diagnostics` 目录才会从“有很多用例”真正进化成“语义覆盖结构完整”。

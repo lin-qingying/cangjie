@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
+import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.lexer.cdoc.psi.CDoc
@@ -15,13 +16,45 @@ internal fun CaCfirSession.renderDocumentation(symbol: CaSymbol): String? {
     val documentationKey = symbol.publicSymbolCacheKeyOrNull() ?: return null
 
     return getOrCreateDocumentation(documentationKey) {
-        when (symbol) {
-            is CaCfirDeclarationBackedSymbol<*> ->
-                (symbol.psi as? CjDeclaration)?.docComment?.renderDocumentationText()
-
-            else -> null
-        }
+        findDocumentedDeclaration(symbol)
+            ?.docComment
+            ?.renderDocumentationText()
     }
+}
+
+/**
+ * 统一把公开 symbol 恢复为“真正承载 CDoc 的声明 PSI”。
+ *
+ * 这里不把文档读取绑定到某一种 symbol 实现细节上，而是按以下顺序恢复：
+ * 1. 声明背后的 source PSI；
+ * 2. 原始元素 / 导航元素；
+ * 3. 仍然找不到时返回 null。
+ *
+ * 这样后续 light declaration、decompiled source view 或其他 symbol 入口
+ * 接入文档能力时，不需要再重新发明一套恢复协议。
+ */
+private fun CaCfirSession.findDocumentedDeclaration(symbol: CaSymbol): CjDeclaration? {
+    val sourcePsi = when (symbol) {
+        is CaCfirDeclarationBackedSymbol<*> -> symbol.psi
+        is CaCfirBackedSymbol<*> -> lookupSourcePsi(symbol.backingSymbol)
+        else -> null
+    } ?: return null
+
+    return sourcePsi.asDocumentedDeclaration()
+}
+
+/**
+ * 从 source/original/navigation 三种视图中恢复真正的声明节点。
+ */
+private fun Any?.asDocumentedDeclaration(): CjDeclaration? {
+    val element = this as? PsiElement ?: return null
+    return sequenceOf(
+        element,
+        element.originalElement,
+        element.navigationElement,
+    )
+        .filterIsInstance<CjDeclaration>()
+        .firstOrNull()
 }
 
 /**

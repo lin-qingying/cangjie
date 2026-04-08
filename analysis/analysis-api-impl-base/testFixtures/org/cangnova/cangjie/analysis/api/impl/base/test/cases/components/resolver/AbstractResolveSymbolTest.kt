@@ -6,6 +6,7 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.expectedCallableName
 import org.cangnova.cangjie.analysis.api.impl.base.test.targetCallText
 import org.cangnova.cangjie.analysis.api.impl.base.test.targetNameText
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjFile
@@ -36,8 +37,8 @@ abstract class AbstractResolveSymbolTest : AbstractAnalysisApiComponentTest() {
             assertNotNull(resolvedFromName, "simple-name 没有解析到符号。")
             assertTrue(resolvedFromCall is CaCallableSymbol, "调用表达式应解析为 callable 符号。")
             assertTrue(resolvedFromName is CaCallableSymbol, "simple-name 应解析为 callable 符号。")
-            assertEquals(directives.expectedCallableName, (resolvedFromCall as CaCallableSymbol).name)
-            assertEquals(directives.expectedCallableName, (resolvedFromName as CaCallableSymbol).name)
+            assertEquals(directives.expectedCallableName, (resolvedFromCall as CaCallableSymbol).name?.asString())
+            assertEquals(directives.expectedCallableName, (resolvedFromName as CaCallableSymbol).name?.asString())
             assertEquals(
                 resolvedFromCall.callableId,
                 (resolvedFromName as CaCallableSymbol).callableId,

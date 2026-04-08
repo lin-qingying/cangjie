@@ -30,6 +30,7 @@ dependencies {
     testFixturesApi(project(":analysis:analysis-api"))
     testFixturesApi(project(":psi"))
     testFixturesApi(testFixtures(project(":analysis:analysis-test-framework")))
+    testFixturesImplementation(project(":analysis:cj-references"))
     testFixturesApi(libs.junit.jupiter)
     testFixturesRuntimeOnly(libs.junit.platform.launcher)
 }

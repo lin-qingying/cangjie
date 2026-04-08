@@ -30,6 +30,8 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementType
 import com.intellij.extapi.psi.StubBasedPsiElementBase
 import com.intellij.lang.ASTNode
 import com.intellij.lang.Language
+import com.intellij.model.psi.PsiSymbolDeclaration
+import com.intellij.model.psi.PsiSymbolReference
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiReference
 import com.intellij.psi.StubBasedPsiElement
@@ -59,10 +61,15 @@ open class CjElementImplStub<T : StubElement<*>> :
     }
 
     override fun getReferences(): Array<PsiReference> {
-        if (this is CjBasicType) return emptyArray()
-
-
         return getReferencesFromProviders(this)
+    }
+
+    override fun getOwnReferences(): Collection<PsiSymbolReference> {
+        return cangJieOwnReferences()
+    }
+
+    override fun getOwnDeclarations(): Collection<PsiSymbolDeclaration> {
+        return cangJieOwnDeclarations()
     }
 
     override fun getContainingCjFile(): CjFile {

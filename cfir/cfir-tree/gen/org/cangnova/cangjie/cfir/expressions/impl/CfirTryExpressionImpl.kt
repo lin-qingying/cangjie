@@ -10,10 +10,7 @@ package org.cangnova.cangjie.cfir.expressions.impl
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
-import org.cangnova.cangjie.cfir.expressions.CfirBlock
-import org.cangnova.cangjie.cfir.expressions.CfirCatch
-import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
+import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -25,6 +22,7 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
     override var tryBlock: CfirBlock,
+    override val handlers: MutableList<CfirHandleClause>,
     override val catches: MutableList<CfirCatch>,
     override var finallyBlock: CfirBlock?,
 ) : CfirTryExpression() {
@@ -32,6 +30,7 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
         tryBlock.accept(visitor, data)
+        handlers.forEach { it.accept(visitor, data) }
         catches.forEach { it.accept(visitor, data) }
         finallyBlock?.accept(visitor, data)
     }
@@ -39,6 +38,7 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirTryExpressionImpl {
         transformAnnotations(transformer, data)
         transformTryBlock(transformer, data)
+        transformHandlers(transformer, data)
         transformCatches(transformer, data)
         transformFinallyBlock(transformer, data)
         return this
@@ -51,6 +51,11 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformTryBlock(transformer: CfirTransformer<D>, data: D): CfirTryExpressionImpl {
         tryBlock = tryBlock.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformHandlers(transformer: CfirTransformer<D>, data: D): CfirTryExpressionImpl {
+        handlers.transformInplace(transformer, data)
         return this
     }
 

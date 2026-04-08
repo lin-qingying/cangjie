@@ -4,7 +4,7 @@ FILE: subscriptAccess.cj
             initializer:
                 SUBSCRIPT {
                     receiver:
-                        QUALIFIED_ACCESS(arr)
+                        NAMED_ACCESS(arr)
                     indices:
                         INT(0)
                 }
@@ -12,11 +12,11 @@ FILE: subscriptAccess.cj
             initializer:
                 SUBSCRIPT {
                     receiver:
-                        QUALIFIED_ACCESS(arr)
+                        NAMED_ACCESS(arr)
                     indices:
                         INT(1)
                 }
         RETURN {
-            QUALIFIED_ACCESS(first)
+            NAMED_ACCESS(first)
         }
     }

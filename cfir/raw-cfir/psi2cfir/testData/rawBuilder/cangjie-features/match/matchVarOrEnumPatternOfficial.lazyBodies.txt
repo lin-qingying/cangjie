@@ -1,0 +1,6 @@
+FILE: matchVarOrEnumPatternOfficial.cj
+    internal? enum Option<T> {
+        Some(R|T|)
+        init()
+    }
+    internal? func matchOption(value: R|Option<R|Int64|>|): R|Int64|

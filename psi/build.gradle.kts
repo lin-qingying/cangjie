@@ -17,6 +17,8 @@ val jflexPath by configurations.creating
 
 dependencies {
     testImplementation(kotlin("test"))
+    testImplementation(testFixtures(project(":tests:test-infrastructure")))
+    testRuntimeOnly(libs.junit.platform.launcher)
 
     implementation(project(":util"))
     implementation(project(":common"))
@@ -72,10 +74,17 @@ tasks.compileKotlin {
     dependsOn("generateLexers")
 }
 
+tasks.matching { it.name == "kotlinSourcesJar" || it.name == "sourcesJar" }.configureEach {
+    dependsOn("generateLexers")
+}
+
 sourceSets {
     "main" {
         projectDefault()
         generatedDir()
+    }
+    "test" {
+        projectDefault()
     }
 }
 

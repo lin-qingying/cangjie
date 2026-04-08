@@ -31,9 +31,9 @@ private fun buildCompatibilityMap(): Map<Pair<CjKeywordToken, CjKeywordToken>, C
 
     result += incompatibilityRegister(PRIVATE_KEYWORD, PROTECTED_KEYWORD, PUBLIC_KEYWORD, INTERNAL_KEYWORD)
 
-    result += redundantRegister(ABSTRACT_KEYWORD, OPEN_KEYWORD)
-    result += redundantRegister(SEALED_KEYWORD, PUBLIC_KEYWORD)
-    result += redundantRegister(SEALED_KEYWORD, OPEN_KEYWORD)
+    result += deprecatedRegister(ABSTRACT_KEYWORD, OPEN_KEYWORD)
+    result += deprecatedRegister(SEALED_KEYWORD, PUBLIC_KEYWORD)
+    result += deprecatedRegister(SEALED_KEYWORD, OPEN_KEYWORD)
 
     result += incompatibilityRegister(CONST_KEYWORD, ABSTRACT_KEYWORD)
     result += incompatibilityRegister(CONST_KEYWORD, OPEN_KEYWORD)
@@ -88,5 +88,15 @@ private fun redundantRegister(
     return mapOf(
         (sufficient to redundant) to Compatibility.REDUNDANT,
         (redundant to sufficient) to Compatibility.REVERSE_REDUNDANT,
+    )
+}
+
+private fun deprecatedRegister(
+    first: CjKeywordToken,
+    second: CjKeywordToken,
+): Map<Pair<CjKeywordToken, CjKeywordToken>, Compatibility> {
+    return mapOf(
+        (first to second) to Compatibility.DEPRECATED,
+        (second to first) to Compatibility.DEPRECATED,
     )
 }

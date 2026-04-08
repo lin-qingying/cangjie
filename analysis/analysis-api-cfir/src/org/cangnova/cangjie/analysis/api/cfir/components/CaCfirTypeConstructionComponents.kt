@@ -61,7 +61,7 @@ internal class CaCfirTypeCreator(
         symbol: CaClassLikeSymbol,
         typeArguments: List<CaType>,
     ): CaClassLikeType = withValidityAssertion {
-        val cfirClassLikeSymbol = symbol as? CaCfirClassLikeSymbolImpl
+        val cfirClassLikeSymbol = symbol as? CaCfirClassLikeSymbolBase<*>
             ?: error("仅支持通过 CFIR class-like 符号构造类型：${symbol::class.simpleName}")
         val coneArguments = typeArguments.asConeTypeArguments("class-like 类型构造")
         val coneType = when (val backingSymbol = cfirClassLikeSymbol.backingSymbol) {

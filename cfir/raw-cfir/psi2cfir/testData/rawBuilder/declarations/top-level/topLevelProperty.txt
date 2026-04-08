@@ -5,3 +5,10 @@ FILE: topLevelProperty.cj
     internal? var count: R|Int64| = ...
         initializer:
             INT(0)
+    internal? var (a, b, c): <implicit> = ...
+        initializer:
+            TUPLE_LITERAL {
+                INT(1)
+                INT(2)
+                INT(3)
+            }

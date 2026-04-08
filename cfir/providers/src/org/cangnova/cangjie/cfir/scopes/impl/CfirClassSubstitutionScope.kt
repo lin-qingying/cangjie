@@ -407,7 +407,13 @@ private var CfirDeclarationAttributes.originalForSubstitutionOverride: CfirCalla
 private val CfirCallableSymbol<*>.originalForSubstitutionOverride: CfirCallableSymbol<*>?
     get() = (cfir as? CfirCallableDeclaration)?.attributes?.originalForSubstitutionOverride
 
+/**
+ * 对 substitution override 做统一“回到原始声明”的入口。
+ *
+ * 解析阶段允许看到替换后的签名壳，但 owner/file/visibility 等元数据
+ * 必须回到原始声明上计算，否则同一成员会在不同前端路径下得到不同语义。
+ */
 @Suppress("UNCHECKED_CAST")
-private fun <S : CfirCallableSymbol<*>> S.unwrapOriginalForSubstitutionOverride(): S {
+internal fun <S : CfirCallableSymbol<*>> S.unwrapOriginalForSubstitutionOverride(): S {
     return originalForSubstitutionOverride as? S ?: this
 }

@@ -2,19 +2,9 @@ package org.cangnova.cangjie.lsp.testkit
 
 import org.cangnova.cangjie.lsp.CangjieLspServerOptions
 import org.cangnova.cangjie.lsp.server.CangjieLanguageServer
-import org.eclipse.lsp4j.DidChangeTextDocumentParams
-import org.eclipse.lsp4j.DidCloseTextDocumentParams
-import org.eclipse.lsp4j.DidOpenTextDocumentParams
-import org.eclipse.lsp4j.InitializeParams
-import org.eclipse.lsp4j.InitializeResult
-import org.eclipse.lsp4j.InitializedParams
-import org.eclipse.lsp4j.MessageActionItem
-import org.eclipse.lsp4j.MessageParams
-import org.eclipse.lsp4j.PublishDiagnosticsParams
-import org.eclipse.lsp4j.TextDocumentIdentifier
-import org.eclipse.lsp4j.TextDocumentContentChangeEvent
-import org.eclipse.lsp4j.TextDocumentItem
-import org.eclipse.lsp4j.VersionedTextDocumentIdentifier
+import org.eclipse.lsp4j.*
+import org.eclipse.lsp4j.jsonrpc.messages.Either
+import org.eclipse.lsp4j.jsonrpc.messages.Either3
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.LanguageClient
 import org.eclipse.lsp4j.services.LanguageServer
@@ -27,6 +17,11 @@ import java.util.concurrent.TimeUnit
 
 /**
  * 基于真实 JSON-RPC 流的 LSP 双端连接。
+ *
+ * 这层不是某几个测试专用的轻量包装，而是协议矩阵测试的统一入口：
+ * 1. 所有请求/通知都从这里发出，保证测试经过真实的 LSP4J 编解码链；
+ * 2. 统一超时、诊断收集与常见参数构造，减少重复样板；
+ * 3. 当服务端协议面扩张时，只需要在这里补一个 helper，测试层即可复用。
  */
 class LspIntegrationTestConnection private constructor(
     options: CangjieLspServerOptions,
@@ -54,7 +49,7 @@ class LspIntegrationTestConnection private constructor(
     }
 
     fun initialize(params: InitializeParams): InitializeResult {
-        val result = serverProxy.initialize(params).get(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        val result = awaitFuture(serverProxy.initialize(params))
         initializeResult = result
         return result
     }
@@ -84,11 +79,21 @@ class LspIntegrationTestConnection private constructor(
         newText: String,
         version: Int,
     ) {
-        serverProxy.textDocumentService.didChange(
+        changeDocument(
             DidChangeTextDocumentParams(
                 VersionedTextDocumentIdentifier(uri, version),
                 listOf(TextDocumentContentChangeEvent(newText)),
             ),
+        )
+    }
+
+    fun changeDocument(params: DidChangeTextDocumentParams) {
+        serverProxy.textDocumentService.didChange(params)
+    }
+
+    fun saveDocument(uri: String, text: String? = null) {
+        serverProxy.textDocumentService.didSave(
+            DidSaveTextDocumentParams(TextDocumentIdentifier(uri), text),
         )
     }
 
@@ -97,6 +102,175 @@ class LspIntegrationTestConnection private constructor(
             DidCloseTextDocumentParams(TextDocumentIdentifier(uri)),
         )
     }
+
+    fun completion(params: CompletionParams): Either<List<CompletionItem>, CompletionList> {
+        return awaitFuture(serverProxy.textDocumentService.completion(params))
+    }
+
+    fun hover(params: HoverParams): Hover = awaitFuture(serverProxy.textDocumentService.hover(params))
+
+    fun signatureHelp(params: SignatureHelpParams): SignatureHelp {
+        return awaitFuture(serverProxy.textDocumentService.signatureHelp(params))
+    }
+
+    fun declaration(params: DeclarationParams): Either<List<Location>, List<LocationLink>> {
+        return awaitFuture(serverProxy.textDocumentService.declaration(params))
+    }
+
+    fun definition(params: DefinitionParams): Either<List<Location>, List<LocationLink>> {
+        return awaitFuture(serverProxy.textDocumentService.definition(params))
+    }
+
+    fun typeDefinition(params: TypeDefinitionParams): Either<List<Location>, List<LocationLink>> {
+        return awaitFuture(serverProxy.textDocumentService.typeDefinition(params))
+    }
+
+    fun implementation(params: ImplementationParams): Either<List<Location>, List<LocationLink>> {
+        return awaitFuture(serverProxy.textDocumentService.implementation(params))
+    }
+
+    fun references(params: ReferenceParams): List<Location> {
+        return awaitFuture(serverProxy.textDocumentService.references(params))
+    }
+
+    fun documentHighlight(params: DocumentHighlightParams): List<DocumentHighlight> {
+        return awaitFuture(serverProxy.textDocumentService.documentHighlight(params))
+    }
+
+    fun documentSymbol(params: DocumentSymbolParams): List<Either<SymbolInformation, DocumentSymbol>> {
+        return awaitFuture(serverProxy.textDocumentService.documentSymbol(params))
+    }
+
+    fun codeAction(params: CodeActionParams): List<Either<Command, CodeAction>> {
+        return awaitFuture(serverProxy.textDocumentService.codeAction(params))
+    }
+
+    fun formatting(params: DocumentFormattingParams): List<TextEdit> {
+        return awaitFuture(serverProxy.textDocumentService.formatting(params))
+    }
+
+    fun rangeFormatting(params: DocumentRangeFormattingParams): List<TextEdit> {
+        return awaitFuture(serverProxy.textDocumentService.rangeFormatting(params))
+    }
+
+    fun rename(params: RenameParams): WorkspaceEdit {
+        return awaitFuture(serverProxy.textDocumentService.rename(params))
+    }
+
+    fun prepareRename(
+        params: PrepareRenameParams,
+    ): Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior> {
+        return awaitFuture(serverProxy.textDocumentService.prepareRename(params))
+    }
+
+    fun foldingRange(params: FoldingRangeRequestParams): List<FoldingRange> {
+        return awaitFuture(serverProxy.textDocumentService.foldingRange(params))
+    }
+
+    fun selectionRange(params: SelectionRangeParams): List<SelectionRange> {
+        return awaitFuture(serverProxy.textDocumentService.selectionRange(params))
+    }
+
+    fun semanticTokensFull(params: SemanticTokensParams): SemanticTokens {
+        return awaitFuture(serverProxy.textDocumentService.semanticTokensFull(params))
+    }
+
+    fun semanticTokensRange(params: SemanticTokensRangeParams): SemanticTokens {
+        return awaitFuture(serverProxy.textDocumentService.semanticTokensRange(params))
+    }
+
+    fun inlayHint(params: InlayHintParams): List<InlayHint> {
+        return awaitFuture(serverProxy.textDocumentService.inlayHint(params))
+    }
+
+    fun documentDiagnostic(params: DocumentDiagnosticParams): DocumentDiagnosticReport {
+        return awaitFuture(serverProxy.textDocumentService.diagnostic(params))
+    }
+
+    fun didChangeConfiguration(params: DidChangeConfigurationParams) {
+        serverProxy.workspaceService.didChangeConfiguration(params)
+    }
+
+    fun didChangeWatchedFiles(params: DidChangeWatchedFilesParams) {
+        serverProxy.workspaceService.didChangeWatchedFiles(params)
+    }
+
+    fun didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {
+        serverProxy.workspaceService.didChangeWorkspaceFolders(params)
+    }
+
+    fun executeCommand(params: ExecuteCommandParams): Any {
+        return awaitFuture(serverProxy.workspaceService.executeCommand(params))
+    }
+
+    fun workspaceSymbol(params: WorkspaceSymbolParams): Either<List<SymbolInformation>, List<WorkspaceSymbol>> {
+        return awaitFuture(serverProxy.workspaceService.symbol(params))
+    }
+
+    fun workspaceDiagnostic(params: WorkspaceDiagnosticParams): WorkspaceDiagnosticReport {
+        return awaitFuture(serverProxy.workspaceService.diagnostic(params))
+    }
+
+    fun notebookDidOpen(params: DidOpenNotebookDocumentParams = DidOpenNotebookDocumentParams()) {
+        serverProxy.notebookDocumentService.didOpen(params)
+    }
+
+    fun notebookDidChange(params: DidChangeNotebookDocumentParams = DidChangeNotebookDocumentParams()) {
+        serverProxy.notebookDocumentService.didChange(params)
+    }
+
+    fun notebookDidSave(params: DidSaveNotebookDocumentParams = DidSaveNotebookDocumentParams()) {
+        serverProxy.notebookDocumentService.didSave(params)
+    }
+
+    fun notebookDidClose(params: DidCloseNotebookDocumentParams = DidCloseNotebookDocumentParams()) {
+        serverProxy.notebookDocumentService.didClose(params)
+    }
+
+    fun cancelProgress(token: String = "contract-token") {
+        serverProxy.cancelProgress(WorkDoneProgressCancelParams(Either.forLeft(token)))
+    }
+
+    fun completionParams(uri: String, line: Int, character: Int): CompletionParams =
+        CompletionParams(TextDocumentIdentifier(uri), Position(line, character))
+
+    fun hoverParams(uri: String, line: Int, character: Int): HoverParams =
+        HoverParams(TextDocumentIdentifier(uri), Position(line, character))
+
+    fun signatureHelpParams(uri: String, line: Int, character: Int): SignatureHelpParams =
+        SignatureHelpParams(TextDocumentIdentifier(uri), Position(line, character))
+
+    fun declarationParams(uri: String, line: Int, character: Int): DeclarationParams =
+        DeclarationParams(TextDocumentIdentifier(uri), Position(line, character))
+
+    fun definitionParams(uri: String, line: Int, character: Int): DefinitionParams =
+        DefinitionParams(TextDocumentIdentifier(uri), Position(line, character))
+
+    fun typeDefinitionParams(uri: String, line: Int, character: Int): TypeDefinitionParams =
+        TypeDefinitionParams(TextDocumentIdentifier(uri), Position(line, character))
+
+    fun implementationParams(uri: String, line: Int, character: Int): ImplementationParams =
+        ImplementationParams(TextDocumentIdentifier(uri), Position(line, character))
+
+    fun referenceParams(
+        uri: String,
+        line: Int,
+        character: Int,
+        includeDeclaration: Boolean = true,
+    ): ReferenceParams = ReferenceParams(
+        TextDocumentIdentifier(uri),
+        Position(line, character),
+        ReferenceContext(includeDeclaration),
+    )
+
+    fun documentHighlightParams(uri: String, line: Int, character: Int): DocumentHighlightParams =
+        DocumentHighlightParams(TextDocumentIdentifier(uri), Position(line, character))
+
+    fun documentSymbolParams(uri: String): DocumentSymbolParams =
+        DocumentSymbolParams(TextDocumentIdentifier(uri))
+
+    fun documentDiagnosticParams(uri: String): DocumentDiagnosticParams =
+        DocumentDiagnosticParams(TextDocumentIdentifier(uri))
 
     fun clearPublishedDiagnostics() {
         client.publishedDiagnostics.clear()
@@ -114,8 +288,13 @@ class LspIntegrationTestConnection private constructor(
     }
 
     override fun close() {
-        runCatching { serverProxy.shutdown().get(TIMEOUT_SECONDS, TimeUnit.SECONDS) }
+        runCatching { awaitFuture(serverProxy.shutdown()) }
         runCatching { serverProxy.exit() }
+        // `exit` 是 notification，没有响应帧；这里补一个本地兜底，
+        // 让测试能够稳定观测到 exitHandler，同时配合服务端幂等保护避免重复退出。
+        runCatching { server.exit() }
+        runCatching { clientInput.close() }
+        runCatching { serverInput.close() }
         runCatching { clientOutput.close() }
         runCatching { serverOutput.close() }
         waitForTermination(serverListening)
@@ -129,6 +308,10 @@ class LspIntegrationTestConnection private constructor(
         runCatching { listening.get(TIMEOUT_SECONDS, TimeUnit.SECONDS) }
     }
 
+    private fun <T> awaitFuture(future: CompletableFuture<T>): T {
+        return future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+    }
+
     private class RecordingLanguageClient : LanguageClient {
         val publishedDiagnostics: MutableList<PublishDiagnosticsParams> = CopyOnWriteArrayList()
 
@@ -140,7 +323,7 @@ class LspIntegrationTestConnection private constructor(
 
         override fun showMessage(messageParams: MessageParams) {}
 
-        override fun showMessageRequest(requestParams: org.eclipse.lsp4j.ShowMessageRequestParams): CompletableFuture<MessageActionItem> {
+        override fun showMessageRequest(requestParams: ShowMessageRequestParams): CompletableFuture<MessageActionItem> {
             return CompletableFuture.completedFuture(MessageActionItem("ok"))
         }
 
@@ -148,8 +331,8 @@ class LspIntegrationTestConnection private constructor(
     }
 
     companion object {
-        private const val TIMEOUT_SECONDS = 10L
-        private const val BUFFER_SIZE = 1024 * 1024 // 1MB 缓冲区防止死锁
+        private const val TIMEOUT_SECONDS = 30L
+        private const val BUFFER_SIZE = 1024 * 1024 // 1MB 缓冲区，避免长诊断或大响应把管道写满
 
         fun create(options: CangjieLspServerOptions = CangjieLspServerOptions()): LspIntegrationTestConnection {
             return LspIntegrationTestConnection(options)

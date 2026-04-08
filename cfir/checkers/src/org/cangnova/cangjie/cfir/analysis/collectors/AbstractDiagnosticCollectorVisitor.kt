@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContextForProvider
 import org.cangnova.cangjie.cfir.analysis.checkers.context.MutableCheckerContext
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
@@ -141,6 +142,12 @@ abstract class AbstractDiagnosticCollectorVisitor(
     override fun visitNamedFunction(namedFunction: CfirNamedFunction, data: Nothing?) {
         withAnnotationContainer(namedFunction) {
             visitWithDeclaration(namedFunction)
+        }
+    }
+
+    override fun visitConstructor(constructor: CfirConstructor, data: Nothing?) {
+        withAnnotationContainer(constructor) {
+            visitWithDeclaration(constructor)
         }
     }
 

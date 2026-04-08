@@ -1,10 +1,9 @@
-package org.cangnova.cangjie.analysis.api.impl.base.projectStructure
+﻿package org.cangnova.cangjie.analysis.api.impl.base.projectStructure
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
@@ -19,10 +18,9 @@ import org.cangnova.cangjie.analysis.api.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.CaNotUnderContentRootModule
-import org.cangnova.cangjie.analysis.api.CaScriptDependencyModule
-import org.cangnova.cangjie.analysis.api.CaScriptModule
 import org.cangnova.cangjie.analysis.api.CaSourceModule
 import org.cangnova.cangjie.analysis.api.CaTargetPlatform
+import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner
@@ -62,10 +60,8 @@ class CaIdeProjectStructureState(
     private val explicitModuleInvalidationCounts = ConcurrentHashMap<CaModule, AtomicLong>()
 
     private val sourceModulesByRootUrl = ConcurrentHashMap<String, CaIdeSourceModule>()
-    private val scriptModulesByFileUrl = ConcurrentHashMap<String, CaIdeScriptModule>()
     private val libraryModulesByKey = ConcurrentHashMap<LibraryBinaryKey, CaIdeLibraryModule>()
     private val librarySourceModulesByKey = ConcurrentHashMap<LibrarySourceKey, CaIdeLibrarySourceModule>()
-    private val scriptDependencyModulesByOwnerKey = ConcurrentHashMap<String, CaIdeScriptDependencyModule>()
     private val fallbackDependencyModulesByOwnerKey = ConcurrentHashMap<String, CaIdeLibraryFallbackDependenciesModule>()
     private val danglingFileModulesByPath = ConcurrentHashMap<String, CaIdeDanglingFileModule>()
     private val outsideContentModulesByPath = ConcurrentHashMap<String, CaIdeNotUnderContentRootModule>()
@@ -115,10 +111,6 @@ class CaIdeProjectStructureState(
             return libraryBinaryModuleFor(virtualFile)
         }
 
-        if (cjFile != null && isScriptFile(cjFile)) {
-            return scriptModuleFor(cjFile)
-        }
-
         val sourceRoot = projectFileIndex.getSourceRootForFile(virtualFile)
         if (sourceRoot != null && projectFileIndex.isInSource(virtualFile)) {
             return sourceModuleFor(sourceRoot)
@@ -165,18 +157,11 @@ class CaIdeProjectStructureState(
             refreshRegularDependencies(entry.module, entry.root.virtualFile)
         }
 
-        val scriptModules = discoverScriptModules()
-        scriptModules.forEach { scriptModule ->
-            refreshScriptDependencies(scriptModule, scriptModule.scriptFile.virtualFile)
-        }
-
         val allModules = buildList {
             add(builtinsModule)
             addAll(sourceEntries.map(ModuleRootEntry::module))
-            addAll(scriptModules)
             addAll(librarySourceModulesByKey.values.sortedBy(CaModule::moduleDescription))
             addAll(libraryModulesByKey.values.sortedBy(CaModule::moduleDescription))
-            addAll(scriptDependencyModulesByOwnerKey.values.sortedBy(CaModule::moduleDescription))
             addAll(fallbackDependencyModulesByOwnerKey.values.sortedBy(CaModule::moduleDescription))
             addAll(danglingFileModulesByPath.values.sortedBy(CaModule::moduleDescription))
             addAll(outsideContentModulesByPath.values.sortedBy(CaModule::moduleDescription))
@@ -186,7 +171,6 @@ class CaIdeProjectStructureState(
 
         val allSourceFiles = buildList {
             sourceEntries.mapTo(this, ModuleRootEntry::root)
-            scriptModules.mapTo(this, CaIdeScriptModule::scriptFile)
             librarySourceModulesByKey.values.flatMapTo(this) { it.sourceRoots }
             danglingFileModulesByPath.values.mapTo(this, CaIdeDanglingFileModule::item)
             outsideContentModulesByPath.values.mapTo(this, CaIdeNotUnderContentRootModule::item)
@@ -240,29 +224,6 @@ class CaIdeProjectStructureState(
             .sortedBy { it.root.virtualFile.path }
     }
 
-    /**
-     * 在 IDE 平台中，脚本 use-site 模块按“单文件”建模，而不是按 source root 建模。
-     *
-     * 这样 low-level resolve 才能把脚本自身和脚本依赖模块区分开，避免把脚本错误压扁为普通源码模块。
-     */
-    private fun discoverScriptModules(): List<CaIdeScriptModule> {
-        val discovered = linkedMapOf<String, CaIdeScriptModule>()
-        for (root in projectRootManager.contentSourceRoots) {
-            VfsUtilCore.iterateChildrenRecursively(root, null) { child ->
-                if (child.isDirectory) return@iterateChildrenRecursively true
-                if (!projectFileIndex.isInSource(child)) return@iterateChildrenRecursively true
-
-                val psiFile = psiManager.findFile(child) as? CjFile ?: return@iterateChildrenRecursively true
-                if (isScriptFile(psiFile)) {
-                    val module = scriptModuleFor(psiFile)
-                    discovered[module.stableModuleName ?: child.url] = module
-                }
-                true
-            }
-        }
-        return discovered.values.sortedBy(CaModule::moduleDescription)
-    }
-
     private fun sourceModuleFor(root: VirtualFile): CaIdeSourceModule {
         return sourceModulesByRootUrl.computeIfAbsent(root.url) {
             val psiRoot = toPsiFileSystemItem(root)
@@ -275,21 +236,6 @@ class CaIdeProjectStructureState(
             )
         }.also { module ->
             refreshRegularDependencies(module, root)
-        }
-    }
-
-    private fun scriptModuleFor(file: CjFile): CaIdeScriptModule {
-        val virtualFile = file.virtualFile
-            ?: error("脚本文件 `${file.name}` 缺少 VirtualFile，无法构建 IDE 脚本模块。")
-        return scriptModulesByFileUrl.computeIfAbsent(virtualFile.url) {
-            CaIdeScriptModule(
-                project = project,
-                scriptFile = file,
-                fileUrl = virtualFile.url,
-                filePath = virtualFile.path,
-            )
-        }.also { module ->
-            refreshScriptDependencies(module, virtualFile)
         }
     }
 
@@ -407,14 +353,6 @@ class CaIdeProjectStructureState(
         }
     }
 
-    private fun refreshScriptDependencies(module: CaIdeScriptModule, anchorFile: VirtualFile) {
-        module.directRegularDependencies.clear()
-        val scriptDependencyModule = scriptDependencyModuleFor(module, anchorFile)
-        if (scriptDependencyModule.directRegularDependencies.isNotEmpty()) {
-            module.directRegularDependencies += scriptDependencyModule
-        }
-    }
-
     private fun refreshDanglingDependencies(module: CaIdeDanglingFileModule, anchorFile: VirtualFile) {
         module.directRegularDependencies.clear()
         val fallbackModule = fallbackDependencyModuleFor(module, anchorFile)
@@ -428,19 +366,6 @@ class CaIdeProjectStructureState(
         val fallbackModule = fallbackDependencyModuleFor(module, anchorFile)
         if (fallbackModule.directRegularDependencies.isNotEmpty()) {
             module.directRegularDependencies += fallbackModule
-        }
-    }
-
-    private fun scriptDependencyModuleFor(owner: CaIdeScriptModule, anchorFile: VirtualFile): CaIdeScriptDependencyModule {
-        return scriptDependencyModulesByOwnerKey.computeIfAbsent(owner.stableModuleName) {
-            CaIdeScriptDependencyModule(
-                project = project,
-                scriptName = owner.name,
-                ownerStableName = owner.stableModuleName,
-            )
-        }.also { dependencyModule ->
-            dependencyModule.directRegularDependencies.clear()
-            dependencyModule.directRegularDependencies += regularDependenciesFor(dependencyModule, anchorFile)
         }
     }
 
@@ -493,12 +418,6 @@ class CaIdeProjectStructureState(
             sourceRoots = sourceRoots.sortedBy(VirtualFile::getUrl),
             binaryRoots = binaryRoots.sortedBy(VirtualFile::getUrl),
         )
-    }
-
-    private fun isScriptFile(file: CjFile): Boolean {
-        val extension = file.virtualFile?.extension
-        if (extension.equals("cjs", ignoreCase = true)) return true
-        return file.declarations.any { declaration -> declaration is org.cangnova.cangjie.psi.CjScript }
     }
 
     private fun isDanglingLikeFile(file: CjFile): Boolean {
@@ -608,33 +527,6 @@ private class CaIdeSourceModule(
 }
 
 /**
- * IDE 中的脚本模块。
- *
- * 仓颉脚本采用“单文件 use-site”语义，因此脚本模块不能继续复用 source-root 语义。
- */
-private class CaIdeScriptModule(
-    project: Project,
-    val scriptFile: CjFile,
-    private val fileUrl: String,
-    private val filePath: String,
-) : CaIdeMutableModule(project, listOf(scriptFile), includeLibrariesInScope = false), CaScriptModule {
-    override val name: String
-        get() = scriptFile.name
-
-    override val languageVersionSettings: LanguageVersionSettings
-        get() = LanguageVersionSettings.DEFAULT
-
-    override val psiRoots: List<PsiFileSystemItem>
-        get() = listOf(scriptFile)
-
-    override val stableModuleName: String
-        get() = "ide-script:$fileUrl"
-
-    override val moduleDescription: String
-        get() = "IDE script $filePath"
-}
-
-/**
  * IDE 中的库二进制模块。
  */
 private class CaIdeLibraryModule(
@@ -674,26 +566,6 @@ private class CaIdeLibrarySourceModule(
 }
 
 /**
- * IDE 中的脚本依赖模块。
- *
- * 该模块只承载脚本可见的稳定依赖边界，不直接作为 use-site 源码模块使用。
- */
-private class CaIdeScriptDependencyModule(
-    project: Project,
-    override val scriptName: String,
-    private val ownerStableName: String,
-) : CaIdeMutableModule(project, emptyList(), includeLibrariesInScope = true), CaScriptDependencyModule {
-    override val stableModuleName: String
-        get() = "ide-script-deps:$ownerStableName"
-
-    override val isResolvable: Boolean
-        get() = false
-
-    override val moduleDescription: String
-        get() = "IDE script dependencies of $scriptName"
-}
-
-/**
  * IDE 中的 fallback 依赖模块。
  *
  * 该模块用于 outside-content-root / dangling-file 这类没有稳定内容根的 use-site 场景，
@@ -728,6 +600,9 @@ private class CaIdeBuiltinsModule(
 
     override val isResolvable: Boolean
         get() = false
+
+    override val contentScope: GlobalSearchScope
+        get() = CaBuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)
 
     override val moduleDescription: String
         get() = "IDE builtins"

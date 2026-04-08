@@ -34,105 +34,112 @@ object GeneratedAnalysisApiTestRegistry {
             baseName = "FileScopeTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.scopeProvider.AbstractFileScopeTest",
             modelRelativePath = "analysis/analysis-api/testData/components/scopeProvider/fileScope",
-            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("fileScopeQueries"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "PackageScopeTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.scopeProvider.AbstractPackageScopeTest",
             modelRelativePath = "analysis/analysis-api/testData/components/scopeProvider/packageScope",
-            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("packageScopeQueries"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "MemberScopeTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.scopeProvider.AbstractMemberScopeTest",
             modelRelativePath = "analysis/analysis-api/testData/components/scopeProvider/memberScope",
-            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("memberScopeQueries"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "TypeScopeTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.scopeProvider.AbstractTypeScopeTest",
             modelRelativePath = "analysis/analysis-api/testData/components/scopeProvider/typeScope",
-            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("typeScopeQueries"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "ResolveSymbolTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.resolver.AbstractResolveSymbolTest",
             modelRelativePath = "analysis/analysis-api/testData/components/resolver/singleByPsi",
-            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("resolveSymbol"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "ResolveCallTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.resolver.AbstractResolveCallTest",
             modelRelativePath = "analysis/analysis-api/testData/components/resolver/singleByPsi",
-            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("memberCallInfo"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "ExpressionTypeTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.expressionTypeProvider.AbstractExpressionTypeTest",
             modelRelativePath = "analysis/analysis-api/testData/components/expressionTypeProvider/expressionType",
-            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("expressionType"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "DeclarationReturnTypeTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.expressionTypeProvider.AbstractDeclarationReturnTypeTest",
             modelRelativePath = "analysis/analysis-api/testData/components/expressionTypeProvider/declarationReturnType",
-            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("declarationReturnType"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "TopLevelSymbolProviderTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.symbolProvider.AbstractTopLevelSymbolProviderTest",
             modelRelativePath = "analysis/analysis-api/testData/components/symbolProvider/topLevelLookup",
-            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("topLevelLookup"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "RendererTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.renderer.AbstractRendererTest",
             modelRelativePath = "analysis/analysis-api/testData/components/renderer/basicRendering",
-            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("basicRendering"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "DefaultImportsTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.imports.AbstractDefaultImportsTest",
             modelRelativePath = "analysis/analysis-api/testData/components/imports/defaultImports",
-            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("defaultImports"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "ReferenceShorteningPlanTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.references.AbstractReferenceShorteningPlanTest",
             modelRelativePath = "analysis/analysis-api/testData/components/references/referenceShortening",
-            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("referenceShortening"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "ImportOptimizationPlanTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.imports.AbstractImportOptimizationPlanTest",
             modelRelativePath = "analysis/analysis-api/testData/components/imports/importOptimization",
-            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("importOptimization"),
+        ),
+        GeneratedAnalysisApiModel(
+            baseName = "CDocProviderTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.docProvider.AbstractCDocProviderTest",
+            modelRelativePath = "analysis/analysis-api/testData/components/docProvider/cdoc",
+            supportedModuleKinds = listOf(TestModuleKind.Source),
+            includedFilePatternProvider = exactStemPattern("cdoc"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "SignatureSubstitutionTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.substitutors.AbstractSignatureSubstitutionTest",
             modelRelativePath = "analysis/analysis-api/testData/components/substitutors/signatureSubstitution",
-            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("signatureSubstitution"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "TypePointerConsistencyTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.types.AbstractTypePointerConsistencyTest",
             modelRelativePath = "analysis/analysis-api/testData/types/typePointers/consistency",
-            supportedModuleKinds = listOf(TestModuleKind.Source, TestModuleKind.ScriptSource),
+            supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("typePointerRestoration"),
         ),
         GeneratedAnalysisApiModel(
@@ -155,13 +162,6 @@ object GeneratedAnalysisApiTestRegistry {
             modelRelativePath = "analysis/analysis-api/testData/restrictedAnalysis/exceptionWrapping",
             supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("restrictedAnalysisException"),
-        ),
-        GeneratedAnalysisApiModel(
-            baseName = "ProjectStructureTest",
-            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.projectStructure.AbstractModuleStructureTest",
-            modelRelativePath = "analysis/analysis-api/testData/projectStructure/moduleKinds/scriptSource",
-            supportedModuleKinds = listOf(TestModuleKind.ScriptSource),
-            includedFilePatternProvider = exactStemPattern("scriptSource"),
         ),
         GeneratedAnalysisApiModel(
             baseName = "ProjectStructureTest",
@@ -191,6 +191,20 @@ object GeneratedAnalysisApiTestRegistry {
             supportedModuleKinds = listOf(TestModuleKind.LibraryBinary),
             includedFilePatternProvider = exactStemPattern("libraryBinary"),
         ),
+        GeneratedAnalysisApiModel(
+            baseName = "ProjectStructureTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.projectStructure.AbstractModuleStructureTest",
+            modelRelativePath = "analysis/analysis-api/testData/projectStructure/moduleKinds/builtins",
+            supportedModuleKinds = listOf(TestModuleKind.Builtins),
+            includedFilePatternProvider = exactStemPattern("builtins"),
+        ),
+        GeneratedAnalysisApiModel(
+            baseName = "ProjectStructureTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.projectStructure.AbstractModuleStructureTest",
+            modelRelativePath = "analysis/analysis-api/testData/projectStructure/moduleKinds/libraryFallbackDependencies",
+            supportedModuleKinds = listOf(TestModuleKind.LibraryFallbackDependencies),
+            includedFilePatternProvider = exactStemPattern("libraryFallbackDependencies"),
+        ),
     )
 
     fun supportedVariantsFor(moduleKind: TestModuleKind): List<GeneratedAnalysisApiVariant> {
@@ -210,10 +224,7 @@ object GeneratedAnalysisApiTestRegistry {
         "^$fileStem\\.${moduleKind.defaultTestFileExtension()}$"
     }
 
-    private fun TestModuleKind.defaultTestFileExtension(): String = when (this) {
-        TestModuleKind.ScriptSource -> "cjs"
-        else -> "cj"
-    }
+    private fun TestModuleKind.defaultTestFileExtension(): String = "cj"
 }
 
 data class GeneratedAnalysisApiModel(

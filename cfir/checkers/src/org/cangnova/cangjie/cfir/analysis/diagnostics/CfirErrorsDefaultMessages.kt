@@ -5,6 +5,8 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.ASSIGNMENT_TYPE
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CANNOT_INFER_PARAMETER_TYPE
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONST_EVAL_ARITHMETIC_OVERFLOW
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONST_EVAL_DIVIDE_BY_ZERO
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONST_EVAL_NEGATIVE_SHIFT_COUNT
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONST_EVAL_SHIFT_COUNT_OVERFLOW
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.LITERAL_NUMERIC_OVERFLOW
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.NEW_INFERENCE_ERROR
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.NO_CONSTRUCTOR
@@ -39,6 +41,11 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
 
     override val MAP: CjDiagnosticFactoryToRendererMap by CjDiagnosticFactoryToRendererMap("FIR") { map ->
         map.put(NO_CONSTRUCTOR, "No constructor available for this type.")
+        map.put(
+            CfirErrors.ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR,
+            "Enum type ''{0}'' cannot be used as a type constructor; use an enum constructor instead.",
+            RENDER_NAME,
+        )
         map.put(CONFLICTING_OVERLOADS, "Conflicting overloads: {0}", RENDER_STRING_LIST)
         map.put(REDECLARATION, "Conflicting declarations: {0}", RENDER_STRING_LIST)
         map.put(CLASSIFIER_REDECLARATION, "Redeclaration: {0}", RENDER_STRING_LIST)
@@ -141,6 +148,11 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_NAME,
         )
         map.put(
+            CfirErrors.PARAM_NAMED_MISMATCHED,
+            "Parameter naming of this declaration does not match overridden member ''{0}''.",
+            RENDER_NAME,
+        )
+        map.put(
             CfirErrors.CLASS_NOT_OPEN_FOR_INHERITANCE,
             "Class ''{0}'' is not open for inheritance.",
             RENDER_NAME,
@@ -184,6 +196,11 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_NAME,
         )
         map.put(
+            CfirErrors.AMBIGUOUS_FUNCTION_CALL,
+            "Ambiguous function call for ''{0}''.",
+            RENDER_NAME,
+        )
+        map.put(
             CfirErrors.RECURSIVE_CONSTRUCTOR_CALL,
             "Recursive constructor call detected.",
         )
@@ -195,6 +212,87 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(
             CfirErrors.EXPLICIT_SUPER_CALL_REQUIRED,
             "Explicit super constructor call is required.",
+        )
+        map.put(
+            CfirErrors.INVALID_LOOP_CONTROL,
+            "'break' or 'continue' must be used inside a loop.",
+        )
+        map.put(
+            CfirErrors.USED_BEFORE_INITIALIZATION,
+            "Variable ''{0}'' is used before initialization.",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.CLASS_UNINITIALIZED_FIELD,
+            "Member variable ''{0}'' is not initialized in this constructor.",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS,
+            "''{0}'' is not found for generic type ''{1}'' in its upper bounds.",
+            RENDER_NAME,
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.GENERIC_NO_METHOD_MATCH_IN_UPPER_BOUNDS,
+            "Method ''{0}'' is not found for generic type ''{1}'' in its upper bounds.",
+            RENDER_NAME,
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.CANNOT_MODIFY_VAR,
+            "Instance member variable ''{0}'' cannot be modified in immutable function.",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION,
+            "Immutable function ''{0}'' cannot access mutable function ''{1}''.",
+            RENDER_NAME,
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.ANNOTATION_NO_CONST_INIT,
+            "class with '@Annotation' should have 'const' constructor.",
+        )
+        map.put(
+            CfirErrors.INVALID_CFUNC_RETURN_TYPE,
+            "foreign function return type must satisfy CType, but ''{0}'' was found.",
+            RENDER_TYPE,
+        )
+        map.put(
+            CfirErrors.EFFECTS_FEATURE_DISABLED,
+            "effects feature is disabled for ''{0}''.",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.COMMAND_INCOMPATIBLE_TYPE,
+            "the performed expression must implement ''stdx.effect.Command<T>'', but actual type is ''{0}''.",
+            RENDER_TYPE,
+        )
+        map.put(
+            CfirErrors.COMMAND_HANDLE_TYPE_ERROR,
+            "the command handle type must implement ''stdx.effect.Command<T>'', but actual type is ''{0}''.",
+            RENDER_TYPE,
+        )
+        map.put(
+            CfirErrors.IMPLICIT_RESUME_OUTSIDE_HANDLER,
+            "''resume'' outside of an immediate handler must have a resumption argument.",
+        )
+        map.put(
+            CfirErrors.RESUME_NO_WITH,
+            "a resumption of non-Unit type ''{0}'' must have a ''with'' or ''throwing'' clause.",
+            RENDER_TYPE,
+        )
+        map.put(
+            CfirErrors.RESUME_THROWING_MISMATCH_TYPE,
+            "the type of ''resume throwing'' must be a subtype of ''std.core.Exception'' or ''std.core.Error'', but actual type is ''{0}''.",
+            RENDER_TYPE,
+        )
+        map.put(
+            CfirErrors.MISMATCHING_HANDLE_BLOCK,
+            "The type of this handle block is ''{0}'', which mismatches the smallest common supertype ''{1}'' of previous branches.",
+            RENDER_TYPE,
+            RENDER_TYPE,
         )
         map.put(
             INVALID_OPERATOR_PARAMETER_COUNT,
@@ -229,6 +327,28 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             VISIBILITY,
         )
         map.put(CfirErrors.NON_EXHAUSTIVE_MATCH, "match expression is not exhaustive. Missing cases: {0}", RENDER_STRING_LIST)
+        map.put(
+            CfirErrors.TUPLE_PATTERN_NOT_MATCH,
+            "{0} isn't a tuple to match tuple pattern.",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.PATTERN_NOT_MATCH,
+            "{0} pattern is not matched.",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.ENUM_PATTERN_PARAM_SIZE_ERROR,
+            "enum pattern's parameters size is wrong.",
+        )
+        map.put(
+            CfirErrors.NOT_OVERLOAD_IN_MATCH,
+            "No overloaded '==' function in match case pattern.",
+        )
+        map.put(
+            CfirErrors.MATCH_CASE_HAS_NO_TYPE,
+            "This match case has no type.",
+        )
         map.put(
             CfirErrors.UNRESOLVED_REFERENCE,
             "Unresolved reference: ''{0}''.",
@@ -265,6 +385,14 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_STRING,
         )
         map.put(
+            CONST_EVAL_NEGATIVE_SHIFT_COUNT,
+            "Shift count is negative during constant evaluation.",
+        )
+        map.put(
+            CONST_EVAL_SHIFT_COUNT_OVERFLOW,
+            "Shift count overflow during constant evaluation.",
+        )
+        map.put(
             TYPE_MISMATCH,
             "Type mismatch: inferred type is ''{1}'', but ''{0}'' was expected.",
             RENDER_TYPE,
@@ -298,6 +426,13 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_TYPE,
             RENDER_TYPE,
             NOT_RENDERED,
+        )
+        map.put(
+            CfirErrors.VARRAY_SIZE_MISMATCH,
+            "VArray size mismatch: expected size ''{0}'', actual size ''{1}'' for element type ''{2}''.",
+            TO_STRING,
+            TO_STRING,
+            RENDER_TYPE,
         )
         map.put(
             CfirErrors.GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT,

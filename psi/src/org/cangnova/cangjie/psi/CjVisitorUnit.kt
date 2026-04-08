@@ -270,6 +270,14 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
         super.visitThrowExpression(expression, Unit)
     }
 
+    open fun visitPerformExpression(expression: CjPerformExpression) {
+        super.visitPerformExpression(expression, Unit)
+    }
+
+    open fun visitResumeExpression(expression: CjResumeExpression) {
+        super.visitResumeExpression(expression, Unit)
+    }
+
     open fun visitBreakExpression(expression: CjBreakExpression) {
         super.visitBreakExpression(expression, Unit)
     }
@@ -337,6 +345,14 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
 
     fun visitCatchSection(catchClause: CjCatchClause) {
         super.visitCatchSection(catchClause, Unit)
+    }
+
+    fun visitHandleClause(handleClause: CjHandleClause) {
+        super.visitHandleClause(handleClause, Unit)
+    }
+
+    fun visitCommandTypePattern(commandTypePattern: CjCommandTypePattern) {
+        super.visitCommandTypePattern(commandTypePattern, Unit)
     }
 
     fun visitFinallySection(finallySection: CjFinallySection) {
@@ -650,6 +666,16 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
 
     }
 
+    override fun visitPerformExpression(expression: CjPerformExpression, data: Unit?): Unit {
+        visitPerformExpression(expression)
+
+    }
+
+    override fun visitResumeExpression(expression: CjResumeExpression, data: Unit?): Unit {
+        visitResumeExpression(expression)
+
+    }
+
     override fun visitBreakExpression(expression: CjBreakExpression, data: Unit?): Unit {
         visitBreakExpression(expression)
 
@@ -728,6 +754,16 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
 
     override fun visitCatchSection(catchClause: CjCatchClause, data: Unit?): Unit {
         visitCatchSection(catchClause)
+
+    }
+
+    override fun visitHandleClause(handleClause: CjHandleClause, data: Unit?): Unit {
+        visitHandleClause(handleClause)
+
+    }
+
+    override fun visitCommandTypePattern(commandTypePattern: CjCommandTypePattern, data: Unit?): Unit {
+        visitCommandTypePattern(commandTypePattern)
 
     }
 
@@ -924,6 +960,15 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
 
     open fun visitPatternByBinding(element: CjBindingPattern) {
         super.visitPatternByBinding(element, Unit)
+    }
+
+    override fun visitPatternByVarOrEnum(element: CjVarOrEnumPattern, data: Unit?): Unit {
+        visitPatternByVarOrEnum(element)
+
+    }
+
+    open fun visitPatternByVarOrEnum(element: CjVarOrEnumPattern) {
+        super.visitPatternByVarOrEnum(element, Unit)
     }
 
     override fun visitPatternByConstant(element: CjConstantPattern, data: Unit?): Unit {

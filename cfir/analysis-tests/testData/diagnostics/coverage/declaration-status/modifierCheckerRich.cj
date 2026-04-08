@@ -1,7 +1,14 @@
 // RUN_PIPELINE_TILL: FRONTEND
-<!REDUNDANT_MODIFIER_FOR_TARGET!>open<!> interface Marker {}
+<!DEPRECATED_MODIFIER_FOR_TARGET!>open<!> interface Marker {
+    <!DEPRECATED_MODIFIER_CONTAINING_DECLARATION!>private<!> func hidden(): Unit {}
+    <!DEPRECATED_MODIFIER_CONTAINING_DECLARATION!>internal<!> func shared(): Unit {}
+}
 
-abstract <!REDUNDANT_MODIFIER!>open<!> class AbstractOpen
+<!DEPRECATED_MODIFIER_PAIR!>abstract<!> <!DEPRECATED_MODIFIER_PAIR!>open<!> class AbstractOpen
+
+<!DEPRECATED_MODIFIER_PAIR!>sealed<!> <!DEPRECATED_MODIFIER_PAIR!>public<!> class PublicSealed
+
+<!DEPRECATED_MODIFIER_PAIR!>sealed<!> <!DEPRECATED_MODIFIER_PAIR!>open<!> class OpenSealed
 
 <!WRONG_MODIFIER_TARGET!>override<!> func topLevelOverride(): Unit {}
 

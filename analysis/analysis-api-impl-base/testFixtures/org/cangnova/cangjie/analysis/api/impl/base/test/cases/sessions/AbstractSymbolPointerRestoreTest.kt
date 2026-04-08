@@ -6,6 +6,7 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.expectedCallableName
 import org.cangnova.cangjie.analysis.api.impl.base.test.targetNameText
 import org.cangnova.cangjie.analysis.api.session.restoreSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.psi.CjFile
@@ -34,13 +35,13 @@ abstract class AbstractSymbolPointerRestoreTest : AbstractAnalysisApiComponentTe
             val symbol = referenceExpression.resolveToSymbol()
             assertNotNull(symbol, "simple-name 应能解析到公开符号。")
             pointer = symbol!!.createPointer()
-            assertEquals(directives.expectedCallableName, symbol.name)
+            assertEquals(directives.expectedCallableName, symbol.name?.asString())
         }
 
         analyzeForTest(referenceExpression) {
             val restoredSymbol = restoreSymbol(pointer)
             assertNotNull(restoredSymbol, "符号指针跨 analyze 边界恢复失败。")
-            assertEquals(directives.expectedCallableName, restoredSymbol!!.name)
+            assertEquals(directives.expectedCallableName, restoredSymbol!!.name?.asString())
         }
     }
 }

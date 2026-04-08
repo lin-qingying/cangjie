@@ -695,7 +695,6 @@ class ConstraintSystemImpl(
         inferenceLogger?.logReadiness(InferenceLogger.FixationLogRecord(emptyMap(), variable), this@ConstraintSystemImpl)
         inferenceLogger?.logFixVariable(variable, resultType, this@ConstraintSystemImpl)
 
-
         doPostponedComputationsIfAllVariablesAreFixed()
     }
 
@@ -729,6 +728,18 @@ class ConstraintSystemImpl(
         addError(
             errorFactory(upperTypes.toList(), emptyIntersectionTypeInfo.casingTypes.toList(), variable, emptyIntersectionTypeInfo.kind)
         )
+    }
+
+    private fun ConstraintSystemUtilContext.postponeOnlyInputTypesCheck(
+        variableWithConstraints: MutableVariableWithConstraints,
+        resultType: CangJieTypeMarker,
+    ) {
+        // `OnlyInputTypes` 依赖最终替换后的输入类型集合，必须等所有相关类型变量 fix 完成后再统一检查。
+        if (variableWithConstraints.typeVariable.hasOnlyInputTypesAttribute()) {
+            postponedComputationsAfterAllVariablesAreFixed.add {
+                checkOnlyInputTypesAnnotation(variableWithConstraints, resultType)
+            }
+        }
     }
 
 

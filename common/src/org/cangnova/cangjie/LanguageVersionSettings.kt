@@ -46,6 +46,7 @@ enum class LanguageFeature {
     LambdaReturnTypeMismatchAsArgumentTypeMismatch,
     InvalidBinaryOperatorDiagnostics,
     LexicographicVariableReadinessCalculation,
+    EffectHandlers,
     ;
 
     companion object {

@@ -10,7 +10,7 @@ dependencies {
     api(project(":psi"))
 
     api(project(":common"))
-    api(project(":util"))
+    implementation(project(":util"))
     compileOnly(intellijCore())
     implementation(libs.guava)
 }

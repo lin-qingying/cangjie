@@ -10,9 +10,9 @@ import org.cangnova.cangjie.cfir.diagnostic.NamedParameterNotFound
 import org.cangnova.cangjie.cfir.diagnostic.NeedNamedArgument
 import org.cangnova.cangjie.cfir.diagnostic.NoValueForParameter
 import org.cangnova.cangjie.cfir.diagnostic.TooManyArguments
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
-import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
@@ -20,6 +20,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjValueArgument
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.source.text
 
@@ -110,6 +111,13 @@ object CfirMapArguments : ResolutionStage() {
                 continue
             }
 
+            // 对齐 Kotlin FIR 的参数绑定语义：
+            // 命名参数可能提前绑定掉前面的形参，后续位置参数必须跳过这些已绑定项，
+            // 否则会把“命名后的位置参数”错误地重新对到旧形参上，制造伪造的 missing / need-named 诊断。
+            while (nextPositionalIndex < parameters.size && parameters[nextPositionalIndex] in usedParameters) {
+                nextPositionalIndex += 1
+            }
+
             val parameter = parameters.getOrNull(nextPositionalIndex)
             if (parameter == null) {
                 sink.reportDiagnostic(TooManyArguments(argument.atom.expression, candidate.callInfo.name))
@@ -147,19 +155,27 @@ private data class CallArgumentInfo(
 )
 
 private fun CfirExpression.argumentNameOrNull(): Name? {
-    val wrappedExpression = this as? CfirWrappedExpression ?: return null
-    val source = wrappedExpression.source
+    val source = valueArgumentSourceOrNull() ?: return null
     val psiArgument = source?.psi as? CjValueArgument
     if (psiArgument != null) {
         return psiArgument.getArgumentName()?.asName
     }
 
+    // LightTree 路径没有 PSI，可用的稳定信息只有整段 value-argument source。
+    // 这里仅对“显式保留下来的 value-argument 包装层”做文本恢复，避免把普通表达式误判成命名参数。
     val rawText = source?.text?.toString()?.trim().orEmpty()
     val separatorIndex = rawText.indexOf(':')
     if (separatorIndex <= 0) return null
 
     val possibleName = rawText.substring(0, separatorIndex).trim()
     return Name.identifierIfValid(possibleName)
+}
+
+private fun CfirExpression.valueArgumentSourceOrNull(): CjSourceElement? {
+    return when (this) {
+        is CfirBlock -> source?.takeIf { statements.size == 1 }
+        else -> source?.takeIf { it.psi is CjValueArgument }
+    }
 }
 
 private fun CfirFunctionCallOrigin.isNamedPrefixOptionalOrigin(): Boolean {

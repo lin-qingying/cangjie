@@ -1,12 +1,16 @@
 package org.cangnova.cangjie.lsp.analysis
 
+import com.intellij.model.psi.PsiSymbolService
+import com.intellij.model.psi.impl.targetDeclarationAndReferenceSymbols
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.analyze
+import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
 import org.cangnova.cangjie.lsp.state.LspTextDocument
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.psi.CjBasicType
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjCallableDeclaration
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration
@@ -17,8 +21,10 @@ import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedDeclaration
 import org.cangnova.cangjie.psi.CjReferenceExpression
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
+import org.cangnova.cangjie.psi.psiUtil.collectDescendantsOfType
 import org.eclipse.lsp4j.Location
 import org.eclipse.lsp4j.Position
+import org.eclipse.lsp4j.Range
 
 /**
  * Analysis API 驱动的 LSP 语义支撑层。
@@ -33,6 +39,21 @@ internal class AnalysisApiLspSemanticSupport(
     lifecycleContext: CangjieAnalysisLifecycleContext,
     private val psiDocumentFactory: AnalysisApiPsiDocumentFactory,
 ) {
+    internal data class PositionTargets(
+        val declarationTargets: List<PsiElement>,
+        val referenceTargets: List<PsiElement>,
+    ) {
+        fun preferredTargets(targetKinds: Set<AnalysisApiLspTargetKind>): List<PsiElement> {
+            if (AnalysisApiLspTargetKind.REFERENCE in targetKinds && referenceTargets.isNotEmpty()) {
+                return referenceTargets
+            }
+            if (AnalysisApiLspTargetKind.DECLARATION in targetKinds && declarationTargets.isNotEmpty()) {
+                return declarationTargets
+            }
+            return emptyList()
+        }
+    }
+
     internal data class WorkspaceFileContext(
         val psiFile: CjFile,
         val documentUri: String,
@@ -64,6 +85,62 @@ internal class AnalysisApiLspSemanticSupport(
         file: CjFile,
         action: CaSession.() -> R,
     ): R = analyze(file, action)
+
+    /**
+     * 统一通过 IntelliJ target extraction 获取当前位置的 declaration/reference targets。
+     *
+     * 这里直接对齐 Kotlin 当前使用的平台能力，不再由 LSP 自己顺着父链猜测命中对象。
+     */
+    fun findTargets(
+        document: LspTextDocument,
+        file: CjFile,
+        position: Position,
+    ): PositionTargets {
+        val offset = analysisOffset(document, file, position)
+        val symbolService = PsiSymbolService.getInstance()
+        val (declared, referenced) = targetDeclarationAndReferenceSymbols(file, offset)
+        return PositionTargets(
+            declarationTargets = declared
+                .mapNotNull(symbolService::extractElementFromSymbol)
+                .distinctBy(::targetIdentity),
+            referenceTargets = referenced
+                .mapNotNull(symbolService::extractElementFromSymbol)
+                .distinctBy(::targetIdentity),
+        )
+    }
+
+    fun findTargetElements(
+        document: LspTextDocument,
+        file: CjFile,
+        position: Position,
+        targetKinds: Set<AnalysisApiLspTargetKind> = AnalysisApiLspTargetKind.ALL,
+    ): List<PsiElement> {
+        return findTargets(document, file, position).preferredTargets(targetKinds)
+    }
+
+    fun findPrimaryTarget(
+        document: LspTextDocument,
+        file: CjFile,
+        position: Position,
+        targetKinds: Set<AnalysisApiLspTargetKind> = AnalysisApiLspTargetKind.ALL,
+    ): PsiElement? {
+        return findTargetElements(document, file, position, targetKinds).firstOrNull()
+    }
+
+    fun hoverRange(
+        document: LspTextDocument,
+        file: CjFile,
+        position: Position,
+    ): Range? {
+        val offset = analysisOffset(document, file, position)
+        file.findReferenceAt(offset)?.element?.textRange?.let { range ->
+            return document.analysisRangeOf(range.startOffset, range.endOffset)
+        }
+        file.findElementAt(offset)?.textRange?.let { range ->
+            return document.analysisRangeOf(range.startOffset, range.endOffset)
+        }
+        return null
+    }
 
     /**
      * 把 LSP 光标位置稳定映射到最适合语义分析的 PSI 叶子节点。
@@ -184,27 +261,75 @@ internal class AnalysisApiLspSemanticSupport(
         return targetKeyFor(resolvedPsi)
     }
 
+    fun CaSession.targetKeyForReferenceLike(element: PsiElement): AnalysisApiLspTargetKey? {
+        return when (element) {
+            is CjReferenceExpression -> targetKeyFor(element)
+            is CjBasicType -> element.references
+                .asSequence()
+                .mapNotNull { reference -> reference.resolve() }
+                .mapNotNull(::targetKeyFor)
+                .firstOrNull()
+
+            else -> null
+        }
+    }
+
     fun targetKeyFor(declaration: PsiElement?): AnalysisApiLspTargetKey? {
-        val namedDeclaration = declaration as? CjNamedDeclaration ?: return null
-        val containingFile = namedDeclaration.containingFile as? CjFile ?: return null
-        val range = namedDeclaration.nameIdentifier?.textRange ?: namedDeclaration.textRange ?: return null
-        val documentUri = documentUriOf(containingFile) ?: return null
+        return when (declaration) {
+            is CjNamedDeclaration -> {
+                val containingFile = declaration.containingFile as? CjFile ?: return null
+                val range = declaration.nameIdentifier?.textRange ?: declaration.textRange ?: return null
+                val documentUri = documentUriOf(containingFile) ?: return null
 
-        return when (namedDeclaration) {
-            is CjClassLikeDeclaration -> {
-                namedDeclaration.getClassId()?.let(AnalysisApiLspTargetKey::ClassLike)
-                    ?: AnalysisApiLspTargetKey.Local(documentUri, range.startOffset, range.endOffset, namedDeclaration.name)
+                when (declaration) {
+                    is CjClassLikeDeclaration -> {
+                        declaration.getClassId()?.let(AnalysisApiLspTargetKey::ClassLike)
+                            ?: AnalysisApiLspTargetKey.Local(documentUri, range.startOffset, range.endOffset, declaration.name)
+                    }
+
+                    is CjCallableDeclaration -> {
+                        declaration.fqName?.let { fqName ->
+                            val callableName = fqName.shortName()
+                            val packageName = fqName.parent()
+                            AnalysisApiLspTargetKey.Callable(CallableId(packageName, null, callableName))
+                        } ?: AnalysisApiLspTargetKey.Local(documentUri, range.startOffset, range.endOffset, declaration.name)
+                    }
+
+                    else -> AnalysisApiLspTargetKey.Local(documentUri, range.startOffset, range.endOffset, declaration.name)
+                }
             }
 
-            is CjCallableDeclaration -> {
-                namedDeclaration.fqName?.let { fqName ->
-                    val callableName = fqName.shortName()
-                    val packageName = fqName.parent()
-                    AnalysisApiLspTargetKey.Callable(CallableId(packageName, null, callableName))
-                } ?: AnalysisApiLspTargetKey.Local(documentUri, range.startOffset, range.endOffset, namedDeclaration.name)
-            }
+            is CjFile -> AnalysisApiLspTargetKey.File(declaration.packageFqName, declaration.name)
+            else -> null
+        }
+    }
 
-            else -> AnalysisApiLspTargetKey.Local(documentUri, range.startOffset, range.endOffset, namedDeclaration.name)
+    fun referenceLikeElements(file: CjFile): Sequence<PsiElement> {
+        return sequence {
+            yieldAll(file.collectDescendantsOfType<CjSimpleNameExpression>().asSequence())
+            yieldAll(file.collectDescendantsOfType<CjBasicType>().asSequence())
+        }
+    }
+
+    private fun analysisOffset(
+        document: LspTextDocument,
+        file: CjFile,
+        position: Position,
+    ): Int {
+        return document.analysisOffsetAt(position).coerceIn(0, file.textLength.coerceAtLeast(0))
+    }
+
+    private fun targetIdentity(element: PsiElement): String {
+        val file = (element.containingFile as? CjFile)?.virtualFile?.url ?: "<memory>"
+        val range = element.textRange
+        return buildString {
+            append(file)
+            append(':')
+            append(range?.startOffset ?: -1)
+            append(':')
+            append(range?.endOffset ?: -1)
+            append(':')
+            append(element::class.java.name)
         }
     }
 
@@ -225,20 +350,35 @@ internal class AnalysisApiLspSemanticSupport(
         )
     }
 
+    /**
+     * 对没有稳定全局标识的本地/匿名 symbol，统一退回到“文件 + 文本区间”的局部键，
+     * 让 LSP 的跨文档比对仍然建立在 Analysis API 当前公开能力之上。
+     */
+    private fun org.cangnova.cangjie.analysis.api.symbols.CaSymbol.localTargetKey(
+        session: CaSession,
+        stableName: String? = null,
+    ): AnalysisApiLspTargetKey.Local? {
+        val originalPsi = session.run { getOriginalPsi() } ?: return null
+        val containingFile = session.run { getContainingFile() } ?: return null
+        val uri = documentUriOf(containingFile) ?: return null
+        val range = originalPsi.textRange ?: return null
+        return AnalysisApiLspTargetKey.Local(uri, range.startOffset, range.endOffset, stableName)
+    }
+
     private fun org.cangnova.cangjie.analysis.api.symbols.CaSymbol.toTargetKey(session: CaSession): AnalysisApiLspTargetKey? =
         when (this) {
             is org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol -> AnalysisApiLspTargetKey.Package(fqName)
-            is org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol -> AnalysisApiLspTargetKey.ClassLike(classId)
+            is org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol -> {
+                classId?.let(AnalysisApiLspTargetKey::ClassLike)
+                    ?: localTargetKey(session, (this as? CaNamedSymbol)?.name?.asString())
+            }
+
             is org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol -> {
                 val stableCallableId = callableId
                 if (stableCallableId != null) {
                     AnalysisApiLspTargetKey.Callable(stableCallableId)
                 } else {
-                    val originalPsi = session.run { getOriginalPsi() } ?: return null
-                    val containingFile = session.run { getContainingFile() } ?: return null
-                    val uri = documentUriOf(containingFile) ?: return null
-                    val range = originalPsi.textRange ?: return null
-                    AnalysisApiLspTargetKey.Local(uri, range.startOffset, range.endOffset, name)
+                    localTargetKey(session, (this as? CaNamedSymbol)?.name?.asString())
                 }
             }
 
@@ -269,4 +409,14 @@ internal sealed interface AnalysisApiLspTargetKey {
         val endOffset: Int,
         val name: String?,
     ) : AnalysisApiLspTargetKey
+}
+
+internal enum class AnalysisApiLspTargetKind {
+    DECLARATION,
+    REFERENCE,
+    ;
+
+    companion object {
+        val ALL: Set<AnalysisApiLspTargetKind> = setOf(DECLARATION, REFERENCE)
+    }
 }

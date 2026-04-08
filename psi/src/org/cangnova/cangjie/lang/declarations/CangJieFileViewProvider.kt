@@ -26,10 +26,10 @@ package org.cangnova.cangjie.lang.declarations
 
 import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.psi.CjFile
-import com.intellij.lang.Language
+import com.intellij.openapi.fileTypes.FileType
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.FileViewProvider
-import com.intellij.psi.FileViewProviderFactory
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.SingleRootFileViewProvider
 
@@ -39,14 +39,22 @@ class CangJieFileViewProvider(
     manager: PsiManager,
     file: VirtualFile,
     physical: Boolean,
-    private val factory: (CangJieFileViewProvider) -> CjFile?
+    private val factory: (CangJieFileViewProvider) -> CjFile?,
+    private val textProvider: ((CangJieFileViewProvider) -> CharSequence)? = null,
 ) : SingleRootFileViewProvider(manager, file, physical, CangJieLanguage) {
+    /**
+     * 统一由外部工厂创建 source/decompiled `CjFile`，
+     * 避免调用方再手工塞入 cached PSI。
+     */
+    override fun createFile(project: Project, file: VirtualFile, fileType: FileType): PsiFile? {
+        return factory(this)
+    }
 
-//    override fun createFile(project: Project, file: VirtualFile, fileType: FileType): PsiFile? {
-//        return factory(this)
-//    }
+    override fun getContents(): CharSequence {
+        return textProvider?.invoke(this) ?: super.getContents()
+    }
 
-    override fun createCopy(copy: VirtualFile) = CangJieFileViewProvider(manager, copy, false, factory)
+    override fun createCopy(copy: VirtualFile) = CangJieFileViewProvider(manager, copy, false, factory, textProvider)
 
 
 }

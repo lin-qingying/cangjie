@@ -27,6 +27,7 @@ dependencyResolutionManagement {
 rootProject.name = "gradle-build-conventions"
 
 include(":utilities")
+include(":analysis-coverage-convention")
 include(":buildsrc-compat")
 include(":gradle-plugins-common")
 include(":project-tests-convention")

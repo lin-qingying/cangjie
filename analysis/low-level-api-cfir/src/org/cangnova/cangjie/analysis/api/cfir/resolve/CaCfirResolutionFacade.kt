@@ -33,6 +33,9 @@ enum class CaCfirCallKind {
 enum class CaCfirCallOrigin {
     REGULAR,
     OPERATOR,
+    CONSTRUCTOR_DELEGATION_THIS,
+    CONSTRUCTOR_DELEGATION_SUPER,
+
 }
 
 /**
@@ -198,6 +201,8 @@ interface CaCfirResolutionFacade {
      * 在当前 use-site 模块闭包里回查底层符号对应的源码 PSI。
      */
     fun findSourcePsi(symbol: CfirSymbol<*>): PsiElement?
+
+    fun getDeclarationSymbols(psi: PsiElement): List<CfirSymbol<*>>
 
     /**
      * 在当前 use-site 模块闭包里查询底层符号所属的源码文件。
