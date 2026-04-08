@@ -21,6 +21,9 @@ import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.name
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -49,13 +52,14 @@ internal class CaCfirResolver(
             return@withValidityAssertion matchBranchBindings
         }
 
-        buildList {
-            addAll(
-                analysisSession.resolveSymbols(this@resolveToSymbols)
-                    .map(analysisSession::getPublicSymbol),
-            )
-            addAll(restoreCallBackedSymbols(this@resolveToSymbols))
-        }.distinctSymbols()
+        val callBackedSymbols = restoreCallBackedSymbols(this@resolveToSymbols).distinctSymbols()
+        if (callBackedSymbols.isNotEmpty()) {
+            return@withValidityAssertion callBackedSymbols
+        }
+
+        analysisSession.resolveSymbols(this@resolveToSymbols)
+            .map(analysisSession::getPublicSymbol)
+            .distinctSymbols()
     }
 
     override fun CjElement.resolveToCall() = withValidityAssertion {
@@ -120,7 +124,44 @@ internal class CaCfirResolver(
             snapshot.calls.mapNotNullTo(this) { call -> call.target }
         }
 
+        val extendDispatchTargets = restoreExtendDispatchTargets(reference, snapshot)
+        if (extendDispatchTargets.isNotEmpty()) {
+            return extendDispatchTargets
+        }
+
         return lowLevelTargets.map(analysisSession::getPublicSymbol)
+    }
+
+    /**
+     * extend 成员调用在 low-level `call target` 上可能先落到被实现的接口成员。
+     *
+     * 为了让引用、导航、查找用法统一指向真正承载实现体的 extend 成员，
+     * 这里基于接收者类型把目标回收到对应的 extend declared-member scope。
+     */
+    private fun restoreExtendDispatchTargets(
+        reference: CjReferenceExpression,
+        snapshot: org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirCallInfoSnapshot,
+    ): Collection<CaSymbol> {
+        val memberName = (reference as? CjSimpleNameExpression)?.referencedNameAsName
+            ?: snapshot.successfulCall?.calleeName
+            ?: return emptyList()
+
+        val receiverClassId = snapshot.successfulCall?.explicitReceiverType?.classIdOrPrimitiveClassId
+            ?: snapshot.calls.asSequence()
+                .mapNotNull { call -> call.explicitReceiverType?.classIdOrPrimitiveClassId }
+                .firstOrNull()
+            ?: return emptyList()
+
+        return analysisSession.getExtendPublicSymbols(receiverClassId)
+            .flatMap { extendSymbol ->
+                with(analysisSession) {
+                    extendSymbol.declaredMemberScope.getCallableSymbols(memberName)
+                }
+            }
+            .onEach { symbol ->
+                (symbol as? CaCfirBackedSymbol<*>)?.backingSymbol?.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+            }
+            .distinctSymbols()
     }
 
     private fun resolvePatternBindingSymbolByPsi(psi: com.intellij.psi.PsiElement): CaPatternBindingSymbol? {
