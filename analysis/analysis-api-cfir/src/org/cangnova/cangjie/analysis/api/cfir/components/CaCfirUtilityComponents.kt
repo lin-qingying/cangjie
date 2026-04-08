@@ -22,6 +22,7 @@ import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
 import org.cangnova.cangjie.analysis.api.evaluation.CaCompileTimeValue
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSymbolProvider
 import org.cangnova.cangjie.analysis.api.imports.CaImportOptimizationPlan
+import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningCommand
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningPlan
 import org.cangnova.cangjie.analysis.api.interop.CaInteropInfo
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
@@ -268,6 +269,24 @@ internal class CaCfirReferenceShortener(
 ) : CaBaseSessionComponent<CaCfirSession>(), CaReferenceShortener {
     override fun CjFile.collectReferenceShorteningPlan(): CaReferenceShorteningPlan = withValidityAssertion {
         analysisSession.collectReferenceShorteningPlan(this@collectReferenceShorteningPlan)
+    }
+
+    override fun CjFile.collectReferenceShortenings(
+        selection: com.intellij.openapi.util.TextRange,
+    ): CaReferenceShorteningCommand = withValidityAssertion {
+        analysisSession.collectReferenceShortenings(
+            file = this@collectReferenceShortenings,
+            selection = selection,
+        )
+    }
+
+    override fun CjElement.collectReferenceShorteningsInElement(): CaReferenceShorteningCommand = withValidityAssertion {
+        val file = containingFile as? CjFile
+            ?: error("引用缩短命令只能在 CjFile 上下文中收集：${this@collectReferenceShorteningsInElement::class.simpleName}")
+        analysisSession.collectReferenceShortenings(
+            file = file,
+            selection = textRange,
+        )
     }
 }
 

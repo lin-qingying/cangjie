@@ -38,6 +38,7 @@ import org.cangnova.cangjie.analysis.light.declarations.sourceOrigin
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.stubs.CangJieFileStub
 import org.cangnova.cangjie.utils.isCangJieFileType
 import java.util.concurrent.atomic.AtomicLong
 
@@ -75,7 +76,7 @@ class CaSymbolLightDeclarationProvider(
         val stubFileProvider = project.getService(CaStubFileProvider::class.java)
 
         return analyze(module) {
-            val packageFqName = file.packageFqName
+            val packageFqName = file.resolvePackageFqName()
             val names = buildList {
                 addAll(stubFileProvider.getTopLevelClassifierNames(file))
                 addAll(stubFileProvider.getTopLevelCallableNames(file))
@@ -259,7 +260,7 @@ class CaSymbolLightDeclarationProvider(
                 ),
                 token = symbol.token,
                 classId = classId,
-                typeParameters = emptyList(),
+                typeParameters = resolveTypeParameterNames(symbol, containingFile),
                 superTypes = (symbol as? org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol)?.superTypes.orEmpty(),
                 members = members,
             )
@@ -314,7 +315,7 @@ class CaSymbolLightDeclarationProvider(
                 extendId = symbol.extendId,
                 targetClassId = symbol.targetClassId,
                 extendedType = symbol.extendedType,
-                typeParameters = symbol.typeParameters.mapNotNull { typeParameter -> typeParameter.name },
+                typeParameters = resolveTypeParameterNames(symbol, containingFile),
                 superTypes = symbol.superTypes,
                 members = members,
             )
@@ -388,5 +389,45 @@ class CaSymbolLightDeclarationProvider(
             is CaLightCallableDeclaration -> "callable:${declaration.callableId ?: declaration.name}"
             else -> "package:${declaration.name}"
         }
+    }
+
+    /**
+     * decompiled 场景下，某些符号 facet 仍然可能要求 source PSI 才能恢复。
+     *
+     * light declaration 作为只读视图，不应因为这些 source-only facet 缺失而整体失败，
+     * 因此这里对 type parameters 做显式边界收敛：source-backed 正常恢复，decompiled 边界
+     * 则稳定退化为空列表。
+     */
+    private fun resolveTypeParameterNames(
+        symbol: CaSymbol,
+        containingFile: CjFile?,
+    ): List<Name> {
+        return runCatching {
+            when (symbol) {
+                is CaClassLikeSymbol -> symbol.typeParameters.mapNotNull { typeParameter -> typeParameter.name }
+                is CaExtendSymbol -> symbol.typeParameters.mapNotNull { typeParameter -> typeParameter.name }
+                else -> emptyList()
+            }
+        }.getOrElse { throwable ->
+            if (containingFile?.isCompiled == true && throwable is IllegalStateException) {
+                emptyList()
+            } else {
+                throw throwable
+            }
+        }
+    }
+
+    /**
+     * 对 decompiled file 优先走 stub/custom stub builder 恢复包名，避免为了读 package
+     * 触发整份反编译文本的 PSI 解析。
+     */
+    private fun CjFile.resolvePackageFqName(): FqName {
+        if (!isCompiled) {
+            return packageFqName
+        }
+
+        val stubPackage = (stub as? CangJieFileStub)?.getPackageFqName()
+            ?: (customStubBuilder?.buildStubTree(this) as? CangJieFileStub)?.getPackageFqName()
+        return stubPackage ?: packageFqName
     }
 }

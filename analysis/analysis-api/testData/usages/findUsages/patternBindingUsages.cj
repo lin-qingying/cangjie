@@ -1,3 +1,4 @@
+// FILE: patternBindingUsages.cj
 // TARGET_KIND: BINDING_PATTERN
 // TARGET_NAME: value
 // EXPECTED_USAGE_COUNT: 2

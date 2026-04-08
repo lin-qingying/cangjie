@@ -58,6 +58,27 @@ import org.cangnova.cangjie.source.psi
 import java.util.LinkedHashMap
 import java.util.LinkedHashSet
 
+private data class CaCfirPsiAnchorKey(
+    val fileIdentity: String,
+    val elementClassName: String,
+    val startOffset: Int,
+    val endOffset: Int,
+) {
+    companion object {
+        fun create(psi: PsiElement): CaCfirPsiAnchorKey? {
+            val file = psi.containingFile ?: return null
+            val range = psi.textRange ?: return null
+            val fileIdentity = file.virtualFile?.path ?: "${file.name}#${file.text.hashCode()}"
+            return CaCfirPsiAnchorKey(
+                fileIdentity = fileIdentity,
+                elementClassName = psi::class.java.name,
+                startOffset = range.startOffset,
+                endOffset = range.endOffset,
+            )
+        }
+    }
+}
+
 /**
  * low-level 语义查询提供器。
  *
@@ -91,13 +112,13 @@ internal class CaCfirSemanticQueryProvider(
         semanticIndex.classDefaultTypes[declaration]
 
     fun getDeclarationSymbols(psi: PsiElement): List<CfirSymbol<*>> =
-        semanticIndex.declarationSymbols[psi].orEmpty()
+        semanticIndex.lookupDeclarationSymbols(psi)
 
     fun resolveReference(reference: CjReferenceExpression): Collection<CfirSymbol<*>> =
-        semanticIndex.referenceTargets[reference].orEmpty()
+        semanticIndex.lookupReferenceTargets(reference)
 
     fun getCallInfo(element: PsiElement): CaCfirCallInfoSnapshot? =
-        semanticIndex.callInfos[element]
+        semanticIndex.lookupCallInfo(element)
 
     /**
      * 只保留当前公开 Analysis API 需要的稳定语义索引。
@@ -108,9 +129,35 @@ internal class CaCfirSemanticQueryProvider(
         val valueParameterTypes: Map<CjParameter, ConeCangJieType>,
         val classDefaultTypes: Map<CjClassLikeDeclaration, ConeCangJieType>,
         val declarationSymbols: Map<PsiElement, List<CfirSymbol<*>>>,
+        val declarationSymbolsByAnchor: Map<CaCfirPsiAnchorKey, List<CfirSymbol<*>>>,
         val referenceTargets: Map<CjReferenceExpression, Set<CfirSymbol<*>>>,
+        val referenceTargetsByAnchor: Map<CaCfirPsiAnchorKey, Set<CfirSymbol<*>>>,
         val callInfos: Map<PsiElement, CaCfirCallInfoSnapshot>,
+        val callInfosByAnchor: Map<CaCfirPsiAnchorKey, CaCfirCallInfoSnapshot>,
     ) {
+        /**
+         * generated / standalone 测试里经常会出现“语义索引建在一份 PSI 上，断言拿到的是另一份等价 PSI”的情况。
+         *
+         * 只用 `PsiElement` 对象身份做 key，会让 `resolveToSymbol` / `resolveToCall` / `lookupSymbolsByPsi`
+         * 在框架级场景里整体失效；这里补上一层稳定锚点键，让语义查询既支持同实例命中，也支持等价 PSI 命中。
+         */
+        fun lookupDeclarationSymbols(psi: PsiElement): List<CfirSymbol<*>> {
+            return declarationSymbols[psi]
+                ?: CaCfirPsiAnchorKey.create(psi)?.let(declarationSymbolsByAnchor::get)
+                ?: emptyList()
+        }
+
+        fun lookupReferenceTargets(reference: CjReferenceExpression): Set<CfirSymbol<*>> {
+            return referenceTargets[reference]
+                ?: CaCfirPsiAnchorKey.create(reference)?.let(referenceTargetsByAnchor::get)
+                ?: emptySet()
+        }
+
+        fun lookupCallInfo(element: PsiElement): CaCfirCallInfoSnapshot? {
+            return callInfos[element]
+                ?: CaCfirPsiAnchorKey.create(element)?.let(callInfosByAnchor::get)
+        }
+
         companion object {
             fun build(cfirFiles: List<CfirFile>): SemanticIndex {
                 val expressionTypes = LinkedHashMap<CjExpression, ConeCangJieType>()
@@ -118,8 +165,11 @@ internal class CaCfirSemanticQueryProvider(
                 val valueParameterTypes = LinkedHashMap<CjParameter, ConeCangJieType>()
                 val classDefaultTypes = LinkedHashMap<CjClassLikeDeclaration, ConeCangJieType>()
                 val declarationSymbols = LinkedHashMap<PsiElement, LinkedHashSet<CfirSymbol<*>>>()
+                val declarationSymbolsByAnchor = LinkedHashMap<CaCfirPsiAnchorKey, LinkedHashSet<CfirSymbol<*>>>()
                 val referenceTargets = LinkedHashMap<CjReferenceExpression, LinkedHashSet<CfirSymbol<*>>>()
+                val referenceTargetsByAnchor = LinkedHashMap<CaCfirPsiAnchorKey, LinkedHashSet<CfirSymbol<*>>>()
                 val callInfos = LinkedHashMap<PsiElement, CaCfirCallInfoSnapshot>()
+                val callInfosByAnchor = LinkedHashMap<CaCfirPsiAnchorKey, CaCfirCallInfoSnapshot>()
 
                 val visitor = object : CfirVisitorVoid() {
                     override fun visitElement(element: CfirElement) {
@@ -131,18 +181,20 @@ internal class CaCfirSemanticQueryProvider(
                         val psi = element.source?.psi
                         if (psi != null) {
                             element.sourceSymbolOrNull()?.let { symbol ->
-                                declarationSymbols.getOrPut(psi, ::LinkedHashSet).add(symbol)
+                                declarationSymbols.recordPsiIdentity(psi, symbol)
+                                declarationSymbolsByAnchor.recordPsiAnchor(psi, symbol)
                                 if (element is org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction && psi is CjLambdaExpression) {
-                                    declarationSymbols.getOrPut(psi.functionLiteral, ::LinkedHashSet).add(symbol)
+                                    declarationSymbols.recordPsiIdentity(psi.functionLiteral, symbol)
+                                    declarationSymbolsByAnchor.recordPsiAnchor(psi.functionLiteral, symbol)
                                 }
                             }
                         }
 
                         when (element) {
                             is org.cangnova.cangjie.cfir.declarations.CfirPatternVariable ->
-                                collectPatternDeclarationSymbols(element.pattern, declarationSymbols)
+                                collectPatternDeclarationSymbols(element.pattern, declarationSymbols, declarationSymbolsByAnchor)
                             is CfirMatchBranch ->
-                                collectPatternDeclarationSymbols(element.pattern, declarationSymbols)
+                                collectPatternDeclarationSymbols(element.pattern, declarationSymbols, declarationSymbolsByAnchor)
                         }
 
                         if (psi is CjExpression && element is CfirExpression) {
@@ -162,16 +214,21 @@ internal class CaCfirSemanticQueryProvider(
                         }
 
                         if (psi is CjReferenceExpression && element is CfirResolvable) {
-                            collectReferenceTargets(psi, element.calleeReference, referenceTargets)
+                            collectReferenceTargets(psi, element.calleeReference, referenceTargets, referenceTargetsByAnchor)
                         }
 
                         if (psi is CjReferenceExpression && element is CfirResolvedNamedReference) {
-                            referenceTargets.getOrPut(psi, ::LinkedHashSet).add(element.resolvedSymbol)
+                            referenceTargets.recordPsiIdentity(psi, element.resolvedSymbol)
+                            referenceTargetsByAnchor.recordPsiAnchor(psi, element.resolvedSymbol)
                         }
 
                         if (element is CfirFunctionCall) {
                             collectCallInfoAnchors(psi).forEach { anchor ->
-                                callInfos[anchor] = buildCallInfo(element)
+                                val snapshot = buildCallInfo(element)
+                                callInfos[anchor] = snapshot
+                                CaCfirPsiAnchorKey.create(anchor)?.let { anchorKey ->
+                                    callInfosByAnchor[anchorKey] = snapshot
+                                }
                             }
                         }
                     }
@@ -187,8 +244,11 @@ internal class CaCfirSemanticQueryProvider(
                     valueParameterTypes = valueParameterTypes,
                     classDefaultTypes = classDefaultTypes,
                     declarationSymbols = declarationSymbols.mapValues { (_, symbols) -> symbols.toList() },
+                    declarationSymbolsByAnchor = declarationSymbolsByAnchor.mapValues { (_, symbols) -> symbols.toList() },
                     referenceTargets = referenceTargets.mapValues { (_, symbols) -> symbols.toSet() },
+                    referenceTargetsByAnchor = referenceTargetsByAnchor.mapValues { (_, symbols) -> symbols.toSet() },
                     callInfos = callInfos,
+                    callInfosByAnchor = callInfosByAnchor,
                 )
             }
 
@@ -308,39 +368,43 @@ internal class CaCfirSemanticQueryProvider(
 private fun collectPatternDeclarationSymbols(
     pattern: CfirPattern,
     declarationSymbols: LinkedHashMap<PsiElement, LinkedHashSet<CfirSymbol<*>>>,
+    declarationSymbolsByAnchor: LinkedHashMap<CaCfirPsiAnchorKey, LinkedHashSet<CfirSymbol<*>>>,
 ) {
     when (pattern) {
         is CfirBindingPattern -> {
             pattern.bindingVariable?.source?.psi?.let { psi ->
-                declarationSymbols.getOrPut(psi, ::LinkedHashSet).add(pattern.bindingVariable!!.symbol)
+                declarationSymbols.recordPsiIdentity(psi, pattern.bindingVariable!!.symbol)
+                declarationSymbolsByAnchor.recordPsiAnchor(psi, pattern.bindingVariable!!.symbol)
             }
             pattern.nestedPattern?.let { nestedPattern ->
-                collectPatternDeclarationSymbols(nestedPattern, declarationSymbols)
+                collectPatternDeclarationSymbols(nestedPattern, declarationSymbols, declarationSymbolsByAnchor)
             }
         }
 
         is CfirTypePattern -> {
             pattern.bindingVariable?.source?.psi?.let { psi ->
-                declarationSymbols.getOrPut(psi, ::LinkedHashSet).add(pattern.bindingVariable!!.symbol)
+                declarationSymbols.recordPsiIdentity(psi, pattern.bindingVariable!!.symbol)
+                declarationSymbolsByAnchor.recordPsiAnchor(psi, pattern.bindingVariable!!.symbol)
             }
         }
 
         is CfirVarOrEnumPattern -> {
             pattern.bindingVariable?.source?.psi?.let { psi ->
-                declarationSymbols.getOrPut(psi, ::LinkedHashSet).add(pattern.bindingVariable!!.symbol)
+                declarationSymbols.recordPsiIdentity(psi, pattern.bindingVariable!!.symbol)
+                declarationSymbolsByAnchor.recordPsiAnchor(psi, pattern.bindingVariable!!.symbol)
             }
         }
 
         is CfirTuplePattern -> pattern.elements.forEach { element ->
-            collectPatternDeclarationSymbols(element, declarationSymbols)
+            collectPatternDeclarationSymbols(element, declarationSymbols, declarationSymbolsByAnchor)
         }
 
         is CfirEnumPattern -> pattern.arguments.forEach { argument ->
-            collectPatternDeclarationSymbols(argument, declarationSymbols)
+            collectPatternDeclarationSymbols(argument, declarationSymbols, declarationSymbolsByAnchor)
         }
 
         is CfirOrPattern -> pattern.alternatives.forEach { alternative ->
-            collectPatternDeclarationSymbols(alternative, declarationSymbols)
+            collectPatternDeclarationSymbols(alternative, declarationSymbols, declarationSymbolsByAnchor)
         }
 
         is CfirWildcardPattern,
@@ -429,18 +493,36 @@ private fun collectReferenceTargets(
     referenceExpression: CjReferenceExpression,
     reference: CfirReference,
     referenceTargets: LinkedHashMap<CjReferenceExpression, LinkedHashSet<CfirSymbol<*>>>,
+    referenceTargetsByAnchor: LinkedHashMap<CaCfirPsiAnchorKey, LinkedHashSet<CfirSymbol<*>>>,
 ) {
     when (reference) {
         is CfirResolvedNamedReference -> {
-            referenceTargets.getOrPut(referenceExpression, ::LinkedHashSet).add(reference.resolvedSymbol)
+            referenceTargets.recordPsiIdentity(referenceExpression, reference.resolvedSymbol)
+            referenceTargetsByAnchor.recordPsiAnchor(referenceExpression, reference.resolvedSymbol)
         }
 
         is CfirNamedReferenceWithCandidate -> {
-            referenceTargets.getOrPut(referenceExpression, ::LinkedHashSet).add(reference.candidate.symbol)
+            referenceTargets.recordPsiIdentity(referenceExpression, reference.candidate.symbol)
+            referenceTargetsByAnchor.recordPsiAnchor(referenceExpression, reference.candidate.symbol)
         }
 
         else -> Unit
     }
+}
+
+private fun <K : PsiElement, V> LinkedHashMap<K, LinkedHashSet<V>>.recordPsiIdentity(
+    psi: K,
+    value: V,
+) {
+    getOrPut(psi, ::LinkedHashSet).add(value)
+}
+
+private fun <V> LinkedHashMap<CaCfirPsiAnchorKey, LinkedHashSet<V>>.recordPsiAnchor(
+    psi: PsiElement,
+    value: V,
+) {
+    val anchor = CaCfirPsiAnchorKey.create(psi) ?: return
+    getOrPut(anchor, ::LinkedHashSet).add(value)
 }
 
 private fun CfirFunctionCallOrigin.asAnalysisOrigin(): CaCfirCallOrigin = when (this) {

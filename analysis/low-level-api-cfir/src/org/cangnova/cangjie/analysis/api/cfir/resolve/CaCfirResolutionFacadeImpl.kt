@@ -46,11 +46,15 @@ internal class CaCfirResolutionFacadeImpl internal constructor(
     override val useSiteFirSession: CfirSession,
     override val allModules: Set<CaModule>,
     override val cfirFiles: List<CfirFile>,
-    private val diagnostics: DiagnosticBuckets,
+    diagnosticsProvider: () -> DiagnosticBuckets,
     private val scopeProvider: CaCfirScopeSnapshotProvider,
     private val visibleSymbolProvider: CaCfirVisibleSymbolProvider,
     private val sourceNavigationProvider: CaCfirSourceNavigationProvider,
 ) : CaCfirResolutionFacade {
+    /**
+     * diagnostics 按需初始化，避免 static use-site 在只读链路中被无关的 checker 初始化拖入。
+     */
+    private val diagnostics: DiagnosticBuckets by lazy(LazyThreadSafetyMode.NONE, diagnosticsProvider)
     /**
      * low-level 类型关系由 analysis 自己持有的关系引擎负责。
      */

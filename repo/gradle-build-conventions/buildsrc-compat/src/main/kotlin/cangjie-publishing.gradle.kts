@@ -3,6 +3,7 @@ import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.GenerateMavenPom
+import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.publish.maven.tasks.AbstractPublishToMaven
 import org.gradle.api.tasks.javadoc.Javadoc
@@ -64,6 +65,22 @@ plugins.withId("java") {
     tasks.withType<Javadoc>().configureEach {
         options.encoding = "UTF-8"
         isFailOnError = false
+    }
+
+    /**
+     * 当前公开发布的是“前端门面工件”：
+     * 这些工件会把未公开的一方模块直接打进最终 jar，只保留清洗后的 Maven POM 依赖图。
+     *
+     * 如果继续发布 Gradle Module Metadata，Gradle 消费端会优先读取 `.module`，
+     * 从而重新看到 `cfir-tree`、`resolve`、`checkers` 等内部实现依赖，导致消费方解析失败。
+     *
+     * 因此这里对公开门面工件统一关闭 `.module` 生成，让 Gradle 回退到已清洗的 POM。
+     */
+    tasks.withType<GenerateModuleMetadata>().configureEach {
+        enabled = false
+    }
+    tasks.matching { it.name == "generateMetadataFileForMavenPublication" }.configureEach {
+        enabled = false
     }
 
     configure<PublishingExtension> {
