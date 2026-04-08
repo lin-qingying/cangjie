@@ -29,6 +29,7 @@ import org.cangnova.cangjie.analysis.api.substitution.CaSubstitutedSignature
 import org.cangnova.cangjie.analysis.api.substitution.CaTypeSubstitutor
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
@@ -66,6 +67,37 @@ interface CaResolver : CaLifetimeOwner {
 
 interface CaSymbolRelationProvider : CaLifetimeOwner {
     fun CaSymbol.isEquivalentTo(other: CaSymbol): Boolean
+
+    /**
+     * 当前 callable 直接覆写到的显式声明集合。
+     *
+     * 这里对齐 Kotlin Analysis `directlyOverriddenSymbols` 的职责边界：
+     * - 只暴露语义上真实存在的上层声明
+     * - 不把底层 substitution override / fake override 细节泄漏给调用方
+     */
+    val CaCallableSymbol.directlyOverriddenSymbols: Sequence<CaCallableSymbol>
+
+    /**
+     * 当前 callable 递归覆写到的全部显式声明集合。
+     *
+     * 该结果以 `directlyOverriddenSymbols` 为 spine 递归展开，
+     * 用于覆盖关系、文档恢复、导航与后续 usages 语义统一。
+     */
+    val CaCallableSymbol.allOverriddenSymbols: Sequence<CaCallableSymbol>
+
+    /**
+     * 判断当前类是否在继承链上继承自 [superClass]。
+     *
+     * 这里不把类自身视为自己的子类，以保持与 Kotlin Analysis 一致的关系语义。
+     */
+    fun CaClassSymbol.isSubClassOf(superClass: CaClassSymbol): Boolean
+
+    /**
+     * 判断当前类是否把 [superClass] 作为直接父类。
+     *
+     * 与 [isSubClassOf] 相同，这里同样不把类自身视为直接子类。
+     */
+    fun CaClassSymbol.isDirectSubClassOf(superClass: CaClassSymbol): Boolean
 }
 
 /**

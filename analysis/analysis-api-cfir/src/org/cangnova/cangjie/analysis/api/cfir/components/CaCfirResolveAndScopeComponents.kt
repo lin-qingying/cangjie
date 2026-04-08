@@ -15,6 +15,7 @@ import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.scopes.CaScope
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
@@ -182,6 +183,101 @@ internal class CaCfirSymbolRelationProvider(
         this@isEquivalentTo === other ||
             (this@isEquivalentTo.publicSymbolCacheKeyOrNull() != null &&
                 this@isEquivalentTo.publicSymbolCacheKeyOrNull() == other.publicSymbolCacheKeyOrNull())
+    }
+
+    override val CaCallableSymbol.directlyOverriddenSymbols: Sequence<CaCallableSymbol>
+        get() = withValidityAssertion {
+            if (!mayHaveOverriddenSymbols()) {
+                return@withValidityAssertion emptySequence()
+            }
+
+            val backingSymbol = (this@directlyOverriddenSymbols as? CaCfirBackedSymbol<*>)
+                ?.backingSymbol as? org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>
+                ?: return@withValidityAssertion emptySequence()
+
+            analysisSession.resolutionFacade.getDirectlyOverriddenCallableSymbols(backingSymbol)
+                .map(analysisSession::getPublicSymbol)
+                .filterIsInstance<CaCallableSymbol>()
+                .distinctStableCallables()
+                .asSequence()
+        }
+
+    override val CaCallableSymbol.allOverriddenSymbols: Sequence<CaCallableSymbol>
+        get() = withValidityAssertion {
+            if (!mayHaveOverriddenSymbols()) {
+                return@withValidityAssertion emptySequence()
+            }
+
+            val visited = linkedSetOf<String>()
+            val result = mutableListOf<CaCallableSymbol>()
+            val queue = ArrayDeque(this@allOverriddenSymbols.directlyOverriddenSymbols.toList())
+
+            while (queue.isNotEmpty()) {
+                val current = queue.removeFirst()
+                val key = current.stableCallableIdentity() ?: continue
+                if (!visited.add(key)) continue
+                result += current
+                queue.addAll(current.directlyOverriddenSymbols)
+            }
+
+            result.asSequence()
+        }
+
+    override fun CaClassSymbol.isSubClassOf(superClass: CaClassSymbol): Boolean = withValidityAssertion {
+        isSubclassOf(superClass, allowIndirect = true)
+    }
+
+    override fun CaClassSymbol.isDirectSubClassOf(superClass: CaClassSymbol): Boolean = withValidityAssertion {
+        isSubclassOf(superClass, allowIndirect = false)
+    }
+
+    private fun CaCallableSymbol.mayHaveOverriddenSymbols(): Boolean {
+        return this is org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol ||
+            this is org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
+    }
+
+    private fun List<CaCallableSymbol>.distinctStableCallables(): List<CaCallableSymbol> {
+        return distinctBy { callable ->
+            callable.stableCallableIdentity() ?: "${callable::class.qualifiedName}@${System.identityHashCode(callable)}"
+        }
+    }
+
+    private fun CaCallableSymbol.stableCallableIdentity(): String? {
+        return publicSymbolCacheKeyOrNull()?.toString() ?: callableId?.toString()
+    }
+
+    private fun CaClassSymbol.isSubclassOf(
+        superClass: CaClassSymbol,
+        allowIndirect: Boolean,
+    ): Boolean {
+        val subClassId = classId ?: return false
+        val superClassId = superClass.classId ?: return false
+        if (subClassId == superClassId) return false
+
+        val directSuperSymbols = superTypes.mapNotNull { type ->
+            with(analysisSession) { type.classLikeSymbol as? CaClassSymbol }
+        }
+        if (directSuperSymbols.any { symbol -> symbol.classId == superClassId }) {
+            return true
+        }
+        if (!allowIndirect) {
+            return false
+        }
+
+        val visited = linkedSetOf<ClassId>()
+        val queue = ArrayDeque(directSuperSymbols)
+        while (queue.isNotEmpty()) {
+            val current = queue.removeFirst()
+            val currentId = current.classId ?: continue
+            if (!visited.add(currentId)) continue
+            if (currentId == superClassId) {
+                return true
+            }
+            queue.addAll(current.superTypes.mapNotNull { type ->
+                with(analysisSession) { type.classLikeSymbol as? CaClassSymbol }
+            })
+        }
+        return false
     }
 }
 

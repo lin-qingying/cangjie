@@ -8,10 +8,14 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.session.ProcessorAction
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
@@ -164,6 +168,31 @@ internal class CaCfirResolutionFacadeImpl internal constructor(
             .mapNotNull { typeRef -> (typeRef as? CfirResolvedTypeRef)?.coneType }
     }
 
+    override fun getDirectlyOverriddenCallableSymbols(symbol: CfirCallableSymbol<*>): List<CfirCallableSymbol<*>> {
+        val ownerClassId = symbol.overrideOwnerClassId(useSiteFirSession) ?: return emptyList()
+        val memberTypeScope = scopeProvider.getMemberTypeScope(ownerClassId) ?: return emptyList()
+
+        return when (symbol) {
+            is CfirFunctionSymbol<*> -> buildList {
+                memberTypeScope.processDirectOverriddenFunctionsWithBaseScope(symbol) { overridden, _ ->
+                    add(overridden)
+                    ProcessorAction.NEXT
+                }
+            }
+
+            is CfirPropertySymbol -> buildList {
+                memberTypeScope.processDirectOverriddenPropertiesWithBaseScope(symbol) { overridden, _ ->
+                    add(overridden)
+                    ProcessorAction.NEXT
+                }
+            }
+
+            else -> emptyList()
+        }.distinctBy { overridden ->
+            overridden.callableId.toString()
+        }
+    }
+
     override fun isSubTypeOf(
         subType: ConeCangJieType,
         superType: ConeCangJieType,
@@ -213,6 +242,14 @@ internal class CaCfirResolutionFacadeImpl internal constructor(
         val symbol = visibleSymbolProvider.getClassLikeSymbolByClassId(classId) ?: return emptyList()
         return getClassLikeSuperTypes(symbol)
     }
+}
+
+private fun CfirCallableSymbol<*>.overrideOwnerClassId(session: CfirSession): ClassId? {
+    /**
+     * override 鏌ヨ涓嶈嚜宸遍噸鏂板彂鏄巓wner 鎺ㄥ瑙勫垯锛屽繀椤诲鐢?provider 宸茬粡缁熶竴鐨勫０鏄庡厓鏁版嵁褰掑睘銆?     *
+     * 杩欐牱鍗充娇绗﹀彿鏉ヨ嚜 substitution override锛屼篃浼氬洖鍒板師濮嬪０鏄庣殑 owner class锛?     * 閬垮厤 low-level relation provider 鑷繁鍐嶅仛涓€濂楅€€鍖栫殑 unwrap / fallback 閫昏緫銆?     */
+    return session.symbolProvider.getContainingClassId(this)
+        ?: callableId.classId
 }
 
 private fun PsiElement?.isAncestorOf(element: PsiElement): Boolean {

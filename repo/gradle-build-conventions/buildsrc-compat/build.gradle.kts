@@ -22,6 +22,7 @@ java {
 dependencies {
     api(project(":gradle-plugins-common"))
     implementation(libs.kotlinGradlePlugin)
+    implementation(libs.shadowGradlePlugin)
 }
 
 tasks.validatePlugins.configure {

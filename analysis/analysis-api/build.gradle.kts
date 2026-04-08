@@ -15,6 +15,8 @@ plugins {
     kotlin("jvm")
 }
 
+description = "Public Cangjie frontend analysis API."
+
 dependencies {
     compileOnly(intellijCore())
     api(project(":common"))
