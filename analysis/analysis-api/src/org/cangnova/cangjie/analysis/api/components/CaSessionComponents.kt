@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.components
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.openapi.util.TextRange
 import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotation
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateDecision
@@ -10,6 +11,7 @@ import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
 import org.cangnova.cangjie.analysis.api.evaluation.CaCompileTimeValue
 import org.cangnova.cangjie.analysis.api.imports.CaDefaultImports
 import org.cangnova.cangjie.analysis.api.imports.CaImportOptimizationPlan
+import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningCommand
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningPlan
 import org.cangnova.cangjie.analysis.api.interop.CaInteropInfo
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
@@ -218,6 +220,23 @@ interface CaVisibilityChecker : CaLifetimeOwner {
 
 interface CaReferenceShortener : CaLifetimeOwner {
     fun CjFile.collectReferenceShorteningPlan(): CaReferenceShorteningPlan
+
+    /**
+     * 按选择范围收集真正要执行的缩短命令。
+     *
+     * 该入口与 Kotlin `collectPossibleReferenceShortenings(file, selection)` 对位，
+     * 但仓颉当前只暴露已经稳定的公共结果：
+     * - 命中的操作
+     * - 需要补齐的 imports
+     */
+    fun CjFile.collectReferenceShortenings(
+        selection: TextRange = textRange,
+    ): CaReferenceShorteningCommand
+
+    /**
+     * 按单个 PSI 元素范围收集缩短命令。
+     */
+    fun CjElement.collectReferenceShorteningsInElement(): CaReferenceShorteningCommand
 }
 
 interface CaImportOptimizer : CaLifetimeOwner {

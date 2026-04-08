@@ -58,7 +58,7 @@ class CaCfirResolutionFacadeServiceImpl(
             useSiteFirSession = moduleResolveComponents.session,
             allModules = moduleResolveComponents.allModules,
             cfirFiles = moduleResolveComponents.cfirFiles,
-            diagnostics = moduleResolveComponents.diagnostics,
+            diagnosticsProvider = { moduleResolveComponents.diagnostics },
             scopeProvider = moduleResolveComponents.scopeProvider,
             visibleSymbolProvider = moduleResolveComponents.visibleSymbolProvider,
             sourceNavigationProvider = moduleResolveComponents.sourceNavigationProvider,

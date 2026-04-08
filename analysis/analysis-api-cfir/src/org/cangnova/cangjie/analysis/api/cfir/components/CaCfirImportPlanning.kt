@@ -1,11 +1,13 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateDecision
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateStatus
 import org.cangnova.cangjie.analysis.api.imports.CaImportOptimizationPlan
+import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningCommand
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningOperation
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningPlan
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
@@ -59,6 +61,17 @@ internal class CaCfirReferenceShorteningPlanImpl(
     override val operations: List<CaReferenceShorteningOperation>,
     override val token: CaLifetimeToken,
 ) : CaReferenceShorteningPlan
+
+/**
+ * 指定选择范围的缩短命令实现。
+ */
+internal class CaCfirReferenceShorteningCommandImpl(
+    override val file: CjFile,
+    override val selection: TextRange,
+    override val operations: List<CaReferenceShorteningOperation>,
+    override val importsToAdd: Set<ImportPath>,
+    override val token: CaLifetimeToken,
+) : CaReferenceShorteningCommand
 
 /**
  * 导入优化规划实现。
@@ -128,6 +141,35 @@ internal fun CaCfirSession.collectReferenceShorteningPlan(file: CjFile): CaRefer
             token = token,
         )
     }
+}
+
+/**
+ * 从文件级全量 plan 中投影出 selection 对应的缩短命令。
+ *
+ * 当前仓颉实现坚持一条统一主线：
+ * 1. 先构造文件级 plan，稳定表达“哪些表达式可被缩短”；
+ * 2. 再按 range / element 过滤出当前操作命令。
+ *
+ * 这样 whole-file、range、element 三种入口不会分裂出三套判定逻辑。
+ */
+internal fun CaCfirSession.collectReferenceShortenings(
+    file: CjFile,
+    selection: TextRange,
+): CaReferenceShorteningCommand {
+    val plan = collectReferenceShorteningPlan(file)
+    val operations = plan.operations.filter { operation ->
+        operation.expression.textRange.intersects(selection)
+    }
+    val importsToAdd = operations.mapNotNullTo(linkedSetOf()) { operation ->
+        operation.decision.requiredImport
+    }
+    return CaCfirReferenceShorteningCommandImpl(
+        file = file,
+        selection = selection,
+        operations = operations,
+        importsToAdd = importsToAdd,
+        token = token,
+    )
 }
 
 /**

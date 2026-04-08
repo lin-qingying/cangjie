@@ -28,6 +28,8 @@ include(":compiler:frontend-arguments-generator")
 include(":compiler:frontend")
 include(":prepare:frontend")
 include(":prepare:frontend-embeddable")
+include(":prepare:test-infrastructure")
+include(":prepare:analysis-test-framework")
 
 include(":util")
 include(":lsp")
@@ -105,3 +107,5 @@ include("compiler:plugin")
 
 include("cfir:providers")
 include("resolution.common")
+
+include("intellij-ide")

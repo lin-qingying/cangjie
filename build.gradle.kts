@@ -100,6 +100,8 @@ tasks.matching { it.name == "checkAnalysisFramework" }.configureEach {
 val publicPublicationArtifacts = linkedMapOf(
     ":prepare:frontend" to "cangjie-frontend",
     ":prepare:frontend-embeddable" to "cangjie-frontend-embeddable",
+    ":prepare:test-infrastructure" to "cangjie-frontend-test-infrastructure",
+    ":prepare:analysis-test-framework" to "cangjie-frontend-analysis-test-framework",
     ":compiler:arguments" to "cangjie-frontend-arguments-description",
     ":common" to "cangjie-frontend-common",
     ":psi" to "cangjie-frontend-psi",

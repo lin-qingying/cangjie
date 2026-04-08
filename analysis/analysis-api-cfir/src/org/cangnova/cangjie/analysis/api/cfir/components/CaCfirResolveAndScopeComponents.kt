@@ -44,16 +44,18 @@ internal class CaCfirResolver(
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaResolver, CaCfirSessionComponent {
     override fun CjReferenceExpression.resolveToSymbols(): Collection<CaSymbol> = withValidityAssertion {
-        val resolvedSymbols = analysisSession.resolveSymbols(this@resolveToSymbols)
-            .map(analysisSession::getPublicSymbol)
-            .distinctSymbols()
-
         val matchBranchBindings = restoreMatchBranchPatternBindings(this@resolveToSymbols).distinctSymbols()
         if (matchBranchBindings.isNotEmpty()) {
             return@withValidityAssertion matchBranchBindings
         }
 
-        resolvedSymbols
+        buildList {
+            addAll(
+                analysisSession.resolveSymbols(this@resolveToSymbols)
+                    .map(analysisSession::getPublicSymbol),
+            )
+            addAll(restoreCallBackedSymbols(this@resolveToSymbols))
+        }.distinctSymbols()
     }
 
     override fun CjElement.resolveToCall() = withValidityAssertion {
@@ -96,6 +98,29 @@ internal class CaCfirResolver(
         return distinctBy { symbol ->
             symbol.publicSymbolCacheKeyOrNull() ?: "${symbol::class.qualifiedName}@${System.identityHashCode(symbol)}"
         }
+    }
+
+    /**
+     * `resolveToSymbol()` 不能只盯住“当前 PSI 节点恰好被 low-level 语义索引命中”这一种形态。
+     *
+     * Kotlin Analysis 在调用入口上会把 call-shaped PSI 也稳定映射回目标 callable；
+     * 仓颉这里同样需要把 `call info` 作为正式语义来源之一，而不是让 `CjCallExpression`
+     * 因为索引锚点落在父节点/子节点就直接解析失败。
+     */
+    private fun restoreCallBackedSymbols(reference: CjReferenceExpression): Collection<CaSymbol> {
+        val snapshot = generateSequence(reference as com.intellij.psi.PsiElement?) { current -> current.parent }
+            .mapNotNull(analysisSession::queryCallInfo)
+            .firstOrNull { callInfo ->
+                callInfo.successfulCall?.target != null || callInfo.calls.any { call -> call.target != null }
+            }
+            ?: return emptyList()
+
+        val lowLevelTargets = buildList {
+            snapshot.successfulCall?.target?.let(::add)
+            snapshot.calls.mapNotNullTo(this) { call -> call.target }
+        }
+
+        return lowLevelTargets.map(analysisSession::getPublicSymbol)
     }
 
     private fun resolvePatternBindingSymbolByPsi(psi: com.intellij.psi.PsiElement): CaPatternBindingSymbol? {

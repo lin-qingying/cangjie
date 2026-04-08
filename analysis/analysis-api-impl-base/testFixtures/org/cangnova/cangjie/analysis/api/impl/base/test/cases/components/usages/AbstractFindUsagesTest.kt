@@ -8,6 +8,7 @@ import com.intellij.psi.search.SearchSession
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.Processor
+import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiReferenceTestUtils.isExtendMemberDeclaration
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiUsageTestDirectives
 import org.cangnova.cangjie.analysis.api.impl.base.test.expectedUsageCount
@@ -17,7 +18,6 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.usageTargetName
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.idea.search.CangJieReferencesSearchExecutor
 import org.cangnova.cangjie.psi.CjBindingPattern
-import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjNamedFunction
@@ -57,10 +57,10 @@ abstract class AbstractFindUsagesTest : AbstractAnalysisApiComponentTest() {
         targetName: String,
     ): PsiElement = when (targetKind) {
         "TOP_LEVEL_FUNCTION" -> PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java)
-            .single { it.name == targetName && it.parent !is CjExtend }
+            .single { it.name == targetName && !it.isExtendMemberDeclaration() }
 
         "EXTEND_MEMBER" -> PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java)
-            .single { it.name == targetName && it.parent is CjExtend }
+            .single { it.name == targetName && it.isExtendMemberDeclaration() }
 
         "IMPORT_ALIAS" -> PsiTreeUtil.findChildrenOfType(mainFile, CjImportAlias::class.java)
             .single { it.name == targetName }

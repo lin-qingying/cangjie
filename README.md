@@ -181,6 +181,22 @@
 - 支持推送 `v*` tag 时自动发布
 - 手动触发时可显式输入 `version`
 
+当前公开工件包含：
+
+- `cangjie-frontend`
+- `cangjie-frontend-embeddable`
+- `cangjie-frontend-arguments-description`
+- `cangjie-frontend-test-infrastructure`
+- `cangjie-frontend-analysis-test-framework`
+- `cangjie-frontend-common`
+- `cangjie-frontend-common-diagnostics`
+- `cangjie-frontend-psi`
+- `cangjie-frontend-analysis-api`
+- `cangjie-frontend-analysis-api-platform-interface`
+- `cangjie-frontend-analysis-api-impl-base`
+- `cangjie-frontend-analysis-api-standalone`
+- `cangjie-frontend-analysis-api-cfir`
+
 ## 测试约定
 
 全项目测试实现与组织规范见：`TESTING_CONVENTIONS.md`。
@@ -257,6 +273,8 @@ cangjie/
 ├── prepare/                   # 发布门面工件
 │   ├── frontend/
 │   └── frontend-embeddable/
+│   ├── test-infrastructure/
+│   └── analysis-test-framework/
 ├── macro/                     # 宏展开模块
 │   ├── macro-common/          # 接口、数据模型、协议编解码
 │   ├── macro-process/         # 外部进程执行器
