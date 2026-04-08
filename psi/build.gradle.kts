@@ -13,6 +13,8 @@ plugins {
     kotlin("jvm")
 }
 
+description = "Cangjie PSI, lexer, parser and source syntax infrastructure."
+
 val jflexPath by configurations.creating
 
 dependencies {

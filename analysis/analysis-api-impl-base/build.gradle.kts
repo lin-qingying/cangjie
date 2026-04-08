@@ -16,6 +16,8 @@ plugins {
     id("java-test-fixtures")
 }
 
+description = "Base implementation layer for the Cangjie frontend analysis API."
+
 sourceSets {
     "testFixtures" { projectDefault() }
 }

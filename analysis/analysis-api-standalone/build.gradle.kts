@@ -15,6 +15,8 @@ plugins {
     kotlin("jvm")
 }
 
+description = "Standalone entrypoints for consuming the Cangjie frontend analysis API."
+
 dependencies {
     compileOnly(intellijCore())
 
