@@ -47,7 +47,7 @@ class CangjieWorkspaceService(
             added = params.event.added,
             removed = params.event.removed,
         )
-        republishOpenDiagnostics()
+        serverContext.republishOpenDiagnostics()
     }
 
     override fun executeCommand(params: ExecuteCommandParams): CompletableFuture<Any> {
@@ -85,23 +85,6 @@ class CangjieWorkspaceService(
     private fun refreshWorkspaceSemantics() {
         serverContext.refreshProjectStructure()
         serverContext.analysisFacade.didRefreshProjectStructure(serverContext.requestContext())
-        republishOpenDiagnostics()
-    }
-
-    /**
-     * 工作区结构变化后，重新发布所有打开文档的诊断。
-     *
-     * 这样客户端看到的 push diagnostics 与新的 project-structure / snapshot 绑定保持一致，
-     * 不会继续保留旧模块图下的结果。
-     */
-    private fun republishOpenDiagnostics() {
-        if (!serverContext.enabledFeatures.diagnostics) return
-
-        serverContext.documentStore.all().forEach { document ->
-            serverContext.requestExecutor.compute {
-                val diagnostics = serverContext.collectDiagnostics(document)
-                serverContext.publishDiagnostics(document, diagnostics)
-            }.join()
-        }
+        serverContext.republishOpenDiagnostics()
     }
 }

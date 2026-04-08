@@ -169,25 +169,17 @@ internal class CjoPackageIndex(
     }
 
     private fun buildRelativeClassName(zeroBasedDeclIndex: Int): FqName? {
-        val segments = mutableListOf<Name>()
-        var currentIndex: Int? = zeroBasedDeclIndex
+        /**
+         * 仓颉当前不支持嵌套 class-like 声明进入公开 `ClassId` 体系。
+         *
+         * 因此这里必须显式拒绝存在 parent class-like 链的声明，
+         * 不能像 Kotlin/JVM 元数据那样拼出 `Outer.Inner`。
+         */
+        if (parentDeclByIndex.containsKey(zeroBasedDeclIndex)) return null
 
-        while (currentIndex != null) {
-            val declaration = resolveDeclByZeroBasedIndex(currentIndex) ?: return null
-            if (!declaration.decl.isClassLikeDeclaration()) return null
-
-            segments += declaration.name
-            currentIndex = parentDeclByIndex[currentIndex]
-        }
-
-        if (segments.isEmpty()) return null
-        segments.reverse()
-
-        var relativeClassName = FqName.topLevel(segments.first())
-        for (segment in segments.drop(1)) {
-            relativeClassName = relativeClassName.child(segment)
-        }
-        return relativeClassName
+        val declaration = resolveDeclByZeroBasedIndex(zeroBasedDeclIndex) ?: return null
+        if (!declaration.decl.isClassLikeDeclaration()) return null
+        return FqName.topLevel(declaration.name)
     }
 
     private fun buildParentDeclIndex(): Map<Int, Int> {

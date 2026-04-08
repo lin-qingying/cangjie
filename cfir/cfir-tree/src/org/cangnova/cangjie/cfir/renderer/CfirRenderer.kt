@@ -221,6 +221,7 @@ private class CfirDefaultPatternRenderer(
         is CfirOrPattern -> pattern.alternatives.joinToString(" | ") { render(it) }
         is CfirWildcardPattern -> "_"
         is CfirConstPattern -> "const(${inlineExpressionRenderer.render(pattern.expression)})"
+        is CfirVarOrEnumPattern -> "deferred(${pattern.name.asString()})"
         is CfirBindingPattern -> buildString {
             append(pattern.name.asString())
             pattern.typeRef?.let { append(": ${typeRenderer.render(it)}") }
@@ -568,14 +569,13 @@ class CfirRenderer(
         override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor ) {
             declarationRenderer?.renderResolveInfo(enumConstructor)
             resolvePhaseRenderer?.render(enumConstructor)
-            val rendered = when (val typeRef = enumConstructor.returnTypeRef) {
-                is CfirImplicitTypeRef -> enumConstructor.name.asString()
-                is CfirTupleTypeRef -> {
-                    val args = typeRef.elementTypeRefs.joinToString { renderType(it) }
-                    "${enumConstructor.name.asString()}($args)"
+            val rendered = if (enumConstructor.valueParameters.isEmpty()) {
+                enumConstructor.name.asString()
+            } else {
+                val args = enumConstructor.valueParameters.joinToString { valueParameter ->
+                    renderType(valueParameter.returnTypeRef)
                 }
-
-                else -> "${enumConstructor.name.asString()}(${renderType(typeRef)})"
+                "${enumConstructor.name.asString()}($args)"
             }
             println(rendered)
         }
@@ -801,8 +801,12 @@ class CfirRenderer(
             }
         }
 
-        override fun visitJumpExpression(jump: CfirJumpExpression ) {
-            println(jump.kind.name)
+        override fun visitBreakExpression(breakExpression: CfirBreakExpression ) {
+            println("BREAK")
+        }
+
+        override fun visitContinueExpression(continueExpression: CfirContinueExpression ) {
+            println("CONTINUE")
         }
 
         override fun visitThrowExpression(throwExpression: CfirThrowExpression ) {

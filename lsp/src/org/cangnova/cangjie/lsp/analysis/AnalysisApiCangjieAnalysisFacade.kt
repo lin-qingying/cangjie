@@ -1,10 +1,12 @@
 package org.cangnova.cangjie.lsp.analysis
 
+import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.resolution.CaCall
 import org.cangnova.cangjie.analysis.api.resolution.singleCallOrNull
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.lsp.capabilities.CangjieLspFeatureSet
@@ -97,7 +99,6 @@ class AnalysisApiCangjieAnalysisFacade(
 ) : AbstractCangjieAnalysisFacade() {
     private val psiDocumentFactory = AnalysisApiPsiDocumentFactory(lifecycleContext)
     private val semanticSupport = AnalysisApiLspSemanticSupport(lifecycleContext, psiDocumentFactory)
-    private val projectStructureState = AnalysisApiLspProjectStructureState.getInstance(lifecycleContext.environment.project)
 
     override val supportedFeatures: CangjieLspFeatureSet = CangjieLspFeatureSet(
         completion = true,
@@ -116,19 +117,19 @@ class AnalysisApiCangjieAnalysisFacade(
     )
 
     override fun didOpen(context: CangjieAnalysisRequestContext, document: LspTextDocument) {
-        synchronizeSnapshot(document)
+        upsertSnapshot(document)
     }
 
     override fun didChange(context: CangjieAnalysisRequestContext, document: LspTextDocument) {
-        synchronizeSnapshot(document)
+        upsertSnapshot(document)
     }
 
     override fun didSave(context: CangjieAnalysisRequestContext, document: LspTextDocument) {
-        synchronizeSnapshot(document)
+        upsertSnapshot(document)
     }
 
     override fun didClose(context: CangjieAnalysisRequestContext, document: LspTextDocument) {
-        projectStructureState.closeDocument(document.uri)
+        psiDocumentFactory.removeSnapshot(document.uri)
     }
 
     override fun didChangeWorkspaceFolders(
@@ -136,11 +137,11 @@ class AnalysisApiCangjieAnalysisFacade(
         added: List<org.eclipse.lsp4j.WorkspaceFolder>,
         removed: List<org.eclipse.lsp4j.WorkspaceFolder>,
     ) {
-        synchronizeOpenSnapshots(context)
+        // 打开文档的 PSI 快照现在是稳定事实源，workspace 变更后由 project structure 重新分类。
     }
 
     override fun didRefreshProjectStructure(context: CangjieAnalysisRequestContext) {
-        synchronizeOpenSnapshots(context)
+        // project structure 刷新只重算模块投影，不再重建 PSI 快照。
     }
 
     override fun collectDiagnostics(
@@ -215,9 +216,9 @@ class AnalysisApiCangjieAnalysisFacade(
         document: LspTextDocument,
         params: HoverParams,
     ): Hover? = semanticSupport.analyzeSnapshot(document) { snapshot ->
-        val reference = semanticSupport.findReferenceExpression(document, snapshot.psiFile, params.position)
-        val declaration = semanticSupport.findNamedDeclaration(document, snapshot.psiFile, params.position)
-        val symbol = reference?.resolveToSymbol() ?: declaration?.toPublicSymbol(this, snapshot.psiFile)
+        val target = semanticSupport.findPrimaryTarget(document, snapshot.psiFile, params.position)
+            ?: return@analyzeSnapshot null
+        val symbol = target.toPublicSymbol(this, snapshot.psiFile)
         if (symbol == null) return@analyzeSnapshot null
 
         val rendered = symbol.render()
@@ -234,9 +235,7 @@ class AnalysisApiCangjieAnalysisFacade(
 
         Hover().apply {
             contents = Either.forRight(MarkupContent(MarkupKind.MARKDOWN, hoverText))
-            range = symbol.getOriginalPsi()?.textRange?.let { textRange ->
-                document.analysisRangeOf(textRange.startOffset, textRange.endOffset)
-            }
+            range = semanticSupport.hoverRange(document, snapshot.psiFile, params.position)
         }
     }
 
@@ -293,17 +292,19 @@ class AnalysisApiCangjieAnalysisFacade(
         semanticSupport.analyzeSnapshot(document) { snapshot ->
             val target = resolveImplementationTarget(document, snapshot.psiFile, params.position)
                 ?: return@analyzeSnapshot emptyList()
+            val targetClassId = target.classId ?: return@analyzeSnapshot emptyList()
 
             val locations = linkedSetOf<Location>()
             semanticSupport.workspaceFiles(context).forEach { workspaceFile ->
                 semanticSupport.analyzeFile(workspaceFile.psiFile) {
                     workspaceFile.psiFile.collectDescendantsOfType<CjClassLikeDeclaration>().forEach { declaration ->
-                        val declarationSymbol = declaration.toPublicSymbol(this, workspaceFile.psiFile) as? CaClassLikeSymbol
+                        val declarationSymbol = declaration.toPublicSymbol(this, workspaceFile.psiFile) as? CaClassSymbol
                             ?: return@forEach
-                        if (declarationSymbol.classId == target.classId) return@forEach
+                        val declarationClassId = declarationSymbol.classId ?: return@forEach
+                        if (declarationClassId == targetClassId) return@forEach
 
                         val directlyImplementsTarget = declarationSymbol.superTypes.any { superType ->
-                            superType.classLikeSymbol?.classId == target.classId
+                            superType.classLikeSymbol?.classId == targetClassId
                         }
                         if (!directlyImplementsTarget) return@forEach
 
@@ -321,24 +322,29 @@ class AnalysisApiCangjieAnalysisFacade(
         document: LspTextDocument,
         params: ReferenceParams,
     ): List<Location> {
-        val targetKey = semanticSupport.analyzeSnapshot(document) { snapshot ->
-            val declaration = semanticSupport.findNamedDeclaration(document, snapshot.psiFile, params.position)
-            val reference = semanticSupport.findReferenceExpression(document, snapshot.psiFile, params.position)
-            reference?.let { semanticSupport.run { targetKeyFor(it) } } ?: semanticSupport.targetKeyFor(declaration)
-        } ?: return emptyList()
+        val targetKeys = semanticSupport.analyzeSnapshot(document) { snapshot ->
+            semanticSupport.findTargetElements(document, snapshot.psiFile, params.position)
+                .mapNotNull(semanticSupport::targetKeyFor)
+                .toSet()
+        }
+        if (targetKeys.isEmpty()) return emptyList()
 
         val locations = linkedSetOf<Location>()
         semanticSupport.workspaceFiles(context).forEach { workspaceFile ->
             semanticSupport.analyzeFile(workspaceFile.psiFile) {
-                workspaceFile.psiFile.collectDescendantsOfType<CjSimpleNameExpression>().forEach { expression ->
-                    if (semanticSupport.run { targetKeyFor(expression) } == targetKey) {
-                        semanticSupport.toLocation(expression.referencedNameElement)?.let(locations::add)
+                semanticSupport.referenceLikeElements(workspaceFile.psiFile).forEach { referenceLike ->
+                    if (semanticSupport.run { targetKeyForReferenceLike(referenceLike) } in targetKeys) {
+                        val locationElement = when (referenceLike) {
+                            is CjSimpleNameExpression -> referenceLike.referencedNameElement
+                            else -> referenceLike
+                        }
+                        semanticSupport.toLocation(locationElement)?.let(locations::add)
                     }
                 }
 
                 if (params.context.isIncludeDeclaration) {
                     workspaceFile.psiFile.collectDescendantsOfType<CjNamedDeclaration>().forEach { declaration ->
-                        if (semanticSupport.targetKeyFor(declaration) == targetKey) {
+                        if (semanticSupport.targetKeyFor(declaration) in targetKeys) {
                             semanticSupport.toLocation(declaration.nameIdentifier ?: declaration)?.let(locations::add)
                         }
                     }
@@ -354,20 +360,23 @@ class AnalysisApiCangjieAnalysisFacade(
         document: LspTextDocument,
         params: DocumentHighlightParams,
     ): List<DocumentHighlight> = semanticSupport.analyzeSnapshot(document) { snapshot ->
-        val declaration = semanticSupport.findNamedDeclaration(document, snapshot.psiFile, params.position)
-        val reference = semanticSupport.findReferenceExpression(document, snapshot.psiFile, params.position)
-        val targetKey = reference?.let { semanticSupport.run { targetKeyFor(it) } }
-            ?: semanticSupport.targetKeyFor(declaration)
-            ?: return@analyzeSnapshot emptyList()
+        val targetKeys = semanticSupport.findTargetElements(document, snapshot.psiFile, params.position)
+            .mapNotNull(semanticSupport::targetKeyFor)
+            .toSet()
+        if (targetKeys.isEmpty()) return@analyzeSnapshot emptyList()
 
         buildList {
-            snapshot.psiFile.collectDescendantsOfType<CjSimpleNameExpression>().forEach { expression ->
-                if (semanticSupport.run { targetKeyFor(expression) } == targetKey) {
+            semanticSupport.referenceLikeElements(snapshot.psiFile).forEach { referenceLike ->
+                if (semanticSupport.run { targetKeyForReferenceLike(referenceLike) } in targetKeys) {
+                    val rangeSource = when (referenceLike) {
+                        is CjSimpleNameExpression -> referenceLike.referencedNameElement
+                        else -> referenceLike
+                    }
                     add(
                         DocumentHighlight().apply {
                             range = document.analysisRangeOf(
-                                expression.referencedNameElement.textRange.startOffset,
-                                expression.referencedNameElement.textRange.endOffset,
+                                rangeSource.textRange.startOffset,
+                                rangeSource.textRange.endOffset,
                             )
                             kind = DocumentHighlightKind.Text
                         },
@@ -376,7 +385,7 @@ class AnalysisApiCangjieAnalysisFacade(
             }
 
             snapshot.psiFile.collectDescendantsOfType<CjNamedDeclaration>().forEach { namedDeclaration ->
-                if (semanticSupport.targetKeyFor(namedDeclaration) == targetKey) {
+                if (semanticSupport.targetKeyFor(namedDeclaration) in targetKeys) {
                     val nameIdentifier = namedDeclaration.nameIdentifier ?: return@forEach
                     add(
                         DocumentHighlight().apply {
@@ -481,23 +490,10 @@ class AnalysisApiCangjieAnalysisFacade(
     ): List<InlayHint> = emptyList()
 
     /**
-     * 打开的 LSP 文档要尽快同步成 Analysis API 可见的 snapshot 模块。
-     *
-     * 这样 diagnostics 之外的 hover/completion/declaration 等请求也能直接复用当前文档版本，
-     * 而不是等某个具体 feature 首次请求时再被动注册模块。
+     * 打开文档的 PSI 快照必须先稳定落库，再交给 project structure 选择 overlay 或 dangling 语义。
      */
-    /**
-     * 打开的 LSP 文档必须尽快同步成 Analysis API 可见的 snapshot 模块。
-     */
-    private fun synchronizeSnapshot(document: LspTextDocument) {
-        psiDocumentFactory.createAnalyzableSnapshot(document)
-    }
-
-    /**
-     * 当工作区结构变化后，重新把所有打开文档绑定到最新的上下文模块。
-     */
-    private fun synchronizeOpenSnapshots(context: CangjieAnalysisRequestContext) {
-        context.documentStore.all().forEach(::synchronizeSnapshot)
+    private fun upsertSnapshot(document: LspTextDocument) {
+        psiDocumentFactory.upsertSnapshot(document)
     }
 
     /**
@@ -511,24 +507,11 @@ class AnalysisApiCangjieAnalysisFacade(
         position: org.eclipse.lsp4j.Position,
     ): Either<List<Location>, List<LocationLink>> = Either.forLeft(
         semanticSupport.analyzeSnapshot(document) { snapshot ->
-            val reference = semanticSupport.findReferenceExpression(document, snapshot.psiFile, position)
-                ?: return@analyzeSnapshot emptyList()
-
-            val locations = linkedSetOf<Location>()
-            reference.resolveToSymbols()
-                .mapNotNull { symbol -> symbol.getOriginalPsi() }
+            semanticSupport.findTargetElements(document, snapshot.psiFile, position)
                 .mapNotNull(semanticSupport::toLocation)
-                .forEach(locations::add)
-
-            if (locations.isEmpty()) {
-                reference.references
-                    .asSequence()
-                    .mapNotNull { it.resolve() }
-                    .mapNotNull(semanticSupport::toLocation)
-                    .forEach(locations::add)
-            }
-
-            locations.toList()
+                .distinctBy { location ->
+                    "${location.uri}:${location.range.start.line}:${location.range.start.character}:${location.range.end.line}:${location.range.end.character}"
+                }
         },
     )
 
@@ -543,6 +526,11 @@ class AnalysisApiCangjieAnalysisFacade(
         file: CjFile,
         position: org.eclipse.lsp4j.Position,
     ): CaClassLikeSymbol? {
+        semanticSupport.findPrimaryTarget(document, file, position)
+            ?.toPublicSymbol(this, file)
+            ?.let { symbol -> classLikeTargetOfSymbol(symbol) }
+            ?.let { return it }
+
         val reference = semanticSupport.findReferenceExpression(document, file, position)
         reference?.resolveToSymbol()?.let { symbol ->
             classLikeTargetOfSymbol(symbol)?.let { return it }
@@ -577,13 +565,13 @@ class AnalysisApiCangjieAnalysisFacade(
         document: LspTextDocument,
         file: CjFile,
         position: org.eclipse.lsp4j.Position,
-    ): CaClassLikeSymbol? {
-        val declaration = semanticSupport.findNamedDeclaration(document, file, position)
-        if (declaration is CjClassLikeDeclaration) {
-            return declaration.getClassId()?.let(::getClassLikeSymbol)
+    ): CaClassSymbol? {
+        val target = semanticSupport.findPrimaryTarget(document, file, position)
+        if (target is CjTypeStatement) {
+            return target.getClassId()?.let(::getClassSymbol)
         }
 
-        return resolveTypeDefinitionTarget(document, file, position)
+        return resolveTypeDefinitionTarget(document, file, position) as? CaClassSymbol
     }
 
     /**
@@ -646,11 +634,22 @@ class AnalysisApiCangjieAnalysisFacade(
         }
     }
 
+    private fun PsiElement.toPublicSymbol(
+        session: CaSession,
+        useSiteFile: CjFile,
+    ): CaSymbol? {
+        return when (this) {
+            is CjNamedDeclaration -> toPublicSymbol(session, useSiteFile)
+            is CjFile -> session.run { this@toPublicSymbol.symbol }
+            else -> null
+        }
+    }
+
     private fun CjCallableDeclaration.restoreCallableSymbol(
         session: CaSession,
         useSiteFile: CjFile,
     ): CaCallableSymbol? {
-        val declarationName = nameAsSafeName
+        val declarationName = runCatching { nameAsSafeName }.getOrNull() ?: return null
         val classLikeContainer = parent as? CjAbstractClassBody
         if (classLikeContainer != null) {
             val owner = classLikeContainer.parent as? CjTypeStatement ?: return null
@@ -690,7 +689,7 @@ class AnalysisApiCangjieAnalysisFacade(
             }
         }
         val label = buildString {
-            append(callableDeclaration.name ?: callableSymbol.name ?: "<anonymous>")
+            append(callableDeclaration.name ?: callableSymbol.callableId?.callableName?.asString() ?: "<anonymous>")
             append("(")
             append(parameterLabels.joinToString(", "))
             append(")")

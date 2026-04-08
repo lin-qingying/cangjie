@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
+import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
@@ -70,6 +71,8 @@ import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.types.TypeApproximatorConfiguration
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.fakeElement
 import kotlin.text.get
 
 class CfirCallCompletionResultsWriterTransformer(
@@ -355,7 +358,11 @@ class CfirCallCompletionResultsWriterTransformer(
         data: ExpectedArgumentType?
     ): CfirExpression {
         anonymousFunctionExpression.transformChildren(this, null)
-        finalizeAnonymousFunction(anonymousFunctionExpression.anonymousFunction, data)
+        finalizeAnonymousFunction(
+            function = anonymousFunctionExpression.anonymousFunction,
+            data = data,
+            anonymousFunctionExpression = anonymousFunctionExpression,
+        )
         val expectedType = data?.getExpectedType(anonymousFunctionExpression)
             ?: data?.getExpectedType(anonymousFunctionExpression.anonymousFunction)
         val anonymousFunction = anonymousFunctionExpression.anonymousFunction
@@ -436,16 +443,36 @@ class CfirCallCompletionResultsWriterTransformer(
         }
     }
 
-    private fun finalizeAnonymousFunction(function: CfirFunction, data: ExpectedArgumentType?) {
+    private fun finalizeAnonymousFunction(
+        function: CfirFunction,
+        data: ExpectedArgumentType?,
+        anonymousFunctionExpression: CfirAnonymousFunctionExpression? = null,
+    ) {
         val anonymousFunction = function as? CfirAnonymousFunction ?: return
         val initialReturnType = anonymousFunction.returnTypeRef.coneTypeOrNull
         val returnExpressions = dataFlowAnalyzer
             .returnExpressionsOfAnonymousFunction(anonymousFunction)
             .replacePostponedAtomsInReturnExpressions(data)
         val containingCallIsError = (data as? ExpectedArgumentType.ArgumentsMap)?.forErrorReference == true
-        val expectedFunctionType = data?.getExpectedType(anonymousFunction) as? ConeFuncType
-        val expectedReturnType = initialReturnType?.let(::finallySubstituteOrSelf)
-            ?: expectedFunctionType?.returnType?.let(::finallySubstituteOrSelf)
+        val expectedFunctionType =
+            (data?.let { context ->
+                anonymousFunctionExpression?.let(context::getExpectedType)
+            } as? ConeFuncType)
+                ?: (data?.getExpectedType(anonymousFunction) as? ConeFuncType)
+        /**
+         * 对齐 Kotlin FIR 的语义意图：
+         * 对“作为实参传入的 lambda”，它的返回类型首先应该受参数函数类型约束，
+         * 而不是盲目继承前序阶段残留在 `returnTypeRef` 上的旧值。
+         *
+         * 当前仓颉在若干 trailing-lambda 场景里，早期阶段会把匿名函数的返回类型
+         * 暂时写成外层 `Unit` 语境，若这里继续优先读取旧值，就会把合法的
+         * `(Int64) -> Int64` lambda 错误降级成 `RETURN_TYPE_MISMATCH(expected Unit)`.
+         *
+         * 因此只要存在参数位 expected function type，就优先以它的 return type 作为
+         * 匿名函数最终定型入口；没有参数位约束时，再回退到已有 returnTypeRef。
+         */
+        val expectedReturnType = expectedFunctionType?.returnType?.let(::finallySubstituteOrSelf)
+            ?: initialReturnType?.let(::finallySubstituteOrSelf)
             ?: if (!containingCallIsError) {
                 (data as? ExpectedArgumentType.ArgumentsMap)?.lambdasReturnTypes?.get(anonymousFunction)
             } else {
@@ -524,14 +551,21 @@ class CfirCallCompletionResultsWriterTransformer(
         val newBody = buildBlockCopy(currentBody) {
             statements.clear()
             statements.addAll(currentBody.statements.dropLast(1))
-            statements.add(
-                buildReturnExpression {
-                    source = lastStatement.source ?: currentBody.source ?: this@addReturnToLastStatementIfNeeded.source
-                    coneTypeOrNull = lastStatement.coneTypeOrNull
-                    result = lastStatement
-                }
-            )
-        }
+                statements.add(
+                    buildReturnExpression {
+                        source = (
+                            lastStatement.source
+                                ?: currentBody.source
+                                ?: this@addReturnToLastStatementIfNeeded.source
+                            )?.fakeElement(CjFakeSourceElementKind.ImplicitReturn.FromLastStatement)
+                        coneTypeOrNull = lastStatement.coneTypeOrNull
+                        target = CfirFunctionTarget(labelName = null, isLambda = this@addReturnToLastStatementIfNeeded.isLambda).also {
+                            it.bind(this@addReturnToLastStatementIfNeeded)
+                        }
+                        result = lastStatement
+                    }
+                )
+            }
 
         (this as? org.cangnova.cangjie.cfir.declarations.impl.CfirAnonymousFunctionImpl)?.body = newBody
     }

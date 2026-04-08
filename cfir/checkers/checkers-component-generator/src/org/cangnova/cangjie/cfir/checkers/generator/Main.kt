@@ -39,21 +39,26 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirCatch
 import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
-import org.cangnova.cangjie.cfir.expressions.CfirJumpExpression
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
+import org.cangnova.cangjie.cfir.expressions.CfirBreakExpression
+import org.cangnova.cangjie.cfir.expressions.CfirContinueExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
 import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLoopJump
 import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMacroExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirPerformExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQuoteExpression
 import org.cangnova.cangjie.cfir.expressions.CfirRangeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResumeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSpawnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirStringInterpolation
@@ -123,6 +128,9 @@ fun main(args: Array<String>) {
                     visitAlso<CfirBlock>(it)
                     visitAlso<CfirLazyBlock>(it)
                     visitAlso<CfirLazyExpression>(it)
+                    visitAlso<CfirPerformExpression>(it)
+                    visitAlso<CfirResumeExpression>(it)
+                    visitAlso<CfirHandleClause>(it)
                     visitAlso<CfirStringInterpolation>(it)
                     visitAlso<CfirMatchBranch>(it)
                     visitAlso<CfirCatch>(it)
@@ -151,7 +159,10 @@ fun main(args: Array<String>) {
                 alias<CfirTryExpression>("TryExpressionChecker")
                 alias<CfirThrowExpression>("ThrowExpressionChecker")
                 alias<CfirReturnExpression>("ReturnExpressionChecker")
-                alias<CfirJumpExpression>("JumpExpressionChecker")
+                alias<CfirLoopJump>("LoopJumpChecker", false).let {
+                    visitAlso<CfirBreakExpression>(it)
+                    visitAlso<CfirContinueExpression>(it)
+                }
                 alias<CfirRangeExpression>("RangeExpressionChecker")
                 alias<CfirSubscriptExpression>("SubscriptExpressionChecker")
                 alias<CfirErrorExpression>("ErrorExpressionChecker")

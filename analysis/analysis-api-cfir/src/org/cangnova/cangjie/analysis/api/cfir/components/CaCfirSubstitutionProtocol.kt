@@ -15,8 +15,8 @@ import org.cangnova.cangjie.name.Name
 /**
  * CFIR 类型替换协议。
  *
- * 这一层把公开 Analysis API 的替换请求映射到编译器现有的 CFIR type substitutor，
- * 避免在 `analysis` 层再维护一套脱离编译器语义的替换逻辑。
+ * 该层把公开 Analysis API 的替换请求映射到 CFIR 现有的类型替换器，
+ * 保证 public signature / type 的实例化仍然服从同一套编译器语义。
  */
 internal class CaCfirTypeSubstitutorImpl(
     override val substitutions: Map<Name, CaType>,
@@ -37,7 +37,6 @@ internal class CaCfirSubstitutedSignatureImpl(
     typeParameters: List<Name>,
     valueParameters: List<CaCfirValueParameterSignatureImpl>,
     returnType: CaType?,
-    returnTypeText: String?,
     annotations: List<CaAnnotation>,
     token: CaLifetimeToken,
 ) : CaCfirSignatureImpl(
@@ -45,7 +44,6 @@ internal class CaCfirSubstitutedSignatureImpl(
     typeParameters = typeParameters,
     valueParameters = valueParameters,
     returnType = returnType,
-    returnTypeText = returnTypeText,
     annotations = annotations,
     token = token,
 ), CaSubstitutedSignature
@@ -106,13 +104,11 @@ internal fun CaCfirSession.substituteSignature(
                 CaCfirValueParameterSignatureImpl(
                     name = parameter.name,
                     type = substitutedType,
-                    typeText = substitutedType?.render() ?: parameter.typeText,
                     annotations = parameter.annotations,
                     token = token,
                 )
             },
             returnType = signature.returnType?.let(cfirSubstitutor::substitute),
-            returnTypeText = signature.returnType?.let(cfirSubstitutor::substitute)?.render() ?: signature.returnTypeText,
             annotations = signature.annotations,
             token = token,
         )
@@ -131,7 +127,7 @@ internal data class CaCfirTypeSubstitutorCacheKey(
 /**
  * 已替换签名缓存键。
  *
- * 同一原始签名和同一组类型替换在同一 session 内必须落到同一个公开签名快照。
+ * 同一原始签名与同一组替换映射在同一 session 内必须落到同一公开签名快照。
  */
 internal data class CaCfirSubstitutedSignatureCacheKey(
     val signature: CaSignature,

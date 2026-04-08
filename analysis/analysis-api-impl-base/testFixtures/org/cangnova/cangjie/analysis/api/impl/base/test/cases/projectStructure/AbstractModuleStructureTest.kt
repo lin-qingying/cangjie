@@ -7,8 +7,6 @@ import org.cangnova.cangjie.analysis.api.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.CaNotUnderContentRootModule
-import org.cangnova.cangjie.analysis.api.CaScriptDependencyModule
-import org.cangnova.cangjie.analysis.api.CaScriptModule
 import org.cangnova.cangjie.analysis.api.CaSourceModule
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiProjectStructureTestDirectives
 import org.cangnova.cangjie.analysis.api.impl.base.test.ExpectedCaModuleShape
@@ -131,11 +129,9 @@ abstract class AbstractModuleStructureTest : AbstractAnalysisApiBasedTest() {
 }
 
 private fun CaModule.toExpectedShape(): ExpectedCaModuleShape = when (this) {
-    is CaScriptModule -> ExpectedCaModuleShape.ScriptModule
     is CaDanglingFileModule -> ExpectedCaModuleShape.DanglingFileModule
     is CaLibrarySourceModule -> ExpectedCaModuleShape.LibrarySourceModule
     is CaLibraryFallbackDependenciesModule -> ExpectedCaModuleShape.LibraryFallbackDependenciesModule
-    is CaScriptDependencyModule -> ExpectedCaModuleShape.ScriptDependenciesModule
     is CaBuiltinsModule -> ExpectedCaModuleShape.BuiltinsModule
     is CaLibraryModule -> ExpectedCaModuleShape.LibraryBinaryModule
     is CaNotUnderContentRootModule -> ExpectedCaModuleShape.NotUnderContentRootModule
@@ -149,11 +145,9 @@ private fun CaModule.toExpectedShape(): ExpectedCaModuleShape = when (this) {
  * 测试数据只应依赖公开模块语义，而不应依赖具体实现类的 `toString()` 偶然值。
  */
 private fun presentableModuleName(module: CaModule): String = when (module) {
-    is CaScriptModule -> module.name
     is CaDanglingFileModule -> module.name
     is CaLibrarySourceModule -> module.libraryName
     is CaLibraryFallbackDependenciesModule -> "${module.dependencyOwnerName}.fallback"
-    is CaScriptDependencyModule -> "${module.scriptName}.scriptDependencies"
     is CaBuiltinsModule -> module.builtinsName
     is CaLibraryModule -> module.libraryName
     is CaNotUnderContentRootModule -> module.name

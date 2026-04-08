@@ -4,7 +4,10 @@ import org.cangnova.cangjie.CangJieCoreEnvironmentMode
 import org.cangnova.cangjie.lsp.CangjieLspServerOptions
 import org.cangnova.cangjie.lsp.capabilities.CangjieLanguageServerDescriptor
 import org.cangnova.cangjie.lsp.testkit.LspIntegrationTestConnection
+import org.cangnova.cangjie.lsp.testkit.LspClientCapabilitiesBuilder
 import org.cangnova.cangjie.lsp.testkit.ServiceLoadedLspTestEnvironment
+import org.eclipse.lsp4j.ClientCapabilities
+import org.eclipse.lsp4j.InitializeParams
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 
@@ -23,14 +26,18 @@ abstract class AbstractLspIntegrationTest {
     protected lateinit var session: LspIntegrationTestSession
         private set
 
+    protected open val autoCreateDefaultSession: Boolean = true
+
     @BeforeEach
     fun setUpLspSession() {
-        session = createSession()
+        if (autoCreateDefaultSession) {
+            session = createSession()
+        }
     }
 
     @AfterEach
     fun tearDownLspSession() {
-        if (::session.isInitialized) {
+        if (autoCreateDefaultSession && ::session.isInitialized) {
             session.close()
         }
     }
@@ -43,6 +50,32 @@ abstract class AbstractLspIntegrationTest {
         connection.initialized()
         return LspIntegrationTestSession(connection)
     }
+
+    protected open fun createSession(
+        params: InitializeParams,
+        options: CangjieLspServerOptions = defaultServerOptions(),
+    ): LspIntegrationTestSession {
+        val connection = LspIntegrationTestConnection.create(options)
+        connection.initialize(params)
+        connection.initialized()
+        return LspIntegrationTestSession(connection)
+    }
+
+    protected fun createSession(
+        rootUri: String,
+        capabilities: ClientCapabilities,
+        options: CangjieLspServerOptions = defaultServerOptions(),
+    ): LspIntegrationTestSession {
+        return createSession(
+            InitializeParams().apply {
+                this.rootUri = rootUri
+                this.capabilities = capabilities
+            },
+            options,
+        )
+    }
+
+    protected fun fullFeaturedCapabilities(): ClientCapabilities = LspClientCapabilitiesBuilder.fullFeatured()
 
     protected open fun defaultServerOptions(): CangjieLspServerOptions {
         return CangjieLspServerOptions(

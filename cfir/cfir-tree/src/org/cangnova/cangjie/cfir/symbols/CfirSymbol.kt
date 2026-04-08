@@ -349,6 +349,27 @@ class CfirPatternVariableSymbol(
         else "CfirPatternVariableSymbol(unbound)"
 }
 
+/**
+ * 模式内部绑定变量符号。
+ *
+ * 该符号对应模式树中真正进入作用域的绑定名，例如：
+ * - `let (a, b) = pair` 中的 `a` / `b`
+ * - `case Year(y)` 中的 `y`
+ * - `case value: Int` 中的 `value`
+ *
+ * 它与外层 `CfirPatternVariableSymbol` 明确分层：
+ * 外层 symbol 只描述模式声明容器，内部 binding symbol 才承担名称解析、导航与诊断职责。
+ */
+class CfirPatternBindingSymbol(
+  callableId: CallableId,
+) : CfirVariableSymbol<CfirPatternBindingVariable>(callableId) {
+    override val name: Name get() = callableId.callableName
+
+    override fun toString(): String =
+        if (isBound) "CfirPatternBindingSymbol(${cfir.name})"
+        else "CfirPatternBindingSymbol(unbound)"
+}
+
 /** 值参数符号，对应函数声明中的形参。 */
 class CfirValueParameterSymbol(
   callableId: CallableId,

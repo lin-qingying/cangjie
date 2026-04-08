@@ -239,6 +239,13 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return declarationsTransformer.transformFieldVariable(fieldVariable, data)
     }
 
+    override fun transformPatternBindingVariable(
+        patternBindingVariable: CfirPatternBindingVariable,
+        data: ResolutionMode,
+    ): CfirPatternBindingVariable {
+        return declarationsTransformer.transformPatternBindingVariable(patternBindingVariable, data)
+    }
+
     override fun transformVariable(variable: CfirVariable, data: ResolutionMode): CfirVariable {
         return declarationsTransformer.transformVariable(variable, data)
     }
@@ -393,6 +400,27 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         data: ResolutionMode,
     ): CfirExpression {
         return expressionsTransformer.transformThrowExpression(throwExpression, data)
+    }
+
+    override fun transformPerformExpression(
+        performExpression: CfirPerformExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformPerformExpression(performExpression, data)
+    }
+
+    override fun transformResumeExpression(
+        resumeExpression: CfirResumeExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformResumeExpression(resumeExpression, data)
+    }
+
+    override fun transformHandleClause(
+        handleClause: CfirHandleClause,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformHandleClause(handleClause, data)
     }
 
     override fun transformTryExpression(

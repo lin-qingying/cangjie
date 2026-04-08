@@ -40,6 +40,7 @@ open class CangJieExtendStubImpl(
     private val qualifiedName: StringRef?,
     private val classId: ClassId?,
     private val name: StringRef?,
+    private val extendIdRef: StringRef?,
 
     private val superNames: Array<StringRef>,
 
@@ -53,7 +54,7 @@ open class CangJieExtendStubImpl(
     }
 
     override val extendId: String
-        get() = StringRef.toString(name)
+        get() = StringRef.toString(extendIdRef)
 
     override fun getName(): String? = StringRef.toString(name)
 

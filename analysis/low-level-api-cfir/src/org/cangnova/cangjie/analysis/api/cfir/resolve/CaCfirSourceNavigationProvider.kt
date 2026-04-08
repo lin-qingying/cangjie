@@ -2,12 +2,14 @@ package org.cangnova.cangjie.analysis.api.cfir.resolve
 
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.psi.CjCallableDeclaration
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjLambdaExpression
 import org.cangnova.cangjie.source.psi
 
 /**
@@ -31,13 +33,15 @@ internal class CaCfirSourceNavigationProvider(
     fun findPsi(symbol: CfirSymbol<*>): PsiElement? {
         val boundPsi = symbol.boundPsiOrNull()
         if (boundPsi != null) {
-            return boundPsi
+            return symbol.normalizePsiForPublicUse(boundPsi)
         }
 
         return when (symbol) {
             is CfirFileSymbol -> symbol.cfir.source?.psi as? CjFile
             is CfirClassLikeSymbol<*> -> declarationLocator.findClassLikeDeclaration(symbol.classId)
-            is CfirCallableSymbol<*> -> symbol.callableId?.let(declarationLocator::findCallableDeclaration)
+            is CfirCallableSymbol<*> -> symbol.callableId
+                ?.let(declarationLocator::findCallableDeclaration)
+                ?.let { psi -> symbol.normalizePsiForPublicUse(psi) }
             else -> null
         }
     }
@@ -56,5 +60,18 @@ internal class CaCfirSourceNavigationProvider(
 
     private fun CfirSymbol<*>.boundPsiOrNull(): PsiElement? {
         return if (isBound) cfir.source?.psi else null
+    }
+
+    /**
+     * 对外暴露 public symbol 时，需要把后端内部使用的锚点 PSI 归一化成公开 API 约定的源码节点。
+     *
+     * 当前最重要的场景是匿名函数：Raw CFIR 以 `CjLambdaExpression` 为源锚点，
+     * 但公开 API 以 `CjFunctionLiteral` 作为 `PSI -> symbol` 与 `originalPsi` 的稳定入口。
+     */
+    private fun CfirSymbol<*>.normalizePsiForPublicUse(psi: PsiElement): PsiElement {
+        return when {
+            this is CfirAnonymousFunctionSymbol && psi is CjLambdaExpression -> psi.functionLiteral
+            else -> psi
+        }
     }
 }

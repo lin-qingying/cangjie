@@ -4,6 +4,7 @@ import com.intellij.lang.LighterASTNode
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.CjInMemoryTextSourceFile
 import org.cangnova.cangjie.CjSourceFile
+import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.builder.*
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.*
@@ -12,8 +13,10 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.CjSourceFileLinesMapping
+import org.cangnova.cangjie.source.fakeElement
 import org.cangnova.cangjie.source.toSourceLinesMapping
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -320,7 +323,8 @@ class LightTreeRawCfirDeclarationBuilder(
         val name = extractFunctionName(node, valueParams.size)
         val modifiers = LightTreeModifierList.from(tree, node)
         val returnTypeRef = extractReturnTypeRef(node)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractBody(node)
+        val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
+        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withFunctionTarget(functionTarget) { extractBody(node) }
 
         return buildSourceDeclaration(CfirNamedFunctionSymbol(callableIdFor(name))) { symbol ->
             buildNamedFunction {
@@ -341,14 +345,15 @@ class LightTreeRawCfirDeclarationBuilder(
                 this.body = body
                 isMut = modifiers.isMut
             }
-        }
+        }.also { bindFunctionTarget(functionTarget, it) }
     }
 
     private fun convertMainFunction(node: LighterASTNode): CfirMainFunction {
         val modifiers = LightTreeModifierList.from(tree, node)
         val valueParams = extractValueParameters(node)
         val returnTypeRef = extractReturnTypeRef(node)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractBody(node)
+        val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
+        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withFunctionTarget(functionTarget) { extractBody(node) }
 
         return buildSourceDeclaration(CfirMainFunctionSymbol(callableIdFor(Name.identifier("main")))) { symbol ->
             buildMainFunction {
@@ -365,7 +370,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 this.valueParameters.addAll(valueParams)
                 this.body = body
             }
-        }
+        }.also { bindFunctionTarget(functionTarget, it) }
     }
 
     private fun convertMacroDeclaration(node: LighterASTNode): CfirMacroDeclaration {
@@ -373,7 +378,8 @@ class LightTreeRawCfirDeclarationBuilder(
         val modifiers = LightTreeModifierList.from(tree, node)
         val valueParams = extractValueParameters(node)
         val returnTypeRef = extractReturnTypeRef(node)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractBody(node)
+        val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
+        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withFunctionTarget(functionTarget) { extractBody(node) }
 
         return buildSourceDeclaration(CfirMacroDeclarationSymbol(callableIdFor(name))) { symbol ->
             buildMacroDeclaration {
@@ -391,13 +397,14 @@ class LightTreeRawCfirDeclarationBuilder(
                 this.valueParameters.addAll(valueParams)
                 this.body = body
             }
-        }
+        }.also { bindFunctionTarget(functionTarget, it) }
     }
 
     private fun convertFinalizer(node: LighterASTNode): CfirFinalizer {
         val modifiers = LightTreeModifierList.from(tree, node)
         val valueParams = extractValueParameters(node)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractBody(node)
+        val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
+        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withFunctionTarget(functionTarget) { extractBody(node) }
 
         return buildSourceDeclaration(CfirFinalizerSymbol(callableIdFor(SpecialNames.END_INIT))) { symbol ->
             buildFinalizer {
@@ -414,7 +421,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 this.valueParameters.addAll(valueParams)
                 this.body = body
             }
-        }
+        }.also { bindFunctionTarget(functionTarget, it) }
     }
 
     // ===== 属性/字段/变量 =====
@@ -423,6 +430,21 @@ class LightTreeRawCfirDeclarationBuilder(
         val name = extractName(node)
         val modifiers = LightTreeModifierList.from(tree, node)
         val typeRef = extractReturnTypeRef(node)
+        val accessors = extractPropertyAccessorNodes(node)
+        val getter = accessors.firstOrNull(::isGetterAccessor)?.let { accessorNode ->
+            convertPropertyAccessor(
+                node = accessorNode,
+                accessorName = Name.special("<get-${name.asString()}>"),
+                defaultReturnTypeRef = typeRef,
+            )
+        }
+        val setter = accessors.firstOrNull { accessorNode -> !isGetterAccessor(accessorNode) }?.let { accessorNode ->
+            convertPropertyAccessor(
+                node = accessorNode,
+                accessorName = Name.special("<set-${name.asString()}>"),
+                defaultReturnTypeRef = buildImplicitTypeRef(),
+            )
+        }
 
         return buildSourceDeclaration(CfirPropertySymbol(callableIdFor(name))) { symbol ->
             buildProperty {
@@ -437,8 +459,44 @@ class LightTreeRawCfirDeclarationBuilder(
                 status = modifiers.toDeclarationStatusForCurrentContext()
                 this.returnTypeRef = typeRef
                 this.name = name
+                this.getter = getter
+                this.setter = setter
             }
         }
+    }
+
+    /**
+     * LightTree 路径同样需要为 getter / setter 保留独立的函数声明节点，
+     * 以支撑公开 accessor symbol 的 PSI 入口与 pointer/originalPsi 协议。
+     */
+    private fun convertPropertyAccessor(
+        node: LighterASTNode,
+        accessorName: Name,
+        defaultReturnTypeRef: CfirTypeRef,
+    ): CfirNamedFunction {
+        val modifiers = LightTreeModifierList.from(tree, node)
+        val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
+        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withFunctionTarget(functionTarget) { extractBody(node) }
+        val explicitReturnTypeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)?.let(::convertTypeRef)
+
+        return buildSourceDeclaration(CfirNamedFunctionSymbol(callableIdFor(accessorName))) { symbol ->
+            buildNamedFunction {
+                resolvePhase = CfirResolvePhase.RAW_CFIR
+                source = node.toSource()
+                this.symbol = symbol
+                origin = CfirDeclarationOrigin.Source
+                moduleData = baseModuleData
+                attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = context.inLocalContext
+                dispatchReceiverType = currentDispatchReceiverType()
+                status = modifiers.toDeclarationStatusForCurrentContext()
+                returnTypeRef = explicitReturnTypeRef ?: defaultReturnTypeRef
+                this.name = accessorName
+                valueParameters.addAll(extractValueParameters(node))
+                this.body = body
+                isMut = false
+            }
+        }.also { bindFunctionTarget(functionTarget, it) }
     }
 
     private fun convertFieldVariable(node: LighterASTNode): CfirFieldVariable {
@@ -471,7 +529,15 @@ class LightTreeRawCfirDeclarationBuilder(
         val modifiers = LightTreeModifierList.from(tree, node)
         val typeRef = extractReturnTypeRef(node)
         val patternNode = findPatternChild(node)
-        val pattern = patternNode?.let { expressionBuilder.convertPattern(it) }
+        val status = modifiers.toDeclarationStatusForCurrentContext()
+        val pattern = patternNode?.let {
+            expressionBuilder.convertPattern(
+                node = it,
+                ownerStatus = status,
+                ownerIsLocal = context.inLocalContext,
+                ownerIsVar = hasVarKeyword(node),
+            )
+        }
             ?: org.cangnova.cangjie.cfir.patterns.builder.buildWildcardPattern { source = node.toSource() }
         val initializer = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractInitializer(node)
         val isVar = hasVarKeyword(node)
@@ -485,7 +551,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 moduleData = baseModuleData
                 attributes = declarationAttributes(node)
                 isLocal = context.inLocalContext
-                status = modifiers.toDeclarationStatusForCurrentContext()
+                this.status = status
                 this.returnTypeRef = typeRef
                 this.pattern = pattern
                 this.initializer = initializer
@@ -499,7 +565,8 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun convertConstructor(node: LighterASTNode, isPrimary: Boolean): CfirConstructor {
         val modifiers = LightTreeModifierList.from(tree, node)
         val valueParams = extractValueParameters(node)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractBody(node)
+        val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
+        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withFunctionTarget(functionTarget) { extractBody(node) }
 
         return buildSourceDeclaration(CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))) { symbol ->
             if (isPrimary) {
@@ -533,7 +600,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.body = body
                 }
             }
-        }
+        }.also { bindFunctionTarget(functionTarget, it) }
     }
 
     // ===== 类型别名 =====
@@ -589,13 +656,12 @@ class LightTreeRawCfirDeclarationBuilder(
         } else {
             emptyList()
         }
-        val enumCtorTypeRef = when (valueTypeRefs.size) {
-            0 -> buildImplicitTypeRef()
-            1 -> valueTypeRefs.first()
-            else -> buildTupleTypeRef {
-                source = node.toSource()
-                elementTypeRefs.addAll(valueTypeRefs)
-            }
+        val valueParameters = valueTypeRefs.mapIndexed { index, valueTypeRef ->
+            buildEnumConstructorValueParameter(
+                source = valueTypeRef.source ?: node.toSource(),
+                name = enumConstructorPayloadParameterName(index),
+                returnTypeRef = valueTypeRef,
+            )
         }
 
         return buildSourceDeclaration(CfirEnumConstructorSymbol(callableIdFor(enumName))) { symbol ->
@@ -609,7 +675,8 @@ class LightTreeRawCfirDeclarationBuilder(
                 isLocal = context.inLocalContext
                 status = CfirDeclarationStatusImpl.DEFAULT
                 typeParameters.addAll(ownerTypeParameters)
-                returnTypeRef = enumCtorTypeRef
+                returnTypeRef = buildImplicitTypeRef()
+                this.valueParameters.addAll(valueParameters)
                 name = enumName
             }
         }
@@ -1002,6 +1069,15 @@ class LightTreeRawCfirDeclarationBuilder(
         return expressionBuilder.convertBlock(blockNode)
     }
 
+    private fun extractPropertyAccessorNodes(node: LighterASTNode): List<LighterASTNode> {
+        val propertyBody = tree.findChildByType(node, CjNodeTypes.PROPERTY_BODY) ?: return emptyList()
+        return tree.getChildrenByType(propertyBody, CjNodeTypes.PROPERTY_ACCESSOR)
+    }
+
+    private fun isGetterAccessor(node: LighterASTNode): Boolean {
+        return tree.findChildByType(node, CjTokens.GET_KEYWORD) != null
+    }
+
     /** 提取初始化器表达式 */
     private fun extractInitializer(node: LighterASTNode): CfirExpression? {
         // 查找 = 之后的表达式
@@ -1035,6 +1111,57 @@ class LightTreeRawCfirDeclarationBuilder(
             if (LightTreeRawCfirExpressionBuilder.isPatternToken(child.tokenType)) return child
         }
         return null
+    }
+
+    internal fun createPatternBindingVariable(
+        source: CjSourceElement?,
+        name: Name,
+        status: CfirDeclarationStatus,
+        isLocal: Boolean,
+        isVar: Boolean,
+        returnTypeRef: CfirTypeRef,
+    ): CfirPatternBindingVariable {
+        val bindingStatus = cloneDeclarationStatus(status)
+        return buildSourceDeclaration(CfirPatternBindingSymbol(callableIdFor(name))) { symbol ->
+            org.cangnova.cangjie.cfir.declarations.builder.buildPatternBindingVariable {
+                resolvePhase = CfirResolvePhase.RAW_CFIR
+                this.source = source?.fakeElement(CjFakeSourceElementKind.PatternBindingVariable)
+                this.symbol = symbol
+                origin = CfirDeclarationOrigin.Source
+                moduleData = baseModuleData
+                attributes = CfirDeclarationAttributes.EMPTY
+                this.isLocal = isLocal
+                dispatchReceiverType = null
+                this.status = bindingStatus
+                initializer = null
+                this.isVar = isVar
+                this.returnTypeRef = returnTypeRef
+                this.name = name
+            }
+        }
+    }
+
+    internal fun cloneDeclarationStatus(status: CfirDeclarationStatus): CfirDeclarationStatusImpl {
+        return CfirDeclarationStatusImpl(
+            visibility = status.visibility,
+            modality = status.modality,
+        ).also { copied ->
+            copied.isVisibilityExplicit = status.isVisibilityExplicit
+            copied.isModalityExplicit = status.isModalityExplicit
+            copied.isOverride = status.isOverride
+            copied.isOperator = status.isOperator
+            copied.isStatic = status.isStatic
+            copied.isConst = status.isConst
+            copied.isMut = status.isMut
+            copied.isUnsafe = status.isUnsafe
+            copied.isForeign = status.isForeign
+            copied.isCommon = status.isCommon
+            copied.isSpecific = status.isSpecific
+            copied.isRedef = status.isRedef
+            copied.isAbstract = status.isAbstract
+            copied.isOpen = status.isOpen
+            copied.isSealed = status.isSealed
+        }
     }
 
     private inline fun <D : CfirDeclaration, S : CfirSymbol<D>> buildSourceDeclaration(

@@ -8,12 +8,17 @@ import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.*
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.builder.buildBindingPattern
+import org.cangnova.cangjie.cfir.patterns.builder.buildEnumPattern
+import org.cangnova.cangjie.cfir.patterns.builder.buildTypePattern
 import org.cangnova.cangjie.cfir.patterns.builder.buildTuplePattern
 import org.cangnova.cangjie.cfir.patterns.builder.buildWildcardPattern
+import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
@@ -38,8 +43,15 @@ class CfirDeclDeserializer(
     private val context: CfirDeserializationContext,
     private val typeDeserializer: CfirTypeDeserializer,
 ) {
+    private data class EnumOwnerContext(
+        val classId: ClassId,
+        val typeParameters: List<CfirTypeParameter>,
+        val isRefEnum: Boolean,
+    )
+
     private val packageFqName: FqName = FqName(context.header.fullPkgName)
     private val declsUnderDeserialization = HashSet<Int>()
+    private val enumOwnerStack = mutableListOf<EnumOwnerContext>()
 
     /**
      * 反序列化指定索引的声明。
@@ -127,6 +139,13 @@ class CfirDeclDeserializer(
         return decoded
     }
 
+    private fun decodeExprRef(rawIndex: UInt): Int? {
+        if (rawIndex == 0u || rawIndex == UInt.MAX_VALUE) return null
+        val decoded = rawIndex.toInt() - 1
+        if (decoded !in 0 until context.pkg.allExprsLength) return null
+        return decoded
+    }
+
     private fun isEnumConstructorDecl(decl: Decl): Boolean =
         testAttr(decl, AttrBit.ENUM_CONSTRUCTOR)
 
@@ -206,6 +225,18 @@ class CfirDeclDeserializer(
     }
 
     /** 设置声明的 resolve 状态为 BODY_RESOLVE（库声明已完全解析） */
+    private inline fun <R> withEnumOwner(owner: EnumOwnerContext, block: () -> R): R {
+        enumOwnerStack += owner
+        return try {
+            block()
+        } finally {
+            enumOwnerStack.removeAt(enumOwnerStack.lastIndex)
+        }
+    }
+
+    private val currentEnumOwner: EnumOwnerContext?
+        get() = enumOwnerStack.lastOrNull()
+
     private fun CfirDeclaration.markResolved() {
         initDefaultResolveState()
         replaceResolvePhase(CfirResolvePhase.BODY_RESOLVE)
@@ -312,13 +343,18 @@ class CfirDeclDeserializer(
     private fun convertEnum(decl: Decl): CfirEnum {
         val name = decl.classLikeName()
         val isRefEnum = false
-        val symbol = CfirEnumSymbol(resolveClassId(decl, name), isRefEnum)
+        val classId = resolveClassId(decl, name)
+        val symbol = CfirEnumSymbol(classId, isRefEnum)
         val status = buildStatus(decl)
         val typeParams = deserializeTypeParameters(decl)
         val info = decl.info(EnumInfo()) as? EnumInfo
         val superTypeRefs =
             info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) } ?: mutableListOf()
-        val members = info?.let { deserializeBody(it::body, it.bodyLength) } ?: mutableListOf()
+        val members = info?.let {
+            withEnumOwner(EnumOwnerContext(classId, typeParams, isRefEnum)) {
+                deserializeBody(it::body, it.bodyLength)
+            }
+        } ?: mutableListOf()
 
         val cfirEnum = CfirEnumImpl(
             source = null,
@@ -469,8 +505,15 @@ class CfirDeclDeserializer(
             null
         }
         val fallbackName = decl.identifier?.let(Name::identifier) ?: Name.special("<pattern>")
-        val symbol = CfirPatternVariableSymbol(CallableId(fallbackName))
-        val pattern = deserializeIrrefutablePattern(info?.irrefutablePattern, fallbackName, returnTypeRef)
+        val symbol = CfirPatternVariableSymbol(CallableId(Name.special("<pattern-variable>")))
+        val pattern = deserializeIrrefutablePattern(
+            fbPattern = info?.irrefutablePattern,
+            fallbackName = fallbackName,
+            defaultTypeRef = returnTypeRef,
+            outerStatus = status,
+            outerIsLocal = false,
+            outerIsVar = info?.isVar ?: false,
+        )
 
         val cfirVar = CfirPatternVariableImpl(
             source = null,
@@ -497,19 +540,42 @@ class CfirDeclDeserializer(
     private fun deserializeIrrefutablePattern(
         fbPattern: Pattern?,
         fallbackName: Name,
-        returnTypeRef: CfirResolvedTypeRef,
+        defaultTypeRef: CfirResolvedTypeRef,
+        outerStatus: CfirDeclarationStatus,
+        outerIsLocal: Boolean,
+        outerIsVar: Boolean,
     ): CfirPattern {
         if (fbPattern == null) {
+            val bindingVariable = deserializePatternBindingVariable(
+                rawDeclRef = null,
+                fallbackName = fallbackName,
+                defaultTypeRef = defaultTypeRef,
+                outerStatus = outerStatus,
+                outerIsLocal = outerIsLocal,
+                outerIsVar = outerIsVar,
+            )
             return buildBindingPattern {
-                name = fallbackName
-                typeRef = returnTypeRef
+                name = bindingVariable.name
+                typeRef = bindingVariable.returnTypeRef
+                this.bindingVariable = bindingVariable
             }
         }
 
         return when (fbPattern.kind) {
-            PatternKind.VarPattern -> buildBindingPattern {
-                name = fallbackName
-                typeRef = returnTypeRef
+            PatternKind.VarPattern -> {
+                val bindingVariable = deserializePatternBindingVariable(
+                    rawDeclRef = fbPattern.exprs(0),
+                    fallbackName = fallbackName,
+                    defaultTypeRef = defaultTypeRef,
+                    outerStatus = outerStatus,
+                    outerIsLocal = outerIsLocal,
+                    outerIsVar = outerIsVar,
+                )
+                buildBindingPattern {
+                    name = bindingVariable.name
+                    typeRef = bindingVariable.returnTypeRef
+                    this.bindingVariable = bindingVariable
+                }
             }
 
             PatternKind.TuplePattern -> buildTuplePattern {
@@ -517,17 +583,142 @@ class CfirDeclDeserializer(
                     elements += deserializeIrrefutablePattern(
                         fbPattern = fbPattern.patterns(i),
                         fallbackName = fallbackName,
-                        returnTypeRef = returnTypeRef,
+                        defaultTypeRef = defaultTypeRef,
+                        outerStatus = outerStatus,
+                        outerIsLocal = outerIsLocal,
+                        outerIsVar = outerIsVar,
+                    )
+                }
+            }
+
+            PatternKind.TypePattern -> {
+                val resolvedTypeRef = buildTypeRef(fbPattern.types(0))
+                val nestedPattern = fbPattern.patterns(0)
+                val nestedBindingVariable = nestedPattern
+                    ?.takeIf { it.kind == PatternKind.VarPattern }
+                    ?.let {
+                        deserializePatternBindingVariable(
+                            rawDeclRef = it.exprs(0),
+                            fallbackName = fallbackName,
+                            defaultTypeRef = resolvedTypeRef,
+                            outerStatus = outerStatus,
+                            outerIsLocal = outerIsLocal,
+                            outerIsVar = outerIsVar,
+                        )
+                    }
+                buildTypePattern {
+                    typeRef = resolvedTypeRef
+                    bindingName = nestedBindingVariable?.name
+                    bindingVariable = nestedBindingVariable
+                }
+            }
+
+            PatternKind.EnumPattern -> buildEnumPattern {
+                val referenceName = decodeExprRef(fbPattern.exprs(0))
+                    ?.let(::extractReferenceName)
+                    ?.takeIf { it.isNotBlank() }
+                    ?.substringAfterLast('.')
+                    ?.let(Name::identifier)
+                    ?: Name.special("<enum-pattern>")
+                constructorReference = buildNamedReference {
+                    name = referenceName
+                    source = null
+                }
+                for (i in 0 until fbPattern.patternsLength) {
+                    arguments += deserializeIrrefutablePattern(
+                        fbPattern = fbPattern.patterns(i),
+                        fallbackName = fallbackName,
+                        defaultTypeRef = defaultTypeRef,
+                        outerStatus = outerStatus,
+                        outerIsLocal = outerIsLocal,
+                        outerIsVar = outerIsVar,
                     )
                 }
             }
 
             PatternKind.WildcardPattern -> buildWildcardPattern()
             else -> buildBindingPattern {
-                name = fallbackName
-                typeRef = returnTypeRef
+                val bindingVariable = deserializePatternBindingVariable(
+                    rawDeclRef = null,
+                    fallbackName = fallbackName,
+                    defaultTypeRef = defaultTypeRef,
+                    outerStatus = outerStatus,
+                    outerIsLocal = outerIsLocal,
+                    outerIsVar = outerIsVar,
+                )
+                name = bindingVariable.name
+                typeRef = bindingVariable.returnTypeRef
+                this.bindingVariable = bindingVariable
             }
         }
+    }
+
+    private fun deserializePatternBindingVariable(
+        rawDeclRef: UInt?,
+        fallbackName: Name,
+        defaultTypeRef: CfirTypeRef,
+        outerStatus: CfirDeclarationStatus,
+        outerIsLocal: Boolean,
+        outerIsVar: Boolean,
+    ): CfirPatternBindingVariable {
+        val bindingDecl = rawDeclRef?.let(::decodeDeclRef)?.let(context.pkg::allDecls)
+        val bindingName = bindingDecl?.identifier?.let(Name::identifier) ?: fallbackName
+        val status = bindingDecl?.let(::buildStatus)?.let(::cloneStatus) ?: cloneStatus(outerStatus)
+        val returnTypeRef = bindingDecl
+            ?.takeIf { it.type != 0u }
+            ?.let { buildTypeRef(it.type) }
+            ?: defaultTypeRef
+        val symbol = CfirPatternBindingSymbol(
+            if (outerIsLocal) CallableId(bindingName) else CallableId(packageFqName, bindingName),
+        )
+
+        return CfirPatternBindingVariableImpl(
+            source = null,
+            moduleData = context.moduleData,
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
+            origin = CfirDeclarationOrigin.Library,
+            attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = outerIsLocal,
+            dispatchReceiverType = null,
+            status = status,
+            initializer = null,
+            isVar = outerIsVar,
+            symbol = symbol,
+            typeParameters = mutableListOf(),
+            returnTypeRef = returnTypeRef,
+            name = bindingName,
+        ).also(symbol::bind)
+    }
+
+    private fun cloneStatus(status: CfirDeclarationStatus): CfirDeclarationStatusImpl {
+        return CfirDeclarationStatusImpl(
+            visibility = status.visibility,
+            modality = status.modality,
+        ).also { copied ->
+            copied.isVisibilityExplicit = status.isVisibilityExplicit
+            copied.isModalityExplicit = status.isModalityExplicit
+            copied.isOverride = status.isOverride
+            copied.isOperator = status.isOperator
+            copied.isStatic = status.isStatic
+            copied.isConst = status.isConst
+            copied.isMut = status.isMut
+            copied.isUnsafe = status.isUnsafe
+            copied.isForeign = status.isForeign
+            copied.isCommon = status.isCommon
+            copied.isSpecific = status.isSpecific
+            copied.isRedef = status.isRedef
+            copied.isAbstract = status.isAbstract
+            copied.isOpen = status.isOpen
+            copied.isSealed = status.isSealed
+        }
+    }
+
+    private fun extractReferenceName(exprIndex: Int): String? {
+        val expr = context.pkg.allExprs(exprIndex) ?: return null
+        if (expr.infoType != ExprInfo.ReferenceInfo) return null
+        val referenceInfo = expr.info(ReferenceInfo()) as? ReferenceInfo ?: return null
+        return referenceInfo.reference
     }
 
     private fun convertExtend(decl: Decl): CfirExtend {
@@ -634,9 +825,10 @@ class CfirDeclDeserializer(
     /** FuncParam → CfirValueParameter */
     private fun convertEnumConstructorFromVariableDecl(decl: Decl): CfirEnumConstructor {
         val name = Name.identifier(decl.identifier ?: "???")
-        val symbol = CfirEnumConstructorSymbol(CallableId(packageFqName, name))
+        val owner = currentEnumOwner
+        val symbol = CfirEnumConstructorSymbol(owner?.let { CallableId(it.classId, name) } ?: CallableId(packageFqName, name))
         val status = buildStatus(decl)
-        val typeParams = deserializeTypeParameters(decl)
+        val typeParams = owner?.typeParameters?.toMutableList() ?: deserializeTypeParameters(decl)
 
         val enumCtor = CfirEnumConstructorImpl(
             source = null,
@@ -650,7 +842,8 @@ class CfirDeclDeserializer(
             dispatchReceiverType = null,
             status = status,
             typeParameters = typeParams,
-            returnTypeRef = buildImplicitTypeRef(),
+            returnTypeRef = buildEnumConstructorReturnTypeRef(owner),
+            valueParameters = mutableListOf(),
             name = name,
         )
         symbol.bind(enumCtor)
@@ -660,10 +853,11 @@ class CfirDeclDeserializer(
 
     private fun convertEnumConstructorFromFunctionDecl(decl: Decl): CfirEnumConstructor {
         val name = Name.identifier(decl.identifier ?: "???")
-        val symbol = CfirEnumConstructorSymbol(CallableId(packageFqName, name))
+        val owner = currentEnumOwner
+        val symbol = CfirEnumConstructorSymbol(owner?.let { CallableId(it.classId, name) } ?: CallableId(packageFqName, name))
         val status = buildStatus(decl)
-        val typeParams = deserializeTypeParameters(decl)
-        val payloadTypeRef = buildEnumConstructorPayloadTypeRef(decl)
+        val typeParams = owner?.typeParameters?.toMutableList() ?: deserializeTypeParameters(decl)
+        val valueParameters = deserializeFunctionParameters(decl)
 
         val enumCtor = CfirEnumConstructorImpl(
             source = null,
@@ -677,7 +871,8 @@ class CfirDeclDeserializer(
             dispatchReceiverType = null,
             status = status,
             typeParameters = typeParams,
-            returnTypeRef = payloadTypeRef,
+            returnTypeRef = buildEnumConstructorReturnTypeRef(owner),
+            valueParameters = valueParameters,
             name = name,
         )
         symbol.bind(enumCtor)
@@ -685,25 +880,35 @@ class CfirDeclDeserializer(
         return enumCtor
     }
 
-    private fun buildEnumConstructorPayloadTypeRef(decl: Decl): CfirTypeRef {
-        val funcInfo = decl.info(FuncInfo()) as? FuncInfo ?: return buildImplicitTypeRef()
-        val funcBody = funcInfo.funcBody ?: return buildImplicitTypeRef()
-        val payloadTypes = mutableListOf<ConeCangJieType>()
+    private fun deserializeFunctionParameters(decl: Decl): MutableList<CfirValueParameter> {
+        val funcInfo = decl.info(FuncInfo()) as? FuncInfo ?: return mutableListOf()
+        val funcBody = funcInfo.funcBody ?: return mutableListOf()
+        val valueParameters = mutableListOf<CfirValueParameter>()
 
         for (i in 0 until funcBody.paramListsLength) {
             val paramList = funcBody.paramLists(i) ?: continue
             for (j in 0 until paramList.paramsLength) {
                 val paramIndex = decodeDeclRef(paramList.params(j)) ?: continue
                 val param = deserializeDecl(paramIndex) as? CfirValueParameter ?: continue
-                val type = (param.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
-                payloadTypes += type
+                valueParameters += param
             }
         }
 
-        return when (payloadTypes.size) {
-            0 -> buildImplicitTypeRef()
-            1 -> buildResolvedTypeRef { coneType = payloadTypes.first() }
-            else -> buildResolvedTypeRef { coneType = ConeTupleType(payloadTypes) }
+        return valueParameters
+    }
+
+    private fun buildEnumConstructorReturnTypeRef(owner: EnumOwnerContext?): CfirTypeRef {
+        owner ?: return buildImplicitTypeRef()
+
+        val typeArguments = owner.typeParameters.map { parameter ->
+            ConeTypeProjection(ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag()))
+        }
+        return buildResolvedTypeRef {
+            coneType = ConeEnumType(
+                lookupTag = owner.classId.toLookupTag(),
+                typeArguments = typeArguments,
+                isRefEnum = owner.isRefEnum,
+            )
         }
     }
 

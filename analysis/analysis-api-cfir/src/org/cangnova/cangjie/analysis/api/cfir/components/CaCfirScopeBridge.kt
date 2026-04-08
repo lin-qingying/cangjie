@@ -3,27 +3,22 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.scopes.CaScope
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.name.Name
 
-/**
- * low-level scope snapshot 对应的公开 Analysis API scope 实现。
- *
- * 它只承载“按名查询 + 去重 + eager symbols”这组稳定协议，
- * 不感知具体 CFIR scope 的形状。
- */
 internal class CaCfirScopeImpl(
     private val indexedNames: Set<Name>,
     private val eagerSymbols: List<CaSymbol>,
     override val token: CaLifetimeToken,
     private val symbolLookup: (Name) -> List<CaSymbol>,
     private val callableLookup: (Name) -> List<CaCallableSymbol>,
-    private val classifierLookup: (Name) -> List<CaClassLikeSymbol>,
+    private val classifierLookup: (Name) -> List<CaClassifierSymbol>,
 ) : CaScope {
     private val cachedSymbolsByName = linkedMapOf<Name, List<CaSymbol>>()
     private val cachedCallableSymbolsByName = linkedMapOf<Name, List<CaCallableSymbol>>()
-    private val cachedClassifierSymbolsByName = linkedMapOf<Name, List<CaClassLikeSymbol>>()
+    private val cachedClassifierSymbolsByName = linkedMapOf<Name, List<CaClassifierSymbol>>()
 
     override val availableNames: Set<Name>
         get() = indexedNames
@@ -37,7 +32,7 @@ internal class CaCfirScopeImpl(
 
     override fun getSymbols(name: Name): List<CaSymbol> {
         return cachedSymbolsByName.getOrPut(name) {
-            val eagerSymbolsByName = eagerSymbols.filter { symbol -> symbol.name == name.asString() }
+            val eagerSymbolsByName = eagerSymbols.filter { symbol -> symbol.name == name }
             (eagerSymbolsByName + symbolLookup(name)).distinctBy { symbol -> symbol.completionDecisionKey() }
         }
     }
@@ -48,7 +43,7 @@ internal class CaCfirScopeImpl(
         }
     }
 
-    override fun getClassifierSymbols(name: Name): List<CaClassLikeSymbol> {
+    override fun getClassifierSymbols(name: Name): List<CaClassifierSymbol> {
         return cachedClassifierSymbolsByName.getOrPut(name) {
             classifierLookup(name).distinctBy { symbol -> symbol.completionDecisionKey() }
         }

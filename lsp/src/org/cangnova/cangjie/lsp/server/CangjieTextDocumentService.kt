@@ -73,22 +73,22 @@ class CangjieTextDocumentService(
     override fun didOpen(params: DidOpenTextDocumentParams) {
         logger.info("====> didOpen: ${params.textDocument.uri}")
         val document = serverContext.documentStore.open(params.textDocument)
-        serverContext.refreshProjectStructure()
         val context = serverContext.requestContext()
         serverContext.analysisFacade.didOpen(context, document)
+        serverContext.refreshProjectStructure()
         if (serverContext.enabledFeatures.diagnostics) {
-            publishDiagnostics(document)
+            serverContext.republishOpenDiagnostics()
         }
     }
 
     override fun didChange(params: DidChangeTextDocumentParams) {
         logger.info("====> didChange: ${params.textDocument.uri}")
         val document = serverContext.documentStore.applyChanges(params)
-        serverContext.refreshProjectStructure()
         val context = serverContext.requestContext()
         serverContext.analysisFacade.didChange(context, document)
+        serverContext.refreshProjectStructure()
         if (serverContext.enabledFeatures.diagnostics) {
-            publishDiagnostics(document)
+            serverContext.republishOpenDiagnostics()
         }
     }
 
@@ -100,17 +100,18 @@ class CangjieTextDocumentService(
         serverContext.refreshProjectStructure()
         if (serverContext.enabledFeatures.diagnostics) {
             serverContext.publishDiagnostics(document, emptyList())
+            serverContext.republishOpenDiagnostics()
         }
     }
 
     override fun didSave(params: DidSaveTextDocumentParams) {
         logger.info("====> didSave: ${params.textDocument.uri}")
         val document = serverContext.documentStore.get(params.textDocument.uri) ?: return
-        serverContext.refreshProjectStructure()
         val context = serverContext.requestContext()
         serverContext.analysisFacade.didSave(context, document)
+        serverContext.refreshProjectStructure()
         if (serverContext.enabledFeatures.diagnostics) {
-            publishDiagnostics(document)
+            serverContext.republishOpenDiagnostics()
         }
     }
 
@@ -261,7 +262,7 @@ class CangjieTextDocumentService(
             serverContext.analysisFacade.prepareRename(
                 serverContext.requestContext(),
                 document,
-                RenameParams(params.textDocument, params.position, null),
+                RenameParams(params.textDocument, params.position, ""),
             ) ?: emptyPrepareRenameResult()
         }.also { it.thenAccept { logger.info("<==== prepareRename") } }
     }
@@ -329,20 +330,6 @@ class CangjieTextDocumentService(
             val diagnostics = serverContext.collectDiagnostics(document)
             DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(diagnostics))
         }.also { it.thenAccept { logger.info("<==== diagnostic") } }
-    }
-
-    /**
-     * 文档事件触发的 push diagnostics 统一走同步发布。
-     *
-     * 这里显式等待异步任务完成，确保 Analysis API、PSI 或平台接入层异常能够沿调用链回流，
-     * 而不是在 JSON-RPC 通知线程里被静默吞掉，最终只表现成“客户端没有收到任何诊断通知”。
-     */
-    private fun publishDiagnostics(document: LspTextDocument) {
-        serverContext.requestExecutor.compute {
-            logger.info("<==== publishDiagnostics: ${document.uri}")
-            val diagnostics = serverContext.collectDiagnostics(document)
-            serverContext.publishDiagnostics(document, diagnostics)
-        }.join()
     }
 
     private fun emptyPrepareRenameResult(): Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior> {

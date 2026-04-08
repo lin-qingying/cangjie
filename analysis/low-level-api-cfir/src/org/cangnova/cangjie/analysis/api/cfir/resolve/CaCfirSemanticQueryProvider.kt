@@ -4,13 +4,26 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithCandidates
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
+import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
+import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
+import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
+import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
+import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
+import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
+import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
+import org.cangnova.cangjie.cfir.patterns.CfirVarOrEnumPattern
+import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -28,9 +41,16 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjCallableDeclaration
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration
+import org.cangnova.cangjie.psi.CjCollectionLiteralExpression
+import org.cangnova.cangjie.psi.CjConstructorDelegationReferenceExpression
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjParameter
+import org.cangnova.cangjie.psi.CjArrayAccessExpression
+import org.cangnova.cangjie.psi.CjAnnotation
+import org.cangnova.cangjie.psi.CjRangeExpression
 import org.cangnova.cangjie.psi.CjReferenceExpression
+import org.cangnova.cangjie.psi.CjLambdaExpression
+import org.cangnova.cangjie.psi.CjSuperTypeCallEntry
 import org.cangnova.cangjie.psi.psiUtil.callExpression
 import org.cangnova.cangjie.psi.psiUtil.getQualifiedExpressionForSelector
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
@@ -70,6 +90,9 @@ internal class CaCfirSemanticQueryProvider(
     fun getClassDefaultType(declaration: CjClassLikeDeclaration): ConeCangJieType? =
         semanticIndex.classDefaultTypes[declaration]
 
+    fun getDeclarationSymbols(psi: PsiElement): List<CfirSymbol<*>> =
+        semanticIndex.declarationSymbols[psi].orEmpty()
+
     fun resolveReference(reference: CjReferenceExpression): Collection<CfirSymbol<*>> =
         semanticIndex.referenceTargets[reference].orEmpty()
 
@@ -84,6 +107,7 @@ internal class CaCfirSemanticQueryProvider(
         val callableReturnTypes: Map<CjCallableDeclaration, ConeCangJieType>,
         val valueParameterTypes: Map<CjParameter, ConeCangJieType>,
         val classDefaultTypes: Map<CjClassLikeDeclaration, ConeCangJieType>,
+        val declarationSymbols: Map<PsiElement, List<CfirSymbol<*>>>,
         val referenceTargets: Map<CjReferenceExpression, Set<CfirSymbol<*>>>,
         val callInfos: Map<PsiElement, CaCfirCallInfoSnapshot>,
     ) {
@@ -93,6 +117,7 @@ internal class CaCfirSemanticQueryProvider(
                 val callableReturnTypes = LinkedHashMap<CjCallableDeclaration, ConeCangJieType>()
                 val valueParameterTypes = LinkedHashMap<CjParameter, ConeCangJieType>()
                 val classDefaultTypes = LinkedHashMap<CjClassLikeDeclaration, ConeCangJieType>()
+                val declarationSymbols = LinkedHashMap<PsiElement, LinkedHashSet<CfirSymbol<*>>>()
                 val referenceTargets = LinkedHashMap<CjReferenceExpression, LinkedHashSet<CfirSymbol<*>>>()
                 val callInfos = LinkedHashMap<PsiElement, CaCfirCallInfoSnapshot>()
 
@@ -104,6 +129,21 @@ internal class CaCfirSemanticQueryProvider(
 
                     private fun recordElement(element: CfirElement) {
                         val psi = element.source?.psi
+                        if (psi != null) {
+                            element.sourceSymbolOrNull()?.let { symbol ->
+                                declarationSymbols.getOrPut(psi, ::LinkedHashSet).add(symbol)
+                                if (element is org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction && psi is CjLambdaExpression) {
+                                    declarationSymbols.getOrPut(psi.functionLiteral, ::LinkedHashSet).add(symbol)
+                                }
+                            }
+                        }
+
+                        when (element) {
+                            is org.cangnova.cangjie.cfir.declarations.CfirPatternVariable ->
+                                collectPatternDeclarationSymbols(element.pattern, declarationSymbols)
+                            is CfirMatchBranch ->
+                                collectPatternDeclarationSymbols(element.pattern, declarationSymbols)
+                        }
 
                         if (psi is CjExpression && element is CfirExpression) {
                             element.coneTypeOrNull?.let { expressionTypes[psi] = it }
@@ -146,6 +186,7 @@ internal class CaCfirSemanticQueryProvider(
                     callableReturnTypes = callableReturnTypes,
                     valueParameterTypes = valueParameterTypes,
                     classDefaultTypes = classDefaultTypes,
+                    declarationSymbols = declarationSymbols.mapValues { (_, symbols) -> symbols.toList() },
                     referenceTargets = referenceTargets.mapValues { (_, symbols) -> symbols.toSet() },
                     callInfos = callInfos,
                 )
@@ -264,9 +305,63 @@ internal class CaCfirSemanticQueryProvider(
     }
 }
 
+private fun collectPatternDeclarationSymbols(
+    pattern: CfirPattern,
+    declarationSymbols: LinkedHashMap<PsiElement, LinkedHashSet<CfirSymbol<*>>>,
+) {
+    when (pattern) {
+        is CfirBindingPattern -> {
+            pattern.bindingVariable?.source?.psi?.let { psi ->
+                declarationSymbols.getOrPut(psi, ::LinkedHashSet).add(pattern.bindingVariable!!.symbol)
+            }
+            pattern.nestedPattern?.let { nestedPattern ->
+                collectPatternDeclarationSymbols(nestedPattern, declarationSymbols)
+            }
+        }
+
+        is CfirTypePattern -> {
+            pattern.bindingVariable?.source?.psi?.let { psi ->
+                declarationSymbols.getOrPut(psi, ::LinkedHashSet).add(pattern.bindingVariable!!.symbol)
+            }
+        }
+
+        is CfirVarOrEnumPattern -> {
+            pattern.bindingVariable?.source?.psi?.let { psi ->
+                declarationSymbols.getOrPut(psi, ::LinkedHashSet).add(pattern.bindingVariable!!.symbol)
+            }
+        }
+
+        is CfirTuplePattern -> pattern.elements.forEach { element ->
+            collectPatternDeclarationSymbols(element, declarationSymbols)
+        }
+
+        is CfirEnumPattern -> pattern.arguments.forEach { argument ->
+            collectPatternDeclarationSymbols(argument, declarationSymbols)
+        }
+
+        is CfirOrPattern -> pattern.alternatives.forEach { alternative ->
+            collectPatternDeclarationSymbols(alternative, declarationSymbols)
+        }
+
+        is CfirWildcardPattern,
+        is CfirConstPattern,
+        is CfirExpressionPattern,
+        -> Unit
+    }
+}
+
 /**
  * 统一把一次底层 function call 绑定到公开 Analysis API 可见的调用锚点。
  */
+private fun CfirElement.sourceSymbolOrNull(): CfirSymbol<*>? = when (this) {
+    is CfirFile -> symbol
+    is CfirClassLikeDeclaration -> symbol
+    is CfirExtend -> symbol
+    is CfirTypeParameter -> symbol
+    is CfirCallableDeclaration -> symbol
+    else -> null
+}
+
 private fun collectCallInfoAnchors(psi: PsiElement?): List<PsiElement> {
     return buildList {
         when (psi) {
@@ -275,6 +370,21 @@ private fun collectCallInfoAnchors(psi: PsiElement?): List<PsiElement> {
                 psi.getQualifiedExpressionForSelector()?.let(::add)
             }
 
+            is CjArrayAccessExpression -> {
+                add(psi)
+                psi.getQualifiedExpressionForSelector()?.let(::add)
+            }
+
+            is CjCollectionLiteralExpression -> add(psi)
+
+            is CjConstructorDelegationReferenceExpression -> add(psi)
+
+            is CjAnnotation -> add(psi)
+
+            is CjRangeExpression -> add(psi)
+
+            is CjSuperTypeCallEntry -> add(psi)
+
             is org.cangnova.cangjie.psi.CjQualifiedExpression -> {
                 add(psi)
                 psi.callExpression?.let(::add)
@@ -282,6 +392,36 @@ private fun collectCallInfoAnchors(psi: PsiElement?): List<PsiElement> {
 
             else -> Unit
         }
+
+        generateSequence(psi?.parent) { current -> current.parent }
+            .forEach { current ->
+                when (current) {
+                    is CjCallExpression -> {
+                        add(current)
+                        current.getQualifiedExpressionForSelector()?.let(::add)
+                    }
+
+                    is CjArrayAccessExpression -> {
+                        add(current)
+                        current.getQualifiedExpressionForSelector()?.let(::add)
+                    }
+
+                    is CjCollectionLiteralExpression -> add(current)
+
+                    is CjConstructorDelegationReferenceExpression -> add(current)
+
+                    is CjAnnotation -> add(current)
+
+                    is CjRangeExpression -> add(current)
+
+                    is CjSuperTypeCallEntry -> add(current)
+
+                    is org.cangnova.cangjie.psi.CjQualifiedExpression -> {
+                        add(current)
+                        current.callExpression?.let(::add)
+                    }
+                }
+            }
     }.distinct()
 }
 
@@ -295,6 +435,10 @@ private fun collectReferenceTargets(
             referenceTargets.getOrPut(referenceExpression, ::LinkedHashSet).add(reference.resolvedSymbol)
         }
 
+        is CfirNamedReferenceWithCandidate -> {
+            referenceTargets.getOrPut(referenceExpression, ::LinkedHashSet).add(reference.candidate.symbol)
+        }
+
         else -> Unit
     }
 }
@@ -302,6 +446,8 @@ private fun collectReferenceTargets(
 private fun CfirFunctionCallOrigin.asAnalysisOrigin(): CaCfirCallOrigin = when (this) {
     CfirFunctionCallOrigin.Regular -> CaCfirCallOrigin.REGULAR
     CfirFunctionCallOrigin.Operator -> CaCfirCallOrigin.OPERATOR
+    CfirFunctionCallOrigin.ConstructorDelegationThis -> CaCfirCallOrigin.CONSTRUCTOR_DELEGATION_THIS
+    CfirFunctionCallOrigin.ConstructorDelegationSuper -> CaCfirCallOrigin.CONSTRUCTOR_DELEGATION_SUPER
 }
 
 private fun CandidateApplicability.asAnalysisApplicability(): CaCfirCallApplicability = when (this) {

@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.test.framework.test.configurators
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
 import com.intellij.openapi.project.Project
+import com.intellij.psi.impl.search.PsiSearchHelperImpl
 import org.cangnova.cangjie.analysis.api.CaTargetPlatform
 import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.AnalysisApiServiceRegistrar
 import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.PluginStructureProvider
@@ -51,12 +52,13 @@ object CaCfirAnalysisApiTestConfiguratorFactory : AnalysisApiTestConfiguratorFac
 
         return when (data.moduleKind) {
             TestModuleKind.Source,
-            TestModuleKind.ScriptSource,
             TestModuleKind.CodeFragment,
             TestModuleKind.NotUnderContentRoot -> true
 
             TestModuleKind.LibraryBinary,
-            TestModuleKind.LibrarySource -> data.analysisSessionMode == AnalysisSessionMode.Normal
+            TestModuleKind.LibrarySource,
+            TestModuleKind.Builtins,
+            TestModuleKind.LibraryFallbackDependencies -> data.analysisSessionMode == AnalysisSessionMode.Normal
         }
     }
 }
@@ -100,11 +102,12 @@ open class CaCfirConfiguredAnalysisApiTestConfigurator(
      * 三种宿主模式共用同一套测试 project-structure 状态源，
      * 只有权限模型在 IDE 与非 IDE 宿主之间存在差异。
      */
-    private class CaCfirAnalysisApiServiceRegistrar(
-        private val analysisApiMode: AnalysisApiMode,
-    ) : AnalysisApiTestServiceRegistrar() {
+        private class CaCfirAnalysisApiServiceRegistrar(
+            private val analysisApiMode: AnalysisApiMode,
+        ) : AnalysisApiTestServiceRegistrar() {
         override fun registerApplicationServices(application: MockApplication, testServices: TestServices) {
             PluginStructureProvider.registerApplicationServices(application, ANALYSIS_API_PLUGIN_XML)
+            PluginStructureProvider.registerApplicationServices(application, CJ_REFERENCES_PLUGIN_XML)
         }
 
         override fun registerProjectServices(project: MockProject, testServices: TestServices) {
@@ -127,6 +130,7 @@ open class CaCfirConfiguredAnalysisApiTestConfigurator(
             project.registerService(CaContentScopeRefiner::class.java, CaTestContentScopeRefiner::class.java)
             project.registerService(CaModificationTracker::class.java, CaTestModificationTracker::class.java)
             project.registerService(CaSessionInvalidationService::class.java, CaTestSessionInvalidationService::class.java)
+            project.registerService(com.intellij.psi.search.PsiSearchHelper::class.java, PsiSearchHelperImpl::class.java)
         }
 
         override fun toString(): String = "CaCfirAnalysisApiServiceRegistrar(mode=${analysisApiMode.suffix})"

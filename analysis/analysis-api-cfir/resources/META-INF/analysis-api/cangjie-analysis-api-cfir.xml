@@ -1,5 +1,8 @@
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
   <xi:include href="/META-INF/analysis-api/cangjie-analysis-api-impl-base.xml"/>
+  <xi:include href="/META-INF/analysis-api/cangjie-analysis-stubs.xml"/>
+  <xi:include href="/META-INF/analysis-api/cangjie-analysis-decompiled.xml"/>
+  <xi:include href="/META-INF/analysis-api/cangjie-symbol-light-declarations.xml"/>
 
   <extensions defaultExtensionNs="com.intellij">
     <projectService

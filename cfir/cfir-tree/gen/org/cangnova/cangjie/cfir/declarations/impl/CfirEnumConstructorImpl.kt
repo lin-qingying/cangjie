@@ -36,6 +36,7 @@ class CfirEnumConstructorImpl @CfirImplementationDetail constructor(
     override var status: CfirDeclarationStatus,
     override val typeParameters: MutableList<CfirTypeParameter>,
     override var returnTypeRef: CfirTypeRef,
+    override val valueParameters: MutableList<CfirValueParameter>,
     override val name: Name,
 ) : CfirEnumConstructor() {
 
@@ -50,12 +51,14 @@ class CfirEnumConstructorImpl @CfirImplementationDetail constructor(
         annotations.forEach { it.accept(visitor, data) }
         typeParameters.forEach { it.accept(visitor, data) }
         returnTypeRef.accept(visitor, data)
+        valueParameters.forEach { it.accept(visitor, data) }
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirEnumConstructorImpl {
         transformAnnotations(transformer, data)
         transformTypeParameters(transformer, data)
         transformReturnTypeRef(transformer, data)
+        transformValueParameters(transformer, data)
         return this
     }
 
@@ -75,6 +78,11 @@ class CfirEnumConstructorImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirEnumConstructorImpl {
         returnTypeRef = returnTypeRef.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformValueParameters(transformer: CfirTransformer<D>, data: D): CfirEnumConstructorImpl {
+        valueParameters.transformInplace(transformer, data)
         return this
     }
 

@@ -7,7 +7,6 @@ import org.cangnova.cangjie.analysis.api.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.CaNotUnderContentRootModule
-import org.cangnova.cangjie.analysis.api.CaScriptDependencyModule
 import org.cangnova.cangjie.analysis.api.CaSourceModule
 import org.cangnova.cangjie.cfir.DependencyListForCliModule
 import org.cangnova.cangjie.cfir.common.CfirBinaryDependenciesModuleData
@@ -242,8 +241,7 @@ internal class CaCfirSessionCache(
     private fun isStaticCapableModule(module: CaModule): Boolean {
         return module is CaLibraryModule ||
             module is CaBuiltinsModule ||
-            module is CaLibraryFallbackDependenciesModule ||
-            module is CaScriptDependencyModule
+            module is CaLibraryFallbackDependenciesModule
     }
 
     private data class DependencySessions(

@@ -3,6 +3,7 @@ package org.cangnova.cangjie.lsp.server
 import org.cangnova.cangjie.lsp.CangjieLspServerOptions
 import org.cangnova.cangjie.lsp.capabilities.CangjieClientCapabilityNegotiator
 import org.cangnova.cangjie.lsp.capabilities.CangjieServerCapabilitiesFactory
+import org.cangnova.cangjie.lsp.state.LspProjectConfiguration
 import org.eclipse.lsp4j.InitializeParams
 import org.eclipse.lsp4j.InitializeResult
 import org.eclipse.lsp4j.InitializedParams
@@ -42,6 +43,8 @@ class CangjieLanguageServer(
      */
     private val shutdownRequested = AtomicBoolean(false)
     private val initialized = AtomicBoolean(false)
+    private val closed = AtomicBoolean(false)
+    private val exited = AtomicBoolean(false)
 
     private val environmentLazy = lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
         options.environmentFactory()
@@ -86,6 +89,9 @@ class CangjieLanguageServer(
                     logger.log(Level.SEVERE, "<==== initialize failed", ex)
                 }
             }
+
+        // 在构造 server context 之前先落库标准库/库搜索路径，避免任何懒初始化的 analysis 组件捕获到空搜索路径。
+        LspProjectConfiguration.fromInitializeParams(params).applyLibrarySearchProperties()
 
         return serverContext.requestExecutor.compute {
             serverContext.client = connectedClient
@@ -143,6 +149,7 @@ class CangjieLanguageServer(
     }
 
     override fun exit() {
+        if (!exited.compareAndSet(false, true)) return
         logger.info("====> exit")
 
         try {
@@ -167,6 +174,7 @@ class CangjieLanguageServer(
     override fun getWorkspaceService(): WorkspaceService = workspaceService
 
     override fun close() {
+        if (!closed.compareAndSet(false, true)) return
         if (serverContextLazy.isInitialized()) {
             serverContext.close()
         }

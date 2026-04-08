@@ -133,6 +133,11 @@ internal class CaCfirSessionCacheStore(
         create: () -> CjFile?,
     ): CjFile? = semanticCacheStore.getOrCreateContainingFile(symbol, create)
 
+    fun getOrCreatePsiSymbols(
+        psi: PsiElement,
+        create: () -> List<CfirSymbol<*>>,
+    ): List<CfirSymbol<*>> = semanticCacheStore.getOrCreatePsiSymbols(psi, create)
+
     fun getOrCreateCallInfo(
         element: PsiElement,
         create: () -> CaCfirCallInfoSnapshot?,

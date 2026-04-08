@@ -93,7 +93,6 @@ internal class AnalysisApiExecutionTestExtension :
         val workspaceRoot = locateWorkspaceRoot(Paths.get("").toAbsolutePath().normalize())
         val candidates = listOf(
             Paths.get(testDirPathString, "$testFileName.cj"),
-            Paths.get(testDirPathString, "$testFileName.cjs"),
         )
 
         candidates.firstOrNull { candidate -> candidate.exists() }?.let { return it }
@@ -103,7 +102,7 @@ internal class AnalysisApiExecutionTestExtension :
             .firstOrNull { candidate -> candidate.exists() }
             ?.let { return it }
 
-        error("Cannot find test file $testFileName.[cj|cjs] in $testDirPathString")
+        error("Cannot find test file $testFileName.cj in $testDirPathString")
     }
 
     /**

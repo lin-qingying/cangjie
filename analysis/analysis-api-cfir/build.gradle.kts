@@ -2,6 +2,7 @@ import org.gradle.api.tasks.JavaExec
 
 plugins {
     kotlin("jvm")
+    id("analysis-coverage-convention")
     id("java-test-fixtures")
     id("project-tests-convention")
 }
@@ -25,6 +26,8 @@ dependencies {
     api(project(":analysis:analysis-api"))
     api(project(":analysis:analysis-api-impl-base"))
     implementation(project(":analysis:low-level-api-cfir"))
+    implementation(project(":analysis:decompiled"))
+    implementation(project(":analysis:symbol-light-declarations"))
     implementation(project(":cfir:entrypoint"))
     implementation(project(":cfir:cfir-tree"))
     implementation(project(":cfir:resolve"))
@@ -36,6 +39,7 @@ dependencies {
 
     testImplementation(testFixtures(project(":analysis:analysis-test-framework")))
     testImplementation(testFixtures(project(":analysis:analysis-api-impl-base")))
+    testImplementation(project(":analysis:analysis-tools"))
     testImplementation(project(":analysis:cj-references"))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
@@ -124,6 +128,15 @@ if (path == ":analysis:analysis-api-cfir") {
             ":analysis:analysis-api-standalone:compileKotlin",
             ":analysis:analysis-internal-utils:compileKotlin",
             ":analysis:low-level-api-cfir:compileKotlin",
+            ":analysis:stubs:compileKotlin",
+            ":analysis:decompiled:decompiler-to-file-stubs:compileKotlin",
+            ":analysis:decompiled:decompiler-to-stubs:compileKotlin",
+            ":analysis:decompiled:decompiler-to-psi:compileKotlin",
+            ":analysis:decompiled:light-declarations-for-decompiled:compileKotlin",
+            ":analysis:decompiled:compileKotlin",
+            ":analysis:light-declarations:compileKotlin",
+            ":analysis:symbol-light-declarations:compileKotlin",
+            ":analysis:analysis-tools:compileKotlin",
             ":analysis:analysis-api-cfir:compileKotlin",
             ":analysis:cj-references:compileKotlin",
             ":analysis:analysis-test-framework:compileTestFixturesKotlin",

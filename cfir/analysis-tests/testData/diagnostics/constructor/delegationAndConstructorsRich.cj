@@ -4,8 +4,8 @@ class Box {
 }
 
 class AmbiguousBox {
-    init(value: Int64) {}
-    init(value: Int64, extra!: Int64 = 0) {}
+    <!CONFLICTING_OVERLOADS!>init(value: Int64, left!: Int64 = 0)<!> {}
+    <!CONFLICTING_OVERLOADS!>init(value: Int64, right!: Int64 = 0)<!> {}
 }
 
 open class Base {

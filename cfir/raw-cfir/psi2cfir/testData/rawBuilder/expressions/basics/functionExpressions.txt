@@ -2,7 +2,7 @@ FILE: functionExpressions.cj
     internal? func expressions(): R|Unit| {
         local? let a: <implicit> = ...
             initializer:
-                FUNCTION_CALL(plus) {
+                FUNCTION_CALL(*operator_plus) {
                     receiver:
                         INT(1)
                     arguments:
@@ -10,9 +10,9 @@ FILE: functionExpressions.cj
                 }
         local? let b: <implicit> = ...
             initializer:
-                FUNCTION_CALL(times) {
+                FUNCTION_CALL(*operator_times) {
                     receiver:
-                        QUALIFIED_ACCESS(a)
+                        NAMED_ACCESS(a)
                     arguments:
                         INT(3)
                 }

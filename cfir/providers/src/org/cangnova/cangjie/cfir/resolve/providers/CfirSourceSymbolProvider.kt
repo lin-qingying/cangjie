@@ -16,15 +16,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
-import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
-import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
-import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
-import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
-import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
-import org.cangnova.cangjie.cfir.patterns.CfirPattern
-import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
-import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
-import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -33,11 +25,13 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
+
 import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
@@ -124,14 +118,14 @@ class CfirProviderImpl(
         override fun getEnumConstructorOwnerClassId(symbol: CfirEnumConstructorSymbol): ClassId? =
             state.enumConstructorOwnerClassIdMap[symbol]
 
-        override fun getContainingFile(symbol: org.cangnova.cangjie.cfir.symbols.CfirSymbol<*>): CfirFile? = when (symbol) {
-            is CfirClassLikeSymbol<*> -> state.classifierContainerFileBySymbol[symbol]
-            is CfirCallableSymbol<*> -> state.callableContainerFileMap[symbol]
+        override fun getContainingFile(symbol: org.cangnova.cangjie.cfir.symbols.CfirSymbol<*>): CfirFile? = when (val normalizedSymbol = symbol.unwrapForDeclarationMetadataLookup()) {
+            is CfirClassLikeSymbol<*> -> state.classifierContainerFileBySymbol[normalizedSymbol]
+            is CfirCallableSymbol<*> -> state.callableContainerFileMap[normalizedSymbol]
             else -> null
         }
 
         override fun getContainingClassId(symbol: CfirCallableSymbol<*>): ClassId? =
-            state.callableOwnerClassIdMap[symbol]
+            state.callableOwnerClassIdMap[symbol.unwrapCallableForDeclarationMetadataLookup()]
 
         override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> =
             state.callableMap[CallableId(packageFqName, name)].orEmpty()
@@ -274,10 +268,13 @@ class CfirProviderImpl(
                 state.callableContainerFileMap[symbol] = containingFile
                 state.callableOwnerClassIdMap[symbol] = containingClass
                 if (!isTopLevel) return
-                for (name in collectBindingNames(declaration.pattern)) {
-                    val callableId = CallableId(packageFqName, name)
-                    state.callableMap.getOrPut(callableId, ::mutableListOf).add(symbol)
-                    state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(name)
+                for (bindingVariable in declaration.pattern.bindingVariables()) {
+                    val bindingSymbol = bindingVariable.symbol as? CfirPatternBindingSymbol ?: continue
+                    state.callableContainerFileMap[bindingSymbol] = containingFile
+                    state.callableOwnerClassIdMap[bindingSymbol] = containingClass
+                    val callableId = CallableId(packageFqName, bindingVariable.name)
+                    state.callableMap.getOrPut(callableId, ::mutableListOf).add(bindingSymbol)
+                    state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(bindingVariable.name)
                 }
             }
 
@@ -386,20 +383,6 @@ class CfirProviderImpl(
         }
     }
 
-    private fun collectBindingNames(pattern: CfirPattern): List<Name> {
-        return when (pattern) {
-            is CfirBindingPattern -> buildList {
-                add(pattern.name)
-                pattern.nestedPattern?.let { addAll(collectBindingNames(it)) }
-            }
-            is CfirTuplePattern -> pattern.elements.flatMap(::collectBindingNames)
-            is CfirEnumPattern -> pattern.arguments.flatMap(::collectBindingNames)
-            is CfirTypePattern -> listOfNotNull(pattern.bindingName)
-            is CfirOrPattern -> pattern.alternatives.firstOrNull()?.let(::collectBindingNames).orEmpty()
-            is CfirWildcardPattern, is CfirConstPattern , is CfirExpressionPattern -> emptyList()
-        }
-    }
-
     private fun recordTopLevelEnumConstructors(
         declaration: CfirEnum,
         ownerClassId: ClassId,
@@ -408,7 +391,7 @@ class CfirProviderImpl(
         declaration.declarations.asSequence()
             .filterIsInstance<CfirEnumConstructor>()
             .forEach { enumConstructor ->
-                val symbol = enumConstructor.symbol as? CfirEnumConstructorSymbol ?: return@forEach
+                val symbol = enumConstructor.symbol ?: return@forEach
                 val callableId = CallableId(ownerClassId.packageFqName, enumConstructor.name)
                 state.callableMap.getOrPut(callableId, ::mutableListOf).add(symbol)
                 state.callableNamesInPackage.getOrPut(ownerClassId.packageFqName, ::mutableSetOf)

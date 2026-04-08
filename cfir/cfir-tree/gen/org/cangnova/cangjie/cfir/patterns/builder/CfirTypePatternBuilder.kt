@@ -10,6 +10,7 @@ package org.cangnova.cangjie.cfir.patterns.builder
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
 import org.cangnova.cangjie.cfir.patterns.impl.CfirTypePatternImpl
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -21,6 +22,7 @@ class CfirTypePatternBuilder {
     var source: CjSourceElement? = null
     lateinit var typeRef: CfirTypeRef
     var bindingName: Name? = null
+    var bindingVariable: CfirPatternBindingVariable? = null
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirTypePattern {
@@ -28,6 +30,7 @@ class CfirTypePatternBuilder {
             source,
             typeRef,
             bindingName,
+            bindingVariable,
         )
     }
 
@@ -50,5 +53,6 @@ inline fun buildTypePatternCopy(original: CfirTypePattern, init: CfirTypePattern
     copyBuilder.source = original.source
     copyBuilder.typeRef = original.typeRef
     copyBuilder.bindingName = original.bindingName
+    copyBuilder.bindingVariable = original.bindingVariable
     return copyBuilder.apply(init).build()
 }

@@ -19,6 +19,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
@@ -28,6 +29,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjTokens.ABSTRACT_KEYWORD
 import org.cangnova.cangjie.lexer.CjTokens.CONST_KEYWORD
+import org.cangnova.cangjie.lexer.CjTokens.FOREIGN_KEYWORD
 import org.cangnova.cangjie.lexer.CjTokens.INTERNAL_KEYWORD
 import org.cangnova.cangjie.lexer.CjTokens.MUT_KEYWORD
 import org.cangnova.cangjie.lexer.CjTokens.OPEN_KEYWORD
@@ -124,7 +126,12 @@ private val defaultVisibilityTargets: Set<CangJieTarget> = EnumSet.of(
     CangJieTarget.TYPEALIAS,
 )
 
-internal val deprecatedParentTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = emptyMap()
+internal val deprecatedParentTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
+    // interface 内部的 private / internal 先按“保留兼容路径”处理，
+    // 由 deprecated 诊断承接，避免和后续状态/可见性语义分裂。
+    PRIVATE_KEYWORD to EnumSet.of(CangJieTarget.INTERFACE),
+    INTERNAL_KEYWORD to EnumSet.of(CangJieTarget.INTERFACE),
+)
 
 internal val possibleTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
     STATIC_KEYWORD to EnumSet.of(
@@ -191,6 +198,7 @@ internal val possibleTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
     CONST_KEYWORD to EnumSet.of(
         CangJieTarget.FUNCTION,
         CangJieTarget.STRUCT_MEMBER_FUNCTION,
+        CangJieTarget.CONSTRUCTOR,
     ),
     OPERATOR_KEYWORD to EnumSet.of(
         CangJieTarget.MEMBER_FUNCTION,
@@ -198,13 +206,20 @@ internal val possibleTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
         CangJieTarget.STRUCT_MEMBER_FUNCTION,
         CangJieTarget.EXTEND_MEMBER_FUNCTION,
     ),
+    // foreign 函数签名当前按 first-party 前端的顶层 CFFI 入口建模，
+    // 不放宽到局部函数或匿名函数，避免把尚未建模的语义提前合法化。
+    FOREIGN_KEYWORD to EnumSet.of(
+        CangJieTarget.TOP_LEVEL_FUNCTION,
+    ),
 )
 
-internal val deprecatedTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = emptyMap()
-
-internal val redundantTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
+internal val deprecatedTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
+    // open interface 当前仍允许，但第一批开始改为 deprecated 语义，
+    // 后续若需要继续收紧，只需要收敛这一张 target truth table。
     OPEN_KEYWORD to EnumSet.of(CangJieTarget.INTERFACE),
 )
+
+internal val redundantTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = emptyMap()
 
 internal interface TargetAllowedPredicate {
     fun isAllowed(target: CangJieTarget, languageVersionSettings: LanguageVersionSettings): Boolean
@@ -260,6 +275,11 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
         else -> AnnotationTargetLists.T_MEMBER_PROPERTY.defaultTargets
     }
     is CfirPatternVariable -> if (declaration.isLocal) {
+        AnnotationTargetLists.T_LOCAL_VARIABLE.defaultTargets
+    } else {
+        AnnotationTargetLists.T_TOP_LEVEL_VARIABLE.defaultTargets
+    }
+    is CfirPatternBindingVariable -> if (declaration.isLocal) {
         AnnotationTargetLists.T_LOCAL_VARIABLE.defaultTargets
     } else {
         AnnotationTargetLists.T_TOP_LEVEL_VARIABLE.defaultTargets

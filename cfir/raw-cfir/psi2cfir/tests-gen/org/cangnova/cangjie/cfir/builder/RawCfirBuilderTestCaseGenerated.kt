@@ -30,6 +30,21 @@ class RawCfirBuilderTestCaseGenerated : AbstractRawCfirBuilderTestCase() {
             assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features")
         }
 
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/effects")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Effects : AbstractRawCfirBuilderTestCase() {
+            fun testAllFilesPresentInEffects() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/effects")
+            }
+
+            @TestMetadata("effectTryHandleOfficial.cj")
+            fun testEffectTryHandleOfficial() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/effects/effectTryHandleOfficial.cj")
+            }
+
+        }
+
         @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/extend")
         @TestDataPath("\$PROJECT_ROOT")
         @RunWith(JUnit3RunnerWithInners::class)
@@ -71,6 +86,11 @@ class RawCfirBuilderTestCaseGenerated : AbstractRawCfirBuilderTestCase() {
             @TestMetadata("matchRichPatternsOfficial.cj")
             fun testMatchRichPatternsOfficial() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/match/matchRichPatternsOfficial.cj")
+            }
+
+            @TestMetadata("matchVarOrEnumPatternOfficial.cj")
+            fun testMatchVarOrEnumPatternOfficial() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/match/matchVarOrEnumPatternOfficial.cj")
             }
 
         }

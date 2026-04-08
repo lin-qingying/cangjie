@@ -699,6 +699,8 @@ open class CangJieExpressionParsing(
             THIS_KEYWORD_Id -> parseThisExpression()
             SUPER_KEYWORD_Id -> parseSuperExpression()
             THROW_KEYWORD_Id -> parseThrow()
+            PERFORM_KEYWORD_Id -> parsePerform()
+            RESUME_KEYWORD_Id -> parseResume()
             RETURN_KEYWORD_Id -> parseReturn()
             CONTINUE_KEYWORD_Id -> parseJump(CONTINUE)
             BREAK_KEYWORD_Id -> parseJump(BREAK)
@@ -747,6 +749,14 @@ open class CangJieExpressionParsing(
         val mark = mark()
         advance()
         mark.done(type)
+    }
+
+    /**
+     * effect 语法里的 `with` 只在 `resume` 局部语境中承担关键字职责，
+     * 不提升为全局关键字，避免把无关 PSI 路径绑到 effect 语法上。
+     */
+    private fun atIdentifierText(expectedText: String): Boolean {
+        return _at(IDENTIFIER) && builder.tokenText == expectedText
     }
 
     /**
@@ -1388,9 +1398,14 @@ open class CangJieExpressionParsing(
         }
 
         cangJieParsing.parseBlock()
-        var catchOrFinally = false
-        while (at(CATCH_KEYWORD)) {
-            catchOrFinally = true
+        var catchHandleOrFinally = false
+        while (at(CATCH_KEYWORD) || at(HANDLE_KEYWORD)) {
+            catchHandleOrFinally = true
+            if (at(HANDLE_KEYWORD)) {
+                parseHandleClause()
+                continue
+            }
+
             val catchBlock = mark()
             advance()
             val parameter = mark()
@@ -1437,16 +1452,95 @@ open class CangJieExpressionParsing(
             catchBlock.done(CATCH)
         }
         if (at(FINALLY_KEYWORD)) {
-            catchOrFinally = true
+            catchHandleOrFinally = true
             val finallyBlock = mark()
             advance()
             cangJieParsing.parseBlock()
             finallyBlock.done(FINALLY)
         }
-        if (!catchOrFinally && !isTryWithResources) {
-            error(CangJieParsingBundle.message("parsing.error.catch.or.finally"))
+        if (!catchHandleOrFinally && !isTryWithResources) {
+            error(CangJieParsingBundle.message("parsing.error.catch.handle.or.finally"))
         }
         tryExpression.done(TRY)
+    }
+
+    /**
+     * `handle` 与 `catch` 并列挂在 try 下面。
+     * 不把它做成独立表达式，保持和官方 TryExpr.handlers 相同的层次结构。
+     */
+    context(context: ParsingContext)
+    private fun parseHandleClause() {
+        assert(_at(HANDLE_KEYWORD))
+        val handleClause = mark()
+        advance()
+
+        val recoverySet = TokenSet.orSet(
+            TRY_CATCH_RECOVERY_TOKEN_SET,
+            TokenSet.create(IDENTIFIER, UNDERLINE, RPAR),
+        )
+        val hasLeftParen = expect(
+            LPAR,
+            CangJieParsingBundle.message("parsing.error.handle.pattern.parenthesized"),
+            recoverySet,
+        )
+
+        if (!at(RPAR) && !atSet(TRY_CATCH_RECOVERY_TOKEN_SET)) {
+            parseCommandTypePattern()
+        }
+
+        if (hasLeftParen || !at(LBRACE)) {
+            expect(
+                RPAR,
+                CangJieParsingBundle.message("parsing.error.expecting.symbol", ")"),
+                TRY_CATCH_RECOVERY_TOKEN_SET,
+            )
+        }
+
+        if (at(LBRACE)) {
+            cangJieParsing.parseBlock()
+        } else {
+            error(CangJieParsingBundle.message("parsing.error.block"))
+        }
+
+        handleClause.done(HANDLE)
+    }
+
+    context(context: ParsingContext)
+    private fun parseCommandTypePattern() {
+        val commandPattern = mark()
+        when {
+            at(UNDERLINE) -> {
+                advance()
+                expect(
+                    COLON,
+                    CangJieParsingBundle.message("parsing.error.expected.colon.in.effect.pattern"),
+                    TokenSet.create(IDENTIFIER, RPAR, LBRACE),
+                )
+                if (!at(RPAR) && !at(LBRACE)) {
+                    parseTypeReferencesByOr()
+                }
+            }
+
+            at(IDENTIFIER) -> {
+                advance()
+                expect(
+                    COLON,
+                    CangJieParsingBundle.message("parsing.error.expected.colon.in.effect.pattern"),
+                    TokenSet.create(IDENTIFIER, RPAR, LBRACE),
+                )
+                if (!at(RPAR) && !at(LBRACE)) {
+                    parseTypeReferencesByOr()
+                }
+            }
+
+            else -> {
+                errorWithRecovery(
+                    CangJieParsingBundle.message("parsing.error.expected.wildcard.or.effect.pattern"),
+                    TRY_CATCH_RECOVERY_TOKEN_SET,
+                )
+            }
+        }
+        commandPattern.done(COMMAND_TYPE_PATTERN)
     }
 
     /**
@@ -1632,6 +1726,34 @@ open class CangJieExpressionParsing(
         advance()
         parseExpression()
         marker.done(THROW)
+    }
+
+    context(context: ParsingContext)
+    private fun parsePerform() {
+        assert(_at(PERFORM_KEYWORD))
+        val marker = mark()
+        advance()
+        parseExpression()
+        marker.done(PERFORM)
+    }
+
+    context(context: ParsingContext)
+    private fun parseResume() {
+        assert(_at(RESUME_KEYWORD))
+        val marker = mark()
+        advance()
+        when {
+            atIdentifierText("with") -> {
+                advance()
+                parseExpression()
+            }
+
+            at(THROWING_KEYWORD) -> {
+                advance()
+                parseExpression()
+            }
+        }
+        marker.done(RESUME)
     }
 
     /**
@@ -1853,6 +1975,11 @@ open class CangJieExpressionParsing(
                     parseIdentifierPattern()
                 }
 
+                MINUS_Id -> {
+                    parsePrefixExpression()
+                    doneConstantPattern(constantPattern)
+                }
+
                 else -> {
                     error(CangJieParsingBundle.message("parsing.error.pattern.expression"))
                     constantPattern.drop()
@@ -1864,7 +1991,11 @@ open class CangJieExpressionParsing(
         fun parseIdentifierPattern() {
             assert(_at(IDENTIFIER))
             var mark = mark()
-            var recognized = RecognizedPattern.BINDING
+            var recognized = if (context.isVariableDeclaration) {
+                RecognizedPattern.BINDING
+            } else {
+                RecognizedPattern.VAR_OR_ENUM
+            }
 
             if (lookahead(1) == DOT || lookahead(1) == LT) {
 
@@ -2281,16 +2412,6 @@ open class CangJieExpressionParsing(
         } else {
             mark.drop()
         }
-    }
-
-    /**
-     * 解析双冒号后缀(目前未实现)
-     *
-     * @param expression 表达式标记
-     * @return 是否成功解析
-     */
-    fun parseDoubleColonSuffix(expression: PsiBuilder.Marker): Boolean {
-        return false
     }
 
     // ==================== 值参数列表 ====================
@@ -3505,6 +3626,8 @@ open class CangJieExpressionParsing(
                 MATCH_KEYWORD,
                 TRY_KEYWORD,
                 THROW_KEYWORD,
+                PERFORM_KEYWORD,
+                RESUME_KEYWORD,
                 RETURN_KEYWORD,
                 CONTINUE_KEYWORD,
                 BREAK_KEYWORD,
@@ -3583,7 +3706,7 @@ open class CangJieExpressionParsing(
         )
 
         private val TRY_CATCH_RECOVERY_TOKEN_SET =
-            TokenSet.create(LBRACE, RBRACE, FINALLY_KEYWORD, CATCH_KEYWORD)
+            TokenSet.create(LBRACE, RBRACE, FINALLY_KEYWORD, CATCH_KEYWORD, HANDLE_KEYWORD)
 
         private val IN_KEYWORD_R_PAR_COLON_SET = TokenSet.create(IN_KEYWORD, RPAR, COLON)
 
@@ -3682,17 +3805,20 @@ private fun IElementType.equal(tokenSet: TokenSet): Boolean {
 }
 
 private enum class RecognizedPattern {
+    VAR_OR_ENUM,
     BINDING,
     TYPE,
     ENUM;
 
     fun toPatternType(): PatternType = when (this) {
+        VAR_OR_ENUM -> PatternType.VAR_OR_ENUM
         BINDING -> PatternType.BINDING
         TYPE -> PatternType.TYPE
         ENUM -> PatternType.ENUM
     }
 
     fun toNodeType(): IElementType = when (this) {
+        VAR_OR_ENUM -> CjNodeTypes.VAR_OR_ENUM_PATTERN
         BINDING -> BINDING_PATTERN
         TYPE -> TYPE_PATTERN
         ENUM -> ENUM_PATTERN
@@ -3701,6 +3827,7 @@ private enum class RecognizedPattern {
 
 enum class PatternType(val displayName: String) {
     WILDCARD("Wildcard patterns"),
+    VAR_OR_ENUM("Deferred binding-or-enum patterns"),
     BINDING("Binding patterns"),
     TYPE("Type patterns"),
     TUPLE("Tuple patterns"),

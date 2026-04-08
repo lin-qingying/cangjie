@@ -21,7 +21,10 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         noImpl(controlFlowGraphReference)
         noImpl(annotationContainer)
         noImpl(controlFlowGraphOwner)
+        noImpl(targetElement)
         noImpl(statement)
+        noImpl(jump)
+        noImpl(loopJump)
         noImpl(memberDeclaration)
         noImpl(callableDeclaration)
         noImpl(classLikeDeclaration)
@@ -215,6 +218,7 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         property,
         fieldVariable,
         patternVariable,
+        patternBindingVariable,
         valueParameter,
         typeParameter,
 
@@ -240,7 +244,8 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         tryExpression,
         throwExpression,
         returnExpression,
-        jumpExpression,
+        breakExpression,
+        continueExpression,
         anonymousFunctionExpression,
         rangeExpression,
         arrayLiteral,

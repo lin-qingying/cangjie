@@ -9,11 +9,15 @@ import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjCommandTypePattern
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
+import org.cangnova.cangjie.psi.CjHandleClause
 import org.cangnova.cangjie.psi.CjImportItem
 import org.cangnova.cangjie.psi.CjNamedDeclaration
+import org.cangnova.cangjie.psi.CjPerformExpression
+import org.cangnova.cangjie.psi.CjResumeExpression
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.util.PrivateForInline
 
@@ -33,6 +37,14 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
      */
     val RESOLVE by object : DiagnosticGroup("Resolve") {
         val NO_CONSTRUCTOR by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED)
+
+        /**
+         * enum 类型名不能直接当作类型构造器调用，例如 `A(1)`。
+         * 这里要求用户改用枚举构造器（如 `A1(1)`），而不是继续退化成通用无构造器错误。
+         */
+        val ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<Name>("enumName")
+        }
     }
 
     /**
@@ -264,6 +276,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("baseMemberName")
             parameter<Visibility>("baseVisibility")
         }
+
+        // override / redef 的形参与父声明的命名参数语义不一致
+        val PARAM_NAMED_MISMATCHED by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
+            parameter<Name>("baseMemberName")
+        }
     }
 
     /**
@@ -307,6 +324,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("className")
         }
 
+        // 普通函数调用的候选都可适用，但无法选出唯一最优目标
+        val AMBIGUOUS_FUNCTION_CALL by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<Name>("functionName")
+        }
+
         // 构造器委托调用形成递归
         val RECURSIVE_CONSTRUCTOR_CALL by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED)
 
@@ -317,6 +339,112 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 父类不存在可隐式调用的无参构造器，要求显式 super(...)
         val EXPLICIT_SUPER_CALL_REQUIRED by error<PsiElement>()
+
+        // break/continue 必须位于循环体内
+        val INVALID_LOOP_CONTROL by error<PsiElement>()
+    }
+
+    /**
+     * 初始化与使用合法性（Initialization / LegalityOfUsage）
+     *
+     * 这里承接 definite assignment 风格的语义错误：
+     * - 局部变量或实例字段在确定初始化前被读取；
+     * - 构造器结束时仍有实例字段没有被初始化。
+     */
+    val INITIALIZATION by object : DiagnosticGroup("Initialization") {
+        val USED_BEFORE_INITIALIZATION by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<Name>("variableName")
+        }
+
+        val CLASS_UNINITIALIZED_FIELD by error<PsiElement> {
+            parameter<Name>("fieldName")
+        }
+    }
+
+    /**
+     * 泛型访问语义（Generic access）
+     *
+     * 这组诊断专门描述“通过类型参数接收者访问其 upper bounds 中不存在的成员/方法”，
+     * 不再退化为普通 `UNRESOLVED_REFERENCE`。
+     */
+    val GENERIC_ACCESS by object : DiagnosticGroup("GenericAccess") {
+        val GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<Name>("memberName")
+            parameter<Name>("typeParameterName")
+        }
+
+        val GENERIC_NO_METHOD_MATCH_IN_UPPER_BOUNDS by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<Name>("methodName")
+            parameter<Name>("typeParameterName")
+        }
+    }
+
+    /**
+     * mut / immutable 语义
+     *
+     * 当前先覆盖 struct 成员函数中的 `this` 视角限制：
+     * - immutable 成员函数不能修改当前实例字段；
+     * - immutable 成员函数不能调用当前实例上的 mut 成员函数。
+     */
+    val MUTABILITY by object : DiagnosticGroup("Mutability") {
+        val CANNOT_MODIFY_VAR by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<Name>("variableName")
+        }
+
+        val IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<Name>("currentFunctionName")
+            parameter<Name>("targetFunctionName")
+        }
+    }
+
+    val ANNOTATION by object : DiagnosticGroup("Annotation") {
+        val ANNOTATION_NO_CONST_INIT by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
+    }
+
+    /**
+     * interop / foreign function 相关的语义诊断。
+     *
+     * 这一组只承接“声明或类型已经进入语义层之后”的规则，
+     * 不把 parser / lexer 层面的 foreign 语法错误混到这里。
+     */
+    val INTEROP by object : DiagnosticGroup("Interop") {
+        val INVALID_CFUNC_RETURN_TYPE by error<CjTypeReference> {
+            parameter<ConeCangJieType>("actualType")
+        }
+    }
+
+    /**
+     * effects 相关诊断。
+     *
+     * effect 语法在 PSI 层始终保留，真正的 feature gate 与语义约束在 CFIR 产出。
+     */
+    val EFFECTS by object : DiagnosticGroup("Effects") {
+        val EFFECTS_FEATURE_DISABLED by error<CjElement> {
+            parameter<String>("constructName")
+        }
+
+        val COMMAND_INCOMPATIBLE_TYPE by error<CjPerformExpression> {
+            parameter<ConeCangJieType>("actualType")
+        }
+
+        val COMMAND_HANDLE_TYPE_ERROR by error<CjCommandTypePattern> {
+            parameter<ConeCangJieType>("actualType")
+        }
+
+        val IMPLICIT_RESUME_OUTSIDE_HANDLER by error<CjResumeExpression>()
+
+        val RESUME_NO_WITH by error<CjResumeExpression> {
+            parameter<ConeCangJieType>("resumptionType")
+        }
+
+        val RESUME_THROWING_MISMATCH_TYPE by error<CjResumeExpression> {
+            parameter<ConeCangJieType>("actualType")
+        }
+
+        val MISMATCHING_HANDLE_BLOCK by error<CjHandleClause> {
+            parameter<ConeCangJieType>("actualType")
+            parameter<ConeCangJieType>("expectedType")
+        }
     }
 
     /**
@@ -328,6 +456,21 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val NON_EXHAUSTIVE_MATCH by error<PsiElement> {
             parameter<Collection<String>>("missingCases")  // 缺失的匹配分支列表
         }
+
+        val TUPLE_PATTERN_NOT_MATCH by error<PsiElement> {
+            parameter<String>("actualTypeText")
+        }
+
+        val PATTERN_NOT_MATCH by error<PsiElement> {
+            parameter<String>("patternText")
+        }
+
+        val ENUM_PATTERN_PARAM_SIZE_ERROR by error<PsiElement>()
+
+        val NOT_OVERLOAD_IN_MATCH by error<PsiElement>()
+
+        // 无 selector 的 match 中，某个 case 的结果类型无法计算
+        val MATCH_CASE_HAS_NO_TYPE by error<PsiElement>()
     }
     val CONSTRAINT by object : DiagnosticGroup("Constraint") {
         val NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
@@ -413,6 +556,18 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             // PositioningStrategy.OPERATOR 表示将错误标记位置设置在赋值操作符处
         }
 
+        /**
+         * `VArray<T, N>` 与 `VArray<T, M>` 的元素类型一致但长度不同。
+         *
+         * 这不是普通 `TYPE_MISMATCH` 的文案换皮，而是官方 Sema 中独立建模的
+         * VArray 长度语义；因此需要在通用 mismatch 之下继续分流。
+         */
+        val VARRAY_SIZE_MISMATCH by error<PsiElement> {
+            parameter<Long>("expectedSize")
+            parameter<Long>("actualSize")
+            parameter<ConeCangJieType>("elementType")
+        }
+
         // 泛型类型在无法从上下文推断时必须显式提供类型参数
         val GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
             parameter<Name>("typeName")
@@ -475,6 +630,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val CONST_EVAL_ARITHMETIC_OVERFLOW by error<PsiElement> {
             parameter<String>("operatorName")  // 导致溢出的运算符名称
         }
+
+        // 常量求值位移计数为负数
+        val CONST_EVAL_NEGATIVE_SHIFT_COUNT by error<PsiElement>()
+
+        // 常量求值位移计数超出目标整型宽度
+        val CONST_EVAL_SHIFT_COUNT_OVERFLOW by error<PsiElement>()
     }
 
 

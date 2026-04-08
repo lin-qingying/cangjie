@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
@@ -129,6 +130,7 @@ private val CfirDeclaration.declarationNameOrNull: Name?
         is CfirFunction -> callableNameOrNull()
         is CfirProperty -> name
         is CfirFieldVariable -> name
+        is CfirPatternBindingVariable -> name
         is CfirTypeAlias -> name
         else -> null
     }

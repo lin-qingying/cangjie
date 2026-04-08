@@ -8,6 +8,7 @@ package org.cangnova.cangjie.cfir.visitors
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.CfirTargetElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.expressions.*
@@ -306,6 +307,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformPatternVariable(patternVariable, data)
     }
 
+    open fun transformPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable, data: D): CfirPatternBindingVariable {
+        return transformElement(patternBindingVariable, data)
+    }
+
+    final override fun visitPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable, data: D): CfirPatternBindingVariable {
+        return transformPatternBindingVariable(patternBindingVariable, data)
+    }
+
     open fun transformValueParameter(valueParameter: CfirValueParameter, data: D): CfirValueParameter {
         return transformElement(valueParameter, data)
     }
@@ -562,6 +571,22 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformCatch(catch, data)
     }
 
+    open fun transformCommandTypePattern(commandTypePattern: CfirCommandTypePattern, data: D): CfirCommandTypePattern {
+        return transformElement(commandTypePattern, data)
+    }
+
+    final override fun visitCommandTypePattern(commandTypePattern: CfirCommandTypePattern, data: D): CfirCommandTypePattern {
+        return transformCommandTypePattern(commandTypePattern, data)
+    }
+
+    open fun transformHandleClause(handleClause: CfirHandleClause, data: D): CfirExpression {
+        return transformElement(handleClause, data)
+    }
+
+    final override fun visitHandleClause(handleClause: CfirHandleClause, data: D): CfirExpression {
+        return transformHandleClause(handleClause, data)
+    }
+
     open fun transformLoopExpression(loopExpression: CfirLoopExpression, data: D): CfirExpression {
         return transformElement(loopExpression, data)
     }
@@ -594,6 +619,22 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformThrowExpression(throwExpression, data)
     }
 
+    open fun transformPerformExpression(performExpression: CfirPerformExpression, data: D): CfirExpression {
+        return transformElement(performExpression, data)
+    }
+
+    final override fun visitPerformExpression(performExpression: CfirPerformExpression, data: D): CfirExpression {
+        return transformPerformExpression(performExpression, data)
+    }
+
+    open fun transformResumeExpression(resumeExpression: CfirResumeExpression, data: D): CfirExpression {
+        return transformElement(resumeExpression, data)
+    }
+
+    final override fun visitResumeExpression(resumeExpression: CfirResumeExpression, data: D): CfirExpression {
+        return transformResumeExpression(resumeExpression, data)
+    }
+
     open fun transformReturnExpression(returnExpression: CfirReturnExpression, data: D): CfirExpression {
         return transformElement(returnExpression, data)
     }
@@ -602,12 +643,36 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformReturnExpression(returnExpression, data)
     }
 
-    open fun transformJumpExpression(jumpExpression: CfirJumpExpression, data: D): CfirExpression {
-        return transformElement(jumpExpression, data)
+    open fun <E : CfirTargetElement> transformJump(jump: CfirJump<E>, data: D): CfirExpression {
+        return transformElement(jump, data)
     }
 
-    final override fun visitJumpExpression(jumpExpression: CfirJumpExpression, data: D): CfirExpression {
-        return transformJumpExpression(jumpExpression, data)
+    final override fun <E : CfirTargetElement> visitJump(jump: CfirJump<E>, data: D): CfirExpression {
+        return transformJump(jump, data)
+    }
+
+    open fun transformLoopJump(loopJump: CfirLoopJump, data: D): CfirExpression {
+        return transformElement(loopJump, data)
+    }
+
+    final override fun visitLoopJump(loopJump: CfirLoopJump, data: D): CfirExpression {
+        return transformLoopJump(loopJump, data)
+    }
+
+    open fun transformBreakExpression(breakExpression: CfirBreakExpression, data: D): CfirExpression {
+        return transformElement(breakExpression, data)
+    }
+
+    final override fun visitBreakExpression(breakExpression: CfirBreakExpression, data: D): CfirExpression {
+        return transformBreakExpression(breakExpression, data)
+    }
+
+    open fun transformContinueExpression(continueExpression: CfirContinueExpression, data: D): CfirExpression {
+        return transformElement(continueExpression, data)
+    }
+
+    final override fun visitContinueExpression(continueExpression: CfirContinueExpression, data: D): CfirExpression {
+        return transformContinueExpression(continueExpression, data)
     }
 
     open fun transformAnonymousFunction(anonymousFunction: CfirAnonymousFunction, data: D): CfirFunction {
@@ -656,6 +721,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitTupleLiteral(tupleLiteral: CfirTupleLiteral, data: D): CfirExpression {
         return transformTupleLiteral(tupleLiteral, data)
+    }
+
+    open fun transformTargetElement(targetElement: CfirTargetElement, data: D): CfirTargetElement {
+        return transformElement(targetElement, data)
+    }
+
+    final override fun visitTargetElement(targetElement: CfirTargetElement, data: D): CfirTargetElement {
+        return transformTargetElement(targetElement, data)
     }
 
     open fun transformSpawnExpression(spawnExpression: CfirSpawnExpression, data: D): CfirExpression {
@@ -752,6 +825,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitBindingPattern(bindingPattern: CfirBindingPattern, data: D): CfirPattern {
         return transformBindingPattern(bindingPattern, data)
+    }
+
+    open fun transformVarOrEnumPattern(varOrEnumPattern: CfirVarOrEnumPattern, data: D): CfirPattern {
+        return transformElement(varOrEnumPattern, data)
+    }
+
+    final override fun visitVarOrEnumPattern(varOrEnumPattern: CfirVarOrEnumPattern, data: D): CfirPattern {
+        return transformVarOrEnumPattern(varOrEnumPattern, data)
     }
 
     open fun transformTuplePattern(tuplePattern: CfirTuplePattern, data: D): CfirPattern {

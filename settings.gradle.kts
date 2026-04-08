@@ -24,7 +24,10 @@ include(":compiler")
 include(":compiler:config")
 include(":compiler:phaser")
 include(":compiler:arguments")
-include(":compiler:cli-arguments-generator")
+include(":compiler:frontend-arguments-generator")
+include(":compiler:frontend")
+include(":prepare:frontend")
+include(":prepare:frontend-embeddable")
 
 include(":util")
 include(":lsp")
@@ -60,13 +63,23 @@ include(":analysis:analysis-api-cfir")
 include(":analysis:low-level-api-cfir")
 include(":analysis:analysis-internal-utils")
 include(":analysis:cj-references")
+include(":analysis:stubs")
+include(":analysis:decompiled")
+include(":analysis:decompiled:decompiler-to-file-stubs")
+include(":analysis:decompiled:decompiler-to-stubs")
+include(":analysis:decompiled:decompiler-to-psi")
+include(":analysis:decompiled:light-declarations-for-decompiled")
+
+include(":analysis:light-declarations")
+
+include(":analysis:symbol-light-declarations")
+include(":analysis:analysis-tools")
 
 
 include(":analysis:analysis-test-framework")
 include(":tests")
 include(":tests:test-infrastructure")
 
-include(":compiler:cli")
 include(":compiler:chir")
 include(":compiler:codegen")
 

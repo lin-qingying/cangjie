@@ -84,6 +84,30 @@ class LspDocumentStoreTest {
     }
 
     @Test
+    fun `applies multiple incremental changes in declared order`() {
+        val store = LspDocumentStore()
+        store.open(TextDocumentItem("file:///sample.cj", "cangjie", 1, "alpha\nbeta\ngamma"))
+
+        val updated = store.applyChanges(
+            DidChangeTextDocumentParams(
+                VersionedTextDocumentIdentifier("file:///sample.cj", 2),
+                listOf(
+                    TextDocumentContentChangeEvent(
+                        Range(Position(0, 0), Position(0, 5)),
+                        "ALPHA",
+                    ),
+                    TextDocumentContentChangeEvent(
+                        Range(Position(2, 0), Position(2, 5)),
+                        "GAMMA",
+                    ),
+                ),
+            ),
+        )
+
+        assertEquals("ALPHA\nbeta\nGAMMA", updated.text)
+    }
+
+    @Test
     fun `converts offsets back to lsp ranges with crlf text`() {
         val document = LspTextDocument(
             uri = "file:///sample.cj",
@@ -98,5 +122,46 @@ class LspDocumentStoreTest {
             document.rangeOf(8, 10),
         )
         assertEquals(8, document.offsetAt(Position(1, 1)))
+    }
+
+    @Test
+    fun `treats surrogate pairs with utf16 semantics`() {
+        val store = LspDocumentStore()
+        store.open(TextDocumentItem("file:///sample.cj", "cangjie", 1, "a😀b"))
+
+        val updated = store.applyChanges(
+            DidChangeTextDocumentParams(
+                VersionedTextDocumentIdentifier("file:///sample.cj", 2),
+                listOf(
+                    TextDocumentContentChangeEvent(
+                        Range(Position(0, 1), Position(0, 3)),
+                        "X",
+                    ),
+                ),
+            ),
+        )
+
+        assertEquals("aXb", updated.text)
+        assertEquals(3, LspTextDocument("file:///sample.cj", "cangjie", 1, "a😀b").offsetAt(Position(0, 3)))
+    }
+
+    @Test
+    fun `supports eof insertion through range edits`() {
+        val store = LspDocumentStore()
+        store.open(TextDocumentItem("file:///sample.cj", "cangjie", 1, "alpha"))
+
+        val updated = store.applyChanges(
+            DidChangeTextDocumentParams(
+                VersionedTextDocumentIdentifier("file:///sample.cj", 2),
+                listOf(
+                    TextDocumentContentChangeEvent(
+                        Range(Position(0, 5), Position(0, 5)),
+                        "\nomega",
+                    ),
+                ),
+            ),
+        )
+
+        assertEquals("alpha\nomega", updated.text)
     }
 }

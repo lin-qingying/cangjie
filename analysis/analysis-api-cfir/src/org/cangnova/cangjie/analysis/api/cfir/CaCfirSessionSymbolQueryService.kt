@@ -46,6 +46,11 @@ internal class CaCfirSessionSymbolQueryService(
             resolutionFacade.findSourcePsi(symbol)
         }
 
+    fun lookupSymbolsByPsi(psi: PsiElement): List<CfirSymbol<*>> =
+        cacheStore.getOrCreatePsiSymbols(psi) {
+            resolutionFacade.getDeclarationSymbols(psi)
+        }
+
     fun lookupContainingFile(symbol: CfirSymbol<*>): CjFile? =
         cacheStore.getOrCreateContainingFile(symbol) {
             resolutionFacade.getContainingFile(symbol)

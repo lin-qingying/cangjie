@@ -1,4 +1,4 @@
-FUNCTION_CALL(plus) {
+FUNCTION_CALL(*operator_plus) {
     receiver:
         INT(21)
     arguments:

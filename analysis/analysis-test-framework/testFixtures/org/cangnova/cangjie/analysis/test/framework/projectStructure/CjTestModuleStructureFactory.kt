@@ -137,16 +137,6 @@ object CjTestModuleStructureFactory {
                 resolvedFriendDependencies.forEach(fallbackModule::addFriendDependencyIfAbsent)
             }
 
-        cjTestModule.auxiliaryModules
-            .filterIsInstance<CaScriptDependencyModuleImpl>()
-            .singleOrNull()
-            ?.also { scriptDependencyModule ->
-                dependencyOwner.addRegularDependencyIfAbsent(scriptDependencyModule)
-                scriptDependencyModule.addRegularDependencyIfAbsent(builtinsModule)
-                resolvedRegularDependencies.forEach(scriptDependencyModule::addRegularDependencyIfAbsent)
-                resolvedFriendDependencies.forEach(scriptDependencyModule::addFriendDependencyIfAbsent)
-            }
-
         if (primaryModule is CaDanglingFileModuleImpl) {
             primaryModule.contextModule = resolvedRegularDependencies.firstOrNull()
         }
@@ -193,34 +183,6 @@ object CjTestModuleStructureFactory {
                         targetPlatform = targetPlatform,
                     ),
                     auxiliaryModules = listOf(builtinsModule),
-                )
-            }
-
-            TestModuleKind.ScriptSource -> {
-                val scriptModule = CaScriptModuleImpl(
-                    name = moduleName,
-                    languageVersionSettings = languageVersionSettings,
-                    project = project,
-                    psiRoots = psiFiles,
-                    targetPlatform = targetPlatform,
-                )
-                TestModuleSet(
-                    primaryModule = scriptModule,
-                    binaryArtifactModule = CaLibraryModuleImpl(
-                        libraryName = "$moduleName.binary",
-                        project = project,
-                        binaryRoots = psiFiles,
-                        targetPlatform = targetPlatform,
-                    ),
-                    auxiliaryModules = listOf(
-                        builtinsModule,
-                        CaScriptDependencyModuleImpl(
-                            scriptName = moduleName,
-                            project = project,
-                            scopeRoots = psiFiles,
-                            targetPlatform = targetPlatform,
-                        ),
-                    ),
                 )
             }
 
@@ -333,6 +295,28 @@ object CjTestModuleStructureFactory {
                     ),
                 )
             }
+
+            TestModuleKind.Builtins -> TestModuleSet(
+                primaryModule = CaBuiltinsModuleImpl(
+                    project = project,
+                    scopeRoots = psiFiles,
+                    targetPlatform = targetPlatform,
+                ),
+                binaryArtifactModule = null,
+                auxiliaryModules = emptyList(),
+            )
+
+            TestModuleKind.LibraryFallbackDependencies -> TestModuleSet(
+                primaryModule = CaLibraryFallbackDependenciesModuleImpl(
+                    dependencyOwnerName = moduleName,
+                    project = project,
+                    scopeRoots = psiFiles,
+                    targetPlatform = targetPlatform,
+                ),
+                binaryArtifactModule = null,
+                auxiliaryModules = listOf(builtinsModule),
+            )
+
         }
     }
 
@@ -340,10 +324,7 @@ object CjTestModuleStructureFactory {
         findExplicitModuleKind(testModule)?.let { return it }
 
         val fileNames = testModule.files.map { it.name }
-        if (fileNames.isNotEmpty() && fileNames.all { it.endsWith(".cjs") }) {
-            return TestModuleKind.ScriptSource
-        }
-        if (fileNames.any { it.endsWith(".fragment.cj") || it.endsWith(".fragment.cjs") }) {
+        if (fileNames.any { it.endsWith(".fragment.cj") }) {
             return TestModuleKind.CodeFragment
         }
         if (testModule.files.any { it.relativePath.contains("/outsideRoot/") || it.name.contains(".outsideRoot.") }) {
@@ -364,13 +345,13 @@ object CjTestModuleStructureFactory {
 }
 
 private fun CaMutableTestModule.addRegularDependencyIfAbsent(module: CaModule) {
-    if (module !in directRegularDependencies) {
+    if (module !== this && module !in directRegularDependencies) {
         directRegularDependencies += module
     }
 }
 
 private fun CaMutableTestModule.addFriendDependencyIfAbsent(module: CaModule) {
-    if (module !in directFriendDependencies) {
+    if (module !== this && module !in directFriendDependencies) {
         directFriendDependencies += module
     }
 }

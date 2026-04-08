@@ -46,6 +46,8 @@ enum class CaCallKind {
 enum class CaCallOrigin {
     REGULAR,
     OPERATOR,
+    CONSTRUCTOR_DELEGATION_THIS,
+    CONSTRUCTOR_DELEGATION_SUPER,
 }
 
 /**

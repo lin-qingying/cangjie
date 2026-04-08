@@ -29,6 +29,22 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         }
     }
 
+    @TestMetadata("annotation")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Annotation : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/annotation")
+        }
+
+        @TestMetadata("annotationNoConstInitRich.cj")
+        @Test
+        fun testAnnotationNoConstInitRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/annotation/annotationNoConstInitRich.cj")
+        }
+    }
+
     @TestMetadata("call")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
@@ -36,6 +52,12 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/call")
+        }
+
+        @TestMetadata("ambiguousFunctionCallRich.cj")
+        @Test
+        fun testAmbiguousFunctionCallRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/call/ambiguousFunctionCallRich.cj")
         }
 
         @TestMetadata("namedArgumentsAndArityRich.cj")
@@ -64,6 +86,12 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         @Test
         fun testConstEvalDivideByZero() {
             runTest("cfir/analysis-tests/testData/diagnostics/const-eval/constEvalDivideByZero.cj")
+        }
+
+        @TestMetadata("constEvalShiftRich.cj")
+        @Test
+        fun testConstEvalShiftRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/const-eval/constEvalShiftRich.cj")
         }
     }
 
@@ -127,6 +155,18 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         fun testDelegationAndConstructorsRich() {
             runTest("cfir/analysis-tests/testData/diagnostics/constructor/delegationAndConstructorsRich.cj")
         }
+
+        @TestMetadata("illegalDelegationPlacementRich.cj")
+        @Test
+        fun testIllegalDelegationPlacementRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/constructor/illegalDelegationPlacementRich.cj")
+        }
+
+        @TestMetadata("noConstructorRich.cj")
+        @Test
+        fun testNoConstructorRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/constructor/noConstructorRich.cj")
+        }
     }
 
     @TestMetadata("coverage")
@@ -179,6 +219,12 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/coverage/declaration-status")
+            }
+
+            @TestMetadata("memberStatusCheckersRich.cj")
+            @Test
+            fun testMemberStatusCheckersRich() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/declaration-status/memberStatusCheckersRich.cj")
             }
 
             @TestMetadata("modifierCheckerRich.cj")
@@ -397,6 +443,12 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
                 runTest("cfir/analysis-tests/testData/diagnostics/coverage/inheritance/overrideInvisibleMemberRich.cj")
             }
 
+            @TestMetadata("overrideParameterNameMismatchRich.cj")
+            @Test
+            fun testOverrideParameterNameMismatchRich() {
+                runTest("cfir/analysis-tests/testData/diagnostics/coverage/inheritance/overrideParameterNameMismatchRich.cj")
+            }
+
             @TestMetadata("overrideReturnType.cj")
             @Test
             fun testOverrideReturnType() {
@@ -461,6 +513,34 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         }
     }
 
+    @TestMetadata("effects")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Effects : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/effects")
+        }
+
+        @TestMetadata("effectsFeatureDisabledRich.cj")
+        @Test
+        fun testEffectsFeatureDisabledRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/effects/effectsFeatureDisabledRich.cj")
+        }
+
+        @TestMetadata("effectsSemanticsRich.cj")
+        @Test
+        fun testEffectsSemanticsRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/effects/effectsSemanticsRich.cj")
+        }
+
+        @TestMetadata("handleBlockMismatchRich.cj")
+        @Test
+        fun testHandleBlockMismatchRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/effects/handleBlockMismatchRich.cj")
+        }
+    }
+
     @TestMetadata("enum")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
@@ -496,6 +576,18 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         @Test
         fun testFuncArg() {
             runTest("cfir/analysis-tests/testData/diagnostics/function/funcArg.cj")
+        }
+
+        @TestMetadata("higherOrderFirstClassRich.cj")
+        @Test
+        fun testHigherOrderFirstClassRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/function/higherOrderFirstClassRich.cj")
+        }
+
+        @TestMetadata("trailingLambdaCallbackReturnRich.cj")
+        @Test
+        fun testTrailingLambdaCallbackReturnRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/function/trailingLambdaCallbackReturnRich.cj")
         }
     }
 
@@ -557,6 +649,100 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         }
     }
 
+    @TestMetadata("generic-access")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class GenericAccess : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/generic-access")
+        }
+
+        @TestMetadata("genericTypeWithoutTypeArgumentRich.cj")
+        @Test
+        fun testGenericTypeWithoutTypeArgumentRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/generic-access/genericTypeWithoutTypeArgumentRich.cj")
+        }
+
+        @TestMetadata("upperBoundsMemberAndMethodRich.cj")
+        @Test
+        fun testUpperBoundsMemberAndMethodRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/generic-access/upperBoundsMemberAndMethodRich.cj")
+        }
+    }
+
+    @TestMetadata("initialization")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Initialization : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/initialization")
+        }
+
+        @TestMetadata("classUninitializedFieldRich.cj")
+        @Test
+        fun testClassUninitializedFieldRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/initialization/classUninitializedFieldRich.cj")
+        }
+
+        @TestMetadata("controlFlowInitializationRich.cj")
+        @Test
+        fun testControlFlowInitializationRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/initialization/controlFlowInitializationRich.cj")
+        }
+
+        @TestMetadata("tryCatchInitializationSmoke.cj")
+        @Test
+        fun testTryCatchInitializationSmoke() {
+            runTest("cfir/analysis-tests/testData/diagnostics/initialization/tryCatchInitializationSmoke.cj")
+        }
+
+        @TestMetadata("usedBeforeInitializationRich.cj")
+        @Test
+        fun testUsedBeforeInitializationRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/initialization/usedBeforeInitializationRich.cj")
+        }
+    }
+
+    @TestMetadata("interop")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Interop : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/interop")
+        }
+
+        @TestMetadata("foreignFunctionReturnTypeRich.cj")
+        @Test
+        fun testForeignFunctionReturnTypeRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/interop/foreignFunctionReturnTypeRich.cj")
+        }
+    }
+
+    @TestMetadata("jump")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Jump : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/jump")
+        }
+
+        @TestMetadata("invalidLoopControlRich.cj")
+        @Test
+        fun testInvalidLoopControlRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/jump/invalidLoopControlRich.cj")
+        }
+
+        @TestMetadata("invalidLoopControlTrailingLambdaRich.cj")
+        @Test
+        fun testInvalidLoopControlTrailingLambdaRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/jump/invalidLoopControlTrailingLambdaRich.cj")
+        }
+    }
+
     @TestMetadata("literal")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
@@ -570,6 +756,22 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         @Test
         fun testLiteralNumericOverflow() {
             runTest("cfir/analysis-tests/testData/diagnostics/literal/literalNumericOverflow.cj")
+        }
+    }
+
+    @TestMetadata("mut")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Mut : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/mut")
+        }
+
+        @TestMetadata("immutableFunctionRestrictionsRich.cj")
+        @Test
+        fun testImmutableFunctionRestrictionsRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/mut/immutableFunctionRestrictionsRich.cj")
         }
     }
 
@@ -752,6 +954,34 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         @Test
         fun testImplemented() {
             runTest("cfir/analysis-tests/testData/diagnostics/override/implemented.cj")
+        }
+    }
+
+    @TestMetadata("pattern")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Pattern : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/pattern")
+        }
+
+        @TestMetadata("matchCaseHasNoTypeRich.cj")
+        @Test
+        fun testMatchCaseHasNoTypeRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/pattern/matchCaseHasNoTypeRich.cj")
+        }
+
+        @TestMetadata("notOverloadInMatchRich.cj")
+        @Test
+        fun testNotOverloadInMatchRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/pattern/notOverloadInMatchRich.cj")
+        }
+
+        @TestMetadata("patternLegalityRich.cj")
+        @Test
+        fun testPatternLegalityRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/pattern/patternLegalityRich.cj")
         }
     }
 
@@ -977,6 +1207,22 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         }
     }
 
+    @TestMetadata("varray")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Varray : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/varray")
+        }
+
+        @TestMetadata("varraySizeMismatchRich.cj")
+        @Test
+        fun testVarraySizeMismatchRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/varray/varraySizeMismatchRich.cj")
+        }
+    }
+
     @TestMetadata("visibility")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
@@ -1008,6 +1254,12 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         @Test
         fun testPrivatePropertyAccess() {
             runTest("cfir/analysis-tests/testData/diagnostics/visibility/privatePropertyAccess.cj")
+        }
+
+        @TestMetadata("protectedAndInternalMatrixRich.cj")
+        @Test
+        fun testProtectedAndInternalMatrixRich() {
+            runTest("cfir/analysis-tests/testData/diagnostics/visibility/protectedAndInternalMatrixRich.cj")
         }
     }
 }

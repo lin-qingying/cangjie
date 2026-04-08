@@ -92,10 +92,6 @@ class ExpressionCheckersDiagnosticComponent(
         checkers.allReturnExpressionCheckers.check(returnExpression, data)
     }
 
-    override fun visitJumpExpression(jumpExpression: CfirJumpExpression, data: CheckerContext) {
-        checkers.allJumpExpressionCheckers.check(jumpExpression, data)
-    }
-
     override fun visitRangeExpression(rangeExpression: CfirRangeExpression, data: CheckerContext) {
         checkers.allRangeExpressionCheckers.check(rangeExpression, data)
     }
@@ -122,6 +118,18 @@ class ExpressionCheckersDiagnosticComponent(
 
     override fun visitLazyExpression(lazyExpression: CfirLazyExpression, data: CheckerContext) {
         checkers.allBasicExpressionCheckers.check(lazyExpression, data)
+    }
+
+    override fun visitPerformExpression(performExpression: CfirPerformExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(performExpression, data)
+    }
+
+    override fun visitResumeExpression(resumeExpression: CfirResumeExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(resumeExpression, data)
+    }
+
+    override fun visitHandleClause(handleClause: CfirHandleClause, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(handleClause, data)
     }
 
     override fun visitStringInterpolation(stringInterpolation: CfirStringInterpolation, data: CheckerContext) {
@@ -174,6 +182,14 @@ class ExpressionCheckersDiagnosticComponent(
 
     override fun visitMacroExpression(macroExpression: CfirMacroExpression, data: CheckerContext) {
         checkers.allBasicExpressionCheckers.check(macroExpression, data)
+    }
+
+    override fun visitBreakExpression(breakExpression: CfirBreakExpression, data: CheckerContext) {
+        checkers.allLoopJumpCheckers.check(breakExpression, data)
+    }
+
+    override fun visitContinueExpression(continueExpression: CfirContinueExpression, data: CheckerContext) {
+        checkers.allLoopJumpCheckers.check(continueExpression, data)
     }
 
     private inline fun <reified E : CfirStatement> Array<CfirExpressionChecker<E>>.check(

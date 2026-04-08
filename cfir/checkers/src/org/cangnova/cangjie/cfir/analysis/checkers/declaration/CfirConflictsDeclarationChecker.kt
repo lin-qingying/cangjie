@@ -14,15 +14,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory1
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
-import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
-import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
-import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
-import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
-import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
-import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
-import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
+import org.cangnova.cangjie.cfir.patterns.bindingOccurrences
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
@@ -139,7 +132,7 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker() {
             val patternVariable = (conflictingDeclaration as? CfirCallableSymbol<*>)?.cfir as? CfirPatternVariable
             if (patternVariable != null) {
                 val conflictingNameSet = renderedNames.toSet()
-                val bindingSources = collectPatternBindings(patternVariable.pattern)
+                val bindingSources = patternVariable.pattern.bindingOccurrences()
                     .asSequence()
                     .filter { it.name.asString() in conflictingNameSet }
                     .mapNotNull { it.source }
@@ -175,23 +168,3 @@ private fun CfirSymbol<*>.boundSourceOrNull(): CjSourceElement? =
 
 private fun Collection<CfirSymbol<*>>.renderNames(): List<String> =
     asSequence().mapNotNull(CfirRedeclarationPresenter::diagnosticName).distinct().sorted().toList()
-
-private data class PatternBindingOccurrence(
-    val name: Name,
-    val source: CjSourceElement?,
-)
-
-private fun collectPatternBindings(pattern: CfirPattern): List<PatternBindingOccurrence> {
-    return when (pattern) {
-        is CfirBindingPattern -> buildList {
-            add(PatternBindingOccurrence(pattern.name, pattern.source))
-            pattern.nestedPattern?.let { addAll(collectPatternBindings(it)) }
-        }
-
-        is CfirTuplePattern -> pattern.elements.flatMap(::collectPatternBindings)
-        is CfirEnumPattern -> pattern.arguments.flatMap(::collectPatternBindings)
-        is CfirTypePattern -> listOfNotNull(pattern.bindingName?.let { PatternBindingOccurrence(it, pattern.source) })
-        is CfirOrPattern -> pattern.alternatives.flatMap(::collectPatternBindings)
-        is CfirWildcardPattern, is CfirConstPattern, is CfirExpressionPattern -> emptyList()
-    }
-}

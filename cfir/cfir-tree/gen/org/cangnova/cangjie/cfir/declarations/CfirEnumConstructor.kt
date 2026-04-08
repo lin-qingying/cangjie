@@ -31,6 +31,7 @@ abstract class CfirEnumConstructor : CfirCallableDeclaration() {
     abstract override val status: CfirDeclarationStatus
     abstract override val typeParameters: List<CfirTypeParameter>
     abstract override val returnTypeRef: CfirTypeRef
+    abstract val valueParameters: List<CfirValueParameter>
     abstract val name: Name
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
@@ -53,4 +54,6 @@ abstract class CfirEnumConstructor : CfirCallableDeclaration() {
     abstract override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirEnumConstructor
 
     abstract override fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirEnumConstructor
+
+    abstract fun <D> transformValueParameters(transformer: CfirTransformer<D>, data: D): CfirEnumConstructor
 }

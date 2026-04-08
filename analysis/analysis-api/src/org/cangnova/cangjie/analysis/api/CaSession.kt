@@ -22,7 +22,6 @@ import org.cangnova.cangjie.analysis.api.components.CaSignatureSubstitutor
 import org.cangnova.cangjie.analysis.api.components.CaSourceProvider
 import org.cangnova.cangjie.analysis.api.components.CaSubstitutorProvider
 import org.cangnova.cangjie.analysis.api.components.CaSymbolInformationProvider
-import org.cangnova.cangjie.analysis.api.components.CaSymbolProvider
 import org.cangnova.cangjie.analysis.api.components.CaSymbolRelationProvider
 import org.cangnova.cangjie.analysis.api.components.CaTypeCreator
 import org.cangnova.cangjie.analysis.api.components.CaTypeInformationProvider
@@ -30,6 +29,7 @@ import org.cangnova.cangjie.analysis.api.components.CaTypeProvider
 import org.cangnova.cangjie.analysis.api.components.CaTypeRelationChecker
 import org.cangnova.cangjie.analysis.api.components.CaVisibilityChecker
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolProvider
 
 /**
  * 仓颉 Analysis API 的分析会话。

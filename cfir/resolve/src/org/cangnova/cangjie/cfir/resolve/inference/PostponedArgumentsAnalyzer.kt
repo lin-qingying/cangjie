@@ -24,6 +24,7 @@ import org.cangnova.cangjie.resolve.calls.inference.isSubtypeConstraintCompatibl
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemBuilder
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.type.model.safeSubstitute
 
 data class ReturnArgumentsAnalysisResult(
@@ -123,11 +124,45 @@ class PostponedArgumentsAnalyzer(
         val checkerSink = CheckerSinkImpl(candidate)
         val builder = csImpl.getBuilder()
         val substitutedReturnType = substituteAlreadyFixedVariables(atom.returnType)
+        val lastExpression = atom.anonymousFunction.body
+            ?.statements
+            ?.lastOrNull() as? org.cangnova.cangjie.cfir.expressions.CfirExpression
+        val isLastExpressionCoercedToUnit = substitutedReturnType.isUnit
 
         var hasExpressionInReturnArguments = false
         for (returnAtom in returnAtoms) {
+            val expression = returnAtom.expression
+            if (expression.isImplicitUnitForEmptyLambda()) continue
+
+            val haveSubsystem = csImpl.addSubsystemFromAtom(returnAtom)
+            val isLastExpression = expression === lastExpression
+
+            /**
+             * 参考 Kotlin FIR 的 postponed lambda 分析：
+             *
+             * 当 lambda 的返回类型已经被约束为 `Unit` 时，最后一个表达式只承担“语句求值”
+             * 语义，不应该再被当作真实返回值去反向约束外层调用。
+             *
+             * 否则像 `break/continue/throw` 这类局部控制流错误会经由返回值检查泄漏到
+             * 外层高阶函数调用，把原本可解析的调用错误地打成 `ErrorTypeInArguments`
+             * 甚至 `UNRESOLVED_REFERENCE`。
+             */
+            if (isLastExpression && isLastExpressionCoercedToUnit) {
+                val expressionType = expression.coneTypeOrNull
+                if (haveSubsystem && expressionType != null) {
+                    val compatible = builder.isSubtypeConstraintCompatible(expressionType, substitutedReturnType)
+                    if (compatible) {
+                        builder.addSubtypeConstraint(
+                            expressionType,
+                            substitutedReturnType,
+                            ConeArgumentConstraintPosition(expression),
+                        )
+                    }
+                }
+                continue
+            }
+
             hasExpressionInReturnArguments = true
-            csImpl.addSubsystemFromAtom(returnAtom)
 
             if (!builder.hasContradiction || returnAtom is ConeResolutionAtomWithPostponedChild) {
                 ArgumentCheckingProcessor.resolveArgumentExpression(
@@ -187,6 +222,10 @@ class PostponedArgumentsAnalyzer(
             )
         }
     }
+}
+
+private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.isImplicitUnitForEmptyLambda(): Boolean {
+    return source?.kind == CjFakeSourceElementKind.ImplicitUnit.ForEmptyLambda
 }
 
 fun ConeLambdaWithTypeVariableAsExpectedTypeAtom.transformToResolvedLambda(

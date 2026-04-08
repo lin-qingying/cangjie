@@ -1252,3 +1252,47 @@ specific class A
 6. `annotation / Java / CFFI / VArray`
 7. `effects / mocking / common-specific`
 
+---
+
+## 18. Status Update (2026-04-05)
+
+### 18.1 Phase 1 `call + constructor`
+
+- 已实现并回归：
+  - `sema_no_match_constructor`
+  - `sema_ambiguous_constructor_match`
+  - `sema_unknown_named_argument`
+  - `sema_multiple_named_argument`
+  - `sema_unordered_arguments`
+  - `sema_recursive_constructor_call`
+  - `sema_illegal_place_of_calling_this_or_super`
+- 已补样例：
+  - `diagnostics/call/namedArgumentsAndArityRich.cj`
+  - `diagnostics/constructor/delegationAndConstructorsRich.cj`
+  - `diagnostics/constructor/illegalDelegationPlacementRich.cj`
+- 结构调整：
+  - `this(...)` / `super(...)` 已通过 `CfirFunctionCallOrigin` 建成专门的 constructor delegation 语义入口，不再只依赖后置 unresolved 抑制。
+
+### 18.2 Phase 2 `initialization + legality`
+
+- 已实现并回归：
+  - `sema_used_before_initialization`
+  - `sema_class_uninitialized_field`
+- 已补样例：
+  - `diagnostics/initialization/usedBeforeInitializationRich.cj`
+  - `diagnostics/initialization/classUninitializedFieldRich.cj`
+- 结构调整：
+  - 新增统一的初始化流分析器，覆盖函数体局部变量、类体字段初始化顺序、构造器完成性检查三条入口。
+
+### 18.3 Phase 3 `generic-access + visibility matrix`
+
+- 已实现并回归：
+  - `sema_generic_type_without_type_argument`
+  - `sema_generic_no_member_match_in_upper_bounds`
+  - `sema_generic_no_method_match_in_upper_bounds`
+- 已补样例：
+  - `diagnostics/generic-access/genericTypeWithoutTypeArgumentRich.cj`
+  - `diagnostics/generic-access/upperBoundsMemberAndMethodRich.cj`
+- 当前状态：
+  - `visibility matrix` 的跨包/跨文件基础样例已存在；
+  - 更完整的 protected/internal/private 组合矩阵仍待继续展开。

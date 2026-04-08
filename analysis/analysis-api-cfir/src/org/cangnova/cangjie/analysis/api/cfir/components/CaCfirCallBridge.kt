@@ -98,6 +98,8 @@ private fun CaCfirCallKind.asAnalysisKind(): CaCallKind = when (this) {
 private fun CaCfirCallOrigin.asAnalysisOrigin(): CaCallOrigin = when (this) {
     CaCfirCallOrigin.REGULAR -> CaCallOrigin.REGULAR
     CaCfirCallOrigin.OPERATOR -> CaCallOrigin.OPERATOR
+    CaCfirCallOrigin.CONSTRUCTOR_DELEGATION_THIS -> CaCallOrigin.CONSTRUCTOR_DELEGATION_THIS
+    CaCfirCallOrigin.CONSTRUCTOR_DELEGATION_SUPER -> CaCallOrigin.CONSTRUCTOR_DELEGATION_SUPER
 }
 
 private fun CaCfirCallApplicability.asAnalysisApplicability(): CaCallApplicability = when (this) {

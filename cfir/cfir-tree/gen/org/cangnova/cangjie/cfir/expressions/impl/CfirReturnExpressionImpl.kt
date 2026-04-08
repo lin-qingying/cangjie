@@ -8,8 +8,10 @@
 package org.cangnova.cangjie.cfir.expressions.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.CfirTarget
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
@@ -23,17 +25,18 @@ class CfirReturnExpressionImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
-    override var result: CfirExpression?,
+    override val target: CfirTarget<CfirFunction>,
+    override var result: CfirExpression,
 ) : CfirReturnExpression() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
-        result?.accept(visitor, data)
+        result.accept(visitor, data)
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirReturnExpressionImpl {
-        transformAnnotations(transformer, data)
         transformResult(transformer, data)
+        transformOtherChildren(transformer, data)
         return this
     }
 
@@ -43,7 +46,12 @@ class CfirReturnExpressionImpl @CfirImplementationDetail constructor(
     }
 
     override fun <D> transformResult(transformer: CfirTransformer<D>, data: D): CfirReturnExpressionImpl {
-        result = result?.transform(transformer, data)
+        result = result.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformOtherChildren(transformer: CfirTransformer<D>, data: D): CfirReturnExpressionImpl {
+        transformAnnotations(transformer, data)
         return this
     }
 

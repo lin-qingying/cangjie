@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.test.testFramework
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFileFactory
@@ -31,7 +32,14 @@ open class CjPlatformLiteFixture : CjUsefulTestCase() {
 
     override fun tearDown() {
         try {
-            Disposer.dispose(fixtureDisposable)
+            val application = ApplicationManager.getApplication()
+            if (application != null) {
+                application.runWriteAction {
+                    Disposer.dispose(fixtureDisposable)
+                }
+            } else {
+                Disposer.dispose(fixtureDisposable)
+            }
         } finally {
             super.tearDown()
         }

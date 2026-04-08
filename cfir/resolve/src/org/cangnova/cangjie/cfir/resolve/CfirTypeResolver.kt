@@ -39,6 +39,7 @@ import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.name.ClassId
@@ -181,6 +182,14 @@ class CfirTypeResolverImpl(
         }
 
         val resolvedClass = resolveClass(classId) ?: return ConeErrorType(ConeUnresolvedSymbolError(classId))
+        if (resolvedClass.typeParameters.isNotEmpty() && typeRef.typeArguments.isEmpty()) {
+            return ConeErrorType(
+                ConeSimpleDiagnostic(
+                    "generic type '${resolvedClass.name.asString()}' should be used with type argument",
+                    DiagnosticKind.GenericTypeWithoutTypeArgument,
+                )
+            )
+        }
         val resolvedArguments = typeRef.typeArguments.map { argument ->
             ConeTypeProjection(
                 resolveType(

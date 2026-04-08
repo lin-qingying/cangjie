@@ -13,8 +13,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
-import org.cangnova.cangjie.cfir.expressions.CfirJumpExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLoopJump
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
@@ -42,7 +42,7 @@ typealias CfirMatchExpressionChecker = CfirExpressionChecker<CfirMatchExpression
 typealias CfirTryExpressionChecker = CfirExpressionChecker<CfirTryExpression>
 typealias CfirThrowExpressionChecker = CfirExpressionChecker<CfirThrowExpression>
 typealias CfirReturnExpressionChecker = CfirExpressionChecker<CfirReturnExpression>
-typealias CfirJumpExpressionChecker = CfirExpressionChecker<CfirJumpExpression>
+typealias CfirLoopJumpChecker = CfirExpressionChecker<CfirLoopJump>
 typealias CfirRangeExpressionChecker = CfirExpressionChecker<CfirRangeExpression>
 typealias CfirSubscriptExpressionChecker = CfirExpressionChecker<CfirSubscriptExpression>
 typealias CfirErrorExpressionChecker = CfirExpressionChecker<CfirErrorExpression>

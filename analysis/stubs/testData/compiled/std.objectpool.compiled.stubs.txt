@@ -1,0 +1,7 @@
+fileKey=std.objectpool.cjo
+kind=File[packageFqName=std.objectpool]
+package=std.objectpool
+topLevelClassifiers=[ObjectPool]
+topLevelCallables=[]
+classMembers=
+  std.objectpool.ObjectPool=[get, init, newFunc, pool, put, resetFunc]

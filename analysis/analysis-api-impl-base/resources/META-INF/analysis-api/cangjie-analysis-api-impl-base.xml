@@ -1,4 +1,13 @@
 <idea-plugin>
+  <extensionPoints>
+    <extensionPoint
+        qualifiedName="org.cangnova.cangjie.psiReferenceProvider"
+        interface="org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor"
+        area="IDEA_PROJECT"
+        dynamic="true"
+    />
+  </extensionPoints>
+
   <extensions defaultExtensionNs="com.intellij">
     <applicationService
         serviceInterface="org.cangnova.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry"

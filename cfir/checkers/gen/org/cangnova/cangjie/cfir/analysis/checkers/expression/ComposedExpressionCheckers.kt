@@ -40,8 +40,8 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
         get() = _throwExpressionCheckers
     override val returnExpressionCheckers: Set<CfirReturnExpressionChecker>
         get() = _returnExpressionCheckers
-    override val jumpExpressionCheckers: Set<CfirJumpExpressionChecker>
-        get() = _jumpExpressionCheckers
+    override val loopJumpCheckers: Set<CfirLoopJumpChecker>
+        get() = _loopJumpCheckers
     override val rangeExpressionCheckers: Set<CfirRangeExpressionChecker>
         get() = _rangeExpressionCheckers
     override val subscriptExpressionCheckers: Set<CfirSubscriptExpressionChecker>
@@ -64,7 +64,7 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
     private val _tryExpressionCheckers: MutableSet<CfirTryExpressionChecker> = mutableSetOf()
     private val _throwExpressionCheckers: MutableSet<CfirThrowExpressionChecker> = mutableSetOf()
     private val _returnExpressionCheckers: MutableSet<CfirReturnExpressionChecker> = mutableSetOf()
-    private val _jumpExpressionCheckers: MutableSet<CfirJumpExpressionChecker> = mutableSetOf()
+    private val _loopJumpCheckers: MutableSet<CfirLoopJumpChecker> = mutableSetOf()
     private val _rangeExpressionCheckers: MutableSet<CfirRangeExpressionChecker> = mutableSetOf()
     private val _subscriptExpressionCheckers: MutableSet<CfirSubscriptExpressionChecker> = mutableSetOf()
     private val _errorExpressionCheckers: MutableSet<CfirErrorExpressionChecker> = mutableSetOf()
@@ -86,7 +86,7 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
         _tryExpressionCheckers.addAll(checkers.tryExpressionCheckers)
         _throwExpressionCheckers.addAll(checkers.throwExpressionCheckers)
         _returnExpressionCheckers.addAll(checkers.returnExpressionCheckers)
-        _jumpExpressionCheckers.addAll(checkers.jumpExpressionCheckers)
+        _loopJumpCheckers.addAll(checkers.loopJumpCheckers)
         _rangeExpressionCheckers.addAll(checkers.rangeExpressionCheckers)
         _subscriptExpressionCheckers.addAll(checkers.subscriptExpressionCheckers)
         _errorExpressionCheckers.addAll(checkers.errorExpressionCheckers)

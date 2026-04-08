@@ -23,6 +23,19 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
     class CangjieFeatures : AbstractLightTree2CfirConverterTestCase() {
         fun testSmoke() {}
 
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/effects")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Effects : AbstractLightTree2CfirConverterTestCase() {
+            fun testSmoke() {}
+
+            @TestMetadata("effectTryHandleOfficial.cj")
+            fun testEffectTryHandleOfficial() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/effects/effectTryHandleOfficial.cj")
+            }
+
+        }
+
         @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/extend")
         @TestDataPath("\$PROJECT_ROOT")
         @RunWith(JUnit3RunnerWithInners::class)
@@ -60,6 +73,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
             @TestMetadata("matchRichPatternsOfficial.cj")
             fun testMatchRichPatternsOfficial() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/match/matchRichPatternsOfficial.cj")
+            }
+
+            @TestMetadata("matchVarOrEnumPatternOfficial.cj")
+            fun testMatchVarOrEnumPatternOfficial() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/match/matchVarOrEnumPatternOfficial.cj")
             }
 
         }
@@ -163,6 +181,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
             @TestMetadata("classWithModifiers.cj")
             fun testClassWithModifiers() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/classWithModifiers.cj")
+            }
+
+            @TestMetadata("classWithSuperReference.cj")
+            fun testClassWithSuperReference() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/classWithSuperReference.cj")
             }
 
             @TestMetadata("classWithSupertype.cj")

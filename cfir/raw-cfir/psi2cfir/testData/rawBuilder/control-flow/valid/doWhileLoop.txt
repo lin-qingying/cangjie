@@ -6,17 +6,17 @@ FILE: doWhileLoop.cj
         DO_WHILE {
             condition:
                 COMPARISON(GT) {
-                    QUALIFIED_ACCESS(x)
+                    NAMED_ACCESS(x)
                     INT(0)
                 }
             body:
                 ASSIGNMENT {
                     lValue:
-                        QUALIFIED_ACCESS(x)
+                        NAMED_ACCESS(x)
                     rValue:
-                        FUNCTION_CALL(minus) {
+                        FUNCTION_CALL(*operator_minus) {
                             receiver:
-                                QUALIFIED_ACCESS(x)
+                                NAMED_ACCESS(x)
                             arguments:
                                 INT(1)
                         }

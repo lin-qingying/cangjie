@@ -10,7 +10,8 @@ enum class TestModuleKind(val suffix: String) {
     Source("Source"),
     LibraryBinary("LibraryBinary"),
     LibrarySource("LibrarySource"),
-    ScriptSource("ScriptSource"),
     CodeFragment("CodeFragment"),
     NotUnderContentRoot("NotUnderContentRoot"),
+    Builtins("Builtins"),
+    LibraryFallbackDependencies("LibraryFallbackDependencies"),
 }

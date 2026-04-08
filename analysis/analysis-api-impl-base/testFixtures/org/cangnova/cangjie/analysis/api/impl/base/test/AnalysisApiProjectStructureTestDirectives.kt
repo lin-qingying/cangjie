@@ -14,11 +14,9 @@ import org.cangnova.cangjie.test.directives.model.singleValue
  */
 enum class ExpectedCaModuleShape {
     SourceModule,
-    ScriptModule,
     LibraryBinaryModule,
     LibrarySourceModule,
     BuiltinsModule,
-    ScriptDependenciesModule,
     LibraryFallbackDependenciesModule,
     DanglingFileModule,
     NotUnderContentRootModule,

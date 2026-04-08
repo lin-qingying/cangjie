@@ -5,8 +5,6 @@ import org.cangnova.cangjie.analysis.api.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.CaModule
-import org.cangnova.cangjie.analysis.api.CaScriptDependencyModule
-import org.cangnova.cangjie.analysis.api.CaScriptModule
 import org.cangnova.cangjie.analysis.api.CaSourceModule
 
 /**
@@ -57,25 +55,6 @@ internal class CaCfirBinaryModuleResolutionStrategyProvider(
         return when {
             module == useSiteModule || module is CaLibrarySourceModule -> CaCfirModuleResolutionStrategy.LAZY
             module is CaBuiltinsModule || module is CaLibraryModule -> CaCfirModuleResolutionStrategy.STATIC
-            else -> cannotProvideResolutionStrategy(module, useSiteModule)
-        }
-    }
-}
-
-internal class CaCfirScriptModuleResolutionStrategyProvider(
-    private val useSiteModule: CaModule,
-) : CaCfirModuleResolutionStrategyProvider {
-    override fun getKind(module: CaModule): CaCfirModuleResolutionStrategy {
-        return when (module) {
-            useSiteModule,
-            is CaScriptModule,
-            is CaSourceModule,
-            is CaLibrarySourceModule -> CaCfirModuleResolutionStrategy.LAZY
-
-            is CaBuiltinsModule,
-            is CaScriptDependencyModule,
-            is CaLibraryModule -> CaCfirModuleResolutionStrategy.STATIC
-
             else -> cannotProvideResolutionStrategy(module, useSiteModule)
         }
     }

@@ -1,3 +1,4 @@
 FILE: topLevelProperty.cj
     internal? let PI: R|Float64|
     internal? var count: R|Int64|
+    internal? var (a, b, c): <implicit>

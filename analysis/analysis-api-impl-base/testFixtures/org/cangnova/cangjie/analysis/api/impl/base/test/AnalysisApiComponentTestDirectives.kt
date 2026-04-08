@@ -266,10 +266,10 @@ val org.cangnova.cangjie.test.directives.model.RegisteredDirectives.expectedCall
     get() = singleValue(AnalysisApiComponentTestDirectives.EXPECTED_CALLABLE_ID)
 
 val org.cangnova.cangjie.test.directives.model.RegisteredDirectives.expectedRenderedClassSymbol: String
-    get() = singleValue(AnalysisApiComponentTestDirectives.EXPECTED_RENDERED_CLASS_SYMBOL)
+    get() = this[AnalysisApiComponentTestDirectives.EXPECTED_RENDERED_CLASS_SYMBOL].joinToString(" ")
 
 val org.cangnova.cangjie.test.directives.model.RegisteredDirectives.expectedRenderedCallableSymbol: String
-    get() = singleValue(AnalysisApiComponentTestDirectives.EXPECTED_RENDERED_CALLABLE_SYMBOL)
+    get() = this[AnalysisApiComponentTestDirectives.EXPECTED_RENDERED_CALLABLE_SYMBOL].joinToString(" ")
 
 val org.cangnova.cangjie.test.directives.model.RegisteredDirectives.expectedRenderedType: String
     get() = singleValue(AnalysisApiComponentTestDirectives.EXPECTED_RENDERED_TYPE)

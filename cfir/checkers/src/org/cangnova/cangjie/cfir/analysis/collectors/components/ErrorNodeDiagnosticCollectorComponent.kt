@@ -13,18 +13,26 @@ import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
+import org.cangnova.cangjie.cfir.expressions.CfirBreakExpression
+import org.cangnova.cangjie.cfir.expressions.CfirContinueExpression
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
+import org.cangnova.cangjie.cfir.expressions.CfirLoopJump
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirPerformExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResumeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.references.CfirErrorReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
@@ -163,6 +171,53 @@ class ErrorNodeDiagnosticCollectorComponent(
     override fun visitSuperReceiverExpression(superReceiverExpression: CfirSuperReceiverExpression, data: CheckerContext) {
         val source = superReceiverExpression.source as? CjSourceElement ?: return
         processConeTypeDiagnostic(superReceiverExpression, superReceiverExpression.coneTypeOrNull, source, data)
+    }
+
+    /**
+     * effects 语义目前把错误附着在专用 expression/handle 节点的 coneType 上。
+     * 因此需要在 collector 里显式补这些入口，才能把 resolve 期的 effect 诊断转成最终前端报告。
+     */
+    override fun visitPerformExpression(performExpression: CfirPerformExpression, data: CheckerContext) {
+        val source = performExpression.source as? CjSourceElement ?: return
+        processConeTypeDiagnostic(performExpression, performExpression.coneTypeOrNull, source, data)
+    }
+
+    override fun visitResumeExpression(resumeExpression: CfirResumeExpression, data: CheckerContext) {
+        val source = resumeExpression.source as? CjSourceElement ?: return
+        processConeTypeDiagnostic(resumeExpression, resumeExpression.coneTypeOrNull, source, data)
+    }
+
+    override fun visitHandleClause(handleClause: CfirHandleClause, data: CheckerContext) {
+        val source = handleClause.source as? CjSourceElement ?: return
+        processConeTypeDiagnostic(handleClause, handleClause.coneTypeOrNull, source, data)
+    }
+
+    override fun visitTryExpression(tryExpression: CfirTryExpression, data: CheckerContext) {
+        val source = tryExpression.source as? CjSourceElement ?: return
+        processConeTypeDiagnostic(tryExpression, tryExpression.coneTypeOrNull, source, data)
+    }
+
+    override fun visitLoopJump(jumpExpression: CfirLoopJump, data: CheckerContext) {
+        visitLoopJumpLike(jumpExpression, data)
+    }
+
+    override fun visitBreakExpression(breakExpression: CfirBreakExpression, data: CheckerContext) {
+        visitLoopJumpLike(breakExpression, data)
+    }
+
+    override fun visitContinueExpression(continueExpression: CfirContinueExpression, data: CheckerContext) {
+        visitLoopJumpLike(continueExpression, data)
+    }
+
+    /**
+     * loop jump 共享的错误入口。
+     *
+     * Kotlin FIR 的基础 visitor 不会把 `visitBreakExpression/visitContinueExpression`
+     * 自动上卷到 `visitLoopJump`，因此 collector 需要在 concrete 节点入口显式复用这段逻辑。
+     */
+    private fun visitLoopJumpLike(jumpExpression: CfirLoopJump, data: CheckerContext) {
+        val source = jumpExpression.source as? CjSourceElement ?: return
+        processConeTypeDiagnostic(jumpExpression, jumpExpression.coneTypeOrNull, source, data)
     }
 
 
@@ -340,12 +395,21 @@ class ErrorNodeDiagnosticCollectorComponent(
      * null 表达式（无接收者）视为"可以解析"，返回 false。
      */
     private fun CfirExpression?.cannotBeResolved(): Boolean {
+        if (this is CfirQualifiedAccessExpression) {
+            val resolvedReference = calleeReference as? org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+            val classLikeSymbol = resolvedReference?.resolvedSymbol as? CfirClassLikeSymbol<*>
+            if (classLikeSymbol != null && typeArguments.isEmpty() && classLikeSymbol.cfir.typeParameters.isNotEmpty()) {
+                return true
+            }
+        }
+
         return when (val diagnostic = (this?.coneTypeOrNull as? ConeErrorType)?.diagnostic) {
             is ConeUnresolvedNameError,
             is ConeUnresolvedReferenceError,
             is ConeUnresolvedSymbolError -> true
             is org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic ->
-                diagnostic.kind == org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind.SuperNotAllowed
+                diagnostic.kind == org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind.SuperNotAllowed ||
+                        diagnostic.kind == org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind.GenericTypeWithoutTypeArgument
             else -> false
         }
     }

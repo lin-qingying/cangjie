@@ -2,13 +2,13 @@ FILE: dotQualifiedAccess.cj
     internal? func testAccess(obj: R|MyClass|): R|Unit| {
         local? let v: <implicit> = ...
             initializer:
-                PROPERTY_ACCESS(field) {
+                NAMED_ACCESS(field) {
                     receiver:
-                        QUALIFIED_ACCESS(obj)
+                        NAMED_ACCESS(obj)
                 }
         FUNCTION_CALL(method) {
             receiver:
-                QUALIFIED_ACCESS(obj)
+                NAMED_ACCESS(obj)
             arguments:
                 INT(1)
         }

@@ -3,10 +3,13 @@ package org.cangnova.cangjie.cfir.lightTree
 import com.intellij.lang.LighterASTNode
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
+import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirLoopTarget
 import org.cangnova.cangjie.cfir.builder.*
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.builder.*
@@ -83,9 +86,11 @@ class LightTreeRawCfirExpressionBuilder(
 
         // 跳转 / 异常
         CjNodeTypes.RETURN -> convertReturn(node)
-        CjNodeTypes.BREAK -> buildJumpExpression { source = node.toSource(); kind = CfirJumpKind.BREAK }
-        CjNodeTypes.CONTINUE -> buildJumpExpression { source = node.toSource(); kind = CfirJumpKind.CONTINUE }
+        CjNodeTypes.BREAK -> buildBreakExpressionWithImplicitLoopTarget(node.toSource())
+        CjNodeTypes.CONTINUE -> buildContinueExpressionWithImplicitLoopTarget(node.toSource())
         CjNodeTypes.THROW -> convertThrow(node)
+        CjNodeTypes.PERFORM -> convertPerform(node)
+        CjNodeTypes.RESUME -> convertResume(node)
         CjNodeTypes.TRY -> convertTry(node)
 
         // Lambda
@@ -376,11 +381,11 @@ class LightTreeRawCfirExpressionBuilder(
 
     // ===== Call & Access =====
 
-    private fun convertCall(node: LighterASTNode): CfirExpression {
-        var calleeNode: LighterASTNode? = null
-        val argNodes = mutableListOf<LighterASTNode>()
-        val typeArgNodes = mutableListOf<LighterASTNode>()
-        val lambdaArgNodes = mutableListOf<LighterASTNode>()
+      private fun convertCall(node: LighterASTNode): CfirExpression {
+          var calleeNode: LighterASTNode? = null
+          val argNodes = mutableListOf<LighterASTNode>()
+          val typeArgNodes = mutableListOf<LighterASTNode>()
+          val lambdaArgNodes = mutableListOf<LighterASTNode>()
 
         tree.forEachChildren(node) { child ->
             when (child.tokenType) {
@@ -405,41 +410,101 @@ class LightTreeRawCfirExpressionBuilder(
                         calleeNode = child
                     }
                 }
-            }
-        }
+              }
+          }
 
-        val callArguments = argNodes.mapNotNull { convertCallArgument(it) }.toMutableList()
-        val directTypeArgs = typeArgNodes.map { typeRefNode ->
-            convertTypeReference(typeRefNode, tree, source) { it.toSourceElement() }
-        }
-        val typeArgs = if (directTypeArgs.isNotEmpty()) {
-            directTypeArgs
-        } else {
-            collectTypeArgumentsFromCallee(calleeNode)
-        }
-        val lambdaArgs = lambdaArgNodes.mapNotNull { lambdaArg ->
-            val lambdaExpr = tree.findChildByType(lambdaArg, CjNodeTypes.LAMBDA_EXPRESSION)
-            lambdaExpr?.let { convertLambda(it) }
-        }
-        callArguments.addAll(lambdaArgs)
+          var effectiveCalleeNode = calleeNode
+          val effectiveArgNodes = argNodes.toMutableList()
+          val effectiveTypeArgNodes = typeArgNodes.toMutableList()
 
-        val (receiver, reference) = resolveCalleeReference(calleeNode)
+          /**
+           * 对齐 Kotlin FIR light-tree raw builder：
+           *
+           * 尾随 lambda 语法 `f(1) { ... }` 在 light-tree 中会表现为
+           * outer CALL_EXPRESSION(callee = inner CALL_EXPRESSION, lambdaArgument = ...)，
+           * 但语义上它仍然是一条对 `f` 的调用。
+           *
+           * 因此当“外层只有尾随 lambda、内层持有普通实参”时，要把这两层 CALL_EXPRESSION
+           * 扁平化成同一个 function call，避免后续把 `f(1)` 错当成 callee 名称。
+           */
+          if (lambdaArgNodes.isNotEmpty() && argNodes.isEmpty() && calleeNode?.tokenType == CjNodeTypes.CALL_EXPRESSION) {
+              var nestedCalleeNode: LighterASTNode? = null
+              val nestedArgNodes = mutableListOf<LighterASTNode>()
+              val nestedTypeArgNodes = mutableListOf<LighterASTNode>()
 
-        return buildFunctionCall {
-            source = node.toSource()
-            calleeReference = reference
-            argumentList = buildArgumentList {
-                arguments.addAll(callArguments)
-            }
-            explicitReceiver = receiver
-            typeArguments.addAll(typeArgs)
-            origin = CfirFunctionCallOrigin.Regular
-        }
-    }
+              tree.forEachChildren(calleeNode!!) { child ->
+                  when (child.tokenType) {
+                      CjNodeTypes.VALUE_ARGUMENT_LIST -> {
+                          tree.forEachChildren(child) { arg ->
+                              if (arg.tokenType == CjNodeTypes.VALUE_ARGUMENT) {
+                                  nestedArgNodes.add(arg)
+                              }
+                          }
+                      }
+
+                      CjNodeTypes.TYPE_ARGUMENT_LIST -> {
+                          tree.forEachChildren(child) { typeArg ->
+                              if (typeArg.tokenType == CjNodeTypes.TYPE_PROJECTION) {
+                                  val typeRef = tree.findChildByType(typeArg, CjNodeTypes.TYPE_REFERENCE)
+                                  if (typeRef != null) nestedTypeArgNodes.add(typeRef)
+                              }
+                          }
+                      }
+
+                      else -> {
+                          if (nestedCalleeNode == null && isExpressionToken(child.tokenType)) {
+                              nestedCalleeNode = child
+                          }
+                      }
+                  }
+              }
+
+              effectiveCalleeNode = nestedCalleeNode
+              effectiveArgNodes.clear()
+              effectiveArgNodes.addAll(nestedArgNodes)
+              effectiveTypeArgNodes.clear()
+              effectiveTypeArgNodes.addAll(nestedTypeArgNodes)
+          }
+
+          val callArguments = effectiveArgNodes.mapNotNull { convertCallArgument(it) }.toMutableList()
+          val directTypeArgs = effectiveTypeArgNodes.map { typeRefNode ->
+              convertTypeReference(typeRefNode, tree, source) { it.toSourceElement() }
+          }
+          val typeArgs = if (directTypeArgs.isNotEmpty()) {
+              directTypeArgs
+          } else {
+              collectTypeArgumentsFromCallee(effectiveCalleeNode)
+          }
+          val lambdaArgs = lambdaArgNodes.mapNotNull { lambdaArg ->
+              val lambdaExpr = tree.findChildByType(lambdaArg, CjNodeTypes.LAMBDA_EXPRESSION)
+              lambdaExpr?.let {
+                  convertLambda(it).also { anonymousFunctionExpression ->
+                      anonymousFunctionExpression.replaceIsTrailingLambda(true)
+                  }
+              }
+          }
+          callArguments.addAll(lambdaArgs)
+
+          val (receiver, reference) = resolveCalleeReference(effectiveCalleeNode)
+
+          return buildFunctionCall {
+              source = node.toSource()
+              calleeReference = reference
+              argumentList = buildArgumentList {
+                  arguments.addAll(callArguments)
+              }
+              explicitReceiver = receiver
+              typeArguments.addAll(typeArgs)
+              origin = callOriginFor(effectiveCalleeNode)
+          }
+      }
 
     /**
-     * LightTree 路径下同样需要保留 named argument 的外层语法，
-     * 这样参数映射阶段才能在不依赖 PSI 的情况下恢复参数名前缀。
+     * LightTree 路径下同样要保留整段 value-argument source。
+     *
+     * 这里故意复用现有 `CfirBlock` 作为“单表达式包装层”：
+     * 1. 参数映射阶段可以从 block.source 恢复命名参数前缀；
+     * 2. 诊断组件已经完整支持 block，不会像专用 wrapped expression 那样额外引入检查器分发分支。
      */
     private fun convertCallArgument(valueArgumentNode: LighterASTNode): CfirExpression? {
         val expressionNode = findFirstExpression(valueArgumentNode) ?: return null
@@ -447,9 +512,9 @@ class LightTreeRawCfirExpressionBuilder(
         val hasName = tree.findChildByType(valueArgumentNode, CjNodeTypes.VALUE_ARGUMENT_NAME) != null
         if (!hasName) return convertedExpression
 
-        return buildWrappedExpression {
+        return buildBlock {
             source = valueArgumentNode.toSource()
-            expression = convertedExpression
+            statements.add(convertedExpression)
         }
     }
 
@@ -483,6 +548,16 @@ class LightTreeRawCfirExpressionBuilder(
             }
             else -> null to buildNamedReference(referenceNameFromText(calleeNode.asText()), calleeNode.toSource())
         }
+    }
+
+    /**
+     * LightTree 路径与 PSI 路径要共享同一套 delegation 语义入口，
+     * 不能因为没有完整 PSI，就把 `this(...)` / `super(...)` 重新降格成普通 Regular call。
+     */
+    private fun callOriginFor(calleeNode: LighterASTNode?): CfirFunctionCallOrigin = when (calleeNode?.tokenType) {
+        CjNodeTypes.THIS_EXPRESSION -> CfirFunctionCallOrigin.ConstructorDelegationThis
+        CjNodeTypes.SUPER_EXPRESSION -> CfirFunctionCallOrigin.ConstructorDelegationSuper
+        else -> CfirFunctionCallOrigin.Regular
     }
 
     private fun convertSpawn(node: LighterASTNode): CfirExpression {
@@ -562,10 +637,14 @@ class LightTreeRawCfirExpressionBuilder(
             } else {
                 collectTypeArgumentsFromCallee(calleeRef)
             }
-            val lambdaArgs = lambdaArgNodes.mapNotNull { lambdaArg ->
-                val lambdaExpr = tree.findChildByType(lambdaArg, CjNodeTypes.LAMBDA_EXPRESSION)
-                lambdaExpr?.let { convertLambda(it) }
-            }
+              val lambdaArgs = lambdaArgNodes.mapNotNull { lambdaArg ->
+                  val lambdaExpr = tree.findChildByType(lambdaArg, CjNodeTypes.LAMBDA_EXPRESSION)
+                  lambdaExpr?.let {
+                      convertLambda(it).also { anonymousFunctionExpression ->
+                          anonymousFunctionExpression.replaceIsTrailingLambda(true)
+                      }
+                  }
+              }
             callArguments.addAll(lambdaArgs)
 
             return buildFunctionCall {
@@ -832,7 +911,12 @@ class LightTreeRawCfirExpressionBuilder(
 
     // ===== Pattern =====
 
-    fun convertPattern(node: LighterASTNode): CfirPattern = when (node.tokenType) {
+    fun convertPattern(
+        node: LighterASTNode,
+        ownerStatus: CfirDeclarationStatus = declarationBuilder.cloneDeclarationStatus(CfirDeclarationStatusImpl.DEFAULT),
+        ownerIsLocal: Boolean = true,
+        ownerIsVar: Boolean = false,
+    ): CfirPattern = when (node.tokenType) {
         CjNodeTypes.BINDING_PATTERN -> {
             val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
                 ?: tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION)
@@ -840,6 +924,31 @@ class LightTreeRawCfirExpressionBuilder(
             buildBindingPattern {
                 source = node.toSource()
                 name = if (!nameText.isNullOrEmpty()) Name.identifier(nameText) else Name.special("<error>")
+                bindingVariable = declarationBuilder.createPatternBindingVariable(
+                    source = node.toSource(),
+                    name = name,
+                    status = ownerStatus,
+                    isLocal = ownerIsLocal,
+                    isVar = ownerIsVar,
+                    returnTypeRef = buildImplicitTypeRef(),
+                )
+            }
+        }
+        CjNodeTypes.VAR_OR_ENUM_PATTERN -> {
+            val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
+                ?: tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION)
+            val nameText = nameNode?.asText()
+            buildVarOrEnumPattern {
+                source = node.toSource()
+                name = if (!nameText.isNullOrEmpty()) Name.identifier(nameText) else Name.special("<error>")
+                bindingVariable = declarationBuilder.createPatternBindingVariable(
+                    source = node.toSource(),
+                    name = name,
+                    status = ownerStatus,
+                    isLocal = ownerIsLocal,
+                    isVar = ownerIsVar,
+                    returnTypeRef = buildImplicitTypeRef(),
+                )
             }
         }
         CjNodeTypes.TYPE_PATTERN -> {
@@ -847,17 +956,27 @@ class LightTreeRawCfirExpressionBuilder(
             val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
             buildTypePattern {
                 source = node.toSource()
-                    this.typeRef = convertTypeReference(typeRef, tree, this@LightTreeRawCfirExpressionBuilder.source) {
-                        it.toSourceElement()
-                    }
+                this.typeRef = convertTypeReference(typeRef, tree, this@LightTreeRawCfirExpressionBuilder.source) {
+                    it.toSourceElement()
+                }
                 bindingName = nameNode?.let { Name.identifier(it.asText()) }
+                bindingVariable = bindingName?.let { name ->
+                    declarationBuilder.createPatternBindingVariable(
+                        source = node.toSource(),
+                        name = name,
+                        status = ownerStatus,
+                        isLocal = ownerIsLocal,
+                        isVar = ownerIsVar,
+                        returnTypeRef = this.typeRef,
+                    )
+                }
             }
         }
         CjNodeTypes.TUPLE_PATTERN -> {
             val elements = mutableListOf<CfirPattern>()
             tree.forEachChildren(node) { child ->
                 if (isPatternToken(child.tokenType)) {
-                    elements.add(convertPattern(child))
+                    elements.add(convertPattern(child, ownerStatus, ownerIsLocal, ownerIsVar))
                 }
             }
             buildTuplePattern {
@@ -870,7 +989,7 @@ class LightTreeRawCfirExpressionBuilder(
             val subPatterns = mutableListOf<CfirPattern>()
             tree.forEachChildren(node) { child ->
                 if (isPatternToken(child.tokenType)) {
-                    subPatterns.add(convertPattern(child))
+                    subPatterns.add(convertPattern(child, ownerStatus, ownerIsLocal, ownerIsVar))
                 }
             }
             val refText = refExpr?.asText() ?: "<enum-pattern>"
@@ -918,22 +1037,32 @@ class LightTreeRawCfirExpressionBuilder(
             val typeRef = tree.findChildByType(it, CjNodeTypes.TYPE_REFERENCE)
             convertTypeReference(typeRef, tree, source) { n -> n.toSourceElement() }
         } ?: buildImplicitTypeRef()
+        val loopStatus = declarationBuilder.cloneDeclarationStatus(CfirDeclarationStatusImpl.DEFAULT)
 
         val variableName = if (paramName != null) Name.identifier(paramName) else Name.special("<anonymous>")
-        val variable = buildSourceDeclaration(CfirPatternVariableSymbol(callableIdFor(variableName))) { symbol ->
-            buildPatternVariable {
-                source = (paramNode ?: node).toSource()
-                this.symbol = symbol
-                origin = CfirDeclarationOrigin.Source
-                moduleData = baseModuleData
+            val variable = buildSourceDeclaration(CfirPatternVariableSymbol(callableIdFor(variableName))) { symbol ->
+                buildPatternVariable {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    source = (paramNode ?: node).toSource()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
                 isLocal = true
-                status = CfirDeclarationStatusImpl.DEFAULT
+                status = loopStatus
                 returnTypeRef = paramTypeRef
                 pattern = buildBindingPattern {
                     source = (paramNode ?: node).toSource()
                     name = variableName
-                    typeRef = paramTypeRef
+                    typeRef = paramTypeRef.takeUnless { it is org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef }
+                    bindingVariable = declarationBuilder.createPatternBindingVariable(
+                        source = (paramNode ?: node).toSource(),
+                        name = variableName,
+                        status = loopStatus,
+                        isLocal = true,
+                        isVar = false,
+                        returnTypeRef = paramTypeRef,
+                    )
                 }
                 isVar = false
             }
@@ -941,20 +1070,25 @@ class LightTreeRawCfirExpressionBuilder(
 
         val iterable = rangeNode?.let { convertExpression(it) }
             ?: buildErrorExpression(reason = "Missing for-in iterable")
-        val body = bodyNode?.let { toBlock(it) } ?: buildBlock { source = node.toSource() }
+        val target = CfirLoopTarget(labelName = null)
+        val loop = withLoopTarget(target) {
+            val body = bodyNode?.let { toBlock(it) } ?: buildBlock { source = node.toSource() }
 
-        return buildForInExpression {
-            source = node.toSource()
-            this.condition = buildLiteralExpression {
+            buildForInExpression {
                 source = node.toSource()
-                kind = CfirLiteralKind.BOOLEAN
-                value = true
+                this.condition = buildLiteralExpression {
+                    source = node.toSource()
+                    kind = CfirLiteralKind.BOOLEAN
+                    value = true
+                }
+                this.isDoWhile = false
+                this.variable = variable
+                this.iterable = iterable
+                this.body = body
             }
-            this.isDoWhile = false
-            this.variable = variable
-            this.iterable = iterable
-            this.body = body
         }
+        target.bind(loop)
+        return loop
     }
 
     private fun convertWhile(node: LighterASTNode): CfirLoopExpression {
@@ -970,12 +1104,17 @@ class LightTreeRawCfirExpressionBuilder(
 
         val condition = condNode?.let { convertExpression(it) }
             ?: buildErrorExpression(reason = "Missing while condition")
-        return buildLoopExpression {
-            source = node.toSource()
-            this.condition = condition
-            this.body = bodyNode?.let { toBlock(it) } ?: buildBlock { source = node.toSource() }
-            isDoWhile = false
+        val target = CfirLoopTarget(labelName = null)
+        val loop = withLoopTarget(target) {
+            buildLoopExpression {
+                source = node.toSource()
+                this.condition = condition
+                this.body = bodyNode?.let { toBlock(it) } ?: buildBlock { source = node.toSource() }
+                isDoWhile = false
+            }
         }
+        target.bind(loop)
+        return loop
     }
 
     private fun convertDoWhile(node: LighterASTNode): CfirLoopExpression {
@@ -989,24 +1128,29 @@ class LightTreeRawCfirExpressionBuilder(
             }
         }
 
-        val condition = condNode?.let { convertExpression(it) }
-            ?: buildErrorExpression(reason = "Missing do-while condition")
-        return buildLoopExpression {
-            source = node.toSource()
-            this.condition = condition
-            this.body = bodyNode?.let { toBlock(it) } ?: buildBlock { source = node.toSource() }
-            isDoWhile = true
+        val target = CfirLoopTarget(labelName = null)
+        val loop = withLoopTarget(target) {
+            val condition = condNode?.let { convertExpression(it) }
+                ?: buildErrorExpression(reason = "Missing do-while condition")
+            buildLoopExpression {
+                source = node.toSource()
+                this.condition = condition
+                this.body = bodyNode?.let { toBlock(it) } ?: buildBlock { source = node.toSource() }
+                isDoWhile = true
+            }
         }
+        target.bind(loop)
+        return loop
     }
 
     // ===== Jump & Exception =====
 
     private fun convertReturn(node: LighterASTNode): CfirReturnExpression {
         val resultExpr = findFirstExpression(node)
-        return buildReturnExpression {
-            source = node.toSource()
-            result = resultExpr?.let { convertExpression(it) }
-        }
+        return buildReturnExpressionWithCurrentFunctionTarget(
+            source = node.toSource(),
+            result = resultExpr?.let { convertExpression(it) },
+        )
     }
 
     private fun convertThrow(node: LighterASTNode): CfirThrowExpression {
@@ -1019,8 +1163,56 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    private fun convertPerform(node: LighterASTNode): CfirPerformExpression {
+        val exprNode = findFirstExpression(node)
+        val performedExpression = exprNode?.let { convertExpression(it) }
+            ?: buildErrorExpression(node.toSourceElement(), "Missing performed expression")
+        return buildPerformExpression {
+            source = node.toSource()
+            expression = performedExpression
+        }
+    }
+
+    private fun convertResume(node: LighterASTNode): CfirResumeExpression {
+        var payloadNode: LighterASTNode? = null
+        var isThrowing = false
+        var isWith = false
+
+        tree.forEachChildren(node) { child ->
+            when {
+                child.tokenType == CjTokens.THROWING_KEYWORD -> isThrowing = true
+                child.tokenType == CjTokens.IDENTIFIER && child.asText() == "with" -> isWith = true
+                payloadNode == null && isExpressionToken(child.tokenType) -> payloadNode = child
+            }
+        }
+
+        return buildResumeExpression {
+            source = node.toSource()
+            if (isThrowing) {
+                throwingExpression = payloadNode?.let(::convertExpression)
+            } else if (isWith) {
+                withExpression = payloadNode?.let(::convertExpression)
+            }
+        }
+    }
+
+    private fun convertCommandTypePattern(node: LighterASTNode): CfirCommandTypePattern {
+        val bindingName = tree.findChildByType(node, CjTokens.IDENTIFIER)?.asText()?.let(Name::identifier)
+        val isWildcard = tree.findChildByType(node, CjTokens.UNDERLINE) != null
+        val typeRefs = tree.getChildrenByType(node, CjNodeTypes.TYPE_REFERENCE).map { typeRefNode ->
+            convertTypeReference(typeRefNode, tree, source) { it.toSourceElement() }
+        }
+        return buildCommandTypePattern {
+            source = node.toSource()
+            this.bindingName = bindingName
+            this.isWildcard = isWildcard
+            this.typeRefs.addAll(typeRefs)
+        }
+    }
+
     private fun convertTry(node: LighterASTNode): CfirTryExpression {
         var tryBlockNode: LighterASTNode? = null
+        val handleNodes = mutableListOf<LighterASTNode>()
         val catchNodes = mutableListOf<LighterASTNode>()
         var finallyNode: LighterASTNode? = null
 
@@ -1029,12 +1221,26 @@ class LightTreeRawCfirExpressionBuilder(
                 CjNodeTypes.BLOCK -> {
                     if (tryBlockNode == null) tryBlockNode = child
                 }
+                CjNodeTypes.HANDLE -> handleNodes.add(child)
                 CjNodeTypes.CATCH -> catchNodes.add(child)
                 CjNodeTypes.FINALLY -> finallyNode = child
             }
         }
 
         val tryBlock = tryBlockNode?.let { convertBlock(it) } ?: buildBlock { source = node.toSource() }
+        val handlers = handleNodes.map { handleNode ->
+            val commandPatternNode = tree.findChildByType(handleNode, CjNodeTypes.COMMAND_TYPE_PATTERN)
+            val bodyNode = tree.findChildByType(handleNode, CjNodeTypes.BLOCK)
+            buildHandleClause {
+                source = handleNode.toSource()
+                commandPattern = commandPatternNode?.let(::convertCommandTypePattern) ?: buildCommandTypePattern {
+                    source = handleNode.toSource()
+                    bindingName = null
+                    isWildcard = false
+                }
+                body = bodyNode?.let(::convertBlock) ?: buildBlock { source = handleNode.toSource() }
+            }
+        }
 
         val catches = catchNodes.map { catchNode ->
             var catchParamNode: LighterASTNode? = null
@@ -1053,12 +1259,13 @@ class LightTreeRawCfirExpressionBuilder(
             val paramTypeRef = buildImplicitTypeRef()
 
             val catchParamName = if (paramName != null) Name.identifier(paramName) else Name.special("<error>")
-            val parameter = buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(catchParamName))) { symbol ->
-                buildValueParameter {
-                    source = (catchParamNode ?: catchNode).toSource()
-                    this.symbol = symbol
-                    origin = CfirDeclarationOrigin.Source
-                    moduleData = baseModuleData
+                val parameter = buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(catchParamName))) { symbol ->
+                    buildValueParameter {
+                        resolvePhase = CfirResolvePhase.RAW_CFIR
+                        source = (catchParamNode ?: catchNode).toSource()
+                        this.symbol = symbol
+                        origin = CfirDeclarationOrigin.Source
+                        moduleData = baseModuleData
                     attributes = CfirDeclarationAttributes.EMPTY
                     isLocal = false
                     isNamed = false
@@ -1083,6 +1290,7 @@ class LightTreeRawCfirExpressionBuilder(
         return buildTryExpression {
             source = node.toSource()
             this.tryBlock = tryBlock
+            this.handlers.addAll(handlers)
             this.catches.addAll(catches)
             this.finallyBlock = finallyBlock
         }
@@ -1110,7 +1318,10 @@ class LightTreeRawCfirExpressionBuilder(
             }
         }
 
-        val body = bodyNode?.let { convertBlock(it) }
+        val functionTarget = CfirFunctionTarget(labelName = null, isLambda = true)
+        val body = withFunctionTarget(functionTarget) {
+            bodyNode?.let { convertBlock(it) }
+        }
         val hasExplicitParameterList = valueParams.isNotEmpty()
 
         val anonymousFunction = buildSourceDeclaration(CfirAnonymousFunctionSymbol()) { symbol ->
@@ -1130,7 +1341,7 @@ class LightTreeRawCfirExpressionBuilder(
                 isLambda = true
                 typeRef = buildImplicitTypeRef()
             }
-        }
+        }.also { bindFunctionTarget(functionTarget, it) }
         return buildAnonymousFunctionExpression {
             source = node.toSource()
             this.anonymousFunction = anonymousFunction
@@ -1339,6 +1550,7 @@ class LightTreeRawCfirExpressionBuilder(
             CjNodeTypes.IF, CjNodeTypes.MATCH,
             CjNodeTypes.FOR, CjNodeTypes.WHILE, CjNodeTypes.DO_WHILE,
             CjNodeTypes.RETURN, CjNodeTypes.BREAK, CjNodeTypes.CONTINUE, CjNodeTypes.THROW,
+            CjNodeTypes.PERFORM, CjNodeTypes.RESUME,
             CjNodeTypes.TRY,
             CjNodeTypes.LAMBDA_EXPRESSION, CjNodeTypes.PARENTHESIZED,
             CjNodeTypes.ARRAY_ACCESS_EXPRESSION,
@@ -1369,7 +1581,7 @@ class LightTreeRawCfirExpressionBuilder(
         /** 判断 tokenType 是否为模式类型 */
         fun isPatternToken(tt: IElementType): Boolean = when (tt) {
             CjNodeTypes.BINDING_PATTERN, CjNodeTypes.TYPE_PATTERN,
-            CjNodeTypes.TUPLE_PATTERN, CjNodeTypes.ENUM_PATTERN,
+            CjNodeTypes.VAR_OR_ENUM_PATTERN, CjNodeTypes.TUPLE_PATTERN, CjNodeTypes.ENUM_PATTERN,
             CjNodeTypes.CONSTANT_PATTERN, CjNodeTypes.WILDCARD_PATTERN,
             -> true
             else -> false

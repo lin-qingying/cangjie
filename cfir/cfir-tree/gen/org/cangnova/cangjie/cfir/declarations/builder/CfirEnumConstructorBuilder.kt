@@ -35,6 +35,7 @@ class CfirEnumConstructorBuilder {
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
+    val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
     lateinit var name: Name
 
     @OptIn(CfirImplementationDetail::class)
@@ -52,6 +53,7 @@ class CfirEnumConstructorBuilder {
             status,
             typeParameters,
             returnTypeRef,
+            valueParameters,
             name,
         )
     }
@@ -83,6 +85,7 @@ inline fun buildEnumConstructorCopy(original: CfirEnumConstructor, init: CfirEnu
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.returnTypeRef = original.returnTypeRef
+    copyBuilder.valueParameters.addAll(original.valueParameters)
     copyBuilder.name = original.name
     return copyBuilder.apply(init).build()
 }

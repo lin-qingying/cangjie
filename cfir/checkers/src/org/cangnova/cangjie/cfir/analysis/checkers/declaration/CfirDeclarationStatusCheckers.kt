@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
@@ -41,8 +42,8 @@ object CfirMutModifierApplicabilityChecker : CfirMemberDeclarationChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirMemberDeclaration) {
         if (!declaration.status.isMut) return
-        if (declaration is CfirProperty) return
-        if (declaration is CfirNamedFunction && context.isStructMemberFunction(declaration)) return
+        val function = declaration as? CfirNamedFunction ?: return
+        if (context.isStructMemberFunction(function)) return
 
         reporter.reportOn(
             source = declaration.source,
@@ -65,9 +66,12 @@ private fun CheckerContext.isStructMemberFunction(function: CfirNamedFunction): 
 }
 
 private fun CfirMemberDeclaration.declarationNameOrNull(): Name? = when (this) {
+    is CfirTypeParameter -> name
+
     is CfirNamedFunction -> name
     is CfirProperty -> name
     is CfirFieldVariable -> name
+    is CfirPatternBindingVariable -> name
     is CfirClass -> name
     is CfirInterface -> name
     is CfirStruct -> name
@@ -75,7 +79,6 @@ private fun CfirMemberDeclaration.declarationNameOrNull(): Name? = when (this) {
     is CfirEnumConstructor -> name
     is CfirMacroDeclaration -> name
     is CfirTypeAlias -> name
-    is CfirTypeParameter -> name
     is CfirValueParameter -> name
     else -> null
 }

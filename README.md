@@ -106,7 +106,7 @@
 |------|------|------|
 | `:compiler:chir` | CHIR 定义、CFIR→CHIR 转换、数据流分析、验证 | ✅ 已实现 |
 | `:compiler:codegen` | CHIR → LLVM IR → 机器码、LLVM 后端集成 | ✅ 已实现 |
-| `:compiler:cli` | CLI 入口、编译管线协调 | ✅ 已实现 |
+| `:compiler:frontend` | 前端基础设施与编译管线协调 | ✅ 已实现 |
 
 ### 分析 API
 
@@ -156,6 +156,31 @@
 ./gradlew check                  # 运行所有检查和测试
 ```
 
+## 发布
+
+公开工件通过根级聚合任务发布：
+
+```bash
+./gradlew publishPublicArtifacts   # 发布到配置的 Maven 仓库
+./gradlew installPublicArtifacts   # 安装到 Maven Local
+```
+
+仓库支持通过 Gradle 属性注入发布目标与凭据：
+
+```bash
+./gradlew publishPublicArtifacts \
+  -Pcangjie.build.deploy-url=https://maven.pkg.github.com/<OWNER>/<REPO> \
+  -Pcangjie.build.deploy-username=<GITHUB_USERNAME> \
+  -Pcangjie.build.deploy-password=<GITHUB_TOKEN>
+```
+
+仓库已内置 GitHub Packages workflow：
+
+- `.github/workflows/publish-github-packages.yml`
+- 支持 `workflow_dispatch`
+- 支持推送 `v*` tag 时自动发布
+- 手动触发时可显式输入 `version`
+
 ## 测试约定
 
 全项目测试实现与组织规范见：`TESTING_CONVENTIONS.md`。
@@ -196,6 +221,7 @@
 ## 设计与对照文档
 
 - 四套类型推断 / 约束系统对照：`docs/type-inference-four-systems-comparison.md`
+- 当前 CFIR 语义分析相对官方实现程度评估：`docs/cfir-semantic-analysis-maturity-vs-official-2026-04-08.md`
 
 ## 目录结构
 
@@ -224,9 +250,13 @@ cangjie/
 │   ├── config/
 │   ├── phaser/
 │   ├── arguments/
-│   ├── cli/
+│   ├── frontend/
+│   ├── frontend-arguments-generator/
 │   ├── chir/                  # （可选扩展）
 │   └── codegen/               # （可选扩展）
+├── prepare/                   # 发布门面工件
+│   ├── frontend/
+│   └── frontend-embeddable/
 ├── macro/                     # 宏展开模块
 │   ├── macro-common/          # 接口、数据模型、协议编解码
 │   ├── macro-process/         # 外部进程执行器

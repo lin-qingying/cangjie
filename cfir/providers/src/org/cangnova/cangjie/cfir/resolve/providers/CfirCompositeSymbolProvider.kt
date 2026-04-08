@@ -83,16 +83,18 @@ class CfirCompositeSymbolProvider(
     }
 
     override fun getContainingFile(symbol: CfirSymbol<*>): CfirFile? {
+        val normalizedSymbol = symbol.unwrapForDeclarationMetadataLookup()
         for (provider in providers) {
-            val file = provider.getContainingFile(symbol)
+            val file = provider.getContainingFile(normalizedSymbol)
             if (file != null) return file
         }
         return null
     }
 
     override fun getContainingClassId(symbol: CfirCallableSymbol<*>): ClassId? {
+        val normalizedSymbol = symbol.unwrapCallableForDeclarationMetadataLookup()
         for (provider in providers) {
-            val classId = provider.getContainingClassId(symbol)
+            val classId = provider.getContainingClassId(normalizedSymbol)
             if (classId != null) return classId
         }
         return null

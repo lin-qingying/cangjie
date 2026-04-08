@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
@@ -109,6 +110,7 @@ private fun CfirCallableDeclaration.returnTypeRefOrNull(): CfirTypeRef? = when (
     is CfirFunction -> returnTypeRef
     is CfirProperty -> returnTypeRef
     is CfirFieldVariable -> returnTypeRef
+    is CfirPatternBindingVariable -> returnTypeRef
     is CfirPatternVariable -> returnTypeRef
     is CfirValueParameter -> returnTypeRef
     else -> null

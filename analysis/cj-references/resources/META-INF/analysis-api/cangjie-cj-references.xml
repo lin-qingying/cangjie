@@ -1,8 +1,30 @@
 <idea-plugin>
   <extensions defaultExtensionNs="com.intellij">
+    <applicationService
+        serviceInterface="org.cangnova.cangjie.idea.references.CangJieReferenceMutateService"
+        serviceImplementation="org.cangnova.cangjie.idea.references.CangJieReferenceMutateServiceImpl"
+    />
+    <lang.findUsagesProvider
+        language="CangJie"
+        implementationClass="org.cangnova.cangjie.idea.search.CangJieFindUsagesProvider"
+    />
+    <referencesSearch implementation="org.cangnova.cangjie.idea.search.CangJieReferencesSearchExecutor" />
     <projectService
         serviceInterface="org.cangnova.cangjie.psi.CangJieReferenceProvidersService"
-        serviceImplementation="org.cangnova.cangjie.analysis.references.CaReferenceProvidersService"
+        serviceImplementation="org.cangnova.cangjie.analysis.references.CangJieReferenceProvidersServiceImpl"
     />
+  </extensions>
+
+  <extensions defaultExtensionNs="org.cangnova.cangjie">
+    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaSimpleNameReference$Provider" />
+    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaBasicTypeReference$Provider" />
+    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaArrayAccessReference$Provider" />
+    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaCollectionLiteralReference$Provider" />
+    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaConstructorDelegationReference$Provider" />
+    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaInvokeFunctionReference$Provider" />
+    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaDefaultAnnotationArgumentReference$Provider" />
+    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaNamedArgumentReference$Provider" />
+    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaSuperTypeCallReference$Provider" />
+    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaRangeReference$Provider" />
   </extensions>
 </idea-plugin>

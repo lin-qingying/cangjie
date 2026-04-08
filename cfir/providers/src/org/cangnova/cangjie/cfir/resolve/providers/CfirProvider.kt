@@ -33,7 +33,13 @@ abstract class CfirProvider : CfirSessionComponent {
 
     open fun getEnumConstructorOwnerClassId(symbol: CfirEnumConstructorSymbol): ClassId? = null
 
-    open fun getContainingFile(symbol: CfirSymbol<*>): CfirFile? = null
+    /**
+     * provider 级的声明归属查询必须与 symbolProvider 保持一致，
+     * 这样 resolve/checker/cone 映射无论走哪条链路，都拿到同一份 owner/file 元数据。
+     */
+    open fun getContainingFile(symbol: CfirSymbol<*>): CfirFile? =
+        symbolProvider.getContainingFile(symbol.unwrapForDeclarationMetadataLookup())
 
-    open fun getContainingClassId(symbol: CfirCallableSymbol<*>): ClassId? = null
+    open fun getContainingClassId(symbol: CfirCallableSymbol<*>): ClassId? =
+        symbolProvider.getContainingClassId(symbol.unwrapCallableForDeclarationMetadataLookup())
 }
