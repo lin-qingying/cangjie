@@ -22,8 +22,7 @@ class CfirResolvedNamedReferenceImpl @CfirImplementationDetail constructor(
     override val resolvedSymbol: CfirSymbol<*>,
 ) : CfirPureAbstractElement(), CfirResolvedNamedReference {
 
-    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
-    }
+    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirResolvedNamedReferenceImpl {
         return this

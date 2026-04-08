@@ -8,9 +8,14 @@ package org.cangnova.cangjie.cfir.tree.generator.util
 import org.cangnova.cangjie.cfir.tree.generator.BASE_PACKAGE
 import org.cangnova.cangjie.cfir.tree.generator.model.Field
 import org.cangnova.cangjie.cfir.tree.generator.model.ListField
+import org.cangnova.cangjie.descriptors.Modality
+import org.cangnova.cangjie.generators.tree.ImplementationKind
 import org.cangnova.cangjie.generators.tree.StandardTypes
 import org.cangnova.cangjie.generators.tree.TypeKind
 import org.cangnova.cangjie.generators.tree.TypeRefWithNullability
+import org.cangnova.cangjie.generators.tree.printer.FunctionParameter
+import org.cangnova.cangjie.generators.tree.printer.ImportCollectingPrinter
+import org.cangnova.cangjie.generators.tree.printer.printFunctionDeclaration
 import org.cangnova.cangjie.generators.tree.withArgs
 import org.cangnova.cangjie.generators.util.GeneratorsFileUtil
 import org.cangnova.cangjie.utils.SmartPrinter
@@ -25,8 +30,32 @@ fun Field.getMutableType(forBuilder: Boolean = false): TypeRefWithNullability = 
     is ListField -> when {
         forBuilder -> StandardTypes.mutableList
         !isMutable -> StandardTypes.list
-        isMutableOrEmptyList -> type(BASE_PACKAGE, "MutableOrEmptyList",  kind = TypeKind.Class)
+        isMutableOrEmptyList -> type(BASE_PACKAGE, "MutableOrEmptyList", kind = TypeKind.Class, exactPackage = true)
         else -> StandardTypes.mutableList
     }.withArgs(baseType).copy(nullable)
     else -> typeRef
+}
+
+
+fun ImportCollectingPrinter.replaceFunctionDeclaration(
+    field: Field,
+    override: Boolean,
+    implementationKind: ImplementationKind,
+    overriddenType: TypeRefWithNullability? = null,
+    forceNullable: Boolean = false,
+) {
+    val capName = field.name.replaceFirstChar(Char::uppercaseChar)
+    val type = overriddenType ?: field.typeRef
+    val typeWithNullable = if (forceNullable) type.copy(nullable = true) else type
+
+    printFunctionDeclaration(
+        name = "replace$capName",
+        parameters = listOf(FunctionParameter("new$capName", typeWithNullable)),
+        returnType = StandardTypes.unit,
+        modality = Modality.ABSTRACT.takeIf {
+            implementationKind == ImplementationKind.AbstractClass || implementationKind == ImplementationKind.SealedClass
+        },
+        override = override,
+        optInAnnotation = field.replaceOptInAnnotation,
+    )
 }

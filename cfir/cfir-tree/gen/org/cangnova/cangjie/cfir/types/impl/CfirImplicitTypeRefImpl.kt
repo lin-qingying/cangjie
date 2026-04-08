@@ -8,14 +8,17 @@
 package org.cangnova.cangjie.cfir.types.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirImplicitTypeRefImpl @CfirImplementationDetail constructor(
-    override var annotations: List<CfirAnnotation>,
+    override var annotations: MutableOrEmptyList<CfirAnnotation>,
 ) : CfirImplicitTypeRef() {
     override val source: CjSourceElement?
         get() = null
@@ -24,19 +27,17 @@ class CfirImplicitTypeRefImpl @CfirImplementationDetail constructor(
         annotations.forEach { it.accept(visitor, data) }
     }
 
-    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-     {
-        this.annotations = newAnnotations
-    }
-
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirImplicitTypeRef
-     {
-        this.annotations = annotations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnnotation }
-        return this
-    }
-
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirImplicitTypeRefImpl {
         transformAnnotations(transformer, data)
         return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirImplicitTypeRefImpl {
+        annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
+        annotations = newAnnotations.toMutableOrEmpty()
     }
 }

@@ -13,15 +13,16 @@ import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
-import org.cangnova.cangjie.cfir.expressions.CfirJumpExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLoopJump
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
-import org.cangnova.cangjie.cfir.expressions.CfirPropertyAccess
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccess
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirRangeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
+import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
@@ -29,8 +30,9 @@ import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
 typealias CfirBasicExpressionChecker = CfirExpressionChecker<CfirStatement>
 typealias CfirLiteralExpressionChecker = CfirExpressionChecker<CfirLiteralExpression>
 typealias CfirFunctionCallChecker = CfirExpressionChecker<CfirFunctionCall>
-typealias CfirPropertyAccessChecker = CfirExpressionChecker<CfirPropertyAccess>
-typealias CfirQualifiedAccessChecker = CfirExpressionChecker<CfirQualifiedAccess>
+typealias CfirNamedAccessChecker = CfirExpressionChecker<CfirNamedAccessExpression>
+typealias CfirQualifiedAccessChecker = CfirExpressionChecker<CfirQualifiedAccessExpression>
+typealias CfirSuperReceiverExpressionChecker = CfirExpressionChecker<CfirSuperReceiverExpression>
 typealias CfirAssignmentChecker = CfirExpressionChecker<CfirAssignment>
 typealias CfirBinaryOpChecker = CfirExpressionChecker<CfirBinaryOp>
 typealias CfirComparisonExpressionChecker = CfirExpressionChecker<CfirComparisonExpression>
@@ -40,7 +42,7 @@ typealias CfirMatchExpressionChecker = CfirExpressionChecker<CfirMatchExpression
 typealias CfirTryExpressionChecker = CfirExpressionChecker<CfirTryExpression>
 typealias CfirThrowExpressionChecker = CfirExpressionChecker<CfirThrowExpression>
 typealias CfirReturnExpressionChecker = CfirExpressionChecker<CfirReturnExpression>
-typealias CfirJumpExpressionChecker = CfirExpressionChecker<CfirJumpExpression>
+typealias CfirLoopJumpChecker = CfirExpressionChecker<CfirLoopJump>
 typealias CfirRangeExpressionChecker = CfirExpressionChecker<CfirRangeExpression>
 typealias CfirSubscriptExpressionChecker = CfirExpressionChecker<CfirSubscriptExpression>
 typealias CfirErrorExpressionChecker = CfirExpressionChecker<CfirErrorExpression>

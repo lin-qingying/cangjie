@@ -20,7 +20,7 @@ val intellijVersion = property("intellijSdkVersion") as String
 dependencies {
     api(project(":cfir:cfir-tree"))
     api(project(":cfir:raw-cfir:raw-cfir-common"))
-    api(project(":cfir:symbols"))
+    api(project(":cfir:providers"))
     api(project(":cfir:semantics"))
     api(project(":psi"))
     api(project(":common:diagnostics"))
@@ -31,7 +31,7 @@ dependencies {
     testFixturesApi(project(":cfir:cfir-tree"))
     testFixturesApi(project(":cfir:raw-cfir:raw-cfir-common"))
     testFixturesApi(project(":cfir:raw-cfir:psi2cfir"))
-    testFixturesApi(project(":cfir:symbols"))
+    testFixturesApi(project(":cfir:providers"))
     testFixturesApi(project(":psi"))
     testFixturesApi(testFixtures(project(":cfir:raw-cfir:psi2cfir")))
     testFixturesApi(testFixtures(project(":tests:test-infrastructure")))
@@ -47,7 +47,7 @@ dependencies {
     testImplementation(testFixtures(project(":cfir:raw-cfir:psi2cfir")))
     testImplementation(testFixtures(project(":cfir:raw-cfir:light-tree2cfir")))
     testImplementation(project(":psi"))
-    testImplementation(project(":cfir:symbols"))
+    testImplementation(project(":cfir:providers"))
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 
     testRuntimeOnly(libs.junit.vintage.engine)

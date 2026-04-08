@@ -1,7 +1,7 @@
 FILE: interfaceDeclaration.cj
     internal? interface Printable {
-        internal? func print(): R|Unit|
+        public? func print(): R|Unit|
     }
     internal? interface Comparable<T> {
-        internal? func compareTo(other: R|T|): R|Int64|
+        public? func compareTo(other: R|T|): R|Int64|
     }

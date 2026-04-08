@@ -1,0 +1,50 @@
+# analysis-api-standalone
+
+## org/cangnova/cangjie/analysis/api/standalone/platform/CaStandaloneAnalysisPermissionChecker.kt
+package org.cangnova.cangjie.analysis.api.standalone.platform
+public class CaStandaloneAnalysisPermissionChecker : CaAnalysisPermissionChecker
+CaStandaloneAnalysisPermissionChecker.public override fun isAnalysisAllowed(): Boolean
+CaStandaloneAnalysisPermissionChecker.public override fun getRejectionReason(): String
+## org/cangnova/cangjie/analysis/api/standalone/platform/CaStandalonePlatformServices.kt
+package org.cangnova.cangjie.analysis.api.standalone.platform
+public class CaStandaloneRestrictedAnalysisService : CaRestrictedAnalysisService
+CaStandaloneRestrictedAnalysisService.public override val isAnalysisRestricted: Boolean
+CaStandaloneRestrictedAnalysisService.public override val isRestrictedAnalysisAllowed: Boolean
+CaStandaloneRestrictedAnalysisService.public override fun rejectRestrictedAnalysis(): Nothing
+public class CaStandalonePlatformSettings : CaPlatformSettings
+CaStandalonePlatformSettings.public override val allowUseSiteLibraryModuleAnalysis: Boolean
+public object CaStandaloneAnalysisApiServiceRegistrar
+CaStandaloneAnalysisApiServiceRegistrar.public fun register(application: MockApplication, project: MockProject)
+## org/cangnova/cangjie/analysis/api/standalone/projectStructure/CaStandaloneModules.kt
+package org.cangnova.cangjie.analysis.api.standalone.projectStructure
+public class CaStandaloneSourceModule( override val name: String, override val languageVersionSettings: LanguageVersionSettings, project: Project, override val psiRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, psiRoots), CaSourceModule
+public class CaStandaloneLibraryModule( override val libraryName: String, project: Project, override val binaryRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, binaryRoots), CaLibraryModule
+public class CaStandaloneLibrarySourceModule( override val libraryName: String, override val binaryLibraryModule: CaLibraryModule, project: Project, override val sourceRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, sourceRoots), CaLibrarySourceModule
+public class CaStandaloneLibraryFallbackDependenciesModule( override val dependencyOwnerName: String, project: Project, scopeRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, scopeRoots), CaLibraryFallbackDependenciesModule
+public class CaStandaloneBuiltinsModule( project: Project, scopeRoots: List<PsiFileSystemItem> = emptyList(), override val builtinsName: String = "<builtins>", ) : CaStandaloneModule(project, scopeRoots), CaBuiltinsModule
+CaStandaloneBuiltinsModule.public override val contentScope: GlobalSearchScope
+public class CaStandaloneDanglingFileModule( override val name: String, override val languageVersionSettings: LanguageVersionSettings, override val contextModule: CaModule?, project: Project, override val psiRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, psiRoots), CaDanglingFileModule
+public class CaStandaloneNotUnderContentRootModule( override val name: String, override val originalModule: CaModule?, project: Project, scopeRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, scopeRoots), CaNotUnderContentRootModule
+## org/cangnova/cangjie/analysis/api/standalone/projectStructure/CaStandaloneProjectStructure.kt
+package org.cangnova.cangjie.analysis.api.standalone.projectStructure
+public class CaStandaloneProjectStructure( override val allModules: List<CaModule>, ) : CaProjectStructureProvider, CaModuleProvider, CaContentScopeRefiner, CaModificationTracker, CaSessionInvalidationService
+CaStandaloneProjectStructure.public override val snapshot: CaProjectStructureSnapshot
+CaStandaloneProjectStructure.public override val modificationCount: Long
+CaStandaloneProjectStructure.public override fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule
+CaStandaloneProjectStructure.public override fun getRefinedContentScope(module: CaModule, baseContentScope: GlobalSearchScope): GlobalSearchScope
+CaStandaloneProjectStructure.public override fun getModuleByStableName(stableModuleName: String): CaModule?
+CaStandaloneProjectStructure.public override fun getModuleModificationCount(module: CaModule): Long
+CaStandaloneProjectStructure.public override fun invalidate(modules: Set<CaModule>)
+## org/cangnova/cangjie/analysis/api/standalone/session/CaStandaloneSessionBuilder.kt
+package org.cangnova.cangjie.analysis.api.standalone.session
+public class CaStandaloneAnalysisContext( val project: Project, val projectStructure: CaStandaloneProjectStructure, )
+CaStandaloneAnalysisContext.public val snapshot: CaProjectStructureSnapshot
+CaStandaloneAnalysisContext.public val allModules: List<CaModule>
+CaStandaloneAnalysisContext.public fun <R> analyze(useSiteModule: CaModule, action: CaSession.() -> R): R
+CaStandaloneAnalysisContext.public fun <R> analyze( useSiteElement: CjElement, preferredUseSiteModule: CaModule? = null, action: CaSession.() -> R, ): R
+CaStandaloneAnalysisContext.public fun <R> analyzeFiles( files: Collection<CjFile>, preferredUseSiteModule: CaModule? = null, action: CaSession.(CjFile) -> R, ): List<R>
+CaStandaloneAnalysisContext.public fun <R> analyzeElements( elements: Collection<CjElement>, preferredUseSiteModule: CaModule? = null, action: CaSession.(CjElement) -> R, ): List<R>
+CaStandaloneAnalysisContext.public fun getUseSiteModule( element: PsiElement, preferredUseSiteModule: CaModule? = null, ): CaModule
+CaStandaloneAnalysisContext.public fun findModuleByStableName(stableModuleName: String): CaModule?
+CaStandaloneAnalysisContext.public fun invalidate(vararg modules: CaModule)
+CaStandaloneAnalysisContext.public fun invalidateAll()

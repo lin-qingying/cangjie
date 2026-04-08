@@ -2,7 +2,7 @@ FILE: specialExpressionsPreserve.cj
     internal? func specialExpressionsPreserve(lock: R|Int64|): R|Unit| {
         SYNCHRONIZED {
             monitor:
-                QUALIFIED_ACCESS(lock)
+                NAMED_ACCESS(lock)
             body:
                 local? let a: <implicit> = ...
                     initializer:

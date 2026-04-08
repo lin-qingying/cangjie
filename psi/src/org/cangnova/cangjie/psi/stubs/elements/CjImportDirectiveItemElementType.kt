@@ -23,6 +23,7 @@
  */
 package org.cangnova.cangjie.psi.stubs.elements
 
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjImportDirective
 import org.cangnova.cangjie.psi.CjImportItem
 import org.cangnova.cangjie.psi.stubs.CangJieImportDirectiveStub
@@ -54,12 +55,19 @@ class CjImportDirectiveElementType(debugName: String) :
 
         return CangJieImportDirectiveStubImpl(
             parentStub!!,
+            psi.containingCjFile.packageFqName,
             importItems
         )
     }
 
     @Throws(IOException::class)
     override fun serialize(stub: CangJieImportDirectiveStub, dataStream: StubOutputStream) {
+        val packageFqName = stub.getPackageFqName()?.asString()
+        dataStream.writeBoolean(packageFqName != null)
+        if (packageFqName != null) {
+            dataStream.writeName(packageFqName)
+        }
+
         val items = stub.getImportItems()
         dataStream.writeInt(items.size)
 
@@ -88,6 +96,11 @@ class CjImportDirectiveElementType(debugName: String) :
 
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieImportDirectiveStub {
+        val packageFqName = if (dataStream.readBoolean()) {
+            dataStream.readNameString()?.let(::FqName)
+        } else {
+            null
+        }
         val itemCount = dataStream.readInt()
         val items = mutableListOf<CangJieImportDirectiveStub.ImportItemInfo>()
 
@@ -113,6 +126,7 @@ class CjImportDirectiveElementType(debugName: String) :
 
         return CangJieImportDirectiveStubImpl(
             parentStub,
+            packageFqName,
             items
         )
     }

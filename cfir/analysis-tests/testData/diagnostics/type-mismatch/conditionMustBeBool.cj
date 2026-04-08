@@ -1,4 +1,4 @@
-// RUN_PIPELINE_TILL: FRONTEND
+
 func badIfCondition(): Int64 {
     if (<!TYPE_MISMATCH!>1<!>) {
         return 1

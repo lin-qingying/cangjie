@@ -326,7 +326,16 @@ object StandardNames {
     val EXCEPTION = Name.identifier("Exception")
 
     @JvmField
+    val ERROR = Name.identifier("Error")
+
+    @JvmField
     val RESOURCE = Name.identifier("Resource")
+
+    @JvmField
+    val COMMAND = Name.identifier("Command")
+
+    @JvmField
+    val RESUMPTION = Name.identifier("Resumption")
 
     @JvmField
     val TOKENS = Name.identifier("Tokens")
@@ -439,7 +448,19 @@ object StandardNames {
         val exceptionFqName: FqName = core.child(EXCEPTION)
 
         @JvmField
+        val errorFqName: FqName = core.child(ERROR)
+
+        @JvmField
         val resourceFqName: FqName = core.child(RESOURCE)
+
+        @JvmField
+        val effect: FqName = FqName.fromSegments(listOf("stdx", "effect"))
+
+        @JvmField
+        val commandFqName: FqName = effect.child(COMMAND)
+
+        @JvmField
+        val resumptionFqName: FqName = effect.child(RESUMPTION)
 
         @JvmField
         val objectFqName: FqName = core.child(OBJECT)

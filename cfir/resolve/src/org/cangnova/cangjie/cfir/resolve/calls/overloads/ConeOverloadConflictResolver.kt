@@ -429,6 +429,7 @@ class ConeOverloadConflictResolver(
             origin = call,
             typeParameters = when (declaration) {
                 is CfirFieldVariable -> declaration.typeParameters.toTypeParameterMarkers()
+                is CfirPatternBindingVariable -> declaration.typeParameters.toTypeParameterMarkers()
                 is org.cangnova.cangjie.cfir.declarations.CfirPatternVariable -> declaration.typeParameters.toTypeParameterMarkers()
                 else -> emptyList()
             },
@@ -486,6 +487,7 @@ class ConeOverloadConflictResolver(
         return when (called) {
             is CfirFunction -> called.valueParameters
             is CfirConstructor -> called.valueParameters
+            is CfirEnumConstructor -> called.valueParameters
             else -> emptyList()
         }
     }

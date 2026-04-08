@@ -33,14 +33,14 @@
   :compiler:config
   :compiler:phaser
   :compiler:arguments
-  :compiler:cli-arguments-generator
+  :compiler:frontend-arguments-generator
   :dependencies:intellij-core
   :generators
   :flatbuffers-gen
 
 源码与入口
   :compiler                  (聚合)
-  :compiler:cli
+  :compiler:frontend
   :psi
 
 CFIR 数据模型
@@ -104,7 +104,7 @@ Analysis API
 ### 2. 源码表示与编译器入口层
 
 - `:psi` 负责词法、语法、PSI。
-- `:compiler:cli` 提供 CLI 入口、编译管线协调。
+- `:compiler:frontend` 提供前端基础设施、编译管线协调。
 
 ### 3. CFIR 数据模型层
 
@@ -149,7 +149,7 @@ Analysis API
 | `:compiler:config` | 实装模块 | 编译配置模型、ContentRoots、环境设置 | 无 |
 | `:compiler:phaser` | 实装模块 | 编译阶段管理框架（CompilerPhase、PhaseSet、PhaserState） | 无 |
 | `:compiler:arguments` | 实装模块 | 编译器命令行参数定义 | 无 |
-| `:compiler:cli-arguments-generator` | 实装模块 | CLI 参数代码生成器 | 无 |
+| `:compiler:frontend-arguments-generator` | 实装模块 | 前端参数代码生成器 | 无 |
 | `:dependencies:intellij-core` | 实装模块 | IntelliJ Platform 依赖聚合 | 无 |
 | `:generators` | 实装模块 | 构建时代码生成工具支持 | `:util`, `:common` |
 | `:flatbuffers-gen` | 实装模块 | FlatBuffers 代码生成与 `flatc` 管理 | 无 |
@@ -159,7 +159,7 @@ Analysis API
 | Gradle 路径 | 类型 | 当前职责 | 直接项目依赖 |
 |---|---|---|---|
 | `:compiler` | 聚合模块 | `compiler` 命名空间父模块 | 无 |
-| `:compiler:cli` | 实装模块 | CLI 入口、编译管线协调、测试环境初始化 | `:compiler:config` |
+| `:compiler:frontend` | 实装模块 | 前端基础设施、编译管线协调、测试环境初始化 | `:compiler:config` |
 | `:psi` | 实装模块 | JFlex Lexer、Parser、PSI 节点与相关基础设施 | `:util`, `:common` |
 
 ### CFIR 核心与生成
@@ -218,7 +218,7 @@ Analysis API
 | Gradle 路径 | 类型 | 当前职责 | 直接项目依赖 |
 |---|---|---|---|
 | `:tests` | 聚合模块 | `tests` 命名空间父模块 | 无 |
-| `:tests:test-infrastructure` | 实装模块 | 共享测试基础设施，采用 `testFixtures` 组织 | `:compiler:cli`, `:psi` |
+| `:tests:test-infrastructure` | 实装模块 | 共享测试基础设施，采用 `testFixtures` 组织 | `:compiler:frontend`, `:psi` |
 | `:cfir:analysis-tests` | 实装模块 | CFIR 分析测试套件 | `:cfir:resolve`, `:cfir:checkers`, `:tests:test-infrastructure` |
 
 ---

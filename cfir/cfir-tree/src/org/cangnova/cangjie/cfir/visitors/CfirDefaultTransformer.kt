@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.visitors
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.CfirTargetElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.*
@@ -119,6 +120,10 @@ open class CfirDefaultTransformer<in D> : CfirTransformer<D>() {
         return transformCallableDeclaration(variable, data) as CfirFieldVariable
     }
 
+    override fun transformPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable, data: D): CfirPatternBindingVariable {
+        return transformCallableDeclaration(patternBindingVariable, data) as CfirPatternBindingVariable
+    }
+
     override fun transformPatternVariable(patternVariable: CfirPatternVariable, data: D): CfirPatternVariable {
         return transformCallableDeclaration(patternVariable, data) as CfirPatternVariable
     }
@@ -163,12 +168,12 @@ open class CfirDefaultTransformer<in D> : CfirTransformer<D>() {
         return transformExpression(functionCall, data)
     }
 
-    override fun transformPropertyAccess(propertyAccess: CfirPropertyAccess, data: D): CfirExpression {
-        return transformExpression(propertyAccess, data)
+    override fun transformNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression, data: D): CfirExpression {
+        return transformQualifiedAccessExpression(namedAccessExpression, data)
     }
 
-    override fun transformQualifiedAccess(qualifiedAccess: CfirQualifiedAccess, data: D): CfirExpression {
-        return transformExpression(qualifiedAccess, data)
+    override fun transformQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression, data: D): CfirExpression {
+        return transformExpression(qualifiedAccessExpression, data)
     }
 
     override fun transformAssignment(assignment: CfirAssignment, data: D): CfirExpression {
@@ -223,8 +228,20 @@ open class CfirDefaultTransformer<in D> : CfirTransformer<D>() {
         return transformExpression(returnExpression, data)
     }
 
-    override fun transformJumpExpression(jumpExpression: CfirJumpExpression, data: D): CfirExpression {
-        return transformExpression(jumpExpression, data)
+    override fun <E : CfirTargetElement> transformJump(jump: CfirJump<E>, data: D): CfirExpression {
+        return transformExpression(jump, data)
+    }
+
+    override fun transformLoopJump(loopJump: CfirLoopJump, data: D): CfirExpression {
+        return transformJump(loopJump, data)
+    }
+
+    override fun transformBreakExpression(breakExpression: CfirBreakExpression, data: D): CfirExpression {
+        return transformLoopJump(breakExpression, data)
+    }
+
+    override fun transformContinueExpression(continueExpression: CfirContinueExpression, data: D): CfirExpression {
+        return transformLoopJump(continueExpression, data)
     }
 
     override fun transformAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression, data: D): CfirExpression {

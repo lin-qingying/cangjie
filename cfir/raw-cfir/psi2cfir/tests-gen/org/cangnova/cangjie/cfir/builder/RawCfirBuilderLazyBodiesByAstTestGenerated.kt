@@ -30,6 +30,21 @@ class RawCfirBuilderLazyBodiesByAstTestGenerated : AbstractRawCfirBuilderLazyBod
             assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features")
         }
 
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/effects")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Effects : AbstractRawCfirBuilderLazyBodiesByAstTest() {
+            fun testAllFilesPresentInEffects() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/effects")
+            }
+
+            @TestMetadata("effectTryHandleOfficial.cj")
+            fun testEffectTryHandleOfficial() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/effects/effectTryHandleOfficial.cj")
+            }
+
+        }
+
         @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/extend")
         @TestDataPath("\$PROJECT_ROOT")
         @RunWith(JUnit3RunnerWithInners::class)
@@ -71,6 +86,11 @@ class RawCfirBuilderLazyBodiesByAstTestGenerated : AbstractRawCfirBuilderLazyBod
             @TestMetadata("matchRichPatternsOfficial.cj")
             fun testMatchRichPatternsOfficial() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/match/matchRichPatternsOfficial.cj")
+            }
+
+            @TestMetadata("matchVarOrEnumPatternOfficial.cj")
+            fun testMatchVarOrEnumPatternOfficial() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/match/matchVarOrEnumPatternOfficial.cj")
             }
 
         }
@@ -186,6 +206,11 @@ class RawCfirBuilderLazyBodiesByAstTestGenerated : AbstractRawCfirBuilderLazyBod
             @TestMetadata("classWithModifiers.cj")
             fun testClassWithModifiers() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/classWithModifiers.cj")
+            }
+
+            @TestMetadata("classWithSuperReference.cj")
+            fun testClassWithSuperReference() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/classWithSuperReference.cj")
             }
 
             @TestMetadata("classWithSupertype.cj")

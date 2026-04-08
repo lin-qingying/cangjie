@@ -9,8 +9,9 @@ package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirSpawnExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirSpawnExpressionImpl
@@ -28,7 +29,7 @@ class CfirSpawnExpressionBuilder {
     fun build(): CfirSpawnExpression {
         return CfirSpawnExpressionImpl(
             source,
-            annotations,
+            annotations.toMutableOrEmpty(),
             coneTypeOrNull,
             body,
         )

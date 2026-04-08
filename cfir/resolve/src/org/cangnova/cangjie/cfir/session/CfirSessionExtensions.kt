@@ -7,7 +7,6 @@ import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporterComponent
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
 import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
-import org.cangnova.cangjie.cfir.resolve.services.CfirImportBindingStore
 import org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
 
@@ -40,12 +39,6 @@ val CfirSession.diagnosticCollector: CfirDiagnosticCollector
 fun CfirSession.registerDiagnosticReporter(reporter: CfirDiagnosticReporter) {
     register(CfirDiagnosticReporterComponent::class, CfirDiagnosticReporterComponent(reporter))
 }
-
-/** import 绑定缓存。 */
-val CfirSession.importBindingStore: CfirImportBindingStore by CfirSession.sessionComponentAccessor()
-
-/** import 绑定缓存，可空访问版本。 */
-val CfirSession.importBindingStoreOrNull: CfirImportBindingStore? by CfirSession.nullableSessionComponentAccessor()
 
 /** 父类型图缓存。 */
 val CfirSession.superTypeGraphStore: CfirSuperTypeGraphStore by CfirSession.sessionComponentAccessor()

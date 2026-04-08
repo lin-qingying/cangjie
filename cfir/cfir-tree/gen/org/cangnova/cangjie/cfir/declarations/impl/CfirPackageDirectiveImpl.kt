@@ -19,8 +19,7 @@ class CfirPackageDirectiveImpl @CfirImplementationDetail constructor(
     override val packageFqName: FqName,
 ) : CfirPackageDirective() {
 
-    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
-    }
+    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirPackageDirectiveImpl {
         return this

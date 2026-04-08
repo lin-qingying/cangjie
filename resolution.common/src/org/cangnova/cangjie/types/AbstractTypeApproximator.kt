@@ -134,24 +134,23 @@ abstract class AbstractTypeApproximator(
     }
 
     context(conf: TypeApproximatorConfiguration)
-    private fun CangJieTypeMarker.requiresLocalOrAnonymousApproximation(
+    private fun CangJieTypeMarker.requiresAnonymousApproximation(
         constructor: TypeConstructorMarker = typeConstructor()
     ): Boolean {
-        return conf.approximateLocalTypes && conf.shouldApproximateLocalType(ctx, this) && constructor.isLocalType() ||
-                conf.approximateAnonymous && constructor.isAnonymous()
+        return conf.approximateAnonymous && constructor.isAnonymous()
     }
 
     context(conf: TypeApproximatorConfiguration, cache: Cache)
-    private fun approximateLocalTypes(
+    private fun approximateAnonymousTypes(
         type: RigidTypeMarker,
         toSuper: Boolean,
         depth: Int,
     ): RigidTypeMarker? {
         if (!toSuper) return null
-        if (!conf.approximateLocalTypes && !conf.approximateAnonymous) return null
+        if (!conf.approximateAnonymous) return null
 
         val constructor = type.typeConstructor()
-        if (!type.requiresLocalOrAnonymousApproximation(constructor)) return null
+        if (!type.requiresAnonymousApproximation(constructor)) return null
         val typeCheckerContext = newTypeCheckerState(
             errorTypesEqualToAnything = false,
             stubTypesEqualToAnything = false
@@ -167,7 +166,7 @@ abstract class AbstractTypeApproximator(
                 val currentType = queue.removeFirst()
                 if (!visited.add(currentType)) continue
                 val currentConstructor = currentType.typeConstructor()
-                if (!currentType.requiresLocalOrAnonymousApproximation(currentConstructor)) {
+                if (!currentType.requiresAnonymousApproximation(currentConstructor)) {
                     result = currentType
                     break
                 }
@@ -309,7 +308,7 @@ abstract class AbstractTypeApproximator(
             } else null
         }
 
-        return approximateLocalTypes(type, toSuper, depth) // simple classifier type
+        return approximateAnonymousTypes(type, toSuper, depth) // simple classifier type
     }
 
     context(conf: TypeApproximatorConfiguration, cache: Cache)
@@ -340,7 +339,7 @@ abstract class AbstractTypeApproximator(
 
             fun approximateToSuperTypeWithRecursionPrevention(): ApproximationResult? {
                 if (simpleArgumentType in cache.typesBeingApproximatedToSupertype) {
-                    if (simpleArgumentType.requiresLocalOrAnonymousApproximation()) {
+                    if (simpleArgumentType.requiresAnonymousApproximation()) {
                         newArguments[index] = parameter.getUpperBounds().firstOrNull()?.asTypeArgument() ?: anyType().asTypeArgument()
                     } else {
                         // Just leave the argument type as is
@@ -366,11 +365,11 @@ abstract class AbstractTypeApproximator(
             newArguments[index] = approximatedArgument.asTypeArgument()
         }
 
-        if (newArguments.all { it == null }) return approximateLocalTypes(type, toSuper, depth)
+        if (newArguments.all { it == null }) return approximateAnonymousTypes(type, toSuper, depth)
 
         val newArgumentsList = List(type.argumentsCount()) { index -> newArguments[index] ?: type.getArgument(index) }
         val approximatedType = type.replaceArguments(newArgumentsList)
-        return approximateLocalTypes(approximatedType, toSuper, depth) ?: approximatedType
+        return approximateAnonymousTypes(approximatedType, toSuper, depth) ?: approximatedType
     }
 
     private fun CangJieTypeMarker.defaultResult(toSuper: Boolean) = if (toSuper) anyType() else nothingType()

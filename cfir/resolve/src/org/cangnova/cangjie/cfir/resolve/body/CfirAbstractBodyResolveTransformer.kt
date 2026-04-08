@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.inference.CfirCallCompleter
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.transformers.IntegerLiteralAndOperatorApproximationTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
@@ -18,6 +19,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitSimpleImportingScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitStarImportingScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirFileDeclaredTopLevelScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendProvider
@@ -137,6 +139,8 @@ abstract class CfirAbstractBodyResolveTransformer(
                 }
 
             return buildList {
+                // 当前文件顶层声明必须先于包级/导入级 scope，避免默认导入抢占本地声明。
+                add(CfirFileDeclaredTopLevelScope(file))
                 add(CfirPackageMemberScope(file.packageDirective.packageFqName, symbolProvider))
                 add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
                 add(CfirExplicitStarImportingScope(imports, symbolProvider))
@@ -186,15 +190,37 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
 
     override fun transformFile(file: CfirFile, data: ResolutionMode): CfirFile {
         checkSessionConsistency(file)
-        return declarationsTransformer.transformFile(file, data)
+        return CfirAccessibilityFileScope.with(file) {
+            declarationsTransformer.transformFile(file, data)
+        }
     }
 
     override fun transformClass(klass: CfirClass, data: ResolutionMode): CfirClass {
         return declarationsTransformer.transformClass(klass, data)
     }
 
+    override fun transformInterface(interfaceDeclaration: CfirInterface, data: ResolutionMode): CfirInterface {
+        return declarationsTransformer.transformInterface(interfaceDeclaration, data)
+    }
+
+    override fun transformStruct(struct: CfirStruct, data: ResolutionMode): CfirStruct {
+        return declarationsTransformer.transformStruct(struct, data)
+    }
+
+    override fun transformEnum(enum: CfirEnum, data: ResolutionMode): CfirEnum {
+        return declarationsTransformer.transformEnum(enum, data)
+    }
+
     override fun transformFunction(function: CfirFunction, data: ResolutionMode): CfirFunction {
         return declarationsTransformer.transformFunction(function, data)
+    }
+
+    override fun transformConstructor(constructor: CfirConstructor, data: ResolutionMode): CfirConstructor {
+        return declarationsTransformer.transformConstructor(constructor, data)
+    }
+
+    override fun transformEnumConstructor(enumConstructor: CfirEnumConstructor, data: ResolutionMode): CfirEnumConstructor {
+        return declarationsTransformer.transformEnumConstructor(enumConstructor, data)
     }
 
     override fun transformNamedFunction(namedFunction: CfirNamedFunction, data: ResolutionMode): CfirNamedFunction {
@@ -207,6 +233,17 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
 
     override fun transformProperty(property: CfirProperty, data: ResolutionMode): CfirProperty {
         return declarationsTransformer.transformProperty(property, data)
+    }
+
+    override fun transformFieldVariable(fieldVariable: CfirFieldVariable, data: ResolutionMode): CfirFieldVariable {
+        return declarationsTransformer.transformFieldVariable(fieldVariable, data)
+    }
+
+    override fun transformPatternBindingVariable(
+        patternBindingVariable: CfirPatternBindingVariable,
+        data: ResolutionMode,
+    ): CfirPatternBindingVariable {
+        return declarationsTransformer.transformPatternBindingVariable(patternBindingVariable, data)
     }
 
     override fun transformVariable(variable: CfirVariable, data: ResolutionMode): CfirVariable {
@@ -239,18 +276,25 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return expressionsTransformer.transformLiteralExpression(literalExpression, data)
     }
 
-    override fun transformPropertyAccess(
-        propertyAccess: CfirPropertyAccess,
+    override fun transformNamedAccessExpression(
+        namedAccess: CfirNamedAccessExpression,
         data: ResolutionMode,
     ): CfirExpression {
-        return expressionsTransformer.transformPropertyAccess(propertyAccess, data)
+        return expressionsTransformer.transformNamedAccessExpression(namedAccess, data)
     }
 
-    override fun transformQualifiedAccess(
-        qualifiedAccess: CfirQualifiedAccess,
+    override fun transformSuperReceiverExpression(
+        superReceiverExpression: CfirSuperReceiverExpression,
         data: ResolutionMode,
     ): CfirExpression {
-        return expressionsTransformer.transformQualifiedAccess(qualifiedAccess, data)
+        return expressionsTransformer.transformSuperReceiverExpression(superReceiverExpression, data)
+    }
+
+    override fun transformQualifiedAccessExpression(
+        qualifiedAccess: CfirQualifiedAccessExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformQualifiedAccessExpression(qualifiedAccess, data)
     }
 
     override fun transformFunctionCall(
@@ -356,6 +400,27 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         data: ResolutionMode,
     ): CfirExpression {
         return expressionsTransformer.transformThrowExpression(throwExpression, data)
+    }
+
+    override fun transformPerformExpression(
+        performExpression: CfirPerformExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformPerformExpression(performExpression, data)
+    }
+
+    override fun transformResumeExpression(
+        resumeExpression: CfirResumeExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformResumeExpression(resumeExpression, data)
+    }
+
+    override fun transformHandleClause(
+        handleClause: CfirHandleClause,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformHandleClause(handleClause, data)
     }
 
     override fun transformTryExpression(

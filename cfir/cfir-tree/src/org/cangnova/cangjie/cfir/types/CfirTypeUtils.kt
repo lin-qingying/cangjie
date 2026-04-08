@@ -1,9 +1,13 @@
 package org.cangnova.cangjie.cfir.types
 
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
+
+val CfirExpression.hasResolvedType: Boolean get() = coneTypeOrNull != null
+
 
 val CfirTypeRef.coneTypeOrNull: ConeCangJieType?
     get() = coneTypeSafe()
@@ -21,3 +25,9 @@ inline fun <reified T : ConeCangJieType> CfirTypeRef.coneTypeSafe(): T? {
     }
     return (this as? CfirResolvedTypeRef)?.coneType as? T
 }
+
+val CfirExpression.resolvedType: ConeCangJieType
+    get() = coneTypeOrNull
+        ?: errorWithAttachment("Expected expression '${this::class.simpleName}' to be resolved") {
+            withCfirEntry("expression", this@resolvedType)
+        }

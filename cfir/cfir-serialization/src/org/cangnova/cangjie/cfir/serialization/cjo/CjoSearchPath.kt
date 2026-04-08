@@ -7,11 +7,11 @@ import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * .cjo file search path configuration.
+ * `.cjo` 搜索路径配置。
  *
- * Search order:
- * 1. build mapping from cjo header (`fullPkgName`) to real file path
- * 2. fallback to legacy path convention for malformed fixtures
+ * 搜索顺序：
+ * 1. 优先按包头里的 `fullPkgName` 建立索引
+ * 2. 回退到遗留路径约定
  */
 class CjoSearchPath(
     private val envProvider: (String) -> String? = System::getenv,
@@ -26,7 +26,7 @@ class CjoSearchPath(
     private fun readPaths(envName: String): List<File> {
         return envProvider(envName)
             ?.split(File.pathSeparator)
-            ?.map { File(it) }
+            ?.map(::File)
             ?.filter { it.isDirectory }
             .orEmpty()
     }
@@ -43,9 +43,6 @@ class CjoSearchPath(
         return fullPkgName == "std" || fullPkgName.startsWith("std.")
     }
 
-    /**
-     * Find cjo file for given full package name.
-     */
     fun findCjoFile(fullPkgName: String): File? {
         resolvedByPackage[fullPkgName]?.let { return it }
         if (fullPkgName in missingPackages) return null
@@ -70,6 +67,15 @@ class CjoSearchPath(
 
         missingPackages += fullPkgName
         return null
+    }
+
+    fun getAvailablePackageNames(): Set<String> {
+        return buildSet {
+            for (root in stdlibSearchPaths + librarySearchPaths) {
+                addAll(indexDirectoryByHeader(root).keys)
+            }
+            addAll(resolvedByPackage.keys)
+        }
     }
 
     private fun indexDirectoryByHeader(root: File): Map<String, File> {

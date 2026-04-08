@@ -69,7 +69,7 @@ Windows 使用 `gradlew.bat`；Unix/macOS 使用 `./gradlew`。
 ./gradlew :cfir:cfir-cones:assemble
 ./gradlew :cfir:cfir-tree:build
 ./gradlew :analysis:analysis-api-cfir:test
-./gradlew :compiler:cli:build
+./gradlew :compiler:frontend:build
 ```
 
 ## 6) Lint / 静态检查

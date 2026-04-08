@@ -1,5 +1,7 @@
 FILE: classWithSupertype.cj
     internal? open class Base {
+        init()
     }
-    internal? class Child : R|Base| {
+    internal? class Child <: R|Base| {
+        init()
     }

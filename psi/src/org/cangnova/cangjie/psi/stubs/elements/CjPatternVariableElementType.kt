@@ -79,6 +79,7 @@ fun CjCasePatternElement?.toPatternKind(): PatternKind {
         is CjBindingPattern -> PatternKind.BINDING
         is CjTuplePattern -> PatternKind.TUPLE
         is CjEnumPattern -> PatternKind.ENUM
+        is CjTypePattern -> PatternKind.BINDING
         is CjWildcardPattern -> PatternKind.WILDCARD
         else -> PatternKind.BINDING // 其他情况默认为绑定模式
     }

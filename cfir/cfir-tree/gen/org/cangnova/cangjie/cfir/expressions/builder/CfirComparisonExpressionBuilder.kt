@@ -9,8 +9,9 @@ package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonOp
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -31,7 +32,7 @@ class CfirComparisonExpressionBuilder {
     fun build(): CfirComparisonExpression {
         return CfirComparisonExpressionImpl(
             source,
-            annotations,
+            annotations.toMutableOrEmpty(),
             coneTypeOrNull,
             operation,
             left,

@@ -1,105 +1,273 @@
 package org.cangnova.cangjie.analysis.api.components
 
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
+import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.annotations.CaAnnotation
+import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateDecision
+import org.cangnova.cangjie.analysis.api.dataFlow.CaDataFlowInfo
 import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
+import org.cangnova.cangjie.analysis.api.evaluation.CaCompileTimeValue
+import org.cangnova.cangjie.analysis.api.imports.CaDefaultImports
+import org.cangnova.cangjie.analysis.api.imports.CaImportOptimizationPlan
+import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningPlan
+import org.cangnova.cangjie.analysis.api.interop.CaInteropInfo
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
+import org.cangnova.cangjie.analysis.api.resolution.CaCallInfo
+import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.impl.CaDeclarationRendererForDebug
+import org.cangnova.cangjie.analysis.api.renderer.declarations.impl.CaDeclarationRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.types.CaTypeRenderer
+import org.cangnova.cangjie.analysis.api.renderer.types.CaTypeRendererPosition
+import org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForDebug
+import org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForSource
+import org.cangnova.cangjie.analysis.api.scopes.CaScope
+import org.cangnova.cangjie.analysis.api.signatures.CaSignature
+import org.cangnova.cangjie.analysis.api.substitution.CaSubstitutedSignature
+import org.cangnova.cangjie.analysis.api.substitution.CaTypeSubstitutor
+import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
+import org.cangnova.cangjie.analysis.api.types.CaClassLikeType
+import org.cangnova.cangjie.analysis.api.types.CaFunctionType
+import org.cangnova.cangjie.analysis.api.types.CaIntersectionType
+import org.cangnova.cangjie.analysis.api.types.CaTupleType
+import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.analysis.api.types.CaUnionType
+import org.cangnova.cangjie.analysis.api.types.pointers.CaTypePointer
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjCallableDeclaration
 import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjReferenceExpression
 
-// ===== 符号相关 =====
+/**
+ * 解析协议。
+ *
+ * 这里只负责把源码元素映射到稳定的公开语义结果，
+ * 不暴露底层候选、约束系统或后端专属解析细节。
+ */
+interface CaResolver : CaLifetimeOwner {
+    fun CjReferenceExpression.resolveToSymbols(): Collection<CaSymbol>
 
-/** 符号解析（对齐 KaResolver） */
-interface CaResolver : CaLifetimeOwner
+    fun CjReferenceExpression.resolveToSymbol(): CaSymbol? = resolveToSymbols().singleOrNull()
 
-/** 符号关系：继承、实现、重写等（对齐 KaSymbolRelationProvider） */
-interface CaSymbolRelationProvider : CaLifetimeOwner
-
-/** 符号查询：按名称、ClassId 查找（对齐 KaSymbolProvider） */
-interface CaSymbolProvider : CaLifetimeOwner
-
-/** 符号详细信息（对齐 KaSymbolInformationProvider） */
-interface CaSymbolInformationProvider : CaLifetimeOwner
-
-// ===== 类型相关 =====
-
-/** 类型查询（对齐 KaTypeProvider） */
-interface CaTypeProvider : CaLifetimeOwner
-
-/** 类型详细信息（对齐 KaTypeInformationProvider） */
-interface CaTypeInformationProvider : CaLifetimeOwner
-
-/** 类型关系：子类型、超类型检查（对齐 KaTypeRelationChecker） */
-interface CaTypeRelationChecker : CaLifetimeOwner
-
-/** 类型创建（对齐 KaTypeCreator） */
-interface CaTypeCreator : CaLifetimeOwner
-
-/** 类型替换器提供（对齐 KaSubstitutorProvider） */
-interface CaSubstitutorProvider : CaLifetimeOwner
-
-/** 签名替换（对齐 KaSignatureSubstitutor） */
-interface CaSignatureSubstitutor : CaLifetimeOwner
-
-// ===== 表达式相关 =====
-
-/** 表达式类型推导（对齐 KaExpressionTypeProvider） */
-interface CaExpressionTypeProvider : CaLifetimeOwner
-
-/** 表达式信息（对齐 KaExpressionInformationProvider） */
-interface CaExpressionInformationProvider : CaLifetimeOwner
-
-/** 常量求值（对齐 KaEvaluator） */
-interface CaEvaluator : CaLifetimeOwner
-
-/** 数据流分析（对齐 KaDataFlowProvider） */
-interface CaDataFlowProvider : CaLifetimeOwner
-
-// ===== 作用域与诊断 =====
-
-/** 诊断信息（对齐 KaDiagnosticProvider） */
-interface CaDiagnosticProvider : CaLifetimeOwner {
-    public fun CjElement.diagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>>
-
-    /**
-     * 收集指定文件的全部诊断信息。
-     */
-    public fun CjFile.collectDiagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>>
+    fun CjElement.resolveToCall(): CaCallInfo?
 }
 
-/** 作用域查询（对齐 KaScopeProvider） */
-interface CaScopeProvider : CaLifetimeOwner
+interface CaSymbolRelationProvider : CaLifetimeOwner {
+    fun CaSymbol.isEquivalentTo(other: CaSymbol): Boolean
+}
 
-/** 分析范围（对齐 KaAnalysisScopeProvider） */
-interface CaAnalysisScopeProvider : CaLifetimeOwner
+/**
+ * 指针协议。
+ *
+ * 所有跨 `analyze {}` 传递的 symbol 都必须先降格为 pointer，
+ * 避免直接泄漏 session 内部对象。
+ */
+interface CaSymbolInformationProvider : CaLifetimeOwner {
+    fun CaSymbol.createPointer(): CaSymbolPointer<CaSymbol>
+}
 
-// ===== IDE 支持 =====
+interface CaAnnotationProvider : CaLifetimeOwner {
+    val CaDeclarationSymbol.annotations: List<CaAnnotation>
+}
 
-/** 代码补全候选检查（对齐 KaCompletionCandidateChecker） */
-interface CaCompletionCandidateChecker : CaLifetimeOwner
+/**
+ * callable 签名协议。
+ *
+ * 该层只暴露结构化语义签名，不再缓存源码文本快照。
+ * 需要源码级文本时，应由 renderer 直接读取 PSI 或 source snapshot。
+ */
+interface CaSignatureProvider : CaLifetimeOwner {
+    val CjCallableDeclaration.signature: CaSignature
 
-/** 可见性检查（对齐 KaVisibilityChecker） */
-interface CaVisibilityChecker : CaLifetimeOwner
+    val CaCallableSymbol.signature: CaSignature?
+}
 
-/** 引用简化（对齐 KaReferenceShortener） */
-interface CaReferenceShortener : CaLifetimeOwner
+interface CaTypeProvider : CaLifetimeOwner {
+    val CaClassLikeSymbol.defaultType: CaType
+}
 
-/** 导入优化（对齐 KaImportOptimizer） */
-interface CaImportOptimizer : CaLifetimeOwner
+/**
+ * 类型附加信息协议。
+ *
+ * 该层负责类型对象与公开 symbol 之间的稳定关联，
+ * 以及错误类型、指针等非声明级类型元信息。
+ */
+interface CaTypeInformationProvider : CaLifetimeOwner {
+    fun CaType.createPointer(): CaTypePointer<CaType>
 
-/** 符号/类型渲染（对齐 KaRenderer） */
-interface CaRenderer : CaLifetimeOwner
+    val CaType.isErrorType: Boolean
 
-// ===== 源码与互操作 =====
+    val CaType.classLikeSymbol: CaClassLikeSymbol?
+}
 
-/** 原始 PSI 访问（对齐 KaOriginalPsiProvider） */
-interface CaOriginalPsiProvider : CaLifetimeOwner
+interface CaTypeRelationChecker : CaLifetimeOwner {
+    fun CaType.isSubTypeOf(superType: CaType): Boolean
 
-/** 源代码查询（对齐 KaSourceProvider） */
-interface CaSourceProvider : CaLifetimeOwner
+    fun CaType.semanticallyEquals(other: CaType): Boolean
+}
 
-/** C 互操作组件（对齐 KaJavaInteroperabilityComponent，仓颉用 C 互操作） */
-interface CaCInteropComponent : CaLifetimeOwner
+interface CaTypeCreator : CaLifetimeOwner {
+    fun buildClassLikeType(
+        classId: ClassId,
+        typeArguments: List<CaType> = emptyList(),
+    ): CaClassLikeType
 
-/** 文档注释查询（对齐 KaKDocProvider） */
-interface CaDocProvider : CaLifetimeOwner
+    fun buildClassLikeType(
+        symbol: CaClassLikeSymbol,
+        typeArguments: List<CaType> = emptyList(),
+    ): CaClassLikeType
+
+    fun buildFunctionType(
+        parameterTypes: List<CaType>,
+        returnType: CaType,
+        isCFunction: Boolean = false,
+        isClosureType: Boolean = false,
+        hasVariableLengthArgument: Boolean = false,
+    ): CaFunctionType
+
+    fun buildTupleType(
+        elementTypes: List<CaType>,
+    ): CaTupleType
+
+    fun buildIntersectionType(
+        conjuncts: List<CaType>,
+    ): CaIntersectionType
+
+    fun buildUnionType(
+        alternatives: Collection<CaType>,
+    ): CaUnionType
+}
+
+interface CaSubstitutorProvider : CaLifetimeOwner {
+    fun createTypeSubstitutor(substitutions: Map<Name, CaType>): CaTypeSubstitutor
+
+    fun CaSignature.createSubstitutor(typeArguments: List<CaType>): CaTypeSubstitutor
+}
+
+interface CaSignatureSubstitutor : CaLifetimeOwner {
+    fun CaSignature.substitute(substitutor: CaTypeSubstitutor): CaSubstitutedSignature
+}
+
+interface CaExpressionTypeProvider : CaLifetimeOwner {
+    val CjExpression.expressionType: CaType?
+
+    val CjCallableDeclaration.returnType: CaType?
+}
+
+interface CaExpressionInformationProvider : CaLifetimeOwner {
+    val CjExpression.isStatementLike: Boolean
+
+    val CjExpression.isCompileTimeConstant: Boolean
+}
+
+interface CaEvaluator : CaLifetimeOwner {
+    fun CjExpression.evaluate(): CaCompileTimeValue?
+}
+
+interface CaDataFlowProvider : CaLifetimeOwner {
+    fun CjExpression.getDataFlowInfo(): CaDataFlowInfo
+}
+
+interface CaDiagnosticProvider : CaLifetimeOwner {
+    fun CjElement.diagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>>
+
+    fun CjFile.collectDiagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>>
+}
+
+interface CaScopeProvider : CaLifetimeOwner {
+    fun CjFile.getFileScope(): CaScope
+
+    fun getPackageScope(packageFqName: FqName): CaScope?
+
+    val CaPackageSymbol.packageScope: CaScope
+
+    val CaClassLikeSymbol.declaredMemberScope: CaScope
+
+    val CaExtendSymbol.declaredMemberScope: CaScope
+
+    val CaClassLikeSymbol.memberScope: CaScope
+
+    val CaType.scope: CaScope?
+}
+
+interface CaAnalysisScopeProvider : CaLifetimeOwner {
+    fun CaModule.analysisScope(): GlobalSearchScope
+}
+
+interface CaDefaultImportProvider : CaLifetimeOwner {
+    val defaultImports: CaDefaultImports
+}
+
+interface CaCompletionCandidateChecker : CaLifetimeOwner {
+    fun CaSymbol.checkCompletionCandidate(position: CjElement): CaCompletionCandidateDecision
+}
+
+interface CaVisibilityChecker : CaLifetimeOwner {
+    fun CaSymbol.isVisible(): Boolean
+}
+
+interface CaReferenceShortener : CaLifetimeOwner {
+    fun CjFile.collectReferenceShorteningPlan(): CaReferenceShorteningPlan
+}
+
+interface CaImportOptimizer : CaLifetimeOwner {
+    fun CjFile.collectImportOptimizationPlan(): CaImportOptimizationPlan
+}
+
+/**
+ * 渲染协议。
+ *
+ * symbol 只提供语义模型，如何把它呈现为源码风格或调试风格文本，
+ * 统一由 renderer 负责，避免把文本缓存重新塞回 symbol。
+ */
+interface CaRenderer : CaLifetimeOwner {
+    fun CaSymbol.render(): String
+
+    fun CaDeclarationSymbol.render(
+        renderer: CaDeclarationRenderer = CaDeclarationRendererForSource.WITH_QUALIFIED_NAMES,
+    ): String
+
+    fun CaDeclarationSymbol.renderDebug(
+        renderer: CaDeclarationRenderer = CaDeclarationRendererForDebug.WITH_QUALIFIED_NAMES,
+    ): String = render(renderer)
+
+    fun CaType.render(): String
+
+    fun CaType.render(
+        renderer: CaTypeRenderer = CaTypeRendererForSource.WITH_QUALIFIED_NAMES,
+        position: CaTypeRendererPosition = CaTypeRendererPosition.INVARIANT,
+    ): String
+
+    fun CaType.renderDebug(
+        renderer: CaTypeRenderer = CaTypeRendererForDebug.WITH_QUALIFIED_NAMES,
+        position: CaTypeRendererPosition = CaTypeRendererPosition.INVARIANT,
+    ): String = render(renderer, position)
+}
+
+interface CaOriginalPsiProvider : CaLifetimeOwner {
+    fun CaSymbol.getOriginalPsi(): PsiElement?
+}
+
+interface CaSourceProvider : CaLifetimeOwner {
+    fun CaSymbol.getContainingFile(): CjFile?
+}
+
+interface CaCInteropComponent : CaLifetimeOwner {
+    fun CjElement.getInteropInfo(): CaInteropInfo?
+
+    fun CaSymbol.getInteropInfo(): CaInteropInfo?
+}
+
+interface CaDocProvider : CaLifetimeOwner {
+    fun CaSymbol.documentation(): String?
+}

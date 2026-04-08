@@ -1,18 +1,66 @@
 <idea-plugin>
+  <extensionPoints>
+    <extensionPoint
+        qualifiedName="org.cangnova.cangjie.psiReferenceProvider"
+        interface="org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor"
+        area="IDEA_PROJECT"
+        dynamic="true"
+    />
+  </extensionPoints>
+
   <extensions defaultExtensionNs="com.intellij">
     <applicationService
         serviceInterface="org.cangnova.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry"
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.permissions.CaBaseAnalysisPermissionRegistry"
+    />
+    <applicationService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionOptions"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.permissions.CaBaseAnalysisPermissionOptions"
     />
 
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker"
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.permissions.CaBaseAnalysisPermissionChecker"
     />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.restrictedAnalysis.CaBaseRestrictedAnalysisService"
+    />
+    <projectService
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeProjectStructureState"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeProjectStructureProvider"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeModuleProvider"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeContentScopeRefiner"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeModificationTracker"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeSessionInvalidationService"
+    />
 
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.lifetime.CaLifetimeTracker"
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.lifetime.CaBaseLifetimeTracker"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.lifetime.CaLifetimeTokenFactory"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.lifetime.CaBaseLifetimeTokenFactory"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.platform.CaBasePlatformSettings"
     />
   </extensions>
 </idea-plugin>

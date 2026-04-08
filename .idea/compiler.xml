@@ -34,15 +34,68 @@
       <module name="cangjie.analysis.analysis-api-cfir" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api-cfir.main" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api-cfir.test" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-cfir.testFixtures" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api-impl-base" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api-impl-base.main" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api-impl-base.test" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-impl-base.testFixtures" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-platform-interface" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-platform-interface.main" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-platform-interface.test" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-standalone" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-standalone.main" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-standalone.test" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api.main" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api.test" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-internal-utils" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-internal-utils.main" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-internal-utils.test" options="-proc:none" />
       <module name="cangjie.analysis.analysis-test-framework" options="-proc:none" />
       <module name="cangjie.analysis.analysis-test-framework.main" options="-proc:none" />
       <module name="cangjie.analysis.analysis-test-framework.test" options="-proc:none" />
       <module name="cangjie.analysis.analysis-test-framework.testFixtures" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-tools" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-tools.main" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-tools.test" options="-proc:none" />
+      <module name="cangjie.analysis.cj-references" options="-proc:none" />
+      <module name="cangjie.analysis.cj-references.main" options="-proc:none" />
+      <module name="cangjie.analysis.cj-references.test" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.decompiler-to-file-stubs" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.decompiler-to-file-stubs.main" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.decompiler-to-file-stubs.test" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.decompiler-to-psi" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.decompiler-to-psi.main" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.decompiler-to-psi.test" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.decompiler-to-stubs" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.decompiler-to-stubs.main" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.decompiler-to-stubs.test" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.light-classes-for-decompiled" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.light-classes-for-decompiled.main" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.light-classes-for-decompiled.test" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.light-declarations-for-decompiled" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.light-declarations-for-decompiled.main" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.light-declarations-for-decompiled.test" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.main" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.test" options="-proc:none" />
+      <module name="cangjie.analysis.light-classes" options="-proc:none" />
+      <module name="cangjie.analysis.light-classes.main" options="-proc:none" />
+      <module name="cangjie.analysis.light-classes.test" options="-proc:none" />
+      <module name="cangjie.analysis.light-declarations" options="-proc:none" />
+      <module name="cangjie.analysis.light-declarations.main" options="-proc:none" />
+      <module name="cangjie.analysis.light-declarations.test" options="-proc:none" />
+      <module name="cangjie.analysis.low-level-api-cfir" options="-proc:none" />
+      <module name="cangjie.analysis.low-level-api-cfir.main" options="-proc:none" />
+      <module name="cangjie.analysis.low-level-api-cfir.test" options="-proc:none" />
+      <module name="cangjie.analysis.stubs" options="-proc:none" />
+      <module name="cangjie.analysis.stubs.main" options="-proc:none" />
+      <module name="cangjie.analysis.stubs.test" options="-proc:none" />
+      <module name="cangjie.analysis.symbol-light-classes" options="-proc:none" />
+      <module name="cangjie.analysis.symbol-light-classes.main" options="-proc:none" />
+      <module name="cangjie.analysis.symbol-light-classes.test" options="-proc:none" />
+      <module name="cangjie.analysis.symbol-light-declarations" options="-proc:none" />
+      <module name="cangjie.analysis.symbol-light-declarations.main" options="-proc:none" />
+      <module name="cangjie.analysis.symbol-light-declarations.test" options="-proc:none" />
       <module name="cangjie.cfir.analysis-tests" options="-proc:none" />
       <module name="cangjie.cfir.analysis-tests.main" options="-proc:none" />
       <module name="cangjie.cfir.analysis-tests.test" options="-proc:none" />
@@ -167,6 +220,19 @@
       <module name="cangjie.llvm-interop.llvm-interop-jni.test" options="-proc:none" />
       <module name="cangjie.llvm-interop.main" options="-proc:none" />
       <module name="cangjie.llvm-interop.test" options="-proc:none" />
+      <module name="cangjie.lsp" options="-proc:none" />
+      <module name="cangjie.lsp.main" options="-proc:none" />
+      <module name="cangjie.lsp.test" options="-proc:none" />
+      <module name="cangjie.lsp.testFixtures" options="-proc:none" />
+      <module name="cangjie.macro.macro-common" options="-proc:none" />
+      <module name="cangjie.macro.macro-common.main" options="-proc:none" />
+      <module name="cangjie.macro.macro-common.test" options="-proc:none" />
+      <module name="cangjie.macro.macro-process" options="-proc:none" />
+      <module name="cangjie.macro.macro-process.main" options="-proc:none" />
+      <module name="cangjie.macro.macro-process.test" options="-proc:none" />
+      <module name="cangjie.macro.macro-stub" options="-proc:none" />
+      <module name="cangjie.macro.macro-stub.main" options="-proc:none" />
+      <module name="cangjie.macro.macro-stub.test" options="-proc:none" />
       <module name="cangjie.psi" options="-proc:none" />
       <module name="cangjie.psi.main" options="-proc:none" />
       <module name="cangjie.psi.test" options="-proc:none" />
@@ -180,6 +246,15 @@
       <module name="cangjie.util" options="-proc:none" />
       <module name="cangjie.util.main" options="-proc:none" />
       <module name="cangjie.util.test" options="-proc:none" />
+      <module name="light-declarations-for-decompiled.cangjie.analysis.decompiled.light-classes-for-decompiled" options="-proc:none" />
+      <module name="light-declarations-for-decompiled.cangjie.analysis.decompiled.light-classes-for-decompiled.main" options="-proc:none" />
+      <module name="light-declarations-for-decompiled.cangjie.analysis.decompiled.light-classes-for-decompiled.test" options="-proc:none" />
+      <module name="light-declarations.cangjie.analysis.light-classes" options="-proc:none" />
+      <module name="light-declarations.cangjie.analysis.light-classes.main" options="-proc:none" />
+      <module name="light-declarations.cangjie.analysis.light-classes.test" options="-proc:none" />
+      <module name="symbol-light-declarations.cangjie.analysis.symbol-light-classes" options="-proc:none" />
+      <module name="symbol-light-declarations.cangjie.analysis.symbol-light-classes.main" options="-proc:none" />
+      <module name="symbol-light-declarations.cangjie.analysis.symbol-light-classes.test" options="-proc:none" />
     </option>
   </component>
 </project>

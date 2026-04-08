@@ -4,6 +4,9 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/analysis-tests.iml" filepath="$PROJECT_DIR$/analysis-tests.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/buildSrc/cangjie.buildSrc.iml" filepath="$PROJECT_DIR$/.idea/modules/buildSrc/cangjie.buildSrc.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/cfir/symbols/cangjie.cfir.symbols.iml" filepath="$PROJECT_DIR$/.idea/modules/cfir/symbols/cangjie.cfir.symbols.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/cfir/symbols/cangjie.cfir.symbols.main.iml" filepath="$PROJECT_DIR$/.idea/modules/cfir/symbols/cangjie.cfir.symbols.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/cfir/symbols/cangjie.cfir.symbols.test.iml" filepath="$PROJECT_DIR$/.idea/modules/cfir/symbols/cangjie.cfir.symbols.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/repo/gradle-build-conventions/generators/gradle-build-conventions.generators.main.iml" filepath="$PROJECT_DIR$/.idea/modules/repo/gradle-build-conventions/generators/gradle-build-conventions.generators.main.iml" />
     </modules>
   </component>

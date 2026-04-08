@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.session
 
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirPhaseResolverRegistry
+import org.cangnova.cangjie.cfir.resolve.transformers.MacroExpandAction
 import org.cangnova.cangjie.cfir.resolve.transformers.registerResolveProcessors
 import org.cangnova.cangjie.cfir.CfirEnumMatchTrackerComponent
 import org.cangnova.cangjie.cfir.CfirImportTrackerComponent
@@ -19,12 +20,15 @@ import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticCollector
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
 import org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents
+import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.calls.visibility.CfirModuleVisibilityChecker
 import org.cangnova.cangjie.cfir.resolve.services.CfirImportBindingStore
 import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
 import org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendRuleQueryServiceImpl
+import org.cangnova.cangjie.cfir.resolve.services.CfirTypeAwareSupertypeProviderImpl
 import org.cangnova.cangjie.cfir.session.services.CfirExtendRuleQueryService
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.sourcesToPathsMapper
@@ -121,6 +125,7 @@ fun CfirSession.registerCommonComponentsAfterExtensionsAreConfigured() {
 @OptIn(SessionConfiguration::class)
 fun CfirSession.registerResolveComponents(
     diagnosticFactoriesStorage: CjRegisteredDiagnosticFactoriesStorage,
+    macroExpandAction: MacroExpandAction? = null,
     lookupTracker: LookupTracker? = null,
     enumMatchTracker: EnumMatchTracker? = null,
     importTracker: ImportTracker? = null,
@@ -190,7 +195,7 @@ fun CfirSession.registerResolveComponents(
     // ── Step 6：将各 resolve 阶段的 Processor 注册到 registry ─────────────
     // registerResolveProcessors 会依次注册 IMPORTS、SUPER_TYPES、TYPES 等
     // 各阶段对应的 Processor，完成 resolve 流水线的装配
-    registerResolveProcessors(registry, diagnosticReporter, this, ScopeSession())
+    registerResolveProcessors(registry, diagnosticReporter, this, ScopeSession(), macroExpandAction)
 }
 
 /**
@@ -256,7 +261,10 @@ private fun CfirSession.registerCoreResolveServices(
     // 父类型图存储：记录类型继承关系，用于：
     //  1. 检测循环继承（A extends B extends A）
     //  2. 父类成员的继承与覆盖解析
-    register(CfirSuperTypeGraphStore::class, CfirSuperTypeGraphStore())
+    val superTypeGraphStore = CfirSuperTypeGraphStore()
+    register(CfirSuperTypeGraphStore::class, superTypeGraphStore)
+    register(CfirDirectSupertypeProvider::class, superTypeGraphStore)
+    register(CfirTypeAwareSupertypeProvider::class, CfirTypeAwareSupertypeProviderImpl(this))
     register(CfirModuleVisibilityChecker::class, CfirModuleVisibilityChecker.Standard(this))
 
     val extendIndexStore = CfirExtendIndexStore()

@@ -2,3 +2,4 @@
 let PI: Float64 = 3.14
 var count: Int64 = 0
 
+var (a,b,c)   = (1, 2, 3)

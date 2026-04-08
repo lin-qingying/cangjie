@@ -15,7 +15,7 @@ import org.cangnova.cangjie.type.model.*
  * - 无星号投影/型变注解，泛型实参就是具体类型
  * - 无弹性类型，所有类型均为刚性类型
  * - 区分值类型（struct）和引用类型（class），两者都可实现接口
- * - 无嵌套类，所有类型定义在顶层或 object 中
+ * - class-like 声明只参与顶层公开语义
  */
 internal object EmptyIntersectionTypeChecker {
 

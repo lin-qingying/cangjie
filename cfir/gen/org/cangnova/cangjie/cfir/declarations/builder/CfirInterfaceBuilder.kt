@@ -30,8 +30,6 @@ class CfirInterfaceBuilder {
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var symbol: CfirInterfaceSymbol
     val superTypeRefs: MutableList<CfirTypeRef> = mutableListOf()
-    val properties: MutableList<CfirProperty> = mutableListOf()
-    val functions: MutableList<CfirFunction> = mutableListOf()
     lateinit var name: Name
 
     @OptIn(CfirImplementationDetail::class)
@@ -47,8 +45,6 @@ class CfirInterfaceBuilder {
             typeParameters,
             symbol,
             superTypeRefs,
-            properties,
-            functions,
             name,
         ).also {
             it.initDefaultResolveState()
@@ -80,8 +76,6 @@ inline fun buildInterfaceCopy(original: CfirInterface, init: CfirInterfaceBuilde
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)
-    copyBuilder.properties.addAll(original.properties)
-    copyBuilder.functions.addAll(original.functions)
     copyBuilder.name = original.name
     return copyBuilder.apply(init).build()
 }

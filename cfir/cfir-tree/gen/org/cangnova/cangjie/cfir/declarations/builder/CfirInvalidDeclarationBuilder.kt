@@ -9,10 +9,12 @@ package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirInvalidDeclarationImpl
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -20,6 +22,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirInvalidDeclarationBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
+    lateinit var resolvePhase: CfirResolvePhase
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var symbol: CfirSymbol<*>
     lateinit var origin: CfirDeclarationOrigin
@@ -31,14 +34,13 @@ class CfirInvalidDeclarationBuilder {
         return CfirInvalidDeclarationImpl(
             source,
             moduleData,
-            annotations,
+            resolvePhase,
+            annotations.toMutableOrEmpty(),
             symbol,
             origin,
             attributes,
             reason,
-        ).also {
-            it.initDefaultResolveState()
-        }
+        )
     }
 
 }
@@ -59,9 +61,10 @@ inline fun buildInvalidDeclarationCopy(original: CfirInvalidDeclaration, init: C
     val copyBuilder = CfirInvalidDeclarationBuilder()
     copyBuilder.source = original.source
     copyBuilder.moduleData = original.moduleData
+    copyBuilder.resolvePhase = original.resolvePhase
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
-    copyBuilder.attributes = original.attributes
+    copyBuilder.attributes = original.attributes.copy()
     copyBuilder.reason = original.reason
     return copyBuilder.apply(init).build()
 }

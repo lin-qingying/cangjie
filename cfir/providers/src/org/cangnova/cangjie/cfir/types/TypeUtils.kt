@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import org.cangnova.cangjie.resolve.calls.CommonSuperTypeCalculator
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.model.supertypes
 
@@ -94,9 +95,21 @@ fun ConeCangJieType.hasSupertypeWithGivenClassId(classId: org.cangnova.cangjie.n
             is ConeIntersectionType -> type.intersectedTypes.any(::visit)
             else -> {
                 val constructor = (type as? ConeRigidType)?.getConstructor() ?: return false
-                with(typeContext) {
-                    constructor.supertypes().filterIsInstance<ConeCangJieType>().any(::visit)
+                val directSupertypes = with(typeContext) {
+                    val unsubstitutedSupertypes = constructor.supertypes().filterIsInstance<ConeCangJieType>()
+                    val inferenceContext = this as? ConeInferenceContext
+                    val substitutor = inferenceContext?.createSubstitutorForSuperTypes(type)
+                    if (substitutor == null || inferenceContext == null) {
+                        unsubstitutedSupertypes
+                    } else {
+                        unsubstitutedSupertypes.map { supertype ->
+                            with(inferenceContext) {
+                                substitutor.safeSubstitute(supertype) as ConeCangJieType
+                            }
+                        }
+                    }
                 }
+                directSupertypes.any(::visit)
             }
         }
     }
@@ -111,4 +124,14 @@ private fun ConeTypeParameterLookupTag.collectUpperBounds(): List<ConeCangJieTyp
 
 private inline fun ConeTypeParameterLookupTag.collectUpperBoundsTo(collect: (ConeCangJieType) -> Unit) {
     collectUpperBounds().forEach(collect)
+}
+
+fun ConeInferenceContext.commonSuperTypeOrNull(types: List<ConeCangJieType>): ConeCangJieType? {
+    return when (types.size) {
+        0 -> null
+        1 -> types.first()
+        else -> with(CommonSuperTypeCalculator) {
+            commonSuperType(types).asCone()
+        }
+    }
 }

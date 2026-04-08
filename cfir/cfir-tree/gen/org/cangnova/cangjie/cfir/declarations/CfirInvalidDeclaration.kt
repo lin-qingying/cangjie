@@ -7,6 +7,7 @@ package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -31,9 +32,7 @@ abstract class CfirInvalidDeclaration : CfirDeclaration() {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformInvalidDeclaration(this, data) as E
 
-    override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+    abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
-
-    override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirInvalidDeclaration
-
+    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirInvalidDeclaration
 }

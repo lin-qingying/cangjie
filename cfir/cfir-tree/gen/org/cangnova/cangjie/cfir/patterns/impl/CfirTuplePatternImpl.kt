@@ -12,25 +12,25 @@ import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirTuplePatternImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
-    override var elements: List<CfirPattern>,
+    override val elements: MutableList<CfirPattern>,
 ) : CfirTuplePattern() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         elements.forEach { it.accept(visitor, data) }
     }
 
-    override fun <D> transformElements(transformer: CfirTransformer<D>, data: D): CfirTuplePattern
-     {
-        this.elements = elements.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirPattern }
+    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirTuplePatternImpl {
+        transformElements(transformer, data)
         return this
     }
 
-    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirTuplePatternImpl {
-        transformElements(transformer, data)
+    override fun <D> transformElements(transformer: CfirTransformer<D>, data: D): CfirTuplePatternImpl {
+        elements.transformInplace(transformer, data)
         return this
     }
 }

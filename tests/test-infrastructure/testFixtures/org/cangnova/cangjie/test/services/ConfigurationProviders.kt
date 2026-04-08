@@ -97,7 +97,7 @@ class CompilerConfigurationProviderImpl(
      * 当前方法体为空，未调用任何配置器。
      * 应遍历 configurators 列表，对每个配置器调用 legacyRegisterCompilerExtensions(project, module, configuration)，
      * 以便在测试环境中注册编译器插件、分析扩展等。
-     * 待 CLI 门面（cliBasedFacades）机制完善后，此方法将通过 TEST_ONLY_PROJECT_CONFIGURATION_CALLBACK 回调触发。
+     * 待前端门面（frontendBasedFacades）机制完善后，此方法将通过 TEST_ONLY_PROJECT_CONFIGURATION_CALLBACK 回调触发。
      */
     fun configureProject(project: Project, module: TestModule, configuration: CompilerConfiguration) {
         // TODO: 解除注释并实现以下逻辑：
@@ -114,12 +114,12 @@ class CompilerConfigurationProviderImpl(
             configurators,
             compilationStage,
         ).also { configuration ->
-            // TODO: 实现基于 CLI 门面的插件注册与项目配置回调
-            // 当 testServices.cliBasedFacadesEnabled 为 true 时，需要：
+            // TODO: 实现基于前端门面的插件注册与项目配置回调
+            // 当 testServices.frontendBasedFacadesEnabled 为 true 时，需要：
             // 1. 通过 TEST_ONLY_PLUGIN_REGISTRATION_CALLBACK 注册编译器扩展（registerCompilerExtensions）
             // 2. 通过 TEST_ONLY_PROJECT_CONFIGURATION_CALLBACK 触发项目配置（configureProject）
-            // 待 CLI 门面机制（cliBasedFacades）完善后解除注释：
-            // if (testServices.cliBasedFacadesEnabled) {
+            // 待前端门面机制（frontendBasedFacades）完善后解除注释：
+            // if (testServices.frontendBasedFacadesEnabled) {
             //     configuration.put(TEST_ONLY_PLUGIN_REGISTRATION_CALLBACK) { extensionStorage ->
             //         registerCompilerExtensions(extensionStorage, module, configuration)
             //     }

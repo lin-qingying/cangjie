@@ -1,10 +1,10 @@
 # Cangjie
 
-基于 Kotlin/JVM 的仓颉编程语言编译器实现，架构参考 Kotlin K2，功能对齐官方仓颉编译器。
+基于 Kotlin/JVM 的仓颉编程语言前端实现，架构参考 Kotlin K2，功能对齐官方仓颉编译器。
 
-## 编译器管线
+## 前端管线
 
-12 阶段管线设计（详见 `cjfir-compiler-stages.md`）：
+核心管线覆盖从源码解析到 .cjo 序列化（详见 `cjfir-compiler-stages.md`）：
 
 ```
 源码 (.cj)
@@ -18,6 +18,7 @@
   → FINALIZE         脱糖 → 泛型实例化 → 溢出策略
   → MANGLING         名称修饰
   → SAVE_CJO         .cjo 序列化
+  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  可选扩展  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
   → CFIR2CHIR        CFIR → CHIR 转换 + 优化
   → CODEGEN          CHIR → LLVM IR → 机器码
 ```
@@ -35,6 +36,7 @@
 | `:compiler:config` | 编译器配置（CompilerConfiguration、ContentRoots、环境设置） | ✅ 已实现 |
 | `:compiler:phaser` | 编译阶段管理框架（CompilerPhase、PhaseSet、PhaserState） | ✅ 已实现 |
 | `:compiler:arguments` | 编译器命令行参数定义 | ✅ 已实现 |
+| `:lsp` | 基于 `lsp4j` 的 Language Server 框架模块（能力协商 / 文档同步 / 工作区状态 / 分析桥接接缝） | ✅ 已实现 |
 
 ### 前端解析
 
@@ -59,6 +61,7 @@
 - 与上述迁移配套，`CfirErrorTypeRef` 的主要消费点也已从旧的 `reason` 读取切换到 `diagnostic.reason` / `diagnostic` 模型（如 `CfirTypeResolver`、`CfirTypeRefExtensions`、`CfirResolvedTypesVerifier`），当前 `:cfir:cfir-tree` 与 `:cfir:raw-cfir:psi2cfir` 均可定向编译通过。
 - 经过全仓扫尾，剩余 `.reason` 读取点主要已限定在其他错误节点模型（如 `CfirErrorReference`、`CfirInvalidDeclaration`、`CfirErrorExpression`），不再属于 `CfirErrorTypeRef` 迁移残留；`CfirErrorTypeRef` 主链现已统一到 `diagnostic` / `diagnostic.reason`。
 - `LightTreeTypeConverter` 中对 `buildErrorTypeRef` 的旧 `reason = ...` 写法也已迁移到 `diagnostic = ConeSimpleDiagnostic(...)`，并已通过 `./gradlew.bat :cfir:raw-cfir:light-tree2cfir:compileKotlin` 复验；其中一次失败来自 Kotlin daemon 增量缓存冲突，清理该模块 `build/kotlin` 缓存后 fresh 编译通过，说明源码层迁移正确。
+- `:lsp` 已升级为基于 `lsp4j` 的完整 Language Server 框架模块：提供 `CangjieLanguageServer` / `TextDocumentService` / `WorkspaceService` / `NotebookDocumentService`、服务器能力描述与协商、文档状态仓库、工作区状态管理、请求执行器，以及与真实分析模块解耦的 `AnalysisFacade` 接缝。当前真实语义能力仍通过 `TODO(...)` 占位，便于后续对接 CFIR / Analysis API；框架层已通过 `./gradlew.bat :lsp:compileKotlin` 与 `./gradlew.bat :lsp:test` 验证。
 
 ### Raw CFIR 构建（阶段 6）
 
@@ -83,19 +86,27 @@
 - 编译器测试入口 `AbstractCangjieCompilerTest` 已接入 `-Dcangjie.slow.assertions=true` 的 slow assertions 开关：默认关闭，不影响正常编译路径；测试/调试时可显式开启，以执行 `resolution.common` 中已迁移的 guarded invariants。
 - 当前遗留主要从“模块不可编译”转为“后续精修/验证”性质：仍建议补齐更细粒度的定向测试、进一步审视桥接层是否可以继续内联回核心 API，以及继续清理少量历史日志/兼容调用以降低长期维护成本。
 
+### 宏展开（阶段 5）
+
+| 模块 | 职责 | 状态 |
+|------|------|------|
+| `:macro:macro-common` | 宏展开接口定义、数据模型、FlatBuffers 协议编解码 | ✅ 已实现 |
+| `:macro:macro-process` | ProcessMacroExecutor（外部进程 LSPMacroServer 实现） | ✅ 已实现 |
+| `:macro:macro-stub` | StubMacroExecutor（测试/IDE 桩实现） | ✅ 已实现 |
+
 ### 序列化（阶段 10）
 
 | 模块 | 职责 | 状态 |
 |------|------|------|
 | `:cfir:cfir-serialization` | .cjo 文件反序列化、跨模块符号加载 | ✅ 已实现 |
 
-### CHIR 与代码生成（阶段 11-12）
+### CHIR 与代码生成（阶段 11-12，可选扩展）
 
 | 模块 | 职责 | 状态 |
 |------|------|------|
 | `:compiler:chir` | CHIR 定义、CFIR→CHIR 转换、数据流分析、验证 | ✅ 已实现 |
 | `:compiler:codegen` | CHIR → LLVM IR → 机器码、LLVM 后端集成 | ✅ 已实现 |
-| `:compiler:cli` | CLI 入口、编译管线协调 | ✅ 已实现 |
+| `:compiler:frontend` | 前端基础设施与编译管线协调 | ✅ 已实现 |
 
 ### 分析 API
 
@@ -128,14 +139,14 @@
 | 2 | PARSE | ✅ 已实现 | `:psi` |
 | 3 | CONDITION_COMPILE | 📋 计划中 | — |
 | 4 | IMPORT_PACKAGE | 📋 计划中 | — |
-| 5 | MACRO_EXPAND | 📋 计划中 | — |
+| 5 | MACRO_EXPAND | 🔄 进行中 | `:macro:macro-common` |
 | 6 | CFIR_BUILD | 🔄 进行中 | `:cfir:raw-cfir:psi2cfir` |
 | 7 | CFIR_RESOLVE | ✅ 已实现 | `:cfir:resolve` |
 | 8 | FINALIZE | 📋 计划中 | — |
 | 9 | MANGLING | 📋 计划中 | — |
 | 10 | SAVE_CJO | ✅ 已实现 | `:cfir:cfir-serialization` |
-| 11 | CFIR2CHIR | ✅ 已实现 | `:compiler:chir` |
-| 12 | CODEGEN | ✅ 已实现 | `:compiler:codegen` |
+| 11 | CFIR2CHIR | ✅ 已实现 | `:compiler:chir`（可选扩展） |
+| 12 | CODEGEN | ✅ 已实现 | `:compiler:codegen`（可选扩展） |
 
 ## 构建
 
@@ -144,6 +155,31 @@
 ./gradlew compileKotlin          # 全量编译
 ./gradlew check                  # 运行所有检查和测试
 ```
+
+## 发布
+
+公开工件通过根级聚合任务发布：
+
+```bash
+./gradlew publishPublicArtifacts   # 发布到配置的 Maven 仓库
+./gradlew installPublicArtifacts   # 安装到 Maven Local
+```
+
+仓库支持通过 Gradle 属性注入发布目标与凭据：
+
+```bash
+./gradlew publishPublicArtifacts \
+  -Pcangjie.build.deploy-url=https://maven.pkg.github.com/<OWNER>/<REPO> \
+  -Pcangjie.build.deploy-username=<GITHUB_USERNAME> \
+  -Pcangjie.build.deploy-password=<GITHUB_TOKEN>
+```
+
+仓库已内置 GitHub Packages workflow：
+
+- `.github/workflows/publish-github-packages.yml`
+- 支持 `workflow_dispatch`
+- 支持推送 `v*` tag 时自动发布
+- 手动触发时可显式输入 `version`
 
 ## 测试约定
 
@@ -185,6 +221,7 @@
 ## 设计与对照文档
 
 - 四套类型推断 / 约束系统对照：`docs/type-inference-four-systems-comparison.md`
+- 当前 CFIR 语义分析相对官方实现程度评估：`docs/cfir-semantic-analysis-maturity-vs-official-2026-04-08.md`
 
 ## 目录结构
 
@@ -213,14 +250,23 @@ cangjie/
 │   ├── config/
 │   ├── phaser/
 │   ├── arguments/
-│   ├── cli/
-│   ├── chir/
-│   └── codegen/
+│   ├── frontend/
+│   ├── frontend-arguments-generator/
+│   ├── chir/                  # （可选扩展）
+│   └── codegen/               # （可选扩展）
+├── prepare/                   # 发布门面工件
+│   ├── frontend/
+│   └── frontend-embeddable/
+├── macro/                     # 宏展开模块
+│   ├── macro-common/          # 接口、数据模型、协议编解码
+│   ├── macro-process/         # 外部进程执行器
+│   └── macro-stub/            # 测试桩实现
 ├── common/                    # 基础设施
 │   ├── src/
 │   └── diagnostics/
 ├── psi/                       # 前端解析（PSI 树）
 ├── util/                      # 工具库
+├── lsp/                       # 基于 lsp4j 的 Language Server 框架模块
 ├── generators/                # 代码生成框架
 ├── tests/                     # 测试框架
 │   └── test-infrastructure/

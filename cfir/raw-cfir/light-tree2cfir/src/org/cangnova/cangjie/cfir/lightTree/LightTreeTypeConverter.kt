@@ -107,7 +107,7 @@ private fun convertUserType(
     val qualifier = buildQualifierFromUserType(typeElement, tree, source)
     val typeArguments = collectTypeArguments(typeElement, tree, source, toSource)
     return buildUserTypeRef {
-        this.source = toSource(typeRefNode) as? CjSourceElement
+        this.source = typeRefNode.toCjSourceElement(toSource)
         this.qualifier += qualifier
         this.typeArguments += typeArguments
     }
@@ -158,6 +158,13 @@ private fun collectTypeArguments(
         convertTypeReference(typeRef, tree, source, toSource)
     }
 }
+
+private fun LighterASTNode.toCjSourceElement(
+    toSource: (LighterASTNode) -> AbstractCjSourceElement,
+): CjSourceElement =
+    requireNotNull(toSource(this) as? CjSourceElement) {
+        "Expected CjSourceElement for light tree type reference: $this"
+    }
 
 /**
  * FUNCTION_TYPE → CfirFunctionTypeRef

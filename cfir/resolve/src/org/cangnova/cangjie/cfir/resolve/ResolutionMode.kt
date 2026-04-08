@@ -1,10 +1,10 @@
 package org.cangnova.cangjie.cfir.resolve
 
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import kotlin.jvm.JvmName
 
 sealed class ResolutionMode(
@@ -85,9 +85,7 @@ fun withExpectedType(coneType: ConeCangJieType?, lastStatementInBlock: Boolean =
 }
 
 fun withExpectedType(coneType: ConeCangJieType, lastStatementInBlock: Boolean = false): ResolutionMode {
-    val typeRef = buildResolvedTypeRef {
-        this.coneType = coneType
-    }
+    val typeRef = coneType.toCfirResolvedTypeRef()
     return ResolutionMode.WithExpectedType(typeRef, lastStatementInBlock)
 }
 

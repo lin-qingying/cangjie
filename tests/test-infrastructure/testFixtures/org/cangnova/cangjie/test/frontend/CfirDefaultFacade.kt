@@ -1,10 +1,10 @@
 package org.cangnova.cangjie.test.frontend
 
-import org.cangnova.cangjie.cli.pipeline.CfirFrontendPipelinePhase
-import org.cangnova.cangjie.cli.pipeline.DefaultCfirFrontendPipelineArtifact
+import org.cangnova.cangjie.frontend.pipeline.CfirFrontendPipelinePhase
+import org.cangnova.cangjie.frontend.pipeline.DefaultCfirFrontendPipelineArtifact
 import org.cangnova.cangjie.test.services.TestServices
 
 class CfirDefaultFacade(
     testServices: TestServices,
-) : CfirCliFacade<CfirFrontendPipelinePhase, DefaultCfirFrontendPipelineArtifact>
+) : CfirFrontendPipelineFacade<CfirFrontendPipelinePhase, DefaultCfirFrontendPipelineArtifact>
     (testServices, CfirFrontendPipelinePhase)

@@ -6,17 +6,22 @@ package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
 import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
@@ -79,14 +84,46 @@ class CfirTypeResolveTransformer(
     override fun transformClass(klass: CfirClass, data: CfirTypeResolutionConfiguration): CfirClass {
         ensureImplicitDefaultConstructorIfNeeded(klass)
 
-        val configuration = data
-            .withTopContainer(klass)
-            .withAdditionalTypeParameters(klass.typeParameters)
-        klass.transformTypeParameters(this, configuration)
-        klass.transformSuperTypeRefs(this, configuration)
-        klass.transformDeclarations(this, configuration)
+        transformClassLikeHeader(klass, data)
         bumpPhase(klass)
         return klass
+    }
+
+    override fun transformInterface(interfaceDeclaration: CfirInterface, data: CfirTypeResolutionConfiguration): CfirInterface {
+        transformClassLikeHeader(interfaceDeclaration, data)
+        bumpPhase(interfaceDeclaration)
+        return interfaceDeclaration
+    }
+
+    override fun transformStruct(struct: CfirStruct, data: CfirTypeResolutionConfiguration): CfirStruct {
+        transformClassLikeHeader(struct, data)
+        bumpPhase(struct)
+        return struct
+    }
+
+    override fun transformEnum(enum: CfirEnum, data: CfirTypeResolutionConfiguration): CfirEnum {
+        transformClassLikeHeader(enum, data)
+        bumpPhase(enum)
+        return enum
+    }
+
+    private fun transformClassLikeHeader(
+        declaration: CfirClassLikeDeclaration,
+        data: CfirTypeResolutionConfiguration,
+    ) {
+        val typeParameters = when (declaration) {
+            is CfirClass -> declaration.typeParameters
+            is CfirInterface -> declaration.typeParameters
+            is CfirStruct -> declaration.typeParameters
+            is CfirEnum -> declaration.typeParameters
+            else -> emptyList()
+        }
+        val configuration = data
+            .withTopContainer(declaration)
+            .withAdditionalTypeParameters(typeParameters)
+        declaration.transformTypeParameters(this, configuration)
+        declaration.transformSuperTypeRefs(this, configuration)
+        declaration.transformDeclarations(this, configuration)
     }
 
     override fun transformExtend(extend: CfirExtend, data: CfirTypeResolutionConfiguration): CfirExtend {
@@ -146,6 +183,15 @@ class CfirTypeResolveTransformer(
         fieldVariable.transformReturnTypeRef(this, data)
         bumpPhase(fieldVariable)
         return fieldVariable
+    }
+
+    override fun transformPatternBindingVariable(
+        patternBindingVariable: CfirPatternBindingVariable,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirPatternBindingVariable {
+        patternBindingVariable.transformReturnTypeRef(this, data)
+        bumpPhase(patternBindingVariable)
+        return patternBindingVariable
     }
 
     override fun transformPatternVariable(patternVariable: CfirPatternVariable, data: CfirTypeResolutionConfiguration): CfirPatternVariable {
@@ -226,8 +272,7 @@ class CfirTypeResolveTransformer(
             returnTypeRef = buildImplicitTypeRef()
             body = null
         }
-        symbol.bind(constructor)
-        classImpl.declarations = classImpl.declarations + constructor
+
+        classImpl.declarations += constructor
     }
 }
-

@@ -4,5 +4,5 @@ func identity<T>(value: T): T {
 }
 
 main() {
-    let number: Int64 <!PATTERN_INITIALIZER_TYPE_MISMATCH!>=<!> identity("hello")
+    let number: Int64 <!PATTERN_INITIALIZER_TYPE_MISMATCH!>=<!> <!TYPE_MISMATCH!>identity("hello")<!>
 }

@@ -8,16 +8,19 @@
 package org.cangnova.cangjie.cfir.types.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirVArrayTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirVArrayTypeRefImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
-    override var annotations: List<CfirAnnotation>,
+    override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var elementTypeRef: CfirTypeRef,
     override val sizeLiteral: String,
 ) : CfirVArrayTypeRef() {
@@ -27,26 +30,23 @@ class CfirVArrayTypeRefImpl @CfirImplementationDetail constructor(
         elementTypeRef.accept(visitor, data)
     }
 
-    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-     {
-        this.annotations = newAnnotations
-    }
-
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirVArrayTypeRef
-     {
-        this.annotations = annotations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnnotation }
-        return this
-    }
-
-    override fun <D> transformElementTypeRef(transformer: CfirTransformer<D>, data: D): CfirVArrayTypeRef
-     {
-        this.elementTypeRef = elementTypeRef.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirTypeRef
-        return this
-    }
-
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirVArrayTypeRefImpl {
         transformAnnotations(transformer, data)
         transformElementTypeRef(transformer, data)
         return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirVArrayTypeRefImpl {
+        annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformElementTypeRef(transformer: CfirTransformer<D>, data: D): CfirVArrayTypeRefImpl {
+        elementTypeRef = elementTypeRef.transform(transformer, data)
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
+        annotations = newAnnotations.toMutableOrEmpty()
     }
 }

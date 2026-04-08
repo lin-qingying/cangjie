@@ -10,6 +10,7 @@
               <build path="$PROJECT_DIR$/repo/gradle-build-conventions" name="gradle-build-conventions">
                 <projects>
                   <project path="$PROJECT_DIR$/repo/gradle-build-conventions" />
+                  <project path="$PROJECT_DIR$/repo/gradle-build-conventions/analysis-coverage-convention" />
                   <project path="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat" />
                   <project path="$PROJECT_DIR$/repo/gradle-build-conventions/generators" />
                   <project path="$PROJECT_DIR$/repo/gradle-build-conventions/gradle-plugins-common" />
@@ -35,7 +36,21 @@
             <option value="$PROJECT_DIR$/analysis/analysis-api" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-cfir" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-impl-base" />
+            <option value="$PROJECT_DIR$/analysis/analysis-api-platform-interface" />
+            <option value="$PROJECT_DIR$/analysis/analysis-api-standalone" />
+            <option value="$PROJECT_DIR$/analysis/analysis-internal-utils" />
             <option value="$PROJECT_DIR$/analysis/analysis-test-framework" />
+            <option value="$PROJECT_DIR$/analysis/analysis-tools" />
+            <option value="$PROJECT_DIR$/analysis/cj-references" />
+            <option value="$PROJECT_DIR$/analysis/decompiled" />
+            <option value="$PROJECT_DIR$/analysis/decompiled/decompiler-to-file-stubs" />
+            <option value="$PROJECT_DIR$/analysis/decompiled/decompiler-to-psi" />
+            <option value="$PROJECT_DIR$/analysis/decompiled/decompiler-to-stubs" />
+            <option value="$PROJECT_DIR$/analysis/decompiled/light-declarations-for-decompiled" />
+            <option value="$PROJECT_DIR$/analysis/light-declarations" />
+            <option value="$PROJECT_DIR$/analysis/low-level-api-cfir" />
+            <option value="$PROJECT_DIR$/analysis/stubs" />
+            <option value="$PROJECT_DIR$/analysis/symbol-light-declarations" />
             <option value="$PROJECT_DIR$/cfir" />
             <option value="$PROJECT_DIR$/cfir/analysis-tests" />
             <option value="$PROJECT_DIR$/cfir/cfir-common" />
@@ -54,7 +69,6 @@
             <option value="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common" />
             <option value="$PROJECT_DIR$/cfir/resolve" />
             <option value="$PROJECT_DIR$/cfir/semantics" />
-            <option value="$PROJECT_DIR$/cfir/symbols" />
             <option value="$PROJECT_DIR$/common" />
             <option value="$PROJECT_DIR$/common/diagnostics" />
             <option value="$PROJECT_DIR$/compiler" />
@@ -73,8 +87,14 @@
             <option value="$PROJECT_DIR$/llvm-interop" />
             <option value="$PROJECT_DIR$/llvm-interop/llvm-interop-api" />
             <option value="$PROJECT_DIR$/llvm-interop/llvm-interop-jni" />
+            <option value="$PROJECT_DIR$/lsp" />
+            <option value="$PROJECT_DIR$/macro" />
+            <option value="$PROJECT_DIR$/macro/macro-common" />
+            <option value="$PROJECT_DIR$/macro/macro-process" />
+            <option value="$PROJECT_DIR$/macro/macro-stub" />
             <option value="$PROJECT_DIR$/psi" />
             <option value="$PROJECT_DIR$/repo/gradle-build-conventions" />
+            <option value="$PROJECT_DIR$/repo/gradle-build-conventions/analysis-coverage-convention" />
             <option value="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat" />
             <option value="$PROJECT_DIR$/repo/gradle-build-conventions/generators" />
             <option value="$PROJECT_DIR$/repo/gradle-build-conventions/gradle-plugins-common" />

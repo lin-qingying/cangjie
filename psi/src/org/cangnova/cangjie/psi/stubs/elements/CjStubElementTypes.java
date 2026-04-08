@@ -218,6 +218,7 @@ public interface CjStubElementTypes {
     CjBindingPatternElementType BINDING_PATTERN = new CjBindingPatternElementType("BINDING_PATTERN");
     CjTuplePatternElementType TUPLE_PATTERN = new CjTuplePatternElementType("TUPLE_PATTERN");
     CjEnumPatternElementType ENUM_PATTERN = new CjEnumPatternElementType("ENUM_PATTERN");
+    CjVarOrEnumPatternElementType VAR_OR_ENUM_PATTERN = new CjVarOrEnumPatternElementType("VAR_OR_ENUM_PATTERN");
     CjWildcardPatternElementType WILDCARD_PATTERN = new CjWildcardPatternElementType("WILDCARD_PATTERN");
     CjTypePatternElementType TYPE_PATTERN = new CjTypePatternElementType("TYPE_PATTERN");
     CjConstantPatternElementType CONSTANT_PATTERN = new CjConstantPatternElementType("CONSTANT_PATTERN");

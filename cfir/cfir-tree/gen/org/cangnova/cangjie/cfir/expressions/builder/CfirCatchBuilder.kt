@@ -9,9 +9,10 @@ package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirCatch
 import org.cangnova.cangjie.cfir.expressions.impl.CfirCatchImpl
@@ -30,7 +31,7 @@ class CfirCatchBuilder {
     fun build(): CfirCatch {
         return CfirCatchImpl(
             source,
-            annotations,
+            annotations.toMutableOrEmpty(),
             coneTypeOrNull,
             parameter,
             body,

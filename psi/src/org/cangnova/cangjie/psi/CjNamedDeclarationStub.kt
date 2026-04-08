@@ -23,24 +23,20 @@
  */
 
 package org.cangnova.cangjie.psi
+
 import org.cangnova.cangjie.name.*
 
-import org.cangnova.cangjie.lang.CangJieFileType.Companion.INSTANCE
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.psi.psiUtil.astReplace
-import org.cangnova.cangjie.psi.psiUtil.containingTypeStatement
 import org.cangnova.cangjie.psi.psiUtil.quoteIfNeeded
 import org.cangnova.cangjie.psi.stubs.CangJieStubWithFqName
 import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorName
 import com.intellij.lang.ASTNode
 import com.intellij.openapi.application.runReadAction
 import com.intellij.psi.PsiElement
-import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.search.LocalSearchScope
 import com.intellij.psi.search.SearchScope
 import com.intellij.psi.stubs.IStubElementType
-import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.IncorrectOperationException
 
 abstract class CjNamedDeclarationStub<T : CangJieStubWithFqName<*>> : CjDeclarationStub<T>, CjNamedDeclaration {
@@ -100,53 +96,10 @@ abstract class CjNamedDeclarationStub<T : CangJieStubWithFqName<*>> : CjDeclarat
     }
 
     override fun getUseScope(): SearchScope {
-        val enclosingBlock = CjPsiUtil.getEnclosingElementForLocalDeclaration(this, false)
-        if (enclosingBlock != null) {
-//            PsiElement enclosingParent = enclosingBlock.getParent();
-
-//            if (enclosingParent instanceof CjContainerNode) {
-//                enclosingParent = enclosingParent.getParent();
-//            }
-
-            return LocalSearchScope(enclosingBlock)
-        }
-
-        //        PsiElement parent = getParent();
-//        PsiElement grandParent = parent != null ? parent.getParent() : null;
-        if (hasModifier(CjTokens.PRIVATE_KEYWORD)) {
-            val containingClass: CjElement? = PsiTreeUtil.getParentOfType(
-                this,
-                CjTypeStatement::class.java,
-            )
-
-            if (containingClass != null) {
-                return LocalSearchScope(containingClass)
-            }
-            val file = getContainingCjFile()
-            if (this is CjTypeStatement) {
-                val project = getProject()
-                val searchScope = GlobalSearchScope.getScopeRestrictedByFileTypes(
-                    GlobalSearchScope.allScope(project),
-                    INSTANCE,
-                )
-
-                val fileScope: SearchScope = GlobalSearchScope.fileScope(file)
-
-                val scope: SearchScope = GlobalSearchScope.notScope(searchScope)
-                return fileScope.union(scope)
-            } else {
-                return LocalSearchScope(file)
-            }
-        }
-
-        var scope = super.getUseScope()
-
-        val cjTypeStatement = this.containingTypeStatement
-        if (cjTypeStatement != null) {
-            scope = scope.intersectWith(cjTypeStatement.useScope)
-        }
-
-        return scope
+        return computeCangJieDeclarationUseScope(
+            declaration = this,
+            defaultScope = super.getUseScope(),
+        )
     }
 
     override val fqName: FqName?

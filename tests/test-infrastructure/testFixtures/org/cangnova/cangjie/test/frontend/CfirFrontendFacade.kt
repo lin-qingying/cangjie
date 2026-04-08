@@ -30,7 +30,7 @@ import org.cangnova.cangjie.test.model.TestFile
 import org.cangnova.cangjie.test.model.TestModule
 import org.cangnova.cangjie.test.services.ServiceRegistrationData
 import org.cangnova.cangjie.test.services.TestServices
-import org.cangnova.cangjie.test.services.cliBasedFacadesMarkerRegistrationData
+import org.cangnova.cangjie.test.services.frontendBasedFacadesMarkerRegistrationData
 import org.cangnova.cangjie.test.services.compilerConfigurationProvider
 import org.cangnova.cangjie.test.services.defaultsProvider
 import org.cangnova.cangjie.test.services.getCjFilesForSourceFiles
@@ -51,7 +51,7 @@ open class CfirFrontendFacade(
 
     override val additionalServices: List<ServiceRegistrationData>
         get() = listOf(
-            cliBasedFacadesMarkerRegistrationData,
+            frontendBasedFacadesMarkerRegistrationData,
             service(::CfirModuleInfoProvider),
             service(::CfirDiagnosticCollectorService),
         )

@@ -154,9 +154,6 @@ fun CjSimpleNameExpression.isImportDirectiveExpression(): Boolean {
 }
 
 fun CjSimpleNameExpression.getQualifiedElementOrCallableRef(): CjElement {
-    val parent = parent
-    if (parent is CjCallableReferenceExpression && parent.callableReference == this) return parent
-
     return getQualifiedElement()
 }
 

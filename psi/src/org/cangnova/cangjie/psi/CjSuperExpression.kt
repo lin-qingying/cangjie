@@ -25,14 +25,15 @@
 package org.cangnova.cangjie.psi
 
 import com.intellij.lang.ASTNode
-import com.intellij.psi.PsiElement
 
+/**
+ * 仓颉中的 `super` 表达式。
+ *
+ * 当前语法只支持裸 `super`，不支持 Kotlin 风格的限定超类型与 label 形式。
+ * 因此 PSI 仅保留实例引用本身，不再暴露额外限定信息入口。
+ */
 class CjSuperExpression(node: ASTNode) : CjInstanceExpressionWithLabel(node), CjStatementExpression {
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitSuperExpression(this, data)
     }
-
-    val superTypeQualifier: CjTypeReference?
-
-        get() = findChildByType<PsiElement>(CjNodeTypes.TYPE_REFERENCE) as CjTypeReference?
 }

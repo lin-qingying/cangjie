@@ -85,5 +85,3 @@ class PendingDiagnosticsReporterImpl(private val delegate: DiagnosticReporter) :
         }
     }
 }
-
-

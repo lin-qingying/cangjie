@@ -1,0 +1,37 @@
+plugins {
+    kotlin("jvm")
+}
+//不能依赖resolve模块，如果需要resolve模块的东西，应该将其声明移动到providers或semantics
+dependencies {
+    api(project(":cfir:cfir-common"))
+    api(project(":cfir:cfir-tree"))
+    api(project(":cfir:symbols"))
+    api(project(":cfir:providers"))
+ 
+
+    api(project(":cfir:semantics"))
+
+    api(project(":cfir:diagnostic-renderers"))
+    api(project(":cfir:cfir-cones"))
+    api(project(":common:diagnostics"))
+    api(project(":cfir:providers"))
+    compileOnly(intellijCore())
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions.freeCompilerArgs.add("-Xcontext-parameters")
+}
+
+val generateCfirErrors by tasks.registering {
+    group = "generation"
+    description = "Generate Cfir diagnostics artifacts from Cangjie diagnostics list."
+    dependsOn(":cfir:checkers:checkers-component-generator:generateCfirDiagnostics")
+}
+
+sourceSets {
+    "main" {
+        projectDefault()
+        generatedDir()
+    }
+    "test" { none() }
+}

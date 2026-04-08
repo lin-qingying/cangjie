@@ -26,6 +26,7 @@ object CfirFieldVariableInitializerTypeMismatchChecker : CfirFieldVariableChecke
             expectedType = expectedType,
             actualType = actualType,
             source = source,
+            preferredSpecializedSource = initializer.source as? AbstractCjSourceElement,
             diagnosticFactory = CfirErrors.TYPE_MISMATCH,
         )
     }

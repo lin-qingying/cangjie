@@ -28,7 +28,5 @@ abstract class CfirEnumPattern : CfirPattern() {
 
     abstract fun <D> transformConstructorReference(transformer: CfirTransformer<D>, data: D): CfirEnumPattern
 
-
     abstract fun <D> transformArguments(transformer: CfirTransformer<D>, data: D): CfirEnumPattern
-
 }

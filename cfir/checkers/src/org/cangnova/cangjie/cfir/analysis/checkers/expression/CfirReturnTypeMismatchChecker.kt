@@ -3,8 +3,11 @@
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirErrorFunction
 
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
@@ -26,10 +29,14 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
         val actualType = result.coneTypeOrNull ?: return
         if (actualType is ConeErrorType) return
         val containingFunction = context.findClosestDeclaration<CfirFunction>() ?: return
+
+        if(containingFunction is CfirErrorFunction || containingFunction is CfirMainFunction || containingFunction is CfirMacroDeclaration) {
+            return
+        }
         val expectedTypeRef = containingFunction.returnTypeRef as? CfirResolvedTypeRef ?: return
         val expectedType = expectedTypeRef.coneType
         if (expectedType is ConeErrorType) return
-        if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, actualType, expectedType) != true) {
+        if (!AbstractTypeChecker.isSubtypeOf(context.session.typeContext, actualType, expectedType)) {
             reporter.reportOn(
                 source, CfirErrors.RETURN_TYPE_MISMATCH,
                 expectedType,

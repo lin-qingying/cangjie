@@ -1,5 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.resolve.body
 
+import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.ScopeSession
@@ -20,7 +22,6 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
-import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 
 /**
  * 带 designated resolve“跳转”能力的返回类型计算器。
@@ -132,11 +133,8 @@ class ReturnTypeCalculatorWithJump(
     }
 
     private fun resolvedTypeRefFromType(prototype: CfirTypeRef?, type: ConeCangJieType): CfirResolvedTypeRef {
-        return buildResolvedTypeRef {
-            source = prototype?.source
-            coneType = type
-            delegatedTypeRef = prototype
-        }
+        return prototype?.resolvedTypeFromPrototype(type, prototype.source)
+            ?: type.toCfirResolvedTypeRef()
     }
 
     /** 查找声明所在文件。 */

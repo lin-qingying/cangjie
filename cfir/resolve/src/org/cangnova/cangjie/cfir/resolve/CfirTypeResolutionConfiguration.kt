@@ -10,6 +10,13 @@ import org.cangnova.cangjie.cfir.scopes.CfirScope
  * 对齐 Kotlin `TypeResolutionConfiguration` 的类型解析配置。
  */
 data class TypeResolutionConfiguration(
+    /**
+     * 类型解析作用域按“高优先级在前、低优先级在后”排列。
+     *
+     * `CfirTypeResolver` 会按当前迭代顺序直接命中第一个可见分类器，
+     * 因此这里绝不能再把文件级/包级/导入级 scope 反转后传入，
+     * 否则默认导入会抢在当前文件声明之前被解析。
+     */
     val scopes: Iterable<CfirScope> = emptyList(),
     val containingClassDeclarations: List<CfirClass> = emptyList(),
     val useSiteFile: CfirFile?,

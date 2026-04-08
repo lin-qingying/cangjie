@@ -1,0 +1,54 @@
+package org.cangnova.cangjie.cfir.analysis.checkers.expression
+
+import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
+
+/**
+ * `this(...)` / `super(...)` 在仓颉里是构造器 delegation 调用，
+ * 即使语法上表现为 call expression，也不能出现在普通函数、lambda 或类体其他位置。
+ *
+ * declaration 侧的 `CfirConstructorDelegationChecker` 负责“在构造器里是否合法”；
+ * 这里负责更外层的入口约束：如果最近的函数级声明不是 constructor，就直接报非法位置。
+ */
+object CfirConstructorDelegationCallChecker : CfirFunctionCallChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirFunctionCall) {
+        val delegationName = expression.origin.constructorDelegationKeyword() ?: return
+        val closestFunction = context.closestFunctionLikeDeclaration() ?: run {
+            reporter.reportOn(
+                source = expression.calleeReference.source ?: expression.source,
+                factory = CfirErrors.ILLEGAL_THIS_OR_SUPER_CALL,
+                a = delegationName,
+            )
+            return
+        }
+
+        if (closestFunction is CfirConstructor) return
+
+        reporter.reportOn(
+            source = expression.calleeReference.source ?: expression.source,
+            factory = CfirErrors.ILLEGAL_THIS_OR_SUPER_CALL,
+            a = delegationName,
+        )
+    }
+}
+
+private fun CfirFunctionCallOrigin.constructorDelegationKeyword(): String? {
+    return when (this) {
+        CfirFunctionCallOrigin.ConstructorDelegationThis -> "this"
+        CfirFunctionCallOrigin.ConstructorDelegationSuper -> "super"
+        else -> null
+    }
+}
+
+private fun CheckerContext.closestFunctionLikeDeclaration(): CfirFunction? {
+    return containingDeclarations
+        .asReversed()
+        .firstOrNull { declaration -> declaration is CfirFunction } as? CfirFunction
+}

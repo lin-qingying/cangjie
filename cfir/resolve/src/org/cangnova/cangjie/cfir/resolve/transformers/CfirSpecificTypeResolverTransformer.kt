@@ -9,10 +9,13 @@ import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.builder.buildUserTypeRef
 
 /**
  * 对齐 Kotlin `FirSpecificTypeResolverTransformer`：
@@ -57,7 +60,7 @@ class CfirSpecificTypeResolverTransformer(
             typeRef.transformChildren(this, data)
         }
 
-        val result = session.typeResolver.resolveType(
+        val (resolvedType, diagnostic) = session.typeResolver.resolveType(
             typeRef = typeRef,
             configuration = data,
             areBareTypesAllowed = areBareTypesAllowed,
@@ -66,41 +69,97 @@ class CfirSpecificTypeResolverTransformer(
             supertypeSupplier = supertypeSupplier,
             expandTypeAliases = expandTypeAliases,
         )
-        val resolvedType = result.type
-        val errorType = resolvedType as? ConeErrorType
+        return transformType(typeRef, resolvedType, diagnostic, data)
+    }
 
-        if (errorType != null && !errorTypeAsResolved) {
-            return buildErrorTypeRef {
-                source = typeRef.source
-                annotations += typeRef.annotations
-                coneType = errorType
-                delegatedTypeRef = typeRef
-                diagnostic = errorType.diagnostic
+    private fun transformType(
+        typeRef: CfirTypeRef,
+        resolvedType: ConeCangJieType,
+        diagnostic: ConeDiagnostic?,
+        data: TypeResolutionConfiguration,
+    ): CfirResolvedTypeRef {
+        return when {
+            resolvedType is ConeErrorType -> {
+                buildErrorType(typeRef, resolvedType, resolvedType.diagnostic, data)
+            }
+
+            diagnostic != null -> {
+                buildErrorType(typeRef, resolvedType, diagnostic, data)
+            }
+
+            else -> {
+                // 正常路径：成功解析
+                buildResolvedTypeRef {
+                    source = typeRef.source
+                    coneType = resolvedType
+                    annotations += typeRef.annotations
+                    delegatedTypeRef = typeRef
+                }
             }
         }
+    }
 
-        if (errorType == null && result.diagnostic == null) {
-            // 正常路径：成功解析
-            return buildResolvedTypeRef {
-                source = typeRef.source
-                coneType = resolvedType
-                annotations += typeRef.annotations
-                delegatedTypeRef = typeRef
-            }
-        }
-
-        // 错误路径：对齐 K2 — 构建 CfirResolvedTypeRef 并将 ConeErrorType 作为 coneType，
-        // 这样下游 CfirErrorNodeDiagnosticCollectorComponent.visitResolvedTypeRef 能通过
-        // coneType.diagnostic 提取结构化诊断（如 ConeUnresolvedSymbolError），正确报告 UNRESOLVED_REFERENCE。
-        val diagnosticConeType = errorType ?: ConeErrorType(
-            result.diagnostic ?: ConeSimpleDiagnostic("Unresolved type")
-        )
-        return buildResolvedTypeRef {
+    private fun buildErrorType(
+        typeRef: CfirTypeRef,
+        resolvedType: ConeCangJieType,
+        diagnostic: ConeDiagnostic,
+        data: TypeResolutionConfiguration,
+    ): CfirErrorTypeRef {
+        return buildErrorTypeRef {
             source = typeRef.source
-            coneType = diagnosticConeType
+            if (errorTypeAsResolved || resolvedType !is ConeErrorType) {
+                coneType = resolvedType
+            }
             annotations += typeRef.annotations
             delegatedTypeRef = typeRef
+            partiallyResolvedTypeRef = tryCalculatingPartiallyResolvedTypeRef(typeRef, data)
+            this.diagnostic = diagnostic
         }
+    }
+
+    /**
+     * 对齐 Kotlin FIR：当用户类型部分可解析时，保留前缀的已解析结果，
+     * 供错误类型引用承载 IDE/诊断所需的部分语义信息。
+     */
+    private fun tryCalculatingPartiallyResolvedTypeRef(
+        typeRef: CfirTypeRef,
+        data: TypeResolutionConfiguration,
+    ): CfirResolvedTypeRef? {
+        if (typeRef !is CfirUserTypeRef) return null
+        if (typeRef.qualifier.size <= 1) return null
+
+        val qualifiersToTry = typeRef.qualifier.toMutableList()
+        while (qualifiersToTry.size > 1) {
+            qualifiersToTry.removeLast()
+
+            val typeRefToTry = buildUserTypeRef {
+                source = typeRef.source
+                annotations += typeRef.annotations
+                qualifier += qualifiersToTry
+            }
+
+            val (resolvedType, diagnostic) = withBareTypes {
+                session.typeResolver.resolveType(
+                    typeRef = typeRefToTry,
+                    configuration = data,
+                    areBareTypesAllowed = areBareTypesAllowed,
+                    isOperandOfIsOperator = isOperandOfIsOperator,
+                    resolveDeprecations = resolveDeprecations,
+                    supertypeSupplier = supertypeSupplier,
+                    expandTypeAliases = expandTypeAliases,
+                )
+            }
+
+            if (resolvedType is ConeErrorType || diagnostic != null) continue
+
+            return buildResolvedTypeRef {
+                source = typeRefToTry.source
+                coneType = resolvedType
+                delegatedTypeRef = typeRefToTry
+            }
+        }
+
+        return null
     }
 
     override fun transformResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef, data: TypeResolutionConfiguration): CfirTypeRef {
@@ -108,6 +167,7 @@ class CfirSpecificTypeResolverTransformer(
     }
 
     override fun transformErrorTypeRef(errorTypeRef: CfirErrorTypeRef, data: TypeResolutionConfiguration): CfirTypeRef {
+        errorTypeRef.transformPartiallyResolvedTypeRef(this, data)
         return errorTypeRef
     }
 

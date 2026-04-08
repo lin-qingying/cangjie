@@ -25,13 +25,14 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
 import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeTypeIntersector
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemBuilder
-import org.cangnova.cangjie.resolve.calls.inference.addSubtypeConstraintIfCompatible
+import org.cangnova.cangjie.resolve.calls.inference.isSubtypeConstraintCompatible
 import org.cangnova.cangjie.resolve.calls.inference.components.PostponedArgumentInputTypesResolver.Companion.TYPE_VARIABLE_NAME_FOR_LAMBDA_RETURN_TYPE
 import org.cangnova.cangjie.resolve.calls.inference.components.PostponedArgumentInputTypesResolver.Companion.TYPE_VARIABLE_NAME_PREFIX_FOR_LAMBDA_PARAMETER_TYPE
 import org.cangnova.cangjie.resolve.calls.inference.model.ArgumentConstraintPosition
@@ -185,6 +186,7 @@ internal object ArgumentCheckingProcessor {
         if (expectedType == null) return
 
         val argumentType = substituteTypeParameterUpperBoundIfNeeded(argumentTypeBeforeCapturing, expectedType, session)
+        val normalizedArgumentType = normalizeTypeForCompatibilityCheck(argumentType)
         val expression = atom.expression
 
         fun subtypeError(actualExpectedType: ConeCangJieType): ResolutionDiagnostic {
@@ -223,9 +225,11 @@ internal object ArgumentCheckingProcessor {
             )
         }
 
-        if (csBuilder.addSubtypeConstraintIfCompatible(argumentType, expectedType, position)) return
-
-        reportDiagnostic(subtypeError(expectedType))
+        val compatible = csBuilder.isSubtypeConstraintCompatible(normalizedArgumentType, expectedType)
+        csBuilder.addSubtypeConstraint(argumentType, expectedType, position)
+        if (!compatible) {
+            reportDiagnostic(subtypeError(expectedType))
+        }
     }
     private fun  ArgumentContext.shouldRunConversion(): Boolean {
         // Currently, we only apply conversions for arguments, not lambda's return expressions
@@ -320,19 +324,22 @@ internal object ArgumentCheckingProcessor {
             val position = ConeArgumentConstraintPosition(expression)
             if (duringCompletion) {
                 csBuilder.addSubtypeConstraint(lambdaType, targetExpectedType, position)
-            } else if (!csBuilder.addSubtypeConstraintIfCompatible(lambdaType, targetExpectedType, position)) {
+            } else {
+                val compatible = csBuilder.isSubtypeConstraintCompatible(lambdaType, targetExpectedType)
                 csBuilder.addSubtypeConstraint(lambdaType, targetExpectedType, position)
-                if (targetExpectedType !is ConeErrorType) {
-                    reportDiagnostic(
-                        ArgumentTypeMismatch(
-                            expectedType = targetExpectedType,
-                            actualType = lambdaType,
-                            argument = expression,
-                            isMismatchDueToNullability = false,
-                            anonymousFunctionIfReturnExpression = anonymousFunctionIfReturnExpression,
-                            systemHadContradiction = csBuilder.hasContradiction,
-                        ),
-                    )
+                if (!compatible) {
+                    if (targetExpectedType !is ConeErrorType) {
+                        reportDiagnostic(
+                            ArgumentTypeMismatch(
+                                expectedType = targetExpectedType,
+                                actualType = lambdaType,
+                                argument = expression,
+                                isMismatchDueToNullability = false,
+                                anonymousFunctionIfReturnExpression = anonymousFunctionIfReturnExpression,
+                                systemHadContradiction = csBuilder.hasContradiction,
+                            ),
+                        )
+                    }
                 }
             }
         }

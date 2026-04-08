@@ -20,8 +20,7 @@ class CfirNamedReferenceImpl @CfirImplementationDetail constructor(
     override val name: Name,
 ) : CfirPureAbstractElement(), CfirNamedReference {
 
-    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
-    }
+    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirNamedReferenceImpl {
         return this

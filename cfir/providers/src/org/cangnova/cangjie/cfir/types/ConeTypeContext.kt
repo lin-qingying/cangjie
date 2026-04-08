@@ -3,11 +3,12 @@ package org.cangnova.cangjie.cfir.types
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.type.model.*
 import org.cangnova.cangjie.types.TypeSystemCommonBackendContext
-import  org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 
 /**
  * CFIR 层的 Cone 类型系统上下文。
@@ -114,8 +115,6 @@ interface ConeTypeContext :
 
     override fun TypeConstructorMarker.isIntegerConstantOperatorTypeConstructor(): Boolean = false
 
-    override fun TypeConstructorMarker.isLocalType(): Boolean = false
-
     override fun TypeConstructorMarker.isAnonymous(): Boolean = false
 
     override fun TypeConstructorMarker.getTypeParameterClassifier(): TypeParameterMarker? =
@@ -175,6 +174,12 @@ interface ConeTypeContext :
         val classSymbol = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(classId) }.getOrNull()
             ?: return emptyList()
         if (!classSymbol.isBound) return emptyList()
-        return classSymbol.cfir.superTypeRefs.mapNotNull { (it as? CfirResolvedTypeRef)?.coneType }
+        classSymbol.lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
+        return declarationSelfType(classSymbol)
+            ?.let { declarationSelfType ->
+                session.typeAwareSupertypeProviderOrNull?.getDirectSupertypes(declarationSelfType)
+            }
+            ?.takeIf { it.isNotEmpty() }
+            ?: classSymbol.cfir.superTypeRefs.mapNotNull { (it as? CfirResolvedTypeRef)?.coneType }
     }
 }

@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.tower
 import org.cangnova.cangjie.cfir.calls.ExpressionReceiverValue
 import org.cangnova.cangjie.cfir.calls.ReceiverValue
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.ConstructorFilter
@@ -13,8 +14,12 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateCollector
 import org.cangnova.cangjie.cfir.resolve.calls.processFunctionsAndConstructorsByName
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 
@@ -53,6 +58,16 @@ internal class ScopeBasedTowerLevel(
     }
 
     override fun processFunctionsByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult {
+        if (info.callKind == CallKind.EnumConstructorCall) {
+            var result = ProcessResult.SCOPE_EMPTY
+            scope.processCallablesByName(info.name) { symbol ->
+                val enumConstructorSymbol = symbol as? CfirEnumConstructorSymbol ?: return@processCallablesByName
+                result = ProcessResult.FOUND
+                processor.consumeCandidate(enumConstructorSymbol, scope, dispatchReceiver, givenExtensionReceiver)
+            }
+            return result
+        }
+
         var result = ProcessResult.SCOPE_EMPTY
         val constructorFilter = when (givenExtensionReceiver) {
             null -> ConstructorFilter.OnlyNested
@@ -62,7 +77,35 @@ internal class ScopeBasedTowerLevel(
             result = ProcessResult.FOUND
             processor.consumeCandidate(symbol, scope, dispatchReceiver, givenExtensionReceiver)
         }
+
+        if (info.callKind == CallKind.Function && result == ProcessResult.SCOPE_EMPTY) {
+            val consumedCallableValues = linkedSetOf<CfirCallableSymbol<*>>()
+
+            fun consumeCallableValue(symbol: CfirCallableSymbol<*>) {
+                if (symbol is CfirFunctionSymbol<*>) return
+                if (!symbol.isDirectCallableValueCandidate()) return
+                if (!consumedCallableValues.add(symbol)) return
+
+                result = ProcessResult.FOUND
+                processor.consumeCandidate(symbol, scope, dispatchReceiver, givenExtensionReceiver)
+            }
+
+            if (scope is CfirLocalScopeImpl) {
+                scope.processVariablesByName(info.name, ::consumeCallableValue)
+            }
+
+            scope.processCallablesByName(info.name) { symbol ->
+                consumeCallableValue(symbol)
+            }
+        }
+
         return result
+    }
+
+    private fun CfirCallableSymbol<*>.isDirectCallableValueCandidate(): Boolean {
+        if (!isBound) return false
+        val declaration = cfir as? CfirVariable ?: return false
+        return declaration.returnTypeRef.coneTypeOrNull is ConeFuncType
     }
 }
 
@@ -125,7 +168,7 @@ internal class TowerLevelHandler {
         )
 
         return when (info.callKind) {
-            CallKind.VariableAccess -> towerLevel.processCallablesByName(info, processor)
+            CallKind.NamedValueAccess -> towerLevel.processCallablesByName(info, processor)
             CallKind.Function,
             CallKind.EnumConstructorCall,
             -> towerLevel.processFunctionsByName(info, processor)

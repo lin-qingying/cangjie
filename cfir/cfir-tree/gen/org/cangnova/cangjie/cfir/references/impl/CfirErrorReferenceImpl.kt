@@ -18,8 +18,7 @@ class CfirErrorReferenceImpl @CfirImplementationDetail constructor(
     override val reason: String,
 ) : CfirErrorReference() {
 
-    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
-    }
+    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirErrorReferenceImpl {
         return this

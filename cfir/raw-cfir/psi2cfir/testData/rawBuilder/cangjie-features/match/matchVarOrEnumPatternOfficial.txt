@@ -1,0 +1,22 @@
+FILE: matchVarOrEnumPatternOfficial.cj
+    internal? enum Option<T> {
+        Some(R|T|)
+        init()
+    }
+    internal? func matchOption(value: R|Option<R|Int64|>|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(value)
+                BRANCH(deferred(None)) {
+                    INT(0)
+                }
+                BRANCH(Some(deferred(x))) {
+                    NAMED_ACCESS(x)
+                }
+                BRANCH(deferred(fallback)) {
+                    INT(1)
+                }
+            }
+        }
+    }

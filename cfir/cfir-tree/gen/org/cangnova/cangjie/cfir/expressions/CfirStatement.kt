@@ -7,7 +7,6 @@ package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -15,7 +14,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.statement]
  */
-interface CfirStatement : CfirElement, CfirAnnotationContainer {
+interface CfirStatement : CfirAnnotationContainer {
     override val source: CjSourceElement?
     override val annotations: List<CfirAnnotation>
 
@@ -28,7 +27,5 @@ interface CfirStatement : CfirElement, CfirAnnotationContainer {
 
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
-
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirStatement
-
 }

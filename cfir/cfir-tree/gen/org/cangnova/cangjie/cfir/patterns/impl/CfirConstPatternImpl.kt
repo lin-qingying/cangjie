@@ -23,14 +23,13 @@ class CfirConstPatternImpl @CfirImplementationDetail constructor(
         expression.accept(visitor, data)
     }
 
-    override fun <D> transformExpression(transformer: CfirTransformer<D>, data: D): CfirConstPattern
-     {
-        this.expression = expression.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirExpression
+    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirConstPatternImpl {
+        transformExpression(transformer, data)
         return this
     }
 
-    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirConstPatternImpl {
-        transformExpression(transformer, data)
+    override fun <D> transformExpression(transformer: CfirTransformer<D>, data: D): CfirConstPatternImpl {
+        expression = expression.transform(transformer, data)
         return this
     }
 }

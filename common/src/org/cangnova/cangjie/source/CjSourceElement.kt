@@ -389,6 +389,14 @@ sealed class CjFakeSourceElementKind(final override val shouldSkipErrorTypeRepor
     object DestructuringBlock : CjFakeSourceElementKind()
 
     /**
+     * 模式绑定变量是语义层从 pattern 中投影出的独立 declaration 视图。
+     *
+     * 它依然锚定原始 pattern PSI，便于导航与诊断，
+     * 但不应再被当成“源码里直接存在的独立声明节点”。
+     */
+    object PatternBindingVariable : CjFakeSourceElementKind()
+
+    /**
      * `{ (a, b) -> foo() }` -> `{ x -> val (a, b) = x; { foo() } }`
      * where the inner block `{ foo() }` has fake source
      */

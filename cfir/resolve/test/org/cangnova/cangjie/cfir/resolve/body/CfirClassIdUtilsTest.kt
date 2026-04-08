@@ -22,17 +22,14 @@ class CfirClassIdUtilsTest {
     }
 
     @Test
-    fun `builds nested class id using relative class name chain`() {
+    fun `nested class ids are not part of cangjie public class id model`() {
         val packageFqName = FqName("sample.pkg")
         val classId = classIdForClassNesting(
             packageFqName,
             listOf(Name.identifier("Outer"), Name.identifier("Inner"), Name.identifier("Leaf")),
         )
 
-        assertEquals(
-            ClassId(packageFqName, FqName("Outer.Inner.Leaf"), isLocal = false),
-            classId,
-        )
+        assertNull(classId)
     }
 }
 

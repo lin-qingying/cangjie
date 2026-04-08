@@ -1,0 +1,200 @@
+package org.cangnova.cangjie.cfir.analysis.checkers.declaration
+
+import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
+import org.cangnova.cangjie.cfir.session.ProcessorAction
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
+import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.renderForDebugging
+import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.name.ClassId
+
+internal fun CheckerContext.createUseSiteMemberScope(declaration: CfirClassLikeDeclaration): CfirTypeScope {
+    return when (declaration) {
+        is CfirClass -> session.cangjieScopeProvider.getDeclarationSiteMemberScope(
+            declaration,
+            session,
+            scopeSession,
+        )
+
+        is CfirStruct -> {
+            val symbol = declaration.symbol as CfirClassLikeSymbol<*>
+            CfirClassUseSiteMemberScope(
+                session = session,
+                classSymbol = symbol,
+                symbolProvider = session.symbolProvider,
+                extendProvider = session.extendProvider,
+                directSupertypeProvider = session.directSupertypeProviderOrNull,
+                scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
+            )
+        }
+
+        else -> {
+            val symbol = declaration.symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
+            CfirClassUseSiteMemberScope(
+                session = session,
+                classSymbol = symbol,
+                symbolProvider = session.symbolProvider,
+                extendProvider = session.extendProvider,
+                directSupertypeProvider = session.directSupertypeProviderOrNull,
+                scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
+            )
+        }
+    }
+}
+
+internal fun CheckerContext.ownerClassSymbol(symbol: CfirCallableSymbol<*>): CfirClassLikeSymbol<*>? {
+    val ownerClassId = symbol.ownerClassId(session = session)
+        ?: return null
+    return session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)
+}
+
+internal fun CfirCallableSymbol<*>.ownerClassId(context: CheckerContext): ClassId? =
+    ownerClassId(session = context.session)
+
+private fun CfirCallableSymbol<*>.ownerClassId(session: org.cangnova.cangjie.cfir.session.CfirSession): ClassId? {
+    return callableId.classId ?: session.symbolProvider.getContainingClassId(this)
+}
+
+internal fun CfirTypeScope.collectDirectOverriddenFunctions(functionSymbol: CfirFunctionSymbol<*>): List<CfirFunctionSymbol<*>> {
+    val targetSignature = functionSymbol.stableSignatureKey()
+    val targetIsStatic = functionSymbol.isStaticMember()
+    val result = linkedSetOf<CfirFunctionSymbol<*>>()
+    processDirectOverriddenFunctionsWithBaseScope(functionSymbol) { candidate, _ ->
+        if (
+            candidate != functionSymbol &&
+            candidate.stableSignatureKey() == targetSignature &&
+            candidate.isStaticMember() == targetIsStatic
+        ) {
+            result += candidate
+        }
+        ProcessorAction.NEXT
+    }
+    return result.toList()
+}
+
+internal fun CfirTypeScope.collectDirectOverriddenProperties(propertySymbol: CfirPropertySymbol): List<CfirPropertySymbol> {
+    val targetSignature = propertySymbol.stableSignatureKey()
+    val targetIsStatic = propertySymbol.isStaticMember()
+    val result = linkedSetOf<CfirPropertySymbol>()
+    processDirectOverriddenPropertiesWithBaseScope(propertySymbol) { candidate, _ ->
+        if (
+            candidate != propertySymbol &&
+            candidate.stableSignatureKey() == targetSignature &&
+            candidate.isStaticMember() == targetIsStatic
+        ) {
+            result += candidate
+        }
+        ProcessorAction.NEXT
+    }
+    return result.toList()
+}
+
+internal fun CfirCallableSymbol<*>.stableSignatureKey(): String {
+    if (!isBound) return callableIdAsString()
+
+    return when (val declaration = cfir) {
+        is CfirFunction -> {
+            val typeParameterPart = "#tp${declaration.typeParameters.size}"
+            val parameterPart = declaration.valueParameters.joinToString(
+                prefix = "(",
+                postfix = ")",
+                separator = ",",
+            ) { parameter ->
+                parameter.returnTypeRef.toOverrideSignatureComponent()
+            }
+            "fun:${name.asString()}$typeParameterPart$parameterPart"
+        }
+
+        is CfirProperty -> "prop:${name.asString()}"
+        else -> callableIdAsString()
+    }
+}
+
+private fun CfirTypeRef.toOverrideSignatureComponent(): String = when (this) {
+    is CfirResolvedTypeRef -> coneType.renderForDebugging()
+    else -> toString()
+}
+
+private fun CfirCallableSymbol<*>.isStaticMember(): Boolean {
+    return isBound && cfir.status.isStatic
+}
+
+internal fun CfirCallableSymbol<*>.isVisibleIn(
+    ownerDeclaration: CfirClassLikeDeclaration,
+    context: CheckerContext,
+): Boolean {
+    if (!isBound) return true
+    // override / abstract-member 语义使用“派生类视角”的可见性：
+    // private-like 成员只能在声明它的同一类体内参与 override / implementation 计算；
+    // internal 按“当前类所在包 + 子包”判断，protected 在仓颉里按模块可见处理。
+    when (cfir.status.visibility) {
+        Visibilities.Public, Visibilities.Protected -> return true
+        Visibilities.Internal -> {
+            val currentFile = context.session.cfirProvider.getContainingFile(ownerDeclaration.symbol) ?: return true
+            val declarationFile = context.session.cfirProvider.getContainingFile(this) ?: return true
+            val currentPackage = currentFile.packageDirective.packageFqName
+            val declarationPackage = declarationFile.packageDirective.packageFqName
+            return canAccessPackageInternalDeclaration(currentPackage, declarationPackage)
+        }
+    }
+
+    val ownerClassId = ownerClassId(context) ?: return true
+    val currentClassId = (ownerDeclaration.symbol as? CfirClassLikeSymbol<*>)?.classId ?: return true
+    return ownerClassId == currentClassId
+}
+
+internal fun CfirCallableSymbol<*>.isAbstractLike(context: CheckerContext): Boolean {
+    if (!isBound) return false
+    if (cfir.status.isAbstract) return true
+
+    val ownerClass = context.ownerClassSymbol(this)?.cfir
+    if (ownerClass !is CfirInterface) return false
+
+    val declaration = cfir
+    return when (declaration) {
+        is CfirFunction -> (this as? CfirFunctionSymbol<*>)?.hasBody == false
+        is CfirProperty -> declaration.getter == null && declaration.setter == null
+        else -> false
+    }
+}
+
+internal fun CfirCallableSymbol<*>.isOverridableFrom(
+    ownerDeclaration: CfirClassLikeDeclaration,
+    context: CheckerContext,
+): Boolean {
+    if (!isBound) return false
+
+    val ownerClassId = ownerClassId(context) ?: return false
+    val currentClassId = (ownerDeclaration.symbol as? CfirClassLikeSymbol<*>)?.classId ?: return false
+    if (ownerClassId == currentClassId) return false
+    if (!isVisibleIn(ownerDeclaration, context)) return false
+
+    if (isAbstractLike(context)) return true
+    if (cfir.status.isOpen || cfir.status.isOverride) return true
+
+    val ownerClassDeclaration = context.ownerClassSymbol(this)?.cfir
+    return ownerClassDeclaration is CfirInterface
+}
+
+internal val CfirCallableDeclaration.isSourceDeclaration: Boolean
+    get() = origin == org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin.Source

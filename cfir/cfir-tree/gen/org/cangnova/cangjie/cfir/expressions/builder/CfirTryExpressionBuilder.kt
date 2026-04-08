@@ -9,11 +9,9 @@ package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
-import org.cangnova.cangjie.cfir.expressions.CfirBlock
-import org.cangnova.cangjie.cfir.expressions.CfirCatch
-import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
+import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.impl.CfirTryExpressionImpl
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
@@ -24,6 +22,7 @@ class CfirTryExpressionBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
     lateinit var tryBlock: CfirBlock
+    val handlers: MutableList<CfirHandleClause> = mutableListOf()
     val catches: MutableList<CfirCatch> = mutableListOf()
     var finallyBlock: CfirBlock? = null
 
@@ -31,9 +30,10 @@ class CfirTryExpressionBuilder {
     fun build(): CfirTryExpression {
         return CfirTryExpressionImpl(
             source,
-            annotations,
+            annotations.toMutableOrEmpty(),
             coneTypeOrNull,
             tryBlock,
+            handlers,
             catches,
             finallyBlock,
         )
@@ -59,6 +59,7 @@ inline fun buildTryExpressionCopy(original: CfirTryExpression, init: CfirTryExpr
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.tryBlock = original.tryBlock
+    copyBuilder.handlers.addAll(original.handlers)
     copyBuilder.catches.addAll(original.catches)
     copyBuilder.finallyBlock = original.finallyBlock
     return copyBuilder.apply(init).build()

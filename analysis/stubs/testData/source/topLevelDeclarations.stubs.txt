@@ -1,0 +1,7 @@
+fileKey=topLevelDeclarations.cj
+kind=Facade[packageFqName=sample.stubs, facadeFqName=sample.stubs]
+package=sample.stubs
+topLevelClassifiers=[Greeter]
+topLevelCallables=[PI, left, right, topLevel]
+classMembers=
+  sample.stubs.Greeter=[member]

@@ -39,12 +39,9 @@ object CfirDiagnosticsDirectives : SimpleDirectivesContainer(){
         description = "Enables CFIR inference logger collection and dumps it to a side file.",
     )
 
-    val DUMP_SCOPE by directive(
-        description = "Dumps basic CFIR scope information for the current test file.",
-    )
 
     val SCOPE_DUMP by stringDirective(
-        description = "Dump scope information for the specified class FQNs. Syntax: SCOPE_DUMP: pkg.Class:foo;bar",
+        description = "Dump scope information for specified top-level class-like FQNs. Syntax: SCOPE_DUMP: pkg.ClassLike:foo;bar. Nested-class syntax is unsupported because Cangjie no longer models nested class declarations. Empty value means dump all class-like declarations in current test files.",
     )
 
     val IGNORE_LEAKED_INTERNAL_TYPES by stringDirective(

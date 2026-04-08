@@ -31,6 +31,7 @@ import com.intellij.psi.stubs.DefaultStubBuilder
 import com.intellij.psi.stubs.StubElement
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubKindImpl
+import org.cangnova.cangjie.psi.stubs.CangJieCompiledFileErrors
 
 class CjFileStubBuilder : DefaultStubBuilder() {
     override fun buildStubTree(file: PsiFile): StubElement<*> {
@@ -73,7 +74,7 @@ class CjFileStubBuilder : DefaultStubBuilder() {
 private fun findErrorMessage(file: CjFile): String? {
     if (!file.isCompiled) return null
     val firstComment = file.importList?.nextSibling as? PsiComment ?: return null
-    if (firstComment.textMatches("// This file was compiled with a newer version of CangJie compiler and can't be decompiled.")) {
+    if (firstComment.textMatches(CangJieCompiledFileErrors.NEWER_VERSION_DECOMPILE_ERROR)) {
         return file.text
     }
 

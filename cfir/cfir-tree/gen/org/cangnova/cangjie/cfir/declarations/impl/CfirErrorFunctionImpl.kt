@@ -8,36 +8,50 @@
 package org.cangnova.cangjie.cfir.declarations.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.symbols.CfirErrorFunctionSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
+import org.cangnova.cangjie.cfir.types.impl.CfirErrorTypeRefImpl
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
-@OptIn(CfirImplementationDetail::class)
+@OptIn(CfirImplementationDetail::class, ResolveStateAccess::class)
 internal class CfirErrorFunctionImpl(
     override val source: CjSourceElement?,
     override val moduleData: CfirModuleData,
-    override var annotations: List<CfirAnnotation>,
+    resolvePhase: CfirResolvePhase,
+    override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
-    override val isLocal: Boolean,
     override val dispatchReceiverType: ConeSimpleCangJieType?,
     override var status: CfirDeclarationStatus,
-    override var typeParameters: List<CfirTypeParameter>,
-    override var returnTypeRef: CfirTypeRef,
-    override var valueParameters: List<CfirValueParameter>,
+    override val typeParameters: MutableList<CfirTypeParameter>,
+    override val valueParameters: MutableList<CfirValueParameter>,
     override var body: CfirBlock?,
     override val diagnostic: ConeDiagnostic,
     override val symbol: CfirErrorFunctionSymbol,
 ) : CfirErrorFunction() {
+    override val isLocal: Boolean
+        get() = false
     override var controlFlowGraphReference: CfirControlFlowGraphReference? = null
+    override var returnTypeRef: CfirTypeRef = CfirErrorTypeRefImpl(null, MutableOrEmptyList.empty(), null, null, diagnostic)
+
+    init {
+        symbol.bind(this)
+        resolveState = resolvePhase.asResolveState()
+        @Suppress("SENSELESS_COMPARISON")
+        require(source != null || origin != CfirDeclarationOrigin.Source) { "${this::class.simpleName} with Source origin was instantiated without a source element." }
+    }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
@@ -48,69 +62,58 @@ internal class CfirErrorFunctionImpl(
         body?.accept(visitor, data)
     }
 
-    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-     {
-        this.annotations = newAnnotations
-    }
-
-    override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
-     {
-        this.controlFlowGraphReference = newControlFlowGraphReference
-    }
-
-    override fun replaceStatus(newStatus: CfirDeclarationStatus)
-     {
-        this.status = newStatus
-    }
-
-    override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
-     {
-        this.returnTypeRef = newReturnTypeRef
-    }
-
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirErrorFunction
-     {
-        this.annotations = annotations.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirAnnotation }
-        return this
-    }
-
-    override fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirErrorFunction
-     {
-        this.status = status.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirDeclarationStatus
-        return this
-    }
-
-    override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirErrorFunction
-     {
-        this.typeParameters = typeParameters.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirTypeParameter }
-        return this
-    }
-
-    override fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirErrorFunction
-     {
-        this.returnTypeRef = returnTypeRef.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirTypeRef
-        return this
-    }
-
-    override fun <D> transformValueParameters(transformer: CfirTransformer<D>, data: D): CfirErrorFunction
-     {
-        this.valueParameters = valueParameters.map { it.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirValueParameter }
-        return this
-    }
-
-    override fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirErrorFunction
-     {
-        this.body = body?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data) as CfirBlock?
-        return this
-    }
-
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirErrorFunctionImpl {
         transformAnnotations(transformer, data)
-        controlFlowGraphReference?.transform<org.cangnova.cangjie.cfir.CfirElement, D>(transformer, data)
+        controlFlowGraphReference = controlFlowGraphReference?.transform(transformer, data)
         transformTypeParameters(transformer, data)
         transformReturnTypeRef(transformer, data)
         transformValueParameters(transformer, data)
         transformBody(transformer, data)
         return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirErrorFunctionImpl {
+        annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirErrorFunctionImpl {
+        return this
+    }
+
+    override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirErrorFunctionImpl {
+        typeParameters.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirErrorFunctionImpl {
+        returnTypeRef = returnTypeRef.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformValueParameters(transformer: CfirTransformer<D>, data: D): CfirErrorFunctionImpl {
+        valueParameters.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirErrorFunctionImpl {
+        body = body?.transform(transformer, data)
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
+        annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?) {
+        controlFlowGraphReference = newControlFlowGraphReference
+    }
+
+    override fun replaceStatus(newStatus: CfirDeclarationStatus) {
+        status = newStatus
+    }
+
+    override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef) {
+        returnTypeRef = newReturnTypeRef
     }
 }

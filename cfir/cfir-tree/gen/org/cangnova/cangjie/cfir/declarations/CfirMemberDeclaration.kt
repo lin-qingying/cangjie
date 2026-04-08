@@ -7,6 +7,7 @@ package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -24,7 +25,6 @@ sealed class CfirMemberDeclaration : CfirDeclaration(), CfirTypeParameterRefsOwn
     abstract override val attributes: CfirDeclarationAttributes
     abstract override val typeParameters: List<CfirTypeParameterRef>
     abstract val status: CfirDeclarationStatus
-    abstract val isLocal: Boolean
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitMemberDeclaration(this, data)
@@ -33,18 +33,13 @@ sealed class CfirMemberDeclaration : CfirDeclaration(), CfirTypeParameterRefsOwn
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformMemberDeclaration(this, data) as E
 
-    override abstract fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
-
+    abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
     abstract fun replaceStatus(newStatus: CfirDeclarationStatus)
 
+    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirMemberDeclaration
 
-    override abstract fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirMemberDeclaration
-
-
-    override abstract fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirMemberDeclaration
-
+    abstract override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirMemberDeclaration
 
     abstract fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirMemberDeclaration
-
 }

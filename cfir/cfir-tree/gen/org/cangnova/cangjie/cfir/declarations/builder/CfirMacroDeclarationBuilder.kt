@@ -9,10 +9,12 @@ package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirMacroDeclarationImpl
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -24,6 +26,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirMacroDeclarationBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
+    lateinit var resolvePhase: CfirResolvePhase
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
@@ -42,7 +45,8 @@ class CfirMacroDeclarationBuilder {
         return CfirMacroDeclarationImpl(
             source,
             moduleData,
-            annotations,
+            resolvePhase,
+            annotations.toMutableOrEmpty(),
             origin,
             attributes,
             isLocal,
@@ -54,9 +58,7 @@ class CfirMacroDeclarationBuilder {
             body,
             symbol,
             name,
-        ).also {
-            it.initDefaultResolveState()
-        }
+        )
     }
 
 }
@@ -77,9 +79,10 @@ inline fun buildMacroDeclarationCopy(original: CfirMacroDeclaration, init: CfirM
     val copyBuilder = CfirMacroDeclarationBuilder()
     copyBuilder.source = original.source
     copyBuilder.moduleData = original.moduleData
+    copyBuilder.resolvePhase = original.resolvePhase
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
-    copyBuilder.attributes = original.attributes
+    copyBuilder.attributes = original.attributes.copy()
     copyBuilder.isLocal = original.isLocal
     copyBuilder.dispatchReceiverType = original.dispatchReceiverType
     copyBuilder.status = original.status

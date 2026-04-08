@@ -745,8 +745,12 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 "continue"   { return CjTokens.CONTINUE_KEYWORD; }
 "return"     { return CjTokens.RETURN_KEYWORD; }
 "throw"      { return CjTokens.THROW_KEYWORD; }
+"perform"    { return CjTokens.PERFORM_KEYWORD; }
+"resume"     { return CjTokens.RESUME_KEYWORD; }
+"throwing"   { return CjTokens.THROWING_KEYWORD; }
 "try"        { return CjTokens.TRY_KEYWORD; }
 "catch"      { return CjTokens.CATCH_KEYWORD; }
+"handle"     { return CjTokens.HANDLE_KEYWORD; }
 "finally"    { return CjTokens.FINALLY_KEYWORD; }
 "match"      { return CjTokens.MATCH_KEYWORD; }
 "case"       { return CjTokens.CASE_KEYWORD; }

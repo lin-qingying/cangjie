@@ -3,6 +3,6 @@ FILE: genericWhereFunction.cj
     }
     internal? func add<T>(a: R|T|, b: R|T|): R|T| {
         RETURN {
-            QUALIFIED_ACCESS(a)
+            NAMED_ACCESS(a)
         }
     }

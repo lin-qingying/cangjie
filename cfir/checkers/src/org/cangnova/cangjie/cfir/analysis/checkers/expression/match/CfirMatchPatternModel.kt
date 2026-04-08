@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression.match
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.payloadArity
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
@@ -15,6 +16,7 @@ import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
 import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
+import org.cangnova.cangjie.cfir.patterns.CfirVarOrEnumPattern
 import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -242,7 +244,7 @@ sealed class CfirConstructor {
                 val klass = classSymbol?.takeIf { it.isBound }?.cfir ?: return emptyList()
                 klass.declarations
                     .filterIsInstance<CfirEnumConstructor>()
-                    .map { Enum(type.classId, it.name.asString(), arityHint = 0) }
+                    .map { Enum(type.classId, it.name.asString(), arityHint = it.payloadArity()) }
             }
 
             else -> listOf(Single)
@@ -263,6 +265,7 @@ fun convertPattern(pattern: CfirPattern, expectedType: ConeCangJieType): List<Cf
     return when (pattern) {
         is CfirOrPattern -> pattern.alternatives.flatMap { convertPattern(it, expectedType) }
         is CfirWildcardPattern -> listOf(CfirMatchPattern.wild(expectedType))
+        is CfirVarOrEnumPattern -> listOf(CfirMatchPattern.Error.copy(cfirPattern = pattern))
         is CfirBindingPattern -> {
             val nested = pattern.nestedPattern
             if (nested == null) {

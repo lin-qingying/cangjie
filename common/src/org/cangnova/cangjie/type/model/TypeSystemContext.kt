@@ -168,7 +168,13 @@ interface TypeSystemCommonSuperTypesContext : TypeSystemContext, TypeSystemTypeF
             .anySupertype(
                 asRigidType()!!,
                 { predicate(it) },
-                { TypeCheckerState.SupertypesPolicy.Direct }
+                { current ->
+                    if (current.argumentsCount() == 0) {
+                        TypeCheckerState.SupertypesPolicy.Direct
+                    } else {
+                        substitutionSupertypePolicy(current)
+                    }
+                }
             )
 
     /** 获取类型的深度（嵌套泛型层数），用于公共父类型计算的复杂度控制 */
@@ -186,11 +192,44 @@ interface TypeSystemCommonSuperTypesContext : TypeSystemContext, TypeSystemTypeF
     /** 将错误类型构造器转为错误类型（仅在 FIR 前端使用） */
     fun TypeConstructorMarker.toErrorType(): SimpleTypeMarker
 
+    /**
+     * 判断类型构造器对应的类型声明是否可访问。
+     * 对齐 C++ ImportManager::IsTyAccessible。
+     */
+    fun TypeConstructorMarker.isTypeAccessible(): Boolean = true
+
     /** 合并多个类型的注解属性列表（取并集） */
     fun unionTypeAttributes(types: List<CangJieTypeMarker>): List<AnnotationMarker>
 
     /** 替换类型上的自定义注解属性 */
     fun CangJieTypeMarker.replaceCustomAttributes(newAttributes: List<AnnotationMarker>): CangJieTypeMarker
+
+    // ------------------------------------------------------------------
+    // 函数类型与元组类型工具（CST 计算特化路径所需）
+    // 对齐官方 C++ JoinAndMeet 中 JoinOrMeetFuncTy / JoinOrMeetTupleTy
+    // ------------------------------------------------------------------
+
+    /** 判断该类型是否是函数类型（默认 false，由具体上下文覆盖） */
+    fun CangJieTypeMarker.isFunctionType(): Boolean = false
+
+    /** 提取函数类型的参数类型列表（最后一个元素为返回值类型） */
+    fun CangJieTypeMarker.extractArgumentsForFunctionType(): List<CangJieTypeMarker> =
+        error("Not a function type")
+
+    /** 创建函数类型 */
+    fun createFunctionType(parameterTypes: List<CangJieTypeMarker>, returnType: CangJieTypeMarker): CangJieTypeMarker =
+        error("Function type creation not available in this context")
+
+    /** 判断该类型是否是元组类型（默认 false，由具体上下文覆盖） */
+    fun CangJieTypeMarker.isTupleType(): Boolean = false
+
+    /** 提取元组类型的元素类型列表 */
+    fun CangJieTypeMarker.extractElementsForTupleType(): List<CangJieTypeMarker> =
+        error("Not a tuple type")
+
+    /** 创建元组类型 */
+    fun createTupleType(elementTypes: List<CangJieTypeMarker>): CangJieTypeMarker =
+        error("Tuple type creation not available in this context")
 }
 
 // =====================================================================
@@ -240,7 +279,7 @@ interface TypeSystemInferenceExtensionContext : TypeSystemContext, TypeSystemBui
     fun CangJieTypeMarker.isUnit(): Boolean
 
     /** 判断该类型是否是内置函数类型 */
-    fun CangJieTypeMarker.isFunctionType(): Boolean
+    override fun CangJieTypeMarker.isFunctionType(): Boolean
 
 
 
@@ -322,7 +361,7 @@ interface TypeSystemInferenceExtensionContext : TypeSystemContext, TypeSystemBui
     fun CangJieTypeMarker.contextParameterCount(): Int
 
     /** 提取函数类型的参数类型列表（含返回值类型） */
-    fun CangJieTypeMarker.extractArgumentsForFunctionType(): List<CangJieTypeMarker>
+    override fun CangJieTypeMarker.extractArgumentsForFunctionType(): List<CangJieTypeMarker>
 
     /** 根据参数数量获取对应的函数类型构造器 */
     fun getFunctionTypeConstructor(parametersNumber: Int): TypeConstructorMarker
@@ -563,9 +602,6 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
 
     /** 判断是否是整型常量运算类型构造器 */
     fun TypeConstructorMarker.isIntegerConstantOperatorTypeConstructor(): Boolean
-
-    /** 判断是否是局部类型（函数内部定义的 class/struct） */
-    fun TypeConstructorMarker.isLocalType(): Boolean
 
     /** 判断是否是匿名类型 */
     fun TypeConstructorMarker.isAnonymous(): Boolean

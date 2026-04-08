@@ -28,6 +28,7 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.impl.source.tree.LeafPsiElement
+import com.intellij.psi.search.SearchScope
 import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.tree.IElementType
@@ -162,6 +163,13 @@ class CjBindingPattern : CjCasePattern<CangJieBindingPatternStub>, CjSimpleNameE
 
     val variable: CjPatternVariable?
         get() = getParentVariable()
+
+    /**
+     * 绑定模式只是模式变量声明的“名字视图”，真正的 use-scope 语义必须与变量声明一致。
+     */
+    override fun getUseScope(): SearchScope {
+        return variable?.useScope ?: super.getUseScope()
+    }
 }
 
 /**
@@ -213,6 +221,13 @@ class CjTypePattern : CjCasePattern<CangJieTypePatternStub>, PsiNameIdentifierOw
         get() = nameAsSafeName
 
     override fun setName(name: String): PsiElement = this
+
+    /**
+     * 类型模式中的名字同样属于模式变量声明的一部分，搜索边界委托给变量声明统一裁剪。
+     */
+    override fun getUseScope(): SearchScope {
+        return variable?.useScope ?: super.getUseScope()
+    }
 }
 
 /**

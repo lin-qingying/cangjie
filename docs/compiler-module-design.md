@@ -281,7 +281,7 @@ PSI 与 CFIR 是两棵不同用途的树：PSI 是源码语法镜像，CFIR 是�
 | 模块 | 职责 | 依赖 |
 |---|---|---|
 | `:compiler:pipeline` | 12 阶段管线编排：定义阶段顺序、阶段间数据传递、错误中断策略 | `:cfir:entrypoint`, 各阶段模块 |
-| `:compiler:cli` | 命令行入口：参数解析、环境初始化、管线调用、诊断输出 | `:compiler:pipeline`, `:compiler:config` |
+| `:compiler:frontend` | 前端基础设施入口：参数模型、环境初始化、前端管线调用、诊断输出接缝 | `:compiler:pipeline`, `:compiler:config` |
 | `:compiler:plugins` | 插件系统：插件加载、MetaTransform 注册、扩展点管理 | `:compiler:config` |
 
 ---
@@ -317,7 +317,7 @@ PSI 与 CFIR 是两棵不同用途的树：PSI 是源码语法镜像，CFIR 是�
 
 ```mermaid
 graph TD
-    cli[":compiler:cli"]
+    frontend[":compiler:frontend"]
     pipeline[":compiler:pipeline"]
     macro[":compiler:macro\n:compiler:condition-compile"]
     entrypoint[":cfir:entrypoint"]
@@ -470,7 +470,7 @@ include(":cfir:checkers:checkers-component-generator")
 // include(":backend:codegen")
 
 // ===== 编译驱动 =====
-include(":compiler:cli")
+include(":compiler:frontend")
 // include(":compiler:pipeline")
 // include(":compiler:plugins")
 

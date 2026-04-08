@@ -177,10 +177,6 @@ context(c: TypeSystemContext)
 fun TypeConstructorMarker.isIntegerConstantOperatorTypeConstructor(): Boolean =
     with(c) { isIntegerConstantOperatorTypeConstructor() }
 
-/** 判断是否是局部类型（函数内部定义的 class/struct） */
-context(c: TypeSystemContext)
-fun TypeConstructorMarker.isLocalType(): Boolean = with(c) { isLocalType() }
-
 /** 判断是否是匿名类型 */
 context(c: TypeSystemContext)
 fun TypeConstructorMarker.isAnonymous(): Boolean = with(c) { isAnonymous() }
@@ -359,3 +355,33 @@ fun CangJieTypeMarker.isTypeVariableType(): Boolean = with(c) { isTypeVariableTy
 context(c: TypeSystemContext)
 fun TypeSubstitutorMarker.safeSubstitute(type: CangJieTypeMarker): CangJieTypeMarker =
     with(c) { safeSubstitute(type) }
+
+// =====================================================================
+// 函数类型与元组类型工具（TypeSystemCommonSuperTypesContext）
+// CST 计算特化路径所需
+// =====================================================================
+
+/**
+ * 判断类型构造器对应的类型声明是否可访问。
+ * 对齐 C++ ImportManager::IsTyAccessible。
+ */
+context(c: TypeSystemCommonSuperTypesContext)
+fun TypeConstructorMarker.isTypeAccessible(): Boolean = with(c) { isTypeAccessible() }
+
+/** 判断该类型是否是函数类型 */
+context(c: TypeSystemCommonSuperTypesContext)
+fun CangJieTypeMarker.isFunctionType(): Boolean = with(c) { isFunctionType() }
+
+/** 提取函数类型的参数类型列表（最后一个元素为返回值类型） */
+context(c: TypeSystemCommonSuperTypesContext)
+fun CangJieTypeMarker.extractArgumentsForFunctionType(): List<CangJieTypeMarker> =
+    with(c) { extractArgumentsForFunctionType() }
+
+/** 判断该类型是否是元组类型 */
+context(c: TypeSystemCommonSuperTypesContext)
+fun CangJieTypeMarker.isTupleType(): Boolean = with(c) { isTupleType() }
+
+/** 提取元组类型的元素类型列表 */
+context(c: TypeSystemCommonSuperTypesContext)
+fun CangJieTypeMarker.extractElementsForTupleType(): List<CangJieTypeMarker> =
+    with(c) { extractElementsForTupleType() }
