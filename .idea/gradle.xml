@@ -84,6 +84,7 @@
             <option value="$PROJECT_DIR$/dependencies/intellij-core" />
             <option value="$PROJECT_DIR$/flatbuffers-gen" />
             <option value="$PROJECT_DIR$/generators" />
+            <option value="$PROJECT_DIR$/intellij-ide" />
             <option value="$PROJECT_DIR$/llvm-interop" />
             <option value="$PROJECT_DIR$/llvm-interop/llvm-interop-api" />
             <option value="$PROJECT_DIR$/llvm-interop/llvm-interop-jni" />

@@ -80,6 +80,13 @@ object GeneratedAnalysisApiTestRegistry {
             includedFilePatternProvider = allFilesPattern(),
         ),
         GeneratedAnalysisApiModel(
+            baseName = "VisibilityCheckerTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.visibilityChecker.AbstractVisibilityCheckerTest",
+            modelRelativePath = "analysis/analysis-api/testData/components/visibilityChecker/isVisible",
+            supportedModuleKinds = listOf(TestModuleKind.Source),
+            includedFilePatternProvider = allFilesPattern(),
+        ),
+        GeneratedAnalysisApiModel(
             baseName = "ExpressionTypeTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.expressionTypeProvider.AbstractExpressionTypeTest",
             modelRelativePath = "analysis/analysis-api/testData/components/expressionTypeProvider/expressionType",

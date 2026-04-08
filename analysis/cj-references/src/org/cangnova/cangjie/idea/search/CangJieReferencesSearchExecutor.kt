@@ -108,9 +108,9 @@ class CangJieReferencesSearchExecutor :
     ): Boolean {
         return when (item) {
             is CjFile -> {
-                val virtualFile = item.virtualFile ?: return true
                 val searchNames = CangJieReferenceSearchSupport.searchNamesForFile(item, target, baseSearchNames)
-                if (!scope.contains(virtualFile) || !item.mayContainAnyName(searchNames)) {
+                val virtualFile = item.virtualFile
+                if ((virtualFile != null && !scope.contains(virtualFile)) || !item.mayContainAnyName(searchNames)) {
                     true
                 } else {
                     processElementTree(item, target, searchNames, consumer)

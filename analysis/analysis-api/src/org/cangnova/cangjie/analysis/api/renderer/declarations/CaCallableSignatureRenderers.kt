@@ -11,6 +11,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaValueParameterOwnerSymbol
+import org.cangnova.cangjie.psi.CjCallableDeclaration
 import org.cangnova.cangjie.psi.CjParameter
 
 fun interface CaTypeParametersRenderer {
@@ -131,12 +132,18 @@ fun interface CaCallableReturnTypeRenderer {
 object CaCallableReturnTypeRendererForSource {
     val WITH_OUT_APPROXIMATION: CaCallableReturnTypeRenderer = CaCallableReturnTypeRenderer { analysisSession, symbol, declarationRenderer, printer ->
         if (!declarationRenderer.returnTypeFilter.shouldRenderReturnType(analysisSession, symbol)) return@CaCallableReturnTypeRenderer
-        val renderedType = declarationRenderer.typeRenderer.renderType(
+        val semanticRenderedType = declarationRenderer.typeRenderer.renderType(
             declarationRenderer.declarationTypeApproximator.approximateType(
                 symbol.returnType,
                 CaTypeRendererPosition.OUT_VARIANCE,
             ),
         )
+        val renderedType = if (semanticRenderedType.startsWith("ERROR TYPE:")) {
+            val sourceTypeText = (symbol.psi as? CjCallableDeclaration)?.typeReference?.text
+            sourceTypeText.takeUnless(String?::isNullOrBlank) ?: semanticRenderedType
+        } else {
+            semanticRenderedType
+        }
         printer.append(if (declarationRenderer.codeStyle.spaceAfterColon) ": " else ":")
         printer.append(renderedType)
     }
