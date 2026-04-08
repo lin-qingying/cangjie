@@ -24,6 +24,12 @@ val publicationArtifactId = providers.provider {
     (findProperty("cangjiePublicationArtifactId") as? String)?.takeIf { it.isNotBlank() } ?: name
 }
 
+val publicationDescription = providers.provider {
+    (findProperty("cangjiePublicationDescription") as? String)?.takeIf { it.isNotBlank() }
+        ?: (project.description?.toString()?.takeIf { it.isNotBlank() })
+        ?: publicationArtifactId.get()
+}
+
 val publicProjectPaths = ((rootProject.extensions.extraProperties.properties["cangjiePublicProjectPaths"] as? Set<*>) ?: emptySet<Any>())
     .filterIsInstance<String>()
     .toSet()
@@ -50,18 +56,6 @@ plugins.withId("java") {
     javaExtension.withSourcesJar()
     javaExtension.withJavadocJar()
 
-    tasks.named<Jar>("jar").configure {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        dependsOn(unpublishedProjectDependencies().map { dependencyPath ->
-            project(dependencyPath).tasks.named("jar")
-        })
-        from({
-            unpublishedProjectDependencies().map { dependencyPath ->
-                zipTree(project(dependencyPath).tasks.named<Jar>("jar").get().archiveFile.get().asFile)
-            }
-        })
-    }
-
     tasks.withType<Javadoc>().configureEach {
         options.encoding = "UTF-8"
         isFailOnError = false
@@ -83,61 +77,85 @@ plugins.withId("java") {
         enabled = false
     }
 
-    configure<PublishingExtension> {
-        publications {
-            create<MavenPublication>("maven") {
-                artifactId = publicationArtifactId.get()
-                from(components.getByName("java"))
-                pom {
-                    name.set(publicationArtifactId.get())
-                    description.set(project.description ?: publicationArtifactId.get())
-                    url.set("https://github.com/cangnova/cangjie")
-                    licenses {
-                        license {
-                            name.set("Apache-2.0")
-                            url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
-                        }
-                    }
-                    scm {
-                        url.set("https://github.com/cangnova/cangjie")
-                        connection.set("scm:git:https://github.com/cangnova/cangjie.git")
-                        developerConnection.set("scm:git:https://github.com/cangnova/cangjie.git")
-                    }
-                    developers {
-                        developer {
-                            name.set("Cangjie Frontend Team")
-                            organization.set("Cangnova")
-                            organizationUrl.set("https://github.com/cangnova")
-                        }
-                    }
-                }
-            }
-        }
-
-        repositories {
-            maven {
-                name = (findProperty("cangjie.build.deploy-repo") as? String)?.ifBlank { null } ?: "cangjie"
-
-                val deployUrl = (findProperty("cangjie.build.deploy-url") as? String)?.ifBlank { null }
-                val deployPath = (findProperty("cangjie.build.deploy-path") as? String)?.ifBlank { null }
-                val repoUrl = deployUrl
-                    ?: deployPath?.let { rootProject.layout.projectDirectory.dir(it).asFile.toURI().toString() }
-                    ?: rootProject.layout.buildDirectory.dir("repo").get().asFile.toURI().toString()
-                setUrl(repoUrl)
-
-                val username = (findProperty("cangjie.build.deploy-username") as? String)?.ifBlank { null }
-                val password = (findProperty("cangjie.build.deploy-password") as? String)?.ifBlank { null }
-                if (url.scheme != "file" && username != null && password != null) {
-                    credentials {
-                        this.username = username
-                        this.password = password
-                    }
-                }
-            }
-        }
-    }
-
     afterEvaluate {
+        val publicationComponentName = if (pluginManager.hasPlugin("com.gradleup.shadow")) "shadow" else "java"
+        val publishesShadowComponent = publicationComponentName == "shadow"
+
+        if (!publishesShadowComponent) {
+            tasks.named<Jar>("jar").configure {
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                dependsOn(unpublishedProjectDependencies().map { dependencyPath ->
+                    project(dependencyPath).tasks.named("jar")
+                })
+                from({
+                    unpublishedProjectDependencies().map { dependencyPath ->
+                        zipTree(project(dependencyPath).tasks.named<Jar>("jar").get().archiveFile.get().asFile)
+                    }
+                })
+            }
+        }
+
+        configure<PublishingExtension> {
+            publications {
+                val publication = (findByName("maven") as? MavenPublication) ?: create<MavenPublication>("maven")
+                publication.apply {
+                    artifactId = publicationArtifactId.get()
+                    from(components.getByName(publicationComponentName))
+
+                    if (publishesShadowComponent) {
+                        artifact(tasks.named<Jar>("sourcesJar"))
+                        artifact(tasks.named<Jar>("javadocJar"))
+                    }
+
+                    pom {
+                        name.set(providers.provider { publicationArtifactId.get() })
+                        description.set(providers.provider { publicationDescription.get() })
+                        url.set("https://github.com/cangnova/cangjie")
+                        licenses {
+                            license {
+                                name.set("Apache-2.0")
+                                url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                            }
+                        }
+                        scm {
+                            url.set("https://github.com/cangnova/cangjie")
+                            connection.set("scm:git:https://github.com/cangnova/cangjie.git")
+                            developerConnection.set("scm:git:https://github.com/cangnova/cangjie.git")
+                        }
+                        developers {
+                            developer {
+                                name.set("Cangjie Frontend Team")
+                                organization.set("Cangnova")
+                                organizationUrl.set("https://github.com/cangnova")
+                            }
+                        }
+                    }
+                }
+            }
+
+            repositories {
+                maven {
+                    name = (findProperty("cangjie.build.deploy-repo") as? String)?.ifBlank { null } ?: "cangjie"
+
+                    val deployUrl = (findProperty("cangjie.build.deploy-url") as? String)?.ifBlank { null }
+                    val deployPath = (findProperty("cangjie.build.deploy-path") as? String)?.ifBlank { null }
+                    val repoUrl = deployUrl
+                        ?: deployPath?.let { rootProject.layout.projectDirectory.dir(it).asFile.toURI().toString() }
+                        ?: rootProject.layout.buildDirectory.dir("repo").get().asFile.toURI().toString()
+                    setUrl(repoUrl)
+
+                    val username = (findProperty("cangjie.build.deploy-username") as? String)?.ifBlank { null }
+                    val password = (findProperty("cangjie.build.deploy-password") as? String)?.ifBlank { null }
+                    if (url.scheme != "file" && username != null && password != null) {
+                        credentials {
+                            this.username = username
+                            this.password = password
+                        }
+                    }
+                }
+            }
+        }
+
         val projectGroupId = project.group.toString()
         val internalArtifactIds = unpublishedProjectDependencies()
             .map(::publishedArtifactId)

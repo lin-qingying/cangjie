@@ -6,31 +6,26 @@
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="refactor: enhance Analysis API components and improve test configurators">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirDocumentationProtocol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirDocumentationProtocol.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirImportPlanning.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirImportPlanning.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirResolveAndScopeComponents.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirResolveAndScopeComponents.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirUtilityComponents.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirUtilityComponents.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/AnalysisApiUsageTestDirectives.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/AnalysisApiUsageTestDirectives.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/GeneratedAnalysisApiTestRegistry.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/GeneratedAnalysisApiTestRegistry.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/usages/AbstractFindUsagesTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/usages/AbstractFindUsagesTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/api/analysis-api.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/api/analysis-api.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-platform-interface/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-platform-interface/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/components/CaSessionComponents.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/components/CaSessionComponents.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/imports/CaImportPlanning.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/imports/CaImportPlanning.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/usages/findUsages/extendMemberUsages.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/usages/findUsages/extendMemberUsages.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/usages/findUsages/patternBindingUsages.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/usages/findUsages/patternBindingUsages.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/usages/findUsages/topLevelFunctionUsages.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/usages/findUsages/topLevelFunctionUsages.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirModuleResolutionStrategy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirModuleResolutionStrategy.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirModuleResolveComponents.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirModuleResolveComponents.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacade.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacade.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeServiceImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeServiceImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirSemanticQueryProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirSemanticQueryProvider.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/symbol-light-declarations/src/org/cangnova/cangjie/analysis/light/declarations/symbol/CaSymbolLightDeclarationProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/symbol-light-declarations/src/org/cangnova/cangjie/analysis/light/declarations/symbol/CaSymbolLightDeclarationProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirScopeSnapshot.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirScopeSnapshot.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/common/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/diagnostics/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/common/diagnostics/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compiler/arguments/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/arguments/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/external/kotlin" beforeDir="false" afterPath="$PROJECT_DIR$/external/kotlin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prepare/frontend-embeddable/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/prepare/frontend-embeddable/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/psi/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat/src/main/kotlin/cangjie-publishing.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat/src/main/kotlin/cangjie-publishing.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -509,7 +504,7 @@
       <workItem from="1775367217855" duration="8571000" />
       <workItem from="1775458431492" duration="19131000" />
       <workItem from="1775498987216" duration="18622000" />
-      <workItem from="1775627109072" duration="13272000" />
+      <workItem from="1775627109072" duration="16826000" />
     </task>
     <task id="LOCAL-00001" summary="add: implement generic functions and type declarations">
       <option name="closed" value="true" />
@@ -575,7 +570,23 @@
       <option name="project" value="LOCAL" />
       <updated>1775629720889</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="refactor: enhance Analysis API components and improve test configurators">
+      <option name="closed" value="true" />
+      <created>1775647697002</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1775647697002</updated>
+    </task>
+    <task id="LOCAL-00010" summary="refactor: enhance Analysis API components and improve test configurators">
+      <option name="closed" value="true" />
+      <created>1775651158722</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1775651158722</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

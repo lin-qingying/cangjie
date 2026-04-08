@@ -263,6 +263,8 @@ interface CaCfirResolutionFacade {
      */
     fun getClassLikeSuperTypes(symbol: CfirClassLikeSymbol<*>): List<ConeCangJieType>
 
+    fun getDirectlyOverriddenCallableSymbols(symbol: CfirCallableSymbol<*>): List<CfirCallableSymbol<*>>
+
     /**
      * 在 low-level 类型系统上下文中判断子类型关系。
      */

@@ -6,6 +6,8 @@ plugins {
     kotlin("jvm")
 }
 
+description = "Cangjie frontend diagnostics model, factories, collectors and renderers."
+
 dependencies {
     api(project(":psi"))
 

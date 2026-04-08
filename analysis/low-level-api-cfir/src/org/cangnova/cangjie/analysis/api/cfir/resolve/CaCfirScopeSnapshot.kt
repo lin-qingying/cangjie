@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.ScopeSessionKey
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
@@ -58,6 +59,7 @@ internal class CaCfirScopeSnapshotProvider(
     private val packageScopeCache = ConcurrentHashMap<FqName, CaCfirScopeSnapshot>()
     private val declaredMemberScopeCache = ConcurrentHashMap<ClassId, CaCfirScopeSnapshot>()
     private val memberScopeCache = ConcurrentHashMap<ClassId, CaCfirScopeSnapshot>()
+    private val memberTypeScopeCache = ConcurrentHashMap<ClassId, CfirTypeScope>()
 
     fun getFileScope(file: CjFile): CaCfirScopeSnapshot {
         return fileScopeCache.computeIfAbsent(file, ::buildFileScope)
@@ -87,19 +89,32 @@ internal class CaCfirScopeSnapshotProvider(
     fun getMemberScope(classId: ClassId): CaCfirScopeSnapshot? {
         memberScopeCache[classId]?.let { return it }
 
-        val classSymbol = visibleSymbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
-        val snapshot = buildScopeSnapshot(
-            scope = scopeSession.getOrBuild(classId, UseSiteMemberScopeKey) {
-                CfirClassUseSiteMemberScope(
-                    classSymbol = classSymbol,
-                    symbolProvider = symbolProvider,
-                    extendProvider = session.extendProviderOrNull,
-                    directSupertypeProvider = session.directSupertypeProviderOrNull,
-                )
-            },
-        )
+        val scope = getMemberTypeScope(classId) ?: return null
+        val snapshot = buildScopeSnapshot(scope = scope)
         val existing = memberScopeCache.putIfAbsent(classId, snapshot)
         return existing ?: snapshot
+    }
+
+    /**
+     * 返回 use-site member scope 的底层 `CfirTypeScope`。
+     *
+     * 该入口供 low-level 继承/override 查询复用，
+     * 确保 relation 查询与公开 `memberScope` 使用的是同一份底层 scope。
+     */
+    fun getMemberTypeScope(classId: ClassId): CfirTypeScope? {
+        memberTypeScopeCache[classId]?.let { return it }
+
+        val classSymbol = visibleSymbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
+        val scope = scopeSession.getOrBuild(classId, UseSiteMemberScopeKey) {
+            CfirClassUseSiteMemberScope(
+                classSymbol = classSymbol,
+                symbolProvider = symbolProvider,
+                extendProvider = session.extendProviderOrNull,
+                directSupertypeProvider = session.directSupertypeProviderOrNull,
+            )
+        }
+        val existing = memberTypeScopeCache.putIfAbsent(classId, scope)
+        return existing ?: scope
     }
 
     /**
