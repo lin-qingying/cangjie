@@ -5,10 +5,26 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="refactor: enhance Analysis API components and improve test configurators">
+      <change beforePath="$PROJECT_DIR$/.github/workflows/publish-github-packages.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/publish-github-packages.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/api/analysis-api.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/api/analysis-api.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/AnalysisApiTypeCreatorTestDirectives.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/AnalysisApiTypeCreatorTestDirectives.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/GeneratedAnalysisApiTestRegistry.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/GeneratedAnalysisApiTestRegistry.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/typeCreator/AbstractTypeCreatorTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/typeCreator/AbstractTypeCreatorTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/classType/genericClass.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/classType/genericClass.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/classType/simpleClass.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/classType/simpleClass.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/compound/intersectionType.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/compound/intersectionType.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/compound/tupleType.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/compound/tupleType.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/compound/unionType.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/compound/unionType.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/function/cFunctionType.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/function/cFunctionType.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/function/closureFunctionType.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/function/closureFunctionType.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/function/functionType.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/typeCreator/function/functionType.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/external/kotlin" beforeDir="false" afterPath="$PROJECT_DIR$/external/kotlin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prepare/analysis-test-framework/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/prepare/analysis-test-framework/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prepare/frontend-embeddable/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/prepare/frontend-embeddable/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prepare/frontend/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/prepare/frontend/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prepare/test-infrastructure/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/prepare/test-infrastructure/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat/src/main/kotlin/cangjie-publishing.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat/src/main/kotlin/cangjie-publishing.gradle.kts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -429,6 +445,13 @@
       </list>
     </recent_temporary>
   </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="project-project-d83eb0681c0a-ce52c3c2" />
+      </set>
+    </attachedChunks>
+  </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="默认任务">
       <changelist id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="" />
@@ -488,7 +511,7 @@
       <workItem from="1775458431492" duration="19131000" />
       <workItem from="1775498987216" duration="18622000" />
       <workItem from="1775627109072" duration="16826000" />
-      <workItem from="1775725105824" duration="536000" />
+      <workItem from="1775725105824" duration="2346000" />
     </task>
     <task id="LOCAL-00001" summary="add: implement generic functions and type declarations">
       <option name="closed" value="true" />
