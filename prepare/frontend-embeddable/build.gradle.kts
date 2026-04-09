@@ -11,7 +11,7 @@ plugins {
     id("com.gradleup.shadow")
 }
 
-description = "仓颉前端 embeddable shaded/relocated 公开工件。"
+description = "供非受控宿主进程嵌入使用的仓颉前端公开工件，对宿主敏感依赖执行 shaded/relocated 隔离。"
 
 val bundledProjectPaths = listOf(
     ":compiler:frontend",

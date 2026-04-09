@@ -5,12 +5,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="refactor: enhance Analysis API components and improve test configurators">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirResolveAndScopeComponents.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirResolveAndScopeComponents.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/tests-gen/org/cangnova/cangjie/analysis/api/cfir/test/cases/generated/CfirIdeDependentSourceModuleIsSubclassOfTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/tests-gen/org/cangnova/cangjie/analysis/api/cfir/test/cases/generated/CfirIdeDependentSourceModuleIsSubclassOfTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/tests-gen/org/cangnova/cangjie/analysis/api/cfir/test/cases/generated/CfirIdeNormalSourceModuleIsSubclassOfTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/tests-gen/org/cangnova/cangjie/analysis/api/cfir/test/cases/generated/CfirIdeNormalSourceModuleIsSubclassOfTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/tests-gen/org/cangnova/cangjie/analysis/api/cfir/test/cases/generated/CfirLspCompatibleNormalSourceModuleIsSubclassOfTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/tests-gen/org/cangnova/cangjie/analysis/api/cfir/test/cases/generated/CfirLspCompatibleNormalSourceModuleIsSubclassOfTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/tests-gen/org/cangnova/cangjie/analysis/api/cfir/test/cases/generated/CfirStandaloneDependentSourceModuleIsSubclassOfTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/tests-gen/org/cangnova/cangjie/analysis/api/cfir/test/cases/generated/CfirStandaloneDependentSourceModuleIsSubclassOfTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/tests-gen/org/cangnova/cangjie/analysis/api/cfir/test/cases/generated/CfirStandaloneNormalSourceModuleIsSubclassOfTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/tests-gen/org/cangnova/cangjie/analysis/api/cfir/test/cases/generated/CfirStandaloneNormalSourceModuleIsSubclassOfTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/symbolRelationProvider/AbstractOverriddenDeclarationProviderTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/symbolRelationProvider/AbstractOverriddenDeclarationProviderTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/symbolRelationProvider/isSubclassOf/localClasses.cj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/symbolRelationProvider/overriddenSymbols/extendFunction.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/symbolRelationProvider/overriddenSymbols/extendFunction.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/symbolRelationProvider/overriddenSymbols/functionChain.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/symbolRelationProvider/overriddenSymbols/functionChain.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/symbolRelationProvider/overriddenSymbols/propertyChain.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/symbolRelationProvider/overriddenSymbols/propertyChain.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/symbolRelationProvider/overriddenSymbols/substitutionFunction.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/symbolRelationProvider/overriddenSymbols/substitutionFunction.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/external/kotlin" beforeDir="false" afterPath="$PROJECT_DIR$/external/kotlin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/prepare/frontend-embeddable/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/prepare/frontend-embeddable/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prepare/frontend/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/prepare/frontend/build.gradle.kts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -490,7 +501,7 @@
       <workItem from="1775458431492" duration="19131000" />
       <workItem from="1775498987216" duration="18622000" />
       <workItem from="1775627109072" duration="16826000" />
-      <workItem from="1775725105824" duration="325000" />
+      <workItem from="1775725105824" duration="415000" />
     </task>
     <task id="LOCAL-00001" summary="add: implement generic functions and type declarations">
       <option name="closed" value="true" />

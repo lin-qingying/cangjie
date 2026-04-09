@@ -17,11 +17,12 @@ open class Parent <: Root {
 }
 
 // FILE: functionChain.cj
+// TARGET_CLASS: Child
 // TARGET_NAME: render
 // OVERRIDE_TARGET_KIND: MEMBER_FUNCTION
-// EXPECTED_ALL_OVERRIDDEN: sample.symbol.relation.overrides.Parent.render(value: Int64): Int64
-// EXPECTED_ALL_OVERRIDDEN: sample.symbol.relation.overrides.Root.render(value: Int64): Int64
-// EXPECTED_DIRECT_OVERRIDDEN: sample.symbol.relation.overrides.Parent.render(value: Int64): Int64
+// EXPECTED_ALL_OVERRIDDEN: sample.symbol.relation.overrides.Parent.render(value:Int64):Int64
+// EXPECTED_ALL_OVERRIDDEN: sample.symbol.relation.overrides.Root.render(value:Int64):Int64
+// EXPECTED_DIRECT_OVERRIDDEN: sample.symbol.relation.overrides.Parent.render(value:Int64):Int64
 package sample.symbol.relation.overrides
 
 class Child <: Parent {

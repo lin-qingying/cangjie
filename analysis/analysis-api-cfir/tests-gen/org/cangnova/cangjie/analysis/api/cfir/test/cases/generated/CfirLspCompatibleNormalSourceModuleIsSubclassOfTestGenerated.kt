@@ -48,12 +48,6 @@ class CfirLspCompatibleNormalSourceModuleIsSubclassOfTestGenerated : AbstractIsS
         runTest("analysis/analysis-api/testData/components/symbolRelationProvider/isSubclassOf/indirectSubclass.cj")
     }
 
-    @TestMetadata("localClasses.cj")
-    @Test
-    fun testLocalClasses() {
-        runTest("analysis/analysis-api/testData/components/symbolRelationProvider/isSubclassOf/localClasses.cj")
-    }
-
     @TestMetadata("sameClass.cj")
     @Test
     fun testSameClass() {

@@ -5,6 +5,7 @@ import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
@@ -14,6 +15,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -169,16 +171,16 @@ internal class CaCfirResolutionFacadeImpl internal constructor(
     }
 
     override fun getDirectlyOverriddenCallableSymbols(symbol: CfirCallableSymbol<*>): List<CfirCallableSymbol<*>> {
+        val extendOverrides = getDirectlyOverriddenExtendCallableSymbols(symbol)
+        if (extendOverrides.isNotEmpty()) {
+            return extendOverrides
+        }
+
         val ownerClassId = symbol.overrideOwnerClassId(useSiteFirSession) ?: return emptyList()
         val memberTypeScope = scopeProvider.getMemberTypeScope(ownerClassId) ?: return emptyList()
 
         return when (symbol) {
-            is CfirFunctionSymbol<*> -> buildList {
-                memberTypeScope.processDirectOverriddenFunctionsWithBaseScope(symbol) { overridden, _ ->
-                    add(overridden)
-                    ProcessorAction.NEXT
-                }
-            }
+            is CfirFunctionSymbol<*> -> memberTypeScope.collectStableDirectOverriddenFunctions(symbol)
 
             is CfirPropertySymbol -> buildList {
                 memberTypeScope.processDirectOverriddenPropertiesWithBaseScope(symbol) { overridden, _ ->
@@ -242,6 +244,128 @@ internal class CaCfirResolutionFacadeImpl internal constructor(
         val symbol = visibleSymbolProvider.getClassLikeSymbolByClassId(classId) ?: return emptyList()
         return getClassLikeSuperTypes(symbol)
     }
+
+    /**
+     * extend 成员不属于 class 声明体本身，因此不能直接复用 class member scope 的 parentScopes。
+     *
+     * 这里按 extend 自己声明的 `superTypeRefs` 恢复直接覆写候选，
+     * 让 extend 成员与普通 class member 一样，都能进入统一的 overrides 主链。
+     */
+    private fun getDirectlyOverriddenExtendCallableSymbols(symbol: CfirCallableSymbol<*>): List<CfirCallableSymbol<*>> {
+        val extendProvider = useSiteFirSession.extendProviderOrNull ?: return emptyList()
+        val ownerExtend = extendProvider.getContainingExtend(symbol)
+            ?.takeIf(extendProvider::isExtendAccessible)
+            ?: return emptyList()
+
+        val directSuperScopes = ownerExtend.superTypeRefs.mapNotNull { superTypeRef ->
+            val coneType = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: return@mapNotNull null
+            val classId = coneType.classIdOrPrimitiveClassId ?: return@mapNotNull null
+            scopeProvider.getMemberTypeScope(classId)
+        }
+        if (directSuperScopes.isEmpty()) {
+            return emptyList()
+        }
+
+    return when (symbol) {
+        is CfirFunctionSymbol<*> -> directSuperScopes.flatMap { scope ->
+            scope.collectStableDirectOverriddenFunctionsByName(symbol.name)
+        }
+
+            is CfirPropertySymbol -> buildList {
+                directSuperScopes.forEach { scope ->
+                    scope.processPropertiesByName(symbol.name) { overridden ->
+                        add(overridden)
+                    }
+                }
+            }
+
+            else -> emptyList()
+        }.distinctBy { overridden ->
+            overridden.callableId.toString()
+        }
+    }
+}
+
+private fun CfirTypeScope.collectStableDirectOverriddenFunctions(
+    symbol: CfirFunctionSymbol<*>,
+): List<CfirFunctionSymbol<*>> {
+    val candidatesByBaseScope = linkedMapOf<CfirTypeScope, MutableList<CfirFunctionSymbol<*>>>()
+    processDirectOverriddenFunctionsWithBaseScope(symbol) { overridden, baseScope ->
+        candidatesByBaseScope.getOrPut(baseScope) { mutableListOf() }.add(overridden)
+        ProcessorAction.NEXT
+    }
+
+    return candidatesByBaseScope.flatMapTo(linkedSetOf()) { (baseScope, candidates) ->
+        baseScope.filterMostSpecificFunctions(candidates)
+    }.toList()
+}
+
+private fun CfirTypeScope.collectStableDirectOverriddenFunctionsByName(
+    name: Name,
+): List<CfirFunctionSymbol<*>> {
+    val candidates = buildList {
+        processFunctionsByName(name) { symbol ->
+            add(symbol)
+        }
+    }
+    return filterMostSpecificFunctions(candidates)
+}
+
+/**
+ * `CfirTypeScope` 的 direct-override 查询保证较弱，某个直接父 scope 可能同时返回：
+ * - 父类自身声明
+ * - 该父类继续继承来的更上层声明
+ *
+ * Analysis API 公开 `directlyOverriddenSymbols` 时必须把这类“同一父 scope 内被更具体声明覆盖”的候选裁掉，
+ * 否则会把 transitive override 错误暴露成 direct override。
+ */
+private fun CfirTypeScope.filterMostSpecificFunctions(
+    candidates: List<CfirFunctionSymbol<*>>,
+): List<CfirFunctionSymbol<*>> {
+    if (candidates.size < 2) {
+        return candidates.distinctBy { candidate -> candidate.overrideRelationKey() }
+    }
+
+    return candidates.filter { candidate ->
+        candidates.none { other ->
+            other !== candidate && overridesTransitively(other, candidate)
+        }
+    }.distinctBy { candidate -> candidate.overrideRelationKey() }
+}
+
+private fun CfirTypeScope.overridesTransitively(
+    possibleOverride: CfirFunctionSymbol<*>,
+    expectedBase: CfirFunctionSymbol<*>,
+): Boolean {
+    val expectedKey = expectedBase.overrideRelationKey()
+    val queue = ArrayDeque<CfirFunctionSymbol<*>>()
+    val visited = linkedSetOf<String>()
+    queue += possibleOverride
+
+    while (queue.isNotEmpty()) {
+        val current = queue.removeFirst()
+        if (!visited.add(current.overrideRelationKey())) continue
+
+        var matched = false
+        processDirectOverriddenFunctionsWithBaseScope(current) { overridden, _ ->
+            if (overridden.overrideRelationKey() == expectedKey) {
+                matched = true
+                ProcessorAction.STOP
+            } else {
+                queue += overridden
+                ProcessorAction.NEXT
+            }
+        }
+        if (matched) {
+            return true
+        }
+    }
+
+    return false
+}
+
+private fun CfirCallableSymbol<*>.overrideRelationKey(): String {
+    return callableId.toString()
 }
 
 private fun CfirCallableSymbol<*>.overrideOwnerClassId(session: CfirSession): ClassId? {
