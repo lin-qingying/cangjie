@@ -179,7 +179,7 @@ internal class CaCfirResolutionFacadeImpl internal constructor(
         val ownerClassId = symbol.overrideOwnerClassId(useSiteFirSession) ?: return emptyList()
         val memberTypeScope = scopeProvider.getMemberTypeScope(ownerClassId) ?: return emptyList()
 
-        return when (symbol) {
+        val directOverrides: List<CfirCallableSymbol<*>> = when (symbol) {
             is CfirFunctionSymbol<*> -> memberTypeScope.collectStableDirectOverriddenFunctions(symbol)
 
             is CfirPropertySymbol -> buildList {
@@ -190,7 +190,9 @@ internal class CaCfirResolutionFacadeImpl internal constructor(
             }
 
             else -> emptyList()
-        }.distinctBy { overridden ->
+        }
+
+        return directOverrides.distinctBy { overridden ->
             overridden.callableId.toString()
         }
     }
@@ -266,10 +268,10 @@ internal class CaCfirResolutionFacadeImpl internal constructor(
             return emptyList()
         }
 
-    return when (symbol) {
-        is CfirFunctionSymbol<*> -> directSuperScopes.flatMap { scope ->
-            scope.collectStableDirectOverriddenFunctionsByName(symbol.name)
-        }
+        val directOverrides: List<CfirCallableSymbol<*>> = when (symbol) {
+            is CfirFunctionSymbol<*> -> directSuperScopes.flatMap { scope ->
+                scope.collectStableDirectOverriddenFunctionsByName(symbol.name)
+            }
 
             is CfirPropertySymbol -> buildList {
                 directSuperScopes.forEach { scope ->
@@ -280,7 +282,9 @@ internal class CaCfirResolutionFacadeImpl internal constructor(
             }
 
             else -> emptyList()
-        }.distinctBy { overridden ->
+        }
+
+        return directOverrides.distinctBy { overridden ->
             overridden.callableId.toString()
         }
     }
