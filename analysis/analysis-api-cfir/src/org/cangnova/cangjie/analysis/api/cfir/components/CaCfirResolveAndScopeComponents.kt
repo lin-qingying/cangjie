@@ -250,27 +250,26 @@ internal class CaCfirSymbolRelationProvider(
         superClass: CaClassSymbol,
         allowIndirect: Boolean,
     ): Boolean {
-        val subClassId = classId ?: return false
-        val superClassId = superClass.classId ?: return false
-        if (subClassId == superClassId) return false
+        if (isSameClassAs(superClass)) {
+            return false
+        }
 
         val directSuperSymbols = superTypes.mapNotNull { type ->
             with(analysisSession) { type.classLikeSymbol as? CaClassSymbol }
         }
-        if (directSuperSymbols.any { symbol -> symbol.classId == superClassId }) {
+        if (directSuperSymbols.any { symbol -> symbol.isSameClassAs(superClass) }) {
             return true
         }
         if (!allowIndirect) {
             return false
         }
 
-        val visited = linkedSetOf<ClassId>()
+        val visited = linkedSetOf<String>()
         val queue = ArrayDeque(directSuperSymbols)
         while (queue.isNotEmpty()) {
             val current = queue.removeFirst()
-            val currentId = current.classId ?: continue
-            if (!visited.add(currentId)) continue
-            if (currentId == superClassId) {
+            if (!visited.add(current.classRelationIdentity())) continue
+            if (current.isSameClassAs(superClass)) {
                 return true
             }
             queue.addAll(current.superTypes.mapNotNull { type ->
@@ -278,6 +277,36 @@ internal class CaCfirSymbolRelationProvider(
             })
         }
         return false
+    }
+
+    /**
+     * subclass relation 既要覆盖带 `ClassId` 的稳定声明，也要覆盖当前 session 中仅由源码承载的局部类。
+     *
+     * 因此这里统一按“ClassId 优先，其次源码 PSI 身份”来比较两个 class symbol，
+     * 避免把 local class 关系硬退化成一律 `false`。
+     */
+    private fun CaClassSymbol.isSameClassAs(other: CaClassSymbol): Boolean {
+        val thisClassId = classId
+        val otherClassId = other.classId
+        if (thisClassId != null && otherClassId != null) {
+            return thisClassId == otherClassId
+        }
+
+        val thisPsi = psi
+        val otherPsi = other.psi
+        return thisPsi != null && otherPsi != null && thisPsi == otherPsi
+    }
+
+    private fun CaClassSymbol.classRelationIdentity(): String {
+        classId?.let { return "classId:${it.asString()}" }
+
+        val declarationPsi = psi
+        if (declarationPsi != null) {
+            val filePath = declarationPsi.containingFile?.virtualFile?.path ?: declarationPsi.containingFile?.name.orEmpty()
+            return "psi:$filePath:${declarationPsi.textOffset}"
+        }
+
+        return "${this::class.qualifiedName}@${System.identityHashCode(this)}"
     }
 }
 
