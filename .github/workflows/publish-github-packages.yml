@@ -59,6 +59,95 @@ jobs:
 
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
+      - name: Resolve public artifact ids
+        id: artifacts
+        shell: bash
+        run: |
+          mapfile -t artifact_ids < <(./gradlew -q printPublicArtifactIds --no-configuration-cache)
+
+          if [[ "${#artifact_ids[@]}" -eq 0 ]]; then
+            echo "Failed to resolve public artifact ids" >&2
+            exit 1
+          fi
+
+          printf 'Resolved public artifacts:\n'
+          printf '  - %s\n' "${artifact_ids[@]}"
+
+          {
+            echo 'artifact_ids<<EOF'
+            printf '%s\n' "${artifact_ids[@]}"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Fail fast when package version already exists
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE_OWNER: ${{ github.repository_owner }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.version }}
+          ARTIFACT_IDS: ${{ steps.artifacts.outputs.artifact_ids }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.request
+
+          token = os.environ["GITHUB_TOKEN"].strip()
+          owner = os.environ["PACKAGE_OWNER"].strip()
+          version = os.environ["PACKAGE_VERSION"].strip()
+          artifact_ids = [line.strip() for line in os.environ["ARTIFACT_IDS"].splitlines() if line.strip()]
+
+          if not token:
+              print("Missing GITHUB_TOKEN for package preflight check.", file=sys.stderr)
+              sys.exit(1)
+
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {token}",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "User-Agent": "cangjie-publish-workflow",
+          }
+
+          conflicts = []
+
+          for artifact_id in artifact_ids:
+              package_name = f"org.cangnova.cangjie.{artifact_id}"
+              page = 1
+
+              while True:
+                  url = f"https://api.github.com/users/{owner}/packages/maven/{package_name}/versions?per_page=100&page={page}"
+                  request = urllib.request.Request(url, headers=headers)
+                  try:
+                      with urllib.request.urlopen(request) as response:
+                          versions = json.load(response)
+                  except urllib.error.HTTPError as exc:
+                      if exc.code == 404:
+                          versions = []
+                      else:
+                          raise
+
+                  if not versions:
+                      break
+
+                  if any(item.get("name") == version for item in versions):
+                      conflicts.append(package_name)
+                      break
+
+                  page += 1
+
+          if conflicts:
+              print("Refusing to publish because GitHub Packages already contains this version for:", file=sys.stderr)
+              for package_name in conflicts:
+                  print(f"  - {package_name}:{version}", file=sys.stderr)
+              print("", file=sys.stderr)
+              print("Use a new version (for example bump from 1.0.4 to 1.0.5) or delete the existing package version before rerunning.", file=sys.stderr)
+              sys.exit(1)
+
+          print(f"Preflight passed: version {version} is not yet present for any public artifact.")
+          PY
+
       - name: Publish public artifacts to GitHub Packages
         env:
           GITHUB_PACKAGES_URL: https://maven.pkg.github.com/${{ github.repository }}

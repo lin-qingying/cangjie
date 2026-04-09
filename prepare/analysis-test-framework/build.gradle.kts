@@ -18,6 +18,7 @@ val fixtureProjectPaths = listOf(
 tasks.named<Jar>("jar") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     isZip64 = true
+    exclude("META-INF/maven/**")
     dependsOn(fixtureProjectPaths.map { "$it:testFixturesJar" })
     from({
         fixtureProjectPaths.flatMap { projectPath ->

@@ -49,7 +49,43 @@ val RegisteredDirectives.containerClassName: String?
     get() = this[AnalysisApiTypeCreatorTestDirectives.CONTAINER_CLASS].singleOrNull()
 
 val RegisteredDirectives.expectedQualifiedTypeRender: String
-    get() = singleValue(AnalysisApiTypeCreatorTestDirectives.EXPECTED_QUALIFIED_TYPE_RENDER)
+    get() = this[AnalysisApiTypeCreatorTestDirectives.EXPECTED_QUALIFIED_TYPE_RENDER].restoreTypeRenderExpectation()
 
 val RegisteredDirectives.expectedShortTypeRender: String
-    get() = singleValue(AnalysisApiTypeCreatorTestDirectives.EXPECTED_SHORT_TYPE_RENDER)
+    get() = this[AnalysisApiTypeCreatorTestDirectives.EXPECTED_SHORT_TYPE_RENDER].restoreTypeRenderExpectation()
+
+/**
+ * test directives 在解析时会把逗号分隔和空白分隔都拆成多个 token。
+ *
+ * type creator 这组用例里既有：
+ * - `Box<User>` 这类需要按 `, ` 还原的文本
+ * - `A & B`、`(A) -> B` 这类需要按空格还原的文本
+ *
+ * 因此这里统一在测试基建层恢复期望文本，避免让每个 abstract test 重复发明一套拼接规则。
+ */
+private fun List<String>.restoreTypeRenderExpectation(): String {
+    if (isEmpty()) error("Type render expectation cannot be empty.")
+    if (size == 1) return single()
+
+    val containsOperator = any { token ->
+        token == "&" || token == "|" || token == "->"
+    }
+    val startsWithFunctionKind = first() == "cfunc" || first() == "closure"
+
+    return if (containsOperator || startsWithFunctionKind) {
+        buildString {
+            this@restoreTypeRenderExpectation.forEachIndexed { index, token ->
+                if (index == 0) {
+                    append(token)
+                } else {
+                    val previousToken = this@restoreTypeRenderExpectation[index - 1]
+                    val separator = if (token.startsWith("...)") && !previousToken.endsWith(",")) ", " else " "
+                    append(separator)
+                    append(token)
+                }
+            }
+        }
+    } else {
+        joinToString(", ")
+    }
+}
