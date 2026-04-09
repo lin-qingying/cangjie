@@ -9,7 +9,7 @@ plugins {
     `java-library`
 }
 
-description = "仓颉前端公开门面工件。"
+description = "供 IntelliJ Platform / IDEA 插件等受控 classpath 场景使用的仓颉前端公开工件，不做 relocation。"
 
 val bundledProjectPaths = listOf(
     ":compiler:frontend",

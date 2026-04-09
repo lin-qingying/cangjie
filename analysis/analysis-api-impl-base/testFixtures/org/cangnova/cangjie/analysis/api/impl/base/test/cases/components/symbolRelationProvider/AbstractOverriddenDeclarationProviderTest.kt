@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.symbol
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
+import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiComponentTestDirectives
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiReferenceTestUtils.isExtendMemberDeclaration
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiSymbolOverrideTestDirectives
 import org.cangnova.cangjie.analysis.api.impl.base.test.expectedAllOverridden
@@ -43,7 +44,13 @@ abstract class AbstractOverriddenDeclarationProviderTest : AbstractAnalysisApiCo
 
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
-        val targetDeclaration = findTargetCallable(mainFile, directives.overrideTargetKind, directives.targetNameText)
+        val targetOwnerName = directives[AnalysisApiComponentTestDirectives.TARGET_CLASS].singleOrNull()
+        val targetDeclaration = findTargetCallable(
+            mainFile = mainFile,
+            targetKind = directives.overrideTargetKind,
+            targetName = directives.targetNameText,
+            targetOwnerName = targetOwnerName,
+        )
 
         analyzeForTest(mainFile) {
             val symbol = when (targetDeclaration) {
@@ -64,18 +71,19 @@ abstract class AbstractOverriddenDeclarationProviderTest : AbstractAnalysisApiCo
         mainFile: CjFile,
         targetKind: String,
         targetName: String,
+        targetOwnerName: String?,
     ) = when (targetKind) {
         "MEMBER_FUNCTION" -> PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java)
             .single { function ->
                 function.name == targetName &&
                     !function.isExtendMemberDeclaration() &&
-                    function.getStrictParentOfType<CjTypeStatement>() != null
+                    function.getStrictParentOfType<CjTypeStatement>()?.name == targetOwnerName
             }
 
         "MEMBER_PROPERTY" -> PsiTreeUtil.findChildrenOfType(mainFile, CjProperty::class.java)
             .single { property ->
                 property.name == targetName &&
-                    property.getStrictParentOfType<CjTypeStatement>() != null
+                    property.getStrictParentOfType<CjTypeStatement>()?.name == targetOwnerName
             }
 
         "EXTEND_FUNCTION" -> PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java)
@@ -101,15 +109,15 @@ abstract class AbstractOverriddenDeclarationProviderTest : AbstractAnalysisApiCo
             val parameters = (symbol as CaValueParameterOwnerSymbol).valueParameters
             parameters.forEachIndexed { index, parameter ->
                 append(parameter.name.asString())
-                append(": ")
+                append(":")
                 append(normalizeTypeRendering(parameter.returnType.render(CaTypeRendererForSource.WITH_SHORT_NAMES)))
                 if (index != parameters.lastIndex) {
-                    append(", ")
+                    append(",")
                 }
             }
             append(")")
         }
-        append(": ")
+        append(":")
         append(normalizeTypeRendering(symbol.returnType.render(CaTypeRendererForSource.WITH_SHORT_NAMES)))
     }
 
