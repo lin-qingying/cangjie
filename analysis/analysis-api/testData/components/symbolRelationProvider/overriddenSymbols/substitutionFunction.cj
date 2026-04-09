@@ -1,9 +1,10 @@
 // FILE: substitutionFunction.cj
+// TARGET_CLASS: FancyIntBox
 // TARGET_NAME: convert
 // OVERRIDE_TARGET_KIND: MEMBER_FUNCTION
-// EXPECTED_ALL_OVERRIDDEN: sample.symbol.relation.overrides.StringBox.convert(value: String): String
-// EXPECTED_ALL_OVERRIDDEN: sample.symbol.relation.overrides.Box.convert(value: T): T
-// EXPECTED_DIRECT_OVERRIDDEN: sample.symbol.relation.overrides.StringBox.convert(value: String): String
+// EXPECTED_ALL_OVERRIDDEN: sample.symbol.relation.overrides.IntBox.convert(value:Int64):Int64
+// EXPECTED_ALL_OVERRIDDEN: sample.symbol.relation.overrides.Box.convert(value:T):T
+// EXPECTED_DIRECT_OVERRIDDEN: sample.symbol.relation.overrides.IntBox.convert(value:Int64):Int64
 package sample.symbol.relation.overrides
 
 open class Box<T> {
@@ -12,14 +13,14 @@ open class Box<T> {
     }
 }
 
-open class StringBox <: Box<String> {
-    public func convert(value: String): String {
+open class IntBox <: Box<Int64> {
+    public func convert(value: Int64): Int64 {
         return value
     }
 }
 
-class FancyStringBox <: StringBox {
-    public func convert(value: String): String {
+class FancyIntBox <: IntBox {
+    public func convert(value: Int64): Int64 {
         return value
     }
 }

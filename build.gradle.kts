@@ -98,8 +98,8 @@ tasks.matching { it.name == "checkAnalysisFramework" }.configureEach {
 }
 
 val publicPublicationArtifacts = linkedMapOf(
-    ":prepare:frontend" to ("cangjie-frontend" to "Published Cangjie frontend runtime facade."),
-    ":prepare:frontend-embeddable" to ("cangjie-frontend-embeddable" to "Embeddable Cangjie frontend runtime with shaded and relocated host dependencies."),
+    ":prepare:frontend" to ("cangjie-frontend" to "Published Cangjie frontend runtime for IntelliJ Platform plugins and other controlled-classpath integrations. Uses original host dependency packages without relocation."),
+    ":prepare:frontend-embeddable" to ("cangjie-frontend-embeddable" to "Embeddable Cangjie frontend runtime for host-uncontrolled integrations. Shades and relocates host-sensitive dependencies under org.cangnova.cangjie.* to avoid classpath conflicts."),
     ":prepare:test-infrastructure" to ("cangjie-frontend-test-infrastructure" to "Published Cangjie frontend compiler test infrastructure."),
     ":prepare:analysis-test-framework" to ("cangjie-frontend-analysis-test-framework" to "Published Cangjie frontend analysis API test framework."),
     ":compiler:arguments" to ("cangjie-frontend-arguments-description" to "Cangjie frontend argument model and generated argument descriptions."),
