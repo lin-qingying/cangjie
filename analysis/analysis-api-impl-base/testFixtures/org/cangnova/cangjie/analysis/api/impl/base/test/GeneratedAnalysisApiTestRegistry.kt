@@ -87,6 +87,20 @@ object GeneratedAnalysisApiTestRegistry {
             includedFilePatternProvider = allFilesPattern(),
         ),
         GeneratedAnalysisApiModel(
+            baseName = "OverriddenDeclarationProviderTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.symbolRelationProvider.AbstractOverriddenDeclarationProviderTest",
+            modelRelativePath = "analysis/analysis-api/testData/components/symbolRelationProvider/overriddenSymbols",
+            supportedModuleKinds = listOf(TestModuleKind.Source),
+            includedFilePatternProvider = allFilesPattern(),
+        ),
+        GeneratedAnalysisApiModel(
+            baseName = "IsSubclassOfTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.symbolRelationProvider.AbstractIsSubclassOfTest",
+            modelRelativePath = "analysis/analysis-api/testData/components/symbolRelationProvider/isSubclassOf",
+            supportedModuleKinds = listOf(TestModuleKind.Source),
+            includedFilePatternProvider = allFilesPattern(),
+        ),
+        GeneratedAnalysisApiModel(
             baseName = "ExpressionTypeTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.expressionTypeProvider.AbstractExpressionTypeTest",
             modelRelativePath = "analysis/analysis-api/testData/components/expressionTypeProvider/expressionType",

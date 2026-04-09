@@ -94,8 +94,10 @@
             <option value="$PROJECT_DIR$/macro/macro-process" />
             <option value="$PROJECT_DIR$/macro/macro-stub" />
             <option value="$PROJECT_DIR$/prepare" />
+            <option value="$PROJECT_DIR$/prepare/analysis-test-framework" />
             <option value="$PROJECT_DIR$/prepare/frontend" />
             <option value="$PROJECT_DIR$/prepare/frontend-embeddable" />
+            <option value="$PROJECT_DIR$/prepare/test-infrastructure" />
             <option value="$PROJECT_DIR$/psi" />
             <option value="$PROJECT_DIR$/repo/gradle-build-conventions" />
             <option value="$PROJECT_DIR$/repo/gradle-build-conventions/analysis-coverage-convention" />
