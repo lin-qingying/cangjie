@@ -89,6 +89,10 @@ CaResolver.public fun CjReferenceExpression.resolveToSymbol(): CaSymbol?
 CaResolver.public fun CjElement.resolveToCall(): CaCallInfo?
 public interface CaSymbolRelationProvider : CaLifetimeOwner
 CaSymbolRelationProvider.public fun CaSymbol.isEquivalentTo(other: CaSymbol): Boolean
+CaSymbolRelationProvider.public val CaCallableSymbol.directlyOverriddenSymbols: Sequence<CaCallableSymbol>
+CaSymbolRelationProvider.public val CaCallableSymbol.allOverriddenSymbols: Sequence<CaCallableSymbol>
+CaSymbolRelationProvider.public fun CaClassSymbol.isSubClassOf(superClass: CaClassSymbol): Boolean
+CaSymbolRelationProvider.public fun CaClassSymbol.isDirectSubClassOf(superClass: CaClassSymbol): Boolean
 public interface CaSymbolInformationProvider : CaLifetimeOwner
 CaSymbolInformationProvider.public fun CaSymbol.createPointer(): CaSymbolPointer<CaSymbol>
 public interface CaAnnotationProvider : CaLifetimeOwner
