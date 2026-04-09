@@ -87,6 +87,13 @@ object GeneratedAnalysisApiTestRegistry {
             includedFilePatternProvider = allFilesPattern(),
         ),
         GeneratedAnalysisApiModel(
+            baseName = "TypeCreatorTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.typeCreator.AbstractTypeCreatorTest",
+            modelRelativePath = "analysis/analysis-api/testData/components/typeCreator",
+            supportedModuleKinds = listOf(TestModuleKind.Source),
+            includedFilePatternProvider = allFilesPattern(),
+        ),
+        GeneratedAnalysisApiModel(
             baseName = "OverriddenDeclarationProviderTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.symbolRelationProvider.AbstractOverriddenDeclarationProviderTest",
             modelRelativePath = "analysis/analysis-api/testData/components/symbolRelationProvider/overriddenSymbols",
