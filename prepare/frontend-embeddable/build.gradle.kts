@@ -49,7 +49,12 @@ tasks.named<ShadowJar>("shadowJar") {
 tasks.named<Jar>("sourcesJar") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     isZip64 = true
-    dependsOn(bundledProjectPaths.map { "$it:sourcesJar" })
+    dependsOn(
+        bundledProjectPaths.mapNotNull { projectPath ->
+            project(projectPath).tasks.findByName("compileKotlin")
+                ?: project(projectPath).tasks.findByName("compileJava")
+        },
+    )
     from({
         val sourceProjectPaths = linkedSetOf<String>()
         bundledProjectPaths.forEach { projectPath ->

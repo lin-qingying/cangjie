@@ -217,7 +217,6 @@
       <module name="cangjie.generators" options="-proc:none" />
       <module name="cangjie.generators.main" options="-proc:none" />
       <module name="cangjie.generators.test" options="-proc:none" />
-      <module name="cangjie.intellij-ide" options="-proc:none" />
       <module name="cangjie.intellij-ide.main" options="-proc:none" />
       <module name="cangjie.intellij-ide.test" options="-proc:none" />
       <module name="cangjie.llvm-interop" options="-proc:none" />
@@ -242,12 +241,18 @@
       <module name="cangjie.macro.macro-stub" options="-proc:none" />
       <module name="cangjie.macro.macro-stub.main" options="-proc:none" />
       <module name="cangjie.macro.macro-stub.test" options="-proc:none" />
+      <module name="cangjie.prepare.analysis-test-framework" options="-proc:none" />
+      <module name="cangjie.prepare.analysis-test-framework.main" options="-proc:none" />
+      <module name="cangjie.prepare.analysis-test-framework.test" options="-proc:none" />
       <module name="cangjie.prepare.frontend" options="-proc:none" />
       <module name="cangjie.prepare.frontend-embeddable" options="-proc:none" />
       <module name="cangjie.prepare.frontend-embeddable.main" options="-proc:none" />
       <module name="cangjie.prepare.frontend-embeddable.test" options="-proc:none" />
       <module name="cangjie.prepare.frontend.main" options="-proc:none" />
       <module name="cangjie.prepare.frontend.test" options="-proc:none" />
+      <module name="cangjie.prepare.test-infrastructure" options="-proc:none" />
+      <module name="cangjie.prepare.test-infrastructure.main" options="-proc:none" />
+      <module name="cangjie.prepare.test-infrastructure.test" options="-proc:none" />
       <module name="cangjie.psi" options="-proc:none" />
       <module name="cangjie.psi.main" options="-proc:none" />
       <module name="cangjie.psi.test" options="-proc:none" />
