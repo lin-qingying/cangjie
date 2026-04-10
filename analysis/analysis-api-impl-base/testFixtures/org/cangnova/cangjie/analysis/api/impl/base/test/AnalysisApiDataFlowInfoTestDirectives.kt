@@ -26,19 +26,19 @@ object AnalysisApiDataFlowInfoTestDirectives : SimpleDirectivesContainer() {
         applicability = DirectiveApplicability.File,
     )
 
-    val EXPECTED_COMPILE_TIME_VALUE by stringDirective(
+    val EXPECTED_DATA_FLOW_COMPILE_TIME_VALUE by stringDirective(
         description = "dataFlowInfo.compileTimeValue?.renderedText 的期望文本。",
         applicability = DirectiveApplicability.File,
     )
 
-    val EXPECTED_EXPRESSION_TYPE by stringDirective(
+    val EXPECTED_DATA_FLOW_EXPRESSION_TYPE by stringDirective(
         description = "dataFlowInfo.expressionType 渲染后的期望文本。",
         applicability = DirectiveApplicability.File,
     )
 }
 
 val RegisteredDirectives.dataFlowTargetExpressionText: String
-    get() = singleValue(AnalysisApiDataFlowInfoTestDirectives.TARGET_EXPRESSION_TEXT)
+    get() = this[AnalysisApiDataFlowInfoTestDirectives.TARGET_EXPRESSION_TEXT].joinToString(", ")
 
 val RegisteredDirectives.expectedDataFlowStability: CaDataFlowStability
     get() = CaDataFlowStability.valueOf(singleValue(AnalysisApiDataFlowInfoTestDirectives.EXPECTED_STABILITY))
@@ -47,7 +47,11 @@ val RegisteredDirectives.expectedIsPureReference: Boolean
     get() = singleValue(AnalysisApiDataFlowInfoTestDirectives.EXPECTED_IS_PURE_REFERENCE).toBooleanStrict()
 
 val RegisteredDirectives.expectedCompileTimeValueText: String?
-    get() = this[AnalysisApiDataFlowInfoTestDirectives.EXPECTED_COMPILE_TIME_VALUE].singleOrNull()
+    get() = this[AnalysisApiDataFlowInfoTestDirectives.EXPECTED_DATA_FLOW_COMPILE_TIME_VALUE]
+        .takeIf(List<String>::isNotEmpty)
+        ?.joinToString(", ")
 
 val RegisteredDirectives.expectedDataFlowExpressionType: String?
-    get() = this[AnalysisApiDataFlowInfoTestDirectives.EXPECTED_EXPRESSION_TYPE].singleOrNull()
+    get() = this[AnalysisApiDataFlowInfoTestDirectives.EXPECTED_DATA_FLOW_EXPRESSION_TYPE]
+        .takeIf(List<String>::isNotEmpty)
+        ?.joinToString(", ")

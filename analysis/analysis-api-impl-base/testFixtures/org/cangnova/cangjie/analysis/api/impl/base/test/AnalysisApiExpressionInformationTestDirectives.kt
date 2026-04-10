@@ -27,7 +27,7 @@ object AnalysisApiExpressionInformationTestDirectives : SimpleDirectivesContaine
 }
 
 val RegisteredDirectives.expressionInfoTargetExpressionText: String
-    get() = singleValue(AnalysisApiExpressionInformationTestDirectives.TARGET_EXPRESSION_TEXT)
+    get() = this[AnalysisApiExpressionInformationTestDirectives.TARGET_EXPRESSION_TEXT].joinToString(", ")
 
 val RegisteredDirectives.expectedIsStatementLike: Boolean
     get() = singleValue(AnalysisApiExpressionInformationTestDirectives.EXPECTED_IS_STATEMENT_LIKE).toBooleanStrict()
