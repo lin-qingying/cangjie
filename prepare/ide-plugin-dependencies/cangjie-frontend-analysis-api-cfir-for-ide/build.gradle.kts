@@ -9,6 +9,8 @@ publishCangjieJarsForIde(
         ":analysis:analysis-api-cfir",
         ":analysis:low-level-api-cfir",
         ":analysis:decompiled",
+        ":analysis:stubs",
+
         ":analysis:symbol-light-declarations",
     )
 )
