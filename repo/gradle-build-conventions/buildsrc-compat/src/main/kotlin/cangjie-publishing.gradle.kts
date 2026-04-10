@@ -84,6 +84,7 @@ plugins.withId("java") {
         if (!publishesShadowComponent) {
             tasks.named<Jar>("jar").configure {
                 duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                exclude("META-INF/maven/**")
                 dependsOn(unpublishedProjectDependencies().map { dependencyPath ->
                     project(dependencyPath).tasks.named("jar")
                 })

@@ -19,6 +19,7 @@ val bundledProjectPaths = listOf(
 tasks.named<Jar>("jar") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     isZip64 = true
+    exclude("META-INF/maven/**")
     dependsOn(bundledProjectPaths.map { "$it:jar" })
     from({
         bundledProjectPaths.flatMap { projectPath ->
