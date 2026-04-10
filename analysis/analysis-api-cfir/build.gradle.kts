@@ -36,6 +36,7 @@ dependencies {
     implementation(project(":cfir:checkers"))
     api(project(":common:diagnostics"))
     implementation(project(":psi"))
+    implementation(project(":analysis:stubs"))
 
     compileOnly(intellijCore())
 

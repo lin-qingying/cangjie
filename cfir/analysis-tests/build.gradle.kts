@@ -16,6 +16,7 @@ dependencies {
     testFixturesApi(project(":cfir:raw-cfir:raw-cfir-common"))
     testFixturesApi(project(":psi"))
     testFixturesApi(testFixtures(project(":tests:test-infrastructure")))
+    testFixturesImplementation(libs.kotlinx.serialization.json)
 
     testImplementation(testFixtures(project(":cfir:analysis-tests")))
     testImplementation(testFixtures(project(":tests:test-infrastructure")))
