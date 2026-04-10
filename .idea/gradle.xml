@@ -97,6 +97,13 @@
             <option value="$PROJECT_DIR$/prepare/analysis-test-framework" />
             <option value="$PROJECT_DIR$/prepare/frontend" />
             <option value="$PROJECT_DIR$/prepare/frontend-embeddable" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-cfir-for-ide" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-for-ide" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-standalone-for-ide" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-cfir-for-ide" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-common-for-ide" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-psi-for-ide" />
             <option value="$PROJECT_DIR$/prepare/test-infrastructure" />
             <option value="$PROJECT_DIR$/psi" />
             <option value="$PROJECT_DIR$/repo/gradle-build-conventions" />

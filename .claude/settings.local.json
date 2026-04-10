@@ -29,7 +29,8 @@
       "Bash(./gradlew.bat :cfir:analysis-tests:test:*)",
       "Bash(cjc:*)",
       "Bash(cd:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "WebFetch(domain:)"
     ]
   }
 }
