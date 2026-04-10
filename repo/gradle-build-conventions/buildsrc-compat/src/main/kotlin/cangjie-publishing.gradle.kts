@@ -1,8 +1,5 @@
-import org.gradle.api.artifacts.component.ProjectComponentIdentifier
-import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.publish.maven.tasks.GenerateMavenPom
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.publish.maven.tasks.AbstractPublishToMaven
@@ -30,27 +27,6 @@ val publicationDescription = providers.provider {
         ?: publicationArtifactId.get()
 }
 
-val publicProjectPaths = ((rootProject.extensions.extraProperties.properties["cangjiePublicProjectPaths"] as? Set<*>) ?: emptySet<Any>())
-    .filterIsInstance<String>()
-    .toSet()
-
-fun publishedArtifactId(projectPath: String): String {
-    val dependencyProject = project(projectPath)
-    return (dependencyProject.findProperty("cangjiePublicationArtifactId") as? String)?.takeIf { it.isNotBlank() }
-        ?: dependencyProject.name
-}
-
-fun unpublishedProjectDependencies(): List<String> {
-    val runtimeClasspath = configurations.findByName("runtimeClasspath") ?: return emptyList()
-    return runtimeClasspath
-        .incoming
-        .resolutionResult
-        .allComponents
-        .mapNotNull { component -> (component.id as? ProjectComponentIdentifier)?.projectPath }
-        .filter { projectPath -> projectPath != path && projectPath !in publicProjectPaths }
-        .distinct()
-}
-
 plugins.withId("java") {
     val javaExtension = javaPluginExtension()
     javaExtension.withSourcesJar()
@@ -62,13 +38,11 @@ plugins.withId("java") {
     }
 
     /**
-     * 当前公开发布的是“前端门面工件”：
-     * 这些工件会把未公开的一方模块直接打进最终 jar，只保留清洗后的 Maven POM 依赖图。
+     * 公开门面工件统一关闭 Gradle Module Metadata 生成。
      *
-     * 如果继续发布 Gradle Module Metadata，Gradle 消费端会优先读取 `.module`，
-     * 从而重新看到 `cfir-tree`、`resolve`、`checkers` 等内部实现依赖，导致消费方解析失败。
-     *
-     * 因此这里对公开门面工件统一关闭 `.module` 生成，让 Gradle 回退到已清洗的 POM。
+     * 门面工件将内部模块打入 fat jar，如果继续发布 `.module`，
+     * Gradle 消费端会优先读取 `.module`，重新看到内部模块依赖，导致解析失败。
+     * 关闭后 Gradle 回退到 POM。
      */
     tasks.withType<GenerateModuleMetadata>().configureEach {
         enabled = false
@@ -80,21 +54,6 @@ plugins.withId("java") {
     afterEvaluate {
         val publicationComponentName = if (pluginManager.hasPlugin("com.gradleup.shadow")) "shadow" else "java"
         val publishesShadowComponent = publicationComponentName == "shadow"
-
-        if (!publishesShadowComponent) {
-            tasks.named<Jar>("jar").configure {
-                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-                exclude("META-INF/maven/**")
-                dependsOn(unpublishedProjectDependencies().map { dependencyPath ->
-                    project(dependencyPath).tasks.named("jar")
-                })
-                from({
-                    unpublishedProjectDependencies().map { dependencyPath ->
-                        zipTree(project(dependencyPath).tasks.named<Jar>("jar").get().archiveFile.get().asFile)
-                    }
-                })
-            }
-        }
 
         configure<PublishingExtension> {
             publications {
@@ -154,28 +113,6 @@ plugins.withId("java") {
                         }
                     }
                 }
-            }
-        }
-
-        val projectGroupId = project.group.toString()
-        val internalArtifactIds = unpublishedProjectDependencies()
-            .map(::publishedArtifactId)
-            .toSet()
-
-        tasks.withType<GenerateMavenPom>().configureEach {
-            doLast {
-                if (internalArtifactIds.isEmpty()) return@doLast
-
-                val pomFile = destination
-                var pomText = pomFile.readText(Charsets.UTF_8)
-                internalArtifactIds.forEach { internalArtifactId ->
-                    val dependencyPattern = Regex(
-                        """\s*<dependency>\s*<groupId>${Regex.escape(projectGroupId)}</groupId>\s*<artifactId>${Regex.escape(internalArtifactId)}</artifactId>.*?</dependency>""",
-                        setOf(RegexOption.DOT_MATCHES_ALL),
-                    )
-                    pomText = pomText.replace(dependencyPattern, "")
-                }
-                pomFile.writeText(pomText, Charsets.UTF_8)
             }
         }
     }

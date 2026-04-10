@@ -250,6 +250,24 @@
       <module name="cangjie.prepare.frontend-embeddable.test" options="-proc:none" />
       <module name="cangjie.prepare.frontend.main" options="-proc:none" />
       <module name="cangjie.prepare.frontend.test" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.main" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.test" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.main" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.test" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.main" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.test" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.main" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.test" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.main" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.test" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.main" options="-proc:none" />
+      <module name="cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.test" options="-proc:none" />
       <module name="cangjie.prepare.test-infrastructure" options="-proc:none" />
       <module name="cangjie.prepare.test-infrastructure.main" options="-proc:none" />
       <module name="cangjie.prepare.test-infrastructure.test" options="-proc:none" />
