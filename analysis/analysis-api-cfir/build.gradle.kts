@@ -29,6 +29,7 @@ dependencies {
     api(project(":analysis:analysis-api-impl-base"))
     implementation(project(":analysis:low-level-api-cfir"))
     implementation(project(":analysis:decompiled"))
+    implementation(project(":analysis:stubs"))
     implementation(project(":analysis:symbol-light-declarations"))
     implementation(project(":cfir:entrypoint"))
     implementation(project(":cfir:cfir-tree"))
@@ -36,7 +37,7 @@ dependencies {
     implementation(project(":cfir:checkers"))
     api(project(":common:diagnostics"))
     implementation(project(":psi"))
-    implementation(project(":analysis:stubs"))
+
 
     compileOnly(intellijCore())
 
