@@ -30,7 +30,17 @@
       "Bash(cjc:*)",
       "Bash(cd:*)",
       "Bash(python3:*)",
-      "WebFetch(domain:)"
+      "WebFetch(domain:)",
+      "Bash(/tmp/cj-verify/test_throw_error.cj:*)",
+      "Bash(/tmp/cj-verify/test_catch.cj:*)",
+      "Bash(/tmp/cj-verify/test_catch_error.cj:*)",
+      "Bash(/tmp/cj-verify/test_throw_enum.cj:*)",
+      "Bash($CJC:*)",
+      "Bash(/c/Users/lin17/sdk/cangjie-sdk-windows-x64-1.0.1/cangjie/bin/cjc.exe:*)",
+      "Bash(/c/Users/lin17/sdk/cangjie-sdk-windows-x64-1.0.1/cangjie/bin/cjc-frontend.exe:*)",
+      "Bash(export:*)",
+      "Bash(bash:*)",
+      "Bash(sed:*)"
     ]
   }
 }
