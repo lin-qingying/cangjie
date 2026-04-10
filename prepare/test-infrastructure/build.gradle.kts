@@ -15,25 +15,13 @@ val fixtureProjectPaths = listOf(
 )
 
 tasks.named<Jar>("jar") {
+    fixtureProjectPaths.forEach { dependsOn("$it:testFixturesJar") }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     isZip64 = true
     exclude("META-INF/maven/**")
-    dependsOn(fixtureProjectPaths.map { "$it:testFixturesJar" })
     from({
-        fixtureProjectPaths.flatMap { projectPath ->
-            val fixtureSourceSet = project(projectPath)
-                .extensions
-                .getByType<JavaPluginExtension>()
-                .sourceSets
-                .getByName("testFixtures")
-
-            fixtureSourceSet.runtimeClasspath.files.mapNotNull { file ->
-                when {
-                    !file.exists() -> null
-                    file.isDirectory -> fileTree(file)
-                    else -> zipTree(file)
-                }
-            }
+        fixtureProjectPaths.map { projectPath ->
+            zipTree(project(projectPath).tasks.named<Jar>("testFixturesJar").get().archiveFile.get().asFile)
         }
     })
     manifest.attributes["Implementation-Title"] = "cangjie-frontend-test-infrastructure"
@@ -42,7 +30,6 @@ tasks.named<Jar>("jar") {
 
 tasks.named<Jar>("sourcesJar") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    dependsOn(fixtureProjectPaths.map { "$it:testFixturesJar" })
     from(
         fixtureProjectPaths.map { projectPath ->
             project(projectPath)

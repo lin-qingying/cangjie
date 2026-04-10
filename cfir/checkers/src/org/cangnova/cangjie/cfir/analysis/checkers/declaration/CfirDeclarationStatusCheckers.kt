@@ -43,7 +43,7 @@ object CfirMutModifierApplicabilityChecker : CfirMemberDeclarationChecker() {
     override fun check(declaration: CfirMemberDeclaration) {
         if (!declaration.status.isMut) return
         val function = declaration as? CfirNamedFunction ?: return
-        if (context.isStructMemberFunction(function)) return
+        if (context.isStructOrInterfaceMemberFunction(function)) return
 
         reporter.reportOn(
             source = declaration.source,
@@ -53,16 +53,19 @@ object CfirMutModifierApplicabilityChecker : CfirMemberDeclarationChecker() {
     }
 }
 
-private fun CheckerContext.isStructMemberFunction(function: CfirNamedFunction): Boolean {
+// interface 中允许声明 mut func，用于约束实现 struct 的 mut 一致性
+// 参考: ParserModifierRules.cpp INTERFACE_BODY_FUNCDECL_MODIFIERS 包含 MUT
+private fun CheckerContext.isStructOrInterfaceMemberFunction(function: CfirNamedFunction): Boolean {
     val ownerClassId = function.symbol.callableId.classId
     if (ownerClassId != null) {
         val owner = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
         if (owner != null) {
-            return owner is CfirStruct
+            return owner is CfirStruct || owner is CfirInterface
         }
     }
 
-    return findClosestDeclaration<CfirClassLikeDeclaration>() is CfirStruct
+    val closestDeclaration = findClosestDeclaration<CfirClassLikeDeclaration>()
+    return closestDeclaration is CfirStruct || closestDeclaration is CfirInterface
 }
 
 private fun CfirMemberDeclaration.declarationNameOrNull(): Name? = when (this) {

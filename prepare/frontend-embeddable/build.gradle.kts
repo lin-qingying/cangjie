@@ -1,5 +1,4 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.bundling.Jar
@@ -13,15 +12,44 @@ plugins {
 
 description = "供非受控宿主进程嵌入使用的仓颉前端公开工件，对宿主敏感依赖执行 shaded/relocated 隔离。"
 
-val bundledProjectPaths = listOf(
+/**
+ * 编译器前端完整一方模块列表（与 :prepare:frontend 保持一致）。
+ */
+val frontendProjectPaths = listOf(
+    // 编译器核心
     ":compiler:frontend",
-    ":dependencies:intellij-core",
+    ":compiler:phaser",
+    ":compiler:config",
+    // CFIR 全系列
+    ":cfir:entrypoint",
+    ":cfir:cfir-common",
+    ":cfir:cfir-tree",
+    ":cfir:cfir-cones",
+    ":cfir:providers",
+    ":cfir:resolve",
+    ":cfir:semantics",
+    ":cfir:checkers",
+    ":cfir:diagnostic-renderers",
+    ":cfir:cfir-serialization",
+    ":cfir:raw-cfir:raw-cfir-common",
+    ":cfir:raw-cfir:psi2cfir",
+    ":cfir:raw-cfir:light-tree2cfir",
+    // 基础设施
+    ":common",
+    ":common:diagnostics",
+    ":util",
+    ":psi",
+    ":resolution.common",
+    // 宏
+    ":macro:macro-common",
+    // FlatBuffers 生成
+    ":flatbuffers-gen",
 )
 
 dependencies {
-    bundledProjectPaths.forEach { projectPath ->
-        implementation(project(projectPath))
-    }
+    // Shadow 插件通过 implementation 配置自动拉取传递依赖并打包
+    implementation(project(":compiler:frontend"))
+    implementation(project(":dependencies:intellij-core"))
 }
 
 tasks.named<Jar>("jar") {
@@ -50,31 +78,17 @@ tasks.named<ShadowJar>("shadowJar") {
 tasks.named<Jar>("sourcesJar") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     isZip64 = true
-    dependsOn(
-        bundledProjectPaths.mapNotNull { projectPath ->
-            project(projectPath).tasks.findByName("compileKotlin")
-                ?: project(projectPath).tasks.findByName("compileJava")
-        },
-    )
-    from({
-        val sourceProjectPaths = linkedSetOf<String>()
-        bundledProjectPaths.forEach { projectPath ->
-            sourceProjectPaths += projectPath
-            sourceProjectPaths += project(projectPath)
-                .configurations
-                .getByName("runtimeClasspath")
-                .incoming
-                .resolutionResult
-                .allComponents
-                .mapNotNull { component -> (component.id as? ProjectComponentIdentifier)?.projectPath }
+    for (projectPath in frontendProjectPaths) {
+        val projectTasks = project(projectPath).tasks
+        if (projectTasks.names.any { it == "compileKotlin" }) {
+            dependsOn(projectTasks.named("compileKotlin").map { it.dependsOn })
         }
-
-        sourceProjectPaths
+    }
+    from({
+        frontendProjectPaths
             .map(::project)
-            .filter { candidate -> candidate.plugins.hasPlugin("java-base") }
-            .distinctBy { candidate -> candidate.path }
-            .map { dependencyProject ->
-                dependencyProject.extensions.getByType<JavaPluginExtension>().sourceSets.getByName("main").allSource
-            }
+            .filter { it.plugins.hasPlugin("java-base") }
+            .distinctBy { it.path }
+            .map { it.extensions.getByType<JavaPluginExtension>().sourceSets.getByName("main").allSource }
     })
 }
