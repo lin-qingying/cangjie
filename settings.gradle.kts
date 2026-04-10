@@ -31,6 +31,14 @@ include(":prepare:frontend-embeddable")
 include(":prepare:test-infrastructure")
 include(":prepare:analysis-test-framework")
 
+// IDE 插件依赖（按功能分组的 fat jar，对齐 Kotlin prepare/ide-plugin-dependencies）
+include(":prepare:ide-plugin-dependencies:cangjie-frontend-common-for-ide")
+include(":prepare:ide-plugin-dependencies:cangjie-frontend-psi-for-ide")
+include(":prepare:ide-plugin-dependencies:cangjie-frontend-cfir-for-ide")
+include(":prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-for-ide")
+include(":prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-cfir-for-ide")
+include(":prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-standalone-for-ide")
+
 include(":util")
 include(":lsp")
 // PSI 模块

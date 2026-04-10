@@ -57,5 +57,5 @@ func unrelatedPackageInternal(base: Base): Int64 {
 }
 
 func unrelatedPackageProtected(base: Base): Int64 {
-    return base.protectedValue()
+    return base.<!INVISIBLE_MEMBER!>protectedValue<!>()
 }
