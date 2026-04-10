@@ -1,0 +1,16 @@
+// FILE: genericSameArguments.cj
+// LEFT_TYPE_KIND: GENERIC_CLASS
+// LEFT_TARGET_CLASS: User
+// LEFT_CONTAINER_CLASS: Box
+// RIGHT_TYPE_KIND: GENERIC_CLASS
+// RIGHT_TARGET_CLASS: User
+// RIGHT_CONTAINER_CLASS: Box
+// EXPECTED_IS_SUBTYPE: true
+// EXPECTED_SEMANTICALLY_EQUAL: true
+package sample.typerelation
+
+class User {
+}
+
+class Box<T> {
+}

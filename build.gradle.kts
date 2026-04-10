@@ -217,6 +217,16 @@ publicPublicationArtifacts.forEach { (projectPath, publication) ->
     }
 }
 
+tasks.register("printPublicArtifactIds") {
+    group = "publishing"
+    description = "Print all public Maven artifactIds, one per line."
+    doLast {
+        publicPublicationArtifacts.values
+            .map { (artifactId, _) -> artifactId }
+            .forEach(::println)
+    }
+}
+
 tasks.register("publishPublicArtifacts") {
     group = "publishing"
     description = "Publish all public frontend and analysis Maven artifacts."

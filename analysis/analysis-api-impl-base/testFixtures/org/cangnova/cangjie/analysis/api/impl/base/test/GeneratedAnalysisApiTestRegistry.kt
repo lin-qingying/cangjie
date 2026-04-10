@@ -94,6 +94,13 @@ object GeneratedAnalysisApiTestRegistry {
             includedFilePatternProvider = allFilesPattern(),
         ),
         GeneratedAnalysisApiModel(
+            baseName = "TypeRelationTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.typeRelationChecker.AbstractTypeRelationTest",
+            modelRelativePath = "analysis/analysis-api/testData/components/typeRelationChecker/subtypingAndEquality",
+            supportedModuleKinds = listOf(TestModuleKind.Source),
+            includedFilePatternProvider = allFilesPattern(),
+        ),
+        GeneratedAnalysisApiModel(
             baseName = "OverriddenDeclarationProviderTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.symbolRelationProvider.AbstractOverriddenDeclarationProviderTest",
             modelRelativePath = "analysis/analysis-api/testData/components/symbolRelationProvider/overriddenSymbols",
@@ -120,6 +127,20 @@ object GeneratedAnalysisApiTestRegistry {
             modelRelativePath = "analysis/analysis-api/testData/components/expressionTypeProvider/declarationReturnType",
             supportedModuleKinds = listOf(TestModuleKind.Source),
             includedFilePatternProvider = exactStemPattern("declarationReturnType"),
+        ),
+        GeneratedAnalysisApiModel(
+            baseName = "ExpressionInformationTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.expressionInfoProvider.AbstractExpressionInformationTest",
+            modelRelativePath = "analysis/analysis-api/testData/components/expressionInfoProvider/basicInfo",
+            supportedModuleKinds = listOf(TestModuleKind.Source),
+            includedFilePatternProvider = allFilesPattern(),
+        ),
+        GeneratedAnalysisApiModel(
+            baseName = "DataFlowInfoTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.dataFlowInfoProvider.AbstractDataFlowInfoTest",
+            modelRelativePath = "analysis/analysis-api/testData/components/dataFlowInfoProvider/basicInfo",
+            supportedModuleKinds = listOf(TestModuleKind.Source),
+            includedFilePatternProvider = allFilesPattern(),
         ),
         GeneratedAnalysisApiModel(
             baseName = "TopLevelSymbolProviderTest",

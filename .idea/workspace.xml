@@ -6,8 +6,16 @@
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="refactor: enhance Analysis API components and improve test configurators">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/api/analysis-api.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/api/analysis-api.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/AnalysisApiDataFlowInfoTestDirectives.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/AnalysisApiDataFlowInfoTestDirectives.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/AnalysisApiExpressionInformationTestDirectives.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/AnalysisApiExpressionInformationTestDirectives.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/dataFlowInfoProvider/AbstractDataFlowInfoTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/dataFlowInfoProvider/AbstractDataFlowInfoTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/expressionInfoProvider/AbstractExpressionInformationTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/expressionInfoProvider/AbstractExpressionInformationTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/dataFlowInfoProvider/basicInfo/callExpression.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/dataFlowInfoProvider/basicInfo/callExpression.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/dataFlowInfoProvider/basicInfo/constantExpression.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/dataFlowInfoProvider/basicInfo/constantExpression.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/dataFlowInfoProvider/basicInfo/immutableReference.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/dataFlowInfoProvider/basicInfo/immutableReference.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/dataFlowInfoProvider/basicInfo/mutableReference.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/dataFlowInfoProvider/basicInfo/mutableReference.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/dataFlowInfoProvider/basicInfo/propertyReference.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/dataFlowInfoProvider/basicInfo/propertyReference.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/testData/components/dataFlowInfoProvider/basicInfo/tupleLiteral.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/testData/components/dataFlowInfoProvider/basicInfo/tupleLiteral.cj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/external/kotlin" beforeDir="false" afterPath="$PROJECT_DIR$/external/kotlin" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -429,6 +437,13 @@
       </list>
     </recent_temporary>
   </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="project-project-d83eb0681c0a-ce52c3c2" />
+      </set>
+    </attachedChunks>
+  </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="默认任务">
       <changelist id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="" />
@@ -488,7 +503,7 @@
       <workItem from="1775458431492" duration="19131000" />
       <workItem from="1775498987216" duration="18622000" />
       <workItem from="1775627109072" duration="16826000" />
-      <workItem from="1775725105824" duration="536000" />
+      <workItem from="1775725105824" duration="2346000" />
     </task>
     <task id="LOCAL-00001" summary="add: implement generic functions and type declarations">
       <option name="closed" value="true" />
