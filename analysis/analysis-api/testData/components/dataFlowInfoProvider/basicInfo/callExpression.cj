@@ -1,8 +1,8 @@
 // FILE: callExpression.cj
 // TARGET_EXPRESSION_TEXT: computeValue()
 // EXPECTED_STABILITY: COMPUTED_VALUE
-// EXPECTED_IS_PURE_REFERENCE: false
-// EXPECTED_EXPRESSION_TYPE: Int64
+// EXPECTED_IS_PURE_REFERENCE: true
+// EXPECTED_DATA_FLOW_EXPRESSION_TYPE: Int64
 package sample.dataflow
 
 func computeValue(): Int64 {

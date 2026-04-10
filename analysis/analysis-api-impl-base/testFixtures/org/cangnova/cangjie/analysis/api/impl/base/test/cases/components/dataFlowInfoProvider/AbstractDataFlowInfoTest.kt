@@ -59,8 +59,15 @@ abstract class AbstractDataFlowInfoTest : AbstractAnalysisApiComponentTest() {
     }
 
     private fun findExpression(mainFile: CjFile, expressionText: String): CjExpression {
-        return PsiTreeUtil.findChildrenOfType(mainFile, CjExpression::class.java)
-            .singleOrNull { expression -> expression.text == expressionText }
+        val candidates = PsiTreeUtil.findChildrenOfType(mainFile, CjExpression::class.java)
+            .filter { expression -> expression.text == expressionText }
+            .filter { expression ->
+                generateSequence(expression.parent) { current -> current.parent }
+                    .filterIsInstance<CjExpression>()
+                    .none { parentExpression -> parentExpression.text == expressionText }
+            }
+
+        return candidates.singleOrNull()
             ?: error("Cannot uniquely locate expression `$expressionText` in `${mainFile.name}`.")
     }
 }
