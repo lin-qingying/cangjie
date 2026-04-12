@@ -4,6 +4,7 @@ import com.intellij.lang.LighterASTNode
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.IElementType
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -14,7 +15,11 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.psi.CjImportDirective
+import org.cangnova.cangjie.psi.CjSimpleNameExpression
+import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.psi
@@ -27,7 +32,8 @@ object CfirImportsChecker : CfirFileChecker() {
         declaration.imports.forEach { import ->
             reportImportResolutionDiagnostic(import)
         }
-        reportImportConflicts(declaration.imports)
+        val duplicateImports = reportImportConflicts(declaration.imports)
+        reportUnusedImports(declaration, duplicateImports)
     }
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -51,7 +57,8 @@ object CfirImportsChecker : CfirFileChecker() {
     }
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun reportImportConflicts(imports: List<CfirImport>) {
+    private fun reportImportConflicts(imports: List<CfirImport>): Set<CfirImport> {
+        val duplicates = linkedSetOf<CfirImport>()
         val groupedByEffectiveName = imports
             .mapNotNull { import ->
                 val effectiveName = import.aliasName ?: import.importedFqName?.shortName()
@@ -61,6 +68,7 @@ object CfirImportsChecker : CfirFileChecker() {
 
         for ((name, conflicts) in groupedByEffectiveName) {
             if (conflicts.size < 2) continue
+            duplicates += conflicts
             reporter.reportOn(conflicts.first().source, CfirErrors.IMPORT_CONFLICT, name)
         }
 
@@ -73,7 +81,42 @@ object CfirImportsChecker : CfirFileChecker() {
 
         for ((alias, conflicts) in groupedByAlias) {
             if (conflicts.size < 2) continue
+            duplicates += conflicts
             reporter.reportOn(conflicts.first().source, CfirErrors.IMPORT_ALIAS_CONFLICT, alias)
+        }
+
+        return duplicates
+    }
+
+    /**
+     * 未使用导入检查与 Analysis API 的 import optimization 语义保持一致：
+     * - 只统计真实代码中的简单名引用，不把 import 自身计为使用；
+     * - `*` 导入默认不参与 unused 判定；
+     * - 已重复或已解析失败的导入不重复报 unused。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun reportUnusedImports(
+        declaration: CfirFile,
+        duplicateImports: Set<CfirImport>,
+    ) {
+        val psiFile = declaration.source?.psi as? CjFile ?: return
+        val referencedNames = PsiTreeUtil.collectElementsOfType(psiFile, CjSimpleNameExpression::class.java)
+            .asSequence()
+            .filter { reference: CjSimpleNameExpression -> reference.getStrictParentOfType<CjImportDirective>() == null }
+            .map(CjSimpleNameExpression::referencedNameAsName)
+            .toSet()
+
+        for (import in declaration.imports) {
+            if (import in duplicateImports) continue
+            if (import.isAllUnder) continue
+
+            val importedFqName = import.importedFqName?.takeUnless { it.isRoot } ?: continue
+            if (!canResolveTerminalImportTarget(importedFqName)) continue
+
+            val importedName = import.aliasName ?: importedFqName.shortName()
+            if (importedName in referencedNames) continue
+
+            reporter.reportOn(import.source, CfirErrors.UNUSED_IMPORT, importedFqName)
         }
     }
 

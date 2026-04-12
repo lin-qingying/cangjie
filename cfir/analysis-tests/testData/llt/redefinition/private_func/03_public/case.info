@@ -1,0 +1,9 @@
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
+// (Linux) DEPENDENCE: 1.cj 2.cj
+// (Linux) ERRCHECK: %frontendCompiler %cmp_opt 1.cj 2.cj -o %output %typecheck %diag_json
+// (Linux) ASSERT: scan sema_overload_conflicts

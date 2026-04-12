@@ -1,0 +1,24 @@
+{
+    "Modules": {
+        "entry": {
+            "deviceSysCap": {
+                "phone": [
+                    "./json/phone-hmos.json",
+                    "./json/phone.json"
+                ],
+                "tablet": [
+                    "./json/tablet-hmos.json",
+                    "./json/tablet.json"
+                ],
+                "2in1": [
+                    "./json/2in1-hmos.json",
+                    "./json/2in1.json"
+                ]
+            }
+        }
+    },
+    "apiLevel": 19
+}
+
+
+

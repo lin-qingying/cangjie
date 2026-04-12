@@ -1,0 +1,61 @@
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
+// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
+
+class Day<T> {}
+
+open class A <: I1 {}
+
+open class B <: A & I2 {}
+
+open class C <: B & I1 & I3 {}
+
+open class D <: C {}
+
+interface I1 {}
+
+interface I2 <: I1 {}
+
+interface I3 {}
+
+func f<X>(a: Day<X>, b: X, c: (X) -> Int64): Int64 {
+    0
+} //f1
+
+func f<Y>(a: Day<Y>, b: Y, c: (B) -> Int64): Int64 {
+    1
+} //f2
+
+main() {
+    /* 候选集：f1, f2, 单独看对应位置参数，f2是最小的
+    候选集中存在f1有公共类型变元，根据公共类型变元规则来判断f2是否满足
+    f2中，Day<Y>中Y是不变，B是逆变，Y无约束上界，f2不满足要求 */
+    f(Day<B>(), B(), {d: A => 0})
+}
+
+/* SCAN
+error: ambiguous match for function call 'f'
+  ==> call8.cj:37:5:
+   | 
+37 |     f(Day<B>(), B(), {d: A => 0})
+   |     ^ 
+   | 
+note: found candidate
+  ==> call8.cj:25:6:
+   | 
+25 | func f<X>(a: Day<X>, b: X, c: (X) -> Int64): Int64 {
+   |      ^ 
+   | 
+note: found candidate
+  ==> call8.cj:29:6:
+   | 
+29 | func f<Y>(a: Day<Y>, b: Y, c: (B) -> Int64): Int64 {
+   |      ^ 
+   | 
+
+1 error generated, 1 error printed.
+*/
