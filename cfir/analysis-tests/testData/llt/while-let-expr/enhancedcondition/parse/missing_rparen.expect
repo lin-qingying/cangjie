@@ -1,0 +1,33 @@
+/* SCAN
+error: trailing closure can only be used on function calls with function or variable names
+  ==> missing_rparen.cj:11:27:
+   | 
+11 |     while (let Some(a) <- 1 {}
+   |                           ^ 
+   | 
+
+error: unclosed delimiter: '('
+  ==> missing_rparen.cj:11:31:
+   | 
+11 |     while (let Some(a) <- 1 {}
+   |           ~                   ^ expected ')' here
+   |           |
+   |           to match this opening '('
+   | 
+
+error: unclosed delimiter: '{'
+  ==> missing_rparen.cj:42:4:
+   | 
+10 | main() {
+   |        ~ to match this opening '{'
+11 |     while (let Some(a) <- 1 {}
+   | ...
+42 | */
+   |    ^ expected '}' here
+   | 
+
+3 errors generated, 3 errors printed.
+*/
+
+
+

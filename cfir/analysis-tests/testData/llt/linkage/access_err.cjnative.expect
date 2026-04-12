@@ -1,0 +1,24 @@
+/* SCAN
+error: 'f4' is not a member of class 'DDDD'
+  ==> access_err.cj:17:20:
+   | 
+17 |     println(DDDD().f4())
+   |                    ^^ 
+   | 
+
+error: 'f4' is not a member of class 'EEEE'
+  ==> access_err.cj:18:20:
+   | 
+18 |     println(EEEE().f4())
+   |                    ^^ 
+   | 
+
+error: 'f4' is not a member of class 'FFFF'
+  ==> access_err.cj:19:20:
+   | 
+19 |     println(FFFF().f4())
+   |                    ^^ 
+   | 
+
+3 errors generated, 3 errors printed.
+*/

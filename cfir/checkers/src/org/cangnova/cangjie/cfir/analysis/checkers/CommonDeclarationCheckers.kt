@@ -2,6 +2,8 @@ package org.cangnova.cangjie.cfir.analysis.checkers
 
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCallableDeclarationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirAnnotationDeclarationChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirBuiltInAnnotationDeclarationChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInteropAnnotationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirConflictsDeclarationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirConstructorChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirConstructorDelegationChecker
@@ -38,11 +40,18 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirTypeConstrain
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirTypeParameterChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirTypeParameterBoundsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirConstructorInitializationChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirClassStructSemanticsChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionOverloadChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionReturnTypeInferenceChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirGeneralSemanticsChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirLambdaParameterTypeChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirPropertySemanticsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.DeclarationCheckers
 
 object CommonDeclarationCheckers : DeclarationCheckers() {
     override val basicDeclarationCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirBasicDeclarationChecker>
         get() = setOf(
+            CfirBuiltInAnnotationDeclarationChecker,
             CfirConflictsDeclarationChecker,
             CfirModifierChecker,
             CfirTypeConstraintsChecker,
@@ -61,6 +70,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
         get() = setOf(
             CfirFunctionInitializationChecker,
             CfirForeignFunctionReturnTypeChecker,
+            CfirFunctionReturnTypeInferenceChecker,
         )
 
     override val typeParameterCheckers: Set<CfirTypeParameterChecker>
@@ -71,11 +81,13 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     override val simpleFunctionCheckers: Set<CfirSimpleFunctionChecker>
         get() = setOf(
             CfirOperatorDeclarationChecker,
+            CfirFunctionOverloadChecker,
         )
 
     override val fileCheckers: Set<CfirFileChecker>
         get() = setOf(
             CfirImportsChecker,
+            CfirGeneralSemanticsChecker,
         )
 
     override val fieldVariableCheckers: Set<CfirFieldVariableChecker>
@@ -110,11 +122,20 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
         get() = setOf(
             CfirAnnotationDeclarationChecker,
             CfirClassLikeInitializationChecker,
+            CfirInteropAnnotationChecker,
             CfirSupertypesChecker,
             CfirOverrideChecker,
             CfirNotImplementedOverrideChecker,
+            CfirClassStructSemanticsChecker,
         )
 
     override val propertyCheckers: Set<CfirPropertyChecker>
-        get() = emptySet()
+        get() = setOf(
+            CfirPropertySemanticsChecker,
+        )
+
+    override val anonymousFunctionCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirAnonymousFunctionChecker>
+        get() = setOf(
+            CfirLambdaParameterTypeChecker,
+        )
 }

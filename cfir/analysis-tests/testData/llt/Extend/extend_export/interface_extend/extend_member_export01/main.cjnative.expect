@@ -1,0 +1,10 @@
+/* SCAN
+error: 'f2' is not a member of class 'A'
+  ==> main.cj:18:9:
+   | 
+18 |     A().f2() // error
+   |         ^^ 
+   | 
+
+1 error generated, 1 error printed.
+*/

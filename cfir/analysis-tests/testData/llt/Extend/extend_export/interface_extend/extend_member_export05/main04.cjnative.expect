@@ -1,0 +1,17 @@
+/* SCAN
+error: 'f1' is not a member of class 'Foo<Int64>'
+  ==> main04.cj:20:18:
+   | 
+20 |     Foo<Int64>().f1() // error
+   |                  ^^ 
+   | 
+
+error: 'f3' is not a member of class 'Foo<Int64>'
+  ==> main04.cj:22:18:
+   | 
+22 |     Foo<Int64>().f3() // error
+   |                  ^^ 
+   | 
+
+2 errors generated, 2 errors printed.
+*/

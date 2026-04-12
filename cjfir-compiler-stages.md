@@ -1,14 +1,14 @@
-# 仓颉编译器阶段设计（Kotlin 实现版）
+# 仓颉编译器前端阶段设计（Kotlin 实现版）
 
 > 基于 Kotlin 实现的仓颉语言前端，IR 命名为 **CFIR**（Cangjie Frontend IR），对齐 Kotlin K2 架构，同时覆盖官方仓颉编译器的前端功能。
 >
-> **核心管线**终止于 `SAVE_CJO`（阶段 10），后续的 `CFIR2CHIR` 和 `CODEGEN` 阶段为**可选扩展**，不在核心管线范围内。
+> **核心管线**终止于 `SAVE_CJO`（阶段 10）。
 
 ---
 
-## 官方编译器阶段参考
+## 官方编译器前端阶段参考
 
-官方 C++ 编译器定义于 `CompilerInstance.h`，完整阶段如下：
+官方 C++ 编译器定义于 `CompilerInstance.h`，前端相关阶段如下：
 
 ```cpp
 enum class CompileStage {
@@ -24,9 +24,7 @@ enum class CompileStage {
     OVERFLOW_STRATEGY,       // 溢出策略设置
     MANGLING,                // 符号名称修饰
     SAVE_CJO,                // 保存 .cjo 编译产物
-    CHIR,                    // AST → CHIR 转换 + 优化
-    CODEGEN,                 // CHIR → LLVM IR → 机器码
-    SAVE_RESULTS,            // 保存 AST/CHIR 结果（CHIR 输出模式）
+    // CHIR、CODEGEN、SAVE_RESULTS 属于后端，不在本前端实现范围内
 };
 ```
 
@@ -34,22 +32,20 @@ enum class CompileStage {
 
 ## 本实现阶段列表
 
-在官方 15 个阶段基础上，按职责相近性合并为 **12 个阶段**：
+在官方前端阶段基础上，按职责相近性合并为 **10 个阶段**：
 
-| #  | 阶段标识       | 中文名       | 产物                                            | 合并来源                                                             |
-|----|----------------|--------------|------------------------------------------------|----------------------------------------------------------------------|
-| 1  | `LOAD_PLUGINS` | 插件加载     | 插件注册表                                      | —                                                                    |
-| 2  | `PARSE`        | 源码解析     | PSI Tree                                        | —                                                                    |
-| 3  | `CONDITION_COMPILE` | 条件编译 | 裁剪后 PSI Tree                                 | —                                                                    |
-| 4  | `IMPORT_PACKAGE` | 包导入     | 合并后包列表（源码包 + 外部包）                   | —                                                                    |
-| 5  | `MACRO_EXPAND` | 宏展开       | 展开后 AST                                      | —                                                                    |
-| 6  | `CFIR_BUILD`   | CFIR 构建    | Raw CFIR                                        | 官方 `AST_DIFF` + `SEMA` 前半段                                      |
-| 7  | `CFIR_RESOLVE` | CFIR 语义解析 | 完整语义 CFIR（含诊断检查）                      | 官方 `SEMA` 主体 + 校验（CHECKERS 为末尾 Phase）                     |
-| 8  | `FINALIZE`     | 语义后处理    | 单态化 CFIR（含溢出策略标注）                    | 官方 `DESUGAR_AFTER_SEMA` + `GENERIC_INSTANTIATION` + `OVERFLOW_STRATEGY` |
-| 9  | `MANGLING`     | 名称修饰     | 全局符号修饰名映射                               | —                                                                    |
-| 10 | `SAVE_CJO`     | CJO 保存     | `.cjo` 文件                                     | 官方 `SAVE_CJO` + `SAVE_RESULTS`                                     |
-| 11 | `CFIR2CHIR`    | CHIR 生成    | 优化后 CHIR                                     | 官方 `CHIR`                                                          |
-| 12 | `CODEGEN`      | 代码生成     | `.bc` / `.o`                                    | —                                                                    |
+| #  | 阶段标识            | 中文名       | 产物                                                    | 合并来源                                                             |
+|----|---------------------|--------------|--------------------------------------------------------|----------------------------------------------------------------------|
+| 1  | `LOAD_PLUGINS`      | 插件加载     | 插件注册表                                              | —                                                                    |
+| 2  | `PARSE`             | 源码解析     | PSI Tree                                               | —                                                                    |
+| 3  | `CONDITION_COMPILE` | 条件编译     | 裁剪后 PSI Tree                                         | —                                                                    |
+| 4  | `IMPORT_PACKAGE`    | 包导入       | 合并后包列表（源码包 + 外部包）                           | —                                                                    |
+| 5  | `MACRO_EXPAND`      | 宏展开       | 展开后 AST                                              | —                                                                    |
+| 6  | `CFIR_BUILD`        | CFIR 构建    | Raw CFIR                                               | 官方 `AST_DIFF` + `SEMA` 前半段                                      |
+| 7  | `CFIR_RESOLVE`      | CFIR 语义解析 | 完整语义 CFIR（含诊断检查）                              | 官方 `SEMA` 主体 + 校验（CHECKERS 为末尾 Phase）                     |
+| 8  | `FINALIZE`          | 语义后处理   | 单态化 CFIR（含溢出策略标注）                            | 官方 `DESUGAR_AFTER_SEMA` + `GENERIC_INSTANTIATION` + `OVERFLOW_STRATEGY` |
+| 9  | `MANGLING`          | 名称修饰     | 全局符号修饰名映射                                       | —                                                                    |
+| 10 | `SAVE_CJO`          | CJO 保存     | `.cjo` 文件                                             | 官方 `SAVE_CJO` + `SAVE_RESULTS`                                     |
 
 ---
 
@@ -86,13 +82,7 @@ Raw CFIR（结构化 IR，无类型信息）
 全局符号修饰名就绪
   │
   ▼ SAVE_CJO
-.cjo 文件（序列化 AST，供下游包导入）
-  │
-  ▼ CFIR2CHIR（转换 + 优化 + 插件 + 分析）
-优化后 CHIR
-  │
-  ▼ CODEGEN（CHIR → LLVM IR → .bc）
-.bc 字节码 / .o 目标文件
+.cjo 文件（序列化 CFIR，供下游包导入）
 ```
 
 ---
@@ -113,7 +103,7 @@ Raw CFIR（结构化 IR，无类型信息）
 - 仅 `CJNATIVE` 后端启用（`#ifdef CANGJIE_CODEGEN_CJNATIVE_BACKEND`）
 
 **说明：**
-此阶段必须最先执行，否则后续阶段的扩展点无法被插件订阅。官方实现中插件主要用于 MetaTransform（元编程转换），在 CHIR 阶段的 PLUGIN Phase 执行。
+此阶段必须最先执行，否则后续阶段的扩展点无法被插件订阅。
 
 ---
 
@@ -300,7 +290,7 @@ RAW_CFIR
 
 ### 9. `MANGLING` — 名称修饰
 
-**职责：** 为所有声明生成唯一的修饰名（Mangled Name），供链接器和 CHIR/LLVM 使用。支持多线程并行。
+**职责：** 为所有声明生成唯一的修饰名（Mangled Name），供链接器和下游使用。支持多线程并行。
 
 **输入：** 单态化 CFIR
 **输出：** 全局符号修饰名映射
@@ -311,7 +301,6 @@ RAW_CFIR
 - `Walker` 遍历每个节点并生成修饰名
 - Lambda 表达式收集后串行修饰（使用全局计数器，不适合并发）
 - `ManglerContext` 跟踪通配符变量、局部变量/函数/Lambda 的作用域信息
-- CJNATIVE 后端使用 `CHIRMangler`（扩展功能），其他后端使用 `BaseMangler`
 - 修饰后对泛型实例化声明按修饰名排序（`SortForBep()`），保证确定性
 
 **独立保留理由：**
@@ -323,7 +312,7 @@ RAW_CFIR
 
 **职责：** 将编译产物序列化为 `.cjo`（Cangjie Object）文件，供下游包作为外部依赖导入。
 
-**输入：** 修饰名就绪的 CFIR/AST
+**输入：** 修饰名就绪的 CFIR
 **输出：** `.cjo` 文件 + `.cjo.flag` 标志文件
 
 **对应官方阶段：** `SAVE_CJO` + `SAVE_RESULTS`
@@ -338,94 +327,30 @@ RAW_CFIR
 官方 `SAVE_RESULTS` 仅在 `outputMode == CHIR` 时执行延迟的 `SaveCjo()`，其他模式直接跳过。两者本质都是序列化保存，合并为单一阶段，内部根据 outputMode 决定保存时机。
 
 **说明：**
-`.cjo` 是仓颉编译的核心产物格式，等价于 Kotlin 的 `.klib`，包含序列化 AST、类型签名、符号信息、依赖关系。本实现的序列化模块为 `cfir-serialization`。
-
----
-
-### 11. `CFIR2CHIR` — CHIR 生成（可选扩展）
-
-**职责：** 将 CFIR 转换为 CHIR（Cangjie High-level IR），执行 CHIR 级别优化和分析。
-
-**输入：** 完整 CFIR
-**输出：** 优化后 CHIR
-
-**官方实现（`ToCHIR` 类）：**
-
-CHIR 是基于 CFG（控制流图）的高级中间表示，独立于后端目标。
-
-**CHIR Phase：**
-```
-RAW     → 翻译完成，未优化
-OPT     → 编译器优化完成
-PLUGIN  → 插件转换完成
-ANALYSIS_FOR_CJLINT → 静态分析完成
-```
-
-**主要优化 Pass：**
-- 闭包转换（Closure Conversion）
-- 函数内联（Function Inline）
-- Lambda 内联（Lambda Inline）
-- 去虚化（Devirtualization）
-- 常量传播（Const Propagation）
-- 死代码消除（Dead Code Elimination）
-- 冗余加载消除（Redundant Load Elimination）
-- 无副作用标记（No Side Effect Marker）
-- 基本块合并（Merge Blocks）
-- 无用分配消除（Useless Allocate Elimination）
-- 数组优化（Array Lambda Opt）
-- 值范围传播（Range Propagation）
-- 覆盖率插桩（Sanitizer Coverage）
-
-**CHIR 核心节点类型：**
-- **Value 类型**：`Literal`, `GlobalVar`, `GlobalFunc`, `Func`, `LocalVar`, `Parameter`, `Block`, `BlockGroup`
-- **Expression 类型**：`Apply`, `ApplyWithException`, `Invoke`（虚调用）, `Binary`, `Unary`, `TypeCast`, `Load`, `Field`, `Allocate`, `Lambda`
-- **Terminator**：`Return`, `Branch`, `Throw`
-- **Type 定义**：`ClassDef`, `StructDef`, `EnumDef`, `ExtendDef`
-
----
-
-### 12. `CODEGEN` — 代码生成（可选扩展）
-
-**职责：** 将 CHIR 转换为 LLVM IR，生成目标平台字节码。
-
-**输入：** 优化后 CHIR
-**输出：** `.bc`（LLVM 字节码）/ `.o` 目标文件 / 可执行文件
-
-**官方实现：**
-- `CodeGen::GenPackageModules()` 创建 LLVM Module
-- `CodeGen::SavePackageModule()` 写入 `.bc` 文件
-- 支持多模块并行保存（`TaskQueue`）
-- 后续由 LLVM 工具链完成：`opt`（优化）→ `llc`（汇编/目标码）→ `ld`（链接）
-
-**输出产物：**
-- `.bc` — LLVM 字节码
-- `.o` / `.obj` — 目标文件
-- `.a` / `.lib` — 静态库
-- `.so` / `.dll` — 动态库
-- 可执行文件
+`.cjo` 是仓颉编译的核心产物格式，等价于 Kotlin 的 `.klib`，包含序列化 CFIR、类型签名、符号信息、依赖关系。本实现的序列化模块为 `cfir-serialization`。
 
 ---
 
 ## 与官方仓颉对比
 
-| 官方阶段                | 本实现对应                     | 处理方式  | 说明                                     |
-|------------------------|-------------------------------|-----------|------------------------------------------|
-| `LOAD_PLUGINS`         | `LOAD_PLUGINS`                | ✅ 保留   | 完全对应                                  |
-| `PARSE`                | `PARSE`                       | ✅ 保留   | 本实现使用 PSI/LightTree，产物等价         |
-| `CONDITION_COMPILE`    | `CONDITION_COMPILE`           | ✅ 保留   | 仓颉特有，裁剪 @When 条件分支              |
-| `IMPORT_PACKAGE`       | `IMPORT_PACKAGE`              | ✅ 保留   | 加载 .cjo 外部依赖                        |
-| `MACRO_EXPAND`         | `MACRO_EXPAND`                | ✅ 保留   | 完全对应，四步宏展开流程                    |
-| `AST_DIFF`             | → 内嵌 `CFIR_BUILD`           | 🔀 内嵌   | 不产出独立产物，作为构建前置 Guard          |
-| `SEMA`（前半）          | → `CFIR_BUILD`                | 🔀 拆分   | 对齐 K2 `FIR_BUILD`，含前置脱糖           |
-| `SEMA`（主体 + 校验）   | → `CFIR_RESOLVE`              | 🔀 拆分   | 对齐 K2 `FIR_RESOLVE` + `FIR_CHECK`      |
-| `DESUGAR_AFTER_SEMA`   | → 合入 `FINALIZE` ①           | 🔀 合并   | 语义后处理流水线第一步                     |
-| `GENERIC_INSTANTIATION`| → 合入 `FINALIZE` ②           | 🔀 合并   | 语义后处理流水线第二步                     |
-| `OVERFLOW_STRATEGY`    | → 合入 `FINALIZE` ③           | 🔀 合并   | 语义后处理流水线第三步                     |
-| `MANGLING`             | `MANGLING`                    | ✅ 保留   | 多线程修饰，职责独立                       |
-| `SAVE_CJO`             | `SAVE_CJO`                    | ✅ 合并   | 吸收 `SAVE_RESULTS` 的延迟保存逻辑        |
-| `CHIR`                 | `CFIR2CHIR`                   | ✅ 改名   | 名称更明确（表达转换过程）                  |
-| `CODEGEN`              | `CODEGEN`                     | ✅ 保留   | CHIR → LLVM IR → 机器码                  |
-| `SAVE_RESULTS`         | → 合入 `SAVE_CJO`             | 🔀 合并   | 仅 CHIR 模式延迟保存，逻辑归入 SAVE_CJO   |
+| 官方阶段                 | 本实现对应                     | 处理方式  | 说明                                     |
+|-------------------------|-------------------------------|-----------|------------------------------------------|
+| `LOAD_PLUGINS`          | `LOAD_PLUGINS`                | ✅ 保留   | 完全对应                                  |
+| `PARSE`                 | `PARSE`                       | ✅ 保留   | 本实现使用 PSI/LightTree，产物等价         |
+| `CONDITION_COMPILE`     | `CONDITION_COMPILE`           | ✅ 保留   | 仓颉特有，裁剪 @When 条件分支              |
+| `IMPORT_PACKAGE`        | `IMPORT_PACKAGE`              | ✅ 保留   | 加载 .cjo 外部依赖                        |
+| `MACRO_EXPAND`          | `MACRO_EXPAND`                | ✅ 保留   | 完全对应，四步宏展开流程                   |
+| `AST_DIFF`              | → 内嵌 `CFIR_BUILD`           | 🔀 内嵌   | 不产出独立产物，作为构建前置 Guard         |
+| `SEMA`（前半）           | → `CFIR_BUILD`                | 🔀 拆分   | 对齐 K2 `FIR_BUILD`，含前置脱糖           |
+| `SEMA`（主体 + 校验）    | → `CFIR_RESOLVE`              | 🔀 拆分   | 对齐 K2 `FIR_RESOLVE` + `FIR_CHECK`      |
+| `DESUGAR_AFTER_SEMA`    | → 合入 `FINALIZE` ①           | 🔀 合并   | 语义后处理流水线第一步                     |
+| `GENERIC_INSTANTIATION` | → 合入 `FINALIZE` ②           | 🔀 合并   | 语义后处理流水线第二步                     |
+| `OVERFLOW_STRATEGY`     | → 合入 `FINALIZE` ③           | 🔀 合并   | 语义后处理流水线第三步                     |
+| `MANGLING`              | `MANGLING`                    | ✅ 保留   | 多线程修饰，职责独立                       |
+| `SAVE_CJO`              | `SAVE_CJO`                    | ✅ 合并   | 吸收 `SAVE_RESULTS` 的延迟保存逻辑        |
+| `CHIR`                  | —                             | ➖ 不含   | 后端阶段，不在前端范围内                   |
+| `CODEGEN`               | —                             | ➖ 不含   | 后端阶段，不在前端范围内                   |
+| `SAVE_RESULTS`          | → 合入 `SAVE_CJO`             | 🔀 合并   | 仅 CHIR 模式延迟保存，逻辑归入 SAVE_CJO   |
 
 **核心设计决策：**
 - 官方 `SEMA` **拆分**为 `CFIR_BUILD` + `CFIR_RESOLVE`，对齐 Kotlin K2 架构
@@ -439,16 +364,13 @@ ANALYSIS_FOR_CJLINT → 静态分析完成
 |--------------------------------|------------------------|-----------|-------------------------------|
 | *(无)*                          | `CONDITION_COMPILE`    | ➕ 新增   | 仓颉特有条件编译               |
 | *(无)*                          | `IMPORT_PACKAGE`       | ➕ 独立   | 仓颉跨包 .cjo 依赖需提前加载   |
-| *(无，用插件替代)*                | `MACRO_EXPAND`         | ➕ 新增   | 仓颉有独立宏系统               |
-| `FIR_BUILD`                     | `CFIR_BUILD`           | ✅ 对齐   | 含增量判断 + 前置脱糖          |
-| `FIR_RESOLVE` + `FIR_CHECK`    | `CFIR_RESOLVE`         | ✅ 对齐   | 多 Phase 渐进，CHECKERS 为末尾  |
-| `FIR2IR`（含脱糖）              | `FINALIZE`             | 🔀 独立   | 脱糖 + 实例化 + 溢出策略       |
-| *(无，类型擦除)*                 | `FINALIZE`（泛型实例化） | ➕ 新增   | LLVM 后端需显式单态化          |
+| *(无，用插件替代)*               | `MACRO_EXPAND`         | ➕ 新增   | 仓颉有独立宏系统               |
+| `FIR_BUILD`                    | `CFIR_BUILD`           | ✅ 对齐   | 含增量判断 + 前置脱糖          |
+| `FIR_RESOLVE` + `FIR_CHECK`   | `CFIR_RESOLVE`         | ✅ 对齐   | 多 Phase 渐进，CHECKERS 为末尾  |
+| `FIR2IR`（含脱糖）             | `FINALIZE`             | 🔀 独立   | 脱糖 + 实例化 + 溢出策略       |
+| *(无，类型擦除)*                | `FINALIZE`（泛型实例化） | ➕ 新增  | LLVM 后端需显式单态化          |
 | *(无)*                          | `MANGLING`             | ➕ 独立   | 仓颉独立名称修饰               |
-| *(klib 机制)*                    | `SAVE_CJO`             | 🔀 显式化 | 仓颉 .cjo 格式                |
-| `FIR2IR`                        | `CFIR2CHIR`            | ✅ 对齐   | 前端 IR → 后端 IR              |
-| `IR_LOWERING`                   | *(内含于 CFIR2CHIR)*    | 🔀 内嵌   | CHIR 内部完成优化和降级         |
-| `CODEGEN`                       | `CODEGEN`              | ✅ 对齐   | CHIR → LLVM IR → 机器码       |
+| *(klib 机制)*                   | `SAVE_CJO`             | 🔀 显式化 | 仓颉 .cjo 格式                |
 
 ---
 
@@ -475,15 +397,15 @@ CFIR_RESOLVE 采用 Kotlin K2 风格的分阶段解析，每个声明独立跟�
 |---------------------------------|---------------------------------|------------------------|
 | `RAW_FIR`                       | `RAW_CFIR`                      | 对应                    |
 | `IMPORTS`                       | `IMPORTS`                       | 对应                    |
-| *(无，用插件替代)*                | `MACRO_EXPAND`                  | 仓颉特有宏展开，纳入 resolve phase |
+| *(无，用插件替代)*               | `MACRO_EXPAND`                  | 仓颉特有宏展开，纳入 resolve phase |
 | `SUPER_TYPES`                   | `SUPER_TYPES`                   | 对应                    |
-| `SEALED_CLASS_INHERITORS`       | *(无)*                           | 仓颉无 sealed 继承者推断 |
+| `SEALED_CLASS_INHERITORS`       | *(无)*                          | 仓颉无 sealed 继承者推断 |
 | `TYPES`                         | `TYPES`                         | 对应                    |
 | `STATUS`                        | `STATUS`                        | 对应                    |
-| `CONTRACTS`                     | *(无)*                           | 仓颉无 Kotlin 风格 contract |
-| *(无)*                           | `EXTENSIONS`                    | 仓颉特有 extend 声明    |
-| `IMPLICIT_TYPES_BODY_RESOLVE`   | `IMPLICIT_TYPES` + `BODY_RESOLVE` | 拆分为两步，粒度更细    |
-| *(无)*                           | `CHECKERS`                      | 诊断检查纳入 Phase 管理  |
+| `CONTRACTS`                     | *(无)*                          | 仓颉无 Kotlin 风格 contract |
+| *(无)*                          | `EXTENSIONS`                    | 仓颉特有 extend 声明    |
+| `IMPLICIT_TYPES_BODY_RESOLVE`   | `IMPLICIT_TYPES` + `BODY_RESOLVE` | 拆分为两步，粒度更细  |
+| *(无)*                          | `CHECKERS`                      | 诊断检查纳入 Phase 管理  |
 
 ---
 
@@ -509,7 +431,6 @@ CFIR_RESOLVE 采用 Kotlin K2 风格的分阶段解析，每个声明独立跟�
 | `PackageFormat.fbs`   | CHIR Package 序列化（类型、函数、类） |
 | `NodeFormat.fbs`      | AST 节点序列化（表达式、语句）        |
 | `ModuleFormat.fbs`    | 模块/包头信息                       |
-| `BCHIRFormat.fbs`     | 字节码 IR 序列化                    |
 | `CachedASTFormat.fbs` | 增量编译 AST 缓存                   |
 | `MacroMsgFormat.fbs`  | 宏元数据序列化                      |
 
