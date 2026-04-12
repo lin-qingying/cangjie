@@ -15,19 +15,24 @@ import org.cangnova.cangjie.cfir.diagnostic.ArgumentPassedTwice
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferTypeParameterType
+import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandIncompatibleTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeEnumTypeCannotBeUsedAsConstructorError
 import org.cangnova.cangjie.cfir.diagnostic.ConeEffectsFeatureDisabledError
+import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionCallExpectedError
+import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionExpectedError
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeImplicitResumeOutsideHandlerError
 import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingHandleBlockError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoConstructorError
+import org.cangnova.cangjie.cfir.diagnostic.ConeNoImplicitDefaultConstructorOnExpectClass
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingInvokeOperatorError
 import org.cangnova.cangjie.cfir.diagnostic.ConeResolutionToClassifierError
 import org.cangnova.cangjie.cfir.diagnostic.ConeResumeNoWithError
 import org.cangnova.cangjie.cfir.diagnostic.ConeResumeThrowingMismatchTypeError
+import org.cangnova.cangjie.cfir.diagnostic.ConeTypeParameterInQualifiedAccess
 import org.cangnova.cangjie.cfir.diagnostic.ConeVisibilityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
@@ -79,10 +84,14 @@ import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjExpression
+import org.cangnova.cangjie.psi.CjCallExpression
+import org.cangnova.cangjie.psi.CjBinaryExpression
+import org.cangnova.cangjie.psi.CjPsiUtil
 import org.cangnova.cangjie.psi.CjFieldVariable
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjReturnExpression
+import org.cangnova.cangjie.psi.psiUtil.getAssignmentByLHS
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
 import org.cangnova.cangjie.resolve.calls.inference.buildAbstractResultingSubstitutor
@@ -467,7 +476,10 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     }
 
     val diagnosticSource = callOrAssignmentSource ?: source ?: return emptyList()
-    return listOfNotNull(CfirErrors.AMBIGUOUS_FUNCTION_CALL.on(diagnosticSource, name, session))
+    val psi = diagnosticSource.psi
+    val isCallLikeContext = psi is CjCallExpression || PsiTreeUtil.getParentOfType(psi, CjCallExpression::class.java, false) != null
+    val factory = if (isCallLikeContext) CfirErrors.AMBIGUOUS_FUNCTION_CALL else CfirErrors.AMBIGUOUS_USE
+    return listOfNotNull(factory.on(diagnosticSource, name, session))
 }
 
 private data class DiagnosticIdentityKey(
@@ -496,6 +508,9 @@ private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
     mapGenericUpperBoundAccessDiagnostic(source, callOrAssignmentSource, session)?.let { diagnostic ->
         return listOf(diagnostic)
     }
+    mapSubscriptOperatorDiagnostic(source, callOrAssignmentSource, session)?.let { diagnostic ->
+        return listOf(diagnostic)
+    }
 
     val diagnosticSource = callOrAssignmentSource ?: source ?: return emptyList()
     return listOfNotNull(
@@ -507,6 +522,33 @@ private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
         ),
         buildInvalidBinaryOperatorDiagnostic(diagnosticSource, session),
     )
+}
+
+/**
+ * `[]` / `[]=` 在 resolve 中都会先降成 operator 调用；
+ * 这里把针对 `*operator_get` / `*operator_set` 的 unresolved 收束回语法级诊断。
+ */
+private fun ConeUnresolvedNameError.mapSubscriptOperatorDiagnostic(
+    source: CjSourceElement?,
+    callOrAssignmentSource: CjSourceElement?,
+    session: CfirSession,
+): CjDiagnostic? {
+    if (operator != "[]") return null
+    val diagnosticSource = source ?: callOrAssignmentSource ?: return null
+    val receiver = receiverType ?: ConeErrorType(ConeSimpleDiagnostic("unknown subscript receiver type"))
+
+    return if (diagnosticSource.isAssignmentLeftHandSide() || callOrAssignmentSource.isAssignmentExpression()) {
+        CfirErrors.CANNOT_ASSIGN_TO_SUBSCRIPT.on(diagnosticSource, session)
+    } else {
+        CfirErrors.INVALID_SUBSCRIPT_EXPR.on(
+            diagnosticSource,
+            receiver,
+            argumentTypes.joinToString(prefix = "[", postfix = "]") {
+                it.renderInvalidBinaryOperatorType(session)
+            },
+            session,
+        )
+    }
 }
 
 /**
@@ -632,12 +674,27 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
 ): CjDiagnostic? {
     val diagnosticSource = callOrAssignmentSource ?: source ?: return null
     return when (this) {
+        is ConeFunctionExpectedError,
+        is ConeFunctionCallExpectedError,
+        -> CfirErrors.INVALID_CALLED_OBJECT.on(diagnosticSource, session)
+
         is ConeCannotInferTypeParameterType ->
             CfirErrors.CANNOT_INFER_PARAMETER_TYPE.on(diagnosticSource, typeParameter, session)
 
+        is ConeCannotInferValueParameterType ->
+            CfirErrors.LAMBDA_MUST_HAVE_TYPE_ANNOTATION.on(diagnosticSource, session)
+
         is ConeNoConstructorError,
+        is ConeNoImplicitDefaultConstructorOnExpectClass,
         is ConeResolutionToClassifierError,
         -> CfirErrors.NO_CONSTRUCTOR.on(diagnosticSource, session)
+
+        is ConeTypeParameterInQualifiedAccess ->
+            CfirErrors.GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT.on(
+                diagnosticSource,
+                symbol.name,
+                session,
+            )
 
         is ConeEnumTypeCannotBeUsedAsConstructorError ->
             CfirErrors.ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR.on(
@@ -720,8 +777,11 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             DiagnosticKind.JumpOutsideLoop ->
                 CfirErrors.INVALID_LOOP_CONTROL.on(source ?: diagnosticSource, session)
 
+            DiagnosticKind.ReturnNotAllowed ->
+                CfirErrors.INVALID_RETURN.on(diagnosticSource, session)
+
             else -> null
-        }
+        } ?: mapSimpleDiagnosticByReason(this, diagnosticSource, session)
 
         is ConeUnresolvedNameError -> CfirErrors.UNRESOLVED_REFERENCE.on(
             diagnosticSource,
@@ -743,6 +803,44 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             null,
             session,
         )
+
+        else -> null
+    }
+}
+
+/**
+ * 对 `DiagnosticKind.Other` 的历史理由串做显式映射。
+ *
+ * 这些 reason 均来自 resolve/raw-cfir 中已有 producer，不是兜底策略：
+ * - 只对已知、稳定的 reason 前缀进行映射；
+ * - 未命中的 reason 仍保持原行为（不报告）。
+ */
+private fun mapSimpleDiagnosticByReason(
+    diagnostic: ConeSimpleDiagnostic,
+    diagnosticSource: CjSourceElement,
+    session: CfirSession,
+): CjDiagnostic? {
+    val reason = diagnostic.reason
+    return when {
+        reason == "`return` must be used inside a function" ->
+            CfirErrors.INVALID_RETURN.on(diagnosticSource, session)
+
+        reason == "Unresolved return type" ||
+            reason == "Unresolved function return type" ->
+            CfirErrors.UNABLE_TO_INFER_RETURN_TYPE.on(diagnosticSource, session)
+
+        reason == "unsupported declaration for implicit type" ||
+            reason == "failed to resolve implicit type" ||
+            reason == "recursive implicit type" ->
+            CfirErrors.UNABLE_TO_INFER_DECL.on(diagnosticSource, session)
+
+        reason == "type not resolved after transformation" ||
+            reason == "No expected type" ->
+            CfirErrors.UNABLE_TO_INFER_EXPR.on(diagnosticSource, session)
+
+        reason.startsWith("Callee reference to candidate without return type:") ||
+            reason == "non-name reference" ->
+            CfirErrors.INVALID_CALLED_OBJECT.on(diagnosticSource, session)
 
         else -> null
     }
@@ -913,6 +1011,16 @@ private fun CjSourceElement.toApproxTypeName(): Name {
     val rawText = text?.toString().orEmpty()
     val simplified = rawText.substringAfterLast('.').substringBefore('<').substringBefore('&').trim()
     return Name.identifierIfValid(simplified) ?: Name.ERROR_NAME
+}
+
+private fun CjSourceElement?.isAssignmentExpression(): Boolean {
+    val psi = this?.psi
+    return psi is CjBinaryExpression && CjPsiUtil.isAssignment(psi)
+}
+
+private fun CjSourceElement?.isAssignmentLeftHandSide(): Boolean {
+    val psiExpression = this?.psi as? CjExpression ?: return false
+    return psiExpression.getAssignmentByLHS() != null
 }
 
 private sealed interface TypeMismatchTarget {

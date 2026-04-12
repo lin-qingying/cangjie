@@ -143,6 +143,20 @@ object GeneratedAnalysisApiTestRegistry {
             includedFilePatternProvider = allFilesPattern(),
         ),
         GeneratedAnalysisApiModel(
+            baseName = "CollectDiagnosticsTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.diagnosticProvider.AbstractCollectDiagnosticsTest",
+            modelRelativePath = "analysis/analysis-api/testData/components/diagnosticProvider/collectDiagnostics",
+            supportedModuleKinds = listOf(TestModuleKind.Source),
+            includedFilePatternProvider = allFilesPattern(),
+        ),
+        GeneratedAnalysisApiModel(
+            baseName = "ElementDiagnosticsTest",
+            abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.diagnosticProvider.AbstractElementDiagnosticsTest",
+            modelRelativePath = "analysis/analysis-api/testData/components/diagnosticProvider/elementDiagnostics",
+            supportedModuleKinds = listOf(TestModuleKind.Source),
+            includedFilePatternProvider = allFilesPattern(),
+        ),
+        GeneratedAnalysisApiModel(
             baseName = "TopLevelSymbolProviderTest",
             abstractClassQualifiedName = "org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.symbolProvider.AbstractTopLevelSymbolProviderTest",
             modelRelativePath = "analysis/analysis-api/testData/components/symbolProvider/topLevelLookup",

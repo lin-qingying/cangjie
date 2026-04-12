@@ -1,0 +1,13 @@
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
+package pkgs006001a
+
+public func Bar<T>(a: T) {
+    var b: Int32 = NormalFunc(1)
+    var c = Foo<T, Int32>(a, b)
+    return c
+}

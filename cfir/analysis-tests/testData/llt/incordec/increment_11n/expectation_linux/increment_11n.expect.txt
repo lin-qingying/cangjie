@@ -1,0 +1,17 @@
+error: undeclared identifier 'z'
+  ==> src/pkga/pkga.cj:14:5:
+   | 
+14 |     z++
+   |     ^ 
+   | 
+
+error: cannot assign to immutable value
+  ==> src/pkga/pkga.cj:13:5:
+   | 
+13 |     y++
+   |     ^^^ 
+   | 
+note: variable 'y' is immutable
+  ==> (package pkgb)pkgb.cj:10:12:
+
+2 errors generated, 2 errors printed.
