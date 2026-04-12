@@ -128,40 +128,40 @@ object CfirOrPatternVariableChecker : CfirMatchExpressionChecker() {
  * 对齐 C++ DiagKind::sema_interpolation_in_const_pattern:
  * match 的常量模式中不能使用字符串插值。
  */
-object CfirConstPatternInterpolationChecker : CfirMatchExpressionChecker() {
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun check(expression: CfirMatchExpression) {
-        for (branch in expression.branches) {
-            checkConstPatternInterpolation(branch.pattern)
-        }
-    }
-
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkConstPatternInterpolation(pattern: CfirPattern) {
-        when (pattern) {
-            is CfirConstPattern -> {
-                val expr = pattern.expression
-                if (expr is CfirLiteralExpression && expr.kind == CfirLiteralKind.StringInterpolation) {
-                    reporter.reportOn(
-                        source = pattern.source,
-                        factory = CfirErrors.INTERPOLATION_IN_CONST_PATTERN,
-                    )
-                }
-            }
-            is CfirOrPattern -> {
-                for (alt in pattern.alternatives) {
-                    checkConstPatternInterpolation(alt)
-                }
-            }
-            is CfirTuplePattern -> {
-                for (element in pattern.elements) {
-                    checkConstPatternInterpolation(element)
-                }
-            }
-            is CfirBindingPattern -> {
-                pattern.nestedPattern?.let { checkConstPatternInterpolation(it) }
-            }
-            else -> Unit
-        }
-    }
-}
+//object CfirConstPatternInterpolationChecker : CfirMatchExpressionChecker() {
+//    context(context: CheckerContext, reporter: DiagnosticReporter)
+//    override fun check(expression: CfirMatchExpression) {
+//        for (branch in expression.branches) {
+//            checkConstPatternInterpolation(branch.pattern)
+//        }
+//    }
+//
+//    context(context: CheckerContext, reporter: DiagnosticReporter)
+//    private fun checkConstPatternInterpolation(pattern: CfirPattern) {
+//        when (pattern) {
+//            is CfirConstPattern -> {
+//                val expr = pattern.expression
+//                if (expr is CfirLiteralExpression && expr.kind == CfirLiteralKind.StringInterpolation) {
+//                    reporter.reportOn(
+//                        source = pattern.source,
+//                        factory = CfirErrors.INTERPOLATION_IN_CONST_PATTERN,
+//                    )
+//                }
+//            }
+//            is CfirOrPattern -> {
+//                for (alt in pattern.alternatives) {
+//                    checkConstPatternInterpolation(alt)
+//                }
+//            }
+//            is CfirTuplePattern -> {
+//                for (element in pattern.elements) {
+//                    checkConstPatternInterpolation(element)
+//                }
+//            }
+//            is CfirBindingPattern -> {
+//                pattern.nestedPattern?.let { checkConstPatternInterpolation(it) }
+//            }
+//            else -> Unit
+//        }
+//    }
+//}

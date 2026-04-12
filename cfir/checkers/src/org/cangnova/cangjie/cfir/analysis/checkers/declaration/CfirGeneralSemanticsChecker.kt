@@ -15,9 +15,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeTypeParameterType
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -139,7 +139,7 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkImmutablePropertySetter(property: CfirProperty) {
-        if (!property.isVar && property.setter != null) {
+        if ( property.setter != null) {
             reporter.reportOn(
                 source = property.source,
                 factory = CfirErrors.IMMUTABLE_PROPERTY_WITH_SETTER,
