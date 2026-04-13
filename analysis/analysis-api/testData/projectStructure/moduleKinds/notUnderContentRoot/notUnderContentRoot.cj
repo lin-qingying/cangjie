@@ -1,4 +1,4 @@
-// MODULE: helper
+// MODULE: helper(peer)
 // FILE: helper.cj
 package sample.outside
 
@@ -7,6 +7,17 @@ class Helper {
 
 func helperFactory(): Helper {
     return Helper()
+}
+
+// MODULE: peer(helper)
+// FILE: peer.cj
+package sample.outside
+
+class Peer {
+}
+
+func peerFactory(): Peer {
+    return Peer()
 }
 
 // MODULE: outside(helper)

@@ -43,6 +43,7 @@ dependencies {
 
     testImplementation(testFixtures(project(":analysis:analysis-test-framework")))
     testImplementation(testFixtures(project(":analysis:analysis-api-impl-base")))
+    testImplementation(project(":analysis:light-declarations"))
     testImplementation(project(":analysis:analysis-tools"))
     testImplementation(project(":analysis:cj-references"))
     testImplementation(libs.junit.jupiter)
