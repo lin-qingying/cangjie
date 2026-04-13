@@ -32,11 +32,18 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirSuperReceiverE
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirFloatLiteralRangeChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirMutFuncReferenceChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirUnsafeFuncReferenceChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirOrPatternVariableChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirDeprecatedCallChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTryExpressionChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTryHandleReturnChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirSpawnSemanticsChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirInoutSemanticsChecker
 
 object CommonExpressionCheckers : ExpressionCheckers() {
     override val basicExpressionCheckers: Set<CfirBasicExpressionChecker>
         get() = setOf(
             CfirLoopConditionTypeMismatchChecker,
+            CfirSpawnSemanticsChecker,
         )
 
     override val ifExpressionCheckers: Set<CfirIfExpressionChecker>
@@ -50,6 +57,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirMatchCaseTypeChecker,
             CfirMatchPatternLegalityChecker,
             CfirMatchExhaustivenessChecker,
+            CfirOrPatternVariableChecker,
         )
 
     override val assignmentCheckers: Set<CfirAssignmentChecker>
@@ -78,6 +86,8 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirConstructorDelegationCallChecker,
             CfirImmutableFunctionCannotAccessMutableFunctionChecker,
             CfirMockApiChecker,
+            CfirDeprecatedCallChecker,
+            CfirInoutSemanticsChecker,
         )
 
     override val qualifiedAccessCheckers: Set<CfirQualifiedAccessChecker>
@@ -90,4 +100,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
 
     override val superReceiverExpressionCheckers: Set<CfirSuperReceiverExpressionChecker>
         get() = setOf(CfirIllegalSuperReferenceChecker)
+
+    override val tryExpressionCheckers: Set<CfirTryExpressionChecker>
+        get() = setOf(CfirTryHandleReturnChecker)
 }
