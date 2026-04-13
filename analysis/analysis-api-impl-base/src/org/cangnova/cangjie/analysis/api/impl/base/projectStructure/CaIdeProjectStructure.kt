@@ -152,9 +152,10 @@ class CaIdeProjectStructureState(
      * 避免不同属性访问时各自重建出不一致的中间结果。
      */
     private fun buildSnapshot(): CaProjectStructureSnapshot {
+        val snapshotStamp = currentSnapshotStamp()
         val sourceEntries = sourceRootEntries()
         sourceEntries.forEach { entry ->
-            refreshRegularDependencies(entry.module, entry.root.virtualFile)
+            refreshRegularDependencies(entry.module, entry.root.virtualFile, snapshotStamp)
         }
 
         val allModules = buildList {
@@ -193,10 +194,7 @@ class CaIdeProjectStructureState(
      * 保证 session provider、模块查询和低层 resolve 至少围绕同一轮 Analysis API 结构视图工作。
      */
     private fun getOrBuildSnapshot(): CaProjectStructureSnapshot {
-        val currentStamp = SnapshotStamp(
-            psiModificationCount = PsiModificationTracker.getInstance(project).modificationCount,
-            explicitInvalidationCount = explicitGlobalInvalidationCount.get(),
-        )
+        val currentStamp = currentSnapshotStamp()
         val cached = cachedSnapshotState
         if (cached?.stamp == currentStamp) {
             return cached.snapshot
@@ -212,6 +210,13 @@ class CaIdeProjectStructureState(
                 cachedSnapshotState = CachedSnapshotState(currentStamp, snapshot)
             }
         }
+    }
+
+    private fun currentSnapshotStamp(): SnapshotStamp {
+        return SnapshotStamp(
+            psiModificationCount = PsiModificationTracker.getInstance(project).modificationCount,
+            explicitInvalidationCount = explicitGlobalInvalidationCount.get(),
+        )
     }
 
     private fun sourceRootEntries(): List<ModuleRootEntry> {
@@ -235,7 +240,7 @@ class CaIdeProjectStructureState(
                 sourceRootPath = root.path,
             )
         }.also { module ->
-            refreshRegularDependencies(module, root)
+            refreshRegularDependencies(module, root, currentSnapshotStamp())
         }
     }
 
@@ -271,7 +276,7 @@ class CaIdeProjectStructureState(
                 sourceRootUrls = identity.sourceRoots.map(VirtualFile::getUrl),
             )
         }.also { module ->
-            refreshLibrarySourceDependencies(module, file)
+            refreshLibrarySourceDependencies(module, file, currentSnapshotStamp())
         }
     }
 
@@ -290,7 +295,7 @@ class CaIdeProjectStructureState(
                 contextModule = contextModule,
             )
         }.also { module ->
-            refreshDanglingDependencies(module, virtualFile)
+            refreshDanglingDependencies(module, virtualFile, currentSnapshotStamp())
         }
     }
 
@@ -304,7 +309,7 @@ class CaIdeProjectStructureState(
                 pathKey = virtualFile.path,
             )
         }.also { module ->
-            refreshOutsideContentDependencies(module, virtualFile)
+            refreshOutsideContentDependencies(module, virtualFile, currentSnapshotStamp())
         }
     }
 
@@ -341,35 +346,72 @@ class CaIdeProjectStructureState(
         return dependencies.toList()
     }
 
-    private fun refreshRegularDependencies(module: CaIdeMutableModule, anchorFile: VirtualFile) {
-        module.directRegularDependencies.clear()
-        module.directRegularDependencies += regularDependenciesFor(module, anchorFile)
+    /**
+     * 以结构时间戳驱动依赖刷新，避免同一轮模块装配发生递归重入。
+     *
+     * source root / library source / fallback module 会在恢复 IntelliJ order entry 时
+     * 彼此再次访问模块工厂。如果这里对每次访问都直接 clear + rebuild，遇到
+     * `A -> B -> A` 或 “同 root 自回访” 就会无限递归。
+     */
+    private fun refreshRegularDependencies(
+        module: CaIdeMutableModule,
+        anchorFile: VirtualFile,
+        snapshotStamp: SnapshotStamp,
+    ) {
+        if (!module.tryStartDependencyRefresh(snapshotStamp)) {
+            return
+        }
+
+        try {
+            module.directRegularDependencies.clear()
+            module.directRegularDependencies += regularDependenciesFor(module, anchorFile)
+            module.finishDependencyRefresh(snapshotStamp)
+        } catch (throwable: Throwable) {
+            module.resetDependencyRefresh(snapshotStamp)
+            throw throwable
+        }
     }
 
-    private fun refreshLibrarySourceDependencies(module: CaIdeLibrarySourceModule, anchorFile: VirtualFile) {
-        refreshRegularDependencies(module, anchorFile)
+    private fun refreshLibrarySourceDependencies(
+        module: CaIdeLibrarySourceModule,
+        anchorFile: VirtualFile,
+        snapshotStamp: SnapshotStamp,
+    ) {
+        refreshRegularDependencies(module, anchorFile, snapshotStamp)
         if (module.binaryLibraryModule !in module.directRegularDependencies) {
             module.directRegularDependencies.add(0, module.binaryLibraryModule)
         }
     }
 
-    private fun refreshDanglingDependencies(module: CaIdeDanglingFileModule, anchorFile: VirtualFile) {
+    private fun refreshDanglingDependencies(
+        module: CaIdeDanglingFileModule,
+        anchorFile: VirtualFile,
+        snapshotStamp: SnapshotStamp,
+    ) {
         module.directRegularDependencies.clear()
-        val fallbackModule = fallbackDependencyModuleFor(module, anchorFile)
+        val fallbackModule = fallbackDependencyModuleFor(module, anchorFile, snapshotStamp)
         if (fallbackModule.directRegularDependencies.isNotEmpty()) {
             module.directRegularDependencies += fallbackModule
         }
     }
 
-    private fun refreshOutsideContentDependencies(module: CaIdeNotUnderContentRootModule, anchorFile: VirtualFile) {
+    private fun refreshOutsideContentDependencies(
+        module: CaIdeNotUnderContentRootModule,
+        anchorFile: VirtualFile,
+        snapshotStamp: SnapshotStamp,
+    ) {
         module.directRegularDependencies.clear()
-        val fallbackModule = fallbackDependencyModuleFor(module, anchorFile)
+        val fallbackModule = fallbackDependencyModuleFor(module, anchorFile, snapshotStamp)
         if (fallbackModule.directRegularDependencies.isNotEmpty()) {
             module.directRegularDependencies += fallbackModule
         }
     }
 
-    private fun fallbackDependencyModuleFor(owner: CaModule, anchorFile: VirtualFile): CaIdeLibraryFallbackDependenciesModule {
+    private fun fallbackDependencyModuleFor(
+        owner: CaModule,
+        anchorFile: VirtualFile,
+        snapshotStamp: SnapshotStamp,
+    ): CaIdeLibraryFallbackDependenciesModule {
         val ownerKey = owner.stableModuleName ?: owner.moduleDescription
         return fallbackDependencyModulesByOwnerKey.computeIfAbsent(ownerKey) {
             CaIdeLibraryFallbackDependenciesModule(
@@ -378,8 +420,7 @@ class CaIdeProjectStructureState(
                 ownerStableName = ownerKey,
             )
         }.also { fallbackModule ->
-            fallbackModule.directRegularDependencies.clear()
-            fallbackModule.directRegularDependencies += regularDependenciesFor(fallbackModule, anchorFile)
+            refreshRegularDependencies(fallbackModule, anchorFile, snapshotStamp)
         }
     }
 
@@ -464,16 +505,17 @@ class CaIdeProjectStructureState(
         val binaryModuleStableName: String,
     )
 
-    private data class SnapshotStamp(
-        val psiModificationCount: Long,
-        val explicitInvalidationCount: Long,
-    )
-
-    private data class CachedSnapshotState(
-        val stamp: SnapshotStamp,
-        val snapshot: CaProjectStructureSnapshot,
-    )
 }
+
+private data class SnapshotStamp(
+    val psiModificationCount: Long,
+    val explicitInvalidationCount: Long,
+)
+
+private data class CachedSnapshotState(
+    val stamp: SnapshotStamp,
+    val snapshot: CaProjectStructureSnapshot,
+)
 
 /**
  * IDE 平台模块的公共基类。
@@ -489,6 +531,9 @@ private sealed class CaIdeMutableModule(
     final override val directRegularDependencies: MutableList<CaModule> = mutableListOf()
     final override val directDependsOnDependencies: MutableList<CaModule> = mutableListOf()
     final override val directFriendDependencies: MutableList<CaModule> = mutableListOf()
+    private val dependencyRefreshLock = Any()
+    @Volatile
+    private var dependencyRefreshState: DependencyRefreshState = DependencyRefreshState.Idle
 
     final override val targetPlatform: CaTargetPlatform
         get() = CaTargetPlatform.IDE
@@ -499,6 +544,54 @@ private sealed class CaIdeMutableModule(
         } else {
             GlobalSearchScope.filesWithoutLibrariesScope(project, scopeRoots.mapNotNull { it.virtualFile })
         }
+
+    fun tryStartDependencyRefresh(snapshotStamp: SnapshotStamp): Boolean {
+        synchronized(dependencyRefreshLock) {
+            return when (val state = dependencyRefreshState) {
+                is DependencyRefreshState.Completed ->
+                    if (state.snapshotStamp == snapshotStamp) {
+                        false
+                    } else {
+                        dependencyRefreshState = DependencyRefreshState.Refreshing(snapshotStamp)
+                        true
+                    }
+
+                is DependencyRefreshState.Refreshing ->
+                    if (state.snapshotStamp == snapshotStamp) {
+                        false
+                    } else {
+                        dependencyRefreshState = DependencyRefreshState.Refreshing(snapshotStamp)
+                        true
+                    }
+
+                DependencyRefreshState.Idle -> {
+                    dependencyRefreshState = DependencyRefreshState.Refreshing(snapshotStamp)
+                    true
+                }
+            }
+        }
+    }
+
+    fun finishDependencyRefresh(snapshotStamp: SnapshotStamp) {
+        synchronized(dependencyRefreshLock) {
+            dependencyRefreshState = DependencyRefreshState.Completed(snapshotStamp)
+        }
+    }
+
+    fun resetDependencyRefresh(snapshotStamp: SnapshotStamp) {
+        synchronized(dependencyRefreshLock) {
+            val state = dependencyRefreshState
+            if (state is DependencyRefreshState.Refreshing && state.snapshotStamp == snapshotStamp) {
+                dependencyRefreshState = DependencyRefreshState.Idle
+            }
+        }
+    }
+
+    private sealed interface DependencyRefreshState {
+        data object Idle : DependencyRefreshState
+        data class Refreshing(val snapshotStamp: SnapshotStamp) : DependencyRefreshState
+        data class Completed(val snapshotStamp: SnapshotStamp) : DependencyRefreshState
+    }
 }
 
 /**
