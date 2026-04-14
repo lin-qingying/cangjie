@@ -85,7 +85,7 @@ abstract class AbstractCjReference<T : CjElement>(
 
     protected abstract fun resolveTargetElements(): Collection<PsiElement>
 
-    final override fun resolve(): PsiElement? = resolveTargetElements().singleOrNull()
+      override fun resolve(): PsiElement? = resolveTargetElements().singleOrNull()
 
     override val resolver: ResolveCache.PolyVariantResolver<CjReference> =
         ResolveCache.PolyVariantResolver { _, _ ->
@@ -103,6 +103,7 @@ abstract class AbstractCjReference<T : CjElement>(
 abstract class CjSimpleReference<T : CjElement>(
     expression: T,
 ) : AbstractCjReference<T>(expression)
+abstract class CjMultiReference<T : CjElement>(expression: T) : AbstractCjReference<T>(expression)
 
 abstract class CjSimpleNameReference(
     expression: CjSimpleNameExpression,
