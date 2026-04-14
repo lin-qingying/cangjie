@@ -2,7 +2,7 @@ package org.cangnova.cangjie.analysis.references
 
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.MultiRangeReference
-import org.cangnova.cangjie.idea.references.CangJieSimpleReference
+import org.cangnova.cangjie.idea.references.CjSimpleReference
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjCallExpression
@@ -17,7 +17,7 @@ import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
  */
 internal class CaInvokeFunctionReference(
     expression: CjCallExpression,
-) : CangJieSimpleReference<CjCallExpression>(expression), MultiRangeReference {
+) : CjSimpleReference<CjCallExpression>(expression), MultiRangeReference {
     override val resolvesByNames: Collection<Name>
         get() = listOf(OperatorNameConventions.INVOKE)
 

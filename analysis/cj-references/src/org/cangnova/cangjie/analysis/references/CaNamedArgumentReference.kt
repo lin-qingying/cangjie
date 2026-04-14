@@ -5,7 +5,7 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaValueParameterOwnerSymbol
-import org.cangnova.cangjie.idea.references.AbstractCangJieReference
+import org.cangnova.cangjie.idea.references.AbstractCjReference
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjCallableDeclaration
 import org.cangnova.cangjie.psi.CjTypeStatement
@@ -18,7 +18,7 @@ import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
  */
 internal class CaNamedArgumentReference(
     element: CjValueArgumentName,
-) : AbstractCangJieReference<CjValueArgumentName>(element) {
+) : AbstractCjReference<CjValueArgumentName>(element) {
     override val resolvesByNames: Collection<Name>
         get() = listOf(element.asName)
 

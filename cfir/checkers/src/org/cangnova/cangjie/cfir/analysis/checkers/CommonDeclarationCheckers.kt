@@ -45,6 +45,8 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCommonPackage
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCommonSpecificChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirConstDeclarationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirConstFunctionVarChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirDeprecatedDeclarationChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendExtraChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionOverloadChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionReturnTypeInferenceChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirGeneralSemanticsChecker
@@ -79,6 +81,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     override val callableDeclarationCheckers: Set<CfirCallableDeclarationChecker>
         get() = setOf(
             CfirVArrayExtraChecker,
+            CfirDeprecatedDeclarationChecker,
         )
 
     override val functionCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionChecker>
@@ -122,6 +125,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirExtendImmutableMemberChecker,
             CfirExtendSpecializationConflictChecker,
             CfirExtendDefaultImplementationConflictChecker,
+            CfirExtendExtraChecker,
         )
 
     override val constructorCheckers: Set<CfirConstructorChecker>

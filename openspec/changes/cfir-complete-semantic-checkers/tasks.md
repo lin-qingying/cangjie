@@ -1,57 +1,116 @@
-## 1. 批次一：核心语义 Checker
+## 0. 全量诊断覆盖治理基线
 
-- [x] 1.1 实现 `CfirGeneralSemanticsChecker`（General 分组）：节点有效性、类型推断失败、多重赋值类型检查、歧义使用、子包冲突、可访问性检查、参数个数通用检查、core.Object 缺失检查。对齐 `TypeCheckDecl.cpp`、`TypeCheckUtil.cpp`。
-- [x] 1.2 实现 `CfirFunctionSemanticsChecker`（Function 分组）：返回类型推断、泛型函数类型参数推断、被调用对象合法性、return 位置合法性、subscript operator 语义、static 函数重载冲突、mut/unsafe 函数引用限制。对齐 `TypeCheckDecl.cpp`、`TypeCheckCall.cpp`。
-- [x] 1.3 实现 `CfirFunctionLambdaChecker`（Function 分组补充）：trailing lambda 类型检查、lambda 参数类型注解、默认参数限制、基本类型扩展歧义、捕获可变变量闭包限制。对齐 `TypeCheckExpr/LambdaExpr.cpp`。
-- [x] 1.4 实现 `CfirExpressionSemanticsChecker`（Expression 分组）：表达式类型推断、浮点字面量范围、一元运算符合法性、subscript 表达式、成员访问、赋值合法性。对齐 `TypeCheckExpr/UnaryExpr.cpp`、`TypeCheckExpr/SubscriptExpr.cpp`、`TypeCheckExpr/NameReferenceExpr.cpp`、`TypeCheckExpr/AssignExpr.cpp`。
-- [x] 1.5 实现 `CfirPatternExpressionChecker`（Expression 分组补充）：or-pattern/or-condition 变量引入限制、不可达模式、enum 构造器参数检查、optional chaining 非 optional、capture-before-initialization、常量模式字符串插值、包名引用限制、需要导入表达式。对齐 `TypeCheckPattern.cpp`、`TypeCheckExpr/OptionalChainExpr.cpp`。
-- [x] 1.6 实现 `CfirDeclarationStatusExtraChecker`（DeclarationStatus 补充）：PARAM_NAMED_MISMATCHED、OVERRIDE_STATIC_ERROR、REDEF_INSTANCE_ERROR、INVALID_OPERATOR_PARAMETER_COUNT。扩展现有 `CfirDeclarationStatusCheckers.kt` 或创建新文件。
-- [x] 1.7 实现 `CfirUnusedImportChecker`（Unused 分组）：已由 `CfirImportsChecker.reportUnusedImports` 完整覆盖。
-- [x] 1.8 将批次一所有新 checker 注册到 `CommonDeclarationCheckers` / `CommonExpressionCheckers`
+- [ ] 0.1 以 `CfirDiagnosticsList.kt` 为唯一基线，盘点全部诊断定义，形成不遗漏任何诊断名的全量台账，输出到 `openspec/changes/cfir-complete-semantic-checkers/diagnostic-coverage-ledger.md`。
+- [ ] 0.2 为每个诊断定义补齐治理字段：诊断组、诊断名、当前状态、责任层、责任子域、实现入口、测试入口、C++ 依据、阻塞说明。
+- [ ] 0.3 对现有实现执行反查，标记哪些诊断已被完整覆盖，哪些只是部分覆盖，哪些完全未覆盖。
+- [ ] 0.4 产出覆盖率说明初稿：总量、已覆盖量、部分覆盖量、未覆盖量、resolve 负责量、checker 负责量。
+- [ ] 0.5 对所有“部分覆盖”的诊断补齐缺口说明，禁止继续把部分覆盖计为完成。
+- [ ] 0.6 将全部未覆盖诊断强制归入 `resolve` 或 `checker`，不保留游离项。
+- [ ] 0.7 为每个未覆盖诊断补齐唯一对应的后续子任务编号，保证任务树与诊断台账一一对应。
 
-## 2. 批次二：类型系统深层 Checker
+## 1. resolve 职责边界校正
 
-- [x] 2.1 实现 `CfirGenericDeepChecker`（GenericDeep 分组）：泛型类型替换一致性、参数个数匹配、约束宽松性、实例化歧义、递归绑定、上界类型约束。对齐 `TypeCheckGeneric.cpp`、`GenericInstantiation/`。
-- [x] 2.2 实现 `CfirGenericJavaInteropChecker`（GenericDeep Java 子集）：static 成员泛型依赖、基本类型泛型参数、@Java 泛型上界约束。
-- [x] 2.3 实现 `CfirInheritanceDeepChecker`（InheritanceDeep 分组）：成员类型一致性、跨父成员冲突、抽象类 static 未实现、open/abstract 可见性、sealed 继承约束。对齐 `InheritanceChecker/`。
-- [x] 2.4 实现 `CfirInheritanceThreadContextChecker`（InheritanceDeep 补充）：ThreadContext 继承约束。
-- [x] 2.5 实现 `CfirClassStructSemanticsChecker`（ClassStruct 分组）：static 成员未初始化、finalizer 限制、sealed 约束、static 变量泛型依赖、@C struct 接口限制、同名 private 导出限制。对齐 `TypeCheckClassLike.cpp`、`LegalityOfUsage/`。
-- [x] 2.6 实现 `CfirPropertySemanticsChecker`（Property 分组）：访问器必要性、immutable setter 限制、继承 mut/immut 一致性、接口属性完整实现。
-- [x] 2.7 实现 `CfirConstDeclarationChecker`（ConstDeclaration 分组）：const 修饰合法性、const 函数内 var 限制、const 构造器前置条件、const 构造器 var 成员冲突。对齐 `ConstEvaluationChecker.cpp`。
-- [x] 2.8 将批次二所有新 checker 注册到 `CommonDeclarationCheckers` / `CommonExpressionCheckers`
+- [ ] 1.1 明确 `CallResolution` 诊断全部由 resolve 管线负责，不允许 checker 兜底参数绑定或候选选择。
+- [ ] 1.2 明确 `Constraint` 诊断全部由 resolve / constraint 求解负责，不允许 checker 侧重算约束结果。
+- [ ] 1.3 明确 `TypeCheck` 诊断中依赖类型求值、实参适配、候选适用性判断的部分由 resolve 负责。
+- [ ] 1.4 明确 `Unresolved` 诊断由 resolve / reference resolution 负责，不允许 checker 用后验猜测代替真正未解析流程。
+- [ ] 1.5 明确 `GenericDeep` 中依赖类型变量收敛、泛型候选选择、实例化歧义求解的部分由 resolve 负责。
+- [ ] 1.6 对所有存在边界争议的诊断形成书面归属结论，并回填台账与设计文档。
 
-## 3. 批次三：语言特性 Checker
+## 2. resolve 缺口补齐：CallResolution
 
-- [x] 3.1 实现 `CfirAnnotationExtraChecker`（AnnotationExtra 分组）：已由 `CfirBuiltInAnnotationSemanticsChecker` 覆盖（@Annotation 参数、非 public 警告、JFFI 限制）。
-- [x] 3.2 实现 `CfirExtendExtraChecker`（ExtendExtra 分组）：已由现有 9 个 CfirExtend*Checker 覆盖全部 20 个 EXTEND 诊断。无需新增。
-- [x] 3.3 实现 `CfirDeprecatedSemanticsChecker`（Deprecated 分组）：deprecated 调用检查（error/warning 级别）、严格度继承约束、override/redef @Deprecated 一致性。对齐 `DeclAttributeChecker.cpp`。
-- [x] 3.4 实现 `CfirEffectsExtraChecker`（EffectsExtra 分组）：resumption 类型合法性、返回类型匹配、command-resumption 匹配、resume resumption 类型、try/handle return 限制、无用 command 类型。对齐 `TypeCheckExpr/PerformExpr.cpp`、`TypeCheckExpr/ResumeExpr.cpp`、`TypeCheckExpr/TryExpr.cpp`。
-- [x] 3.5 实现 `CfirSpawnSemanticsChecker`（Spawn 分组）：通过 BasicExpressionChecker 分发（CfirSpawnExpression 已注册为 visitAlso）。对齐 `TypeCheckExpr/SpawnExpr.cpp`。
-- [x] 3.6 实现 `CfirInterfaceSemanticsChecker`（Interface 分组）：接口未实现 static 成员调用检查。对齐 `TypeCheckClassLike.cpp`。
-- [x] 3.7 实现 `CfirInoutSemanticsChecker`（Inout 分组）：框架就绪，待 CFIR 树模型补充 inout 参数标记后启用具体检查。对齐 `FFI/CFFICheck.cpp`。
-- [x] 3.8 实现 `CfirVArrayExtraChecker`（VArrayExtra 分组）：VArray 作为 CFunc 返回类型限制。对齐 `TypeCheckType.cpp`。
-- [x] 3.9 将批次三所有新 checker 注册到 `CommonDeclarationCheckers` / `CommonExpressionCheckers`
+- [ ] 2.1 逐项补齐 `CallResolution` 组全部未完成诊断的实现，不遗漏任何参数绑定、命名参数、构造器调用、委托调用、循环控制相关诊断。
+- [ ] 2.2 为 `CallResolution` 每个诊断建立对应测试，不允许多个诊断长期共挂在单个粗粒度样例中而无法定位。
+- [ ] 2.3 对 `CallResolution` 完成覆盖率回填，确认该组无遗漏、无 checker 兜底项。
+- [ ] 2.4 补齐 `Resolve` 组诊断的实现与测试，覆盖 `NO_CONSTRUCTOR`、`ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR`，并确认不退化为通用未解析错误。
 
-## 4. 批次四：互操作与平台 Checker
+## 3. resolve 缺口补齐：Constraint
 
-- [x] 4.1 实现 `CfirJavaInteropChecker`（JavaInterop 分组）：已由 `CfirBuiltInAnnotationSemanticsChecker` + `CfirInteropAnnotationChecker` 覆盖。
-- [x] 4.2 实现 `CfirJavaMirrorChecker`（JavaMirror 分组）：已由 `CfirInteropAnnotationChecker` 覆盖（mirror/impl 继承、成员类型约束、ForeignName）。
-- [x] 4.3 实现 `CfirCJMappingChecker`（CJMapping 分组）：struct 泛型限制、struct 接口继承限制。
-- [x] 4.4 实现 `CfirObjCInteropChecker`（ObjCInterop 分组）：已由 `CfirInteropAnnotationChecker` 覆盖。
-- [x] 4.5 实现 `CfirObjCCJMappingChecker`（ObjCCJMapping 分组）：继承接口限制、泛型限制。
-- [x] 4.6 实现 `CfirForeignNameChecker`（ForeignName 分组）：已由 `CfirInteropAnnotationChecker` 覆盖。
-- [x] 4.7 实现 `CfirIfAvailableChecker`（IfAvailable 分组）：已由 `CfirBuiltInAnnotationSemanticsChecker` 覆盖。
-- [x] 4.8 实现 `CfirAPILevelChecker`（APILevel 分组）：已由 `CfirBuiltInAnnotationSemanticsChecker` 覆盖。
-- [x] 4.9 实现 `CfirHideChecker`（Hide 分组）：已由 `CfirBuiltInAnnotationSemanticsChecker` 覆盖。
-- [x] 4.10 实现 `CfirMockSemanticsChecker`（Mock 分组）：功能启用检查、类型约束、static 声明约束、包兼容性、@Frozen 兼容性。对齐 `Test/`。
-- [x] 4.11 实现 `CfirCommonSpecificChecker`（CommonSpecific 分组）：声明匹配、类型/修饰符/注解/参数/超类型一致性、common open class 构造器、多 specific 实现、var/let 一致性、成员实现体、main 限制、抽象成员修饰符、@Frozen 泛型限制。对齐 `CJMP/`。
-- [x] 4.12 将批次四所有新 checker 注册到 `CommonDeclarationCheckers` / `CommonExpressionCheckers`
+- [ ] 3.1 逐项补齐 `Constraint` 组全部未完成诊断的实现，覆盖类型参数约束、边界合法性、约束语义冲突等全部子项。
+- [ ] 3.2 为 `Constraint` 每个诊断建立定向测试，验证约束求解路径与诊断输出一致。
+- [ ] 3.3 对 `Constraint` 完成覆盖率回填，确认该组无遗漏。
 
-## 5. 测试与验证
+## 4. resolve 缺口补齐：TypeCheck
 
-- [ ] 5.1 为批次一核心语义 checker 编写测试用例（参考 `cfir/analysis-tests/` 现有测试结构）
-- [ ] 5.2 为批次二类型系统深层 checker 编写测试用例
-- [ ] 5.3 为批次三语言特性 checker 编写测试用例
-- [ ] 5.4 为批次四互操作与平台 checker 编写测试用例
-- [ ] 5.5 集成测试：验证所有 checker 在完整编译管线中正确运行，无相互干扰
-- [ ] 5.6 对齐验证：选取官方 C++ 编译器的测试用例，验证 CFIR checker 输出与官方编译器一致
+- [ ] 4.1 逐项补齐 `TypeCheck` 组全部未完成诊断的实现，覆盖类型兼容、形状合法性、推断失败后类型检查落点等全部子项。
+- [ ] 4.2 为 `TypeCheck` 每个诊断建立定向测试，确保不会被 checker 重复报告或提前截断。
+- [ ] 4.3 对 `TypeCheck` 完成覆盖率回填，确认该组无遗漏。
+
+## 5. resolve 缺口补齐：Unresolved
+
+- [ ] 5.1 逐项补齐 `Unresolved` 组全部未完成诊断的实现，覆盖未解析声明、未解析成员、未解析类型、上下文相关未解析场景等全部子项。
+- [ ] 5.2 为 `Unresolved` 每个诊断建立定向测试，验证 unresolved 信息来源完整且定位准确。
+- [ ] 5.3 对 `Unresolved` 完成覆盖率回填，确认该组无遗漏。
+
+## 6. resolve 缺口补齐：GenericDeep 深层推断
+
+- [ ] 6.1 将 `GenericDeep` 诊断拆分为“resolve 深层推断职责”和“checker 语义约束职责”两类，不再整体视为 checker 工作。
+- [ ] 6.2 逐项补齐属于 resolve 的 `GenericDeep` 深层推断诊断，覆盖实例化歧义、推断收敛、类型变量替换一致性等全部子项。
+- [ ] 6.3 为属于 resolve 的 `GenericDeep` 诊断建立定向测试，并确认与 checker 侧不重复。
+- [ ] 6.4 对 resolve 侧 `GenericDeep` 完成覆盖率回填，确认该部分无遗漏。
+
+## 7. checker 缺口补齐：核心语义
+
+- [ ] 7.0 逐项核对并补齐 `Redeclaration`、`Imports`、`SuperTypes`、`Extend` 这些声明结构类诊断组，确保每个诊断定义都有明确实现与测试归属。
+- [ ] 7.1 逐项补齐 `General` 组全部仍未覆盖的 checker 诊断。
+- [ ] 7.2 逐项补齐 `Function` 组全部仍未覆盖的 checker 诊断。
+- [ ] 7.3 逐项补齐 `Expression` 组全部仍未覆盖的 checker 诊断。
+- [ ] 7.4 逐项补齐 `DeclarationStatus` 中属于 checker 的剩余诊断。
+- [ ] 7.5 为 `Redeclaration`、`Imports`、`SuperTypes`、`Extend`、`General`、`Function`、`Expression`、`DeclarationStatus` 各组每个诊断建立定向测试并回填覆盖率说明。
+
+## 8. checker 缺口补齐：类型与声明深层语义
+
+- [ ] 8.0 逐项核对并补齐 `Initialization`、`GenericAccess`、`Mutability` 这些声明/使用语义组，确保每个诊断定义都有明确实现与测试归属。
+- [ ] 8.1 逐项补齐 `InheritanceDeep` 组全部仍未覆盖的 checker 诊断。
+- [ ] 8.2 逐项补齐 `ClassStruct` 组全部仍未覆盖的 checker 诊断。
+- [ ] 8.3 逐项补齐 `Property` 组全部仍未覆盖的 checker 诊断。
+- [ ] 8.4 逐项补齐 `ConstDeclaration` 组全部仍未覆盖的 checker 诊断。
+- [ ] 8.5 逐项补齐 `GenericDeep` 中属于 checker 语义约束侧的剩余诊断。
+- [ ] 8.6 为 `Initialization`、`GenericAccess`、`Mutability`、`InheritanceDeep`、`ClassStruct`、`Property`、`ConstDeclaration`、`GenericDeep` 各组每个诊断建立定向测试并回填覆盖率说明。
+
+## 9. checker 缺口补齐：语言特性与执行语义
+
+- [ ] 9.0 逐项核对并补齐 `Annotation`、`Interop`、`Effects`、`Match`、`ConstEval` 这些已建模语义组，确保每个诊断定义都有明确实现与测试归属。
+- [ ] 9.1 逐项补齐 `AnnotationExtra` 组全部仍未覆盖的 checker 诊断。
+- [ ] 9.2 逐项补齐 `Inout` 组全部仍未覆盖的 checker 诊断。
+- [ ] 9.3 逐项补齐 `VArrayExtra` 组全部仍未覆盖的 checker 诊断。
+- [ ] 9.4 逐项补齐 `EffectsExtra` 组全部仍未覆盖的 checker 诊断。
+- [ ] 9.5 逐项补齐 `Deprecated` 组全部仍未覆盖的 checker 诊断。
+- [ ] 9.6 逐项补齐 `ExtendExtra` 组全部仍未覆盖的 checker 诊断。
+- [ ] 9.7 逐项补齐 `Spawn` 组全部仍未覆盖的 checker 诊断。
+- [ ] 9.8 逐项补齐 `Interface` 组全部仍未覆盖的 checker 诊断。
+- [ ] 9.9 逐项补齐 `Unused` 组全部仍未覆盖的 checker 诊断。
+- [ ] 9.10 为 `Annotation`、`Interop`、`Effects`、`Match`、`ConstEval`、`AnnotationExtra`、`Inout`、`VArrayExtra`、`EffectsExtra`、`Deprecated`、`ExtendExtra`、`Spawn`、`Interface`、`Unused` 各组每个诊断建立定向测试并回填覆盖率说明。
+
+## 10. checker 缺口补齐：平台、互操作与注解语义
+
+- [ ] 10.1 逐项补齐 `JavaInterop` 组全部仍未覆盖的 checker 诊断。
+- [ ] 10.2 逐项补齐 `JavaMirror` 组全部仍未覆盖的 checker 诊断。
+- [ ] 10.3 逐项补齐 `CJMapping` 组全部仍未覆盖的 checker 诊断。
+- [ ] 10.4 逐项补齐 `ObjCInterop` 组全部仍未覆盖的 checker 诊断。
+- [ ] 10.5 逐项补齐 `ObjCCJMapping` 组全部仍未覆盖的 checker 诊断。
+- [ ] 10.6 逐项补齐 `ForeignName` 组全部仍未覆盖的 checker 诊断。
+- [ ] 10.7 逐项补齐 `IfAvailable` 组全部仍未覆盖的 checker 诊断。
+- [ ] 10.8 逐项补齐 `APILevel` 组全部仍未覆盖的 checker 诊断。
+- [ ] 10.9 逐项补齐 `Hide` 组全部仍未覆盖的 checker 诊断。
+- [ ] 10.10 为以上各组每个诊断建立定向测试并回填覆盖率说明。
+
+## 11. checker 缺口补齐：跨平台与测试能力
+
+- [ ] 11.1 逐项补齐 `CommonSpecific` 组全部仍未覆盖的 checker 诊断。
+- [ ] 11.2 逐项补齐 `Mock` 组全部仍未覆盖的 checker 诊断。
+- [ ] 11.3 为以上各组每个诊断建立定向测试并回填覆盖率说明。
+
+## 12. 注册、接线与架构一致性
+
+- [ ] 12.1 对全部新增 checker 诊断核对注册入口，确保 `CommonDeclarationCheckers`、`CommonExpressionCheckers`、`CommonTypeCheckers` 中无遗漏。
+- [ ] 12.2 对全部 resolve 诊断核对产生时机，确保不会在 checker 阶段重复报告。
+- [ ] 12.3 对全部跨层诊断核对唯一报告位置，防止一个诊断在多个阶段重复发射。
+- [ ] 12.4 对全部实现回填覆盖台账中的“实现入口”与“测试入口”字段。
+
+## 13. 覆盖率收敛与对齐验证
+
+- [ ] 13.1 统计最终覆盖率：总诊断数、existing 数、resolve 数、checker 数、已完成数、剩余数。
+- [ ] 13.2 逐项核对是否仍存在未归类、未实现、未测试、无入口映射的诊断定义。
+- [ ] 13.3 选取官方 C++ `Sema/` 对应语义样例，对 resolve/checker 的关键诊断进行行为对齐验证。
+- [ ] 13.4 在 OpenSpec 产物中输出最终覆盖率说明与剩余风险说明，作为本变更收尾依据。

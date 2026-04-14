@@ -3,7 +3,7 @@ package org.cangnova.cangjie.analysis.references
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.analyze
-import org.cangnova.cangjie.idea.references.AbstractCangJieReference
+import org.cangnova.cangjie.idea.references.AbstractCjReference
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjSuperTypeCallEntry
 import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
@@ -16,7 +16,7 @@ import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
  */
 internal class CaSuperTypeCallReference(
     element: CjSuperTypeCallEntry,
-) : AbstractCangJieReference<CjSuperTypeCallEntry>(element) {
+) : AbstractCjReference<CjSuperTypeCallEntry>(element) {
     override val resolvesByNames: Collection<Name>
         get() = listOfNotNull(element.calleeExpression.constructorReferenceExpression?.referencedNameAsName)
 

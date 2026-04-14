@@ -8,6 +8,7 @@ publishCangjieJarsForIde(
     listOf(
         ":common",
         ":util",
+        ":analysis:cj-references",
         ":compiler:arguments",
         ":resolution.common",
     )
