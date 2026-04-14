@@ -1,100 +1,185 @@
 ## 上下文
 
-当前 CFIR checker 框架已具备完整的基础设施：
+当前变更已经完成了一批 checker 落地，但 OpenSpec 设计仍停留在“按 checker 分组推进”的描述层，缺少两个框架级约束：
 
-- **诊断定义**：`CfirDiagnosticsList`（约 1958 行）定义了 40+ 诊断分组，覆盖仓颉全部语义检查场景
-- **生成代码**：`CfirErrors.kt`（诊断工厂）、`CfirErrorsDefaultMessages.kt`（默认消息）、`DeclarationCheckers.kt` / `ExpressionCheckers.kt` / `TypeCheckers.kt`（checker 注册容器）均已生成
-- **checker 基类**：`CfirDeclarationChecker<D>`、`CfirExpressionChecker<E>`、`CfirTypeChecker` 已定义，使用 Kotlin context receivers 模式
-- **注册体系**：`CheckersComponent` 通过 `ComposedDeclarationCheckers` / `ComposedExpressionCheckers` / `ComposedTypeCheckers` 组合多个 checker 集合
-- **Collector 管线**：`CfirCheckerRunningDiagnosticCollectorVisitor` 驱动 CFIR 树遍历，在各节点类型分发到对应 checker
+1. **缺少全诊断定义覆盖率模型**：没有以 `CfirDiagnosticsList` 为唯一基线回答“总量、已覆盖量、剩余量、责任归属、验证状态”。
+2. **缺少 resolve / checker 职责分层**：容易把本应由 resolve 负责的语义错误，误放到 checker 中补洞。
 
-**已实现（约 30%）**：`CommonDeclarationCheckers` 注册了 modifier、conflict、supertypes、override、extend 系列、constructor delegation、imports、type constraint/bounds、initializer type mismatch 等 checker。`CommonExpressionCheckers` 注册了 loop condition、if condition、match（case type + pattern legality + exhaustiveness）、assignment、return type mismatch、literal overflow、const eval arithmetic、constructor delegation call、mutability、generic bare classifier、super reference 等 checker。
+结合 `CfirDiagnosticsList.kt` 当前结构，可以看到诊断并不天然等价于 checker：
 
-**未实现（约 70%）**：General、Function、Expression（大量子项）、GenericDeep、InheritanceDeep、ClassStruct、Property、ConstDeclaration、AnnotationExtra、Inout、VArrayExtra、EffectsExtra、Deprecated、CommonSpecific、ExtendExtra、Spawn、Interface、JavaInterop、JavaMirror、CJMapping、ObjCInterop、ObjCCJMapping、ForeignName、IfAvailable、APILevel、Hide、Mock、Unused 等分组对应的 checker。
+- 一部分天然属于 checker，如修饰符合法性、声明/表达式语义、互操作约束、平台注解约束、mock/common-specific 等；
+- 一部分天然属于 resolve，如参数绑定、候选选择、约束求解、未解析引用、深层泛型推断；
+- 还有一部分当前虽已有实现，但尚未纳入统一台账，无法形成可信覆盖率说明。
 
-**C++ 参考实现**（`external/cangjie_compiler/src/Sema/`）结构：
-- 核心入口：`TypeChecker.cpp` + `TypeCheckerImpl.h`
-- 按主题分文件：`TypeCheckDecl.cpp`、`TypeCheckClassLike.cpp`、`TypeCheckExtend.cpp`、`TypeCheckGeneric.cpp`、`TypeCheckExpr/`（28 个子文件）、`TypeCheckAnnotation.cpp`、`TypeCheckCall.cpp`、`TypeCheckReference.cpp`、`TypeCheckType.cpp`、`TypeCheckPattern.cpp`、`TypeCheckMatchExpr.cpp`、`TypeCheckOverflow.cpp` 等
-- 子目录：`InheritanceChecker/`、`LegalityOfUsage/`、`FFI/`、`CJMP/`、`GenericInstantiation/`、`NativeFFI/`
-
-**K2 FIR checker 参考**（`external/kotlin/compiler/fir/checkers/`）：每个 checker 是一个 `object` 继承 `FirXxxChecker`，在 `check()` 方法中通过 `reporter.reportOn()` 报告诊断，所有 checker 在 `CommonDeclarationCheckers` 等注册表中集中注册。
+因此，本设计将原有“checker 完成计划”提升为“**全诊断定义覆盖治理 + 分层实施设计**”。
 
 ## 目标 / 非目标
 
 **目标：**
-- 为 `CfirDiagnosticsList` 中全部 40+ 诊断分组实现对应的 checker，使 CFIR 前端管线具备与官方 C++ 编译器对等的语义校验能力
-- 严格按照 K2 FIR checker 框架模式编写：每个 checker 为 Kotlin `object`，继承对应的 `CfirDeclarationChecker<D>` / `CfirExpressionChecker<E>` / `CfirTypeChecker`，使用 context receivers 注入 `CheckerContext` 和 `DiagnosticReporter`
-- 每个 checker 的语义检查逻辑必须对齐 `external/cangjie_compiler/src/Sema/` 中对应的 C++ 实现，不得盲目发明语义规则
-- 所有新 checker 在 `CommonDeclarationCheckers` / `CommonExpressionCheckers` / `CommonTypeCheckers` 中集中注册
+
+- 以 `CfirDiagnosticsList` 中的全部诊断定义作为唯一覆盖对象。
+- 建立全量诊断覆盖台账，确保无遗漏、无游离项。
+- 以 `openspec/changes/cfir-complete-semantic-checkers/diagnostic-coverage-ledger.md` 作为本变更的覆盖台账主入口。
+- 对每个诊断定义明确归属：
+  - `existing`
+  - `resolve`
+  - `checker`
+- 明确约 80-100 个剩余诊断属于 resolve 管线职责，约 80-90 个剩余诊断属于 checker 管线职责，并以实际台账统计结果为最终准。
+- 将任务拆分到“不漏一个诊断子项”的粒度，至少做到每个诊断都有映射关系、责任人、实现入口、测试入口和阻塞说明。
 
 **非目标：**
-- 不修改诊断定义（`CfirDiagnosticsList` 已完备）
-- 不修改 checker 框架基础设施（生成器、collector、visitor 管线）
-- 不实现 CFIR resolve 阶段逻辑（checker 依赖的 resolve 信息由 resolve 管线提供）
-- 不实现后端 CHIR/CodeGen 相关检查
-- 不实现运行时行为验证，仅覆盖编译期静态语义检查
 
-## 决策
+- 不修改 `CfirDiagnosticsList` 的诊断定义语义。
+- 不用 checker 为 resolve 缺口做兜底实现。
+- 不以“测试通过”代替“职责正确”。
+- 不把未确认语义的诊断混入已完成统计。
 
-### 决策 1：按诊断分组组织 checker 文件
+## 核心设计
 
-**选择**：每个诊断分组对应一个或一组 checker 文件，文件命名为 `Cfir<Group>Checker.kt`。
+### 决策 1：以诊断定义而非 checker 文件作为一级规划对象
 
-**替代方案**：
-- A）将所有检查放在少数大文件中（如 `CfirDeclarationStatusCheckers.kt` 承载所有声明状态相关检查）——缺点：文件过大，难以维护
-- B）每个诊断条目一个 checker——缺点：文件数量爆炸，注册表冗长
+**选择**：将 `CfirDiagnosticsList` 中的每个诊断定义作为一级治理单元；checker 文件、resolve 模块、测试目录都只是其承载位置。
 
-**理由**：与 K2 FIR 的组织方式一致。K2 中 `FirModifierChecker`、`FirClassChecker`、`FirEnumChecker` 等按功能域划分。同一功能域中相关的检查共享上下文信息，放在同一 checker 中可减少重复的 CFIR 树查询。如果单个分组过于庞大（如 CommonSpecific 有 30+ 诊断），可拆分为子 checker（如 `CfirCommonSpecificMatchChecker`、`CfirCommonSpecificModifierChecker`）。
+**理由**：
 
-### 决策 2：使用 object singleton 模式
+- checker 分组只是实现组织方式，不是覆盖对象本身；
+- 同一诊断组中的不同诊断可能分属不同实现层；
+- 只有按诊断定义建账，才能真正计算覆盖率并防止遗漏。
 
-**选择**：每个 checker 为 Kotlin `object`（单例），无状态。
+### 决策 2：建立三态责任模型
 
-**替代方案**：使用 `class` 实例化——但 checker 本身不应持有可变状态，K2 FIR 也使用 object 模式。
+**选择**：每个诊断定义必须被归入三类之一：
 
-**理由**：与已有 checker 实现保持一致（如 `CfirModifierChecker`、`CfirSupertypesChecker` 均为 object）。object 模式自动保证��程安全且零分配成本。
+- `existing`：现有实现已完整覆盖，且能定位到实现入口与测试入口；
+- `resolve`：应由 resolve 管线负责；
+- `checker`：应由 checker 管线负责。
 
-### 决策 3：checker 分类归属策略
+**补充规则**：
 
-**选择**：
-- **Declaration checker**：检查的目标是 CFIR 声明节点（CfirClassLikeDeclaration、CfirFunction、CfirProperty 等）→ 继承 `CfirDeclarationChecker<D>`
-- **Expression checker**：检查的目标是 CFIR 表达式/语句节点（CfirFunctionCall、CfirAssignment、CfirMatchExpression 等）→ 继承 `CfirExpressionChecker<E>`
-- **Type checker**：检查的目标是类型引用节点 → 继承 `CfirTypeChecker`
+- `resolve` 与 `checker` 之间必须互斥；
+- 不允许使用“暂不确定”作为长期状态；
+- 若短期无法确认，只能作为临时阻塞状态，并必须附带证据链与后续任务。
 
-对于跨越声明和表达式的检查（如 `EXPRESSION.CAPTURE_BEFORE_INITIALIZATION` 需要分析变量声明和使用点），将 checker 放在使用点一侧（expression checker），通过 CheckerContext 访问声明信息。
+### 决策 3：以责任子域继续细分
 
-**替代方案**：引入新的 checker 类别（如 `CfirSemanticChecker`）——但这要求修改生成器和 collector，违反非目标约束。
+**选择**：在三态责任模型之下，再按子域细分，保证后续任务可执行。
 
-### 决策 4：实现批次划分
+**resolve 子域**：
 
-**选择**：按优先级和依赖关系分 4 个批次实现：
+- `CallResolution`
+- `Constraint`
+- `TypeCheck`
+- `Unresolved`
+- `GenericDeep-Inference`
 
-- **批次 1（核心语义）**：General、Function、Expression、DeclarationStatus 补充——这些是最基础的语义检查，覆盖面最广
-- **批次 2（类型系统深层）**：GenericDeep、InheritanceDeep、ClassStruct、Property、ConstDeclaration——依赖完善的类型信息
-- **批次 3（语言特性）**：AnnotationExtra、ExtendExtra、Deprecated、Effects/EffectsExtra、Spawn、Interface、Inout、VArray、Match 补充、Unused——面向特定语言特性
-- **批次 4（互操作与平台）**：JavaInterop、JavaMirror、CJMapping、ObjCInterop、ObjCCJMapping、ForeignName、IfAvailable、APILevel、Hide、Mock、CommonSpecific——面向特定平台和互操作���景
+**checker 子域**：
 
-**理由**：批次 1~2 覆盖最多日常编码场景，优先实现可尽早提供价值。批次 3~4 面向进阶场景，可渐进交付。
+- `General`
+- `Function`
+- `Expression`
+- `InheritanceDeep`
+- `ClassStruct`
+- `Property`
+- `ConstDeclaration`
+- `AnnotationExtra`
+- `Inout`
+- `VArrayExtra`
+- `EffectsExtra`
+- `Deprecated`
+- `CommonSpecific`
+- `ExtendExtra`
+- `Spawn`
+- `Interface`
+- `JavaInterop`
+- `JavaMirror`
+- `CJMapping`
+- `ObjCInterop`
+- `ObjCCJMapping`
+- `ForeignName`
+- `IfAvailable`
+- `APILevel`
+- `Hide`
+- `Mock`
+- `Unused`
+- `DeclarationStatusExtra`
 
-### 决策 5：诊断报告方式
+**理由**：只有先切到责任子域，后续任务才能真正“一个不漏”地展开，而不是继续停留在宽泛批次。
 
-**选择**：使用 `reporter.reportOn(source, CfirErrors.DIAGNOSTIC_NAME, arg1, arg2, ...)` 模式，其中 `source` 从 CFIR 节点的 `source` 属性获取 PSI 元素。
+### 决策 4：覆盖率说明必须可审计
 
-**理由**：与已有 checker 一致，且与 `CfirErrors` 生成的工厂方法 API 匹配。
+**选择**：本变更必须产出可审计的覆盖率说明，而不是口头估算。
+
+覆盖率说明至少回答：
+
+- `CfirDiagnosticsList` 诊断总数；
+- 已覆盖数；
+- 已覆盖但测试不足数；
+- resolve 负责数；
+- checker 负责数；
+- 各子域剩余缺口数；
+- 每个缺口对应的实现任务与验证任务。
+
+**理由**：没有覆盖率说明，就无法证明“提案是否完成”，也无法知道任务拆分是否真实闭环。
+
+### 决策 5：禁止 checker 兜底 resolve 缺口
+
+**选择**：对 `CallResolution`、`Constraint`、`TypeCheck`、`Unresolved`、`GenericDeep` 深层推断部分，若语义本质依赖候选选择、约束求解、未解析恢复或推断收敛，则必须在 resolve 管线中实现。
+
+**明确禁止**：
+
+- 在 checker 中重新做一套不完整的参数绑定；
+- 在 checker 中重复实现候选筛选；
+- 在 checker 中根据错误形状做事后猜测式诊断；
+- 为了“先补覆盖率”而将 resolve 语义错误错误地下沉为 checker。
+
+**理由**：这会直接破坏编译器分层，导致诊断重复、时序错误、信息不完整和后续不可维护。
+
+### 决策 6：任务必须分成“实现任务 + 验证任务”
+
+**选择**：每一类诊断缺口都必须同时有：
+
+- 实现任务
+- 测试/验证任务
+- 覆盖率回填任务
+
+**理由**：如果只有实现没有验证，覆盖率台账很快会失真；如果只有测试没有责任归属，项目会再次退化回“症状驱动补洞”。
+
+## 架构影响
+
+### 1. 对 checker 体系的影响
+
+- checker 仍是 declaration / expression / type 三大体系；
+- 但其职责边界将被重新校正，只承接真正属于 checker 的诊断；
+- 原 proposal 中把 `GenericDeep` 整体视为 checker 的写法需要修正为：
+  - 一部分属于 resolve 深层推断；
+  - 一部分属于 checker 语义约束。
+
+### 2. 对 resolve 体系的影响
+
+- resolve 不再被视为“checker 的前置条件”，而是诊断覆盖的主要承载层之一；
+- 本变更要求把 resolve 诊断缺口显式纳入提案，不再默认排除。
+
+### 3. 对测试体系的影响
+
+- 测试需要按责任层组织验证：
+  - resolve 诊断验证；
+  - checker 诊断验证；
+  - 端到端一致性验证；
+- `diagnostics2` 可作为新增矩阵的承载区，但不能替代对现有测试入口的责任归位。
 
 ## 风险 / 权衡
 
-**[风险] CFIR 声明/表达式树 API 不完整**
-→ 部分 checker 可能依赖尚未建模的 CFIR 属性（如 `@Deprecated` 注解信息、`@Java` 标记等）。缓解：先实现可用的 checker，对 API 缺失的部分在 checker 中留 TODO 注释并跳过相关检查，待 CFIR 模型补充后再启用。
+**[风险] 现有“已完成”任务统计失真**
+→ 旧任务以 checker 分组为中心，未反映未归位诊断。缓解：重写任务树，以覆盖台账重新计算进度。
 
-**[风险] C++ 语义逻辑翻译偏差**
-→ C++ 参考实现使用命令式风格，CFIR 使用函数式/访问者风格，直接翻译可能引入语义偏差。缓解：为每个 checker 编写测试用例，对齐官方编译器的错误输出行为。
+**[风险] 诊断存在跨层边界争议**
+→ 某些 `GenericDeep` 或调用语义诊断可能同时依赖推断与后置语义。缓解：以“诊断产生所需的主信息源”作为归属原则，优先归入 resolve。
 
-**[风险] checker 执行顺序依赖**
-→ 部分 checker 可能假设其他 checker 已经执行（如泛型深层检查假设基本类型检查已完成）。缓解：checker 应设计为无状态且独立，不依赖其他 checker 的执行结果。共享的中间计算通过 CheckerContext 提供。
+**[风险] 覆盖率统计与真实实现脱节**
+→ 如果覆盖率只记“声称已支持”，会再次失真。缓解：每条诊断必须绑定实现位置和测试位置。
 
-**[权衡] 覆盖完整性 vs 实现成本**
-→ 40+ 诊断分组、300+ 个诊断条目的全覆盖工作量巨大。权衡：按批次交付，每批次确保功能完整且可测试。
+**[权衡] 一次性把所有诊断纳入提案会显著扩大任务规模**
+→ 这是必要扩大。相比继续保留模糊边界，这种扩大能换来真实可收敛的工程计划。
 
-**[权衡] 严格对齐 C++ vs 惯用 Kotlin**
-→ 某些 C++ 实现的检查逻辑（如递归遍历 + 全局状态）不适合直接翻译为 Kotlin。权衡：保持语义对齐，但实现方式遵循 K2 FIR 的惯用模式（visitor + context receivers + immutable 数据）。
+**[权衡] 先修 proposal/design/tasks 再继续编码会延缓短期提交**
+→ 这是正确顺序。当前问题首先是提案不准确，不应在错误任务树上继续追加实现。

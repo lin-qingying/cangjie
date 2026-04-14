@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.analysis.references
 
 import com.intellij.openapi.util.TextRange
-import org.cangnova.cangjie.idea.references.CangJieSimpleReference
+import org.cangnova.cangjie.idea.references.CjSimpleReference
 import org.cangnova.cangjie.psi.CjConstructorDelegationReferenceExpression
 import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
 
@@ -10,7 +10,7 @@ import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
  */
 internal class CaConstructorDelegationReference(
     expression: CjConstructorDelegationReferenceExpression,
-) : CangJieSimpleReference<CjConstructorDelegationReferenceExpression>(expression) {
+) : CjSimpleReference<CjConstructorDelegationReferenceExpression>(expression) {
     override fun getRangeInElement(): TextRange = TextRange(0, element.textLength)
 
     override fun resolveTargetElements() = element.resolveCallTargetPsis()

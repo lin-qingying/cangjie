@@ -39,6 +39,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.symbols.CaScriptSymbol
 import org.cangnova.cangjie.analysis.api.symbols.name
@@ -181,7 +182,7 @@ internal class CaCfirSymbolProvider(
         analysisSession.getClassLikePublicSymbol(classId)
     }
 
-    override fun getClassSymbol(classId: ClassId): org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol? = withValidityAssertion {
+    override fun getClassSymbol(classId: ClassId):  CaClassSymbol? = withValidityAssertion {
         analysisSession.getClassPublicSymbol(classId)
     }
 
