@@ -1241,6 +1241,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val INOUT_MISMATCH by error<PsiElement> {
             parameter<ConeCangJieType>("type")
         }
+
+        // inout 参数必须是可变左值
+        val INVALID_INOUT_ARGUMENT by error<PsiElement>()
+
+        // 同一个参数不能重复标记 inout
+        val DUPLICATE_INOUT_ARGUMENT by error<PsiElement>()
     }
 
     /**

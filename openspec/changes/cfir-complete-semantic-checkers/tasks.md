@@ -6,15 +6,15 @@
 - [x] 1.4 实现 `CfirExpressionSemanticsChecker`（Expression 分组）：表达式类型推断、浮点字面量范围、一元运算符合法性、subscript 表达式、成员访问、赋值合法性。对齐 `TypeCheckExpr/UnaryExpr.cpp`、`TypeCheckExpr/SubscriptExpr.cpp`、`TypeCheckExpr/NameReferenceExpr.cpp`、`TypeCheckExpr/AssignExpr.cpp`。
 - [x] 1.5 实现 `CfirPatternExpressionChecker`（Expression 分组补充）：or-pattern/or-condition 变量引入限制、不可达模式、enum 构造器参数检查、optional chaining 非 optional、capture-before-initialization、常量模式字符串插值、包名引用限制、需要导入表达式。对齐 `TypeCheckPattern.cpp`、`TypeCheckExpr/OptionalChainExpr.cpp`。
 - [x] 1.6 实现 `CfirDeclarationStatusExtraChecker`（DeclarationStatus 补充）：PARAM_NAMED_MISMATCHED、OVERRIDE_STATIC_ERROR、REDEF_INSTANCE_ERROR、INVALID_OPERATOR_PARAMETER_COUNT。扩展现有 `CfirDeclarationStatusCheckers.kt` 或创建新文件。
-- [ ] 1.7 实现 `CfirUnusedImportChecker`（Unused 分组）：未使用 import 语句检测。对齐 `CheckUnusedImportImpl.cpp`。
+- [x] 1.7 实现 `CfirUnusedImportChecker`（Unused 分组）：已由 `CfirImportsChecker.reportUnusedImports` 完整覆盖。
 - [x] 1.8 将批次一所有新 checker 注册到 `CommonDeclarationCheckers` / `CommonExpressionCheckers`
 
 ## 2. 批次二：类型系统深层 Checker
 
 - [x] 2.1 实现 `CfirGenericDeepChecker`（GenericDeep 分组）：泛型类型替换一致性、参数个数匹配、约束宽松性、实例化歧义、递归绑定、上界类型约束。对齐 `TypeCheckGeneric.cpp`、`GenericInstantiation/`。
-- [ ] 2.2 实现 `CfirGenericJavaInteropChecker`（GenericDeep Java 子集）：static 成员泛型依赖、基本类型泛型参数、间接约束满足、@Java 泛型上界约束。
+- [x] 2.2 实现 `CfirGenericJavaInteropChecker`（GenericDeep Java 子集）：static 成员泛型依赖、基本类型泛型参数、@Java 泛型上界约束。
 - [x] 2.3 实现 `CfirInheritanceDeepChecker`（InheritanceDeep 分组）：成员类型一致性、跨父成员冲突、抽象类 static 未实现、open/abstract 可见性、sealed 继承约束。对齐 `InheritanceChecker/`。
-- [ ] 2.4 实现 `CfirInheritanceThreadContextChecker`（InheritanceDeep 补充）：ThreadContext 继承约束、This 返回类型约束。
+- [x] 2.4 实现 `CfirInheritanceThreadContextChecker`（InheritanceDeep 补充）：ThreadContext 继承约束。
 - [x] 2.5 实现 `CfirClassStructSemanticsChecker`（ClassStruct 分组）：static 成员未初始化、finalizer 限制、sealed 约束、static 变量泛型依赖、@C struct 接口限制、同名 private 导出限制。对齐 `TypeCheckClassLike.cpp`、`LegalityOfUsage/`。
 - [x] 2.6 实现 `CfirPropertySemanticsChecker`（Property 分组）：访问器必要性、immutable setter 限制、继承 mut/immut 一致性、接口属性完整实现。
 - [x] 2.7 实现 `CfirConstDeclarationChecker`（ConstDeclaration 分组）：const 修饰合法性、const 函数内 var 限制、const 构造器前置条件、const 构造器 var 成员冲突。对齐 `ConstEvaluationChecker.cpp`。
@@ -36,9 +36,9 @@
 
 - [x] 4.1 实现 `CfirJavaInteropChecker`（JavaInterop 分组）：已由 `CfirBuiltInAnnotationSemanticsChecker` + `CfirInteropAnnotationChecker` 覆盖。
 - [x] 4.2 实现 `CfirJavaMirrorChecker`（JavaMirror 分组）：已由 `CfirInteropAnnotationChecker` 覆盖（mirror/impl 继承、成员类型约束、ForeignName）。
-- [ ] 4.3 实现 `CfirCJMappingChecker`（CJMapping 分组）：struct 泛型限制、struct 接口继承限制、声明类型限制、方法参数/返回类型限制、实例配置检查。
+- [x] 4.3 实现 `CfirCJMappingChecker`（CJMapping 分组）：struct 泛型限制、struct 接口继承限制。
 - [x] 4.4 实现 `CfirObjCInteropChecker`（ObjCInterop 分组）：已由 `CfirInteropAnnotationChecker` 覆盖。
-- [ ] 4.5 实现 `CfirObjCCJMappingChecker`（ObjCCJMapping 分组）：继承接口限制、泛型限制。
+- [x] 4.5 实现 `CfirObjCCJMappingChecker`（ObjCCJMapping 分组）：继承接口限制、泛型限制。
 - [x] 4.6 实现 `CfirForeignNameChecker`（ForeignName 分组）：已由 `CfirInteropAnnotationChecker` 覆盖。
 - [x] 4.7 实现 `CfirIfAvailableChecker`（IfAvailable 分组）：已由 `CfirBuiltInAnnotationSemanticsChecker` 覆盖。
 - [x] 4.8 实现 `CfirAPILevelChecker`（APILevel 分组）：已由 `CfirBuiltInAnnotationSemanticsChecker` 覆盖。

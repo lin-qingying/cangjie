@@ -31,6 +31,7 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 import com.intellij.psi.stubs.IStubElementType
+import org.cangnova.cangjie.lexer.CjTokens
 
 open class CjValueArgument :
     CjElementImplStub<CangJieValueArgumentStub<out CjValueArgument>>,
@@ -86,4 +87,19 @@ open class CjValueArgument :
 
             return getSpreadElement() != null
         }
+
+    /**
+     * 是否有 `inout` 修饰。
+     *
+     * 仓颉语法：`cFunc(inout x)` 中 `inout` 关键字修饰函数调用参数，
+     * 表示该参数按 inout（可写引用）方式传递给 foreign/CFunc 函数。
+     */
+    val isInout: Boolean
+        get() = findChildByType<LeafPsiElement>(CjTokens.INOUT_KEYWORD) != null
+
+    /**
+     * 获取 `inout` 关键字的 PSI 节点（用于诊断定位）。
+     */
+    fun getInoutKeyword(): LeafPsiElement? =
+        findChildByType(CjTokens.INOUT_KEYWORD)
 }
