@@ -312,6 +312,8 @@ object CfirErrors : CjDiagnosticsContainer() {
     val INOUT_MODIFY_HEAP_VARIABLE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INOUT_MODIFY_HEAP_VARIABLE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val INOUT_CAN_ONLY_USED_IN_CFUNC_CALLING: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INOUT_CAN_ONLY_USED_IN_CFUNC_CALLING", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val INOUT_MISMATCH: CjDiagnosticFactory1<ConeCangJieType> = CjDiagnosticFactory1("CFIR_INOUT_MISMATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val INVALID_INOUT_ARGUMENT: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INVALID_INOUT_ARGUMENT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val DUPLICATE_INOUT_ARGUMENT: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_DUPLICATE_INOUT_ARGUMENT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
     // VArrayExtra
     val VARRAY_ARGS_NUMBER_MISMATCH: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_VARRAY_ARGS_NUMBER_MISMATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
