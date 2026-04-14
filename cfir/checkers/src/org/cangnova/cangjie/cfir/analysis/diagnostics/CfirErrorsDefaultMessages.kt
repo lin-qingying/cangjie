@@ -653,6 +653,8 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.INOUT_MODIFY_HEAP_VARIABLE, "the variable qualified by 'inout' cannot be directly or indirectly derived from an instance of a 'class'")
         map.put(CfirErrors.INOUT_CAN_ONLY_USED_IN_CFUNC_CALLING, "'inout' can only be used in a 'CFunc' calling")
         map.put(CfirErrors.INOUT_MISMATCH, "mismatch 'inout' of function argument with type ''{0}''", RENDER_TYPE)
+        map.put(CfirErrors.INVALID_INOUT_ARGUMENT, "'inout' argument must be a mutable l-value")
+        map.put(CfirErrors.DUPLICATE_INOUT_ARGUMENT, "duplicate 'inout' qualifier on the same argument")
 
         // ================================================================
         // VArrayExtra

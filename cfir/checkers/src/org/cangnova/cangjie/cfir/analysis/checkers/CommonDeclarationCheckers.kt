@@ -53,6 +53,10 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInheritanceDe
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInterfaceSemanticsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirLambdaParameterTypeChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirMockSemanticsChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirGenericJavaInteropChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInheritanceThreadContextChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCJMappingChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirObjCCJMappingChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirPropertySemanticsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirVArrayExtraChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.DeclarationCheckers
@@ -146,6 +150,10 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirInterfaceSemanticsChecker,
             CfirCommonSpecificChecker,
             CfirMockSemanticsChecker,
+            CfirGenericJavaInteropChecker,
+            CfirInheritanceThreadContextChecker,
+            CfirCJMappingChecker,
+            CfirObjCCJMappingChecker,
         )
 
     override val propertyCheckers: Set<CfirPropertyChecker>

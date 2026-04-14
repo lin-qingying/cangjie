@@ -13,6 +13,7 @@ publishCangjieJarsForIde(
         ":cfir:providers",
         ":cfir:resolve",
         ":cfir:semantics",
+        ":compiler:config",
         ":cfir:checkers",
         ":cfir:diagnostic-renderers",
         ":cfir:raw-cfir:raw-cfir-common",
