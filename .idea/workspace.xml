@@ -5,18 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="refactor: enhance Analysis API components and improve test configurators">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangnova/cangjie/cfir/checkers/generator/diagnostics/CfirDiagnosticsList.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangnova/cangjie/cfir/checkers/generator/diagnostics/CfirDiagnosticsList.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirErrors.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/gen/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirErrors.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirNonSuppressibleErrorNames.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/gen/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirNonSuppressibleErrorNames.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonDeclarationCheckers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonDeclarationCheckers.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirGeneralSemanticsChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirGeneralSemanticsChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirInoutSemanticsChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirInoutSemanticsChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirErrorsDefaultMessages.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirErrorsDefaultMessages.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/external/kotlin" beforeDir="false" afterPath="$PROJECT_DIR$/external/kotlin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/openspec/changes/cfir-complete-semantic-checkers/tasks.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/cfir-complete-semantic-checkers/tasks.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/lexer/CjTokens.java" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/lexer/CjTokens.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjValueArgument.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjValueArgument.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -571,7 +560,7 @@
       <workItem from="1775892405187" duration="14120000" />
       <workItem from="1776009136340" duration="1813000" />
       <workItem from="1776055314179" duration="18156000" />
-      <workItem from="1776143016177" duration="10589000" />
+      <workItem from="1776143016177" duration="10988000" />
     </task>
     <task id="LOCAL-00001" summary="add: implement generic functions and type declarations">
       <option name="closed" value="true" />
@@ -677,7 +666,15 @@
       <option name="project" value="LOCAL" />
       <updated>1775837048103</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="refactor: enhance Analysis API components and improve test configurators">
+      <option name="closed" value="true" />
+      <created>1776156221958</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1776156221958</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
