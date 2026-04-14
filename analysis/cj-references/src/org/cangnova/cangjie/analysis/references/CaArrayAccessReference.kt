@@ -6,7 +6,7 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.analysis.api.scopes.CaScope
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
-import org.cangnova.cangjie.idea.references.CangJieSimpleReference
+import org.cangnova.cangjie.idea.references.CjSimpleReference
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjArrayAccessExpression
@@ -20,7 +20,7 @@ import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
  */
 internal class CaArrayAccessReference(
     expression: CjArrayAccessExpression,
-) : CangJieSimpleReference<CjArrayAccessExpression>(expression), MultiRangeReference {
+) : CjSimpleReference<CjArrayAccessExpression>(expression), MultiRangeReference {
     override val resolvesByNames: Collection<Name>
         get() = listOf(OperatorNameConventions.GET, OperatorNameConventions.SET)
 

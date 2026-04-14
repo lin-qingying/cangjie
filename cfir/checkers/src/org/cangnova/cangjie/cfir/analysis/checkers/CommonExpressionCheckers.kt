@@ -38,12 +38,18 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTryExpressionC
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTryHandleReturnChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirSpawnSemanticsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirInoutSemanticsChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirExpressionTypeInferenceChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirEffectsBasicChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirSubscriptAssignmentChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirSubscriptExpressionChecker
 
 object CommonExpressionCheckers : ExpressionCheckers() {
     override val basicExpressionCheckers: Set<CfirBasicExpressionChecker>
         get() = setOf(
             CfirLoopConditionTypeMismatchChecker,
             CfirSpawnSemanticsChecker,
+            CfirExpressionTypeInferenceChecker,
+            CfirEffectsBasicChecker,
         )
 
     override val ifExpressionCheckers: Set<CfirIfExpressionChecker>
@@ -103,4 +109,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
 
     override val tryExpressionCheckers: Set<CfirTryExpressionChecker>
         get() = setOf(CfirTryHandleReturnChecker)
+
+    override val subscriptExpressionCheckers: Set<CfirSubscriptExpressionChecker>
+        get() = setOf(CfirSubscriptAssignmentChecker)
 }

@@ -2,7 +2,7 @@ package org.cangnova.cangjie.analysis.references
 
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.idea.references.AbstractCangJieReference
+import org.cangnova.cangjie.idea.references.AbstractCjReference
 import org.cangnova.cangjie.psi.CjAnnotation
 import org.cangnova.cangjie.psi.CjValueArgument
 import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
@@ -14,7 +14,7 @@ import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
  */
 internal class CaDefaultAnnotationArgumentReference(
     element: CjValueArgument,
-) : AbstractCangJieReference<CjValueArgument>(element) {
+) : AbstractCjReference<CjValueArgument>(element) {
     override fun getRangeInElement(): TextRange = TextRange.EMPTY_RANGE
 
     override fun resolveTargetElements(): Collection<PsiElement> {

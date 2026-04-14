@@ -24,8 +24,8 @@ import org.cangnova.cangjie.psi.CjSimpleNameExpression
  * 2. rename / bind；
  * 3. 后续 references / rename / usages 的共同协议。
  */
-interface CangJieReference : PsiPolyVariantReference {
-    val resolver: ResolveCache.PolyVariantResolver<CangJieReference>
+interface CjReference : PsiPolyVariantReference {
+    val resolver: ResolveCache.PolyVariantResolver<CjReference>
 
     val resolvesByNames: Collection<Name>
         get() = emptyList()
@@ -33,9 +33,9 @@ interface CangJieReference : PsiPolyVariantReference {
     override fun getElement(): CjElement
 }
 
-abstract class AbstractCangJieReference<T : CjElement>(
+abstract class AbstractCjReference<T : CjElement>(
     element: T,
-) : PsiPolyVariantReferenceBase<T>(element), CangJieReference {
+) : PsiPolyVariantReferenceBase<T>(element), CjReference {
     val expression: T
         get() = element
 
@@ -56,7 +56,7 @@ abstract class AbstractCangJieReference<T : CjElement>(
 
         if (
             candidateTarget is CjImportAlias &&
-            this is CangJieSimpleNameReference &&
+            this is CjSimpleNameReference &&
             candidateTarget.name == expression.referencedName
         ) {
             return isReferenceToImportAlias(candidateTarget)
@@ -87,7 +87,7 @@ abstract class AbstractCangJieReference<T : CjElement>(
 
     final override fun resolve(): PsiElement? = resolveTargetElements().singleOrNull()
 
-    override val resolver: ResolveCache.PolyVariantResolver<CangJieReference> =
+    override val resolver: ResolveCache.PolyVariantResolver<CjReference> =
         ResolveCache.PolyVariantResolver { _, _ ->
             this.resolveTargetElements()
                 .map { target -> PsiElementResolveResult(target) }
@@ -100,13 +100,13 @@ abstract class AbstractCangJieReference<T : CjElement>(
     }
 }
 
-abstract class CangJieSimpleReference<T : CjElement>(
+abstract class CjSimpleReference<T : CjElement>(
     expression: T,
-) : AbstractCangJieReference<T>(expression)
+) : AbstractCjReference<T>(expression)
 
-abstract class CangJieSimpleNameReference(
+abstract class CjSimpleNameReference(
     expression: CjSimpleNameExpression,
-) : CangJieSimpleReference<CjSimpleNameExpression>(expression) {
+) : CjSimpleReference<CjSimpleNameExpression>(expression) {
     enum class ShorteningMode {
         NO_SHORTENING,
         DELAYED_SHORTENING,

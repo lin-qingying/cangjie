@@ -2,7 +2,6 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateDecision
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.asCaDiagnostic
 import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirScopeSnapshot
 import org.cangnova.cangjie.analysis.api.cfir.resolve.DiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.components.CaCompletionCandidateChecker
@@ -25,10 +24,8 @@ import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
-import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjMatchEntry
@@ -318,17 +315,17 @@ internal class CaCfirDiagnosticProvider(
 ) : CaBaseSessionComponent<CaCfirSession>(), CaDiagnosticProvider, CaCfirSessionComponent {
     override fun CjElement.diagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>> =
         this@CaCfirDiagnosticProvider.withValidityAssertion {
-            analysisSession.queryDiagnostics(this@diagnostics, filter.asLLFilter())
+            analysisSession.queryDiagnostics(this@diagnostics, filter.asCfilter())
                 .map { diagnostic -> diagnostic.asPublicDiagnostic() }
         }
 
     override fun CjFile.collectDiagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>> =
         this@CaCfirDiagnosticProvider.withValidityAssertion {
-            analysisSession.queryFileDiagnostics(this@collectDiagnostics, filter.asLLFilter())
+            analysisSession.queryFileDiagnostics(this@collectDiagnostics, filter.asCfilter())
                 .map { diagnostic -> diagnostic.asPublicDiagnostic() }
         }
 
-    private fun CaDiagnosticCheckerFilter.asLLFilter(): DiagnosticCheckerFilter = when (this) {
+    private fun CaDiagnosticCheckerFilter.asCfilter(): DiagnosticCheckerFilter = when (this) {
         CaDiagnosticCheckerFilter.ONLY_COMMON_CHECKERS -> DiagnosticCheckerFilter.ONLY_DEFAULT_CHECKERS
         CaDiagnosticCheckerFilter.ONLY_EXTENDED_CHECKERS -> DiagnosticCheckerFilter.ONLY_EXTRA_CHECKERS
         CaDiagnosticCheckerFilter.ONLY_EXPERIMENTAL_CHECKERS -> DiagnosticCheckerFilter.ONLY_EXPERIMENTAL_CHECKERS

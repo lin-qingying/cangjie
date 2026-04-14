@@ -4,7 +4,7 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.builtins.StandardNames
-import org.cangnova.cangjie.idea.references.AbstractCangJieReference
+import org.cangnova.cangjie.idea.references.AbstractCjReference
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjFile
@@ -20,7 +20,7 @@ import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
  */
 internal class CaRangeReference(
     element: CjRangeExpression,
-) : AbstractCangJieReference<CjRangeExpression>(element) {
+) : AbstractCjReference<CjRangeExpression>(element) {
     override val resolvesByNames: Collection<Name>
         get() = listOf(Name.identifier("Range"))
 

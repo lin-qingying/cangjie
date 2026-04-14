@@ -4,8 +4,8 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
 import org.cangnova.cangjie.analysis.api.analyze
-import org.cangnova.cangjie.idea.references.AbstractCangJieReference
-import org.cangnova.cangjie.idea.references.CangJieSimpleNameReference
+import org.cangnova.cangjie.idea.references.AbstractCjReference
+import org.cangnova.cangjie.idea.references.CjSimpleNameReference
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjBasicType
 import org.cangnova.cangjie.psi.CjFile
@@ -18,7 +18,7 @@ import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
  */
 internal class CaSimpleNameReference(
     expression: CjSimpleNameExpression,
-) : CangJieSimpleNameReference(expression) {
+) : CjSimpleNameReference(expression) {
     override val resolvesByNames: Collection<Name>
         get() = listOf(expression.referencedNameAsName)
 
@@ -74,7 +74,7 @@ internal class CaSimpleNameReference(
  */
 internal class CaBasicTypeReference(
     element: CjBasicType,
-) : AbstractCangJieReference<CjBasicType>(element) {
+) : AbstractCjReference<CjBasicType>(element) {
     override val resolvesByNames: Collection<Name>
         get() = listOf(Name.identifier(element.name))
 
