@@ -1,80 +1,171 @@
 ## 为什么
 
-CFIR checker 框架已具备完整的基础设施（诊断定义、checker 注册体系、collector/visitor 管线），且约 1958 行的 `CfirDiagnosticsList` 已覆盖仓颉编译器全部 40+ 语义诊断分组。然而，已注册到 `CommonDeclarationCheckers` / `CommonExpressionCheckers` / `CommonTypeCheckers` 的 checker 实现仅覆盖其中约 30%，大量诊断分组——包括通用语义、函数语义、表达式语义、泛型深层检查、继承深层检查、属性语义、常量声明、注解、inout、VArray、effects、@Deprecated、common/specific 跨平台、Java/ObjC 互操作、@ForeignName、@IfAvailable、@APILevel、@Hide、Mock 等——的对应 checker 尚未实现。当前状态导致编译器前端无法完成完整的语义检查，大量本应在编译期拦截的错误会被漏检。
+当前提案的问题不是“checker 还不够多”这么简单，而是**整个 `CfirDiagnosticsList` 尚未形成一份以诊断定义为唯一基线的覆盖台账**。现有提案按 checker 分组描述工作范围，容易把“诊断分组”误写成“实现职责分组”，导致两个后果：
 
-此变更的目标是：对齐 C++ 官方仓颉编译器 `src/Sema/` 目录下的全部语义检查逻辑，在 Kotlin/JVM 侧以 K2 FIR checker 框架的写法，系统性地为每个诊断分组实现完整的 checker，从而使 CFIR 前端管线具备与官方编译器对等的语义校验能力。
+1. 没有明确承诺必须覆盖 `CfirDiagnosticsList` 中的**全部诊断定义**，因此无法回答“还剩哪些诊断没有归位、覆盖率是多少、由谁负责实现”。
+2. 没有把 **resolve 管线职责** 与 **checker 管线职责** 明确切开，容易把本应在 `CallResolution`、`Constraint`、`TypeCheck`、`Unresolved`、`GenericDeep` 深层推断阶段完成的语义，错误地下沉到 checker 层做兜底。
+
+当前项目的真实目标应当是：
+
+- 以 `cfir/checkers/checkers-component-generator/.../CfirDiagnosticsList.kt` 为唯一基线；
+- 对其中**每一个诊断定义**建立覆盖归属；
+- 对仍未覆盖的诊断，明确标注其责任归属为：
+  - 已由现有实现覆盖；
+  - 应由 resolve 管线实现；
+  - 应由 checker 管线实现；
+- 且禁止用 checker 兜底 resolve 漏洞，禁止用“临时兼容检查”掩盖架构边界。
+
+基于当前盘点，未完全落地的诊断中：
+
+- **大部分（约 80-100 个）属于 resolve 管线职责**，集中在 `CallResolution`、`Constraint`、`TypeCheck`、`Unresolved`、`GenericDeep` 的深层推断部分；
+- **其余约 80-90 个属于 checker 管线职责**，需要继续在 declaration / expression / type checker 中补齐；
+- 另外还有一部分诊断虽然已有实现，但尚未被纳入统一覆盖率说明、责任表和验证闭环。
+
+因此，本变更不再只是“补 checker”，而是升级为：**完成 CFIR 全诊断定义覆盖治理，并在该治理之下分别推进 resolve 与 checker 的剩余实现。**
 
 ## 变更内容
 
-**新增大量 checker 实现**，按仓颉官方编译器 Sema 模块的功能域划分为以下批次：
+### 1. 建立全诊断定义覆盖台账
 
-1. **通用语义 checker**（General）：节点有效性、类型推断失败、歧义使用、子包冲突、可访问性等
-2. **函数语义 checker**（Function）：返回类型推断、subscript 语义、static 函数重载冲突、mut 函数引用限制、lambda 参数类型注解、trailing lambda、捕获可变变量约束等
-3. **表达式语义 checker**（Expression）：浮点字面量范围、一元运算符合法性、subscript 表达式、成员访问、赋值合法性、or-pattern/or-condition 变量引入、不可达模式、optional chaining 非 optional 类型、enum 构造器参数检查、capture-before-initialization 等
-4. **泛型深层 checker**（GenericDeep）：泛型类型替换一致性、参数个数匹配、约束宽松性、泛型实例化歧义、递归绑定、上界类型约束等
-5. **继承深层 checker**（InheritanceDeep）：成员类型一致性、跨父类型成员冲突、sealed 继承约束、ThreadContext 约束、This 返回类型约束等
-6. **类/结构体语义 checker**（ClassStruct）：static 成员未初始化、finalizer 限制、sealed 约束、泛型参数 static 依赖等
-7. **属性语义 checker**（Property）：访问器必要性、immutable 属性 setter 约束、继承 mut/immut 一致性等
-8. **常量声明 checker**（ConstDeclaration）：const 修饰合法性、const 函数内 var 限制、const 构造器约束等
-9. **注解语义 checker**（AnnotationExtra）：@Annotation 参数约束、自定义注解位置、注解目标匹配等
-10. **inout 语义 checker**（Inout）：CString/零大小类型限制、CType 约束、var 变量约束、堆变量约束等
-11. **VArray 语义 checker**（VArrayExtra）：构造器参数个数、subscript 约束、CFunc 返回限制等
-12. **Effects 语义 checker**（EffectsExtra）：resumption 类型匹配、try/handle return 约束等
-13. **@Deprecated 语义 checker**（Deprecated）：deprecated 调用检查、严格度继承约束、override/redef 标记等
-14. **common/specific 跨平台 checker**（CommonSpecific）：声明匹配、修饰符一致性、抽象成员约束等
-15. **Extend 补充 checker**（ExtendExtra）：override 限制、成员遮蔽、非法成员等
-16. **Spawn 语义 checker**（Spawn）：spawn 参数合法性
-17. **接口语义 checker**（Interface）：未实现 static 成员调用
-18. **Java 互操作 checker**（JavaInterop + JavaMirror + CJMapping）：@Java 类型约束、mirror/impl 继承规则、JType 兼容性等
-19. **ObjC 互操作 checker**（ObjCInterop + ObjCCJMapping）：@ObjCMirror/@ObjCImpl 约束、ObjC 类型兼容性等
-20. **@ForeignName checker**（ForeignName）：注解冲突、override 位置约束
-21. **@IfAvailable / @APILevel / @Hide checker**：参数合法性、level 约束等
-22. **Mock 语义 checker**（Mock）：mock 模式约束、@Frozen 兼容性等
-23. **DeclarationStatus 补充 checker**：`PARAM_NAMED_MISMATCHED`、`OVERRIDE_STATIC_ERROR`、`REDEF_INSTANCE_ERROR`、`INVALID_OPERATOR_PARAMETER_COUNT` 等当前未实现的诊断
+- 以 `CfirDiagnosticsList.kt` 中的每一个诊断定义为最小跟踪单元，建立完整覆盖台账。
+- 台账必须至少包含以下字段：
+  - 诊断组
+  - 诊断名
+  - 当前状态：已覆盖 / 未覆盖 / 部分覆盖 / 语义待确认
+  - 责任层：existing / resolve / checker
+  - 责任子域：如 `CallResolution`、`Constraint`、`TypeCheck`、`Unresolved`、`GenericDeep-Inference`、`GeneralChecker`、`ExpressionChecker`、`InteropChecker` 等
+  - 对应实现入口
+  - 对应测试入口
+  - 官方 C++ 语义依据
+- 首版台账文件固定落在 `openspec/changes/cfir-complete-semantic-checkers/diagnostic-coverage-ledger.md`
+- 变更完成的判定标准不再是“若干 checker 分组已实现”，而是**`CfirDiagnosticsList` 中全部诊断定义均已归位且无遗漏**。
 
-**修改**：
+### 2. 明确 resolve / checker 责任边界
 
-- `CommonDeclarationCheckers`：注册新增的 declaration checker 实例
-- `CommonExpressionCheckers`：注册新增的 expression checker 实例
-- `CommonTypeCheckers`：按需注册新增的 type checker 实例
-- 可能需要在 `DeclarationCheckers` / `ExpressionCheckers` 生成器中扩展新的 checker 分类（如有必要）
+- 对全部诊断定义执行职责切分，形成覆盖率说明与分层实施计划。
+- 明确下列诊断簇主要属于 **resolve 管线职责**，不得退化为 checker 兜底：
+  - `CallResolution`
+  - `Constraint`
+  - `TypeCheck`
+  - `Unresolved`
+  - `GenericDeep` 中依赖候选选择、约束求解、类型变量收敛的深层推断部分
+- 明确下列诊断簇主要属于 **checker 管线职责**，必须在 checker 层补齐：
+  - `General`
+  - `Function`
+  - `Expression`
+  - `InheritanceDeep`
+  - `ClassStruct`
+  - `Property`
+  - `ConstDeclaration`
+  - `AnnotationExtra`
+  - `Inout`
+  - `VArrayExtra`
+  - `EffectsExtra`
+  - `Deprecated`
+  - `CommonSpecific`
+  - `ExtendExtra`
+  - `Spawn`
+  - `Interface`
+  - `JavaInterop`
+  - `JavaMirror`
+  - `CJMapping`
+  - `ObjCInterop`
+  - `ObjCCJMapping`
+  - `ForeignName`
+  - `IfAvailable`
+  - `APILevel`
+  - `Hide`
+  - `Mock`
+  - `Unused`
+  - 以及 `DeclarationStatus` 中仍未闭环的 checker 语义
+
+### 3. 将“覆盖全部诊断定义”写成硬性目标
+
+- 本提案要求覆盖 `CfirDiagnosticsList` 中**所有诊断定义**，而不是仅覆盖“当前最容易补的一批”。
+- `openspec/changes/cfir-complete-semantic-checkers/specs/` 必须对全部诊断组建立正式需求，不允许 proposal / tasks 已经要求，但 specs 中没有对应约束。
+- 不允许再保留“批次外诊断”“暂不处理的子项”“后续再说的分支”而不进入台账。
+- 即使某个诊断暂时不能立刻实现，也必须：
+  - 写入覆盖台账；
+  - 明确属于 resolve 还是 checker；
+  - 明确阻塞点；
+  - 明确后续子任务；
+  - 明确验证方式。
+
+### 4. 扩展任务拆分粒度
+
+- 任务拆分必须从“按 checker 分组”升级为“按诊断簇 + 实现责任 + 验证入口”拆分。
+- 所有子任务必须覆盖到：
+  - 全量诊断盘点；
+  - 全量职责归类；
+  - resolve 剩余诊断补齐；
+  - checker 剩余诊断补齐；
+  - 对应测试补齐；
+  - 覆盖率收敛与对齐验证。
 
 ## 功能 (Capabilities)
 
 ### 新增功能
-- `general-semantics-checker`: 通用语义检查——节点有效性、类型推断、歧义使用、子包冲突、可访问性
-- `function-semantics-checker`: 函数语义检查——返回类型推断、subscript 合法性、static 重载冲突、mut/unsafe 函数引用限制、lambda/trailing-lambda 约束
-- `expression-semantics-checker`: 表达式语义检查——浮点范围、一元运算、subscript、成员访问、赋值合法性、or-pattern/or-condition、optional chaining、capture-before-init
-- `generic-deep-checker`: 泛型深层检查——类型替换一致性、参数匹配、约束宽松性、递归绑定、上界约束
-- `inheritance-deep-checker`: 继承深层检查——成员类型一致性、跨父成员冲突、sealed/ThreadContext/This 约束
-- `class-struct-semantics-checker`: 类/结构体语义检查——static 未初始化、finalizer 限制、sealed 约束
-- `property-semantics-checker`: 属性语义检查——访问器约束、mut/immut 继承一致性
-- `const-declaration-checker`: 常量声明检查——const 修饰、var 限制、const 构造器约束
-- `annotation-extra-checker`: 注解补充检查——@Annotation 参数、自定义注解位置、注解目标
-- `inout-semantics-checker`: inout 语义检查——类型约束、var 限制、堆变量约束
-- `varray-extra-checker`: VArray 语义检查——构造器参数、subscript、CFunc 返回约束
-- `effects-extra-checker`: Effects 补充检查——resumption 类型、try/handle return
-- `deprecated-semantics-checker`: @Deprecated 语义检查——调用检查、严格度约束、override/redef 标记
-- `common-specific-checker`: common/specific 跨平台检查——声明匹配、修饰符一致性、抽象成员约束
-- `extend-extra-checker`: Extend 补充检查——override 限制、成员遮蔽、非法成员
-- `spawn-semantics-checker`: Spawn 语义检查——参数合法性
-- `interface-semantics-checker`: 接口语义检查——未实现 static 成员调用
-- `java-interop-checker`: Java 互操作检查——@Java 类型约束、JType 兼容性、mirror/impl 继承
-- `objc-interop-checker`: ObjC 互操作检查——@ObjCMirror/@ObjCImpl 约束、类型兼容性
-- `foreign-name-checker`: @ForeignName 检查——注解冲突、override 位置
-- `if-available-api-level-hide-checker`: @IfAvailable / @APILevel / @Hide 检查——参数合法性、level 约束
-- `mock-semantics-checker`: Mock 语义检查——mock 模式约束、@Frozen 兼容性
-- `declaration-status-extra-checker`: 声明状态补充检查——参数命名一致性、override/redef static 检查、操作符参数个数
+
+- `diagnostic-coverage-governance`: 建立以 `CfirDiagnosticsList` 为基线的全诊断定义覆盖台账、覆盖率说明与实现责任分层规则，要求所有诊断都必须被归位到 existing / resolve / checker 三类之一。
+- `resolve-diagnostics-completion`: 补齐所有属于 resolve 管线职责的剩余诊断，重点覆盖 `CallResolution`、`Constraint`、`TypeCheck`、`Unresolved`、`GenericDeep` 深层推断部分。
+- `checker-diagnostics-completion`: 补齐所有属于 checker 管线职责的剩余诊断，并在 declaration / expression / type checker 体系内按架构边界完成注册与验证。
 
 ### 修改功能
 
-（无已有 spec 需修改）
+- `general-semantics-checker`
+- `function-semantics-checker`
+- `expression-semantics-checker`
+- `generic-deep-checker`
+- `inheritance-deep-checker`
+- `class-struct-semantics-checker`
+- `property-semantics-checker`
+- `const-declaration-checker`
+- `annotation-extra-checker`
+- `inout-semantics-checker`
+- `varray-extra-checker`
+- `effects-extra-checker`
+- `deprecated-semantics-checker`
+- `common-specific-checker`
+- `extend-extra-checker`
+- `spawn-semantics-checker`
+- `interface-semantics-checker`
+- `java-interop-checker`
+- `objc-interop-checker`
+- `foreign-name-checker`
+- `if-available-api-level-hide-checker`
+- `mock-semantics-checker`
+- `declaration-status-extra-checker`
+
+以上能力的含义从“补某组 checker”调整为：**在全诊断定义覆盖治理约束下，补齐这些分组中属于 checker 的全部剩余诊断**。
 
 ## 影响
 
-- **核心影响模块**：`cfir/checkers/src/` 下的 `checkers/declaration/`、`checkers/expression/`、`checkers/type/` 目录
-- **注册入口**：`CommonDeclarationCheckers.kt`、`CommonExpressionCheckers.kt`、`CommonTypeCheckers.kt`
-- **生成器**：`checkers-component-generator/` 如需新增 checker 分类（如 spawn、interface 等），需同步更新 `CheckersConfigurator.kt` 和 `Generator.kt`
-- **诊断系统**：`CfirDiagnosticsList.kt` 已完成全部定义（无需新增），`CfirErrors.kt`（生成）和 `CfirErrorsDefaultMessages.kt` 需保持同步
-- **外部参考**：实现逻辑需严格对齐 `external/cangjie_compiler/src/Sema/` 下对应的 C++ 语义检查代码
-- **测试**：需为每个新 checker 编写单元测试用例，参考 `cfir/analysis-tests/` 目录下的现有测试结构
+- **诊断定义基线**：`cfir/checkers/checkers-component-generator/src/org/cangnova/cangjie/cfir/checkers/generator/diagnostics/CfirDiagnosticsList.kt`
+- **checker 实现与注册**：
+  - `cfir/checkers/src/.../checkers/declaration/`
+  - `cfir/checkers/src/.../checkers/expression/`
+  - `cfir/checkers/src/.../checkers/type/`
+  - `CommonDeclarationCheckers.kt`
+  - `CommonExpressionCheckers.kt`
+  - `CommonTypeCheckers.kt`
+- **resolve 实现入口**：`cfir` 中承担 `CallResolution`、`Constraint`、`TypeCheck`、`Unresolved`、`GenericDeep` 推断职责的相关模块与管线
+- **测试**：
+  - `cfir/analysis-tests/`
+  - `cfir/analysis-tests/testData/diagnostics2/`
+  - 以及针对 resolve / checker 的定向测试入口
+- **外部对齐依据**：`external/cangjie_compiler/src/Sema/` 下对应的 C++ 语义实现
+
+## 完成标准
+
+- `CfirDiagnosticsList` 中**每一个诊断定义**都有唯一、明确、可追踪的责任归属。
+- 全量诊断覆盖率说明可回答：
+  - 总数是多少；
+  - 已覆盖多少；
+  - resolve 负责多少；
+  - checker 负责多少；
+  - 各自剩余多少；
+  - 每一项缺口对应哪个子任务。
+- 所有属于 resolve 的诊断均在 resolve 管线完成，不使用 checker 兜底。
+- 所有属于 checker 的诊断均在 checker 管线完成，并完成注册与测试。
+- 不存在未入账、未归类、未分配、未验证的诊断子项。
+- 不存在 proposal / design / tasks 已声明，但 `specs/` 未建模的诊断组需求。

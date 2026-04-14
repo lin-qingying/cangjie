@@ -16,27 +16,27 @@ import org.cangnova.cangjie.psi.CjValueArgumentName
  * 避免每个 reference 子类重复直接操作语法树。
  */
 interface CangJieReferenceMutateService {
-    fun handleElementRename(cangJieReference: CangJieReference, newElementName: String): PsiElement?
+    fun handleElementRename(cjReference: CjReference, newElementName: String): PsiElement?
 
-    fun bindToElement(cangJieReference: CangJieReference, element: PsiElement): PsiElement
+    fun bindToElement(cjReference: CjReference, element: PsiElement): PsiElement
 
     fun bindToElement(
-        simpleNameReference: CangJieSimpleNameReference,
+        simpleNameReference: CjSimpleNameReference,
         element: PsiElement,
-        shorteningMode: CangJieSimpleNameReference.ShorteningMode,
+        shorteningMode: CjSimpleNameReference.ShorteningMode,
     ): PsiElement
 
     fun bindToFqName(
-        simpleNameReference: CangJieSimpleNameReference,
+        simpleNameReference: CjSimpleNameReference,
         fqName: FqName,
-        shorteningMode: CangJieSimpleNameReference.ShorteningMode = CangJieSimpleNameReference.ShorteningMode.DELAYED_SHORTENING,
+        shorteningMode: CjSimpleNameReference.ShorteningMode = CjSimpleNameReference.ShorteningMode.DELAYED_SHORTENING,
         targetElement: PsiElement? = null,
     ): PsiElement
 }
 
 internal class CangJieReferenceMutateServiceImpl : CangJieReferenceMutateService {
-    override fun handleElementRename(cangJieReference: CangJieReference, newElementName: String): PsiElement? {
-        return when (val element = cangJieReference.element) {
+    override fun handleElementRename(cjReference: CjReference, newElementName: String): PsiElement? {
+        return when (val element = cjReference.element) {
             is CjSimpleNameExpression -> {
                 element.referencedNameElement.replace(CjPsiFactory(element.project).createNameIdentifier(newElementName))
                 element
@@ -55,21 +55,21 @@ internal class CangJieReferenceMutateServiceImpl : CangJieReferenceMutateService
             }
 
             else -> throw IncorrectOperationException(
-                "${cangJieReference::class.java.simpleName} does not support PSI mutation for ${element::class.java.simpleName}",
+                "${cjReference::class.java.simpleName} does not support PSI mutation for ${element::class.java.simpleName}",
             )
         }
     }
 
-    override fun bindToElement(cangJieReference: CangJieReference, element: PsiElement): PsiElement {
+    override fun bindToElement(cjReference: CjReference, element: PsiElement): PsiElement {
         val targetName = (element as? PsiNamedElement)?.name
-            ?: throw IncorrectOperationException("Cannot bind ${cangJieReference::class.java.simpleName} to unnamed PSI")
-        return handleElementRename(cangJieReference, targetName) ?: cangJieReference.element
+            ?: throw IncorrectOperationException("Cannot bind ${cjReference::class.java.simpleName} to unnamed PSI")
+        return handleElementRename(cjReference, targetName) ?: cjReference.element
     }
 
     override fun bindToElement(
-        simpleNameReference: CangJieSimpleNameReference,
+        simpleNameReference: CjSimpleNameReference,
         element: PsiElement,
-        shorteningMode: CangJieSimpleNameReference.ShorteningMode,
+        shorteningMode: CjSimpleNameReference.ShorteningMode,
     ): PsiElement {
         val targetName = (element as? PsiNamedElement)?.name
             ?: throw IncorrectOperationException("Cannot bind ${simpleNameReference::class.java.simpleName} to unnamed PSI")
@@ -77,9 +77,9 @@ internal class CangJieReferenceMutateServiceImpl : CangJieReferenceMutateService
     }
 
     override fun bindToFqName(
-        simpleNameReference: CangJieSimpleNameReference,
+        simpleNameReference: CjSimpleNameReference,
         fqName: FqName,
-        shorteningMode: CangJieSimpleNameReference.ShorteningMode,
+        shorteningMode: CjSimpleNameReference.ShorteningMode,
         targetElement: PsiElement?,
     ): PsiElement {
         val renderedName = fqName.shortName().asString()

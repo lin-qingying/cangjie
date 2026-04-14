@@ -2,7 +2,7 @@ package org.cangnova.cangjie.analysis.references
 
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.MultiRangeReference
-import org.cangnova.cangjie.idea.references.CangJieSimpleReference
+import org.cangnova.cangjie.idea.references.CjSimpleReference
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjCollectionLiteralExpression
 import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
@@ -12,7 +12,7 @@ import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
  */
 internal class CaCollectionLiteralReference(
     expression: CjCollectionLiteralExpression,
-) : CangJieSimpleReference<CjCollectionLiteralExpression>(expression), MultiRangeReference {
+) : CjSimpleReference<CjCollectionLiteralExpression>(expression), MultiRangeReference {
     override val resolvesByNames: Collection<Name>
         get() = emptyList()
 

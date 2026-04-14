@@ -58,7 +58,7 @@ internal object CangJieReferenceSearchSupport {
         reference: PsiReference,
         searchNames: Set<String>,
     ): Boolean {
-        val resolvesByNames = (reference as? CangJieReference)
+        val resolvesByNames = (reference as? CjReference)
             ?.resolvesByNames
             ?.map { name -> name.asString() }
             ?.filter(String::isNotBlank)
