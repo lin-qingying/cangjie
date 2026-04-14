@@ -6,21 +6,17 @@
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="refactor: enhance Analysis API components and improve test configurators">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/GeneratedAnalysisApiTestRegistry.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/GeneratedAnalysisApiTestRegistry.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testFixtures/org/cangnova/cangjie/cfir/analysis/tests/golden/DiagnosticNameMapper.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testFixtures/org/cangnova/cangjie/cfir/analysis/tests/golden/DiagnosticNameMapper.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangnova/cangjie/cfir/checkers/generator/diagnostics/CfirDiagnosticsList.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/checkers-component-generator/src/org/cangnova/cangjie/cfir/checkers/generator/diagnostics/CfirDiagnosticsList.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirErrors.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/gen/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirErrors.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/checkers/gen/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirNonSuppressibleErrorNames.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/gen/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirNonSuppressibleErrorNames.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonDeclarationCheckers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonDeclarationCheckers.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonExpressionCheckers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonExpressionCheckers.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirImportsChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirImportsChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirOperatorDeclarationChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirOperatorDeclarationChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirGeneralSemanticsChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirGeneralSemanticsChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirInoutSemanticsChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirInoutSemanticsChecker.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirErrorsDefaultMessages.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirErrorsDefaultMessages.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cjfir-compiler-stages.md" beforeDir="false" afterPath="$PROJECT_DIR$/cjfir-compiler-stages.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/external/kotlin" beforeDir="false" afterPath="$PROJECT_DIR$/external/kotlin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/cfir-complete-semantic-checkers/tasks.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/cfir-complete-semantic-checkers/tasks.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/lexer/CjTokens.java" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/lexer/CjTokens.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjValueArgument.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjValueArgument.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,7 +48,74 @@
         </task>
         <projects_view>
           <tree_state>
-            <expand />
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+                <item name="cfir" type="2d1252cf:ModuleNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+                <item name="cfir" type="2d1252cf:ModuleNode" />
+                <item name="checkers" type="2d1252cf:ModuleNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+                <item name="cfir" type="2d1252cf:ModuleNode" />
+                <item name="checkers" type="2d1252cf:ModuleNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+                <item name="cfir" type="2d1252cf:ModuleNode" />
+                <item name="checkers" type="2d1252cf:ModuleNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+                <item name="verification" type="c8890929:TasksNode$1" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+                <item name="cfir" type="2d1252cf:ModuleNode" />
+                <item name="checkers" type="2d1252cf:ModuleNode" />
+                <item name="checkers-component-generator" type="2d1252cf:ModuleNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+                <item name="cfir" type="2d1252cf:ModuleNode" />
+                <item name="checkers" type="2d1252cf:ModuleNode" />
+                <item name="checkers-component-generator" type="2d1252cf:ModuleNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+                <item name="cfir" type="2d1252cf:ModuleNode" />
+                <item name="checkers" type="2d1252cf:ModuleNode" />
+                <item name="checkers-component-generator" type="2d1252cf:ModuleNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+                <item name="verification" type="c8890929:TasksNode$1" />
+              </path>
+            </expand>
             <select />
           </tree_state>
         </projects_view>
@@ -136,6 +199,7 @@
     &quot;Gradle.CfirAnalysisResolveTestGenerated.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.CfirConstraintCompletionTest.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.CfirConstraintResultBuilderTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.CfirIdeDependentSourceModuleCollectDiagnosticsTestGenerated.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.CfirJoinMeetTest.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.CfirMapArgumentsTest.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.CfirMinimalResolvePipelineTest.executor&quot;: &quot;Run&quot;,
@@ -286,8 +350,8 @@
       <command value="gradle psi build --info --stacktrace" />
     </option>
   </component>
-  <component name="RunManager" selected="Gradle.CjcGoldenDiagnostics2Test">
-    <configuration name="CfirAnalysisDiagnostics2TestGenerated" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+  <component name="RunManager" selected="Gradle.CfirIdeDependentSourceModuleCollectDiagnosticsTestGenerated">
+    <configuration name="CfirIdeDependentSourceModuleCollectDiagnosticsTestGenerated" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -298,9 +362,9 @@
         </option>
         <option name="taskNames">
           <list>
-            <option value=":cfir:analysis-tests:test" />
+            <option value=":analysis:analysis-api-cfir:test" />
             <option value="--tests" />
-            <option value="&quot;org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnostics2TestGenerated&quot;" />
+            <option value="&quot;org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.CfirIdeDependentSourceModuleCollectDiagnosticsTestGenerated&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -366,7 +430,7 @@
       <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
     </configuration>
-    <configuration name="cangjie [publishToMavenLocal]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="cangjie [generateCfirDiagnostics]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -377,7 +441,7 @@
         </option>
         <option name="taskNames">
           <list>
-            <option value="publishToMavenLocal" />
+            <option value="generateCfirDiagnostics" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -424,19 +488,19 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Gradle.CfirIdeDependentSourceModuleCollectDiagnosticsTestGenerated" />
+      <item itemvalue="Gradle.cangjie [generateCfirDiagnostics]" />
       <item itemvalue="Gradle.CjcGoldenDiagnostics2Test" />
       <item itemvalue="Gradle.cangjie [:prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-cfir-for-ide:publishToMavenLocal]" />
-      <item itemvalue="Gradle.cangjie [publishToMavenLocal]" />
       <item itemvalue="Gradle.cangjie [publish]" />
-      <item itemvalue="Gradle.CfirAnalysisDiagnostics2TestGenerated" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.CfirIdeDependentSourceModuleCollectDiagnosticsTestGenerated" />
+        <item itemvalue="Gradle.cangjie [generateCfirDiagnostics]" />
         <item itemvalue="Gradle.CjcGoldenDiagnostics2Test" />
         <item itemvalue="Gradle.cangjie [publish]" />
         <item itemvalue="Gradle.cangjie [:prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-cfir-for-ide:publishToMavenLocal]" />
-        <item itemvalue="Gradle.cangjie [publishToMavenLocal]" />
-        <item itemvalue="Gradle.CfirAnalysisDiagnostics2TestGenerated" />
       </list>
     </recent_temporary>
   </component>
@@ -506,6 +570,8 @@
       <workItem from="1775839210738" duration="13784000" />
       <workItem from="1775892405187" duration="14120000" />
       <workItem from="1776009136340" duration="1813000" />
+      <workItem from="1776055314179" duration="18156000" />
+      <workItem from="1776143016177" duration="10589000" />
     </task>
     <task id="LOCAL-00001" summary="add: implement generic functions and type declarations">
       <option name="closed" value="true" />
@@ -767,7 +833,7 @@
         <line-breakpoint enabled="true" type="kotlin-function">
           <url>file://$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/collectors/AbstractDiagnosticCollectorVisitor.kt</url>
           <line>229</line>
-          <properties class="org.cangnova.cangjie.cfir.analysis.collectors.AbstractDiagnosticCollectorVisitor">
+          <properties class="org.cangnova.cangjie.cfir.analysis.collectors.AbstractDiagnosticCollectorVisitor" method="withFile">
             <option name="EMULATED" value="true" />
             <option name="WATCH_EXIT" value="false" />
           </properties>
@@ -776,7 +842,7 @@
         <line-breakpoint enabled="true" type="kotlin-function">
           <url>file://$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/references/impl/CfirResolvedAppliedCallableReference.kt</url>
           <line>11</line>
-          <properties class="org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference">
+          <properties class="org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference" method="&lt;init&gt;">
             <option name="EMULATED" value="true" />
             <option name="WATCH_EXIT" value="false" />
           </properties>

@@ -269,6 +269,8 @@ int COALESCING_Id = 110;
     int RESUME_KEYWORD_Id = 216;
     int THROWING_KEYWORD_Id = 217;
 
+    int INOUT_KEYWORD_Id = 218;
+
 
     IElementType DOC_COMMENT = CDocTokens.CDOC;
     IElementType WHITE_SPACE = TokenType.WHITE_SPACE;
@@ -522,6 +524,7 @@ int COALESCING_Id = 110;
     CjKeywordToken PERFORM_KEYWORD = CjKeywordToken.keyword("perform", PERFORM_KEYWORD_Id);
     CjKeywordToken RESUME_KEYWORD = CjKeywordToken.keyword("resume", RESUME_KEYWORD_Id);
     CjKeywordToken THROWING_KEYWORD = CjKeywordToken.keyword("throwing", THROWING_KEYWORD_Id);
+    CjKeywordToken INOUT_KEYWORD = CjKeywordToken.keyword("inout", INOUT_KEYWORD_Id);
     CjModifierKeywordToken REDEF_KEYWORD = CjModifierKeywordToken.keywordModifier("redef", REDEF_KEYWORD_Id);
     CjKeywordToken QUOTE_KEYWORD = CjKeywordToken.keyword("quote", QUOTE_KEYWORD_Id);
     //    特殊修饰符
