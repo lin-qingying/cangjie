@@ -4,7 +4,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 
 /**
  * 平台 project-structure 的一致性快照。

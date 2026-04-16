@@ -8,7 +8,10 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeStructType
+import org.cangnova.cangjie.cfir.session.symbolProvider
 
 import org.cangnova.cangjie.name.Name
 
@@ -27,6 +30,7 @@ object CfirGenericDeepChecker : CfirTypeParameterChecker() {
     override fun check(declaration: CfirTypeParameter) {
         checkDirectRecursiveBound(declaration)
         checkIndirectRecursiveBound(declaration)
+        checkUpperBoundMustBeClassOrInterface(declaration)
     }
 
     /**
@@ -91,5 +95,35 @@ object CfirGenericDeepChecker : CfirTypeParameterChecker() {
             if (containsTypeParameterInArgs(argType, name)) return true
         }
         return false
+    }
+
+    /**
+     * 泛型参数的上界必须是 class 或 interface。
+     *
+     * 对齐 C++ DiagKind::sema_upper_bound_must_be_class_or_interface。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkUpperBoundMustBeClassOrInterface(typeParam: CfirTypeParameter) {
+        for (boundRef in typeParam.symbol.resolvedBounds) {
+            val boundType = boundRef.coneType
+            if (boundType is ConeErrorType) continue
+            if (boundType is ConeTypeParameterType) continue // 类型参数作为上界是合法的
+
+            // class-like 和 interface 类型是合法上界
+            if (boundType is ConeClassLikeType) {
+                val classSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(boundType.classId)
+                if (classSymbol != null) continue // 可以解析到 class/interface/struct/enum
+            }
+
+            // struct 和 enum 也是合法上界
+            if (boundType is ConeStructType || boundType is ConeEnumType) continue
+
+            reporter.reportOn(
+                source = boundRef.source ?: typeParam.source,
+                factory = CfirErrors.UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE,
+                a = boundType,
+                b = typeParam.name,
+            )
+        }
     }
 }

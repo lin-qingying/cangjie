@@ -1,12 +1,12 @@
 package org.cangnova.cangjie.analysis.decompiled.light.declarations
 
 import com.intellij.openapi.project.Project
-import org.cangnova.cangjie.analysis.api.CaBuiltinsModule
-import org.cangnova.cangjie.analysis.api.CaLibraryModule
-import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjDecompiledFile
 

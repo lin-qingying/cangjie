@@ -1,14 +1,19 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassLikeSymbolBase
+import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirType
+import org.cangnova.cangjie.analysis.api.cfir.types.asCaType
 import org.cangnova.cangjie.analysis.api.components.CaExpressionTypeProvider
 import org.cangnova.cangjie.analysis.api.components.CaTypeInformationProvider
 import org.cangnova.cangjie.analysis.api.components.CaTypeProvider
 import org.cangnova.cangjie.analysis.api.components.CaTypeRelationChecker
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.types.CaClassLikeType
 import org.cangnova.cangjie.analysis.api.types.CaType
-import org.cangnova.cangjie.analysis.api.types.pointers.CaTypePointer
+import org.cangnova.cangjie.analysis.api.types.CaTypePointer
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.psi.CjCallableDeclaration
 import org.cangnova.cangjie.psi.CjExpression
 
@@ -44,7 +49,7 @@ internal class CaCfirTypeInformationProvider(
 ) : CaBaseSessionComponent<CaCfirSession>(), CaTypeInformationProvider, CaCfirSessionComponent {
     override fun CaType.createPointer(): CaTypePointer<CaType> = withValidityAssertion {
         when (this@createPointer) {
-            is CaCfirTypeImpl -> CaCfirTypePointer(coneType)
+            is CaCfirType -> createPointer() as CaTypePointer<CaType>
             else -> error("Only CFIR public types can create type pointers: ${this@createPointer::class.simpleName}")
         }
     }
@@ -52,15 +57,24 @@ internal class CaCfirTypeInformationProvider(
     override val CaType.isErrorType: Boolean
         get() = withValidityAssertion {
             when (this@isErrorType) {
-                is CaCfirTypeImpl -> coneType.isError
+                is CaCfirType -> coneType.isError
                 else -> error("Only CFIR public types can expose error flag: ${this@isErrorType::class.simpleName}")
+            }
+        }
+
+    override val CaType.fullyExpandedType: CaType
+        get() = withValidityAssertion {
+            when (this@fullyExpandedType) {
+                is CaCfirType -> coneType.fullyExpandedType(analysisSession.cfirSession).asCaType(analysisSession)
+                else -> error("Only CFIR public types can expose fullyExpandedType: ${this@fullyExpandedType::class.simpleName}")
             }
         }
 
     override val CaType.classLikeSymbol: CaClassLikeSymbol?
         get() = withValidityAssertion {
             when (this@classLikeSymbol) {
-                is CaCfirTypeImpl -> analysisSession.queryTypeClassLikeSymbol(coneType)?.let(analysisSession::createClassLikeSymbol)
+                is CaClassLikeType -> symbol
+                is CaCfirType -> analysisSession.queryTypeClassLikeSymbol(coneType)?.let(analysisSession::createClassLikeSymbol)
                 else -> error("Only CFIR public types can resolve class-like symbols: ${this@classLikeSymbol::class.simpleName}")
             }
         }

@@ -1,10 +1,11 @@
 package org.cangnova.cangjie.analysis.api.cfir.resolve
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -54,7 +55,7 @@ internal class CaCfirResolutionFacadeImpl internal constructor(
     override val allModules: Set<CaModule>,
     override val cfirFiles: List<CfirFile>,
     diagnosticsProvider: () -> DiagnosticBuckets,
-    private val scopeProvider: CaCfirScopeSnapshotProvider,
+    private val scopeProvider: CaCfirScopeProvider,
     private val visibleSymbolProvider: CaCfirVisibleSymbolProvider,
     private val sourceNavigationProvider: CaCfirSourceNavigationProvider,
 ) : CaCfirResolutionFacade {
@@ -86,19 +87,19 @@ internal class CaCfirResolutionFacadeImpl internal constructor(
     override fun getFileSymbol(file: CjFile): CfirFileSymbol? =
         getCfirFile(file)?.symbol
 
-    override fun getFileScope(file: CjFile): CaCfirScopeSnapshot =
-        scopeProvider.getFileScope(file)
+    override fun getFileDeclaredScope(file: CjFile): CfirContainingNamesAwareScope =
+        scopeProvider.getFileDeclaredScope(file)
 
-    override fun getPackageScope(packageFqName: FqName): CaCfirScopeSnapshot? =
+    override fun getPackageScope(packageFqName: FqName): CfirContainingNamesAwareScope? =
         scopeProvider.getPackageScope(packageFqName)
 
-    override fun getDeclaredMemberScope(classId: ClassId): CaCfirScopeSnapshot? =
+    override fun getDeclaredMemberScope(classId: ClassId): CfirContainingNamesAwareScope? =
         scopeProvider.getDeclaredMemberScope(classId)
 
-    override fun getMemberScope(classId: ClassId): CaCfirScopeSnapshot? =
+    override fun getMemberScope(classId: ClassId): CfirTypeScope? =
         scopeProvider.getMemberScope(classId)
 
-    override fun getTypeScope(type: ConeCangJieType): CaCfirScopeSnapshot? =
+    override fun getTypeScope(type: ConeCangJieType): CfirTypeScope? =
         scopeProvider.getTypeScope(type)
 
     override fun hasPackage(packageFqName: FqName): Boolean =
@@ -177,7 +178,7 @@ internal class CaCfirResolutionFacadeImpl internal constructor(
         }
 
         val ownerClassId = symbol.overrideOwnerClassId(useSiteFirSession) ?: return emptyList()
-        val memberTypeScope = scopeProvider.getMemberTypeScope(ownerClassId) ?: return emptyList()
+        val memberTypeScope = scopeProvider.getMemberScope(ownerClassId) ?: return emptyList()
 
         val directOverrides: List<CfirCallableSymbol<*>> = when (symbol) {
             is CfirFunctionSymbol<*> -> memberTypeScope.collectStableDirectOverriddenFunctions(symbol)
@@ -262,7 +263,7 @@ internal class CaCfirResolutionFacadeImpl internal constructor(
         val directSuperScopes = ownerExtend.superTypeRefs.mapNotNull { superTypeRef ->
             val coneType = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: return@mapNotNull null
             val classId = coneType.classIdOrPrimitiveClassId ?: return@mapNotNull null
-            scopeProvider.getMemberTypeScope(classId)
+            scopeProvider.getMemberScope(classId)
         }
         if (directSuperScopes.isEmpty()) {
             return emptyList()

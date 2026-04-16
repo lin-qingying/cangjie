@@ -2,12 +2,38 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.CaBuiltinsModule
-import org.cangnova.cangjie.analysis.api.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirTopLevelPublicSymbolQueryValue
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirAnonymousFunctionSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCallableSymbolBase
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassLikeSymbolBase
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirConstructorSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirEnumConstructorSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFieldSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFileSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFinalizerSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirMacroSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirMainFunctionSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirNamedFunctionSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPackageSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPatternBindingSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPatternVariableSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPropertyGetterSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPropertySetterSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPropertySymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirScriptSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirTypeAliasSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirTypeParameterSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirValueParameterSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.findContainingDeclarationSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.getPublicSymbolByPsi
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
@@ -26,8 +52,10 @@ import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaValueParameterOwnerSymbol
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -109,6 +137,7 @@ internal data class CaCfirValueParameterSymbolCacheKey(
 internal data class CaCfirTypeParameterSymbolCacheKey(
     val ownerKey: CaCfirPublicSymbolCacheKey,
     val parameterName: Name,
+    val parameterIndex: Int,
 ) : CaCfirPublicSymbolCacheKey
 
 internal data class CaCfirPsiSymbolCacheKey(
@@ -126,7 +155,7 @@ internal enum class CaCfirCallableSymbolKind {
     FIELD,
     PATTERN_VARIABLE,
     PATTERN_BINDING,
-    ENUM_ENTRY,
+    ENUM_CONSTRUCTOR,
 }
 
 internal enum class CaCfirPropertyAccessorKind {
@@ -231,7 +260,15 @@ internal fun CaCfirSession.createClassLikeSymbol(symbol: CfirClassLikeSymbol<*>)
 internal fun CaCfirSession.createExtendSymbol(symbol: CfirExtendSymbol): CaExtendSymbol {
     val identity = resolveExtendIdentity(symbol)
     return getOrCreatePublicSymbol(CaCfirExtendSymbolCacheKey(identity.extendId)) {
-        CaCfirExtendSymbolImpl(symbol, identity.extendPsi, identity.extendId, identity.packageFqName, this, useSiteModule, token)
+        CaCfirExtendSymbolImpl(
+            symbol,
+            identity.extendPsi,
+            identity.extendId,
+            identity.packageFqName,
+            this,
+            useSiteModule,
+            token
+        )
     }
 }
 
@@ -254,8 +291,15 @@ internal fun CaCfirSession.createTypeParameterSymbol(symbol: CfirTypeParameterSy
             CaCfirTypeParameterSymbolImpl(symbol, this, useSiteModule, token)
         }
     }
-    return getOrCreatePublicSymbol(CaCfirTypeParameterSymbolCacheKey(ownerKey, symbol.name)) {
-        CaCfirTypeParameterSymbolImpl(symbol, this, useSiteModule, token)
+    val parameterIndex = symbol.stableTypeParameterIndex()
+        ?: error("Type parameter `${symbol.name}` is missing a stable owner index")
+    return getOrCreatePublicSymbol(CaCfirTypeParameterSymbolCacheKey(ownerKey, symbol.name, parameterIndex)) {
+        CaCfirTypeParameterSymbolImpl(
+            symbol,
+            this,
+            useSiteModule,
+            token,
+        )
     }
 }
 
@@ -286,7 +330,11 @@ internal fun CaCfirSession.createValueParameterSymbol(
                 stableParameterIndex = parameterIndex,
                 parameterPsi = (ownerSymbol as? CaDeclarationSymbol)
                     ?.psi
-                    ?.let { ownerPsi -> (ownerPsi as? org.cangnova.cangjie.psi.CjCallableDeclaration)?.valueParameters?.getOrNull(parameterIndex) },
+                    ?.let { ownerPsi ->
+                        (ownerPsi as? org.cangnova.cangjie.psi.CjCallableDeclaration)?.valueParameters?.getOrNull(
+                            parameterIndex
+                        )
+                    },
             )
         }
     } else {
@@ -299,7 +347,7 @@ internal fun CaCfirSession.createValueParameterSymbol(symbol: CfirValueParameter
     val parameterPsi = psi as? org.cangnova.cangjie.psi.CjParameter
     val ownerSymbol = parameterPsi
         ?.let(::findContainingDeclarationSymbol)
-        as? CaValueParameterOwnerSymbol
+            as? CaValueParameterOwnerSymbol
     val parameterIndex = parameterPsi
         ?.let { currentParameter ->
             (currentParameter.parent as? org.cangnova.cangjie.psi.CjParameterList)
@@ -341,8 +389,19 @@ internal fun CaCfirSession.createPropertyAccessorSymbol(
         ?: error("Property accessor owner must expose a stable public key")
     return getOrCreatePublicSymbol(CaCfirPropertyAccessorSymbolCacheKey(ownerKey, kind)) {
         when (kind) {
-            CaCfirPropertyAccessorKind.GETTER -> CaCfirPropertyGetterSymbolImpl(backingSymbol, this, useSiteModule, token)
-            CaCfirPropertyAccessorKind.SETTER -> CaCfirPropertySetterSymbolImpl(backingSymbol, this, useSiteModule, token)
+            CaCfirPropertyAccessorKind.GETTER -> CaCfirPropertyGetterSymbolImpl(
+                backingSymbol,
+                this,
+                useSiteModule,
+                token
+            )
+
+            CaCfirPropertyAccessorKind.SETTER -> CaCfirPropertySetterSymbolImpl(
+                backingSymbol,
+                this,
+                useSiteModule,
+                token
+            )
         }
     }
 }
@@ -352,6 +411,7 @@ internal fun CaCfirSession.createScriptSymbol(script: CjScript): CaCfirScriptSym
         CaCfirScriptSymbolImpl(
             scriptPsi = script,
             scriptFileSymbol = script.containingCjFile?.let(::createFileSymbol),
+            analysisSession = this,
             containingModule = useSiteModule,
             token = token,
         )
@@ -379,16 +439,42 @@ private fun CaCfirSession.createUncachedCallableSymbol(symbol: CfirCallableSymbo
         symbol is CfirPatternVariableSymbol -> CaCfirPatternVariableSymbolImpl(symbol, this, useSiteModule, token)
         symbol is CfirPatternBindingSymbol -> CaCfirPatternBindingSymbolImpl(symbol, this, useSiteModule, token)
         symbol is CfirValueParameterSymbol -> CaCfirValueParameterSymbolImpl(symbol, this, useSiteModule, token)
-        symbol is CfirEnumConstructorSymbol -> CaCfirEnumEntrySymbolImpl(symbol, this, useSiteModule, token)
+        symbol is CfirEnumConstructorSymbol -> CaCfirEnumConstructorSymbolImpl(symbol, this, useSiteModule, token)
         else -> error("Unsupported callable public symbol mapping for `${symbol::class.simpleName}`")
     }
 }
 
-private fun CfirSymbol<*>.publicTypeParameterOwnerKey(session: CaCfirSession): CaCfirPublicSymbolCacheKey? = when (this) {
-    is CfirClassLikeSymbol<*> -> CaCfirClassLikeSymbolCacheKey(classId)
-    is CfirExtendSymbol -> CaCfirExtendSymbolCacheKey(session.resolveExtendIdentity(this).extendId)
-    is CfirCallableSymbol<*> -> publicSymbolCacheKeyOrNull(session)
-    else -> null
+private fun CfirSymbol<*>.publicTypeParameterOwnerKey(session: CaCfirSession): CaCfirPublicSymbolCacheKey? =
+    when (this) {
+        is CfirClassLikeSymbol<*> -> CaCfirClassLikeSymbolCacheKey(classId)
+        is CfirExtendSymbol -> CaCfirExtendSymbolCacheKey(session.resolveExtendIdentity(this).extendId)
+        is CfirCallableSymbol<*> -> publicSymbolCacheKeyOrNull(session)
+        else -> null
+    }
+
+/**
+ * 类型参数的稳定身份遵循 Kotlin FIR 的 owner + index + name 方案。
+ *
+ * 名字仅作为恢复后的额外一致性校验，真正的顺序身份由 owner 中的声明序号承担。
+ */
+private fun CfirTypeParameterSymbol.stableTypeParameterIndex(): Int? {
+    val ownerDeclaration = containingDeclarationSymbol.cfir
+    val parameterIndex = when (ownerDeclaration) {
+        is CfirClassLikeDeclaration -> ownerDeclaration.typeParameters.indexOfFirst { parameter ->
+            parameter.symbol == this
+        }
+
+        is CfirExtend -> ownerDeclaration.typeParameters.indexOfFirst { parameter ->
+            parameter.symbol == this
+        }
+
+        is CfirCallableDeclaration -> ownerDeclaration.typeParameters.indexOfFirst { parameter ->
+            parameter is CfirTypeParameter && parameter.symbol == this
+        }
+
+        else -> -1
+    }
+    return parameterIndex.takeIf { it >= 0 }
 }
 
 private fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSession): CaCfirPublicSymbolCacheKey? {
@@ -396,7 +482,11 @@ private fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSess
     if ((cfir as? CfirCallableDeclaration)?.isLocal == true) {
         return psi?.let { localPsi ->
             when (this) {
-                is CfirAnonymousFunctionSymbol -> CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.ANONYMOUS_FUNCTION)
+                is CfirAnonymousFunctionSymbol -> CaCfirPsiSymbolCacheKey(
+                    localPsi,
+                    CaCfirPsiSymbolKind.ANONYMOUS_FUNCTION
+                )
+
                 is CfirPatternVariableSymbol -> CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.PATTERN_VARIABLE)
                 is CfirPatternBindingSymbol -> CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.PATTERN_BINDING)
                 else -> CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.LOCAL_VARIABLE)
@@ -419,7 +509,13 @@ private fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSess
     }
 
     return when (this) {
-        is CfirAnonymousFunctionSymbol -> psi?.let { CaCfirPsiSymbolCacheKey(it, CaCfirPsiSymbolKind.ANONYMOUS_FUNCTION) }
+        is CfirAnonymousFunctionSymbol -> psi?.let {
+            CaCfirPsiSymbolCacheKey(
+                it,
+                CaCfirPsiSymbolKind.ANONYMOUS_FUNCTION
+            )
+        }
+
         is CfirNamedFunctionSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.NAMED_FUNCTION)
         is CfirMainFunctionSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.MAIN_FUNCTION)
         is CfirMacroDeclarationSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.MACRO)
@@ -427,9 +523,21 @@ private fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSess
         is CfirConstructorSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.CONSTRUCTOR)
         is CfirPropertySymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.PROPERTY)
         is CfirFieldVariableSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.FIELD)
-        is CfirPatternVariableSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.PATTERN_VARIABLE)
-        is CfirPatternBindingSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.PATTERN_BINDING)
-        is CfirEnumConstructorSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.ENUM_ENTRY)
+        is CfirPatternVariableSymbol -> CaCfirCallableSymbolCacheKey(
+            callableId,
+            CaCfirCallableSymbolKind.PATTERN_VARIABLE
+        )
+
+        is CfirPatternBindingSymbol -> CaCfirCallableSymbolCacheKey(
+            callableId,
+            CaCfirCallableSymbolKind.PATTERN_BINDING
+        )
+
+        is CfirEnumConstructorSymbol -> CaCfirCallableSymbolCacheKey(
+            callableId,
+            CaCfirCallableSymbolKind.ENUM_CONSTRUCTOR
+        )
+
         is CfirValueParameterSymbol -> null
         else -> null
     }
@@ -509,7 +617,7 @@ private fun CfirCallableSymbol<*>.matchesKind(kind: CaCfirCallableSymbolKind): B
     CaCfirCallableSymbolKind.CONSTRUCTOR -> this is CfirConstructorSymbol
     CaCfirCallableSymbolKind.PROPERTY -> this is CfirPropertySymbol
     CaCfirCallableSymbolKind.FIELD -> this is CfirFieldVariableSymbol
-    CaCfirCallableSymbolKind.ENUM_ENTRY -> this is CfirEnumConstructorSymbol
+    CaCfirCallableSymbolKind.ENUM_CONSTRUCTOR -> this is CfirEnumConstructorSymbol
 }
 
 internal fun CaCfirSession.restoreExtendPublicSymbol(extendId: String): CaExtendSymbol? {
@@ -536,10 +644,12 @@ private data class CaCfirResolvedExtendIdentity(
  * 3. cache key、pointer restore、public symbol 构造全部共用这一套逻辑。
  */
 private fun CaCfirSession.resolveExtendIdentity(symbol: CfirExtendSymbol): CaCfirResolvedExtendIdentity {
-    val packageFqName = cfirSession.symbolProvider.getContainingFile(symbol)?.packageDirective?.packageFqName ?: FqName.ROOT
+    val packageFqName =
+        cfirSession.symbolProvider.getContainingFile(symbol)?.packageDirective?.packageFqName ?: FqName.ROOT
     val sourceExtendPsi = lookupSourcePsi(symbol) as? CjExtend
     val provisionalExtendId = buildStableExtendId(packageFqName, symbol.cfir, sourceExtendPsi)
-    val resolvedExtendPsi = sourceExtendPsi ?: findDecompiledExtendPsi(project, packageFqName, provisionalExtendId, useSiteModule)
+    val resolvedExtendPsi =
+        sourceExtendPsi ?: findDecompiledExtendPsi(project, packageFqName, provisionalExtendId, useSiteModule)
     val stableExtendId = buildStableExtendId(packageFqName, symbol.cfir, resolvedExtendPsi)
     return CaCfirResolvedExtendIdentity(
         extendId = stableExtendId,
@@ -575,19 +685,21 @@ private fun findDecompiledExtendPsi(
     project: Project,
     packageFqName: FqName,
     extendId: String,
-    preferredModule: org.cangnova.cangjie.analysis.api.CaModule?,
+    preferredModule: CaModule?,
 ): CjExtend? {
     val psiProvider = project.getService(CaDecompiledPsiProvider::class.java) ?: return null
     val projectStructure = CaProjectStructureProvider.getInstance(project)
 
     fun findInLibraryModule(module: CaLibraryModule): CjExtend? {
         val file = psiProvider.findDecompiledFile(module, packageFqName) ?: return null
-        return file.declarations.filterIsInstance<CjExtend>().firstOrNull { candidate -> candidate.getExtendId() == extendId }
+        return file.declarations.filterIsInstance<CjExtend>()
+            .firstOrNull { candidate -> candidate.getExtendId() == extendId }
     }
 
     fun findInBuiltinsModule(module: CaBuiltinsModule): CjExtend? {
         val file = psiProvider.findDecompiledFile(module, packageFqName) ?: return null
-        return file.declarations.filterIsInstance<CjExtend>().firstOrNull { candidate -> candidate.getExtendId() == extendId }
+        return file.declarations.filterIsInstance<CjExtend>()
+            .firstOrNull { candidate -> candidate.getExtendId() == extendId }
     }
 
     when (preferredModule) {
@@ -619,8 +731,9 @@ private fun CaCallableSymbol.matchesStableCallable(
     if (this.callableId != callableId) return false
     return when (kind) {
         CaCfirCallableSymbolKind.NAMED_FUNCTION -> this is org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol &&
-            this !is org.cangnova.cangjie.analysis.api.symbols.CaMainFunctionSymbol &&
-            this !is org.cangnova.cangjie.analysis.api.symbols.CaMacroSymbol
+                this !is org.cangnova.cangjie.analysis.api.symbols.CaMainFunctionSymbol &&
+                this !is org.cangnova.cangjie.analysis.api.symbols.CaMacroSymbol
+
         CaCfirCallableSymbolKind.MAIN_FUNCTION -> this is org.cangnova.cangjie.analysis.api.symbols.CaMainFunctionSymbol
         CaCfirCallableSymbolKind.MACRO -> this is org.cangnova.cangjie.analysis.api.symbols.CaMacroSymbol
         CaCfirCallableSymbolKind.FINALIZER -> this is org.cangnova.cangjie.analysis.api.symbols.CaFinalizerSymbol
@@ -629,7 +742,7 @@ private fun CaCallableSymbol.matchesStableCallable(
         CaCfirCallableSymbolKind.FIELD -> this is org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
         CaCfirCallableSymbolKind.PATTERN_VARIABLE -> this is org.cangnova.cangjie.analysis.api.symbols.CaPatternVariableSymbol
         CaCfirCallableSymbolKind.PATTERN_BINDING -> this is org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
-        CaCfirCallableSymbolKind.ENUM_ENTRY -> this is org.cangnova.cangjie.analysis.api.symbols.CaEnumEntrySymbol
+        CaCfirCallableSymbolKind.ENUM_CONSTRUCTOR -> this is org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
     }
 }
 
@@ -638,23 +751,29 @@ internal fun CaSymbol.publicSymbolCacheKeyOrNull(): CaCfirPublicSymbolCacheKey? 
     is CaCfirPackageSymbolImpl -> CaCfirPackageSymbolCacheKey(fqName)
     is CaCfirClassLikeSymbolBase<*> -> classId?.let(::CaCfirClassLikeSymbolCacheKey)
     is CaCfirExtendSymbolImpl -> CaCfirExtendSymbolCacheKey(extendId)
-    is CaCfirPropertyAccessorSymbolBase -> {
+    is CaPropertyGetterSymbol,
+    is CaPropertySetterSymbol,
+        -> {
         val ownerKey = owningProperty.publicSymbolCacheKeyOrNull() ?: return null
         CaCfirPropertyAccessorSymbolCacheKey(
             ownerKey = ownerKey,
             kind = if (isGetter) CaCfirPropertyAccessorKind.GETTER else CaCfirPropertyAccessorKind.SETTER,
         )
     }
+
     is CaCfirValueParameterSymbolImpl -> {
         val ownerKey = (containingDeclaration as? CaSymbol)?.publicSymbolCacheKeyOrNull() ?: return null
         val parameterIndex = stableParameterIndex ?: return null
         CaCfirValueParameterSymbolCacheKey(ownerKey, parameterIndex, name)
     }
+
     is CaCfirTypeParameterSymbolImpl -> {
         val owner = containingDeclaration ?: return null
         val ownerKey = owner.publicSymbolCacheKeyOrNull() ?: return null
-        CaCfirTypeParameterSymbolCacheKey(ownerKey, name)
+        val parameterIndex = stableParameterIndex ?: return null
+        CaCfirTypeParameterSymbolCacheKey(ownerKey, name, parameterIndex)
     }
+
     is CaCfirCallableSymbolBase<*> -> backingSymbol.publicSymbolCacheKeyOrNull(analysisSession)
     else -> null
 }

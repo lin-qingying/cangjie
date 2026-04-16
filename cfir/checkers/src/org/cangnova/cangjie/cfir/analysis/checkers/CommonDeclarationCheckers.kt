@@ -45,6 +45,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCommonPackage
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCommonSpecificChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirConstDeclarationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirConstFunctionVarChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirDefaultParameterChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirDeprecatedDeclarationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendExtraChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionOverloadChecker
@@ -102,6 +103,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
         get() = setOf(
             CfirOperatorDeclarationChecker,
             CfirFunctionOverloadChecker,
+            CfirDefaultParameterChecker,
         )
 
     override val fileCheckers: Set<CfirFileChecker>

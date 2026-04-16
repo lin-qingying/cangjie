@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.psi
 
 /**
  * @Deprecated 语义检查器
@@ -30,9 +31,13 @@ object CfirDeprecatedCallChecker : CfirFunctionCallChecker() {
         val source = expression.calleeReference.source ?: expression.source ?: return
         val declName = extractDeclarationName(declaration)
 
+        // 检查 @Deprecated 注解的 level 参数来区分 error/warning
+        val isError = isDeprecatedError(deprecatedAnnotation)
+        val factory = if (isError) CfirErrors.DEPRECATED_ERROR else CfirErrors.DEPRECATED_WARNING
+
         reporter.reportOn(
             source = source,
-            factory = CfirErrors.DEPRECATED_WARNING,
+            factory = factory,
             a = "function",
             b = declName,
             c = "",
@@ -63,5 +68,20 @@ object CfirDeprecatedCallChecker : CfirFunctionCallChecker() {
             is org.cangnova.cangjie.cfir.declarations.CfirFieldVariable -> declaration.name
             else -> Name.identifier("<unknown>")
         }
+    }
+
+    /**
+     * 判断 @Deprecated 注解是否指定了 error 级别。
+     *
+     * 对齐 C++ DiagKind::sema_deprecated_error vs sema_deprecated_warning:
+     * @Deprecated 注解的 level 参数为 "ERROR" 时为 error 级别。
+     */
+    private fun isDeprecatedError(annotation: CfirAnnotation): Boolean {
+        for (arg in annotation.arguments) {
+            val psi = arg.source?.psi
+            val text = psi?.text ?: continue
+            if (text.contains("ERROR") || text.contains("error")) return true
+        }
+        return false
     }
 }

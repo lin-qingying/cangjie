@@ -1,11 +1,11 @@
 package org.cangnova.cangjie.analysis.api.cfir.resolve
 
-import org.cangnova.cangjie.analysis.api.CaBuiltinsModule
-import org.cangnova.cangjie.analysis.api.CaDanglingFileModule
-import org.cangnova.cangjie.analysis.api.CaLibraryModule
-import org.cangnova.cangjie.analysis.api.CaLibrarySourceModule
-import org.cangnova.cangjie.analysis.api.CaModule
-import org.cangnova.cangjie.analysis.api.CaSourceModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 
 /**
  * 指定某个模块在当前 use-site 分析中的解析策略。

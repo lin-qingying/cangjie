@@ -2,7 +2,7 @@ package org.cangnova.cangjie.analysis.api.standalone.session
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider

@@ -13,6 +13,8 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/compiler/cli-arguments-generator/cangjie.compiler.cli-arguments-generator.test.iml" filepath="$PROJECT_DIR$/.idea/modules/compiler/cli-arguments-generator/cangjie.compiler.cli-arguments-generator.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/compiler/cli/cangjie.compiler.cli.main.iml" filepath="$PROJECT_DIR$/.idea/modules/compiler/cli/cangjie.compiler.cli.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/compiler/cli/cangjie.compiler.cli.test.iml" filepath="$PROJECT_DIR$/.idea/modules/compiler/cli/cangjie.compiler.cli.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/intellij-ide/cangjie.intellij-ide.iml" filepath="$PROJECT_DIR$/.idea/modules/intellij-ide/cangjie.intellij-ide.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/repo/gradle-build-conventions/generators/gradle-build-conventions.generators.main.iml" filepath="$PROJECT_DIR$/.idea/modules/repo/gradle-build-conventions/generators/gradle-build-conventions.generators.main.iml" />
     </modules>
   </component>
 </project>

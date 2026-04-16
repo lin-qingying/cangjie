@@ -5,9 +5,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.stubs.StubElement
 import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.builtins.StandardNames.MAIN
-import org.cangnova.cangjie.analysis.api.CaBuiltinsModule
-import org.cangnova.cangjie.analysis.api.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.decompiled.filestubs.CaDecompiledBinarySupport
 import org.cangnova.cangjie.analysis.decompiled.filestubs.CaLoadedCjoPackage
 import org.cangnova.cangjie.cfir.declarations.CfirClass

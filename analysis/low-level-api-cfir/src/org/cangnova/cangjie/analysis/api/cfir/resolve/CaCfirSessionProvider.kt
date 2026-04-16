@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.analysis.api.cfir.resolve
 
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**

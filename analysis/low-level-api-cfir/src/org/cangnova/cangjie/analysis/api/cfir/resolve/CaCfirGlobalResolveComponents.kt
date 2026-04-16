@@ -3,14 +3,14 @@ package org.cangnova.cangjie.analysis.api.cfir.resolve
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFileSystemItem
 import org.cangnova.cangjie.LanguageVersionSettings
-import org.cangnova.cangjie.analysis.api.CaBuiltinsModule
-import org.cangnova.cangjie.analysis.api.CaDanglingFileModule
-import org.cangnova.cangjie.analysis.api.CaLibraryModule
-import org.cangnova.cangjie.analysis.api.CaLibrarySourceModule
-import org.cangnova.cangjie.analysis.api.CaModule
-import org.cangnova.cangjie.analysis.api.CaNotUnderContentRootModule
-import org.cangnova.cangjie.analysis.api.CaSourceModule
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjFile
 

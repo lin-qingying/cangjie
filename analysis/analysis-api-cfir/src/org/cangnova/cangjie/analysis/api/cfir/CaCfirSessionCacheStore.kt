@@ -9,7 +9,6 @@ import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirPublicSymbolCache
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirTypeSubstitutorCacheKey
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirSubstitutedSignatureCacheKey
 import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirCallInfoSnapshot
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirScopeSnapshot
 import org.cangnova.cangjie.analysis.api.cfir.resolve.DiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.dataFlow.CaDataFlowInfo
 import org.cangnova.cangjie.analysis.api.imports.CaDefaultImports
@@ -21,6 +20,8 @@ import org.cangnova.cangjie.analysis.api.substitution.CaSubstitutedSignature
 import org.cangnova.cangjie.analysis.api.substitution.CaTypeSubstitutor
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
@@ -155,30 +156,30 @@ internal class CaCfirSessionCacheStore(
         create: () -> Collection<CjPsiDiagnostic>,
     ): Collection<CjPsiDiagnostic> = semanticCacheStore.getOrCreateFileDiagnostics(file, filter, create)
 
-    fun getOrCreateFileScope(
+    fun getOrCreateFileDeclaredScope(
         file: CjFile,
-        create: () -> CaCfirScopeSnapshot,
-    ): CaCfirScopeSnapshot = semanticCacheStore.getOrCreateFileScope(file, create)
+        create: () -> CfirContainingNamesAwareScope,
+    ): CfirContainingNamesAwareScope = semanticCacheStore.getOrCreateFileDeclaredScope(file, create)
 
     fun getOrCreatePackageScope(
         packageFqName: FqName,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = semanticCacheStore.getOrCreatePackageScope(packageFqName, create)
+        create: () -> CfirContainingNamesAwareScope?,
+    ): CfirContainingNamesAwareScope? = semanticCacheStore.getOrCreatePackageScope(packageFqName, create)
 
     fun getOrCreateDeclaredMemberScope(
         classId: ClassId,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = semanticCacheStore.getOrCreateDeclaredMemberScope(classId, create)
+        create: () -> CfirContainingNamesAwareScope?,
+    ): CfirContainingNamesAwareScope? = semanticCacheStore.getOrCreateDeclaredMemberScope(classId, create)
 
     fun getOrCreateMemberScope(
         classId: ClassId,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = semanticCacheStore.getOrCreateMemberScope(classId, create)
+        create: () -> CfirTypeScope?,
+    ): CfirTypeScope? = semanticCacheStore.getOrCreateMemberScope(classId, create)
 
     fun getOrCreateTypeScope(
         type: ConeCangJieType,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = semanticCacheStore.getOrCreateTypeScope(type, create)
+        create: () -> CfirTypeScope?,
+    ): CfirTypeScope? = semanticCacheStore.getOrCreateTypeScope(type, create)
 
     fun getOrCreatePackageVisibility(
         packageFqName: FqName,

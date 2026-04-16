@@ -5,8 +5,1028 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="refactor: enhance Analysis API components and improve test configurators">
-      <change beforePath="$PROJECT_DIR$/analysis/cj-references/src/org/cangnova/cangjie/idea/references/CjReference.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/cj-references/src/org/cangnova/cangjie/idea/references/CjReference.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/CaCfirSession.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/CaCfirSession.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/CaCfirSessionCacheStore.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/CaCfirSessionCacheStore.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/CaCfirSessionScopeQueryService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/CaCfirSessionScopeQueryService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/CaCfirSessionSemanticCacheStore.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/CaCfirSessionSemanticCacheStore.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirCallBridge.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirDataFlowPlanning.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirDataFlowPlanning.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirDocumentationProtocol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirDocumentationProtocol.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirImportPlanning.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirImportPlanning.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirInteropProtocol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirInteropProtocol.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirMetadataProtocol.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirPointerProtocol.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirPublicSymbolFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirPublicSymbolFactory.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirPublicSymbolModel.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirPublicTypeModel.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirResolveAndScopeComponents.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirResolveAndScopeComponents.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirScopeBridge.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirSessionComponent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirSessionComponent.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirSubstitutionProtocol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirSubstitutionProtocol.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirTypeComponents.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirTypeComponents.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirTypeConstructionComponents.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirTypeConstructionComponents.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirUtilityComponents.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirUtilityComponents.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/session/CaCfirSessionProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/session/CaCfirSessionProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiSymbolProviderEntryTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiSymbolProviderEntryTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/src/org/cangnova/cangjie/analysis/api/impl/base/CaBaseSession.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/src/org/cangnova/cangjie/analysis/api/impl/base/CaBaseSession.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/src/org/cangnova/cangjie/analysis/api/impl/base/projectStructure/CaIdeProjectStructure.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/src/org/cangnova/cangjie/analysis/api/impl/base/projectStructure/CaIdeProjectStructure.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/src/org/cangnova/cangjie/analysis/api/impl/base/sessions/CaBaseSessionProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/src/org/cangnova/cangjie/analysis/api/impl/base/sessions/CaBaseSessionProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/modification/CaModificationTracker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/modification/CaModificationTracker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/modification/CaSessionInvalidationService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/modification/CaSessionInvalidationService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/projectStructure/CaContentScopeRefiner.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/projectStructure/CaContentScopeRefiner.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/projectStructure/CaModuleProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/projectStructure/CaModuleProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/projectStructure/CaProjectStructureProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/projectStructure/CaProjectStructureProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/src/org/cangnova/cangjie/analysis/api/standalone/platform/CaStandalonePlatformServices.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/src/org/cangnova/cangjie/analysis/api/standalone/platform/CaStandalonePlatformServices.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/src/org/cangnova/cangjie/analysis/api/standalone/projectStructure/CaStandaloneModules.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/src/org/cangnova/cangjie/analysis/api/standalone/projectStructure/CaStandaloneModules.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/src/org/cangnova/cangjie/analysis/api/standalone/projectStructure/CaStandaloneProjectStructure.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/src/org/cangnova/cangjie/analysis/api/standalone/projectStructure/CaStandaloneProjectStructure.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/src/org/cangnova/cangjie/analysis/api/standalone/session/CaStandaloneSessionBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/src/org/cangnova/cangjie/analysis/api/standalone/session/CaStandaloneSessionBuilder.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/api/analysis-api.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/api/analysis-api.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/CaModule.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/CaSession.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/CaSession.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/analyze.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/analyze.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/annotations/CaAnnotation.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/annotations/CaAnnotation.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/completion/CaCompletionCandidate.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/completion/CaCompletionCandidate.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/components/CaSessionComponents.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/dataFlow/CaDataFlowInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/dataFlow/CaDataFlowInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/decompiled/CaDecompiledServices.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/diagnostics/CaDiagnostic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/diagnostics/CaDiagnostic.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/evaluation/CaCompileTimeValue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/evaluation/CaCompileTimeValue.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/imports/CaImportPlanning.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/interop/CaInteropInfo.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/interop/CaInteropInfo.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/lifetime/CaLifetimeToken.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/lifetime/CaLifetimeToken.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/lightDeclarations/CaLightDeclarations.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/base/CaAnnotationRenderer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/base/CaKeywordsRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/base/CaKeywordsRenderer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/base/CaPrettyPrinter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/base/CaPrettyPrinter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/declarations/CaCallableSignatureRenderers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/declarations/CaCallableSignatureRenderers.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/declarations/CaClassifierRenderers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/declarations/CaDeclarationBodyRenderers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/declarations/CaDeclarationModifierProviders.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/declarations/CaDeclarationRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/declarations/CaDeclarationRenderer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/declarations/CaDeclarationRenderingOptions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/declarations/CaDeclarationSymbolRenderers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/declarations/impl/CaDeclarationRendererForDebug.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/declarations/impl/CaDeclarationRendererForDebug.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/declarations/impl/CaDeclarationRendererForSource.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/declarations/impl/CaDeclarationRendererForSource.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/types/CaCompositeTypeRenderers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/types/CaFunctionTypeRenderers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/types/CaTypeRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/types/CaTypeRenderer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/types/impl/CaTypeRendererForDebug.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/types/impl/CaTypeRendererForDebug.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/types/impl/CaTypeRendererForSource.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/types/impl/CaTypeRendererForSource.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/resolution/CaCall.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/resolution/CaCall.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/session/CaPointerRestoration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/session/CaSessionProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/session/CaSessionProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/signatures/CaSignature.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/signatures/CaSignature.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/stubs/CaStubServices.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/stubs/CaStubServices.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/substitution/CaTypeSubstitution.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/substitution/CaTypeSubstitution.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaCallableSymbol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaCallableSymbol.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaClassLikeSymbol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaClassLikeSymbol.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaDeclarationSymbol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaDeclarationSymbol.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaFunctionSymbol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaFunctionSymbol.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaPropertyAccessorSymbol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaPropertyAccessorSymbol.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaSymbol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaSymbol.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaSymbolProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaSymbolProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaVariableSymbol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaVariableSymbol.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/markers/markers.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/types/CaType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/types/CaType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/types/pointers/CaTypePointer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-internal-utils/src/org/cangnova/cangjie/analysis/internal/projectStructure/CaModuleDependencyGraph.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-internal-utils/src/org/cangnova/cangjie/analysis/internal/projectStructure/CaModuleDependencyGraph.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/framework/projectStructure/CaSourceModuleImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/framework/projectStructure/CaSourceModuleImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/framework/projectStructure/CjTestModule.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/framework/projectStructure/CjTestModule.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/framework/projectStructure/CjTestModuleStructure.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/framework/projectStructure/CjTestModuleStructure.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/framework/projectStructure/CjTestModuleStructureFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/framework/projectStructure/CjTestModuleStructureFactory.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/framework/test/configurators/CaCfirAnalysisApiTestConfiguratorFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/framework/test/configurators/CaCfirAnalysisApiTestConfiguratorFactory.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/services/CaTestPlatformServices.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/services/CaTestPlatformServices.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/services/CaTestProjectStructureProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/services/CaTestProjectStructureProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/decompiled/decompiler-to-file-stubs/src/org/cangnova/cangjie/analysis/decompiled/filestubs/CaDecompiledBinarySupport.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/decompiled/decompiler-to-file-stubs/src/org/cangnova/cangjie/analysis/decompiled/filestubs/CaDecompiledBinarySupport.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/decompiled/decompiler-to-stubs/src/org/cangnova/cangjie/analysis/decompiled/stubs/CaDecompiledPackageViewService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/decompiled/decompiler-to-stubs/src/org/cangnova/cangjie/analysis/decompiled/stubs/CaDecompiledPackageViewService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/decompiled/light-declarations-for-decompiled/src/org/cangnova/cangjie/analysis/decompiled/light/declarations/CaDecompiledLightSupport.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/decompiled/light-declarations-for-decompiled/src/org/cangnova/cangjie/analysis/decompiled/light/declarations/CaDecompiledLightSupport.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/decompiled/src/org/cangnova/cangjie/analysis/decompiled/CaDecompiledServices.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/decompiled/src/org/cangnova/cangjie/analysis/decompiled/CaDecompiledServices.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/light-declarations/src/org/cangnova/cangjie/analysis/light/declarations/CaLightDeclarationModels.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/light-declarations/src/org/cangnova/cangjie/analysis/light/declarations/CaLightDeclarationModels.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirGlobalResolveComponents.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirGlobalResolveComponents.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirModuleProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirModuleProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirModuleResolutionStrategy.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirModuleResolutionStrategy.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirModuleResolveComponents.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirModuleResolveComponents.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacade.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacade.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeServiceImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirResolutionFacadeServiceImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirScopeSnapshot.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirSessionCache.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirSessionCache.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirSessionProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/resolve/CaCfirSessionProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/stubs/src/org/cangnova/cangjie/analysis/stubs/CaStubFileCollector.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/src/org/cangnova/cangjie/analysis/stubs/CaStubFileCollector.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/symbol-light-declarations/src/org/cangnova/cangjie/analysis/light/declarations/symbol/CaSymbolLightDeclarationProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/symbol-light-declarations/src/org/cangnova/cangjie/analysis/light/declarations/symbol/CaSymbolLightDeclarationProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/diagnostics/DiagnosticKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/diagnostics/DiagnosticKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonDeclarationCheckers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonDeclarationCheckers.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirBuiltInAnnotationSemanticsChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirBuiltInAnnotationSemanticsChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirCJMappingCheckers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirCJMappingCheckers.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirCommonSpecificChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirCommonSpecificChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirDeprecatedDeclarationChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirDeprecatedDeclarationChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirExtendExtraChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirExtendExtraChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirFunctionSemanticsChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirFunctionSemanticsChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirGeneralSemanticsChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirGeneralSemanticsChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirGenericDeepChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirGenericDeepChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInheritanceDeepChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInheritanceDeepChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirVArrayExtraChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirVArrayExtraChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirDeprecatedCallChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirDeprecatedCallChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirEffectsExtraChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirEffectsExtraChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirExpressionSemanticsChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirExpressionSemanticsChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirInoutSemanticsChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirInoutSemanticsChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirSpawnSemanticsChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirSpawnSemanticsChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapTypeArguments.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapTypeArguments.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/semantics/src/org/cangnova/cangjie/cfir/diagnostic/ConeDiagnostic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/semantics/src/org/cangnova/cangjie/cfir/diagnostic/ConeDiagnostic.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/src/org/cangnova/cangjie/RenderingUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/org/cangnova/cangjie/RenderingUtils.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/external/kotlin" beforeDir="false" afterPath="$PROJECT_DIR$/external/kotlin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/buildSrc/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/buildSrc/settings.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/buildSrc/src/main/kotlin/cangjie-module.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/event/CjBuildEvent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/event/CjBuildListener.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/extension/CjBuildConfigurationProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/extension/CjDependencyResolver.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/extension/CjPackageManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/extension/CjRepositoryProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/model/CjBuildConfiguration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/model/CjBuildContext.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/model/CjBuildResult.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/model/CjBuildTask.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/CangJieSettingsFilesService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/CjProjectBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/CjProjectSettingsBase.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/CjProjectSettingsServiceBase.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/event/CjProjectEvent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/event/CjProjectListener.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/extension/CjModuleBuilderProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/extension/CjProjectConfigParser.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/extension/CjProjectProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/extension/ProjectBuildSystemId.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/listener/CjProjectConfigurationListener.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/listener/CjProjectOpenedActivity.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/model/CjDependency.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/model/CjModule.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/model/CjPackage.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/model/CjProject.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/model/CjSourceSet.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/model/CjTarget.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/model/CjVersion.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/model/CjWorkspace.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/model/PackageFeature.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/model/PackageModel.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/model/ResolvedGraph.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/notifications/MissingToolchainNotificationProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/roots/CangJieAdditionalLibraryRootsProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/service/CjDependencyService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/service/CjProjectBuildSystemService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/service/CjProjectsService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/service/CjProjectsServiceExtensions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/service/ModifyProjectsOptions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/service/impl/CangJieConfigFileWatcher.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/service/impl/CangJieExternalSystemProjectAware.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/service/impl/CangJieModuleIndex.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/service/impl/CjProjectsServiceImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/service/impl/DependencyResolverImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/service/impl/UserDisabledFeatures.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/service/impl/UserDisabledFeaturesHolder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/task/CangJieProjectSyncTask.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/ui/actions/AttachProjectAction.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/ui/actions/CangJieProjectActionBase.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/ui/actions/CjCommandCompletionProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/ui/actions/CjCommandProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/ui/actions/CjRunAnythingProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/ui/actions/RefreshProjectAction.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/ui/actions/RunCommandAction.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/ui/actions/ShowSettingsAction.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/ui/toolwindow/CjProjectToolWindow.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/ui/toolwindow/CjProjectToolWindowFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/ui/toolwindow/CjProjectTree.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/wizard/CangJieModuleType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/wizard/CjModuleBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/project/workspace/CjWorkspaceModelSync.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/registry/CjPackageRegistry.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/registry/impl/CjPackageRegistryImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/AbstractBuildEvent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieBuildAdapter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieBuildEventsConverter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieBuildManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieBuildOutputParser.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieBuildSessionsQueueManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieBuildTaskRunner.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieCommandRunConfiguration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieCommandRunConfigurationProducer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieCommandRunConfigurationType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieCommandRunState.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieCommandRunner.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieProgramRunConfiguration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieProgramRunConfigurationEditor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieProgramRunConfigurationProducer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieProgramRunConfigurationType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieProgramRunState.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieProjectTaskRunner.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieRunConfigurationBase.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieRunConfigurationDefaultEditor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieRunConfigurationExtension.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CangJieRunConfigurationExtensions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CjExecutableRunner.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/CjRunConfigurationExtensionManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/build/CjBuildTaskProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/target/CjLanguageRuntimeConfiguration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/target/CjLanguageRuntimeType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/run/target/TargetEnvironmentUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/service/CjBuildTaskManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/kotlin/org/cangnova/cangjie/ui/CjDependencyLibraryRootsProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/resources/META-INF/cangjie-dependency.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/resources/META-INF/cangjie-project.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/resources/messages/CjBuildBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/resources/messages/CjBuildBundle_zh_CN.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/resources/messages/CjDependencyBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/resources/messages/CjDependencyBundle_zh_CN.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/resources/messages/CjProjectBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/resources/messages/CjProjectBundle_zh_CN.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/workspace-model-builder/kotlin/org/cangnova/cangjie/project/workspace/compat/WorkspaceModelCompat.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/workspace-model-builder/kotlin/org/cangnova/cangjie/run/compat/BuildEventsCompat.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/workspace-model-legacy/kotlin/org/cangnova/cangjie/project/workspace/compat/WorkspaceModelCompat.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cangjie-project/src/main/workspace-model-legacy/kotlin/org/cangnova/cangjie/run/compat/BuildEventsCompat.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/CJPMConfigInspectionBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/CjpmConstants.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/actions/CjpmCommandProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/actions/CjpmConsole.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/actions/CjpmRunAnythingProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/build/CjpmBuildConfigurationImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/build/CjpmBuildOutputParser.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/config/lock/CjpmLockFile.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/config/lock/CjpmLockParser.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/CjpmTomlConfig.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/CjpmTomlDiffer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/CjpmTomlMerger.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/CjpmTomlParser.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/CjpmTomlUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/CjpmTomlValidator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/DependencyConfig.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/FfiConfig.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/PackageConfigurationInfo.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/ProfileConfig.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/TargetConfig.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/dependency/CjpmDependencyResolver.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/dependency/CjpmPackageImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/dependency/CjpmPackageManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/dependency/CjpmRepositoryProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/project/CjpmBuildSystemId.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/project/CjpmModuleImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/project/CjpmProjectImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/project/CjpmProjectProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/project/CjpmWorkspaceImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/run/CjpmCommandExecutor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/run/CjpmProjectTaskRunner.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/CangJieTomlDecompile.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/CangJieTomlFileType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/CangJieTomlFileTypeFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/CangJieTomlFileTypeOverrider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/CangJieTomlFileTypeRegistrar.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/CjpmTomlPsiPattern.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/completion/CjpmTomlCompletionContributor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/completion/CjpmTomlKeysCompletionProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/completion/CjpmTomlKnownValuesCompletionProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/completion/TomlSchema.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/inspection/ProjectVersionInspection.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/inspection/ProjectVersionQuickFix.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/jsonSchema/SimpleJsonShemaProviderFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/util.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/wizard/CjpmModuleBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/kotlin/org/cangnova/cangjie/cjpm/wizard/CjpmModuleBuilderProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/resources/jsonSchema/cjpmProjectConfig.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/resources/messages/CJPMConfigInspectionBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/resources/messages/CJPMConfigInspectionBundle_zh_CN.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/resources/messages/CjpmBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/resources/messages/CjpmBundle_zh_CN.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/cjpm/src/main/resources/org.cangnova.cangjie.cjpm.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/CangJiePluginDisposable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/CjConstants.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/config/CangJieJpsModelSerializerExtension.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/config/CangJieJpsSourceRootType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/config/CangJieModuleSourceRootEditHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/config/CangJieSourceRootPropertiesSerializer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/config/CangJieSourceRootTypes.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/configurable/CjConfigurableBase.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/process/CjAnsiEscapeDecoder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/process/CjProcessHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/project/CjProjectSettingsProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/projectStructure/CangJieSourceFilterScope.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/projectStructure/RootKindFilter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/projectStructure/RootKindMatcher.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/projectStructure/scope/PoweredLibraryScopeBase.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/result/CjResult.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/task/CjBackgroundTaskQueue.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/task/CjProjectTaskQueueService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/kotlin/org/cangnova/cangjie/task/DelayedBackgroundableProcessIndicator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/common/src/main/resources/META-INF/services/org.jetbrains.jps.model.serialization.JpsModelSerializerExtension" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/CangJieStartupActivity.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/NotPropertiesService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/configurable/BuildSystemConfigurable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/configurable/CangJieAstAnalyzerConfigurable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/configurable/CangJieConfigurable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/configurable/CangJieLanguageServerConfigurable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/configurable/CangJieLspConfigurable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/configurable/services/CangJieLanguageServerServices.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/contracts/description/CjContractDescription.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/contracts/description/CjContractDescriptionVisitor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/download/sdk/urls.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/download/stdlib/urls.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/download/stdlib/utils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/extensions/ProjectExtensionDescriptor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/highlighter/AbstractHighlightingPassBase.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/highlighter/AbstractHighlightingVisitor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/highlighter/BeforeResolveHighlightingVisitor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieBeforeResolveHighlightingPass.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieSyntaxHighlighterFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/highlighter/HighlightingFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/highlighter/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/CangJieIconProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/CangJieIconProviderService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/actions/NewCangJieFileAction.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/codeInsight/template/template/AbstractCangJiePostfixTemplateWithExpression.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/codeInsight/template/template/CangJiePostfixTemplatesProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/codeInsight/template/template/CangJieVariablePostfixTemplate.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/commenter/CjCommenter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/configuration/ConfigureCangJieStatus.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/copyright/CangJieCopyrightsProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/debugger/CodeFragmentContextTuner.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/editor/CDocTypedHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/editor/CangJieBackspaceHandlerDelegate.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/editor/CangJieCodeFoldingOptionsProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/editor/CangJieMultilineStringEnterHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/editor/CangJiePairedBraceMatcher.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/editor/CangJieQuoteHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/editor/CangJieRawStringBackspaceHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/editor/CangJieRawStringTypedHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/editor/CangJieStringTemplateBackspaceHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/editor/CangJieTypedHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/editor/LtGtTypingUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/experiments/CjExperiments.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/intentions/UsePropertyAccessSyntaxInspection.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/liveTemplates/CangJieLiveTemplatesBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/liveTemplates/CangJieShortenFQNamesProcessor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/liveTemplates/CangJieTemplateContextType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/navigation/CangJieDeclarationNavigationPolicyImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/navigation/SourceNavigationHelper.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/CangJiePluginComponent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/CangJieProjectComponent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/CangJieProjectManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/CangJieProjectSettingsPanel.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/CangJieProjectSettingsService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/CjMacroCallFileHiddenProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/CjToolchainPathChoosingComboBox.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/UiDebouncer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/structure/CangJieBinaryExtension.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/structure/IDELanguageSettingsProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/structure/ProjectWizardSdkIntent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/structure/download/SdkDownloaderLogger.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/structure/download/SdkListDownloaderBase.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/structure/download/sdkdownloaddialog.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/tools/projectWizard/CangJieNewProjectWizard.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/tools/projectWizard/CjDirectoryProjectGenerator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/tools/projectWizard/CjNewProjectPanel.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/tools/projectWizard/CjProjectGeneratorPeer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/tools/projectWizard/core/Entry.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/tools/projectWizard/core/Plugin.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/tools/projectWizard/core/SettingContext.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/tools/projectWizard/core/services/ServicesManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/tools/projectWizard/core/services/WizardService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/tools/projectWizard/core/utils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/tools/projectWizard/wizard/CangJieNewProjectWizardUIBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/project/tools/projectWizard/wizard/IdeWizard.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/run/CjRunLineMarkersProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/toolwindow/doc/CangJieDocWindowFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/ide/toolwindow/doc/urls.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/lsp/CangJieLspServerManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/messages/CangJieBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/messages/CangJieStyleBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/messages/CangJieUiBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/notifications/MissingToolchainNotificationProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/kotlin/org/cangnova/cangjie/task/AbstractForegroundTask.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-actions.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-all.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-analysis-entry.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-copyright.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-debugger.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-editor.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-extensionPoints.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-filetypes.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-formatter.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-icon.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-ide-features.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-jps.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-json.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-language-shell.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-listeners.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-notifications.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-product.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-registry-key.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-run.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-templates.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-toml.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-toolchain.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-toolwindow.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/cangjie-unittest.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/META-INF/services/org.cangnova.cangjie.builtins.BuiltInsLoader" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/colorScheme/Darcula_CangJie.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/colorScheme/Default_CangJie.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/code/New CangJie Function Body.cj.ft" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/code/New CangJie Function Body.cj.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/code/New CangJie Property Initializer.cj.ft" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/code/New CangJie Property Initializer.kt.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/code/New CangJie Secondary Constructor Body.kt.ft" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/code/New CangJie Secondary Constructor Body.kt.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/internal/CangJie Class.cj.ft" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/internal/CangJie Class.cj.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/internal/CangJie Enum.cj.ft" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/internal/CangJie Enum.cj.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/internal/CangJie Extend.cj.ft" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/internal/CangJie Extend.cj.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/internal/CangJie File.cj.ft" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/internal/CangJie File.cj.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/internal/CangJie Interface.cj.ft" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/internal/CangJie Interface.cj.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/internal/CangJie Struct.cj.ft" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/fileTemplates/internal/CangJie Struct.cj.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/abstractClassCangJie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/abstract_extension_function.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/ai/cangjie_icon.ai" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/ai/classCangJie.ai" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/ai/field_property.ai" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/ai/field_property_value.ai" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/ai/structCangJie.ai" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/ai/toml.ai" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/cangjie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/cangjie_file.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/cangjie_file2.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/cangjie_icon.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/cangjie_icon.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/cangjie_icon_16_16.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/classCangJie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/enumCangJie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/expui/classCangJie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/expui/classCangJie_dark.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/field_property.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/field_property_value.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/field_variable.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/field_variable_value.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/icon.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/interfaceCangJie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/lambda.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/macroCangJie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/structCangjie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/toml.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/typeAlias.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/icons/value.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inlayProviders/cangjie.lambdas.hints/hints.lambda.receivers.parameters.cj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inlayProviders/cangjie.lambdas.hints/hints.lambda.return.cj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inlayProviders/cangjie.method.chains/preview.cj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inlayProviders/cangjie.references.types.hints/hints.type.function.parameter.cj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inlayProviders/cangjie.references.types.hints/hints.type.function.return.cj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inlayProviders/cangjie.references.types.hints/hints.type.local.variable.cj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inlayProviders/cangjie.references.types.hints/hints.type.main.function.return.cj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inlayProviders/cangjie.references.types.hints/hints.type.pattern.variable.cj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inlayProviders/cangjie.references.types.hints/hints.type.variable.cj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inlayProviders/cangjie.values.hints/preview.cj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inlayProviders/vcs.code.author/preview.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inspectionDescriptions/CDocMissingDocumentation.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inspectionDescriptions/CJPMProjectConfigVersionValueCheck.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inspectionDescriptions/CangJieFunctionWithLambdaExpressionBody.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inspectionDescriptions/CangJieImportCheck.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inspectionDescriptions/CangJiePackageCheck.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inspectionDescriptions/CangJiePackageDirectoryMismatch.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inspectionDescriptions/CangJieRedundantVisibilityModifier.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/inspectionDescriptions/FunctionWithLambdaExpressionBody.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/intentionDescriptions/CangJieInsertExplicitTypeArgumentsIntention/description.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/intentionDescriptions/ReplaceExplicitFunctionLiteralParamWithItIntention/after.cj.template" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/intentionDescriptions/ReplaceExplicitFunctionLiteralParamWithItIntention/before.cj.template" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/intentionDescriptions/ReplaceExplicitFunctionLiteralParamWithItIntention/description.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/intentionDescriptions/SpecifyExplicitLambdaSignatureIntention/description.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/intentionDescriptions/SpecifyTypeExplicitlyIntention/description.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/liveTemplates/CangJie.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/messages/CangJieBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/messages/CangJieBundle_zh_CN.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/messages/CangJieCompilerBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/messages/CangJieHighlightingBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/messages/CangJieHighlightingBundle_zh_CN.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/messages/CangJieIdeBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/messages/CangJieIndexingBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/messages/CangJieIndexingBundle_zh_CN.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/messages/CangJieLineMarkersSharedBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/messages/CangJieLiveTemplatesBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/messages/CangJieNewProjectWizardUIBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/messages/CangJieStyleBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/messages/CangJieStyleBundle_zh_CN.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/messages/CangJieUiBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/messages/CangJieUiBundle_zh_CN.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/postfixTemplates/CangJieLetPostfixTemplate/description.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/postfixTemplates/CangJieVarPostfixTemplate/description.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/stdlib/info" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/stdlib/std/ast/ast.cangjie_builtins" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/stdlib/std/collection/collection.cangjie_builtins" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/main/resources/stdlib/std/core/core.cangjie_builtins" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/29/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/0/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/1/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/10/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/11/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/12/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/13/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/14/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/15/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/16/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/17/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/18/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/19/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/2/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/20/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/21/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/22/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/23/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/24/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/25/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/26/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/27/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/28/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/3/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/30/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/31/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/32/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/33/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/34/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/35/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/36/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/37/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/38/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/39/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/4/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/40/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/41/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/42/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/43/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/44/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/45/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/46/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/47/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/48/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/49/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/5/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/50/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/6/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/7/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/8/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/core/src/test/resources/project_toml_files/9/cjpm.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/common/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/common/src/main/kotlin/org/cangnova/cangjie/debugger/DebuggerProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/common/src/main/kotlin/org/cangnova/cangjie/debugger/RunParameters.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/common/src/main/kotlin/org/cangnova/cangjie/debugger/configurable/DebuggerConfigurable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/common/src/main/kotlin/org/cangnova/cangjie/debugger/messages/DebuggerBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/common/src/main/kotlin/org/cangnova/cangjie/debugger/toolchain/CjDebuggerToolchainService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/common/src/main/kotlin/org/cangnova/cangjie/debugger/toolchain/DebuggerIndexFetcher.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/common/src/main/kotlin/org/cangnova/cangjie/debugger/util/File.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/common/src/main/resources/messages/DebuggerBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/common/src/main/resources/messages/DebuggerBundle_zh_CN.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/a.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/CangJieDebugAdapterDescriptorFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/config/DebuggerConfig.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/config/DebuggerConfiguration.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/config/PlatformConfig.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/connection/AsyncDapConnection.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/connection/ConnectionManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/connection/DefaultConnectionManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/connection/HealthMonitor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/core/BreakpointManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/core/DebugAdapter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/core/DebugEvent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/core/DebugSession.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/core/DefaultDebugEventBus.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/core/EvaluationEngine.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/dap/DapClient.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/exception/DebuggerExceptions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/getDapDebugProcess.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/messages/DapDebuggerBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/protocol/DapMessageTracer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/protocol/DapProtocolClient.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/protocol/DapTraceWriter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/provider/DapDebuggerProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/server/DefaultServerLifecycleManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/server/DefaultServerProcess.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/server/PortAllocator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/server/ProcessRegistry.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/server/ServerLifecycleManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/service/BreakpointService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/service/EvaluationService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/service/VariableService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/session/DebugSessionCoordinator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/session/DefaultDebugSessionCoordinator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/session/DefaultManagedDebugSession.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/session/SessionState.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/ui/CangJieBreakpointHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/ui/CangJieDebuggerEditorsProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/ui/CangJieDebuggerSupport.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/ui/CangJieEvaluator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/ui/CangJieLineBreakpointType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/ui/CangJieStackFrame.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/ui/CangJieSuspendContext.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/ui/DapDebugProcess.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/kotlin/org/cangnova/cangjie/debugger/dap/ui/VariableWatchManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/resources/META-INF/dapdebugger.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/resources/messages/DapDapDebuggerBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/dap/src/main/resources/messages/DapDebuggerBundle_zh_CN.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/ProtoDebugProcess.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/ProtoDebuggerProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/breakpoint/AddBreakpointResult.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/breakpoint/AddressBreakpointHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/breakpoint/AddressBreakpointType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/breakpoint/BaseBreakpointHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/breakpoint/DebugPausePoint.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/breakpoint/LineBreakpointHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/breakpoint/LineBreakpointType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/console/CangJieDebugProtoLLDBLanguage.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/console/CangJieLLDBParserDefinition.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/console/CangJieProtoLLDBFileType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/console/CjdbConsoleCompletionContributor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/console/CjdbConsoleExecutor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/console/ConsoleOutputProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/core/CangJieAlternativeSourceHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/core/CangJieDebuggerEditorsProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/core/CangJieStackFrame.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/core/CangJieSuspendContext.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/core/CangJieValue.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/core/DebuggerDriverFacade.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/core/DebuggerHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/core/DebuggerStateManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/core/EvaluationContext.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/data/LLDBBreakpoint.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/data/LLDBDisasmInstruction.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/data/LLDBFrame.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/data/LLDBRegister.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/data/LLDBThread.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/data/LLDBValue.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/data/LLDBVariable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/data/LLDBWatchpoint.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/data/ValueFormatter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/event/ArrayListBackedEventTracer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/event/BeginEvent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/event/ChromeTracingEventTracer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/event/EndEvent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/event/Event.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/event/EventSpan.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/event/EventTracer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/event/NoopEventTracer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/exception/DebuggerCommandExceptionException.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/exception/JumpToLineOutsideCurrentFunctionException.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/execution/async/AsyncResult.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/execution/async/FutureUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/execution/exit/ExitStatus.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/execution/state/StateTransitions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/execution/state/TargetState.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/location/LocationParser.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/location/SourceLocation.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/Address.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/AddressRange.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/DataRegion_MemoryVisualization_Design.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/MemoryCell.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/MemoryExtensions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/MemoryMatrix.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/MemoryViewFacade.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/actions/ActionEventExtensions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/actions/MemoryActions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/config/MemoryViewConfig.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/debugger/DebuggerMemoryAdapter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/editor/EditorConfigurators.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/editor/EditorPipeline.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/editor/MemoryAddressLineNumberConverter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/editor/MemoryEditor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/editor/MemoryViewFileEditorProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/editor/MemoryViewFileIconProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/editor/MemoryViewHighlightingSettingProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/editor/MemoryViewReaderModeMatcher.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/editor/MemoryViewTabTitleProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/gutter/MemoryGutterIconProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/input/HexdumpTypedHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/language/CangJieDebugProtoHexdumpLanguage.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/language/HexdumpFoldingBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/language/HexdumpLexer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/language/HexdumpParserDefinition.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/language/HexdumpSyntaxHighlighter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/language/HexdumpTokenTypes.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/provider/DisasmCellLoader.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/provider/HexCellLoader.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/provider/MemoryCellLoader.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/rendering/SnapshotRenderer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/state/MemoryState.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/vfs/MemoryViewFile.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/vfs/MemoryViewFileWritingAccessProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/memory/vfs/MemoryViewVirtualFileSystem.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/messages/ProtoDebuggerBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/notification/NotificationType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/output/LogFileMonitor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/output/LogFileReader.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/output/LogOutputManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/output/LogType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/output/ResultList.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/path/PathManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/process/DebuggerProcessFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/process/HostMachine.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/process/LocalHost.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/process/ProcessBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/process/ProcessOutputReaders.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/process/RunProcessUtil.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/protocol/ProtobufFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/protocol/ProtobufUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/pty/NamedPipe.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/pty/Pty4jPseudoTerminal.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/pty/PtyProcessHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/pty/WindowsPipe.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/result/PagedResult.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/AttachService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/BreakpointService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/CommandService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/DisasmService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/EvalService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/MemoryService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/SessionService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/SteppingService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/impl/AttachServiceImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/impl/BreakpointServiceImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/impl/CommandServiceImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/impl/DisasmServiceImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/impl/EvalServiceImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/impl/MemoryServiceImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/impl/SessionServiceImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/services/impl/SteppingServiceImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/settings/ArchitectureType.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/settings/DebuggerSettings.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/settings/DisasmOptions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/settings/RichValueDescriptionSupport.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/transport/EventBroadcastHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/transport/MessageBus.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/transport/ServerSocketTransport.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/transport/Transport.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/transport/TransportException.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/util/ByteList.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/util/ExecUtil.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/util/ShellCommandResult.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/util/SourceFileHash.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/kotlin/org/cangnova/cangjie/debugger/protobuf/util/ToolVersion.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/proto/event.proto" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/proto/model.proto" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/proto/request.proto" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/proto/response.proto" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/resources/META-INF/protodebugger.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/resources/messages/ProtoDebuggerBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/protobuf/src/main/resources/messages/ProtoDebuggerBundle_zh_CN.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/src/main/kotlin/org/cangnova/cangjie/debugger/runconfig/CjDebugRunner.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/src/main/kotlin/org/cangnova/cangjie/debugger/runconfig/CjDebugRunnerUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/debugger/src/main/resources/intellij-cangjie.debugger.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/BaseCangJieImportLayoutPanel.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieBlock.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieCodeStyleGenerationConfigurable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieCodeStylePanel.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieCodeStylePropertyAccessor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieCodeStyleSettings.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieCommonBlock.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieCommonCodeStyleSettings.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieFormatterBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieFormattingModelBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieFormattingService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieLanguageCodeStyleSettingsProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieLineIndentProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieObsoleteCodeStyle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieOtherSettingsPanel.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJiePackageEntry.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJiePackageEntryTable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJiePackageEntryTableAccessor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJiePreFormatProcessor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieSaveStylePanel.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieSpacingBuilder.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/CangJieStyleGuideCodeStyle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/FormatterUtil.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/FormattingRules.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/ImportSettingsPanel.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/NodeAlignmentStrategy.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/NodeIndentStrategy.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/SyntheticCangJieBlock.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/TrailingCommaPostFormatProcessor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/cangjieSpacingRules.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/codeStyleUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/documentUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/indent/IndentRules.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/lineIndent/CangJieLangLineIndentProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/util/TrailingCommaContext.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/util/TrailingCommaHelper.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/util/TrailingCommaState.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/util/TrailingCommaVisitor.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/kotlin/org/cangnova/cangjie/formatter/util/util.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/formatter/src/main/resources/messages/CangJieFormatterBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/gradle.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/gradle/libs.versions.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/highlighter/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/highlighter/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieColorSettingsPage.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/highlighter/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieHighlightInfoTypeSemanticNames.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/highlighter/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieHighlighter.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/highlighter/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieHighlighterAttributeUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/highlighter/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieHighlightingBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/highlighter/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieHighlightingColors.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/highlighter/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieHighlightingLexer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/highlighter/src/main/resources/messages/CangJieHighlightingBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/highlighter/src/main/resources/messages/CangJieHighlightingBundle_zh_CN.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/kotlin/org/cangnova/cangjie/icon/CangJieBaseResourcesIcons.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/kotlin/org/cangnova/cangjie/icon/CangJieIcons.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/kotlin/org/cangnova/cangjie/icon/CjpmIcons.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/abstractClassCangJie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/abstract_extension_function.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/ai/cangjie_icon.ai" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/ai/classCangJie.ai" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/ai/field_property.ai" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/ai/field_property_value.ai" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/ai/structCangJie.ai" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/ai/toml.ai" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/cangjie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/cangjie_file.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/cangjie_file2.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/cangjie_icon.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/cangjie_icon.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/cangjie_icon_16_16.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/classCangJie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/enumCangJie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/expui/classCangJie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/expui/classCangJie_dark.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/field_property.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/field_property_value.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/field_variable.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/field_variable_value.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/icon.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/interfaceCangJie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/lambda.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/macroCangJie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/structCangjie.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/toml.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/typeAlias.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/icon/src/main/resources/icons/value.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/lsp4ij/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/lsp4ij/src/main/kotlin/org/cangnova/cangjie/lsp4ij/CangJieLSPCodeLensFeature.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/lsp4ij/src/main/kotlin/org/cangnova/cangjie/lsp4ij/CangJieLSPCommandAction.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/lsp4ij/src/main/kotlin/org/cangnova/cangjie/lsp4ij/CangJieLSPDiagnosticFeature.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/lsp4ij/src/main/kotlin/org/cangnova/cangjie/lsp4ij/CangJieLSPHoverFeature.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/lsp4ij/src/main/kotlin/org/cangnova/cangjie/lsp4ij/CangJieLanguageServerFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/lsp4ij/src/main/kotlin/org/cangnova/cangjie/lsp4ij/CangJieOSProcessStreamConnectionProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/lsp4ij/src/main/kotlin/org/cangnova/cangjie/lsp4ij/CangJieSemanticTokensColorsProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/lsp4ij/src/main/kotlin/org/cangnova/cangjie/lsp4ij/CjProjectSyncListener.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/lsp4ij/src/main/kotlin/org/cangnova/cangjie/lsp4ij/diagnostics/DiagnosticTelemetry.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/lsp4ij/src/main/resources/org.cangnova.cangjie.lsp4ij.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroExpansionBackgroundTask.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/cache/MacroExpansionCache.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/compiler/CompilerFrontendEngine.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/compiler/CompilerMacroCompilationProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/compiler/CompilerMacroExpansionProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/compiler/CompilerMacroExpansionProviderFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/compiler/FullProjectMacroDeclarationLocator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/compiler/MacroCallFileParser.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/compiler/MacroDeclarationLocator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/configurable/CangJieMacroConfigurable.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/engine/MacroExpansionEngine.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/messages/CangJieMacroBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/pipeline/MacroFileChangeListener.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/pipeline/MacroPipelineCoordinator.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/pipeline/MacroPipelineCoordinatorImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/pipeline/MacroPipelineProjectSyncListener.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/psi/MacroPsiExpansionService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/psi/MacroPsiReplacer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/psi/MacroSourceInfo.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/LspMacroProcessHandler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/LspMacroServerClient.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/LspMacroServerEngine.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/LspMacroServerProcess.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/LspMacroServerProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/LspMacroServerProviderFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodec.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/protocol/PipeTransport.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/service/MacroCompilationService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/service/MacroCompilationServiceImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/service/MacroExpansionError.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/service/MacroExpansionProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/service/MacroExpansionProviderFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/service/MacroExpansionResult.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/service/MacroExpansionService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/service/MacroExpansionServiceImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/service/MacroExpansionSettings.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/ui/CjMacroExpansionLineMarkerProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/ui/MacroExpansionPanel.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/ui/ShowMacroExpansionAction.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/resources/META-INF/cangjie-macro.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/resources/messages/CangJieMacroBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/macro/src/main/resources/messages/CangJieMacroBundle_zh_CN.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/messages/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/messages/src/main/kotlin/org/cangnova/cangjie/messages/AbstractCangJieBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/namedpipe/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/namedpipe/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/namedpipe/src/main/kotlin/org/cangnova/namedpipe/Main.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/namedpipe/src/main/kotlin/org/cangnova/namedpipe/NamedPipe.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/namedpipe/src/main/kotlin/org/cangnova/namedpipe/NamedPipeFactory.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/namedpipe/src/main/kotlin/org/cangnova/namedpipe/PipeExtensions.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/namedpipe/src/main/kotlin/org/cangnova/namedpipe/UnixNamedPipe.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/namedpipe/src/main/kotlin/org/cangnova/namedpipe/WindowsNamedPipe.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/notifications/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/notifications/src/main/kotlin/org/cangnova/cangjie/notifications/CangJieCompilerBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/notifications/src/main/kotlin/org/cangnova/cangjie/notifications/CjNotificationProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/notifications/src/main/kotlin/org/cangnova/cangjie/notifications/CjNotifications.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/notifications/src/main/kotlin/org/cangnova/cangjie/notifications/CompileDriverNotifications.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/notifications/src/main/kotlin/org/cangnova/cangjie/notifications/utils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/settings.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/src/description.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/src/main/resources/META-INF/plugin.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/src/main/resources/META-INF/pluginIcon.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/kotlin/org/cangnova/telemetry/TelemetryBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/kotlin/org/cangnova/telemetry/TelemetrySettings.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/kotlin/org/cangnova/telemetry/TelemetryStartupActivity.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/kotlin/org/cangnova/telemetry/actions/SendImmediatelyTelemetryAction.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/kotlin/org/cangnova/telemetry/api/EventCategories.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/kotlin/org/cangnova/telemetry/api/TelemetryEvent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/kotlin/org/cangnova/telemetry/api/TelemetryService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/kotlin/org/cangnova/telemetry/data/TelemetryDataCollector.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/kotlin/org/cangnova/telemetry/error/ErrorTelemetry.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/kotlin/org/cangnova/telemetry/impl/DefaultTelemetryService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/kotlin/org/cangnova/telemetry/performance/IndexingPerformanceTelemetry.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/kotlin/org/cangnova/telemetry/sender/TelemetryDataSender.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/kotlin/org/cangnova/telemetry/ui/TelemetryNotifications.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/kotlin/org/cangnova/telemetry/ui/TelemetrySettingsAction.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/kotlin/org/cangnova/telemetry/ui/TelemetrySettingsPanel.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/resources/META-INF/telemetry.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/resources/messages/TelemetryBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/telemetry/src/main/resources/messages/TelemetryBundle_zh.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/test-common/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/test-common/testFixtures/CangJieTestBase.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/test-common/testFixturesResources/META-INF/plugin.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/main/kotlin/org/cangnova/cangjie/toolchain/CangJieSdkVersion.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/main/kotlin/org/cangnova/cangjie/toolchain/api/CjProjectSdkConfig.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/main/kotlin/org/cangnova/cangjie/toolchain/api/CjSdk.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/main/kotlin/org/cangnova/cangjie/toolchain/api/CjSdkDetector.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/main/kotlin/org/cangnova/cangjie/toolchain/api/CjSdkDiscoverer.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/main/kotlin/org/cangnova/cangjie/toolchain/api/CjSdkRegistry.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/main/kotlin/org/cangnova/cangjie/toolchain/command/commandLine.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/main/kotlin/org/cangnova/cangjie/toolchain/env/CangJieEnv.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/main/kotlin/org/cangnova/cangjie/toolchain/impl/CjProjectSdkConfigImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/main/kotlin/org/cangnova/cangjie/toolchain/impl/CjSdkDetectorImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/main/kotlin/org/cangnova/cangjie/toolchain/impl/CjSdkDiscovererImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/main/kotlin/org/cangnova/cangjie/toolchain/impl/CjSdkRegistryImpl.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/main/kotlin/org/cangnova/cangjie/toolchain/utils/SdkVersionParser.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/main/resources/META-INF/toolchain.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/test/kotlin/org/cangnova/cangjie/toolchain/impl/CjProjectSdkConfigImplTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/test/kotlin/org/cangnova/cangjie/toolchain/impl/CjSdkDetectorImplTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/test/kotlin/org/cangnova/cangjie/toolchain/impl/CjSdkDiscovererImplTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/test/kotlin/org/cangnova/cangjie/toolchain/impl/CjSdkRegistryImplTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/toolchain/src/test/kotlin/org/cangnova/cangjie/toolchain/utils/SdkVersionParserTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/AsyncValue.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/Collections.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/GenericPsiUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/Graph.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/ImmutableMap.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/ReflectionUtil.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/RegitsryUtil.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/SmartSet.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/Strings.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/addToStdlib.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/applicationUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/concurrent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/fileUtils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/jsonSchema/SimpleJsonSchemaFileProvider.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/pathUtil.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/pluginVersionUtil.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/util/src/main/kotlin/org/cangnova/cangjie/utils/utils.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/cfir-complete-semantic-checkers/diagnostic-coverage-ledger.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/cfir-complete-semantic-checkers/diagnostic-coverage-ledger.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/cfir-complete-semantic-checkers/tasks.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/cfir-complete-semantic-checkers/tasks.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-cfir-for-ide/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-cfir-for-ide/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-psi-for-ide/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-psi-for-ide/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat/src/main/kotlin/cangjieIdePublishing.kt" beforeDir="false" afterPath="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat/src/main/kotlin/cangjieIdePublishing.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,6 +1043,9 @@
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
     </projectState>
+    <projectState path="$PROJECT_DIR$/intellij-ide">
+      <ProjectState />
+    </projectState>
     <projectState path="$PROJECT_DIR$/repo/gradle-build-conventions">
       <ProjectState />
     </projectState>
@@ -36,6 +1059,9 @@
         <task path="$PROJECT_DIR$">
           <activation />
         </task>
+        <task path="$PROJECT_DIR$/intellij-ide">
+          <activation />
+        </task>
         <projects_view>
           <tree_state>
             <expand>
@@ -45,65 +1071,7 @@
               </path>
               <path>
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="cangjie" type="f1a62948:ProjectNode" />
-                <item name="cangjie" type="2d1252cf:ModuleNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="cangjie" type="f1a62948:ProjectNode" />
-                <item name="cangjie" type="2d1252cf:ModuleNode" />
-                <item name="cfir" type="2d1252cf:ModuleNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="cangjie" type="f1a62948:ProjectNode" />
-                <item name="cangjie" type="2d1252cf:ModuleNode" />
-                <item name="cfir" type="2d1252cf:ModuleNode" />
-                <item name="checkers" type="2d1252cf:ModuleNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="cangjie" type="f1a62948:ProjectNode" />
-                <item name="cangjie" type="2d1252cf:ModuleNode" />
-                <item name="cfir" type="2d1252cf:ModuleNode" />
-                <item name="checkers" type="2d1252cf:ModuleNode" />
-                <item name="Tasks" type="e4a08cd1:TasksNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="cangjie" type="f1a62948:ProjectNode" />
-                <item name="cangjie" type="2d1252cf:ModuleNode" />
-                <item name="cfir" type="2d1252cf:ModuleNode" />
-                <item name="checkers" type="2d1252cf:ModuleNode" />
-                <item name="Tasks" type="e4a08cd1:TasksNode" />
-                <item name="verification" type="c8890929:TasksNode$1" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="cangjie" type="f1a62948:ProjectNode" />
-                <item name="cangjie" type="2d1252cf:ModuleNode" />
-                <item name="cfir" type="2d1252cf:ModuleNode" />
-                <item name="checkers" type="2d1252cf:ModuleNode" />
-                <item name="checkers-component-generator" type="2d1252cf:ModuleNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="cangjie" type="f1a62948:ProjectNode" />
-                <item name="cangjie" type="2d1252cf:ModuleNode" />
-                <item name="cfir" type="2d1252cf:ModuleNode" />
-                <item name="checkers" type="2d1252cf:ModuleNode" />
-                <item name="checkers-component-generator" type="2d1252cf:ModuleNode" />
-                <item name="Tasks" type="e4a08cd1:TasksNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="cangjie" type="f1a62948:ProjectNode" />
-                <item name="cangjie" type="2d1252cf:ModuleNode" />
-                <item name="cfir" type="2d1252cf:ModuleNode" />
-                <item name="checkers" type="2d1252cf:ModuleNode" />
-                <item name="checkers-component-generator" type="2d1252cf:ModuleNode" />
-                <item name="Tasks" type="e4a08cd1:TasksNode" />
-                <item name="verification" type="c8890929:TasksNode$1" />
+                <item name="intellij-cangjie" type="f1a62948:ProjectNode" />
               </path>
             </expand>
             <select />
@@ -273,6 +1241,7 @@
     "Gradle.cangjie [publishToMavenLocal].executor": "Run",
     "Gradle.cangjie [publish].executor": "Run",
     "Gradle.cangjie [test].executor": "Run",
+    "Gradle.intellij-ide [:product:idea-plugin:runIde].executor": "Debug",
     "Gradle.下载源代码.executor": "Run",
     "Gradle.加载 Gradle 依赖项.executor": "Run",
     "Gradle.构建 cangjie.executor": "Run",
@@ -295,7 +1264,7 @@
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "git-widget-placeholder": "codex/enum-implement-complete-constraint-system",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/code/intellij/cangjie/intellij-ide",
+    "last_opened_file_path": "D:/code/intellij/cangjie/prepare/ide-plugin-dependencies-module",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -303,18 +1272,18 @@
     "nodejs_package_manager_path": "npm",
     "project.structure.last.edited": "模块",
     "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.5724138",
-    "settings.editor.selected.configurable": "profiler.jvm",
+    "project.structure.side.proportion": "0.30207306",
+    "settings.editor.selected.configurable": "reference.settingsdialog.project.gradle",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\code\intellij\cangjie\prepare\ide-plugin-dependencies-module" />
       <recent name="D:\code\intellij\cangjie\intellij-ide" />
       <recent name="D:\code\intellij\cangjie\docs" />
       <recent name="D:\code\intellij\cangjie" />
       <recent name="D:\code\intellij\cangjie\cfir\constraint\src\org\cangnova\cangjie\constraint" />
-      <recent name="D:\code\intellij\cangjie\flatbuffers-gen\src\org\cangnova\cangjie\metadata" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\code\intellij\cangjie\common" />
@@ -341,7 +1310,7 @@
       <command value="gradle psi build --info --stacktrace" />
     </option>
   </component>
-  <component name="RunManager" selected="Gradle.CfirAnalysisDiagnosticsTestGenerated">
+  <component name="RunManager" selected="Gradle.intellij-ide [:product:idea-plugin:runIde]">
     <configuration name="CfirAnalysisDiagnosticsTestGenerated" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -396,33 +1365,6 @@
       <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
     </configuration>
-    <configuration name="CjcGoldenDiagnostics2Test" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":cfir:analysis-tests:test" />
-            <option value="--tests" />
-            <option value="&quot;org.cangnova.cangjie.cfir.analysis.tests.CjcGoldenDiagnostics2Test&quot;" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <RunAsTest>true</RunAsTest>
-      <GradleProfilingDisabled>false</GradleProfilingDisabled>
-      <GradleCoverageDisabled>false</GradleCoverageDisabled>
-      <method v="2" />
-    </configuration>
     <configuration name="cangjie [generateCfirDiagnostics]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -448,7 +1390,7 @@
       <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
     </configuration>
-    <configuration name="cangjie [publish]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="cangjie [publishToMavenLocal]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -459,7 +1401,32 @@
         </option>
         <option name="taskNames">
           <list>
-            <option value="publish" />
+            <option value="publishToMavenLocal" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="intellij-ide [:product:idea-plugin:runIde]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/intellij-ide" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":product:idea-plugin:runIde" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -481,19 +1448,19 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Gradle.cangjie [publishToMavenLocal]" />
+      <item itemvalue="Gradle.intellij-ide [:product:idea-plugin:runIde]" />
       <item itemvalue="Gradle.CfirAnalysisDiagnosticsTestGenerated" />
       <item itemvalue="Gradle.CfirIdeDependentSourceModuleCollectDiagnosticsTestGenerated" />
       <item itemvalue="Gradle.cangjie [generateCfirDiagnostics]" />
-      <item itemvalue="Gradle.CjcGoldenDiagnostics2Test" />
-      <item itemvalue="Gradle.cangjie [publish]" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.intellij-ide [:product:idea-plugin:runIde]" />
+        <item itemvalue="Gradle.cangjie [publishToMavenLocal]" />
         <item itemvalue="Gradle.CfirAnalysisDiagnosticsTestGenerated" />
         <item itemvalue="Gradle.CfirIdeDependentSourceModuleCollectDiagnosticsTestGenerated" />
         <item itemvalue="Gradle.cangjie [generateCfirDiagnostics]" />
-        <item itemvalue="Gradle.CjcGoldenDiagnostics2Test" />
-        <item itemvalue="Gradle.cangjie [publish]" />
       </list>
     </recent_temporary>
   </component>
@@ -566,6 +1533,8 @@
       <workItem from="1776055314179" duration="18156000" />
       <workItem from="1776143016177" duration="17937000" />
       <workItem from="1776168323988" duration="2497000" />
+      <workItem from="1776268572004" duration="14580000" />
+      <workItem from="1776323626650" duration="24416000" />
     </task>
     <task id="LOCAL-00001" summary="add: implement generic functions and type declarations">
       <option name="closed" value="true" />
@@ -769,6 +1738,14 @@
           <properties class="java.lang.StackOverflowError" package="java.lang" />
           <option name="timeStamp" value="187" />
         </breakpoint>
+        <breakpoint enabled="true" type="java-exception">
+          <properties class="java.lang.ClassCastException" package="java.lang" />
+          <option name="timeStamp" value="306" />
+        </breakpoint>
+        <breakpoint enabled="true" type="java-exception">
+          <properties class="java.util.ServiceConfigurationError" package="java.util" />
+          <option name="timeStamp" value="307" />
+        </breakpoint>
         <line-breakpoint enabled="true" type="kotlin-line">
           <url>file://$PROJECT_DIR$/cfir/checkers/gen/org/cangnova/cangjie/cfir/analysis/checkers/declaration/DeclarationCheckersDiagnosticComponent.kt</url>
           <line>34</line>
@@ -868,12 +1845,6 @@
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
-    <watches-manager>
-      <configuration name="GradleRunConfiguration">
-        <watch expression="constructor" />
-        <watch expression="resolveSimpleClassId(className, configuration)" language="kotlin" />
-      </configuration>
-    </watches-manager>
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

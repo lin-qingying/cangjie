@@ -1,8 +1,8 @@
 package org.cangnova.cangjie.analysis.test.framework.projectStructure
 
 import com.intellij.psi.PsiFile
-import org.cangnova.cangjie.analysis.api.CaLibraryModule
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.model.DependencyKind

@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.api.symbols
 
+import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -78,7 +79,7 @@ interface CaSymbolProvider : CaLifetimeOwner {
 
     val CjFieldVariable.symbol: CaFieldSymbol
 
-    val CjEnumConstructor.symbol: CaEnumEntrySymbol
+    val CjEnumConstructor.symbol: CaEnumConstructorSymbol
 
     val CjPatternVariable.symbol: CaPatternVariableSymbol
 
@@ -128,3 +129,6 @@ interface CaSymbolProvider : CaLifetimeOwner {
      */
     fun getExtendSymbols(targetClassId: ClassId): List<CaExtendSymbol>
 }
+context(session: CaSession)
+public val CjDeclaration.symbol: CaDeclarationSymbol
+    get() = with(session) { symbol }

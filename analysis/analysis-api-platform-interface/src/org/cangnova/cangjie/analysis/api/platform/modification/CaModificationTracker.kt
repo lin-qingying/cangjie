@@ -2,7 +2,7 @@ package org.cangnova.cangjie.analysis.api.platform.modification
 
 import com.intellij.openapi.components.serviceOrNull
 import com.intellij.openapi.project.Project
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 
 /**
  * Analysis API 修改追踪器。

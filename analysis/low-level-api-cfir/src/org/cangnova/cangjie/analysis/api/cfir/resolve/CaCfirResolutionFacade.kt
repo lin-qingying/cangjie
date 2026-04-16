@@ -1,10 +1,12 @@
 package org.cangnova.cangjie.analysis.api.cfir.resolve
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
@@ -144,22 +146,22 @@ interface CaCfirResolutionFacade {
     /**
      * 查询文件在当前 use-site 上下文中的 low-level 作用域快照。
      */
-    fun getFileScope(file: CjFile): CaCfirScopeSnapshot
+    fun getFileDeclaredScope(file: CjFile): CfirContainingNamesAwareScope
 
     /**
      * 查询包级 low-level 作用域快照。
      */
-    fun getPackageScope(packageFqName: FqName): CaCfirScopeSnapshot?
+    fun getPackageScope(packageFqName: FqName): CfirContainingNamesAwareScope?
 
     /**
      * 查询 class-like 自身的 declared-member 作用域快照。
      */
-    fun getDeclaredMemberScope(classId: ClassId): CaCfirScopeSnapshot?
+    fun getDeclaredMemberScope(classId: ClassId): CfirContainingNamesAwareScope?
 
     /**
      * 查询 class-like 在当前 use-site 上下文中的可见成员作用域快照。
      */
-    fun getMemberScope(classId: ClassId): CaCfirScopeSnapshot?
+    fun getMemberScope(classId: ClassId): CfirTypeScope?
 
     /**
      * 查询类型在当前 use-site 上下文中的 type scope 快照。
@@ -167,7 +169,7 @@ interface CaCfirResolutionFacade {
      * `type scope` 必须由 low-level 层统一提供，
      * 上层不能再自行从 `ClassId` 回退推导成员作用域。
      */
-    fun getTypeScope(type: ConeCangJieType): CaCfirScopeSnapshot?
+    fun getTypeScope(type: ConeCangJieType): CfirTypeScope?
 
     /**
      * 按当前 use-site 模块闭包判断包是否可见。

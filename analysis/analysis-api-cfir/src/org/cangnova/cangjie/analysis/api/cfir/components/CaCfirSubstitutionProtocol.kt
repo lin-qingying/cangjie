@@ -2,6 +2,8 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotation
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirType
+import org.cangnova.cangjie.analysis.api.cfir.types.asCaType
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.signatures.CaSignature
 import org.cangnova.cangjie.analysis.api.substitution.CaSubstitutedSignature
@@ -24,9 +26,9 @@ internal class CaCfirTypeSubstitutorImpl(
     override val token: CaLifetimeToken,
 ) : CaTypeSubstitutor {
     override fun substitute(type: CaType): CaType {
-        val cfirType = type as? CaCfirTypeImpl
+        val cfirType = type as? CaCfirType
             ?: error("仅支持对 CFIR Analysis API 类型执行替换：${type::class.simpleName}")
-        return coneSubstitutor.substituteOrSelf(cfirType.coneType).asCaType(token)
+        return coneSubstitutor.substituteOrSelf(cfirType.coneType).asCaType(cfirType.analysisSession)
     }
 }
 
@@ -59,7 +61,7 @@ internal fun CaCfirSession.buildTypeSubstitutor(
             "类型替换表中出现重复类型参数名：`${name.asString()}`"
         }
         normalizedSubstitutions[name] = type
-        val cfirType = type as? CaCfirTypeImpl
+        val cfirType = type as? CaCfirType
             ?: error("仅支持使用 CFIR Analysis API 类型构建替换器：${type::class.simpleName}")
         coneSubstitutions[name] = cfirType.coneType
         coneSubstitutionsForSubstitutor[name.asString()] = cfirType.coneType

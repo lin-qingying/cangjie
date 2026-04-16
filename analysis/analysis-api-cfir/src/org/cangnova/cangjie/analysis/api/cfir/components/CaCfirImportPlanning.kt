@@ -241,8 +241,13 @@ private fun CaSymbol.canBeShortenedAsStandaloneReference(): Boolean = when (this
 
 private fun CaCfirSession.isDirectlyReachable(symbol: CaSymbol, file: CjFile): Boolean {
     val shortName = symbol.shortNameOrNull() ?: return false
-    return queryFileScope(file)
-        .getSymbols(shortName)
+    val visibleSymbols = buildList {
+        queryFileDeclaredScope(file).processClassifiersByName(shortName) { add(it) }
+        queryFileDeclaredScope(file).processCallablesByName(shortName) { add(it) }
+        queryPackageScope(file.packageFqName)?.processClassifiersByName(shortName) { add(it) }
+        queryPackageScope(file.packageFqName)?.processCallablesByName(shortName) { add(it) }
+    }
+    return visibleSymbols
         .map(::getPublicSymbol)
         .any { visibleSymbol -> with(this) { visibleSymbol.isEquivalentTo(symbol) } }
 }

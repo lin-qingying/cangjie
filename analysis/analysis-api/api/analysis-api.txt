@@ -346,9 +346,9 @@ CaAnnotationRendererForSource.public val WITH_SHORT_NAMES: CaAnnotationRenderer
 ## org/cangnova/cangjie/analysis/api/renderer/base/CaKeywordsRenderer.kt
 package org.cangnova.cangjie.analysis.api.renderer.base
 public fun interface CaKeywordsRenderer
-## org/cangnova/cangjie/analysis/api/renderer/base/CaPrettyPrinter.kt
+## org/cangnova/cangjie/analysis/api/renderer/base/PrettyPrinter.kt
 package org.cangnova.cangjie.analysis.api.renderer.base
-public inline fun prettyPrint(block: CaPrettyPrinter.() -> Unit): String
+public inline fun prettyPrint(block: PrettyPrinter.() -> Unit): String
 ## org/cangnova/cangjie/analysis/api/renderer/declarations/CaCallableSignatureRenderers.kt
 package org.cangnova.cangjie.analysis.api.renderer.declarations
 public fun interface CaTypeParametersRenderer
@@ -418,7 +418,7 @@ public fun interface CaConstructorSymbolRenderer
 public fun interface CaPropertySymbolRenderer
 public fun interface CaFieldSymbolRenderer
 public fun interface CaLocalVariableSymbolRenderer
-public fun interface CaEnumEntrySymbolRenderer
+public fun interface CaEnumConstructorSymbolRenderer
 public fun interface CaValueParameterSymbolRenderer
 public fun interface CaTypeParameterSymbolRenderer
 public fun interface CaScriptSymbolRenderer
@@ -688,6 +688,12 @@ CaConstructorSymbol.public val isPrimary: Boolean
 CaConstructorSymbol.public val containingClassId: ClassId?
 public interface CaFinalizerSymbol : CaFunctionSymbol
 CaFinalizerSymbol.public val containingClassId: ClassId?
+## org/cangnova/cangjie/analysis/api/symbols/CaEnumConstructorSymbol.kt
+package org.cangnova.cangjie.analysis.api.symbols
+public interface CaEnumConstructorSymbol : CaCallableSymbol, CaNamedSymbol
+CaEnumConstructorSymbol.public val containingEnumClassId: ClassId?
+CaEnumConstructorSymbol.public val payloadTypes: List<CaType>
+CaEnumConstructorSymbol.public val hasPayload: Boolean
 ## org/cangnova/cangjie/analysis/api/symbols/CaPackageSymbol.kt
 package org.cangnova.cangjie.analysis.api.symbols
 public interface CaPackageSymbol : CaSymbol, CaNamedSymbol
@@ -734,7 +740,7 @@ CaSymbolProvider.public val CjFinalizer.symbol: CaFinalizerSymbol
 CaSymbolProvider.public val CjProperty.symbol: CaPropertySymbol
 CaSymbolProvider.public val CjPropertyAccessor.symbol: CaPropertyAccessorSymbol
 CaSymbolProvider.public val CjFieldVariable.symbol: CaFieldSymbol
-CaSymbolProvider.public val CjEnumConstructor.symbol: CaEnumEntrySymbol
+CaSymbolProvider.public val CjEnumConstructor.symbol: CaEnumConstructorSymbol
 CaSymbolProvider.public val CjPatternVariable.symbol: CaPatternVariableSymbol
 CaSymbolProvider.public val CjBindingPattern.symbol: CaPatternBindingSymbol
 CaSymbolProvider.public val CjParameter.symbol: CaVariableSymbol
@@ -750,7 +756,7 @@ CaSymbolProvider.public fun getExtendSymbols(targetClassId: ClassId): List<CaExt
 ## org/cangnova/cangjie/analysis/api/symbols/CaVariableSymbol.kt
 package org.cangnova.cangjie.analysis.api.symbols
 public interface CaVariableSymbol : CaCallableSymbol, CaNamedSymbol
-CaVariableSymbol.public val isVal: Boolean
+CaVariableSymbol.public val isLet: Boolean
 public interface CaPropertySymbol : CaVariableSymbol, CaTypeParameterOwnerSymbol, CaDeclarationContainerSymbol
 CaPropertySymbol.public val isStatic: Boolean
 CaPropertySymbol.public val isConst: Boolean
@@ -766,7 +772,6 @@ CaFieldSymbol.public val isConst: Boolean
 public interface CaLocalVariableSymbol : CaVariableSymbol
 public interface CaPatternVariableSymbol : CaLocalVariableSymbol
 public interface CaPatternBindingSymbol : CaLocalVariableSymbol
-public interface CaEnumEntrySymbol : CaVariableSymbol
 public interface CaParameterSymbol : CaVariableSymbol
 public interface CaValueParameterSymbol : CaParameterSymbol
 CaValueParameterSymbol.public val isNamed: Boolean

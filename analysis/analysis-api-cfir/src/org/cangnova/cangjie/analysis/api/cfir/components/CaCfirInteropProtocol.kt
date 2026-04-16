@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirBackedSymbol
 import org.cangnova.cangjie.analysis.api.interop.CaInteropBackend
 import org.cangnova.cangjie.analysis.api.interop.CaInteropCallingConvention
 import org.cangnova.cangjie.analysis.api.interop.CaInteropInfo

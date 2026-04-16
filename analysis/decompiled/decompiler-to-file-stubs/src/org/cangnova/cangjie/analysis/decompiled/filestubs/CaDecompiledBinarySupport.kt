@@ -7,12 +7,12 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileSystemItem
-import org.cangnova.cangjie.analysis.api.CaBuiltinsModule
-import org.cangnova.cangjie.analysis.api.CaLibraryModule
-import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageHeader
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath

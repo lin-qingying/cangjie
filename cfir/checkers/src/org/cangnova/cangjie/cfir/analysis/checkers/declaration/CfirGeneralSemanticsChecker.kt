@@ -50,6 +50,79 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFile) {
         checkAccessibilityInFile(declaration)
+        checkConflictWithSubPackage(declaration)
+        checkCoreObjectAvailable(declaration)
+        checkMainFunctionAccessibility(declaration)
+    }
+
+    /**
+     * 检查顶层声明名是否与子包名冲突。
+     *
+     * 对齐 C++ DiagKind::sema_conflict_with_sub_package。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkConflictWithSubPackage(file: CfirFile) {
+        val packageFqName = file.packageDirective.packageFqName
+        for (declaration in file.declarations) {
+            val declName = declaration.declarationName() ?: continue
+            val childPackageFqName = packageFqName.child(declName)
+            if (context.session.symbolProvider.hasPackage(childPackageFqName)) {
+                reporter.reportOn(
+                    source = declaration.source,
+                    factory = CfirErrors.CONFLICT_WITH_SUB_PACKAGE,
+                    a = declName,
+                    b = declName,
+                )
+            }
+        }
+    }
+
+    /**
+     * 检查 core.Object 是否可用。
+     *
+     * 对齐 C++ DiagKind::sema_core_object_not_found_when_no_prelude:
+     * 使用 --no-prelude 选项时，如果 std.core.Object 不存在则报错。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkCoreObjectAvailable(file: CfirFile) {
+        val stdCoreObjectId = org.cangnova.cangjie.name.ClassId(
+            org.cangnova.cangjie.name.FqName("std.core"),
+            Name.identifier("Object"),
+        )
+        val objectSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(stdCoreObjectId)
+        if (objectSymbol == null) {
+            // 只在 std.core 包本身不存在时报告（即 --no-prelude 场景）
+            val stdCoreFqName = org.cangnova.cangjie.name.FqName("std.core")
+            if (!context.session.symbolProvider.hasPackage(stdCoreFqName)) {
+                reporter.reportOn(
+                    source = file.source,
+                    factory = CfirErrors.CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE,
+                )
+            }
+        }
+    }
+
+    /**
+     * main 函数可访问性检查。
+     *
+     * 对齐 C++ DiagKind::sema_accessibility_with_main_hint:
+     * main 函数必须是 public 的，否则带有 main 提示的可访问性错误。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkMainFunctionAccessibility(file: CfirFile) {
+        for (declaration in file.declarations) {
+            if (declaration !is org.cangnova.cangjie.cfir.declarations.CfirMainFunction) continue
+            val visibility = declaration.status.visibility
+            if (visibility != Visibilities.Public) {
+                reporter.reportOn(
+                    source = declaration.source,
+                    factory = CfirErrors.ACCESSIBILITY_WITH_MAIN_HINT,
+                    a = "function",
+                    b = org.cangnova.cangjie.name.Name.identifier("main"),
+                    c = visibility,
+                )
+            }
+        }
     }
 
     /**
@@ -133,6 +206,7 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
             checkSealedOnlyOnAbstract(declaration)
             checkStaticVariableGenericParameterDependency(declaration)
             checkUninitializedStaticFields(declaration)
+            checkFinalizerConstraints(declaration)
         }
         if (declaration is CfirStruct) {
             checkStaticVariableGenericParameterDependency(declaration)
@@ -192,6 +266,24 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
                 source = structDecl.source,
                 factory = CfirErrors.CSTRUCT_CANNOT_IMPL_INTERFACES,
             )
+        }
+    }
+
+    /**
+     * finalizer 中不能使用实例函数。
+     *
+     * 对齐 C++ DiagKind::sema_instance_func_cannot_be_used_in_finalizer
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkFinalizerConstraints(classDecl: CfirClass) {
+        val hasFinalizer = classDecl.declarations.any { it is org.cangnova.cangjie.cfir.declarations.CfirFinalizer }
+        if (!hasFinalizer) return
+
+        // 检查 finalizer 中的实例方法调用（需要 body 遍历）
+        for (member in classDecl.declarations) {
+            if (member !is org.cangnova.cangjie.cfir.declarations.CfirFinalizer) continue
+            // 在 finalizer 声明级别标记——实际的实例成员调用检查在表达式 checker 中完成
+            // 此处预留声明级入口
         }
     }
 

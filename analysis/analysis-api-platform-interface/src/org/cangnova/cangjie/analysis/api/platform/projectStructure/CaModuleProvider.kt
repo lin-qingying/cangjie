@@ -2,7 +2,7 @@ package org.cangnova.cangjie.analysis.api.platform.projectStructure
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 
 /**
  * 平台模块图服务。
