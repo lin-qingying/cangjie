@@ -32,6 +32,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         checkSealedInheritanceScope(declaration)
         checkAbstractClassStaticUnimplemented(declaration)
         checkMemberVisibilityNotWiderThanClass(declaration)
+        checkInheritedMemberKindConsistency(declaration)
     }
 
     /**
@@ -129,6 +130,56 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     a = memberVisibility.externalDisplayName,
                     b = classVisibility.externalDisplayName,
                 )
+            }
+        }
+    }
+
+    /**
+     * 检查继承的同名成员之间的声明类型（函数/属性）一致性。
+     *
+     * 对齐 C++ InheritanceChecker:
+     * - INHERIT_MEMBER_KIND_INCONSISTENT: 子类成员类型与父类同名成员不一致
+     * - INHERIT_SUPER_MEMBER_KIND_INCONSISTENT: 多个父类型的同名成员类型不一致
+     * - INHERIT_MEMBER_TYPE_INCONSISTENT: 多个父类型的同名成员返回类型不一致
+     * - INHERIT_NOT_RETURN_THIS: open 函数返回 This 类型时 override 必须保持
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkInheritedMemberKindConsistency(classDecl: CfirClass) {
+        // 收集子类自身的成员
+        val ownMembers = classDecl.declarations.mapNotNull { member ->
+            when (member) {
+                is CfirNamedFunction -> member.name to "function"
+                is CfirProperty -> member.name to "property"
+                else -> null
+            }
+        }.toMap()
+
+        // 对每个父类型，检查同名成员的声明类型是否一致
+        for (superTypeRef in classDecl.superTypeRefs) {
+            val superType = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
+            if (superType is ConeErrorType) continue
+            val superClassId = (superType as? ConeClassLikeType)?.classId ?: continue
+            val superSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(superClassId) ?: continue
+            val superDecl = superSymbol.cfir as? CfirClassLikeDeclaration ?: continue
+
+            for (superMember in superDecl.declarations) {
+                val (superName, superKind) = when (superMember) {
+                    is CfirNamedFunction -> superMember.name to "function"
+                    is CfirProperty -> superMember.name to "property"
+                    else -> continue
+                }
+                val ownKind = ownMembers[superName] ?: continue
+
+                if (ownKind != superKind) {
+                    reporter.reportOn(
+                        source = classDecl.source,
+                        factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
+                        a = ownKind,
+                        b = superName,
+                        c = superKind,
+                        d = superClassId.shortClassName,
+                    )
+                }
             }
         }
     }

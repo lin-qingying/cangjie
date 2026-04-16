@@ -2,7 +2,6 @@ package org.cangnova.cangjie.analysis.api.cfir
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotation
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateDecision
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirAnalysisScopeProvider
@@ -41,7 +40,6 @@ import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirVisibilityChecker
 import org.cangnova.cangjie.analysis.api.cfir.components.completionDecisionKey
 import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirCallInfoSnapshot
 import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacade
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirScopeSnapshot
 import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirTopLevelSymbolQueryResult
 import org.cangnova.cangjie.analysis.api.cfir.resolve.DiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.dataFlow.CaDataFlowInfo
@@ -51,11 +49,14 @@ import org.cangnova.cangjie.analysis.api.imports.CaImportOptimizationPlan
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningPlan
 import org.cangnova.cangjie.analysis.api.interop.CaInteropInfo
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.signatures.CaSignature
 import org.cangnova.cangjie.analysis.api.substitution.CaSubstitutedSignature
 import org.cangnova.cangjie.analysis.api.substitution.CaTypeSubstitutor
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
@@ -247,19 +248,19 @@ internal class CaCfirSession private constructor(
     ): Collection<org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic> =
         diagnosticQueryService.queryFileDiagnostics(file, filter)
 
-    internal fun queryFileScope(file: CjFile): CaCfirScopeSnapshot =
-        scopeQueryService.queryFileScope(file)
+    internal fun queryFileDeclaredScope(file: CjFile): CfirContainingNamesAwareScope =
+        scopeQueryService.queryFileDeclaredScope(file)
 
-    internal fun queryPackageScope(packageFqName: FqName): CaCfirScopeSnapshot? =
+    internal fun queryPackageScope(packageFqName: FqName): CfirContainingNamesAwareScope? =
         scopeQueryService.queryPackageScope(packageFqName)
 
-    internal fun queryDeclaredMemberScope(classId: ClassId): CaCfirScopeSnapshot? =
+    internal fun queryDeclaredMemberScope(classId: ClassId): CfirContainingNamesAwareScope? =
         scopeQueryService.queryDeclaredMemberScope(classId)
 
-    internal fun queryMemberScope(classId: ClassId): CaCfirScopeSnapshot? =
+    internal fun queryMemberScope(classId: ClassId): CfirTypeScope? =
         scopeQueryService.queryMemberScope(classId)
 
-    internal fun queryTypeScope(type: ConeCangJieType): CaCfirScopeSnapshot? =
+    internal fun queryTypeScope(type: ConeCangJieType): CfirTypeScope? =
         scopeQueryService.queryTypeScope(type)
 
     internal fun hasVisiblePackage(packageFqName: FqName): Boolean =

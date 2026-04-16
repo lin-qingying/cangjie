@@ -1,8 +1,8 @@
 package org.cangnova.cangjie.analysis.api.cfir.resolve
 
-import org.cangnova.cangjie.analysis.api.CaDanglingFileModule
-import org.cangnova.cangjie.analysis.api.CaModule
-import org.cangnova.cangjie.analysis.api.CaNotUnderContentRootModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
 
 /**
  * low-level use-site 模块提供器。

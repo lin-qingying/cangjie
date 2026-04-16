@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.analysis.api.cfir.resolve
 
 import com.intellij.openapi.util.TextRange
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.cfir.analysis.CheckersComponent
 import org.cangnova.cangjie.cfir.analysis.checkers.CommonDeclarationCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.CommonExpressionCheckers
@@ -80,8 +80,8 @@ internal class CaCfirModuleResolveComponents(
      * package/member/type scope 的缓存必须和模块级 resolve components 同生命周期，
      * 才能与 session、CFIR file 和 diagnostics 快照保持一致的失效边界。
      */
-    val scopeProvider: CaCfirScopeSnapshotProvider by lazy(LazyThreadSafetyMode.NONE) {
-        CaCfirScopeSnapshotProvider(this)
+    val scopeProvider: CaCfirScopeProvider by lazy(LazyThreadSafetyMode.NONE) {
+        CaCfirScopeProvider(this)
     }
 
     /**

@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjValueArgument
@@ -72,6 +73,7 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
             if (cfirArgIndex >= 0 && cfirArgIndex < expression.argumentList.arguments.size) {
                 val cfirArg = expression.argumentList.arguments[cfirArgIndex]
                 checkInoutMustBeVar(cfirArg, argSource)
+                checkInoutTypeConstraints(cfirArg, argSource)
             }
         }
 
@@ -123,6 +125,76 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
                 source = argSource,
                 factory = CfirErrors.INOUT_MUST_BE_VAR_VARIABLE,
             )
+        }
+    }
+
+    /**
+     * 检查 inout 参数的类型约束。
+     *
+     * 对齐 C++ CFFICheck.cpp:
+     * - inout 表达式类型必须满足 CType 约束
+     * - inout 表达式不能是 CString 或零大小类型
+     * - inout 变量不能来自堆（class 实例字段）
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkInoutTypeConstraints(
+        cfirArg: org.cangnova.cangjie.cfir.expressions.CfirExpression,
+        argSource: org.cangnova.cangjie.source.AbstractCjSourceElement?,
+    ) {
+        val argType = cfirArg.coneTypeOrNull ?: return
+        if (argType is org.cangnova.cangjie.cfir.types.ConeErrorType) return
+
+        // CString 和零大小类型不允许
+        val classId = argType.classIdOrNull()
+        if (classId != null && classId.shortClassName.asString() == "CString") {
+            reporter.reportOn(
+                source = argSource,
+                factory = CfirErrors.INOUT_MODIFY_CSTRING_OR_ZEROSIZED,
+                a = argType,
+            )
+            return
+        }
+
+        // 必须满足 CType 约束（基本类型和 @C struct 是 CType）
+        if (!isCTypeCompatible(argType)) {
+            reporter.reportOn(
+                source = argSource,
+                factory = CfirErrors.INOUT_MODIFY_NON_CTYPE,
+            )
+        }
+
+        // 检查是否来自 class 实例字段（堆变量）
+        val qualifiedAccess = cfirArg as? org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression ?: return
+        val receiver = qualifiedAccess.explicitReceiver
+        if (receiver != null) {
+            val receiverType = receiver.coneTypeOrNull
+            if (receiverType is org.cangnova.cangjie.cfir.types.ConeClassLikeType) {
+                reporter.reportOn(
+                    source = argSource,
+                    factory = CfirErrors.INOUT_MODIFY_HEAP_VARIABLE,
+                )
+            }
+        }
+    }
+
+    /**
+     * 判断类型是否满足 CType 约束。
+     * CType 包括：基本类型、@C struct、VArray、CPointer 等。
+     */
+    private fun isCTypeCompatible(type: org.cangnova.cangjie.cfir.types.ConeCangJieType): Boolean {
+        if (type is org.cangnova.cangjie.cfir.types.ConePrimitiveType) return true
+        if (type is org.cangnova.cangjie.cfir.types.ConeStructType) return true
+        if (type is org.cangnova.cangjie.cfir.types.ConeVArrayType) return true
+        if (type is org.cangnova.cangjie.cfir.types.ConePointerType) return true
+        return false
+    }
+
+    private fun org.cangnova.cangjie.cfir.types.ConeCangJieType.classIdOrNull(): org.cangnova.cangjie.name.ClassId? {
+        return when (this) {
+            is org.cangnova.cangjie.cfir.types.ConeClassLikeType -> classId
+            is org.cangnova.cangjie.cfir.types.ConeStructType -> classId
+            is org.cangnova.cangjie.cfir.types.ConeEnumType -> classId
+            else -> null
         }
     }
 

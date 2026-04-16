@@ -29,7 +29,12 @@ import org.cangnova.cangjie.analysis.api.components.CaTypeProvider
 import org.cangnova.cangjie.analysis.api.components.CaTypeRelationChecker
 import org.cangnova.cangjie.analysis.api.components.CaVisibilityChecker
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolProvider
+import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
+import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.analysis.api.types.CaTypePointer
 
 /**
  * 仓颉 Analysis API 的分析会话。
@@ -87,3 +92,17 @@ interface CaSession : CaLifetimeOwner,
     val useSiteSession: CaSession
         get() = this
 }
+
+fun <S : CaSymbol> CaSession.restoreSymbol(pointer: CaSymbolPointer<S>): S? =
+    pointer.restoreSymbol(this)
+
+fun <T : CaType> CaSession.restoreType(pointer: CaTypePointer<T>): T? =
+    pointer.restoreType(this)
+
+fun <S : CaSymbol> CaSession.restoreSymbols(
+    pointers: Collection<CaSymbolPointer<S>>,
+): List<S?> = pointers.map { pointer -> pointer.restoreSymbol(this) }
+
+fun <T : CaType> CaSession.restoreTypes(
+    pointers: Collection<CaTypePointer<T>>,
+): List<T?> = pointers.map { pointer -> pointer.restoreType(this) }

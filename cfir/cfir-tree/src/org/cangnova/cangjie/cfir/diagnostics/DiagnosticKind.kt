@@ -21,5 +21,7 @@ enum class DiagnosticKind {
     LabelNameClash,
     SuperNotAllowed,
     GenericTypeWithoutTypeArgument,
+    ReturnInStaticInit,
+    CaptureBeforeInitialization,
     Other,
 }

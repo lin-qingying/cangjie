@@ -2,15 +2,39 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateDecision
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirScopeSnapshot
+import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirCallApplicability
+import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirCallArgumentMappingSnapshot
+import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirCallInfoSnapshot
+import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirCallKind
+import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirCallOrigin
+import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirCallSnapshot
 import org.cangnova.cangjie.analysis.api.cfir.resolve.DiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirDeclaredMemberScope
+import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirFileScope
+import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirMemberScope
+import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirPackageScope
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirBackedSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassLikeSymbolBase
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPackageSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.types.asCaType
 import org.cangnova.cangjie.analysis.api.components.CaCompletionCandidateChecker
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticProvider
 import org.cangnova.cangjie.analysis.api.components.CaResolver
 import org.cangnova.cangjie.analysis.api.components.CaScopeProvider
+import org.cangnova.cangjie.analysis.api.impl.base.resolution.CaBaseCall
+import org.cangnova.cangjie.analysis.api.impl.base.resolution.CaBaseCallArgumentMapping
+import org.cangnova.cangjie.analysis.api.impl.base.resolution.CaBaseCallInfo
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.analysis.api.resolution.CaCall
+import org.cangnova.cangjie.analysis.api.resolution.CaCallApplicability
+import org.cangnova.cangjie.analysis.api.resolution.CaCallArgumentMapping
+import org.cangnova.cangjie.analysis.api.resolution.CaCallInfo
+import org.cangnova.cangjie.analysis.api.resolution.CaCallKind
+import org.cangnova.cangjie.analysis.api.resolution.CaCallOrigin
 import org.cangnova.cangjie.analysis.api.scopes.CaScope
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
@@ -61,7 +85,7 @@ internal class CaCfirResolver(
     }
 
     override fun CjElement.resolveToCall() = withValidityAssertion {
-        analysisSession.queryCallInfo(this@resolveToCall)?.asCaCallInfo(analysisSession, token)
+        analysisSession.queryCallInfo(this@resolveToCall)?.asAnalysisCallInfo(analysisSession, token)
     }
 
     /**
@@ -168,6 +192,88 @@ internal class CaCfirResolver(
             .filterIsInstance<CaPatternBindingSymbol>()
             .firstOrNull()
     }
+}
+
+/**
+ * 对齐 Kotlin `KaFirResolver` 的分层：
+ * CFIR resolver 在组件层直接把 low-level 调用 snapshot 转成公开 Analysis API 调用模型，
+ * 而不是再额外引入一层独立的 “CallBridge” 文件。
+ */
+private fun CaCfirCallInfoSnapshot.asAnalysisCallInfo(
+    analysisSession: CaCfirSession,
+    token: CaLifetimeToken,
+): CaCallInfo {
+    val mappedCalls = calls.map { callSnapshot -> callSnapshot.asAnalysisCall(analysisSession, token) }
+    val mappedSuccessfulCall = successfulCall?.asAnalysisCall(analysisSession, token)
+    return CaBaseCallInfo(
+        successfulCall = mappedSuccessfulCall,
+        calls = mappedCalls,
+        token = token,
+    )
+}
+
+private fun CaCfirCallSnapshot.asAnalysisCall(
+    analysisSession: CaCfirSession,
+    token: CaLifetimeToken,
+): CaCall {
+    return CaBaseCall(
+        kind = kind.asAnalysisKind(),
+        origin = origin.asAnalysisOrigin(),
+        applicability = applicability.asAnalysisApplicability(),
+        isImplicitInvoke = isImplicitInvoke,
+        calleeName = calleeName,
+        target = target?.let(analysisSession::getPublicSymbol) as? CaCallableSymbol,
+        explicitReceiverType = explicitReceiverType?.asCaType(analysisSession),
+        dispatchReceiverType = dispatchReceiverType?.asCaType(analysisSession),
+        extensionReceiverType = extensionReceiverType?.asCaType(analysisSession),
+        contextArgumentTypes = contextArgumentTypes.map { argumentType -> argumentType?.asCaType(analysisSession) },
+        argumentTypes = argumentTypes.map { argumentType -> argumentType?.asCaType(analysisSession) },
+        typeArguments = typeArguments.map { typeArgument -> typeArgument?.asCaType(analysisSession) },
+        argumentMapping = argumentMapping.map { mapping ->
+            mapping.asAnalysisCallArgumentMapping(analysisSession, token)
+        },
+        token = token,
+    )
+}
+
+private fun CaCfirCallKind.asAnalysisKind(): CaCallKind = when (this) {
+    CaCfirCallKind.FUNCTION -> CaCallKind.FUNCTION
+}
+
+private fun CaCfirCallOrigin.asAnalysisOrigin(): CaCallOrigin = when (this) {
+    CaCfirCallOrigin.REGULAR -> CaCallOrigin.REGULAR
+    CaCfirCallOrigin.OPERATOR -> CaCallOrigin.OPERATOR
+    CaCfirCallOrigin.CONSTRUCTOR_DELEGATION_THIS -> CaCallOrigin.CONSTRUCTOR_DELEGATION_THIS
+    CaCfirCallOrigin.CONSTRUCTOR_DELEGATION_SUPER -> CaCallOrigin.CONSTRUCTOR_DELEGATION_SUPER
+}
+
+private fun CaCfirCallApplicability.asAnalysisApplicability(): CaCallApplicability = when (this) {
+    CaCfirCallApplicability.HIDDEN -> CaCallApplicability.HIDDEN
+    CaCfirCallApplicability.INAPPLICABLE_WRONG_RECEIVER -> CaCallApplicability.INAPPLICABLE_WRONG_RECEIVER
+    CaCfirCallApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR ->
+        CaCallApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR
+    CaCfirCallApplicability.INAPPLICABLE -> CaCallApplicability.INAPPLICABLE
+    CaCfirCallApplicability.VISIBILITY_ERROR -> CaCallApplicability.VISIBILITY_ERROR
+    CaCfirCallApplicability.UNSAFE_CALL -> CaCallApplicability.UNSAFE_CALL
+    CaCfirCallApplicability.UNSTABLE_SMARTCAST -> CaCallApplicability.UNSTABLE_SMARTCAST
+    CaCfirCallApplicability.CONVENTION_ERROR -> CaCallApplicability.CONVENTION_ERROR
+    CaCfirCallApplicability.RESOLVED_LOW_PRIORITY -> CaCallApplicability.RESOLVED_LOW_PRIORITY
+    CaCfirCallApplicability.RESOLVED_NEED_PRESERVE_COMPATIBILITY ->
+        CaCallApplicability.RESOLVED_NEED_PRESERVE_COMPATIBILITY
+    CaCfirCallApplicability.RESOLVED_WITH_ERROR -> CaCallApplicability.RESOLVED_WITH_ERROR
+    CaCfirCallApplicability.RESOLVED -> CaCallApplicability.RESOLVED
+}
+
+private fun CaCfirCallArgumentMappingSnapshot.asAnalysisCallArgumentMapping(
+    analysisSession: CaCfirSession,
+    token: CaLifetimeToken,
+): CaCallArgumentMapping {
+    return CaBaseCallArgumentMapping(
+        argumentIndex = argumentIndex,
+        parameterName = parameterName,
+        parameterType = parameterType?.asCaType(analysisSession),
+        token = token,
+    )
 }
 
 /**
@@ -343,32 +449,48 @@ internal class CaCfirScopeProvider(
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaScopeProvider, CaCfirSessionComponent {
     override fun CjFile.getFileScope(): CaScope = withValidityAssertion {
-        analysisSession.queryFileScope(this@getFileScope).asAnalysisScope(
-            extraSymbols = listOf(with(analysisSession) { this@getFileScope.symbol }),
+        CaCfirFileScope(
+            fileDeclaredScope = analysisSession.queryFileDeclaredScope(this@getFileScope),
+            packageScope = analysisSession.queryPackageScope(this@getFileScope.packageFqName),
+            analysisSession = analysisSession,
+            fileSymbol = with(analysisSession) { this@getFileScope.symbol },
+            token = token,
         )
     }
 
     override fun getPackageScope(packageFqName: FqName): CaScope? = withValidityAssertion {
         val packageSymbol = with(analysisSession) { getPackageSymbol(packageFqName) } ?: return@withValidityAssertion null
-        analysisSession.queryPackageScope(packageFqName)?.asAnalysisScope(
-            extraSymbols = listOf(packageSymbol),
-        ) ?: error("无法为包 `${packageFqName.asString()}` 构建 low-level 作用域快照。")
+        analysisSession.queryPackageScope(packageFqName)?.let { snapshot ->
+            CaCfirPackageScope(
+                packageScope = snapshot,
+                analysisSession = analysisSession,
+                packageSymbol = packageSymbol,
+                token = token,
+            )
+        } ?: error("无法为包 `${packageFqName.asString()}` 构建 low-level 作用域快照。")
     }
 
     override val CaPackageSymbol.packageScope: CaScope
         get() = withValidityAssertion {
             val packageSymbol = this@packageScope as? CaCfirPackageSymbolImpl
                 ?: error("仅 CFIR 包符号支持包级作用域查询：${this@packageScope::class.simpleName}")
-            analysisSession.queryPackageScope(packageSymbol.fqName)?.asAnalysisScope(
-                extraSymbols = listOf(packageSymbol),
-            ) ?: error("无法为包 `${packageSymbol.fqName.asString()}` 构建 low-level 作用域快照。")
+            analysisSession.queryPackageScope(packageSymbol.fqName)?.let { snapshot ->
+                CaCfirPackageScope(
+                    packageScope = snapshot,
+                    analysisSession = analysisSession,
+                    packageSymbol = packageSymbol,
+                    token = token,
+                )
+            } ?: error("无法为包 `${packageSymbol.fqName.asString()}` 构建 low-level 作用域快照。")
         }
 
     override val CaClassLikeSymbol.declaredMemberScope: CaScope
         get() = withValidityAssertion {
             val classSymbol = requireClassLikeSymbol(this@declaredMemberScope)
             val classId = classSymbol.classId ?: error("Local/anonymous class-like symbols do not expose declared-member scope.")
-            analysisSession.queryDeclaredMemberScope(classId)?.asAnalysisScope()
+            analysisSession.queryDeclaredMemberScope(classId)?.let { snapshot ->
+                CaCfirDeclaredMemberScope(snapshot, analysisSession, token)
+            }
                 ?: error("无法为 `${classId.asString()}` 构建 declared-member 作用域快照。")
         }
 
@@ -383,46 +505,22 @@ internal class CaCfirScopeProvider(
         get() = withValidityAssertion {
             val classSymbol = requireClassLikeSymbol(this@memberScope)
             val classId = classSymbol.classId ?: error("Local/anonymous class-like symbols do not expose use-site member scope.")
-            analysisSession.queryMemberScope(classId)?.asAnalysisScope()
+            analysisSession.queryMemberScope(classId)?.let { snapshot ->
+                CaCfirMemberScope(snapshot, analysisSession, token)
+            }
                 ?: error("无法为 `${classId.asString()}` 构建 use-site member 作用域快照。")
         }
 
     override val org.cangnova.cangjie.analysis.api.types.CaType.scope: CaScope?
         get() = withValidityAssertion {
-            analysisSession.queryTypeScope(this@scope.requireCfirConeType("成员作用域查询"))?.asAnalysisScope()
+            analysisSession.queryTypeScope(this@scope.requireCfirConeType("成员作用域查询"))?.let { snapshot ->
+                CaCfirMemberScope(snapshot, analysisSession, token)
+            }
         }
 
     private fun requireClassLikeSymbol(symbol: CaClassLikeSymbol): CaCfirClassLikeSymbolBase<*> {
         return symbol as? CaCfirClassLikeSymbolBase<*>
             ?: error("仅 CFIR class-like 符号支持成员作用域查询：${symbol::class.simpleName}")
-    }
-
-    /**
-     * 把 low-level scope snapshot 适配为公开 Analysis API scope。
-     */
-    private fun CaCfirScopeSnapshot.asAnalysisScope(
-        extraSymbols: List<CaSymbol> = emptyList(),
-    ): CaScope {
-        return CaCfirScopeImpl(
-            indexedNames = availableNames,
-            eagerSymbols = extraSymbols,
-            token = token,
-            symbolLookup = { name ->
-                getSymbols(name).map { symbol ->
-                    analysisSession.getPublicSymbol(symbol)
-                }
-            },
-            callableLookup = { name ->
-                getCallableSymbols(name).map { symbol ->
-                    analysisSession.getPublicSymbol(symbol) as CaCallableSymbol
-                }
-            },
-            classifierLookup = { name ->
-                getClassifierSymbols(name).map { symbol ->
-                    analysisSession.getPublicSymbol(symbol) as CaClassifierSymbol
-                }
-            },
-        )
     }
 
     private fun List<org.cangnova.cangjie.cfir.declarations.CfirDeclaration>.asDeclarationListScope(): CaScope {
@@ -440,14 +538,24 @@ internal class CaCfirScopeProvider(
             }
         }
         val symbolsByName = publicSymbols.groupBy { symbol -> symbol.name ?: Name.special("<anonymous>") }
-        return CaCfirScopeImpl(
-            indexedNames = symbolsByName.keys,
-            eagerSymbols = publicSymbols,
-            token = token,
-            symbolLookup = { name -> symbolsByName[name].orEmpty() },
-            callableLookup = { name -> symbolsByName[name].orEmpty().filterIsInstance<CaCallableSymbol>() },
-            classifierLookup = { name -> symbolsByName[name].orEmpty().filterIsInstance<CaClassifierSymbol>() },
-        )
+        return object : CaScope {
+            override val token: CaLifetimeToken
+                get() = this@CaCfirScopeProvider.token
+
+            override val symbols: List<CaSymbol>
+                get() = publicSymbols
+
+            override val availableNames: Set<Name>
+                get() = symbolsByName.keys
+
+            override fun getSymbols(name: Name): List<CaSymbol> = symbolsByName[name].orEmpty()
+
+            override fun getCallableSymbols(name: Name): List<CaCallableSymbol> =
+                symbolsByName[name].orEmpty().filterIsInstance<CaCallableSymbol>()
+
+            override fun getClassifierSymbols(name: Name): List<CaClassifierSymbol> =
+                symbolsByName[name].orEmpty().filterIsInstance<CaClassifierSymbol>()
+        }
     }
 }
 

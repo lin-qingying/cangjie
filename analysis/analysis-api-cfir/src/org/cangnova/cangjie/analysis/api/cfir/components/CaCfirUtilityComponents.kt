@@ -1,10 +1,17 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.CaBuiltinsModule
-import org.cangnova.cangjie.analysis.api.CaLibraryModule
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirBackedSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCallableSymbolBase
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassLikeSymbolBase
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFileSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.getPublicSymbolByPsi
 import org.cangnova.cangjie.analysis.api.components.CaCInteropComponent
 import org.cangnova.cangjie.analysis.api.components.CaDataFlowProvider
 import org.cangnova.cangjie.analysis.api.components.CaDocProvider
@@ -20,6 +27,7 @@ import org.cangnova.cangjie.analysis.api.components.CaVisibilityChecker
 import org.cangnova.cangjie.analysis.api.dataFlow.CaDataFlowInfo
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
 import org.cangnova.cangjie.analysis.api.evaluation.CaCompileTimeValue
+import org.cangnova.cangjie.analysis.api.impl.base.CaBaseSession
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSymbolProvider
 import org.cangnova.cangjie.analysis.api.imports.CaImportOptimizationPlan
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningCommand
@@ -27,6 +35,9 @@ import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningPlan
 import org.cangnova.cangjie.analysis.api.interop.CaInteropInfo
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.renderer.base.prettyPrint
+import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationRenderer
+import org.cangnova.cangjie.analysis.api.renderer.types.CaTypeRenderer
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
@@ -78,15 +89,15 @@ internal class CaCfirSymbolProvider(
             analysisSession.createScriptSymbol(this@symbol)
         }
 
-    override val CjTypeStatement.classSymbol: org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
+    override val CjTypeStatement.classSymbol: CaClassSymbol
         get() = withValidityAssertion {
-            analysisSession.getPublicSymbolByPsi<org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol>(this@classSymbol)
+            analysisSession.getPublicSymbolByPsi<CaClassSymbol>(this@classSymbol)
                 ?: error("Cannot build class symbol for ${this@classSymbol::class}")
         }
 
-    override val org.cangnova.cangjie.psi.CjExtend.symbol: org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
+    override val org.cangnova.cangjie.psi.CjExtend.symbol: CaExtendSymbol
         get() = withValidityAssertion {
-            analysisSession.getPublicSymbolByPsi<org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol>(this@symbol)
+            analysisSession.getPublicSymbolByPsi<CaExtendSymbol>(this@symbol)
                 ?: error("Cannot build extend symbol for ${this@symbol::class}")
         }
 
@@ -144,10 +155,10 @@ internal class CaCfirSymbolProvider(
                 ?: error("Cannot build field symbol for ${this@symbol::class}")
         }
 
-    override val org.cangnova.cangjie.psi.CjEnumConstructor.symbol: org.cangnova.cangjie.analysis.api.symbols.CaEnumEntrySymbol
+    override val org.cangnova.cangjie.psi.CjEnumConstructor.symbol: org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
         get() = withValidityAssertion {
-            analysisSession.getPublicSymbolByPsi<org.cangnova.cangjie.analysis.api.symbols.CaEnumEntrySymbol>(this@symbol)
-                ?: error("Cannot build enum-entry symbol for ${this@symbol::class}")
+            analysisSession.getPublicSymbolByPsi<org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol>(this@symbol)
+                ?: error("Cannot build enum-constructor symbol for ${this@symbol::class}")
         }
 
     override val CjPatternVariable.symbol: org.cangnova.cangjie.analysis.api.symbols.CaPatternVariableSymbol
@@ -198,11 +209,11 @@ internal class CaCfirSymbolProvider(
         analysisSession.getOrCreateTopLevelPublicSymbols(packageFqName, name).callableSymbols
     }
 
-    override fun getTopLevelExtendSymbols(packageFqName: FqName): List<org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol> = withValidityAssertion {
+    override fun getTopLevelExtendSymbols(packageFqName: FqName): List<CaExtendSymbol> = withValidityAssertion {
         analysisSession.getTopLevelExtendPublicSymbols(packageFqName)
     }
 
-    override fun getExtendSymbols(targetClassId: ClassId): List<org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol> = withValidityAssertion {
+    override fun getExtendSymbols(targetClassId: ClassId): List<CaExtendSymbol> = withValidityAssertion {
         analysisSession.getExtendPublicSymbols(targetClassId)
     }
 }
@@ -230,7 +241,7 @@ internal class CaCfirSymbolInformationProvider(
 ) : CaBaseSessionComponent<CaCfirSession>(), CaSymbolInformationProvider {
     override fun CaSymbol.createPointer(): CaSymbolPointer<CaSymbol> = withValidityAssertion {
         @Suppress("UNCHECKED_CAST")
-        CaCfirSymbolPointerDelegate<CaSymbol>(createRestoreKey())
+        this@createPointer.createPointer() as CaSymbolPointer<CaSymbol>
     }
 }
 
@@ -306,44 +317,20 @@ internal class CaCfirImportOptimizer(
  * 统一文本渲染入口。
  */
 internal class CaCfirRenderer(
-    override val analysisSessionProvider: () -> CaCfirSession,
-) : CaBaseSessionComponent<CaCfirSession>(), CaRenderer {
-    override fun CaSymbol.render(): String = withValidityAssertion {
-        when (this@render) {
-            is CaPackageSymbol -> fqName.asString()
-            is CaFileSymbol -> "${packageFqName.asString()}/${file.name}"
-            is CaDeclarationSymbol -> render(org.cangnova.cangjie.analysis.api.renderer.declarations.impl.CaDeclarationRendererForSource.WITH_QUALIFIED_NAMES)
-            else -> name?.asString() ?: this@render::class.simpleName.orEmpty()
+    override val analysisSessionProvider: () -> CaSession,
+) : CaBaseSessionComponent<CaSession>(), CaRenderer {
+    override fun CaDeclarationSymbol.render(renderer: CaDeclarationRenderer): String = withValidityAssertion {
+        return with(analysisSession) {
+            prettyPrint { renderer.renderDeclaration(useSiteSession, this@render, this) }
         }
     }
 
-    override fun CaDeclarationSymbol.render(
-        renderer: org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationRenderer,
-    ): String = withValidityAssertion {
-        renderer.renderDeclaration(analysisSession, this@render)
+    override fun CaType.render(renderer: CaTypeRenderer): String = withValidityAssertion {
+        return with(analysisSession) {
+            val approximatedType = renderer.typeApproximator.approximateType(useSiteSession, this@render)
+            prettyPrint { renderer.renderType(useSiteSession, approximatedType, this) }
+        }
     }
-
-    override fun CaType.render(): String = withValidityAssertion {
-        render(
-            renderer = org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForSource.WITH_QUALIFIED_NAMES,
-            position = org.cangnova.cangjie.analysis.api.renderer.types.CaTypeRendererPosition.INVARIANT,
-        )
-    }
-
-    override fun CaType.render(
-        renderer: org.cangnova.cangjie.analysis.api.renderer.types.CaTypeRenderer,
-        position: org.cangnova.cangjie.analysis.api.renderer.types.CaTypeRendererPosition,
-    ): String = withValidityAssertion {
-        renderer.renderType(this@render, position)
-    }
-
-    /**
-     * 统一渲染公开 callable 符号。
-     */
-
-    /**
-     * 当前公开 API 尚未暴露完整 class-like kind 模型，这里稳定输出注解前缀加 ClassId。
-     */
 }
 
 /**
@@ -356,14 +343,14 @@ internal class CaCfirVisibilityChecker(
         when (this@isVisible) {
             is CaPackageSymbol -> analysisSession.hasVisiblePackage(fqName)
             is CaCfirFileSymbolImpl -> analysisSession.lookupFileSymbol(file) != null
-            is org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol -> {
+            is CaExtendSymbol -> {
                 val restoredSymbol = when (this@isVisible) {
                     is CaCfirExtendSymbolImpl -> analysisSession.restoreExtendPublicSymbol(extendId)
                     else -> null
                 }
                 restoredSymbol === this@isVisible
             }
-            is org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol -> {
+            is CaClassLikeSymbol -> {
                 val restoredSymbol = when (this@isVisible) {
                     is CaCfirClassLikeSymbolBase<*> -> classId?.let(analysisSession::getClassLikePublicSymbol)
                     else -> null

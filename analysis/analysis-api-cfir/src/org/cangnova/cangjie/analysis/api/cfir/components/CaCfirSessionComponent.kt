@@ -3,6 +3,8 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.asCaDiagnostic
+import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirType
+import org.cangnova.cangjie.analysis.api.cfir.types.asCaType
 import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacade
 import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponent
 import org.cangnova.cangjie.analysis.api.types.CaType
@@ -29,7 +31,7 @@ internal interface CaCfirSessionComponent : CaSessionComponent {
      * 将 low-level Cone 类型绑定到当前组件的生命周期 token，
      * 并转换成公开 [CaType]。
      */
-    fun ConeCangJieType.asPublicType(): CaType = asCaType(token)
+    fun ConeCangJieType.asPublicType(): CaType = asCaType(analysisSession)
 
     /**
      * 将 low-level 诊断转换成当前组件生命周期下的公开诊断对象。
@@ -43,7 +45,7 @@ internal interface CaCfirSessionComponent : CaSessionComponent {
      * 不允许各组件自行分散编写类型转换逻辑。
      */
     fun CaType.requireCfirConeType(owner: String): ConeCangJieType {
-        val cfirType = this as? CaCfirTypeImpl
+        val cfirType = this as? CaCfirType
             ?: error("仅支持对 CFIR Analysis API 类型执行 $owner：${this::class.simpleName}")
         return cfirType.coneType
     }

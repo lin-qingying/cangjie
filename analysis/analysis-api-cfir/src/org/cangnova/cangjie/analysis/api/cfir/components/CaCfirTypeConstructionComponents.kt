@@ -1,13 +1,14 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
 import com.intellij.psi.search.GlobalSearchScope
-import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassLikeSymbolBase
 import org.cangnova.cangjie.analysis.api.components.CaAnalysisScopeProvider
 import org.cangnova.cangjie.analysis.api.components.CaSignatureSubstitutor
 import org.cangnova.cangjie.analysis.api.components.CaSubstitutorProvider
 import org.cangnova.cangjie.analysis.api.components.CaTypeCreator
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.signatures.CaSignature
 import org.cangnova.cangjie.analysis.api.substitution.CaSubstitutedSignature
 import org.cangnova.cangjie.analysis.api.substitution.CaTypeSubstitutor

@@ -2,9 +2,10 @@ package org.cangnova.cangjie.analysis.api.cfir
 
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirCallInfoSnapshot
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirScopeSnapshot
 import org.cangnova.cangjie.analysis.api.cfir.resolve.DiagnosticCheckerFilter
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
@@ -30,11 +31,11 @@ internal class CaCfirSessionSemanticCacheStore {
     private val callInfoCache = linkedMapOf<PsiElement, CaCfirCallInfoSnapshot?>()
     private val diagnosticsCache = linkedMapOf<CaCfirDiagnosticsQueryKey, List<CjPsiDiagnostic>>()
     private val fileDiagnosticsCache = linkedMapOf<CaCfirFileDiagnosticsQueryKey, Collection<CjPsiDiagnostic>>()
-    private val fileScopeCache = linkedMapOf<CjFile, CaCfirScopeSnapshot>()
-    private val packageScopeCache = linkedMapOf<FqName, CaCfirScopeSnapshot?>()
-    private val declaredMemberScopeCache = linkedMapOf<ClassId, CaCfirScopeSnapshot?>()
-    private val memberScopeCache = linkedMapOf<ClassId, CaCfirScopeSnapshot?>()
-    private val typeScopeCache = linkedMapOf<ConeCangJieType, CaCfirScopeSnapshot?>()
+    private val fileDeclaredScopeCache = linkedMapOf<CjFile, CfirContainingNamesAwareScope>()
+    private val packageScopeCache = linkedMapOf<FqName, CfirContainingNamesAwareScope?>()
+    private val declaredMemberScopeCache = linkedMapOf<ClassId, CfirContainingNamesAwareScope?>()
+    private val memberScopeCache = linkedMapOf<ClassId, CfirTypeScope?>()
+    private val typeScopeCache = linkedMapOf<ConeCangJieType, CfirTypeScope?>()
     private val packageVisibilityCache = linkedMapOf<FqName, Boolean>()
     private val classLikeSymbolCache = linkedMapOf<ClassId, CfirClassLikeSymbol<*>?>()
     private val fileSymbolCache = linkedMapOf<CjFile, CfirFileSymbol?>()
@@ -86,30 +87,30 @@ internal class CaCfirSessionSemanticCacheStore {
         create,
     )
 
-    fun getOrCreateFileScope(
+    fun getOrCreateFileDeclaredScope(
         file: CjFile,
-        create: () -> CaCfirScopeSnapshot,
-    ): CaCfirScopeSnapshot = getOrCreateCachedValue(fileScopeCache, file, create)
+        create: () -> CfirContainingNamesAwareScope,
+    ): CfirContainingNamesAwareScope = getOrCreateCachedValue(fileDeclaredScopeCache, file, create)
 
     fun getOrCreatePackageScope(
         packageFqName: FqName,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = getOrCreateCachedValue(packageScopeCache, packageFqName, create)
+        create: () -> CfirContainingNamesAwareScope?,
+    ): CfirContainingNamesAwareScope? = getOrCreateCachedValue(packageScopeCache, packageFqName, create)
 
     fun getOrCreateDeclaredMemberScope(
         classId: ClassId,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = getOrCreateCachedValue(declaredMemberScopeCache, classId, create)
+        create: () -> CfirContainingNamesAwareScope?,
+    ): CfirContainingNamesAwareScope? = getOrCreateCachedValue(declaredMemberScopeCache, classId, create)
 
     fun getOrCreateMemberScope(
         classId: ClassId,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = getOrCreateCachedValue(memberScopeCache, classId, create)
+        create: () -> CfirTypeScope?,
+    ): CfirTypeScope? = getOrCreateCachedValue(memberScopeCache, classId, create)
 
     fun getOrCreateTypeScope(
         type: ConeCangJieType,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = getOrCreateCachedValue(typeScopeCache, type, create)
+        create: () -> CfirTypeScope?,
+    ): CfirTypeScope? = getOrCreateCachedValue(typeScopeCache, type, create)
 
     fun getOrCreatePackageVisibility(
         packageFqName: FqName,

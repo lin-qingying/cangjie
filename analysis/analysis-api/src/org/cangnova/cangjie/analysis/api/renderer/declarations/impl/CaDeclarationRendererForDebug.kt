@@ -1,9 +1,9 @@
 package org.cangnova.cangjie.analysis.api.renderer.declarations.impl
 
-import org.cangnova.cangjie.analysis.api.renderer.base.CaAnnotationRendererForSource
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaClassifierBodyRendererForSource
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationModifiersRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.base.annotations.CaAnnotationRendererForSource
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaClassifierBodyRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.declarations.modifiers.CaDeclarationModifiersRendererForSource
 import org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForDebug
 
 object CaDeclarationRendererForDebug {

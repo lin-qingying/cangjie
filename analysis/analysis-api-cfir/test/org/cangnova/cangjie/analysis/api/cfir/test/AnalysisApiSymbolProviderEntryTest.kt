@@ -5,7 +5,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaEnumEntrySymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFinalizerSymbol
@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test
  * 新增 PSI 入口的 public symbol provider 回归测试。
  *
  * 目标是锁定 `PSI -> symbol -> original PSI` 这条公开契约，
- * 防止匿名函数、accessor、extend、enum entry、field 等入口再次退化成
+ * 防止匿名函数、accessor、extend、enum constructor、field 等入口再次退化成
  * “只能通过 owner 间接恢复 symbol” 的状态。
  */
 class AnalysisApiSymbolProviderEntryTest : AbstractAnalysisApiExecutionTest(
@@ -53,8 +53,8 @@ class AnalysisApiSymbolProviderEntryTest : AbstractAnalysisApiExecutionTest(
         val fieldDeclaration = PsiTreeUtil.findChildrenOfType(mainFile, CjFieldVariable::class.java).single()
         val constructorDeclaration = PsiTreeUtil.findChildrenOfType(mainFile, CjSecondaryConstructor::class.java).single()
         val finalizerDeclaration = PsiTreeUtil.findChildrenOfType(mainFile, CjFinalizer::class.java).single()
-        val enumEntryDeclaration = PsiTreeUtil.findChildrenOfType(mainFile, CjEnumConstructor::class.java)
-            .single { enumEntry -> enumEntry.name == "Ready" }
+        val enumConstructorDeclaration = PsiTreeUtil.findChildrenOfType(mainFile, CjEnumConstructor::class.java)
+            .single { enumConstructor -> enumConstructor.name == "Ready" }
         val getterDeclaration = PsiTreeUtil.findChildrenOfType(mainFile, CjPropertyAccessor::class.java).single { accessor ->
             accessor.isGetter
         }
@@ -77,7 +77,7 @@ class AnalysisApiSymbolProviderEntryTest : AbstractAnalysisApiExecutionTest(
             val fieldSymbol = fieldDeclaration.symbol as CaFieldSymbol
             val constructorSymbol = constructorDeclaration.symbol as CaConstructorSymbol
             val finalizerSymbol = finalizerDeclaration.symbol as CaFinalizerSymbol
-            val enumEntrySymbol = enumEntryDeclaration.symbol as CaEnumEntrySymbol
+            val enumConstructorSymbol = enumConstructorDeclaration.symbol as CaEnumConstructorSymbol
             val getterSymbol = getterDeclaration.symbol as CaPropertyGetterSymbol
             val setterSymbol = setterDeclaration.symbol as CaPropertySetterSymbol
             val anonymousFunctionSymbol = functionLiteral.symbol as CaAnonymousFunctionSymbol
@@ -88,7 +88,7 @@ class AnalysisApiSymbolProviderEntryTest : AbstractAnalysisApiExecutionTest(
             assertRestoresToSamePsi(fieldDeclaration, fieldSymbol)
             assertRestoresToSamePsi(constructorDeclaration, constructorSymbol)
             assertRestoresToSamePsi(finalizerDeclaration, finalizerSymbol)
-            assertRestoresToSamePsi(enumEntryDeclaration, enumEntrySymbol)
+            assertRestoresToSamePsi(enumConstructorDeclaration, enumConstructorSymbol)
             assertRestoresToSamePsi(getterDeclaration, getterSymbol)
             assertRestoresToSamePsi(setterDeclaration, setterSymbol)
             assertRestoresToSamePsi(functionLiteral, anonymousFunctionSymbol)

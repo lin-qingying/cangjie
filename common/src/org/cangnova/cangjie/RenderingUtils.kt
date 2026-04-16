@@ -27,11 +27,19 @@ package org.cangnova.cangjie
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.FqNameUnsafe
 import org.cangnova.cangjie.name.Name
+import kotlin.text.contains
 
-fun Name.render(): String {
-    return if (this.shouldBeEscaped()) '`' + asString() + '`' else asString()
+private fun shouldBeEscaped(string: String): Boolean {
+    return string in KeywordStringsGenerated.KEYWORDS ||
+            string.any { !Character.isLetterOrDigit(it) && it != '_' } ||
+            string.isEmpty() ||
+            !Character.isJavaIdentifierStart(string.codePointAt(0))
 }
 
+fun Name.render(stipSpecialMarkers: Boolean = false): String {
+    val string = if (stipSpecialMarkers) asStringStripSpecialMarkers() else asString()
+    return if ((!stipSpecialMarkers || !isSpecial) &&  shouldBeEscaped(string)) '`' + string + '`' else string
+}
 private fun Name.shouldBeEscaped(): Boolean {
     val string = asString()
     return string in KeywordStringsGenerated.KEYWORDS ||

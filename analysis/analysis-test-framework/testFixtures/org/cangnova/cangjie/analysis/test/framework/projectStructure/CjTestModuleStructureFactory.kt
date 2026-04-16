@@ -3,9 +3,9 @@ package org.cangnova.cangjie.analysis.test.framework.projectStructure
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import org.cangnova.cangjie.LanguageVersionSettings
-import org.cangnova.cangjie.analysis.api.CaLibraryModule
-import org.cangnova.cangjie.analysis.api.CaModule
-import org.cangnova.cangjie.analysis.api.CaTargetPlatform
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaTargetPlatform
 import org.cangnova.cangjie.analysis.test.framework.AnalysisApiTestDirectives
 import org.cangnova.cangjie.analysis.test.framework.analysisApiModuleKind
 import org.cangnova.cangjie.analysis.test.framework.hasAnalysisApiFallbackDependencies

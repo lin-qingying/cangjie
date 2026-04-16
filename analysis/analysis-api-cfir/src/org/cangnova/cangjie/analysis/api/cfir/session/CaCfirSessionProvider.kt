@@ -2,13 +2,13 @@ package org.cangnova.cangjie.analysis.api.cfir.session
 
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
-import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacadeService
 import org.cangnova.cangjie.analysis.api.impl.base.sessions.CaBaseSessionProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.psi.CjElement
 import java.util.concurrent.ConcurrentHashMap
 
