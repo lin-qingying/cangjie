@@ -11,7 +11,7 @@ import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.impl.CfirNamedReferenceWithCandidateBaseImpl
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -19,7 +19,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirNamedReferenceWithCandidateBaseBuilder {
     var source: CjSourceElement? = null
     lateinit var name: Name
-    lateinit var candidateSymbol: CfirSymbol<*>
+    lateinit var candidateSymbol: CfirBasedSymbol<*>
 
     fun build(): CfirNamedReferenceWithCandidateBase {
         return CfirNamedReferenceWithCandidateBaseImpl(

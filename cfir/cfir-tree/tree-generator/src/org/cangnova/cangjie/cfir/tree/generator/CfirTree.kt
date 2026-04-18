@@ -27,7 +27,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     private val resolvePhaseType = generatedType("declarations", "CfirResolvePhase", TypeKind.Class)
     private val resolveStateType = type("declarations", "CfirResolveState", kind = TypeKind.Class)
     private val resolveStateAccessType = type("declarations", "ResolveStateAccess", kind = TypeKind.Class)
-    private val symbolType = type("symbols", "CfirSymbol").withArgs(TreeTypeRef.Star)
+    private val symbolType = type("symbols", "CfirBasedSymbol").withArgs(TreeTypeRef.Star)
 
     // ---- 分类器符号类型 ----
     val classSymbolType = type("symbols", "CfirClassSymbol")
@@ -464,7 +464,9 @@ object CfirTree : AbstractCfirTreeBuilder() {
         parent(variable)
         parent(controlFlowGraphOwner)
         +declaredSymbol(valueParameterSymbolType)
-
+        +referencedSymbol("containingDeclarationSymbol", cfirSymbolType.withArgs(TreeTypeRef.Star)) {
+            withBindThis = false
+        }
         +field("isNamed",booleanType, withReplace = false)
         +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +FieldSets.typeParameters
@@ -553,6 +555,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
         parent(call)
 
         +field("origin", functionCallOrigin)
+        +field("hasTrailingLambda", boolean)
 
     }
     val errorNamedReference: Element by element(Reference) {
@@ -758,7 +761,14 @@ object CfirTree : AbstractCfirTreeBuilder() {
         parent(expression)
         +field("exception", expression, withTransform = true)
     }
+    val resolvedDeclarationStatus: Element by element(Declaration) {
+        kind = ImplementationKind.Interface
 
+        parent( declarationStatus)
+
+        +field(modalityType, nullable = false)
+//        +field("effectiveVisibility", effectiveVisibilityType)
+    }
     val performExpression: Element by element(Expression, name = "PerformExpression") {
         parent(expression)
         +field("expression", expression, withTransform = true)
@@ -870,6 +880,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     val spawnExpression: Element by element(Expression, name = "SpawnExpression") {
         parent(expression)
         +field("body", block, withTransform = true)
+        +field("threadContextArgument", expression, nullable = true, withTransform = true)
     }
 
     val synchronizedExpression: Element by element(Expression, name = "SynchronizedExpression") {

@@ -1,0 +1,1028 @@
+*** Begin Patch
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\element\builder\CfirElementBuilder.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder
+
+import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.FileStructure
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.CfirElementsRecorder
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.CjToCfirMapping
+import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.elementCanBeLazilyResolved
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.findSourceNonLocalCfirDeclaration
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialBodyResolvable
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.requireTypeIntersectionWith
+import org.cangnova.cangjie.analysis.utils.printer.parentOfType
+import org.cangnova.cangjie.cfir.*
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.utils.correspondingValueParameterFromPrimaryConstructor
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.resolve.providers.firProvider
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhaseRecursively
+import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.psi.psiUtil.parentsWithSelf
+import org.cangnova.cangjie.utils.ThreadSafe
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withPsiEntry
+
+/**
+ * This class is responsible for mapping from [CjElement] to [CfirElement]
+ * using [FileStructure][org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.FileStructure].
+ *
+ * @see getOrBuildCfirFor
+ * @see org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.FileStructure
+ * @see getNonLocalContainingOrThisElement
+ */
+@ThreadSafe
+internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleResolveComponents) {
+    companion object {
+        private fun getPsiAsCfirElementSource(element: CjElement): CjElement? {
+            val unwrappedElement = if (element is CjExpression) CjPsiUtil.safeDeparenthesize(element) else element
+            return when (unwrappedElement) {
+                is CjPropertyDelegate -> unwrappedElement.expression ?: element
+                is CjQualifiedExpression if unwrappedElement.selectorExpression is CjCallExpression -> {
+                    /*
+                     CjQualifiedExpression with CjCallExpression in selector transformed in CFIR to CfirFunctionCall expression
+                     Which will have a receiver as qualifier
+                     */
+                    unwrappedElement.selectorExpression ?: errorWithAttachment("Incomplete code") {
+                        withPsiEntry("psi", unwrappedElement)
+                    }
+                }
+                is CjValueArgument -> {
+                    // null will be return in case of invalid CjValueArgument
+                    unwrappedElement.getArgumentExpression()
+                }
+                is CjStringTemplateEntryWithExpression -> unwrappedElement.expression
+                is CjUserType if unwrappedElement.parent is CjNullableType -> unwrappedElement.parent as CjNullableType
+                else -> unwrappedElement
+            }
+        }
+
+        private fun doCjElementHasCorrespondingCfirElement(ktElement: CjElement): Boolean = when (ktElement) {
+            is CjImportList -> false
+            is CjFileAnnotationList -> false
+            is CjAnnotation -> false
+            else -> true
+        }
+    }
+
+    /**
+     * Returns a [CfirElement] in its final resolved state.
+     *
+     * Note: that it isn't always [BODY_RESOLVE][CfirResolvePhase.BODY_RESOLVE]
+     * as not all declarations have types/bodies/etc. to resolve.
+     *
+     * For instance, [CjPackageDirective] has nothing to resolve,
+     * so it will be returned as is ([CfirPackageDirective][org.cangnova.cangjie.cfir.CfirPackageDirective]),
+     * with the [RAW_CFIR][CfirResolvePhase.RAW_CFIR] phase.
+     *
+     * @return associated [CfirElement] in final resolved state if it exists.
+     *
+     * @see getCfirForElementInsideAnnotations
+     * @see getCfirForElementInsideTypes
+     * @see getCfirForElementInsideFileHeader
+     */
+    fun getOrBuildCfirFor(element: CjElement): CfirElement? {
+        return if (element is CjFile && element !is CjCodeFragment) {
+            getOrBuildCfirForCjFile(element)
+        } else {
+            getCfirForNonCjFileElement(element)
+        }
+    }
+
+    private fun getOrBuildCfirForCjFile(ktFile: CjFile): CfirFile {
+        val firFile = moduleComponents.firFileBuilder.buildRawCfirFileWithCaching(ktFile)
+        firFile.lazyResolveToPhaseRecursively(CfirResolvePhase.BODY_RESOLVE)
+        return firFile
+    }
+
+    private fun getCfirForNonCjFileElement(element: CjElement): CfirElement? {
+        require(element !is CjFile || element is CjCodeFragment)
+
+        if (!doCjElementHasCorrespondingCfirElement(element)) {
+            return null
+        }
+
+        val nonLocalContainer = element.getNonLocalContainingOrThisElement()
+        tryGetCfirWithoutBodyResolve(nonLocalContainer, element)?.let { return it }
+
+        val psi = getPsiAsCfirElementSource(element) ?: return null
+        val ktFile = element.containingCjFile
+        val fileStructure = moduleComponents.fileStructureCache.getFileStructure(ktFile)
+
+        val structureElement = fileStructure.getStructureElementFor(element, nonLocalContainer)
+        val mappings = structureElement.mappings
+
+        val firElement = mappings.get(psi)
+
+        if (firElement is CfirElementWithResolveState) {
+            // Partially resolvable declarations might have unresolved bodies in the mapping.
+            // Here we forcibly resolve them to obey to the 'getOrBuildCfirFor()' contract.
+            if (firElement.isPartialBodyResolvable && firElement.resolvePhase < CfirResolvePhase.BODY_RESOLVE) {
+                firElement.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+            }
+        }
+
+        return firElement
+    }
+
+    /**
+     * Provides a fast path for well-known psi-to-fir mappings to avoid [CfirResolvePhase.BODY_RESOLVE] there it is possible.
+     *
+     * This optimization makes sense only for [nonLocalContainer]s which might have such expensive resolution.
+     * For instance, there is no need to avoid [CfirResolvePhase.BODY_RESOLVE] for dangling modifiers as they don't
+     * have bodies, so effectively it is the same as [CfirResolvePhase.ANNOTATION_ARGUMENTS].
+     *
+     * Declaration containers ([CjFile], [CjScript], [CjClassOrObject]) are resolved till [CfirResolvePhase.ANNOTATION_ARGUMENTS]
+     * by default in [FileStructure.getStructureElementFor],
+     * so there is no need to use optimized search via [getCfirForElementInsideAnnotations]/[getCfirForElementInsideTypes]
+     * as this is redundant work and effectively duplicate the logic of [CjToCfirMapping].
+     *
+     * [CjClassOrObject] is not excluded yet as in some cases it might trigger additional resolution.
+     * For instance, currently it resolves generated members (fake constructor, data class members, enum members, etc.).
+     *
+     * [CjEnumEntry] is not a declaration container as it is treated as callable in K2.
+     *
+     * @see getCfirForElementInsideFileHeader
+     * @see getCfirForElementInsideAnnotations
+     * @see getCfirForElementInsideTypes
+     */
+    private fun tryGetCfirWithoutBodyResolve(nonLocalContainer: CjElement?, element: CjElement): CfirElement? = when (nonLocalContainer) {
+        is CjScript -> null
+        is CjFile -> getCfirForElementInsideFileHeader(element)
+
+        is CjDeclaration -> getCfirForElementInsideAnnotations(element, nonLocalContainer)
+            ?: getCfirForElementInsideTypes(element, nonLocalContainer)
+
+        else -> null
+    }
+
+    private inline fun <T : CjElement, E : PsiElement> getCfirForNonBodyElement(
+        element: CjElement,
+        nonLocalDeclaration: CjDeclaration?,
+        anchorElementProvider: (CjElement) -> T?,
+        elementOwnerProvider: (T) -> E?,
+        resolveAndFindCfirForAnchor: (CfirElementWithResolveState, T) -> CfirElement?,
+    ): CfirElement? {
+        val anchorElement = anchorElementProvider(element) ?: return null
+        val elementOwner = elementOwnerProvider(anchorElement) ?: return null
+
+        val firElementContainer = if (elementOwner is CjFile) {
+            moduleComponents.firFileBuilder.buildRawCfirFileWithCaching(elementOwner)
+        } else {
+            if (elementOwner != nonLocalDeclaration) return null
+
+            nonLocalDeclaration.findSourceNonLocalCfirDeclaration(
+                firFileBuilder = moduleComponents.firFileBuilder,
+                provider = moduleComponents.session.firProvider,
+            )
+        }
+
+        // There is no need for a custom traverse as the resolved element has a cached map
+        if (firElementContainer.resolvePhase == CfirResolvePhase.BODY_RESOLVE) {
+            return null
+        }
+
+        val anchorCfir = resolveAndFindCfirForAnchor(firElementContainer, anchorElement) ?: return null
+        // We use identity comparison here intentionally to check that it is exactly the object we want to find
+        if (element === anchorElement) return anchorCfir
+
+        return findElementInside(firElement = anchorCfir, element = element)
+    }
+
+    private fun PsiElement.annotationOwner(): CjAnnotated? {
+        val modifierList = when (val parent = parent) {
+            is CjModifierList -> parent
+            is CjAnnotation -> return parent.annotationOwner()
+            is CjFileAnnotationList -> return parent.parent as? CjFile
+            else -> null
+        }
+
+        return modifierList?.owner as? CjDeclaration
+    }
+
+    private fun getCfirForElementInsideAnnotations(
+        element: CjElement,
+        nonLocalDeclaration: CjDeclaration,
+    ): CfirElement? = getCfirForNonBodyElement(
+        element = element,
+        nonLocalDeclaration = nonLocalDeclaration,
+        anchorElementProvider = { it.parentsOfType<CjAnnotationEntry>(nonLocalDeclaration).firstOrNull() },
+        elementOwnerProvider = { it.annotationOwner() },
+        resolveAndFindCfirForAnchor = { declaration, anchor -> declaration.resolveAndFindAnnotation(anchor, goDeep = true) },
+    )
+
+    private fun getCfirForElementInsideTypes(
+        element: CjElement,
+        nonLocalDeclaration: CjDeclaration,
+    ): CfirElement? = getCfirForNonBodyElement(
+        element = element,
+        nonLocalDeclaration = nonLocalDeclaration,
+        anchorElementProvider = { it.parentsOfType<CjTypeReference>(nonLocalDeclaration).lastOrNull() },
+        elementOwnerProvider = {
+            when (val parent = it.parent) {
+                is CjDeclaration -> parent
+                is CjSuperTypeListEntry, is CjConstructorCalleeExpression, is CjTypeConstraint -> parent.parentOfType<CjDeclaration>()
+                else -> null
+            }
+        },
+        resolveAndFindCfirForAnchor = { declaration, anchor -> declaration.resolveAndFindTypeRefAnchor(anchor) },
+    )?.let { firElement ->
+        if (firElement is CfirReceiverParameter) {
+            firElement.typeRef
+        } else {
+            firElement
+        }
+    }
+
+    private fun getCfirForElementInsideFileHeader(element: CjElement): CfirElement? = getCfirForNonBodyElement<CjElement, CjAnnotated>(
+        element = element,
+        nonLocalDeclaration = null,
+        anchorElementProvider = { it.fileHeaderAnchorElement() },
+        elementOwnerProvider = { it.containingCjFile },
+        resolveAndFindCfirForAnchor = { declaration, anchor ->
+            declaration.requireTypeIntersectionWith<CfirFile>()
+
+            when (anchor) {
+                is CjPackageDirective -> declaration.packageDirective
+                is CjImportDirective -> {
+                    declaration.lazyResolveToPhase(CfirResolvePhase.IMPORTS)
+                    declaration.imports.find { it.psi == anchor }
+                }
+                else -> errorWithAttachment("Unexpected element type: ${anchor::class.simpleName}") {
+                    withPsiEntry("anchor", anchor)
+                }
+            }
+        },
+    )
+
+    private fun CjElement.fileHeaderAnchorElement(): CjElement? {
+        return parentsWithSelf.find { it is CjPackageDirective || it is CjImportDirective } as? CjElement
+    }
+
+    private fun findElementInside(firElement: CfirElement, element: CjElement): CfirElement? {
+        val elementToSearch = getPsiAsCfirElementSource(element) ?: return null
+        val mapping = CfirElementsRecorder.recordElementsFrom(firElement, CfirElementsRecorder())
+        return CjToCfirMapping.getCfir(elementToSearch, moduleComponents.session, mapping)
+    }
+
+    private fun CfirElementWithResolveState.resolveAndFindTypeRefAnchor(typeReference: CjTypeReference): CfirElement? {
+        requireTypeIntersectionWith<CfirAnnotationContainer>()
+
+        lazyResolveToPhase(CfirResolvePhase.ANNOTATION_ARGUMENTS)
+
+        when (this) {
+            is CfirCallableDeclaration -> {
+                returnTypeRef.takeIf { it.psi == typeReference }?.let { return it }
+                receiverParameter?.takeIf { it.typeRef.psi == typeReference }?.let { return it }
+            }
+
+            is CfirTypeParameter -> {
+                findTypeRefAnchor(typeReference)?.let { return it }
+            }
+
+            is CfirClass -> {
+                for (typeRef in superTypeRefs) {
+                    if (typeRef.psi == typeReference) {
+                        return typeRef
+                    }
+                }
+            }
+
+            is CfirTypeAlias -> {
+                expandedTypeRef.takeIf { it.psi == typeReference }?.let { return it }
+            }
+        }
+
+        if (this is CfirTypeParameterRefsOwner) {
+            for (typeParameterRef in typeParameters) {
+                typeParameterRef.findTypeRefAnchor(typeReference)?.let { return it }
+            }
+        }
+
+        return null
+    }
+
+    private fun CfirTypeParameterRef.findTypeRefAnchor(typeReference: CjTypeReference): CfirElement? {
+        if (this !is CfirTypeParameter) return null
+
+        for (typeRef in bounds) {
+            if (typeRef.psi == typeReference) {
+                return typeRef
+            }
+        }
+
+        return null
+    }
+
+    private fun CfirElementWithResolveState.resolveAndFindAnnotation(
+        annotationEntry: CjAnnotationEntry,
+        goDeep: Boolean = false,
+    ): CfirAnnotation? {
+        requireTypeIntersectionWith<CfirAnnotationContainer>()
+
+        lazyResolveToPhase(CfirResolvePhase.ANNOTATION_ARGUMENTS)
+        findAnnotation(annotationEntry)?.let { return it }
+
+        if (this is CfirProperty) {
+            backingField?.findAnnotation(annotationEntry)?.let { return it }
+            getter?.findAnnotation(annotationEntry)?.let { return it }
+            setter?.findAnnotation(annotationEntry)?.let { return it }
+            setter?.valueParameters?.first()?.findAnnotation(annotationEntry)?.let { return it }
+        }
+
+        return when {
+            !goDeep -> null
+            this is CfirProperty -> correspondingValueParameterFromPrimaryConstructor?.fir?.resolveAndFindAnnotation(annotationEntry)
+            this is CfirValueParameter -> correspondingProperty?.resolveAndFindAnnotation(annotationEntry)
+            else -> null
+        }
+    }
+
+    private fun CfirAnnotationContainer.findAnnotation(
+        annotationEntry: CjAnnotationEntry,
+    ): CfirAnnotation? = annotations.find { it.psi == annotationEntry }
+}
+
+internal val CjTypeParameter.containingDeclaration: CjDeclaration?
+    get() = (parent as? CjTypeParameterList)?.parent as? CjDeclaration
+
+/**
+ * Returns **true** if [this] element is a unit of resolution and can be treated as non-local.
+ * The property is supposed to be used only in the pair with
+ * [getNonLocalContainingOrThisElement] or [getNonLocalContainingOrThisDeclaration].
+ *
+ * @see getNonLocalContainingOrThisElement
+ */
+internal val CjElement.isAutonomousElement: Boolean
+    get() = when (this) {
+        is CjPropertyAccessor, is CjParameter, is CjTypeParameter -> false
+        else -> true
+    }
+
+// TODO change predicate (KT-76271)
+@CaImplementationDetail
+fun PsiElement.getNonLocalContainingOrThisDeclaration(predicate: (CjDeclaration) -> Boolean = { true }): CjDeclaration? {
+    return getNonLocalContainingOrThisElement { it is CjDeclaration && predicate(it) } as? CjDeclaration
+}
+
+/**
+ * Returns the first non-local element from [parentsWithSelf] that contains the given elements, based on the specified predicate.
+ *
+ * The resulting element can be considered reachable at [RAW_CFIR][CfirResolvePhase.RAW_CFIR] phase.
+ *
+ * @see org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.FileStructure
+ */
+internal fun PsiElement.getNonLocalContainingOrThisElement(predicate: (CjElement) -> Boolean = { true }): CjElement? {
+    for (parent in parentsWithSelf) {
+        if (parent is CjElement && elementCanBeLazilyResolved(parent) && predicate(parent)) {
+            return parent
+        }
+    }
+
+    return null
+}
+
+private inline fun <reified T : CjElement> PsiElement.parentsOfType(stopDeclaration: CjDeclaration?): Sequence<T> {
+    return parentsWithSelf.takeWhile { it !== stopDeclaration }.filterIsInstance<T>()
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\file\builder\LLCfirDeclrationsCacheForModule.kt
++/*
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder
+
+import com.google.common.collect.MapMaker
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsOnlyApi
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.utils.ThreadSafe
+import java.util.concurrent.ConcurrentMap
+
+/**
+ * Caches the [CjFile] to [CfirFile] mapping of a [CaModule][org.cangnova.cangjie.analysis.api.projectStructure.CaModule].
+ */
+@ThreadSafe
+internal abstract class ModuleFileCache {
+    abstract val moduleComponents: LLCfirModuleResolveComponents
+
+    /**
+     * @return [CfirFile] by [file] if it was previously built or runs [createValue] otherwise
+     * The [createValue] is run under the lock so [createValue] is executed at most once for each [CjFile]
+     */
+    abstract fun fileCached(file: CjFile, createValue: () -> CfirFile): CfirFile
+
+    abstract fun getContainerCfirFile(declaration: CfirDeclaration): CfirFile?
+
+    abstract fun getCachedCfirFile(ktFile: CjFile): CfirFile?
+
+    @LLStatisticsOnlyApi
+    abstract fun getAllCachedCfirFiles(): Collection<CfirFile>
+}
+
+internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleResolveComponents) : ModuleFileCache() {
+    private val ktFileToCfirFile: ConcurrentMap<CjFile, CfirFile> = MapMaker().weakKeys().makeMap()
+    override fun fileCached(file: CjFile, createValue: () -> CfirFile): CfirFile =
+        ktFileToCfirFile.computeIfAbsent(file) { createValue() }
+
+    override fun getCachedCfirFile(ktFile: CjFile): CfirFile? = ktFileToCfirFile[ktFile]
+
+    override fun getContainerCfirFile(declaration: CfirDeclaration): CfirFile? {
+        val ktFile = declaration.psi?.containingFile as? CjFile ?: return null
+        return getCachedCfirFile(ktFile)
+    }
+
+    @LLStatisticsOnlyApi
+    override fun getAllCachedCfirFiles(): Collection<CfirFile> = ktFileToCfirFile.values
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\file\builder\LLCfirFileBuilder.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
+import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
+import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
+import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.utils.ThreadSafe
+
+/**
+ * Responsble for building [CfirFile] by [CjFile]
+ */
+@ThreadSafe
+internal class LLCfirFileBuilder(val moduleComponents: LLCfirModuleResolveComponents) {
+    private val projectStructureProvider by lazy { KotlinProjectStructureProvider.getInstance(moduleComponents.session.project) }
+
+    fun buildRawCfirFileWithCaching(ktFile: CjFile): CfirFile = moduleComponents.cache.fileCached(ktFile) {
+        val contextualModule = moduleComponents.module
+        val actualFileModule = projectStructureProvider.getModule(ktFile, contextualModule)
+
+        checkWithAttachment(actualFileModule == contextualModule, { "Modules are inconsistent" }) {
+            withEntry("file", ktFile.name)
+            withEntry("file module", actualFileModule) {
+                it.toString()
+            }
+            withEntry("components module", contextualModule) {
+                it.toString()
+            }
+        }
+
+        PsiRawCfirBuilder(
+            moduleComponents.session,
+            moduleComponents.scopeProvider,
+            bodyBuildingMode = BodyBuildingMode.LAZY_BODIES
+        ).buildCfirFile(ktFile)
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\file\builder\LLCfirLockProvider.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder
+
+import com.intellij.openapi.util.registry.Registry
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.partialBodyAnalysisState
+import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirLazyResolveContractChecker
+import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.PartialBodyAnalysisSuspendedException
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLPhaseSuspensionEventCompleter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLFlightRecorder
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkCanceled
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.lockWithPCECheck
+import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater
+import java.util.concurrent.locks.ReentrantLock
+
+/**
+ * This class is responsible for the locking strategy in the lazy resolution mode.
+ * Each [CfirElementWithResolveState] have [CfirResolveState] which is used by this provider
+ * to build the lock system.
+ *
+ * @see LLCfirLazyResolveContractChecker
+ * @see withWriteLock
+ * @see withReadLock
+ * @see withJumpingLock
+ */
+internal class LLCfirLockProvider(private val checker: LLCfirLazyResolveContractChecker) {
+    private val globalLock = ReentrantLock()
+
+    inline fun <R> withGlobalLock(action: () -> R): R {
+        if (!globalLockEnabled) return action()
+
+        return globalLock.lockWithPCECheck(action)
+    }
+
+    /**
+     * Locks an a [CfirElementWithResolveState] to resolve from `phase - 1` to [phase] and
+     * then updates the [CfirElementWithResolveState.resolveState] to a [phase].
+     * Does nothing if [target] already has at least [phase] phase.
+     *
+     * [action] will be executed once if [target] is not yet resolved to [phase] phase.
+     *
+     * @see withReadLock
+     * @see withJumpingLock
+     */
+    inline fun withWriteLock(
+        target: CfirElementWithResolveState,
+        phase: CfirResolvePhase,
+        action: () -> Unit,
+    ) {
+        checker.lazyResolveToPhaseInside(phase) {
+            target.withLock(toPhase = phase, updatePhase = true, action = action)
+        }
+    }
+
+    /**
+     * Locks an a [CfirElementWithResolveState] to read something required for [phase].
+     * Does nothing if [target] already has at least [phase] phase.
+     *
+     * [action] will be executed once if [target] is not yet resolved to [phase] phase.
+     *
+     * @see withWriteLock
+     */
+    inline fun withReadLock(
+        target: CfirElementWithResolveState,
+        phase: CfirResolvePhase,
+        action: () -> Unit,
+    ) {
+        checker.lazyResolveToPhaseInside(phase) {
+            target.withLock(toPhase = phase, updatePhase = false, action = action)
+        }
+    }
+
+    /**
+     * Locks an a [CfirElementWithResolveState] to resolve from `toPhase - 1` to [toPhase] and
+     * then updates the [CfirElementWithResolveState.resolveState] to a [toPhase] if [updatePhase] is **true**.
+     *
+     * [updatePhase] == false means that we want to read some data under a lock.
+     *
+     * If [CfirElementWithResolveState] is already at least at [toPhase], does nothing.
+     *
+     * Otherwise:
+     *  - Marks [CfirElementWithResolveState] as in a process of resovle
+     *  - performs the resolve by calling [action]
+     *  - updates the resolve phase to [toPhase] if [updatePhase] is **true**.
+     *  - notifies other threads waiting on the same lock that the declaration is already resolved by this thread, so other threads can continue its execution.
+     *
+     *
+     *  Contention handling:
+     *  - on lock acquisition, no real lock or barrier is created. Instead, the [CfirElementWithResolveState.resolveState] is updated to indicate that the declaration is being resolved now.
+     *  - If some other thread tries to resolve current [CfirElementWithResolveState], it changes `resolveState` and puts the barrier there. Then it awaits on it until the initial thread which hold the lock finishes its job.
+     *  - This way, no barrier is used in a case when no contention arise.
+     */
+    private inline fun CfirElementWithResolveState.withLock(
+        toPhase: CfirResolvePhase,
+        updatePhase: Boolean,
+        action: () -> Unit,
+    ) {
+        var event: LLPhaseSuspensionEventCompleter? = null
+
+        while (true) {
+            checkCanceled()
+
+            @OptIn(ResolveStateAccess::class)
+            val stateSnapshot = resolveState
+            if (stateSnapshot.resolvePhase >= toPhase) {
+                // already resolved by some other thread
+                event?.notifyCompleted()
+                return
+            }
+
+            when (stateSnapshot) {
+                is CfirInProcessOfResolvingToPhaseStateWithoutBarrier -> {
+                    // some thread is resolving the phase, so we wait until it finishes
+                    if (event == null && updatePhase) {
+                        event = LLFlightRecorder.phaseSuspension(this@withLock, toPhase)
+                    }
+                    trySettingBarrier(toPhase, stateSnapshot)
+                    continue
+                }
+
+                is CfirInProcessOfResolvingToPhaseStateWithBarrier -> {
+                    // some thread is waiting on a barrier as the declaration is being resolved, so we try too
+                    if (event == null && updatePhase) {
+                        event = LLFlightRecorder.phaseSuspension(this@withLock, toPhase)
+                    }
+                    waitOnBarrier(stateSnapshot)
+                    continue
+                }
+
+                is CfirResolvedToPhaseState -> {
+                    if (!tryLock(toPhase, stateSnapshot)) continue
+                    event?.notifyCompleted()
+
+                    var exceptionOccurred = false
+                    try {
+                        action()
+                    } catch (e: Throwable) {
+                        if (e !is PartialBodyAnalysisSuspendedException) {
+                            // Partial body analysis is complete (and successful), there is no real error
+                            exceptionOccurred = true
+                        }
+                        throw e
+                    } finally {
+                        val newPhase = when {
+                            !updatePhase || exceptionOccurred -> stateSnapshot.resolvePhase
+                            else -> computeNewPhase(stateSnapshot, toPhase)
+                        }
+                        unlock(toPhase = newPhase)
+                    }
+
+                    return
+                }
+
+                is CfirInProcessOfResolvingToJumpingPhaseState -> {
+                    errorWithCfirSpecificEntries("$stateSnapshot state are not allowed to be inside non-jumping lock", fir = this)
+                }
+            }
+        }
+    }
+
+    private fun CfirElementWithResolveState.computeNewPhase(stateSnapshot: CfirResolveState, toPhase: CfirResolvePhase): CfirResolvePhase {
+        if (this is CfirDeclaration && toPhase == CfirResolvePhase.BODY_RESOLVE) {
+            val state = partialBodyAnalysisState
+            if (state != null && !state.isFullyAnalyzed) {
+                LLFlightRecorder.partialBodyAnalyzed(this, state)
+
+                // We only update the phase to BODY_RESOLVE if all statements are resolved.
+                // Otherwise, we set (BODY_RESOLVE - 1), so the next BODY_RESOLVE phase run can finish the analysis.
+                return stateSnapshot.resolvePhase
+            }
+        }
+
+        return toPhase
+    }
+
+    private fun waitOnBarrier(
+        stateSnapshot: CfirInProcessOfResolvingToPhaseStateWithBarrier,
+    ): Boolean {
+        return stateSnapshot.barrier.await(lockingInterval, TimeUnit.MILLISECONDS)
+    }
+
+    private fun CfirElementWithResolveState.trySettingBarrier(
+        toPhase: CfirResolvePhase,
+        stateSnapshot: CfirResolveState,
+    ) {
+        val newState = CfirInProcessOfResolvingToPhaseStateWithBarrier(toPhase)
+        resolveStateFieldUpdater.compareAndSet(this, stateSnapshot, newState)
+    }
+
+    private fun CfirElementWithResolveState.tryLock(
+        toPhase: CfirResolvePhase,
+        stateSnapshot: CfirResolveState,
+    ): Boolean {
+        val newState = CfirInProcessOfResolvingToPhaseStateWithoutBarrier(toPhase)
+        return resolveStateFieldUpdater.compareAndSet(this, stateSnapshot, newState)
+    }
+
+    private fun CfirElementWithResolveState.unlock(toPhase: CfirResolvePhase) {
+        when (val stateSnapshotAfter = resolveStateFieldUpdater.getAndSet(this, CfirResolvedToPhaseState(toPhase))) {
+            is CfirInProcessOfResolvingToPhaseStateWithoutBarrier -> {}
+            is CfirInProcessOfResolvingToPhaseStateWithBarrier -> {
+                stateSnapshotAfter.barrier.countDown()
+            }
+            is CfirResolvedToPhaseState, is CfirInProcessOfResolvingToJumpingPhaseState -> {
+                errorWithCfirSpecificEntries("phase is unexpectedly unlocked $stateSnapshotAfter", fir = this)
+            }
+        }
+    }
+
+    /**
+     * Locks on an a [CfirElementWithResolveState] to resolve from `phase - 1` to [phase] and
+     * then updates the [resolve state][CfirElementWithResolveState.resolveState] to a [phase].
+     * Does nothing if [target] already has at least [phase] phase.
+     *
+     * @param actionUnderLock will be executed once under the lock if [target] is not yet resolved to [phase] phase and there are no cycles
+     * @param actionOnCycle will be executed once without the lock if [target] is not yet resolved to [phase] phase and a resolution cycle is found
+     *
+     * @see withWriteLock
+     * @see withJumpingLockImpl
+     */
+    fun withJumpingLock(
+        target: CfirElementWithResolveState,
+        phase: CfirResolvePhase,
+        actionUnderLock: () -> Unit,
+        actionOnCycle: () -> Unit,
+    ) {
+        checker.lazyResolveToPhaseInside(phase) {
+            target.withJumpingLockImpl(phase, actionUnderLock, actionOnCycle)
+        }
+    }
+
+    /**
+     * Holds resolution states of the current thread.
+     * This information is required to properly process possible cycles
+     * during resolution.
+     *
+     * @see withJumpingLockImpl
+     * @see tryJumpingLock
+     * @see jumpingUnlock
+     */
+    private val jumpingResolutionStatesStack = JumpingResolutionStatesStack()
+
+    /**
+     * Locks an a [CfirElementWithResolveState] to resolve from `toPhase - 1` to [toPhase] and
+     * then updates the [CfirElementWithResolveState.resolveState] to a
+     * [toPhase] if no exceptions were found during [actionUnderLock].
+     *
+     * If [CfirElementWithResolveState] is already at least at [toPhase], does nothing.
+     *
+     * ### Happy path:
+     *  1. Marks [CfirElementWithResolveState] as in a process of resolve
+     *  2. Performs the resolve by calling [actionUnderLock]
+     *  3. Updates the resolve phase to [toPhase] if there is no exceptions
+     *  4. Notifies other threads waiting on the same lock that this thread already resolved the declaration,
+     *  so other threads can continue its execution
+     *
+     *  ### Cycle handling
+     *  During step 1 we can realize someone already set [CfirInProcessOfResolvingToJumpingPhaseState]
+     *  for the current [CfirElementWithResolveState], so there is a room for a possible deadlock.
+     *
+     *  The requirement for the deadlock is not empty [jumpingResolutionStatesStack] as we should already hold another lock.
+     *  Otherwise, we can just wait on the [latch][CfirInProcessOfResolvingToJumpingPhaseState.latch].
+     *
+     *  In the case of not empty [jumpingResolutionStatesStack], we have the following algorithm:
+     *  1. Set [waitingFor][CfirInProcessOfResolvingToJumpingPhaseState.waitingFor] for the previous state
+     *  as we have an intention to take the next lock
+     *  2. Iterate over all [waitingFor][CfirInProcessOfResolvingToJumpingPhaseState.waitingFor] recursively
+     *  to detect the possible cycle
+     *  3. Execute [actionOnCycle] without the lock in the case of cycle or waining on
+     *  the [latch][CfirInProcessOfResolvingToJumpingPhaseState.latch] to try to take the lock again later
+     *
+     * @param actionUnderLock will be executed once under the lock if [this] is not yet resolved to [toPhase] phase and there are no cycles
+     * @param actionOnCycle will be executed once without the lock if [this] is not yet resolved to [toPhase] phase and a resolution cycle is found
+     *
+     *  @see withJumpingLock
+     */
+    private fun CfirElementWithResolveState.withJumpingLockImpl(
+        toPhase: CfirResolvePhase,
+        actionUnderLock: () -> Unit,
+        actionOnCycle: () -> Unit,
+    ) {
+        var event: LLPhaseSuspensionEventCompleter? = null
+
+        while (true) {
+            checkCanceled()
+
+            @OptIn(ResolveStateAccess::class)
+            val currentState = resolveState
+            if (currentState.resolvePhase >= toPhase) {
+                // already resolved by some other thread
+                event?.notifyCompleted()
+                return
+            }
+
+            when (currentState) {
+                is CfirResolvedToPhaseState -> {
+                    if (!tryJumpingLock(toPhase, currentState)) continue
+                    event?.notifyCompleted()
+
+                    var exceptionOccurred = false
+                    try {
+                        actionUnderLock()
+                    } catch (e: Throwable) {
+                        exceptionOccurred = true
+                        throw e
+                    } finally {
+                        val newPhase = if (!exceptionOccurred) toPhase else currentState.resolvePhase
+                        jumpingUnlock(toPhase = newPhase)
+                    }
+
+                    return
+                }
+
+                is CfirInProcessOfResolvingToJumpingPhaseState -> {
+                    val previousState = jumpingResolutionStatesStack.peek()
+
+                    // Not null value means we already hold a lock for another declaration in the current thread,
+                    // so we have to check the possible cycle
+                    if (previousState != null) {
+                        // All writing to waitingFor will be consistent, as it is the last writing if we have cycle
+                        previousState.waitingFor = currentState
+
+                        // Cycle check
+                        var nextState: CfirInProcessOfResolvingToJumpingPhaseState? = currentState
+                        while (nextState != null) {
+                            if (nextState === previousState) {
+                                previousState.waitingFor = null
+
+                                event?.notifyCompleted()
+                                return actionOnCycle()
+                            }
+
+                            nextState = nextState.waitingFor
+                        }
+                    }
+
+                    if (event == null) {
+                        event = LLFlightRecorder.phaseSuspension(this, toPhase)
+                    }
+
+                    try {
+                        // Waiting until another thread released the lock
+                        currentState.latch.await(lockingInterval, TimeUnit.MILLISECONDS)
+                    } finally {
+                        previousState?.waitingFor = null
+                    }
+                }
+
+                is CfirInProcessOfResolvingToPhaseStateWithoutBarrier, is CfirInProcessOfResolvingToPhaseStateWithBarrier -> {
+                    errorWithCfirSpecificEntries("$currentState state are not allowed to be inside jumping lock", fir = this)
+                }
+            }
+        }
+    }
+
+    /**
+     * Trying to set [CfirInProcessOfResolvingToJumpingPhaseState] to [this].
+     *
+     * @return **true** if the state is published successfully
+     *
+     * @see withJumpingLockImpl
+     * @see CfirInProcessOfResolvingToJumpingPhaseState
+     */
+    private fun CfirElementWithResolveState.tryJumpingLock(
+        toPhase: CfirResolvePhase,
+        stateSnapshot: CfirResolveState,
+    ): Boolean {
+        val newState = CfirInProcessOfResolvingToJumpingPhaseState(toPhase)
+        val isSucceed = resolveStateFieldUpdater.compareAndSet(this, stateSnapshot, newState)
+        if (!isSucceed) return false
+
+        jumpingResolutionStatesStack.push(newState)
+
+        return true
+    }
+
+    /**
+     * Publish [CfirResolvedToPhaseState] with [toPhase] phase and unlocks current [CfirInProcessOfResolvingToJumpingPhaseState].
+     *
+     * @see withJumpingLockImpl
+     * @see CfirInProcessOfResolvingToJumpingPhaseState
+     * @see CfirResolvedToPhaseState
+     */
+    private fun CfirElementWithResolveState.jumpingUnlock(toPhase: CfirResolvePhase) {
+        val currentState = jumpingResolutionStatesStack.pop()
+
+        resolveStateFieldUpdater.set(this, CfirResolvedToPhaseState(toPhase))
+        currentState.latch.countDown()
+    }
+
+    companion object {
+        val lockingInterval: Long by lazy(LazyThreadSafetyMode.PUBLICATION) {
+            Registry.intValue("kotlin.analysis.ll.locking.interval", 100).toLong()
+        }
+    }
+}
+
+private val resolveStateFieldUpdater = AtomicReferenceFieldUpdater.newUpdater(
+    CfirElementWithResolveState::class.java,
+    CfirResolveState::class.java,
+    "resolveState"
+)
+
+private val globalLockEnabled: Boolean by lazy(LazyThreadSafetyMode.PUBLICATION) {
+    Registry.`is`("kotlin.parallel.resolve.under.global.lock", false)
+}
+
+/**
+ * @see CfirInProcessOfResolvingToJumpingPhaseState
+ */
+private class JumpingResolutionStatesStack {
+    private val stateStackHolder = ThreadLocal.withInitial<MutableList<CfirInProcessOfResolvingToJumpingPhaseState>> {
+        mutableListOf()
+    }
+
+    /**
+     * Adds [newState] to the stack and set [waitingFor][CfirInProcessOfResolvingToJumpingPhaseState.waitingFor]
+     * for the previous state if needed
+     */
+    fun push(newState: CfirInProcessOfResolvingToJumpingPhaseState) {
+        val states = stateStackHolder.get()
+
+        val currentState = states.lastOrNull()
+        currentState?.waitingFor = newState
+        states += newState
+    }
+
+    /**
+     * Pops from the top of the stack the last state and return it.
+     * Updates [waitingFor][CfirInProcessOfResolvingToJumpingPhaseState.waitingFor] for
+     * the previous state if needed
+     *
+     * Note: it doesn't release the [lock][CfirInProcessOfResolvingToJumpingPhaseState.latch]
+     */
+    fun pop(): CfirInProcessOfResolvingToJumpingPhaseState {
+        val states = stateStackHolder.get()
+
+        val currentState = states.removeLast()
+        val prevState = states.lastOrNull()
+        requireWithAttachment(
+            condition = prevState == null || prevState.waitingFor === currentState,
+            message = { "The lock contact is violated" },
+        )
+
+        prevState?.waitingFor = null
+
+        // Drop the empty stack to avoid memory leak
+        // as the updated capacity of the stack can be high
+        if (states.isEmpty()) {
+            stateStackHolder.remove()
+        }
+
+        return currentState
+    }
+
+    /**
+     * Current state on the top if exists
+     */
+    fun peek(): CfirInProcessOfResolvingToJumpingPhaseState? = stateStackHolder.get().lastOrNull()
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\file\structure\FileElementFactory.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.collectDesignation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirClassSpecificMembersResolveTarget
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.resolve
+import org.cangnova.cangjie.cfir.correspondingProperty
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.impl.CfirPrimaryConstructor
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+
+internal object FileElementFactory {
+    fun createFileStructureElement(
+        firDeclaration: CfirDeclaration,
+        firFile: CfirFile,
+        moduleComponents: LLCfirModuleResolveComponents,
+    ): FileStructureElement = when (firDeclaration) {
+        is CfirRegularClass -> {
+            firDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
+
+            lazyResolveClassGeneratedMembers(firDeclaration)
+            ClassDeclarationStructureElement(firFile, firDeclaration, moduleComponents)
+        }
+
+        is CfirScript -> {
+            firDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
+            RootScriptStructureElement(firFile, firDeclaration, moduleComponents)
+        }
+
+        else -> {
+            if (firDeclaration is CfirPrimaryConstructor) {
+                firDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+                firDeclaration.valueParameters.forEach { parameter ->
+                    parameter.correspondingProperty?.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+                }
+            } else {
+                /** Reserve the [CfirResolvePhase.BODY_RESOLVE] for partial body analysis. */
+                firDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
+            }
+
+            DeclarationStructureElement(firFile, firDeclaration, moduleComponents)
+        }
+    }
+
+    private fun lazyResolveClassGeneratedMembers(firClass: CfirRegularClass) {
+        val classMembersToResolve = firClass.declarations.filter(CfirDeclaration::isPartOfClassStructureElement)
+
+        if (classMembersToResolve.isEmpty()) return
+        val firClassDesignation = firClass.collectDesignation()
+        val designationWithMembers = LLCfirClassSpecificMembersResolveTarget(
+            firClassDesignation,
+            classMembersToResolve,
+        )
+
+        designationWithMembers.resolve(CfirResolvePhase.BODY_RESOLVE)
+    }
+}
+
+*** End Patch

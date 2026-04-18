@@ -1,0 +1,50 @@
+/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories
+
+import com.intellij.openapi.project.Project
+import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.platform.KotlinDeserializedDeclarationsOrigin
+import org.cangnova.cangjie.analysis.api.platform.KotlinPlatformSettings
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.load.kotlin.PackagePartProvider
+
+/**
+ * [LLLibrarySymbolProviderFactory] creates symbol providers in accordance with [KotlinPlatformSettings.deserializedDeclarationsOrigin].
+ * Its implementations should be lightweight as the factory is neither a service nor cached.
+ */
+internal interface LLLibrarySymbolProviderFactory {
+    fun createJvmLibrarySymbolProvider(
+        session: LLCfirSession,
+        packagePartProvider: PackagePartProvider,
+        scope: GlobalSearchScope,
+    ): List<CfirSymbolProvider>
+
+    fun createCommonLibrarySymbolProvider(
+        session: LLCfirSession,
+        packagePartProvider: PackagePartProvider,
+        scope: GlobalSearchScope,
+    ): List<CfirSymbolProvider>
+
+    /**
+     * Creates a symbol provider for a [fallback builtins module][org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule].
+     *
+     * Since fallback builtins don't have any class ID ambiguities, their symbol providers don't have to implement
+     * [LLPsiAwareSymbolProvider][org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLPsiAwareSymbolProvider].
+     */
+    fun createBuiltinsSymbolProvider(session: LLCfirSession): List<CfirSymbolProvider>
+
+    companion object {
+        fun fromSettings(project: Project): LLLibrarySymbolProviderFactory {
+            val platformSettings = KotlinPlatformSettings.getInstance(project)
+            return when (platformSettings.deserializedDeclarationsOrigin) {
+                KotlinDeserializedDeclarationsOrigin.BINARIES -> LLBinaryOriginLibrarySymbolProviderFactory
+                KotlinDeserializedDeclarationsOrigin.STUBS -> LLStubOriginLibrarySymbolProviderFactory
+            }
+        }
+    }
+}

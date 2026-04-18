@@ -19,7 +19,7 @@ repositories {
 
 kotlin {
     @OptIn(ExperimentalKotlinGradlePluginApi::class, ExperimentalBuildToolsApi::class)
-    jvmToolchain(17)
+    jvmToolchain(21)
 
     compilerOptions {
         allWarningsAsErrors.set(true)

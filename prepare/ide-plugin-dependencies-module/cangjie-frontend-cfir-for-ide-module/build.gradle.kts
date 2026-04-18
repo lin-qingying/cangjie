@@ -29,3 +29,10 @@ dependencies {
     // api("org.jetbrains.kotlin:kotlin-stdlib:2.1.0")
     // api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
 }
+
+configurations.configureEach {
+    exclude(group = "com.jetbrains.intellij.platform")
+    exclude(group = "com.jetbrains.intellij")
+    exclude(group = "org.jetbrains.intellij")
+    exclude(group = "com.intellij.platform")
+}

@@ -82,6 +82,7 @@ object CallResolutionTestFixtures {
                 name = parameterNames?.getOrNull(index) ?: "p$index",
                 type = type,
                 hasDefault = parameterDefaults?.getOrNull(index) ?: false,
+                containingDeclarationSymbol = symbol,
             )
         }
         val function = CfirFunctionImpl(
@@ -109,6 +110,7 @@ object CallResolutionTestFixtures {
         name: String,
         type: ConeCangJieType,
         hasDefault: Boolean = false,
+        containingDeclarationSymbol: CfirBasedSymbol<*>,
     ): CfirValueParameter {
         val symbol = CfirValueParameterSymbol(CallableId(Name.identifier(name)))
         val defaultExpr: CfirExpression? = if (hasDefault) {
@@ -117,10 +119,15 @@ object CallResolutionTestFixtures {
         val param = CfirValueParameterImpl(
             source = null,
             moduleData = TEST_MODULE_DATA,
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
             annotations = emptyList(),
-            symbol = symbol,
             origin = CfirDeclarationOrigin.Source,
             attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
+            dispatchReceiverType = null,
+            symbol = symbol,
+            containingDeclarationSymbol = containingDeclarationSymbol,
+            isNamed = false,
             status = CfirDeclarationStatusImpl(),
             typeParameters = emptyList(),
             returnTypeRef = CfirResolvedTypeRefImpl(source = null, annotations = emptyList(), coneType = type, delegatedTypeRef = null),
@@ -178,4 +185,3 @@ object CallResolutionTestFixtures {
 private object StubCfirSession : org.cangnova.cangjie.cfir.session.CfirSession(Kind.Source) {
     override fun toString(): String = "StubCfirSession"
 }
-

@@ -6,7 +6,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -82,7 +82,7 @@ class CfirCompositeSymbolProvider(
         return null
     }
 
-    override fun getContainingFile(symbol: CfirSymbol<*>): CfirFile? {
+    override fun getContainingFile(symbol: CfirBasedSymbol<*>): CfirFile? {
         val normalizedSymbol = symbol.unwrapForDeclarationMetadataLookup()
         for (provider in providers) {
             val file = provider.getContainingFile(normalizedSymbol)

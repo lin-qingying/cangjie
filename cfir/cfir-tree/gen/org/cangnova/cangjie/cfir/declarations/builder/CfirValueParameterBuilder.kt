@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirValueParameterImpl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
@@ -33,6 +34,7 @@ class CfirValueParameterBuilder {
     var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var symbol: CfirValueParameterSymbol
+    lateinit var containingDeclarationSymbol: CfirBasedSymbol<*>
     var isNamed: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
@@ -52,6 +54,7 @@ class CfirValueParameterBuilder {
             isLocal,
             dispatchReceiverType,
             symbol,
+            containingDeclarationSymbol,
             isNamed,
             status,
             typeParameters,
@@ -85,6 +88,7 @@ inline fun buildValueParameterCopy(original: CfirValueParameter, init: CfirValue
     copyBuilder.attributes = original.attributes.copy()
     copyBuilder.isLocal = original.isLocal
     copyBuilder.dispatchReceiverType = original.dispatchReceiverType
+    copyBuilder.containingDeclarationSymbol = original.containingDeclarationSymbol
     copyBuilder.isNamed = original.isNamed
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)

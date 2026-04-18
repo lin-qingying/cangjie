@@ -10,13 +10,13 @@ import org.cangnova.cangjie.cfir.expressions.buildSmartCastExpression
 import org.cangnova.cangjie.cfir.expressions.buildSmartCastExpressionCopy
 import org.cangnova.cangjie.cfir.expressions.buildThisReceiverExpressionCopy
 import org.cangnova.cangjie.cfir.expressions.unwrapSmartcastExpression
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.fakeElement
 
-sealed class ImplicitValue<S : CfirSymbol<*>>(
+sealed class ImplicitValue<S : CfirBasedSymbol<*>>(
     type: ConeCangJieType,
     val originalType: ConeCangJieType,
     protected val mutable: Boolean,

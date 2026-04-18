@@ -2,7 +2,7 @@ package org.cangnova.cangjie.lsp.analysis
 
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
-import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.PluginStructureProvider
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker

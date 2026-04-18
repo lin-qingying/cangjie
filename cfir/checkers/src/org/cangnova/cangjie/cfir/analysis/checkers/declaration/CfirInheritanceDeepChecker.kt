@@ -33,6 +33,113 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         checkAbstractClassStaticUnimplemented(declaration)
         checkMemberVisibilityNotWiderThanClass(declaration)
         checkInheritedMemberKindConsistency(declaration)
+        checkSuperMembersKindConsistency(declaration)
+        checkInheritedMemberTypeConsistency(declaration)
+        checkOverrideReturnThis(declaration)
+    }
+
+    /**
+     * 多个父类型中同名成员的声明类型（function/property）不一致。
+     *
+     * 对齐 C++ sema_inherit_super_member_kind_inconsistent
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkSuperMembersKindConsistency(classDecl: CfirClass) {
+        val kindsByName = mutableMapOf<Name, MutableSet<String>>()
+        for (superTypeRef in classDecl.superTypeRefs) {
+            val type = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
+            if (type is ConeErrorType) continue
+            val classId = (type as? ConeClassLikeType)?.classId ?: continue
+            val superDecl = context.session.symbolProvider
+                .getClassLikeSymbolByClassId(classId)?.cfir as? CfirClassLikeDeclaration ?: continue
+            for (m in superDecl.declarations) {
+                val (n, k) = when (m) {
+                    is CfirNamedFunction -> m.name to "function"
+                    is CfirProperty -> m.name to "property"
+                    else -> continue
+                }
+                kindsByName.getOrPut(n) { mutableSetOf() }.add(k)
+            }
+        }
+        for ((name, kinds) in kindsByName) {
+            if (kinds.size > 1) {
+                reporter.reportOn(
+                    source = classDecl.source,
+                    factory = CfirErrors.INHERIT_SUPER_MEMBER_KIND_INCONSISTENT,
+                    a = name,
+                )
+            }
+        }
+    }
+
+    /**
+     * 多个父类型中同名函数成员的返回类型不一致（且非子类型关系）。
+     *
+     * 对齐 C++ sema_inherit_member_type_inconsistent
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkInheritedMemberTypeConsistency(classDecl: CfirClass) {
+        val fnTypesByName = mutableMapOf<Name, MutableList<org.cangnova.cangjie.cfir.types.ConeCangJieType>>()
+        for (superTypeRef in classDecl.superTypeRefs) {
+            val type = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
+            if (type is ConeErrorType) continue
+            val classId = (type as? ConeClassLikeType)?.classId ?: continue
+            val superDecl = context.session.symbolProvider
+                .getClassLikeSymbolByClassId(classId)?.cfir as? CfirClassLikeDeclaration ?: continue
+            for (m in superDecl.declarations) {
+                if (m !is CfirNamedFunction) continue
+                val rt = (m.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
+                fnTypesByName.getOrPut(m.name) { mutableListOf() }.add(rt)
+            }
+        }
+        for ((name, types) in fnTypesByName) {
+            if (types.size < 2) continue
+            val first = types[0]
+            if (types.any { it != first }) {
+                reporter.reportOn(
+                    source = classDecl.source,
+                    factory = CfirErrors.INHERIT_MEMBER_TYPE_INCONSISTENT,
+                    a = "return types",
+                    b = "function",
+                    c = name,
+                )
+            }
+        }
+    }
+
+    /**
+     * 父类 open 函数返回 This 时，override 子函数必须保持 This。
+     *
+     * 对齐 C++ sema_inherit_not_return_this
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkOverrideReturnThis(classDecl: CfirClass) {
+        for (member in classDecl.declarations) {
+            if (member !is CfirNamedFunction) continue
+            if (!member.status.isOverride) continue
+            val myRet = (member.returnTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType
+            if (myRet?.isThisType == true) continue
+
+            // 在父类型中查找同名 open 函数
+            var superReturnsThis = false
+            for (superTypeRef in classDecl.superTypeRefs) {
+                val t = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
+                val cid = (t as? ConeClassLikeType)?.classId ?: continue
+                val sd = context.session.symbolProvider
+                    .getClassLikeSymbolByClassId(cid)?.cfir as? CfirClassLikeDeclaration ?: continue
+                val sm = sd.declarations.firstOrNull {
+                    it is CfirNamedFunction && it.name == member.name
+                } as? CfirNamedFunction ?: continue
+                val sr = (sm.returnTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType
+                if (sr?.isThisType == true) { superReturnsThis = true; break }
+            }
+            if (superReturnsThis) {
+                reporter.reportOn(
+                    source = member.returnTypeRef.source ?: member.source ?: classDecl.source,
+                    factory = CfirErrors.INHERIT_NOT_RETURN_THIS,
+                )
+            }
+        }
     }
 
     /**

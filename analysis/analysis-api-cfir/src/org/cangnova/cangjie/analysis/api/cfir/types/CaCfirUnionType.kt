@@ -2,6 +2,9 @@ package org.cangnova.cangjie.analysis.api.cfir.types
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
+import org.cangnova.cangjie.analysis.api.cfir.utils.createTypePointer
+import org.cangnova.cangjie.analysis.api.cfir.utils.restoreUnionType
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.api.types.CaTypePointer

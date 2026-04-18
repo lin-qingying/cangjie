@@ -9,7 +9,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -25,9 +25,9 @@ import org.cangnova.cangjie.psi.CjParameter
  * 包括诊断、作用域、符号回查、源码导航与类型查询快照。
  */
 internal class CaCfirSessionSemanticCacheStore {
-    private val sourcePsiCache = linkedMapOf<CfirSymbol<*>, PsiElement?>()
-    private val psiSymbolsCache = linkedMapOf<PsiElement, List<CfirSymbol<*>>>()
-    private val containingFileCache = linkedMapOf<CfirSymbol<*>, CjFile?>()
+    private val sourcePsiCache = linkedMapOf<CfirBasedSymbol<*>, PsiElement?>()
+    private val psiSymbolsCache = linkedMapOf<PsiElement, List<CfirBasedSymbol<*>>>()
+    private val containingFileCache = linkedMapOf<CfirBasedSymbol<*>, CjFile?>()
     private val callInfoCache = linkedMapOf<PsiElement, CaCfirCallInfoSnapshot?>()
     private val diagnosticsCache = linkedMapOf<CaCfirDiagnosticsQueryKey, List<CjPsiDiagnostic>>()
     private val fileDiagnosticsCache = linkedMapOf<CaCfirFileDiagnosticsQueryKey, Collection<CjPsiDiagnostic>>()
@@ -48,19 +48,19 @@ internal class CaCfirSessionSemanticCacheStore {
     private val classLikeSuperTypesCache = linkedMapOf<CfirClassLikeSymbol<*>, List<ConeCangJieType>>()
 
     fun getOrCreateSourcePsi(
-        symbol: CfirSymbol<*>,
+        symbol: CfirBasedSymbol<*>,
         create: () -> PsiElement?,
     ): PsiElement? = getOrCreateCachedValue(sourcePsiCache, symbol, create)
 
     fun getOrCreateContainingFile(
-        symbol: CfirSymbol<*>,
+        symbol: CfirBasedSymbol<*>,
         create: () -> CjFile?,
     ): CjFile? = getOrCreateCachedValue(containingFileCache, symbol, create)
 
     fun getOrCreatePsiSymbols(
         psi: PsiElement,
-        create: () -> List<CfirSymbol<*>>,
-    ): List<CfirSymbol<*>> = getOrCreateCachedValue(psiSymbolsCache, psi, create)
+        create: () -> List<CfirBasedSymbol<*>>,
+    ): List<CfirBasedSymbol<*>> = getOrCreateCachedValue(psiSymbolsCache, psi, create)
 
     fun getOrCreateCallInfo(
         element: PsiElement,

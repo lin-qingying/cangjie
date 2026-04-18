@@ -1,0 +1,604 @@
+*** Begin Patch
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\symbolProviders\combined\LLCombinedJavaSymbolProvider.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined
+
+import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaGlobalSearchScopeMerger
+import org.cangnova.cangjie.analysis.api.platform.caches.NullableCaffeineCache
+import org.cangnova.cangjie.analysis.api.platform.caches.withStatsCounter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCfirJavaSymbolProvider
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.java.JavaSymbolProvider
+import org.cangnova.cangjie.cfir.java.hasMetadataAnnotation
+import org.cangnova.cangjie.cfir.java.javaAnnotationProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProviderWithoutCallables
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
+import org.cangnova.cangjie.cfir.symbols.impl.*
+import org.cangnova.cangjie.load.java.JavaClassFinder
+import org.cangnova.cangjie.load.java.createJavaClassFinder
+import org.cangnova.cangjie.load.java.structure.JavaClass
+import org.cangnova.cangjie.load.java.structure.impl.JavaClassImpl
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+
+/**
+ * [LLCombinedJavaSymbolProvider] combines multiple [JavaSymbolProvider]s with the following advantages:
+ *
+ * - For a given class ID, indices can be accessed once to get relevant PSI classes. Then the correct symbol provider(s) to call can be
+ *   found out via the PSI element's [CaModule][org.cangnova.cangjie.analysis.api.projectStructure.CaModule]s. This avoids the need to call
+ *   every single subordinate symbol provider.
+ * - A small Caffeine cache can avoid most index accesses, because many names are requested multiple times, with a minor memory footprint.
+ *
+ * [javaClassFinder] must have a scope which combines the scopes of the individual [providers].
+ */
+internal class LLCombinedJavaSymbolProvider private constructor(
+    session: CfirSession,
+    project: Project,
+    providers: List<JavaSymbolProvider>,
+    private val javaClassFinder: JavaClassFinder,
+) : LLSelectingCombinedSymbolProvider<JavaSymbolProvider>(session, project, providers) {
+    /**
+     * The purpose of this cache is to avoid index access for frequently accessed `ClassId`s, including failures. Because Java symbol
+     * providers currently cannot benefit from a "name in package" check (see KTIJ-24642), the cache should also store negative results.
+     *
+     * The cache size has been chosen with the help of local benchmarks and performance tests. A cache size of 2500 in comparison to 1000
+     * resulted in less time spent in [computeClassLikeSymbolByClassId] in local benchmarks. Cache sizes of 5000 and 10000 were tried in
+     * performance tests, but didn't affect performance. A cache size of 2500 is a good middle ground with a small memory footprint.
+     */
+    private val classCache: NullableCaffeineCache<ClassId, CfirRegularClassSymbol> = NullableCaffeineCache {
+        it
+            .maximumSize(2500)
+            .withStatsCounter(LLStatisticsService.getInstance(project)?.symbolProviders?.combinedSymbolProviderClassCacheStatsCounter)
+    }
+
+    override val symbolNamesProvider: CfirSymbolNamesProvider = object : CfirSymbolNamesProviderWithoutCallables() {
+        override val hasSpecificClassifierPackageNamesComputation: Boolean get() = false
+
+        override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? = null
+        override fun mayHaveTopLevelClassifier(classId: ClassId): Boolean = true
+    }
+
+    override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
+        classCache.getOrPut(classId) { computeClassLikeSymbolByClassId(it) }
+
+    private fun computeClassLikeSymbolByClassId(classId: ClassId): CfirRegularClassSymbol? {
+        val javaClasses = javaClassFinder.findClasses(classId).filterNot(JavaClass::hasMetadataAnnotation)
+        if (javaClasses.isEmpty()) return null
+
+        val (javaClass, provider) = selectCfirstElementInClasspathOrder(javaClasses) { javaClass ->
+            // `JavaClass` doesn't know anything about PSI, but we can be sure that `findClasses` returns a `JavaClassImpl` because it's
+            // using `KotlinJavaPsiFacade`. The alternative to this hack would be to change the interface of either `JavaClass` (yet the
+            // module should hardly depend on PSI), or to have `KotlinJavaPsiFacade` and `JavaClassFinderImpl` return `JavaClassImpl` and to
+            // return `JavaClassFinderImpl` from `createJavaClassFinder`.
+            check(javaClass is JavaClassImpl) { "`findClasses` as used here should return `JavaClassImpl` results." }
+            javaClass.psi
+        } ?: return null
+
+        return provider.getClassLikeSymbolByClassId(classId, javaClass)
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelCallableSymbolsTo(destination: MutableList<CfirCallableSymbol<*>>, packageFqName: FqName, name: Name) {
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelFunctionSymbolsTo(destination: MutableList<CfirNamedFunctionSymbol>, packageFqName: FqName, name: Name) {
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelPropertySymbolsTo(destination: MutableList<CfirPropertySymbol>, packageFqName: FqName, name: Name) {
+    }
+
+    override fun hasPackage(fqName: FqName): Boolean = providers.any { it.hasPackage(fqName) }
+
+    override fun estimateSymbolCacheSize(): Long = classCache.estimatedSize
+
+    companion object {
+        fun merge(session: CfirSession, project: Project, providers: List<LLCfirJavaSymbolProvider>): CfirSymbolProvider? =
+            if (providers.size > 1) {
+                val combinedScope = CaGlobalSearchScopeMerger.getInstance(project).union(providers.map { it.searchScope })
+                val javaClassFinder = project.createJavaClassFinder(combinedScope, session.javaAnnotationProvider)
+                LLCombinedJavaSymbolProvider(session, project, providers, javaClassFinder)
+            } else providers.singleOrNull()
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\symbolProviders\combined\LLCombinedKotlinSymbolProvider.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined
+
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
+import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinDeclarationProvider
+import org.cangnova.cangjie.analysis.api.platform.declarations.mergeDeclarationProviders
+import org.cangnova.cangjie.analysis.api.platform.packages.KotlinPackageProvider
+import org.cangnova.cangjie.analysis.api.platform.packages.mergePackageProviders
+import org.cangnova.cangjie.analysis.api.platform.caches.NullableCaffeineCache
+import org.cangnova.cangjie.analysis.api.platform.caches.getOrPut
+import org.cangnova.cangjie.analysis.api.platform.caches.withStatsCounter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLKotlinSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleSpecificSymbolProviderAccess
+import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolNamesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
+import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirPropertySymbol
+import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjCallableDeclaration
+import java.time.Duration
+
+/**
+ * [LLCombinedKotlinSymbolProvider] combines multiple [LLKotlinSymbolProvider]s with the following advantages:
+ *
+ * - The combined symbol provider can combine the "names in package" sets built by individual providers. The name set can then be checked
+ *   once instead of for each subordinate symbol provider. Because Kotlin symbol providers are ordered first in
+ *   [LLDependenciesSymbolProvider][org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLDependenciesSymbolProvider],
+ *   this check is especially fruitful.
+ * - For a given class or callable ID, indices can be accessed once to get relevant PSI elements. Then the correct symbol provider(s) to
+ *   call can be found out via the PSI element's [CaModule][org.cangnova.cangjie.analysis.api.projectStructure.CaModule]s. This avoids the
+ *   need to call every single subordinate symbol provider.
+ * - A small Caffeine cache can avoid most index accesses for classes, because many names are requested multiple times, with a minor memory
+ *   footprint.
+ * - Caffeine caches for functions and properties use time-based eviction, which allows them to scale up in short bursts when many callables
+ *   are requested.
+ *
+ * @param declarationProvider The declaration provider must have a scope which combines the scopes of the individual [providers].
+ *
+ * @param packageProviderForKotlinPackages This package provider should be combined from all [providers] which allow `kotlin` packages (see
+ *  [LLKotlinSymbolProvider.allowKotlinPackage]). It may be `null` if no such provider exists. See [hasPackage] for a use case.
+ */
+internal class LLCombinedKotlinSymbolProvider private constructor(
+    session: CfirSession,
+    project: Project,
+    providers: List<LLKotlinSymbolProvider>,
+    private val declarationProvider: KotlinDeclarationProvider,
+    private val packageProvider: KotlinPackageProvider,
+    private val packageProviderForKotlinPackages: KotlinPackageProvider?,
+) : LLSelectingCombinedSymbolProvider<LLKotlinSymbolProvider>(session, project, providers) {
+    override val symbolNamesProvider: CfirSymbolNamesProvider = CfirCompositeCachedSymbolNamesProvider.fromSymbolProviders(session, providers)
+
+    private val classifierCache = NullableCaffeineCache<ClassId, CfirClassLikeSymbol<*>> {
+        it
+            .maximumSize(500)
+            .withStatsCounter(LLStatisticsService.getInstance(project)?.symbolProviders?.combinedSymbolProviderClassCacheStatsCounter)
+    }
+
+    private val functionCache =
+        Caffeine.newBuilder()
+            .expireAfterAccess(Duration.ofSeconds(5))
+            .withStatsCounter(LLStatisticsService.getInstance(project)?.symbolProviders?.combinedSymbolProviderCallableCacheStatsCounter)
+            .build<CallableId, List<CfirNamedFunctionSymbol>>()
+
+    private val propertyCache =
+        Caffeine.newBuilder()
+            .expireAfterAccess(Duration.ofSeconds(5))
+            .withStatsCounter(LLStatisticsService.getInstance(project)?.symbolProviders?.combinedSymbolProviderCallableCacheStatsCounter)
+            .build<CallableId, List<CfirPropertySymbol>>()
+
+    override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
+        if (!symbolNamesProvider.mayHaveTopLevelClassifier(classId)) return null
+
+        return classifierCache.getOrPut(classId) { computeClassLikeSymbolByClassId(it) }
+    }
+
+    private fun computeClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
+        val candidates = declarationProvider.getAllClassesByClassId(classId) + declarationProvider.getAllTypeAliasesByClassId(classId)
+        val (ktClass, provider) = selectCfirstElementInClasspathOrder(candidates) { it } ?: return null
+
+        // We've picked the symbol provider via the `ktClass`, so `ktClass` must be contained in the symbol provider's module.
+        @OptIn(LLModuleSpecificSymbolProviderAccess::class)
+        return provider.getClassLikeSymbolByClassId(classId, ktClass)
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelCallableSymbolsTo(destination: MutableList<CfirCallableSymbol<*>>, packageFqName: FqName, name: Name) {
+        if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
+
+        val callableId = CallableId(packageFqName, name)
+
+        // Callables are provided very rarely (compared to functions/properties individually), so it's acceptable to hit caches and indices
+        // twice here.
+        destination.addAll(getTopLevelFunctionSymbolsFromCache(callableId))
+        destination.addAll(getTopLevelPropertySymbolsFromCache(callableId))
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelFunctionSymbolsTo(destination: MutableList<CfirNamedFunctionSymbol>, packageFqName: FqName, name: Name) {
+        if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
+
+        destination.addAll(getTopLevelFunctionSymbolsFromCache(CallableId(packageFqName, name)))
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelPropertySymbolsTo(destination: MutableList<CfirPropertySymbol>, packageFqName: FqName, name: Name) {
+        if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
+
+        destination.addAll(getTopLevelPropertySymbolsFromCache(CallableId(packageFqName, name)))
+    }
+
+    @OptIn(CfirSymbolProviderInternals::class)
+    private fun getTopLevelFunctionSymbolsFromCache(callableId: CallableId): List<CfirNamedFunctionSymbol> =
+        getCallablesFromCache(
+            callableId,
+            functionCache,
+            declarationProvider::getTopLevelFunctions,
+        ) { destination, callableId, functions ->
+            getTopLevelFunctionSymbolsTo(destination, callableId, functions)
+        }
+
+    @OptIn(CfirSymbolProviderInternals::class)
+    private fun getTopLevelPropertySymbolsFromCache(callableId: CallableId): List<CfirPropertySymbol> =
+        getCallablesFromCache(
+            callableId,
+            propertyCache,
+            declarationProvider::getTopLevelProperties,
+        ) { destination, callableId, properties ->
+            getTopLevelPropertySymbolsTo(destination, callableId, properties)
+        }
+
+    /**
+     * Retrieves all callables of type [S] from the given [cache] or loads them with [getCallables] and [provide].
+     *
+     * We cannot use [KotlinDeclarationProvider.getTopLevelCallableFiles] like [LLKotlinSourceSymbolProvider][org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLKotlinSourceSymbolProvider]
+     * for optimization because this approach only works for sources. Stub-based library symbol providers shouldn't access callables from
+     * [CjFile][org.cangnova.cangjie.psi.CjFile]s.
+     */
+    private inline fun <A : CjCallableDeclaration, S : CfirCallableSymbol<*>> getCallablesFromCache(
+        callableId: CallableId,
+        cache: Cache<CallableId, List<S>>,
+        crossinline getCallables: (CallableId) -> Collection<A>,
+        crossinline provide: LLKotlinSymbolProvider.(MutableList<S>, CallableId, Collection<A>) -> Unit,
+    ): List<S> =
+        cache.getOrPut(callableId) {
+            buildList {
+                getCallables(callableId)
+                    .groupBy { getModule(it) }
+                    .forEach { (module, callables) ->
+                        // If `module` cannot be found in the map, `callables` cannot be processed by any of the available providers,
+                        // because none of them belong to the correct module. We can skip in that case because iterating through all
+                        // providers wouldn't lead to any results for `callables`.
+                        val provider = getProviderByModule(module) ?: return@forEach
+                        provider.provide(this, callableId, callables)
+                    }
+            }
+        }
+
+    override fun hasPackage(fqName: FqName): Boolean {
+        val hasPackage = if (fqName.startsWith(StandardNames.BUILT_INS_PACKAGE_NAME)) {
+            // If a package is a `kotlin` package, `packageProvider` might find it via the scope of an individual symbol provider that
+            // disallows `kotlin` packages. Hence, the combined `getPackage` would erroneously find a package it shouldn't be able to find,
+            // because calling that individual symbol provider directly would result in `null` (as it disallows `kotlin` packages). The
+            // `packageProviderForKotlinPackages` solves this issue by including only scopes from symbol providers which allow `kotlin`
+            // packages.
+            packageProviderForKotlinPackages?.doesKotlinOnlyPackageExist(fqName) == true
+        } else {
+            packageProvider.doesKotlinOnlyPackageExist(fqName)
+        }
+
+        // Regarding caching `hasPackage`: The static (standalone) package provider precomputes its packages, while the IDE package provider
+        // caches the results itself. Hence, it's currently unnecessary to provide another layer of caching here.
+        return hasPackage
+    }
+
+    override fun estimateSymbolCacheSize(): Long = classifierCache.estimatedSize
+
+    companion object {
+        fun merge(session: LLCfirSession, project: Project, providers: List<LLKotlinSymbolProvider>): CfirSymbolProvider? =
+            if (providers.size > 1) {
+                val declarationProvider = project.mergeDeclarationProviders(providers.map { it.declarationProvider })
+
+                val packageProvider = project.mergePackageProviders(providers.map { it.packageProvider })
+
+                val packageProviderForKotlinPackages = providers
+                    .filter { it.allowKotlinPackage }
+                    .takeIf { it.isNotEmpty() }
+                    ?.map { it.packageProvider }
+                    ?.let(project::mergePackageProviders)
+
+                LLCombinedKotlinSymbolProvider(
+                    session,
+                    project,
+                    providers,
+                    declarationProvider,
+                    packageProvider,
+                    packageProviderForKotlinPackages,
+                )
+            } else providers.singleOrNull()
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\symbolProviders\combined\LLCombinedPackageDelegationSymbolProvider.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined
+
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolNamesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
+import org.cangnova.cangjie.cfir.resolve.providers.impl.CfirCompositeSymbolProvider
+import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirPropertySymbol
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.parentOrNull
+import org.cangnova.cangjie.utils.newHashMapWithExpectedSize
+
+/**
+ * [LLCombinedPackageDelegationSymbolProvider] combines multiple [CfirSymbolProvider]s by delegating to the appropriate individual providers
+ * based on package names.
+ *
+ * Unlike [LLCombinedKotlinSymbolProvider], which delegates based on the modules of index-provided candidates, this provider builds a map
+ * from package [FqName]s to lists of symbol providers that can provide symbols for that package. Then, for each symbol request, it queries
+ * only the relevant providers for the given package.
+ *
+ * If any provider's [CfirSymbolNamesProvider.getPackageNames] returns `null`, [LLCombinedPackageDelegationSymbolProvider] cannot be used. In
+ * that case, [merge] falls back to [CfirCompositeSymbolProvider], which queries all providers individually.
+ *
+ * The symbol provider affords its simple implementation due to the following factors:
+ *
+ * - There is no need to check `mayHaveTopLevel*` functions as the access to [providersByPackage] already covers the package name check: If
+ *   a package cannot be provided by the combined symbol provider, the map will contain no entry for it. The callable name check itself is
+ *   covered on the individual symbol provider level.
+ * - There is no need for caches since the delegation is simple.
+ * - [providersByPackage] is built in classpath order of the providers, so the symbol provider lists will reflect the classpath order,
+ *   preserving it without a need for additional priority logic.
+ *
+ * ### Usage Notes
+ *
+ * [LLCombinedPackageDelegationSymbolProvider] is a better choice for combining library symbol providers than
+ * [LLCombinedKotlinSymbolProvider]. This is because of the different lifetimes of library symbol providers and combined symbol providers:
+ *
+ * - Individual library symbol providers are invalidated infrequently, as library sessions outlast source sessions, so they generally have
+ *   symbols already cached.
+ * - Combined symbol providers are part of use-site source sessions, so they are invalidated more frequently.
+ *
+ * [LLCombinedKotlinSymbolProvider] accesses the index before calling into individual symbol providers. Using this symbol provider to
+ * combine library symbol providers led to the following situation: As source sessions were invalidated, [LLCombinedKotlinSymbolProvider]
+ * had to redo index accesses which would not have been performed by individual library symbol providers. This led to an overall performance
+ * degradation in some cases.
+ *
+ * On the flipside, [LLCombinedPackageDelegationSymbolProvider] is not automatically better than [LLCombinedKotlinSymbolProvider]. Cfirst,
+ * package delegation requires that all individual symbol providers can compute package sets, which currently isn't the case for source
+ * symbol providers. But [LLCombinedKotlinSymbolProvider] might also be better in cases where multiple index accesses would be performed in
+ * individual symbol providers, whereas [LLCombinedKotlinSymbolProvider] can perform a single index access.
+ *
+ * @param providersByPackage For the implementation of [hasPackage], [providersByPackage] must contain a transitive closure of all parent
+ *  packages. For example, if the map contains 'foo.bar.baz', it must also contain 'foo.bar' and 'foo'. The entry for 'foo.bar' must contain
+ *  all providers that have any package matching the prefix 'foo.bar*'.
+ *
+ *  [providersByPackage] has [String] keys instead of [FqName] keys to conserve memory. Furthermore, it uses arrays for the same purpose.
+ */
+internal class LLCombinedPackageDelegationSymbolProvider private constructor(
+    session: CfirSession,
+    override val providers: List<CfirSymbolProvider>,
+    private val providersByPackage: Map<String, Array<CfirSymbolProvider>>
+) : LLCombinedSymbolProvider<CfirSymbolProvider>(session) {
+    override val symbolNamesProvider: CfirSymbolNamesProvider = CfirCompositeCachedSymbolNamesProvider.fromSymbolProviders(session, providers)
+
+    override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
+        val relevantProviders = providersByPackage[classId.packageFqName.asString()] ?: return null
+
+        return relevantProviders.firstNotNullOfOrNull { it.getClassLikeSymbolByClassId(classId) }
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelCallableSymbolsTo(destination: MutableList<CfirCallableSymbol<*>>, packageFqName: FqName, name: Name) {
+        val relevantProviders = providersByPackage[packageFqName.asString()] ?: return
+
+        relevantProviders.forEach { it.getTopLevelCallableSymbolsTo(destination, packageFqName, name) }
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelFunctionSymbolsTo(destination: MutableList<CfirNamedFunctionSymbol>, packageFqName: FqName, name: Name) {
+        val relevantProviders = providersByPackage[packageFqName.asString()] ?: return
+
+        relevantProviders.forEach { it.getTopLevelFunctionSymbolsTo(destination, packageFqName, name) }
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelPropertySymbolsTo(destination: MutableList<CfirPropertySymbol>, packageFqName: FqName, name: Name) {
+        val relevantProviders = providersByPackage[packageFqName.asString()] ?: return
+
+        relevantProviders.forEach { it.getTopLevelPropertySymbolsTo(destination, packageFqName, name) }
+    }
+
+    override fun hasPackage(fqName: FqName): Boolean {
+        val relevantProviders = providersByPackage[fqName.asString()] ?: return false
+
+        // We still have to query individual providers since the package sets from symbol names providers may contain false positives, so
+        // the `fqName` being in `providersByPackage` doesn't prove that the package exists.
+        return relevantProviders.any { it.hasPackage(fqName) }
+    }
+
+    override fun estimateSymbolCacheSize(): Long = 0
+
+    companion object {
+        fun merge(session: CfirSession, providers: List<CfirSymbolProvider>): CfirSymbolProvider? =
+            if (providers.size > 1) {
+                val providersByPackage = buildPackageToProvidersMap(providers)
+                if (providersByPackage != null) {
+                    LLCombinedPackageDelegationSymbolProvider(session, providers, providersByPackage)
+                } else {
+                    CfirCompositeSymbolProvider(session, providers)
+                }
+            } else providers.singleOrNull()
+
+        /**
+         * Builds the "package to providers" map. If any package set is `null`, the resulting map will be `null` as well, and we'll need to
+         * fall back to querying all providers individually.
+         */
+        private fun buildPackageToProvidersMap(providers: List<CfirSymbolProvider>): Map<String, Array<CfirSymbolProvider>>? {
+            val providerListsByPackage = buildMap {
+                providers.forEach { provider ->
+                    val packageNames = provider.symbolNamesProvider.getPackageNames() ?: return null
+                    packageNames.forEach { packageName ->
+                        // We only use the `FqName` here for convenience. It won't be stored.
+                        FqName(packageName).forEachFqName { fqName ->
+                            val list = getOrPut(fqName.asString()) { mutableListOf() }
+
+                            // Parent package names may overlap (e.g. 'foo.bar' and 'foo.baz' have the same parent 'foo'), so we have to be
+                            // careful not to add the same provider multiple times. Since we're iterating provider by provider, the current
+                            // provider will always be last in the list if it has been added, so we just need to check the last element.
+                            if (list.lastOrNull() != provider) {
+                                list.add(provider)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Avoid linked hash maps to conserve memory.
+            return newHashMapWithExpectedSize<String, Array<CfirSymbolProvider>>(providerListsByPackage.size).apply {
+                providerListsByPackage.forEach { (packageName, providers) ->
+                    this[packageName] = providers.toTypedArray()
+                }
+            }
+        }
+
+        private inline fun FqName.forEachFqName(f: (FqName) -> Unit) {
+            var current: FqName? = this
+            while (current != null) {
+                f(current)
+                current = current.parentOrNull()
+            }
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\symbolProviders\combined\LLCombinedSymbolProvider.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined
+
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+
+/**
+ * A symbol provider which combines multiple individual symbol providers of the same type. Combined symbol providers typically have an
+ * advantage over naively querying the list of individual symbol providers, such as caching or a single index access with a combined scope.
+ */
+internal abstract class LLCombinedSymbolProvider<P : CfirSymbolProvider>(session: CfirSession) : CfirSymbolProvider(session) {
+    abstract val providers: List<P>
+
+    /**
+     * Estimates the number of symbols contained in the combined symbol provider's own caches. The metric does not include the cache sizes
+     * of the individual symbol providers.
+     *
+     * The purpose of this metric is to estimate the current **cache overhead** of a combined symbol provider.
+     */
+    abstract fun estimateSymbolCacheSize(): Long
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\symbolProviders\combined\LLCombinedSyntheticFunctionSymbolProvider.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined
+
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolNamesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
+import org.cangnova.cangjie.cfir.resolve.providers.impl.CfirSyntheticFunctionInterfaceProviderBase
+import org.cangnova.cangjie.cfir.resolve.providers.impl.CfirSyntheticFunctionInterfaceProviderBase.Companion.mayBeSyntheticFunctionClassName
+import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirPropertySymbol
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+
+/**
+ * [LLCombinedSyntheticFunctionSymbolProvider] combines multiple synthetic function symbol providers with the advantage that [ClassId]
+ * heuristics are checked only once.
+ */
+@OptIn(CfirSymbolProviderInternals::class)
+internal class LLCombinedSyntheticFunctionSymbolProvider private constructor(
+    session: CfirSession,
+    override val providers: List<CfirSyntheticFunctionInterfaceProviderBase>,
+) : LLCombinedSymbolProvider<CfirSyntheticFunctionInterfaceProviderBase>(session) {
+    private val combinedPackageNames: Set<FqName> = providers.flatMapTo(mutableSetOf()) { it.getFunctionKindPackageNames() }
+
+    // `CfirCompositeSymbolNamesProvider` defines `mayHaveSyntheticFunctionTypes` and `mayHaveSyntheticFunctionType` correctly, which is
+    // needed for consistency should this symbol provider be part of another composite symbol provider.
+    override val symbolNamesProvider: CfirSymbolNamesProvider =
+        object : CfirCompositeSymbolNamesProvider(providers.map { it.symbolNamesProvider }) {
+            override fun getPackageNames(): Set<String> = emptySet()
+
+            override val hasSpecificClassifierPackageNamesComputation: Boolean get() = false
+            override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name> = emptySet()
+
+            override val hasSpecificCallablePackageNamesComputation: Boolean get() = false
+            override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name> = emptySet()
+        }
+
+    override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
+        if (!classId.mayBeSyntheticFunctionClassName()) return null
+        if (classId.packageFqName !in combinedPackageNames) return null
+
+        return providers.firstNotNullOfOrNull { it.getClassLikeSymbolByClassId(classId) }
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelCallableSymbolsTo(destination: MutableList<CfirCallableSymbol<*>>, packageFqName: FqName, name: Name) {
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelFunctionSymbolsTo(destination: MutableList<CfirNamedFunctionSymbol>, packageFqName: FqName, name: Name) {
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelPropertySymbolsTo(destination: MutableList<CfirPropertySymbol>, packageFqName: FqName, name: Name) {
+    }
+
+    override fun hasPackage(fqName: FqName): Boolean = fqName in combinedPackageNames
+
+    override fun estimateSymbolCacheSize(): Long = 0
+
+    companion object {
+        fun merge(session: CfirSession, providers: List<CfirSyntheticFunctionInterfaceProviderBase>): CfirSymbolProvider? =
+            if (providers.size > 1) LLCombinedSyntheticFunctionSymbolProvider(session, providers)
+            else providers.singleOrNull()
+    }
+}
+
+*** End Patch

@@ -8,3 +8,10 @@ dependencies {
     api(project(":analysis:analysis-api-platform-interface"))
     api(project(":analysis:analysis-api-impl-base"))
 }
+
+configurations.configureEach {
+    exclude(group = "com.jetbrains.intellij.platform")
+    exclude(group = "com.jetbrains.intellij")
+    exclude(group = "org.jetbrains.intellij")
+    exclude(group = "com.intellij.platform")
+}

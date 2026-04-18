@@ -1,0 +1,115 @@
+package org.cangnova.cangjie.analysis.api.cfir.symbols
+
+import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.api.resolveToCfirSymbolOfType
+import org.cangnova.cangjie.analysis.api.impl.base.util.lazyPub
+import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolOrigin
+import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
+import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.realPsi
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.psi.CjCallableDeclaration
+import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.psi.CjDeclarationWithBody
+import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjTypeParameterListOwner
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
+
+/**
+ * A [CaCfirSymbol] that is possibly backed by some [PsiElement] and builds [cfirSymbol] lazily (by convention),
+ * allowing some properties to be calculated without the need to build a [cfirSymbol].
+ */
+internal interface CaCfirPsiSymbol<out P : PsiElement, out S : CfirBasedSymbol<*>> : CaCfirSymbol<S> {
+    /**
+     * The [PsiElement] which can be used as a source of truth for some other property implementations.
+     *
+     * It can be as an element from a source file, or an element from a library.
+     */
+    val backingPsi: P?
+
+    /**
+     * The lazy implementation of [CfirBasedSymbol].
+     *
+     * The implementation is either built on top of [backingPsi] or provided during creation.
+     *
+     * @see cfirSymbol
+     */
+    val lazyCfirSymbol: Lazy<S>
+
+    /**
+     * The origin should be provided without using [cfirSymbol], if possible.
+     */
+    abstract override val origin: CaSymbolOrigin
+
+    override val cfirSymbol: S get() = lazyCfirSymbol.value
+}
+@OptIn(ExperimentalContracts::class)
+internal inline fun <R> CaCfirPsiSymbol<*, *>.ifNotLibrarySource(action: () -> R): R? {
+    contract {
+        callsInPlace(action, kotlin.contracts.InvocationKind.AT_MOST_ONCE)
+    }
+
+    return if (analysisSession.useSiteModule is CaLibrarySourceModule) null else action()
+}
+internal fun CaCfirCjBasedSymbol<CjCallableDeclaration, *>.createCaValueParameters(): List<CaValueParameterSymbol>? =
+    ifNotLibrarySource {
+        with(analysisSession) {
+            backingPsi?.valueParameters?.map { it.symbol as CaValueParameterSymbol }
+        }
+    }
+internal fun CaCfirCjBasedSymbol<CjTypeParameterListOwner, *>.createCaTypeParameters(): List<CaTypeParameterSymbol>? =
+    ifNotLibrarySource {
+        with(analysisSession) {
+            backingPsi?.typeParameters?.map { it.symbol }
+        }
+    }
+internal interface CaCfirCjBasedSymbol<out P : CjElement, out S : CfirBasedSymbol<*>> : CaCfirPsiSymbol<P, S> {
+    override val origin: CaSymbolOrigin get() = withValidityAssertion { psiOrSymbolOrigin() }
+}
+
+internal inline fun <reified S : CfirBasedSymbol<*>> lazyCfirSymbol(
+    declaration: CjDeclaration,
+    session: CaCfirSession,
+): Lazy<S> = lazyPub {
+    declaration.resolveToCfirSymbolOfType<S>(session.resolutionFacade)
+}
+/**
+ * Currently, the compiled file can represent both library and non-library origin depending on the `preferBinary`
+ * parameter from [org.jetbrains.kotlin.analysis.low.level.api.fir.sessions.LLCfirSessionCache.getSession].
+ *
+ * So, depending on it, we may represent one decompiled file as [CaSymbolOrigin.SOURCE] and as [CaSymbolOrigin.LIBRARY]
+ * at the same time.
+ */
+internal fun <P : CjElement> CaCfirPsiSymbol<P, *>.psiOrSymbolOrigin(): CaSymbolOrigin {
+    val backingPsi = backingPsi
+    return when {
+        backingPsi == null -> symbolOrigin()
+        backingPsi.cameFromCangJieLibrary -> symbolOrigin()
+        else -> CaSymbolOrigin.SOURCE
+    }
+}
+
+internal val CjElement.cameFromCangJieLibrary: Boolean get() = containingCjFile.isCompiled
+internal val CfirBasedSymbol<*>.backingPsiIfApplicable: PsiElement?
+    get() {
+        if (origin == CfirDeclarationOrigin.Synthetic.TypeAliasConstructor) return null
+
+        return cfir.realPsi
+    }
+
+
+internal fun CaCfirCjBasedSymbol<CjDeclarationWithBody, CfirCallableSymbol<*>>.createReturnType(): CaType {
+    val backingPsi = backingPsi
+    if (backingPsi?.hasBlockBody() == true && !backingPsi.hasDeclaredReturnType()) {
+        return analysisSession.builtinTypes.unit
+    }
+
+    return cfirSymbol.returnType(builder)
+}

@@ -52,6 +52,13 @@ class CfirDeclDeserializer(
     private val packageFqName: FqName = FqName(context.header.fullPkgName)
     private val declsUnderDeserialization = HashSet<Int>()
     private val enumOwnerStack = mutableListOf<EnumOwnerContext>()
+    /**
+     * 记录“当前正在为哪个声明反序列化子声明”。
+     *
+     * `GenericParamDecl` / `FuncParam` 在 FlatBuffers 中是独立 Decl，
+     * 但它们的 CFIR 语义必须绑定到真实宿主声明符号，不能退化为自引用。
+     */
+    private val containingDeclarationSymbolStack = mutableListOf<CfirBasedSymbol<*>>()
 
     /**
      * 反序列化指定索引的声明。
@@ -237,6 +244,21 @@ class CfirDeclDeserializer(
     private val currentEnumOwner: EnumOwnerContext?
         get() = enumOwnerStack.lastOrNull()
 
+    private inline fun <R> withContainingDeclarationSymbol(
+        symbol: CfirBasedSymbol<*>,
+        block: () -> R,
+    ): R {
+        containingDeclarationSymbolStack += symbol
+        return try {
+            block()
+        } finally {
+            containingDeclarationSymbolStack.removeAt(containingDeclarationSymbolStack.lastIndex)
+        }
+    }
+
+    private val currentContainingDeclarationSymbol: CfirBasedSymbol<*>?
+        get() = containingDeclarationSymbolStack.lastOrNull()
+
     private fun CfirDeclaration.markResolved() {
         initDefaultResolveState()
         replaceResolvePhase(CfirResolvePhase.BODY_RESOLVE)
@@ -249,11 +271,17 @@ class CfirDeclDeserializer(
         val name = decl.classLikeName()
         val symbol = CfirClassSymbol(resolveClassId(decl, name))
         val status = buildStatus(decl)
-        val typeParams = deserializeTypeParameters(decl)
+        val typeParams = withContainingDeclarationSymbol(symbol) {
+            deserializeTypeParameters(decl)
+        }
         val info = decl.info(ClassInfo()) as? ClassInfo
         val superTypeRefs =
             info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) } ?: mutableListOf()
-        val members = info?.let { deserializeBody(it::body, it.bodyLength) } ?: mutableListOf()
+        val members = info?.let {
+            withContainingDeclarationSymbol(symbol) {
+                deserializeBody(it::body, it.bodyLength)
+            }
+        } ?: mutableListOf()
 
         val cfirClass = CfirClassImpl(
             source = null,
@@ -284,11 +312,17 @@ class CfirDeclDeserializer(
         }
         val symbol = CfirInterfaceSymbol(classId)
         val status = buildStatus(decl)
-        val typeParams = deserializeTypeParameters(decl)
+        val typeParams = withContainingDeclarationSymbol(symbol) {
+            deserializeTypeParameters(decl)
+        }
         val info = decl.info(InterfaceInfo()) as? InterfaceInfo
         val superTypeRefs =
             info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) } ?: mutableListOf()
-        val members = info?.let { deserializeBody(it::body, it.bodyLength) } ?: mutableListOf()
+        val members = info?.let {
+            withContainingDeclarationSymbol(symbol) {
+                deserializeBody(it::body, it.bodyLength)
+            }
+        } ?: mutableListOf()
 
         val cfirInterface = CfirInterfaceImpl(
             source = null,
@@ -314,11 +348,17 @@ class CfirDeclDeserializer(
         val name = decl.classLikeName()
         val symbol = CfirStructSymbol(resolveClassId(decl, name))
         val status = buildStatus(decl)
-        val typeParams = deserializeTypeParameters(decl)
+        val typeParams = withContainingDeclarationSymbol(symbol) {
+            deserializeTypeParameters(decl)
+        }
         val info = decl.info(StructInfo()) as? StructInfo
         val superTypeRefs =
             info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) } ?: mutableListOf()
-        val members = info?.let { deserializeBody(it::body, it.bodyLength) } ?: mutableListOf()
+        val members = info?.let {
+            withContainingDeclarationSymbol(symbol) {
+                deserializeBody(it::body, it.bodyLength)
+            }
+        } ?: mutableListOf()
 
         val cfirStruct = CfirStructImpl(
             source = null,
@@ -346,13 +386,17 @@ class CfirDeclDeserializer(
         val classId = resolveClassId(decl, name)
         val symbol = CfirEnumSymbol(classId, isRefEnum)
         val status = buildStatus(decl)
-        val typeParams = deserializeTypeParameters(decl)
+        val typeParams = withContainingDeclarationSymbol(symbol) {
+            deserializeTypeParameters(decl)
+        }
         val info = decl.info(EnumInfo()) as? EnumInfo
         val superTypeRefs =
             info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) } ?: mutableListOf()
         val members = info?.let {
             withEnumOwner(EnumOwnerContext(classId, typeParams, isRefEnum)) {
-                deserializeBody(it::body, it.bodyLength)
+                withContainingDeclarationSymbol(symbol) {
+                    deserializeBody(it::body, it.bodyLength)
+                }
             }
         } ?: mutableListOf()
 
@@ -385,7 +429,9 @@ class CfirDeclDeserializer(
         val name = Name.identifier(decl.identifier ?: "???")
         val symbol = CfirNamedFunctionSymbol(CallableId(packageFqName, name))
         val status = buildStatus(decl)
-        val typeParams = deserializeTypeParameters(decl)
+        val typeParams = withContainingDeclarationSymbol(symbol) {
+            deserializeTypeParameters(decl)
+        }
         val returnTypeRef = buildTypeRef(decl.type)
 
         // 从 FuncInfo.funcBody.paramLists 获取参数
@@ -393,12 +439,14 @@ class CfirDeclDeserializer(
         val funcInfo = decl.info(FuncInfo()) as? FuncInfo
         val funcBody = funcInfo?.funcBody
         if (funcBody != null) {
-            for (i in 0 until funcBody.paramListsLength) {
-                val paramList = funcBody.paramLists(i) ?: continue
-                for (j in 0 until paramList.paramsLength) {
-                    val paramIndex = decodeDeclRef(paramList.params(j)) ?: continue
-                    val param = deserializeDecl(paramIndex) as? CfirValueParameter
-                    if (param != null) valueParams.add(param)
+            withContainingDeclarationSymbol(symbol) {
+                for (i in 0 until funcBody.paramListsLength) {
+                    val paramList = funcBody.paramLists(i) ?: continue
+                    for (j in 0 until paramList.paramsLength) {
+                        val paramIndex = decodeDeclRef(paramList.params(j)) ?: continue
+                        val param = deserializeDecl(paramIndex) as? CfirValueParameter
+                        if (param != null) valueParams.add(param)
+                    }
                 }
             }
         }
@@ -431,7 +479,9 @@ class CfirDeclDeserializer(
         val name = Name.identifier(decl.identifier ?: "???")
         val symbol = CfirPropertySymbol(CallableId(packageFqName, name))
         val status = buildStatus(decl)
-        val typeParams = deserializeTypeParameters(decl)
+        val typeParams = withContainingDeclarationSymbol(symbol) {
+            deserializeTypeParameters(decl)
+        }
         val returnTypeRef = buildTypeRef(decl.type)
 
         val cfirProp = CfirPropertyImpl(
@@ -465,7 +515,9 @@ class CfirDeclDeserializer(
         val name = Name.identifier(decl.identifier ?: "???")
         val symbol = CfirFieldVariableSymbol(CallableId(packageFqName, name))
         val status = buildStatus(decl)
-        val typeParams = deserializeTypeParameters(decl)
+        val typeParams = withContainingDeclarationSymbol(symbol) {
+            deserializeTypeParameters(decl)
+        }
         val returnTypeRef = buildTypeRef(decl.type)
 
         val varInfo = if (decl.infoType == DeclInfo.VarInfo) decl.info(VarInfo()) as? VarInfo else null
@@ -496,7 +548,6 @@ class CfirDeclDeserializer(
     /** ExtendDecl → CfirExtend */
     private fun convertVariableWithPattern(decl: Decl): CfirPatternVariable {
         val status = buildStatus(decl)
-        val typeParams = deserializeTypeParameters(decl)
         val returnTypeRef = buildTypeRef(decl.type)
 
         val info = if (decl.infoType == DeclInfo.VarWithPatternInfo) {
@@ -506,6 +557,9 @@ class CfirDeclDeserializer(
         }
         val fallbackName = decl.identifier?.let(Name::identifier) ?: Name.special("<pattern>")
         val symbol = CfirPatternVariableSymbol(CallableId(Name.special("<pattern-variable>")))
+        val typeParams = withContainingDeclarationSymbol(symbol) {
+            deserializeTypeParameters(decl)
+        }
         val pattern = deserializeIrrefutablePattern(
             fbPattern = info?.irrefutablePattern,
             fallbackName = fallbackName,
@@ -724,7 +778,9 @@ class CfirDeclDeserializer(
     private fun convertExtend(decl: Decl): CfirExtend {
         val symbol = CfirExtendSymbol()
         val status = buildStatus(decl)
-        val typeParams = deserializeTypeParameters(decl)
+        val typeParams = withContainingDeclarationSymbol(symbol) {
+            deserializeTypeParameters(decl)
+        }
 
         val extendInfo = decl.info(ExtendInfo()) as? ExtendInfo
         // 被扩展的类型来自 decl.type
@@ -733,7 +789,9 @@ class CfirDeclDeserializer(
             deserializeInheritedTypes(extendInfo::inheritedTypes, extendInfo.inheritedTypesLength)
         } else mutableListOf()
         val members = if (extendInfo != null) {
-            deserializeBody(extendInfo::body, extendInfo.bodyLength)
+            withContainingDeclarationSymbol(symbol) {
+                deserializeBody(extendInfo::body, extendInfo.bodyLength)
+            }
         } else mutableListOf()
 
         val cfirExtend = CfirExtendImpl(
@@ -760,7 +818,9 @@ class CfirDeclDeserializer(
         val name = decl.classLikeName()
         val symbol = CfirTypeAliasSymbol(resolveClassId(decl, name))
         val status = buildStatus(decl)
-        val typeParams = deserializeTypeParameters(decl)
+        val typeParams = withContainingDeclarationSymbol(symbol) {
+            deserializeTypeParameters(decl)
+        }
 
         val aliasInfo = decl.info(AliasInfo()) as? AliasInfo
         val expandedTypeRef = if (aliasInfo != null) {
@@ -793,6 +853,8 @@ class CfirDeclDeserializer(
     private fun convertTypeParameter(decl: Decl): CfirTypeParameter {
         val name = Name.identifier(decl.identifier ?: "T")
         val symbol = CfirTypeParameterSymbol()
+        val containingDeclarationSymbol = currentContainingDeclarationSymbol
+            ?: error("Type parameter '${name.asString()}' must be deserialized inside a containing declaration")
 
         // 泛型约束来自 decl.generic.constraints
         val bounds = mutableListOf<CfirTypeRef>()
@@ -812,7 +874,7 @@ class CfirDeclDeserializer(
             annotations = MutableOrEmptyList.empty(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
-            containingDeclarationSymbol = symbol,
+            containingDeclarationSymbol = containingDeclarationSymbol,
             symbol = symbol,
             name = name,
             bounds = bounds,
@@ -856,8 +918,12 @@ class CfirDeclDeserializer(
         val owner = currentEnumOwner
         val symbol = CfirEnumConstructorSymbol(owner?.let { CallableId(it.classId, name) } ?: CallableId(packageFqName, name))
         val status = buildStatus(decl)
-        val typeParams = owner?.typeParameters?.toMutableList() ?: deserializeTypeParameters(decl)
-        val valueParameters = deserializeFunctionParameters(decl)
+        val typeParams = owner?.typeParameters?.toMutableList() ?: withContainingDeclarationSymbol(symbol) {
+            deserializeTypeParameters(decl)
+        }
+        val valueParameters = withContainingDeclarationSymbol(symbol) {
+            deserializeFunctionParameters(decl)
+        }
 
         val enumCtor = CfirEnumConstructorImpl(
             source = null,
@@ -927,8 +993,12 @@ class CfirDeclDeserializer(
 
         val name = Name.identifier(decl.identifier ?: "_")
         val symbol = CfirValueParameterSymbol(CallableId(name))
+        val containingDeclarationSymbol = currentContainingDeclarationSymbol
+            ?: error("Value parameter '${name.asString()}' must be deserialized inside a containing declaration")
         val status = buildStatus(decl)
-        val typeParams = deserializeTypeParameters(decl)
+        val typeParams = withContainingDeclarationSymbol(symbol) {
+            deserializeTypeParameters(decl)
+        }
         val returnTypeRef = buildTypeRef(decl.type)
         val isNamed = info?.isNamedParam ?: false
         val cfirParam = CfirValueParameterImpl(
@@ -942,11 +1012,13 @@ class CfirDeclDeserializer(
             isLocal = false,
             dispatchReceiverType = null,
             symbol = symbol,
+            containingDeclarationSymbol = containingDeclarationSymbol,
             status = status,
             typeParameters = typeParams,
             returnTypeRef = returnTypeRef,
             name = name,
             defaultValue = null,
+
         )
         symbol.bind(cfirParam)
         cfirParam.markResolved()

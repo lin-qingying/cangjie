@@ -1,13 +1,7 @@
 package org.cangnova.cangjie.analysis.api.annotations
 
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
-import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
-import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
-import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSymbol
-import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name

@@ -29,7 +29,7 @@ val coneDiagnosticType = generatedType("types", "ConeDiagnostic", kind = TypeKin
 val coneErrorTypeType = type<ConeErrorType>()
 val coneUnreportedDuplicateDiagnosticType = generatedType("types", "ConeUnreportedDuplicateDiagnostic")
 val jumpTargetType = type(BASE_PACKAGE, "CfirTarget", exactPackage = true, kind = TypeKind.Interface)
-val cfirSymbolType = type("symbols", "CfirSymbol")
+val cfirSymbolType = type("symbols", "CfirBasedSymbol")
 val cfirThisOwnerSymbolType = type("symbols", "CfirThisOwnerSymbol")
 val coneTypeOrNull = type("types","coneTypeOrNull")
 val coneSimpleCangJieTypeType = type<ConeSimpleCangJieType>()

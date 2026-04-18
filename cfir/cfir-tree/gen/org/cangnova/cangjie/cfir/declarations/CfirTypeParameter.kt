@@ -8,7 +8,7 @@ package org.cangnova.cangjie.cfir.declarations
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -25,7 +25,7 @@ abstract class CfirTypeParameter : CfirDeclaration(), CfirTypeParameterRef {
     abstract override val annotations: List<CfirAnnotation>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
-    abstract val containingDeclarationSymbol: CfirSymbol<*>
+    abstract val containingDeclarationSymbol: CfirBasedSymbol<*>
     abstract override val symbol: CfirTypeParameterSymbol
     abstract val name: Name
     abstract val bounds: List<CfirTypeRef>

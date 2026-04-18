@@ -9,7 +9,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -53,7 +53,7 @@ abstract class CfirSymbolProvider(val session: CfirSession)  : CfirSessionCompon
     open fun getEnumConstructorOwnerClassId(symbol: CfirEnumConstructorSymbol): ClassId? = null
 
     /** 查询声明所属文件。默认返回 null，由具体 provider 决定是否支持。 */
-    open fun getContainingFile(symbol: CfirSymbol<*>): CfirFile? = null
+    open fun getContainingFile(symbol: CfirBasedSymbol<*>): CfirFile? = null
 
     /** 查询可调用声明所属外层类。默认返回 null，由具体 provider 决定是否支持。 */
     open fun getContainingClassId(symbol: CfirCallableSymbol<*>): ClassId? = null

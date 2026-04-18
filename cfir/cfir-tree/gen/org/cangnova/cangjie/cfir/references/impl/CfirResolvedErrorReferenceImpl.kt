@@ -8,7 +8,7 @@
 package org.cangnova.cangjie.cfir.references.impl
 
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -18,7 +18,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 internal class CfirResolvedErrorReferenceImpl(
     override val source: CjSourceElement?,
     override val name: Name,
-    override val resolvedSymbol: CfirSymbol<*>,
+    override val resolvedSymbol: CfirBasedSymbol<*>,
     override val diagnostic: ConeDiagnostic,
 ) : CfirResolvedErrorReference() {
 

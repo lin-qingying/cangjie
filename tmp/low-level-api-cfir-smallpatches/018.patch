@@ -1,0 +1,368 @@
+*** Begin Patch
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\providers\LLCfirPrivateVisibleFromDifferentModuleExtension.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.providers
+
+import com.intellij.psi.PsiFile
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirModuleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.unwrapCopy
+import org.cangnova.cangjie.cfir.CfirModuleData
+import org.cangnova.cangjie.cfir.CfirPrivateVisibleFromDifferentModuleExtension
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.psi.CjCodeFragment
+
+/**
+ * [CfirPrivateVisibleFromDifferentModuleExtension] which is aware of [CaDanglingFileModule]s.
+ * Dangling file can see private declarations of its respective context file.
+ */
+internal class LLCfirPrivateVisibleFromDifferentModuleExtension(private val llCfirSession: LLCfirSession) :
+    CfirPrivateVisibleFromDifferentModuleExtension() {
+
+    override fun canSeePrivateDeclarationsOfModule(otherModuleData: CfirModuleData): Boolean {
+        check(otherModuleData is LLCfirModuleData)
+        return otherModuleData.ktModule in llCfirSession.ktModule.allContextModulesWithSelf
+    }
+
+    private val CaModule.allContextModulesWithSelf: Sequence<CaModule>
+        get() = generateSequence(this) { if (it is CaDanglingFileModule) it.contextModule else null }
+
+    override fun canSeePrivateTopLevelDeclarationsFromFile(useSiteFile: CfirFile, targetFile: CfirFile): Boolean {
+        return useSiteFile.isDanglingFileWithContextFileEqualTo(targetFile)
+    }
+
+    private fun CfirFile.isDanglingFileWithContextFileEqualTo(targetFile: CfirFile): Boolean {
+        val thisDanglingModule = this.llCfirModuleData.ktModule as? CaDanglingFileModule ?: return false
+        if (targetFile.llCfirModuleData.ktModule is CaDanglingFileModule) return false
+
+        return targetFile.psi in thisDanglingModule.allContextFiles
+    }
+
+    private val CaDanglingFileModule.allContextFiles: Sequence<PsiFile>
+        get() = allContextModulesWithSelf
+            .filterIsInstance<CaDanglingFileModule>()
+            .mapNotNull { it.findContextFile() }
+
+    private fun CaDanglingFileModule.findContextFile(): PsiFile? {
+        val danglingFile = this.files.singleOrNull() ?: return null
+        return when (danglingFile) {
+            is CjCodeFragment -> danglingFile.context?.containingFile
+            else -> danglingFile.unwrapCopy(danglingFile)
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\providers\LLCfirProvider.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.providers
+
+import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinDeclarationProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLEmptyKotlinSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLKotlinSourceSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLKotlinSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleSpecificSymbolProviderAccess
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLContainingClassCalculator
+import org.cangnova.cangjie.cfir.ThreadSafeMutableState
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.resolve.providers.*
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.*
+import org.cangnova.cangjie.cfir.utils.exceptions.withCfirSymbolEntry
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjClassLikeDeclaration
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+
+@ThreadSafeMutableState
+internal class LLCfirProvider(
+    val session: LLCfirSession,
+    private val moduleComponents: LLCfirModuleResolveComponents,
+    canContainKotlinPackage: Boolean,
+    disregardSelfDeclarations: Boolean = false,
+    declarationProviderFactory: (GlobalSearchScope) -> KotlinDeclarationProvider?,
+) : CfirProvider() {
+    override val symbolProvider: LLKotlinSymbolProvider =
+        if (!disregardSelfDeclarations) {
+            LLKotlinSourceSymbolProvider(session, moduleComponents, canContainKotlinPackage, declarationProviderFactory)
+        } else {
+            LLEmptyKotlinSymbolProvider(session)
+        }
+
+    override val isPhasedCfirAllowed: Boolean get() = true
+
+    override fun getCfirClassifierByFqName(classId: ClassId): CfirClassLikeDeclaration? =
+        symbolProvider.getClassLikeSymbolByClassId(classId)?.fir
+
+    /**
+     * @param classLikeDeclaration The [CjClassLikeDeclaration] must be contained in the module associated with this [LLCfirProvider]. See
+     *  [LLModuleSpecificSymbolProviderAccess] for details.
+     */
+    fun getCfirClassifierByDeclaration(classLikeDeclaration: CjClassLikeDeclaration): CfirClassLikeDeclaration? {
+        val classId = classLikeDeclaration.getClassId() ?: return null
+
+        @OptIn(LLModuleSpecificSymbolProviderAccess::class)
+        return symbolProvider.getClassLikeSymbolByPsi(classId, classLikeDeclaration)?.fir
+    }
+
+    override fun getCfirClassifierContainerFile(fqName: ClassId): CfirFile {
+        return getCfirClassifierContainerFileIfAny(fqName)
+            ?: errorWithAttachment("Couldn't find container") {
+                withEntry("classId", fqName.asString())
+            }
+    }
+
+    override fun getCfirClassifierContainerFileIfAny(fqName: ClassId): CfirFile? {
+        return getCfirClassifierByFqName(fqName)?.let { moduleComponents.cache.getContainerCfirFile(it) }
+    }
+
+    override fun getCfirClassifierContainerFile(symbol: CfirClassLikeSymbol<*>): CfirFile {
+        return getCfirClassifierContainerFileIfAny(symbol)
+            ?: errorWithAttachment("Couldn't find container") {
+                withCfirSymbolEntry("symbol", symbol)
+            }
+    }
+
+    override fun getCfirClassifierContainerFileIfAny(symbol: CfirClassLikeSymbol<*>): CfirFile? {
+        return moduleComponents.cache.getContainerCfirFile(symbol.fir)
+    }
+
+    override fun getCfirCallableContainerFile(symbol: CfirCallableSymbol<*>): CfirFile? {
+        return moduleComponents.cache.getContainerCfirFile(symbol.fir)
+    }
+
+    override fun getCfirScriptContainerFile(symbol: CfirScriptSymbol): CfirFile? {
+        return moduleComponents.cache.getContainerCfirFile(symbol.fir)
+    }
+
+    // TODO: implement
+    override fun getCfirScriptByFilePath(path: String): CfirScriptSymbol? = null
+
+    override fun getCfirReplSnippetContainerFile(symbol: CfirReplSnippetSymbol): CfirFile? {
+        return moduleComponents.cache.getContainerCfirFile(symbol.fir)
+    }
+
+    override fun getCfirFilesByPackage(fqName: FqName): List<CfirFile> = error("Should not be called in CFIR IDE")
+
+    override fun getClassNamesInPackage(fqName: FqName): Set<Name> =
+        symbolProvider.symbolNamesProvider.getTopLevelClassifierNamesInPackage(fqName)
+            ?: errorWithAttachment("Cannot compute the set of class names in the given package") {
+                withEntry("packageFqName", fqName.asString())
+            }
+
+    override fun getContainingClass(symbol: CfirBasedSymbol<*>): CfirClassLikeSymbol<*>? {
+        val psiResult = LLContainingClassCalculator.getContainingClassSymbol(symbol)
+        if (psiResult != null) {
+            return psiResult
+        }
+
+        return super.getContainingClass(symbol)
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\providers\LLHiddenDeprecationProvider.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.providers
+
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.declarations.CfirHiddenDeprecationProvider
+import org.cangnova.cangjie.cfir.java.declarations.CfirJavaClass
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+
+/**
+ * Due to unpredictable Java resolution behavior, the Analysis API need to disable [CfirHiddenDeprecationProvider] for Java sources.
+ * Otherwise, it might cause a contract violation as this check is called during the
+ * [TYPES][org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.TYPES] phase.
+ *
+ * After [KT-77114](https://youtrack.jetbrains.com/issue/KT-77114) the provider won't be needed anymore.
+ */
+class LLHiddenDeprecationProvider(session: CfirSession) : CfirHiddenDeprecationProvider(session) {
+    override fun isDeprecationLevelHidden(symbol: CfirBasedSymbol<*>): Boolean {
+        val fir = symbol.fir
+        if (fir is CfirJavaClass && fir.origin.fromSource) {
+            return false
+        }
+
+        return super.isDeprecationLevelHidden(symbol)
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\providers\LLNameConflictsTracker.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.providers
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.getAllClassLikeSymbolsByClassIdOrSingle
+import org.cangnova.cangjie.cfir.CfirNameConflictsTracker
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.resolve.providers.firProvider
+import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
+import org.cangnova.cangjie.name.ClassId
+
+internal class LLNameConflictsTracker(private val session: LLCfirSession) : CfirNameConflictsTracker() {
+    private data class LLClassifierRedeclaration(override val classifierSymbol: CfirClassLikeSymbol<*>) : ClassifierRedeclaration() {
+        // Grabbing the containing file via the symbol provider is non-trivial. Specifying it is optional, and it can later be retrieved
+        // separately.
+        override val containingFile: CfirFile? get() = null
+    }
+
+    override fun getClassifierRedeclarations(classId: ClassId): Collection<ClassifierRedeclaration> {
+        // As noted in the KDoc of `getClassifierRedeclarations`, Java redeclarations should not be returned by this component. As such,
+        // we limit the scope to Kotlin symbols by taking the CFIR provider's symbol provider.
+        val symbolProvider = session.firProvider.symbolProvider
+
+        // While redeclarations are rare, we don't know whether a given class is redeclared somewhere else in the whole module. So this
+        // function will be called once for each top-level classifier. Still, we don't cache the result since checkers are only run on
+        // specific files, not all files visited by lazy resolution.
+        return symbolProvider
+            .getAllClassLikeSymbolsByClassIdOrSingle(classId)
+            .takeIf { it.size >= 2 }
+            .orEmpty()
+            .map { LLClassifierRedeclaration(it) }
+    }
+
+    override fun registerClassifierRedeclaration(
+        classId: ClassId,
+        newSymbol: CfirClassLikeSymbol<*>,
+        newSymbolFile: CfirFile,
+        prevSymbol: CfirClassLikeSymbol<*>,
+        prevSymbolFile: CfirFile?,
+    ) {
+        // In the Analysis API, classifier redeclarations are resolved from symbol providers, so we don't need to register them here.
+        // Registration-based conflict trackers require the whole module to be analyzed, which is not performant in the Analysis API.
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\providers\LLSealedInheritorsProvider.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.providers
+
+import com.intellij.openapi.project.Project
+import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinDirectInheritorsProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinModuleDependentsProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.baseContextModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCache
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirRegularClass
+import org.cangnova.cangjie.cfir.declarations.SealedClassInheritorsProvider
+import org.cangnova.cangjie.cfir.declarations.SealedClassInheritorsProviderInternals
+import org.cangnova.cangjie.cfir.declarations.sealedInheritorsAttr
+import org.cangnova.cangjie.cfir.declarations.utils.classId
+import org.cangnova.cangjie.cfir.declarations.utils.isExpect
+import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.psi.CjClass
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.filter
+import kotlin.collections.map
+import kotlin.collections.mapNotNull
+import kotlin.collections.plus
+import kotlin.collections.sortedBy
+import kotlin.let
+
+/**
+ * [LLSealedInheritorsProvider] is the LL CFIR implementation of [SealedClassInheritorsProvider] for both the IDE and Standalone mode.
+ */
+@OptIn(SealedClassInheritorsProviderInternals::class)
+internal class LLSealedInheritorsProvider(private val project: Project) : SealedClassInheritorsProvider() {
+    val cache = ConcurrentHashMap<ClassId, List<ClassId>>()
+
+    override fun getSealedClassInheritors(firClass: CfirRegularClass): List<ClassId> {
+        // Classes from binary libraries which are deserialized from class files (but not stubs) will have their `sealedInheritorsAttr` set
+        // from metadata.
+        firClass.sealedInheritorsAttr?.let { return it.value }
+
+        val classId = firClass.classId
+
+        // Local classes cannot be sealed.
+        if (firClass.isLocal) {
+            return emptyList()
+        }
+
+        return cache.computeIfAbsent(classId) { searchInheritors(firClass) }
+    }
+
+    /**
+     * Some notes about the search:
+     *
+     *  - A Java class cannot legally extend a sealed Kotlin class (even in the same package), so we don't need to search for Java class
+     *    inheritors.
+     *  - Technically, we could use a package scope to narrow the search, but the search is already sufficiently narrow because it uses
+     *    supertype indices and is confined to the current `CaModule` in most cases (except for 'expect' classes). Finding a `PsiPackage`
+     *    for a `PackageScope` is not cheap, hence the decision to avoid it. If a `PackageScope` is needed in the future, it'd be best to
+     *    extract a `PackageNameScope` which operates just with the qualified package name, to avoid `PsiPackage`. (At the time of writing,
+     *    this is possible with the implementation of `PackageScope`.)
+     *  - We ignore local classes to avoid lazy resolve contract violations.
+     *    See KT-63795.
+     *  - For `expect` declarations, the search scope includes all modules with a dependsOn dependency on the containing module.
+     *    At the same time, `actual` declarations are restricted to the same module and require no special handling.
+     *    See KT-45842.
+     *  - KMP libraries are not yet supported.
+     *    See KT-65591.
+     */
+    private fun searchInheritors(firClass: CfirClass): List<ClassId> {
+        val (targetModule, targetCfirClass) = when (val classModule = firClass.llCfirModuleData.ktModule) {
+            is CaDanglingFileModule -> {
+                // Since we are searching for inheritors in the context module's scope, we need to search for inheritors of the *original*
+                // CFIR class, not the dangling CFIR class.
+                val contextModule = classModule.baseContextModule
+                val contextSession = LLCfirSessionCache.getInstance(project).getSession(contextModule, preferBinary = true)
+                val originalCfirSymbol = contextSession.symbolProvider.getClassLikeSymbolByClassId(firClass.classId)
+                val originalCfirClass = originalCfirSymbol?.fir as? CfirClass ?: return emptyList()
+                contextModule to originalCfirClass
+            }
+            else -> classModule to firClass
+        }
+        val targetCjClass = targetCfirClass.psi as? CjClass ?: return emptyList()
+
+        // `CfirClass.isExpect` does not depend on the `STATUS` phase because it's already set during CFIR building.
+        val scope = if (targetCfirClass.isExpect) {
+            val refinementDependents = KotlinModuleDependentsProvider.getInstance(project).getRefinementDependents(targetModule)
+            GlobalSearchScope.union(refinementDependents.map { it.contentScope } + targetModule.contentScope)
+        } else {
+            targetModule.contentScope
+        }
+
+        return searchInScope(targetCjClass, targetCfirClass.classId, scope)
+    }
+
+    private fun searchInScope(ktClass: CjClass, classId: ClassId, scope: GlobalSearchScope): List<ClassId> =
+        KotlinDirectInheritorsProvider.getInstance(project)
+            .getDirectKotlinInheritors(ktClass, scope, includeLocalInheritors = false)
+            .mapNotNull { it.getClassId() }
+            .filter { it.packageFqName == classId.packageFqName }
+            // Enforce a deterministic order on the result, e.g. for stable test output.
+            .sortedBy { it.toString() }
+            .ifEmpty { emptyList() }
+}
+
+*** End Patch

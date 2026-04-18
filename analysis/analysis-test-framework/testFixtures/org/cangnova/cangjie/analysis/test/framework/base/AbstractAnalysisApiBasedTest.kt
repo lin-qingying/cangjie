@@ -4,7 +4,7 @@ import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.analyze
-import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.AnalysisApiServiceRegistrar
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import org.cangnova.cangjie.analysis.test.framework.TestWithDisposable
 import org.cangnova.cangjie.analysis.test.framework.analysisApiMainFileName

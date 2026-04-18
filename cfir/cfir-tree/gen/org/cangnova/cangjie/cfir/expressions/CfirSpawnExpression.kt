@@ -19,6 +19,7 @@ abstract class CfirSpawnExpression : CfirExpression() {
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract val body: CfirBlock
+    abstract val threadContextArgument: CfirExpression?
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitSpawnExpression(this, data)
@@ -34,4 +35,6 @@ abstract class CfirSpawnExpression : CfirExpression() {
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirSpawnExpression
 
     abstract fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirSpawnExpression
+
+    abstract fun <D> transformThreadContextArgument(transformer: CfirTransformer<D>, data: D): CfirSpawnExpression
 }

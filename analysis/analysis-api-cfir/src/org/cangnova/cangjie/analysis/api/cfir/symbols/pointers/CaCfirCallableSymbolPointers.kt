@@ -1,9 +1,9 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols.pointers
 
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirCallableSymbolCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirExtendMemberCallableSymbolCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.components.restoreCallablePublicSymbol
-import org.cangnova.cangjie.analysis.api.cfir.components.restoreExtendMemberCallablePublicSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCallableSymbolCacheKey
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendMemberCallableSymbolCacheKey
+import org.cangnova.cangjie.analysis.api.cfir.symbols.restoreCallablePublicSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.restoreExtendMemberCallablePublicSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 
 /**
@@ -32,7 +32,7 @@ internal class CaCfirExtendMemberCallableSymbolPointer<S : CaCallableSymbol>(
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): S? =
         symbolType.castOrNull(
             restoreSession(session)?.restoreExtendMemberCallablePublicSymbol(
-                extendId = cacheKey.extendId,
+                extendIdentity = cacheKey.extendIdentity,
                 callableName = cacheKey.callableName,
                 kind = cacheKey.kind,
             )

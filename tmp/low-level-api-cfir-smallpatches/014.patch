@@ -1,0 +1,780 @@
+*** Begin Patch
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\lazy\resolve\LLCfirResolutionActivityTracker.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve
+
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.service
+import org.cangnova.cangjie.analysis.api.CaIdeApi
+import org.cangnova.cangjie.analysis.api.platform.resolution.CaResolutionActivityTracker
+
+/**
+ * The service use site guarantees that all [beforeLazyResolve] and [afterLazyResolve] calls are paired,
+ * so for each [beforeLazyResolve] call where will be the following [afterLazyResolve]. **Nested calls are allowed**.
+ */
+@OptIn(CaIdeApi::class)
+internal class LLCfirResolutionActivityTracker : CaResolutionActivityTracker {
+    private val blockCounter = ThreadLocal.withInitial { BlockCounter() }
+
+    fun beforeLazyResolve() {
+        blockCounter.get().enter()
+    }
+
+    fun afterLazyResolve() {
+        blockCounter.get().exit()
+    }
+
+    override val isKotlinResolutionActive: Boolean
+        get() = blockCounter.get().isInside
+
+    private class BlockCounter {
+        private var count = 0
+
+        fun enter() {
+            ++count
+        }
+
+        fun exit() {
+            --count
+        }
+
+        /**
+         * The service guarantees that all [beforeLazyResolve] and [afterLazyResolve]
+         * are paired, so 0 means there is no resolver on the stack, and more than one means ongoing resolution.
+         */
+        val isInside: Boolean get() = count > 0
+    }
+
+    companion object {
+        fun getInstance(): LLCfirResolutionActivityTracker {
+            return ApplicationManager.getApplication().service<CaResolutionActivityTracker>() as LLCfirResolutionActivityTracker
+        }
+    }
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\lazy\resolve\LLCfirResolveDesignationCollector.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirClassWithAllCallablesResolveTarget
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirPartialBodyResolveTarget
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirResolveTarget
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirWholeElementResolveTarget
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLPartialBodyResolveRequest
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.asResolveTarget
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.throwUnexpectedCfirElementError
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.tryCollectDesignation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirResolveDesignationCollector.shouldBeResolved
+import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.canHaveDeferredReturnTypeCalculation
+import org.cangnova.cangjie.cfir.declarations.*
+
+/**
+ * Collects [LLCfirResolveTarget] for requested [CfirElementWithResolveState].
+ *
+ * Effectively, this class is responsible for which elements can be lazily resolved and which cannot.
+ *
+ * @see LLCfirResolveTarget
+ * @see shouldBeResolved
+ */
+internal object LLCfirResolveDesignationCollector {
+    fun getDesignationToResolve(target: CfirElementWithResolveState): LLCfirResolveTarget? {
+        return getDesignationToResolve(target, CfirDesignation::asResolveTarget)
+    }
+
+    fun getDesignationToResolveWithCallableMembers(target: CfirRegularClass): LLCfirResolveTarget? {
+        return getDesignationToResolve(target, ::LLCfirClassWithAllCallablesResolveTarget)
+    }
+
+    fun getDesignationToResolveRecursively(target: CfirElementWithResolveState): LLCfirResolveTarget? {
+        return getDesignationToResolve(target, ::LLCfirWholeElementResolveTarget)
+    }
+
+    fun getDesignationToResolveForPartialBody(request: LLPartialBodyResolveRequest): LLCfirResolveTarget? {
+        return getDesignationToResolve(request.target) {
+            LLCfirPartialBodyResolveTarget(it, request)
+        }
+    }
+
+    private fun getDesignationToResolve(
+        target: CfirElementWithResolveState,
+        resolveTarget: (CfirDesignation) -> LLCfirResolveTarget,
+    ): LLCfirResolveTarget? {
+        val designation = getCfirDesignationToResolve(target) ?: return null
+        val llResolveTarget = resolveTarget(designation)
+        return llResolveTarget
+    }
+
+    private fun getCfirDesignationToResolve(target: CfirElementWithResolveState): CfirDesignation? {
+        if (!target.shouldBeResolved()) {
+            return null
+        }
+
+        return when (target) {
+            is CfirPropertyAccessor -> getCfirDesignationToResolve(target.propertySymbol.fir)
+            is CfirBackingField -> getCfirDesignationToResolve(target.propertySymbol.fir)
+            is CfirTypeParameter -> getCfirDesignationToResolve(target.containingDeclarationSymbol.fir)
+            is CfirValueParameter -> getCfirDesignationToResolve(target.containingDeclarationSymbol.fir)
+            is CfirReceiverParameter -> getCfirDesignationToResolve(target.containingDeclarationSymbol.fir)
+            is CfirCallableDeclaration if target.canHaveDeferredReturnTypeCalculation -> CfirDesignation(target)
+            else -> target.tryCollectDesignation()
+        }
+    }
+
+    /**
+     * @see isLazyResolvable
+     */
+    private fun CfirElementWithResolveState.shouldBeResolved() = when (this) {
+        is CfirDeclaration -> shouldBeResolved()
+        else -> throwUnexpectedCfirElementError(this)
+    }
+
+    private fun CfirDeclaration.shouldBeResolved(): Boolean {
+        if (!origin.isLazyResolvable) {
+            @OptIn(ResolveStateAccess::class)
+            check(resolvePhase == CfirResolvePhase.BODY_RESOLVE) {
+                "Expected body resolve phase for origin $origin but found $resolveState"
+            }
+
+            return false
+        }
+
+        return true
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\lazy\resolve\NonLocalAnnotationVisitor.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve
+
+import org.cangnova.cangjie.cfir.CfirAnnotationContainer
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousInitializer
+import org.cangnova.cangjie.cfir.declarations.CfirBackingField
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirDanglingModifierList
+import org.cangnova.cangjie.cfir.declarations.CfirEnumEntry
+import org.cangnova.cangjie.cfir.declarations.CfirErrorPrimaryConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirErrorProperty
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
+import org.cangnova.cangjie.cfir.declarations.CfirReceiverParameter
+import org.cangnova.cangjie.cfir.declarations.CfirRegularClass
+import org.cangnova.cangjie.cfir.declarations.CfirScript
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationArgumentMapping
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
+import org.cangnova.cangjie.cfir.expressions.CfirErrorAnnotationCall
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.typeAnnotations
+import org.cangnova.cangjie.cfir.types.forEachType
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+
+/**
+ * Visitor for annotations outside bodies.
+ * Such annotations are processed in [ANNOTATION_ARGUMENTS][org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.ANNOTATION_ARGUMENTS]
+ * phase.
+ *
+ * This visitor is not recursive and processes only the target declaration (without unrelated nested declarations).
+ * See [RecursiveNonLocalAnnotationVisitor] for the recursive visitor.
+ *
+ * @see processAnnotation
+ * @see RecursiveNonLocalAnnotationVisitor
+ */
+internal abstract class NonLocalAnnotationVisitor<T> : CfirVisitor<Unit, T>() {
+    abstract fun processAnnotation(annotation: CfirAnnotation, data: T)
+
+    /**
+     * Skip all [CfirElementWithResolveState] without explicit override
+     */
+    override fun visitElement(element: CfirElement, data: T) {
+        if (element is CfirElementWithResolveState) return
+
+        element.acceptChildren(this, data)
+    }
+
+    /**
+     * Skip argument list as the compiler do not support annotations inside annotation arguments
+     */
+    override fun visitArgumentList(argumentList: CfirArgumentList, data: T) {}
+    override fun visitAnnotationArgumentMapping(annotationArgumentMapping: CfirAnnotationArgumentMapping, data: T) {}
+
+    override fun visitResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef, data: T) {
+        visitTypeAnnotations(resolvedTypeRef, data)
+        resolvedTypeRef.acceptChildren(this, data)
+    }
+
+    override fun visitErrorTypeRef(errorTypeRef: CfirErrorTypeRef, data: T) {
+        visitResolvedTypeRef(errorTypeRef, data)
+    }
+
+    private fun visitTypeAnnotations(resolvedTypeRef: CfirResolvedTypeRef, data: T) {
+        resolvedTypeRef.coneType.forEachType { coneType ->
+            for (typeArgumentAnnotation in coneType.typeAnnotations) {
+                typeArgumentAnnotation.accept(this, data)
+            }
+        }
+    }
+
+    override fun visitAnnotation(annotation: CfirAnnotation, data: T) {
+        processAnnotation(annotation, data)
+        annotation.acceptChildren(this, data)
+    }
+
+    override fun visitAnnotationCall(annotationCall: CfirAnnotationCall, data: T) {
+        visitAnnotation(annotationCall, data)
+    }
+
+    override fun visitErrorAnnotationCall(errorAnnotationCall: CfirErrorAnnotationCall, data: T) {
+        visitAnnotation(errorAnnotationCall, data)
+    }
+
+    override fun visitFile(file: CfirFile, data: T) {
+        visitAnnotationContainer(file, data)
+    }
+
+    override fun visitDanglingModifierList(danglingModifierList: CfirDanglingModifierList, data: T) {
+        visitAnnotationContainer(danglingModifierList, data)
+        danglingModifierList.contextParameters.forEach { it.accept(this, data) }
+    }
+
+    override fun visitScript(script: CfirScript, data: T) {
+        visitAnnotationContainer(script, data)
+    }
+
+    override fun visitAnonymousInitializer(anonymousInitializer: CfirAnonymousInitializer, data: T) {
+        visitAnnotationContainer(anonymousInitializer, data)
+    }
+
+    override fun visitMemberDeclaration(memberDeclaration: CfirMemberDeclaration, data: T) {
+        visitTypeParameterRefsOwner(memberDeclaration, data)
+        visitAnnotationContainer(memberDeclaration, data)
+    }
+
+    override fun visitTypeAlias(typeAlias: CfirTypeAlias, data: T) {
+        visitMemberDeclaration(typeAlias, data)
+        typeAlias.expandedTypeRef.accept(this, data)
+    }
+
+    override fun visitRegularClass(regularClass: CfirRegularClass, data: T) {
+        visitMemberDeclaration(regularClass, data)
+        regularClass.contextParameters.forEach { it.accept(this, data) }
+        regularClass.superTypeRefs.forEach { it.accept(this, data) }
+    }
+
+    override fun visitCallableDeclaration(callableDeclaration: CfirCallableDeclaration, data: T) {
+        visitMemberDeclaration(callableDeclaration, data)
+        callableDeclaration.contextParameters.forEach { it.accept(this, data) }
+        callableDeclaration.receiverParameter?.accept(this, data)
+        callableDeclaration.returnTypeRef.accept(this, data)
+    }
+
+    override fun visitAnnotationContainer(annotationContainer: CfirAnnotationContainer, data: T) {
+        annotationContainer.annotations.forEach { it.accept(this, data) }
+    }
+
+    override fun visitTypeParameterRefsOwner(typeParameterRefsOwner: CfirTypeParameterRefsOwner, data: T) {
+        typeParameterRefsOwner.typeParameters.forEach { it.accept(this, data) }
+    }
+
+    override fun visitReceiverParameter(receiverParameter: CfirReceiverParameter, data: T) {
+        receiverParameter.acceptChildren(this, data)
+    }
+
+    override fun visitTypeParameter(typeParameter: CfirTypeParameter, data: T) {
+        typeParameter.acceptChildren(this, data)
+    }
+
+    override fun visitFunction(function: CfirFunction, data: T) {
+        visitCallableDeclaration(function, data)
+        function.valueParameters.forEach { it.accept(this, data) }
+    }
+
+    override fun visitNamedFunction(namedFunction: CfirNamedFunction, data: T) {
+        visitFunction(namedFunction, data)
+    }
+
+    override fun visitConstructor(constructor: CfirConstructor, data: T) {
+        visitFunction(constructor, data)
+    }
+
+    override fun visitErrorPrimaryConstructor(errorPrimaryConstructor: CfirErrorPrimaryConstructor, data: T) {
+        visitFunction(errorPrimaryConstructor, data)
+    }
+
+    override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor, data: T) {
+        visitFunction(propertyAccessor, data)
+    }
+
+    override fun visitVariable(variable: CfirVariable, data: T) {
+        visitCallableDeclaration(variable, data)
+        variable.getter?.accept(this, data)
+        variable.setter?.accept(this, data)
+        variable.backingField?.accept(this, data)
+    }
+
+    override fun visitEnumEntry(enumEntry: CfirEnumEntry, data: T) {
+        visitVariable(enumEntry, data)
+    }
+
+    override fun visitProperty(property: CfirProperty, data: T) {
+        visitVariable(property, data)
+    }
+
+    override fun visitErrorProperty(errorProperty: CfirErrorProperty, data: T) {
+        visitVariable(errorProperty, data)
+    }
+
+    override fun visitValueParameter(valueParameter: CfirValueParameter, data: T) {
+        visitVariable(valueParameter, data)
+    }
+
+    override fun visitBackingField(backingField: CfirBackingField, data: T) {
+        visitVariable(backingField, data)
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\lazy\resolve\NonLocalDeclarationUtils.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve
+
+import org.cangnova.cangjie.analysis.utils.printer.parentOfType
+import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withPsiEntry
+
+/**
+ * Note: The `CjCodeFragment` itself is technically lazy-resolvable, but the function doesn't support it yet.
+ */
+internal fun elementCanBeLazilyResolved(element: CjElement?): Boolean = when (element) {
+    null -> false
+    is CjFunctionLiteral -> false
+    is CjTypeParameter -> elementCanBeLazilyResolved(element.parentOfType<CjNamedDeclaration>(withSelf = false))
+    is CjScript -> elementCanBeLazilyResolved(element.parent as? CjFile)
+    is CjFile -> element !is CjCodeFragment
+    is CjDestructuringDeclarationEntry -> elementCanBeLazilyResolved(element.parent as? CjDestructuringDeclaration)
+    is CjParameter -> elementCanBeLazilyResolved(element.ownerDeclaration)
+    is CjCallableDeclaration, is CjEnumEntry, is CjDestructuringDeclaration, is CjAnonymousInitializer -> {
+        val parentToCheck = when (val parent = element.parent) {
+            is CjClassOrObject, is CjFile -> parent
+            is CjClassBody -> parent.parent as? CjClassOrObject
+            is CjBlockExpression -> parent.parent as? CjScript
+            else -> null
+        }
+
+        elementCanBeLazilyResolved(parentToCheck.takeUnless { it is CjEnumEntry })
+    }
+
+    is CjPropertyAccessor -> elementCanBeLazilyResolved(element.property)
+    is CjClassOrObject -> element.isTopLevel() || element.getClassId() != null
+    is CjTypeAlias -> element.isTopLevel() || element.getClassId() != null
+    is CjModifierList -> element.isNonLocalDanglingModifierList()
+    !is CjNamedDeclaration -> false
+    else -> errorWithAttachment("Unexpected ${element::class}") {
+        withPsiEntry("declaration", element)
+    }
+}
+
+/**
+ * Detects a common pattern of invalid code where a modifier list (e.g., annotation)
+ * is dangling—unattached to a valid declaration—or left unclosed and followed by another declaration.
+ *
+ * ### Examples
+ *
+ * ```kotlin
+ * class C1 {
+ *     @Ann1 @Ann2
+ * }
+ *
+ * class C2 {
+ *     @Ann(
+ *     fun foo() {}
+ * }
+ *
+ * @Ann("argument"
+ * fun foo() {}
+ * ```
+ * @see org.cangnova.cangjie.cfir.declarations.CfirDanglingModifierList
+ * @see org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.Visitor.buildErrorNonLocalDeclarationForDanglingModifierList
+ */
+private fun CjModifierList.isNonLocalDanglingModifierList(): Boolean {
+    val parentToCheck = when (val parent = parent) {
+        is CjFile -> parent
+        is CjClassBody -> (parent.parent as? CjClassOrObject).takeUnless { it is CjEnumEntry }
+        else -> null
+    }
+
+    return elementCanBeLazilyResolved(parentToCheck)
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\lazy\resolve\RawCfirNonLocalDeclarationBuilder.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve
+
+import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.CjSourceElement
+import org.cangnova.cangjie.analysis.api.utils.errors.withPsiEntry
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.codeFragment
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
+import org.cangnova.cangjie.analysis.utils.errors.requireIsInstance
+import org.cangnova.cangjie.cfir.*
+import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
+import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
+import org.cangnova.cangjie.cfir.builder.buildDestructuringVariable
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.utils.isInner
+import org.cangnova.cangjie.cfir.expressions.CfirMultiDelegatedConstructorCall
+import org.cangnova.cangjie.cfir.references.CfirSuperReference
+import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
+import org.cangnova.cangjie.name.NameUtils
+import org.cangnova.cangjie.psi
+import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.psi.psiUtil.containingClassOrObject
+import org.cangnova.cangjie.psi.psiUtil.hasExpectModifier
+import org.cangnova.cangjie.util.PrivateForInline
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withPsiEntry
+
+internal class RawCfirNonLocalDeclarationBuilder private constructor(
+    session: CfirSession,
+    baseScopeProvider: CfirScopeProvider,
+    private val originalDeclaration: CfirDeclaration,
+    private val declarationToBuild: CjElement,
+    private val functionsToRebind: Set<CfirFunction>,
+) : PsiRawCfirBuilder(session, baseScopeProvider, bodyBuildingMode = BodyBuildingMode.NORMAL) {
+    companion object {
+        fun buildWithFunctionSymbolRebind(
+            session: CfirSession,
+            scopeProvider: CfirScopeProvider,
+            designation: CfirDesignation,
+            rootNonLocalDeclaration: CjAnnotated,
+        ): CfirDeclaration {
+            val functionsToRebind = when (val originalDeclaration = designation.target) {
+                is CfirFunction -> setOf(originalDeclaration)
+                is CfirProperty -> setOfNotNull(originalDeclaration.getter, originalDeclaration.setter)
+                else -> emptySet()
+            }
+
+            return build(session, scopeProvider, designation, rootNonLocalDeclaration, functionsToRebind)
+        }
+
+        private fun build(
+            session: CfirSession,
+            scopeProvider: CfirScopeProvider,
+            designation: CfirDesignation,
+            rootNonLocalDeclaration: CjElement,
+            functionsToRebind: Set<CfirFunction>,
+        ): CfirDeclaration {
+            check(rootNonLocalDeclaration is CjDeclaration || rootNonLocalDeclaration is CjCodeFragment)
+
+            val builder = RawCfirNonLocalDeclarationBuilder(
+                session = session,
+                baseScopeProvider = scopeProvider,
+                originalDeclaration = designation.target as CfirDeclaration,
+                declarationToBuild = rootNonLocalDeclaration,
+                functionsToRebind = functionsToRebind,
+            )
+
+            builder.context.packageFqName = rootNonLocalDeclaration.containingCjFile.packageFqName
+            @OptIn(PrivateForInline::class)
+            builder.context.forcedContainerSymbol = designation.target.symbol
+
+            return builder.moveNext(designation.path.iterator(), containingDeclaration = null)
+        }
+    }
+
+    override fun bindFunctionTarget(target: CfirFunctionTarget, function: CfirFunction) {
+        super.bindFunctionTarget(target, computeRebindTarget(function) ?: function)
+    }
+
+    /**
+     * @return [CfirFunction] if another function should be used instead of [function] for [CfirFunctionTarget]
+     *
+     * @see bindFunctionTarget
+     * @see functionsToRebind
+     */
+    private fun computeRebindTarget(function: CfirFunction): CfirFunction? {
+        if (functionsToRebind.isNullOrEmpty()) return null
+        val realPsi = function.realPsi
+        if (realPsi != null) {
+            return functionsToRebind.firstOrNull { it.realPsi == realPsi }
+        }
+
+        val accessor = function as? CfirPropertyAccessor ?: return null
+        val accessorPsi = accessor.psi ?: return null
+
+        return functionsToRebind.firstOrNull { it is CfirPropertyAccessor && it.isGetter == accessor.isGetter && it.psi == accessorPsi }
+    }
+
+    override fun addCapturedTypeParameters(
+        status: Boolean,
+        declarationSource: CjSourceElement?,
+        currentCfirTypeParameters: List<CfirTypeParameterRef>,
+    ) {
+        if (originalDeclaration is CfirTypeParameterRefsOwner && declarationSource?.psi == originalDeclaration.psi) {
+            super.addCapturedTypeParameters(status, declarationSource, originalDeclaration.typeParameters)
+        } else {
+            super.addCapturedTypeParameters(status, declarationSource, currentCfirTypeParameters)
+        }
+    }
+
+    private inner class VisitorWithReplacement(private val containingClass: CfirRegularClass?) : Visitor() {
+        fun convertDestructuringDeclaration(element: CjDestructuringDeclaration, containingDeclaration: CfirDeclaration?): CfirVariable {
+            return if (containingDeclaration is CfirScript) {
+                withContainerSymbol(containingDeclaration.symbol) {
+                    // Annotations from script destructuring declarations are linked to the script itself
+                    buildScriptDestructuringDeclaration(element)
+                }
+            } else {
+                val initializer = element.toInitializerExpression()
+                buildErrorNonLocalDestructuringDeclaration(element.toCfirSourceElement(), initializer)
+            }
+        }
+
+        fun convertDestructuringDeclarationEntry(element: CjDestructuringDeclarationEntry): CfirVariable {
+            requireIsInstance<CfirProperty>(originalDeclaration)
+
+            val container = originalDeclaration.destructuringDeclarationContainerVariable?.fir
+            requireWithAttachment(container != null, { "Container is not found"}) {
+                withCfirEntry("originalDeclaration", originalDeclaration)
+                withPsiEntry("element", element)
+            }
+
+            val hasSquareBrackets = (element.parent as CjDestructuringDeclaration).hasSquareBrackets()
+            val isNameBased = !hasSquareBrackets && (element.ownValOrVarKeyword != null || nameBasedDestructuringShortForm)
+
+            return buildDestructuringVariable(
+                moduleData = baseModuleData,
+                container = container,
+                element,
+                isNameBased = isNameBased,
+                forceLocal = false,
+                index = element.index(),
+                configure = { configureScriptDestructuringDeclarationEntry(it, container) },
+            )
+        }
+
+        private fun CjDestructuringDeclarationEntry.index(): Int {
+            val destructuringDeclaration = parent
+            requireIsInstance<CjDestructuringDeclaration>(destructuringDeclaration)
+            return destructuringDeclaration.entries.indexOf(this)
+        }
+
+        fun convertAnonymousInitializer(element: CjAnonymousInitializer, containingDeclaration: CfirDeclaration): CfirAnonymousInitializer {
+            return buildAnonymousInitializer(element, containingDeclaration.symbol)
+        }
+
+        private fun extractContructorConversionParams(
+            classOrObject: CjClassOrObject,
+            constructor: CjConstructor<*>?,
+        ): ConstructorConversionParams {
+            val typeParameters = mutableListOf<CfirTypeParameterRef>()
+            context.appendOuterTypeParameters(ignoreLastLevel = false, typeParameters)
+            val containingClass = this.containingClass ?: errorWithAttachment("Constructor outside of class") {
+                withPsiEntry("constructor", constructor, baseSession.llCfirModuleData.ktModule)
+            }
+            val selfType = classOrObject.toDelegatedSelfType(typeParameters, containingClass.symbol)
+            val allSuperTypeCallEntries = classOrObject.superTypeListEntries.filterIsInstance<CjSuperTypeCallEntry>()
+            val superTypeCallEntry = allSuperTypeCallEntries.lastOrNull()
+            return ConstructorConversionParams(superTypeCallEntry, selfType, typeParameters, allSuperTypeCallEntries)
+        }
+
+        override fun visitSecondaryConstructor(constructor: CjSecondaryConstructor, data: CfirElement?): CfirElement {
+            val classOrObject = constructor.getContainingClassOrObject()
+            val params = extractContructorConversionParams(classOrObject, constructor)
+            val delegatedTypeRef = (originalDeclaration as CfirConstructor).delegatedConstructor?.constructedTypeRef ?: params.selfType
+            return constructor.toCfirConstructor(
+                delegatedTypeRef,
+                params.selfType,
+                classOrObject,
+                params.typeParameters,
+            )
+        }
+
+        fun processPrimaryConstructor(classOrObject: CjClassOrObject, constructor: CjPrimaryConstructor?): CfirElement {
+            val params = extractContructorConversionParams(classOrObject, constructor)
+            val firConstructor = originalDeclaration as CfirConstructor
+            val allSuperTypeCallEntries = if (params.allSuperTypeCallEntries.size <= 1) {
+                params.allSuperTypeCallEntries.map { it to firConstructor.delegatedConstructor!!.constructedTypeRef }
+            } else {
+                params.allSuperTypeCallEntries.zip((firConstructor.delegatedConstructor as CfirMultiDelegatedConstructorCall).delegatedConstructorCalls.map { it.constructedTypeRef })
+            }
+            val newConstructor = constructor.toCfirConstructor(
+                params.superTypeCallEntry,
+                firConstructor.delegatedConstructor?.constructedTypeRef,
+                params.selfType,
+                classOrObject,
+                params.typeParameters,
+                allSuperTypeCallEntries,
+                firConstructor.delegatedConstructor == null,
+                copyConstructedTypeRefWithImplicitSource = false,
+            )
+            val delegatedConstructor = firConstructor.delegatedConstructor
+            if (delegatedConstructor is CfirMultiDelegatedConstructorCall) {
+                for ((oldExcessiveDelegate, newExcessiveDelegate) in delegatedConstructor.delegatedConstructorCalls
+                    .zip((newConstructor.delegatedConstructor as CfirMultiDelegatedConstructorCall).delegatedConstructorCalls)) {
+                    val calleeReferenceForExessiveDelegate = oldExcessiveDelegate.calleeReference
+                    if (calleeReferenceForExessiveDelegate is CfirSuperReference) {
+                        (newExcessiveDelegate.calleeReference as? CfirSuperReference)
+                            ?.replaceSuperTypeRef(calleeReferenceForExessiveDelegate.superTypeRef)
+                    }
+                }
+            } else {
+                val calleeReference = delegatedConstructor?.calleeReference
+                if (calleeReference is CfirSuperReference) {
+                    (newConstructor.delegatedConstructor?.calleeReference as? CfirSuperReference)?.replaceSuperTypeRef(calleeReference.superTypeRef)
+                }
+            }
+            return newConstructor
+        }
+
+        override fun visitPrimaryConstructor(constructor: CjPrimaryConstructor, data: CfirElement?): CfirElement =
+            processPrimaryConstructor(constructor.getContainingClassOrObject(), constructor)
+
+        override fun visitEnumEntry(enumEntry: CjEnumEntry, data: CfirElement?): CfirElement {
+            val owner = containingClass ?: errorWithAttachment("Enum entry outside of class") {
+                withPsiEntry("enumEntry", enumEntry, baseSession.llCfirModuleData.ktModule)
+                withPsiEntry("containingClassPsi", enumEntry.containingClassOrObject)
+                withCfirEntry("originalDeclaration", originalDeclaration)
+            }
+
+            val classOrObject = owner.psi as CjClassOrObject
+            val primaryConstructor = classOrObject.primaryConstructor
+            val ownerClassHasDefaultConstructor =
+                primaryConstructor?.valueParameters?.isEmpty() ?: classOrObject.secondaryConstructors.let { constructors ->
+                    constructors.isEmpty() || constructors.any { it.valueParameters.isEmpty() }
+                }
+            val typeParameters = mutableListOf<CfirTypeParameterRef>()
+            context.appendOuterTypeParameters(ignoreLastLevel = false, typeParameters)
+            val selfType = classOrObject.toDelegatedSelfType(typeParameters, owner.symbol)
+            return enumEntry.toCfirEnumEntry(selfType, ownerClassHasDefaultConstructor)
+        }
+
+        fun processField(classOrObject: CjClassOrObject, originalDeclaration: CfirField): CfirField? {
+            var index = 0
+            classOrObject.superTypeListEntries.forEach { superTypeListEntry ->
+                if (superTypeListEntry is CjDelegatedSuperTypeEntry) {
+                    val expectedName = NameUtils.delegateFieldName(index)
+                    if (originalDeclaration.name == expectedName) {
+                        return buildFieldForSupertypeDelegate(superTypeListEntry, originalDeclaration.returnTypeRef, index)
+                    }
+
+                    index++
+                }
+            }
+            return null
+        }
+    }
+
+    private fun moveNext(iterator: Iterator<CfirDeclaration>, containingDeclaration: CfirDeclaration?): CfirDeclaration {
+        if (!iterator.hasNext()) {
+            val containingClass = containingDeclaration as? CfirRegularClass
+            val visitor = VisitorWithReplacement(containingClass)
+            return when (declarationToBuild) {
+                is CjProperty -> {
+                    val ownerSymbol = containingClass?.symbol
+                    visitor.convertProperty(declarationToBuild, ownerSymbol)
+                }
+                is CjConstructor<*> -> {
+                    if (containingClass == null) {
+                        // Constructor outside of class, syntax error, we should not do anything
+                        originalDeclaration
+                    } else {
+                        visitor.convertElement(declarationToBuild, originalDeclaration)
+                    }
+                }
+                is CjClassOrObject -> {
+                    when {
+                        originalDeclaration is CfirConstructor -> visitor.processPrimaryConstructor(declarationToBuild, null)
+                        originalDeclaration is CfirField -> visitor.processField(declarationToBuild, originalDeclaration)
+                        else -> visitor.convertElement(declarationToBuild, originalDeclaration)
+                    }
+                }
+                is CjDestructuringDeclaration -> visitor.convertDestructuringDeclaration(declarationToBuild, containingDeclaration)
+                is CjDestructuringDeclarationEntry -> visitor.convertDestructuringDeclarationEntry(declarationToBuild)
+                is CjCodeFragment -> {
+                    val firFile = visitor.convertElement(declarationToBuild, originalDeclaration) as CfirFile
+                    firFile.codeFragment
+                }
+                is CjAnonymousInitializer -> {
+                    requireWithAttachment(containingDeclaration != null, { "Containing declaration is null" }) {
+                        withPsiEntry("elementToBuild.txt", declarationToBuild)
+                    }
+                    visitor.convertAnonymousInitializer(declarationToBuild, containingDeclaration)
+                }
+                else -> visitor.convertElement(declarationToBuild, originalDeclaration)
+            } as CfirDeclaration
+        }
+
+        val parent = iterator.next()
+        if (parent !is CfirRegularClass) return moveNext(iterator, containingDeclaration = parent)
+
+        val classOrObject = parent.psi
+        if (classOrObject !is CjClassOrObject) {
+            errorWithCfirSpecificEntries("Expected CjClassOrObject is not found", fir = parent, psi = classOrObject)
+        }
+
+        withChildClassName(classOrObject.nameAsSafeName, isExpect = classOrObject.hasExpectModifier() || context.containerIsExpect) {
+            withCapturedTypeParameters(
+                parent.isInner,
+                declarationSource = null,
+                parent.typeParameters.subList(0, classOrObject.typeParameters.size)
+            ) {
+                registerSelfType(classOrObject.toDelegatedSelfType(parent))
+                return moveNext(iterator, parent)
+            }
+        }
+    }
+
+    private fun PsiElement.toDelegatedSelfType(firClass: CfirRegularClass): CfirResolvedTypeRef =
+        toDelegatedSelfType(firClass.typeParameters, firClass.symbol)
+
+    private data class ConstructorConversionParams(
+        val superTypeCallEntry: CjSuperTypeCallEntry?,
+        val selfType: CfirTypeRef,
+        val typeParameters: List<CfirTypeParameterRef>,
+        val allSuperTypeCallEntries: List<CjSuperTypeCallEntry>,
+    )
+}
+
+
+*** End Patch

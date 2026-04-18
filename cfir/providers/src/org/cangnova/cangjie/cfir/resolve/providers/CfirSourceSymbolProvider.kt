@@ -118,7 +118,7 @@ class CfirProviderImpl(
         override fun getEnumConstructorOwnerClassId(symbol: CfirEnumConstructorSymbol): ClassId? =
             state.enumConstructorOwnerClassIdMap[symbol]
 
-        override fun getContainingFile(symbol: org.cangnova.cangjie.cfir.symbols.CfirSymbol<*>): CfirFile? = when (val normalizedSymbol = symbol.unwrapForDeclarationMetadataLookup()) {
+        override fun getContainingFile(symbol: org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol<*>): CfirFile? = when (val normalizedSymbol = symbol.unwrapForDeclarationMetadataLookup()) {
             is CfirClassLikeSymbol<*> -> state.classifierContainerFileBySymbol[normalizedSymbol]
             is CfirCallableSymbol<*> -> state.callableContainerFileMap[normalizedSymbol]
             else -> null

@@ -1,0 +1,1143 @@
+*** Begin Patch
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\symbolProviders\LLKotlinSourceSymbolProvider.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
+
+import com.intellij.psi.PsiElement
+import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinCompositeDeclarationProvider
+import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinDeclarationProvider
+import org.cangnova.cangjie.analysis.api.platform.packages.KotlinCompositePackageProvider
+import org.cangnova.cangjie.analysis.api.platform.packages.createPackageProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.analysisContextModule
+import org.cangnova.cangjie.analysis.api.utils.errors.withCaModuleEntry
+import org.cangnova.cangjie.analysis.api.utils.errors.withPsiEntry
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.extensions.LLCfirResolveExtensionTool
+import org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.extensions.llResolveExtensionTool
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.caches.LLPsiAwareClassLikeSymbolCache
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.CfirElementFinder
+import org.cangnova.cangjie.config.AnalysisFlags
+import org.cangnova.cangjie.cfir.caches.CfirCache
+import org.cangnova.cangjie.cfir.caches.firCachesFactory
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirScript
+import org.cangnova.cangjie.cfir.languageVersionSettings
+import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolNamesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
+import org.cangnova.cangjie.cfir.smartPlus
+import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirPropertySymbol
+import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.ClassIdBasedLocality
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withPsiEntry
+import org.cangnova.cangjie.utils.exceptions.withVirtualFileEntry
+
+/**
+ * [LLKotlinSourceSymbolProvider] is a [LLKotlinSymbolProvider] which provides symbols for source-based modules, such as [CaSourceModule][org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule]
+ * and [CaScriptModule][org.cangnova.cangjie.analysis.api.projectStructure.CaScriptModule].
+ *
+ * ### Resolve extension symbols
+ *
+ * The symbol provider includes symbols from [LLCfirResolveExtensionTool]s. While it would be nicer to have a separate resolve extension
+ * symbol provider, such a setup would destroy the classpath order once symbol providers are combined into
+ * [LLCombinedKotlinSymbolProvider][org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedKotlinSymbolProvider]s,
+ * because we can only ever combine one symbol provider per module. This means that we would combine all regular Kotlin source symbol
+ * providers and append resolve extension symbol providers to the end, which changes the classpath order, as all resolve extensions are now
+ * queried last. So a source module which occurs later in the dependencies would be able to shadow a symbol from an earlier resolve
+ * extension.
+ *
+ * Even separating the internal implementation of this symbol provider into two symbol providers wouldn't quite work without additional
+ * disambiguation logic. That's because the "get symbol" functions for known declarations (i.e. those defined in [LLKotlinSymbolProvider])
+ * would need to disambiguate whether to delegate to the regular symbol provider or the resolve extension symbol provider. If a declaration
+ * from a resolve extension is passed to the regular symbol provider, that symbol provider might cache the symbol for it. This wouldn't lead
+ * to duplicate symbols because CFIR files (from which the symbols are taken) are unique in the session, but we would still cache a symbol in
+ * the wrong symbol provider.
+ */
+internal class LLKotlinSourceSymbolProvider private constructor(
+    session: LLCfirSession,
+    private val moduleComponents: LLCfirModuleResolveComponents,
+    extensionTool: LLCfirResolveExtensionTool?,
+    canContainKotlinPackage: Boolean,
+    declarationProviderFactory: (GlobalSearchScope) -> KotlinDeclarationProvider?,
+) : LLKotlinSymbolProvider(session), LLMultiClassLikeSymbolProvider {
+    constructor(
+        session: LLCfirSession,
+        moduleComponents: LLCfirModuleResolveComponents,
+        canContainKotlinPackage: Boolean,
+        declarationProviderFactory: (GlobalSearchScope) -> KotlinDeclarationProvider?,
+    ) : this(session, moduleComponents, session.llResolveExtensionTool, canContainKotlinPackage, declarationProviderFactory)
+
+    private val searchScope: GlobalSearchScope
+        get() = moduleComponents.module.contentScope
+
+    override val declarationProvider = KotlinCompositeDeclarationProvider.create(
+        listOfNotNull(
+            declarationProviderFactory(searchScope),
+            extensionTool?.declarationProvider,
+        )
+    )
+
+    override val packageProvider = KotlinCompositePackageProvider.create(
+        listOfNotNull(
+            session.project.createPackageProvider(searchScope),
+            extensionTool?.packageProvider,
+        )
+    )
+
+    override val allowKotlinPackage: Boolean =
+        canContainKotlinPackage || session.languageVersionSettings.getFlag(AnalysisFlags.allowKotlinPackage)
+
+    override val symbolNamesProvider: CfirSymbolNamesProvider = CfirCompositeCachedSymbolNamesProvider.create(
+        session,
+        listOfNotNull(
+            LLCfirKotlinSymbolNamesProvider(declarationProvider, allowKotlinPackage),
+            extensionTool?.symbolNamesProvider,
+        )
+    )
+
+    private val classLikeCache =
+        LLPsiAwareClassLikeSymbolCache(session, ::computeClassLikeSymbolByClassId) { declaration: CjClassLikeDeclaration, _ ->
+            computeClassLikeSymbolByPsi(declaration)
+        }
+
+    override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
+        if (!symbolNamesProvider.mayHaveTopLevelClassifier(classId)) return null
+        return getClassLikeSymbolByClassIdAndDeclaration(classId, classLikeDeclaration = null)
+    }
+
+    @LLModuleSpecificSymbolProviderAccess
+    override fun getClassLikeSymbolByClassId(classId: ClassId, classLikeDeclaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? =
+        getClassLikeSymbolByClassIdAndDeclaration(classId, classLikeDeclaration)
+
+    @OptIn(LLModuleSpecificSymbolProviderAccess::class, ClassIdBasedLocality::class)
+    private fun getClassLikeSymbolByClassIdAndDeclaration(
+        classId: ClassId,
+        classLikeDeclaration: CjClassLikeDeclaration?,
+    ): CfirClassLikeSymbol<*>? {
+        if (!classId.isAccepted()) return null
+        return classLikeCache.getSymbolByClassId(
+            classId,
+            classLikeDeclaration,
+            buildAdditionalAttachments = buildAdditionalAttachmentsForClassLikeSymbol,
+        )
+    }
+
+    @LLModuleSpecificSymbolProviderAccess
+    @OptIn(ClassIdBasedLocality::class)
+    override fun getClassLikeSymbolByPsi(classId: ClassId, declaration: PsiElement): CfirClassLikeSymbol<*>? {
+        if (!classId.isAccepted()) return null
+        return classLikeCache.getSymbolByPsi<CjClassLikeDeclaration>(
+            classId,
+            declaration,
+            buildAdditionalAttachments = buildAdditionalAttachmentsForClassLikeSymbol,
+        ) { it }
+    }
+
+    /**
+     * To find out more about KT-62339, we're adding information about whether the declaration for the given class ID can *now* be found by
+     * the declaration provider (or is still `null`). And whether the given context element is actually in the scope of the symbol provider.
+     */
+    private val buildAdditionalAttachmentsForClassLikeSymbol: ExceptionAttachmentBuilder.(ClassId, CjClassLikeDeclaration?) -> Unit =
+        { classId, context ->
+            val declaration = declarationProvider.getClassLikeDeclarationByClassId(classId)
+            withPsiEntry("declarationFromDeclarationProvider", declaration)
+
+            val virtualFile = context?.containingFile?.virtualFile
+            withVirtualFileEntry("contextVirtualFile", virtualFile)
+
+            if (virtualFile != null) {
+                val isInContentScope = searchScope.contains(virtualFile)
+                withEntry("isContextInScope", isInContentScope.toString())
+
+                @Suppress("DEPRECATION")
+                val analysisContextModule = virtualFile.analysisContextModule
+                withCaModuleEntry("analysisContextModule", analysisContextModule)
+            }
+        }
+
+    override fun getAllClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> {
+        val declarations = declarationProvider.getAllClassesByClassId(classId) + declarationProvider.getAllTypeAliasesByClassId(classId)
+
+        // We're specifically taking the declarations from the declaration provider, so they're guaranteed to be in the symbol provider's
+        // module.
+        @OptIn(LLModuleSpecificSymbolProviderAccess::class)
+        return declarations.mapNotNull { getClassLikeSymbolByPsi(classId, it) }
+    }
+
+    @ClassIdBasedLocality
+    private fun ClassId.isAccepted(): Boolean = !isLocal && (allowKotlinPackage || !isKotlinPackage())
+
+    private fun computeClassLikeSymbolByClassId(classId: ClassId, context: CjClassLikeDeclaration?): CfirClassLikeSymbol<*>? {
+        require(context == null || context.isPhysical)
+        val ktClass = context ?: declarationProvider.getClassLikeDeclarationByClassId(classId) ?: return null
+
+        if (ktClass.getClassId() == null) return null
+        return findClassLikeSymbol(classId, ktClass) { CfirElementFinder.findClassifierWithClassId(it, classId) }
+    }
+
+    private fun computeClassLikeSymbolByPsi(declaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? {
+        require(declaration.isPhysical)
+
+        val classId = declaration.getClassId() ?: return null
+        return findClassLikeSymbol(classId, declaration) { file ->
+            CfirElementFinder.findDeclaration(file, declaration) as? CfirClassLikeDeclaration
+        }
+    }
+
+    private inline fun findClassLikeSymbol(
+        classId: ClassId,
+        declaration: CjClassLikeDeclaration,
+        findCfirElement: (CfirFile) -> CfirClassLikeDeclaration?,
+    ): CfirClassLikeSymbol<*> {
+        val firFile = moduleComponents.firFileBuilder.buildRawCfirFileWithCaching(declaration.containingCjFile)
+        return findCfirElement(firFile)?.symbol
+            ?: errorWithAttachment("Classifier was found in CjFile but was not found in CfirFile") {
+                withEntry("classifierClassId", classId) { it.asString() }
+                withPsiEntry("classifier", declaration, session.llCfirModuleData.ktModule)
+                withVirtualFileEntry("virtualFile", declaration.containingCjFile.virtualFile)
+            }
+    }
+
+    override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> {
+        if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return emptyList()
+        return getTopLevelCallableSymbols(CallableId(packageFqName, name), callableFiles = null)
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelCallableSymbolsTo(destination: MutableList<CfirCallableSymbol<*>>, packageFqName: FqName, name: Name) {
+        if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
+        destination += getTopLevelCallableSymbols(CallableId(packageFqName, name), callableFiles = null)
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelCallableSymbolsTo(
+        destination: MutableList<CfirCallableSymbol<*>>,
+        callableId: CallableId,
+        callables: Collection<CjCallableDeclaration>,
+    ) {
+        destination += getTopLevelCallableSymbols(callableId, callables.mapTo(mutableSetOf()) { it.containingCjFile })
+    }
+
+    private fun getTopLevelCallableSymbols(callableId: CallableId, callableFiles: Collection<CjFile>?): List<CfirCallableSymbol<*>> {
+        if (!allowKotlinPackage && callableId.packageName.isKotlinPackage()) return emptyList()
+
+        val functions = getTopLevelFunctionSymbols(callableId, callableFiles)
+        val properties = getTopLevelPropertySymbols(callableId, callableFiles)
+
+        return functions.smartPlus(properties)
+    }
+
+    override fun getTopLevelFunctionSymbols(packageFqName: FqName, name: Name): List<CfirNamedFunctionSymbol> {
+        if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return emptyList()
+        return getTopLevelFunctionSymbols(CallableId(packageFqName, name), callableFiles = null)
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelFunctionSymbolsTo(destination: MutableList<CfirNamedFunctionSymbol>, packageFqName: FqName, name: Name) {
+        if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
+        destination += getTopLevelFunctionSymbols(CallableId(packageFqName, name), callableFiles = null)
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelFunctionSymbolsTo(
+        destination: MutableList<CfirNamedFunctionSymbol>,
+        callableId: CallableId,
+        functions: Collection<CjNamedFunction>,
+    ) {
+        destination += getTopLevelFunctionSymbols(callableId, functions.mapTo(mutableSetOf()) { it.containingCjFile })
+    }
+
+    private val functionCache: CfirCache<CallableId, List<CfirNamedFunctionSymbol>, Collection<CjFile>?> =
+        session.firCachesFactory.createCache { callableId, context ->
+            computeCallableSymbolsByCallableId<CfirNamedFunctionSymbol>(callableId, context)
+        }
+
+    private fun getTopLevelFunctionSymbols(callableId: CallableId, callableFiles: Collection<CjFile>?): List<CfirNamedFunctionSymbol> {
+        return functionCache.getValue(callableId, callableFiles)
+    }
+
+    override fun getTopLevelPropertySymbols(packageFqName: FqName, name: Name): List<CfirPropertySymbol> {
+        if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return emptyList()
+        return getTopLevelPropertySymbols(CallableId(packageFqName, name), callableFiles = null)
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelPropertySymbolsTo(destination: MutableList<CfirPropertySymbol>, packageFqName: FqName, name: Name) {
+        if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
+        destination += getTopLevelPropertySymbols(CallableId(packageFqName, name), callableFiles = null)
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelPropertySymbolsTo(
+        destination: MutableList<CfirPropertySymbol>,
+        callableId: CallableId,
+        properties: Collection<CjProperty>,
+    ) {
+        destination += getTopLevelPropertySymbols(callableId, properties.mapTo(mutableSetOf()) { it.containingCjFile })
+    }
+
+    private val propertyCache: CfirCache<CallableId, List<CfirPropertySymbol>, Collection<CjFile>?> =
+        session.firCachesFactory.createCache { callableId, context ->
+            computeCallableSymbolsByCallableId<CfirPropertySymbol>(callableId, context)
+        }
+
+    private fun getTopLevelPropertySymbols(callableId: CallableId, callableFiles: Collection<CjFile>?): List<CfirPropertySymbol> {
+        return propertyCache.getValue(callableId, callableFiles)
+    }
+
+    /**
+     * Locates all the callable symbols of required [TYPE] with the matching [callableId] within a specific set of files.
+     * Uses the passed [context] files to avoid index access if available; falls back to the [declarationProvider] otherwise.
+     *
+     * To work correctly with the [CfirCache], this function has to obey the following contract:
+     *
+     * It can be called with some [callableId] and a non-null [context] **if and only if** the returned value
+     * is going to be the same for the `null` context.
+     */
+    private inline fun <reified TYPE : CfirCallableSymbol<*>> computeCallableSymbolsByCallableId(
+        callableId: CallableId,
+        context: Collection<CjFile>?,
+    ): List<TYPE> {
+        require(context == null || context.all { it.isPhysical })
+
+        // we want to use `getTopLevelCallableFiles` instead of
+        // `getTopLevelFunctions/Properties`, because it is highly optimized
+        // to retrieve the files in the IDE mode
+        val files = context ?: declarationProvider.getTopLevelCallableFiles(callableId)
+
+        if (files.isEmpty()) return emptyList()
+
+        return buildList {
+            files.forEach { ktFile ->
+                val firFile = moduleComponents.firFileBuilder.buildRawCfirFileWithCaching(ktFile)
+                firFile.collectCallableSymbolsOfTypeTo<TYPE>(this, callableId.callableName)
+            }
+        }
+    }
+
+    private inline fun <reified TYPE : CfirCallableSymbol<*>> CfirFile.collectCallableSymbolsOfTypeTo(result: MutableList<TYPE>, name: Name) {
+        ((declarations.singleOrNull() as? CfirScript)?.declarations ?: declarations).mapNotNullTo(result) { declaration ->
+            if (declaration is CfirCallableDeclaration && declaration.symbol.name == name) {
+                declaration.symbol as? TYPE
+            } else null
+        }
+    }
+
+    override fun hasPackage(fqName: FqName): Boolean {
+        if (!allowKotlinPackage && fqName.isKotlinPackage()) return false
+        return packageProvider.doesKotlinOnlyPackageExist(fqName)
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\symbolProviders\LLKotlinStubBasedLibraryMultifileClassPartCallableSymbolProvider.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.JvmAndBuiltinsDeserializedContainerSourceProvider
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.caches.firCachesFactory
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirPropertySymbol
+import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.JvmStandardClassIds
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjCallableDeclaration
+import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjProperty
+
+/**
+ * Issue: [KT-68484](https://youtrack.jetbrains.com/issue/KT-68484).
+ *
+ * This class provides fallback symbols for top-level callables from synthetic multifile class part
+ * ([MULTIFILE_CLASS_PART][org.cangnova.cangjie.load.kotlin.header.KotlinClassHeader.Kind.MULTIFILE_CLASS_PART]).
+ *
+ * @see org.cangnova.cangjie.analysis.decompiler.stub.file.ClsClassFinder.isKotlinInternalCompiledFile
+ * @see addCallableIfNeeded
+ **/
+internal class LLKotlinStubBasedLibraryMultifileClassPartCallableSymbolProvider(val session: CfirSession) {
+    private val fallbackFunctionCache = session.firCachesFactory.createCache(::loadFunction)
+    private val fallbackPropertyCache = session.firCachesFactory.createCache(::loadProperty)
+
+    /**
+     * This fallback is required for multifile part classes which are not present in indices
+     * but might be requested as in some cases we still build stubs for them.
+     */
+    fun addCallableIfNeeded(
+        callableCandidates: MutableList<CfirCallableSymbol<*>>,
+        packageFqName: FqName,
+        shortName: Name,
+        callableDeclaration: CjCallableDeclaration,
+    ) {
+        val fileName = callableDeclaration.containingCjFile.virtualFile?.nameWithoutExtension ?: return
+        if (!fileName.endsWith("Cj") || JvmStandardClassIds.MULTIFILE_PART_NAME_DELIMITER !in fileName) {
+            return
+        }
+
+        val callableId = CallableId(packageFqName, shortName)
+        val symbol = when (callableDeclaration) {
+            is CjNamedFunction -> fallbackFunctionCache.getValue(callableDeclaration, callableId)
+            is CjProperty -> fallbackPropertyCache.getValue(callableDeclaration, callableId)
+            else -> null
+        }
+
+        symbol?.let(callableCandidates::add)
+    }
+
+    private fun loadFunction(function: CjNamedFunction, callableId: CallableId): CfirNamedFunctionSymbol? {
+        return LLKotlinStubBasedLibrarySymbolProvider.loadFunction(
+            function = function,
+            callableId = callableId,
+            functionOrigin = CfirDeclarationOrigin.Library,
+            deserializedContainerSourceProvider = JvmAndBuiltinsDeserializedContainerSourceProvider,
+            session = session,
+        )
+    }
+
+    private fun loadProperty(property: CjProperty, callableId: CallableId): CfirPropertySymbol? {
+        return LLKotlinStubBasedLibrarySymbolProvider.loadProperty(
+            property = property,
+            callableId = callableId,
+            propertyOrigin = CfirDeclarationOrigin.Library,
+            deserializedContainerSourceProvider = JvmAndBuiltinsDeserializedContainerSourceProvider,
+            session = session,
+        )
+    }
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\symbolProviders\LLKotlinStubBasedLibrarySymbolProvider.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
+
+import com.intellij.psi.PsiElement
+import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.util.containers.addIfNotNull
+import org.cangnova.cangjie.analysis.api.platform.declarations.createDeclarationProvider
+import org.cangnova.cangjie.analysis.api.platform.packages.createPackageProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.utils.errors.withPsiEntry
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirModuleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsOnlyApi
+import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.*
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.caches.LLPsiAwareClassLikeSymbolCache
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.caches.CfirCache
+import org.cangnova.cangjie.cfir.caches.CfirCacheInternals
+import org.cangnova.cangjie.cfir.caches.firCachesFactory
+import org.cangnova.cangjie.cfir.caches.getValue
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.moduleData
+import org.cangnova.cangjie.cfir.realPsi
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
+import org.cangnova.cangjie.cfir.scopes.CfirKotlinScopeProvider
+import org.cangnova.cangjie.cfir.scopes.kotlinScopeProvider
+import org.cangnova.cangjie.cfir.symbols.impl.*
+import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.psi.psiUtil.getTopmostParentOfType
+import org.cangnova.cangjie.psi.stubs.impl.KotlinFunctionStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.KotlinPropertyStubImpl
+import org.cangnova.cangjie.serialization.deserialization.builtins.BuiltInSerializerProtocol
+import org.cangnova.cangjie.utils.addToStdlib.ifNotEmpty
+import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+
+typealias DeserializedTypeAliasPostProcessor = (CfirTypeAliasSymbol) -> Unit
+
+/**
+ * [LLKotlinStubBasedLibrarySymbolProvider] deserializes CFIR symbols from existing stubs, retrieving them by [ClassId]/[CallableId] from a
+ * [KotlinDeclarationProvider][org.cangnova.cangjie.analysis.api.platform.declarations.KotlinDeclarationProvider].
+ *
+ * The symbol provider is currently only enabled in IDE mode. The Standalone mode uses [LLJvmClassFileBasedSymbolProvider] whose base class
+ * [JvmClassFileBasedSymbolProvider][org.cangnova.cangjie.cfir.java.deserialization.JvmClassFileBasedSymbolProvider] is also used by the
+ * compiler.
+ *
+ * Because the symbol provider uses existing stubs, there is no need to keep a huge protobuf in memory, which would be the case for
+ * metadata-based deserialization ([JvmClassFileBasedSymbolProvider][org.cangnova.cangjie.cfir.java.deserialization.JvmClassFileBasedSymbolProvider]).
+ * At the same time, there is no need to guess sources for CFIR elements anymore, as they are set during deserialization.
+ *
+ * Like with [JvmClassFileBasedSymbolProvider][org.cangnova.cangjie.cfir.java.deserialization.JvmClassFileBasedSymbolProvider], the resulting
+ * deserialized CFIR elements are already fully resolved.
+ */
+internal open class LLKotlinStubBasedLibrarySymbolProvider(
+    session: LLCfirSession,
+    private val deserializedContainerSourceProvider: DeserializedContainerSourceProvider,
+    scope: GlobalSearchScope,
+) : LLKotlinSymbolProvider(session) {
+    private val kotlinScopeProvider: CfirKotlinScopeProvider get() = session.kotlinScopeProvider
+    private val moduleData: LLCfirModuleData get() = session.llCfirModuleData
+
+    private val module: CaModule
+        get() = moduleData.ktModule
+
+    final override val declarationProvider = session.project.createDeclarationProvider(
+        scope,
+        contextualModule = session.ktModule,
+    )
+
+    override val allowKotlinPackage: Boolean get() = true
+
+    override val symbolNamesProvider: CfirSymbolNamesProvider =
+        LLCfirKotlinSymbolNamesProvider.cached(session, declarationProvider, allowKotlinPackage)
+
+    private val typeAliasCache = LLPsiAwareClassLikeSymbolCache(
+        createTypeAliasCache(::findAndDeserializeTypeAlias),
+        createTypeAliasCache { declaration: CjClassLikeDeclaration, context ->
+            val classId = declaration.getClassId() ?: return@createTypeAliasCache Pair(null, null)
+            findAndDeserializeTypeAlias(classId, declaration, context)
+        },
+    )
+
+    private inline fun <K : Any> createTypeAliasCache(
+        crossinline deserialize: (K, StubBasedCfirDeserializationContext?) -> Pair<CfirTypeAliasSymbol?, DeserializedTypeAliasPostProcessor?>,
+    ): CfirCache<K, CfirTypeAliasSymbol?, StubBasedCfirDeserializationContext?> =
+        session.firCachesFactory.createCacheWithPostCompute(
+            createValue = { key, context ->
+                deserialize(key, context)
+            },
+            postCompute = { _, symbol, postProcessor ->
+                if (postProcessor != null && symbol != null) {
+                    postProcessor.invoke(symbol)
+                }
+            },
+        )
+
+    private val classCache = LLPsiAwareClassLikeSymbolCache(
+        session,
+        ::findAndDeserializeClass,
+    ) { declaration: CjClassLikeDeclaration, context ->
+        val classId = declaration.getClassId() ?: return@LLPsiAwareClassLikeSymbolCache null
+        findAndDeserializeClass(classId, declaration, context)
+    }
+
+    private val functionCache = session.firCachesFactory.createCache(::loadFunctionsByCallableId)
+    private val propertyCache = session.firCachesFactory.createCache(::loadPropertiesByCallableId)
+
+    final override val packageProvider = session.project.createPackageProvider(scope)
+
+    /**
+     * Computes the origin for the declarations coming from [file].
+     *
+     * We assume that a stub Kotlin declaration might come only from Library or from BuiltIns.
+     * We do the decision based upon the extension of the [file].
+     *
+     * This method is left open so the inheritors can provide more optimal/strict implementations.
+     */
+    protected open fun getDeclarationOriginFor(file: CjFile): CfirDeclarationOrigin {
+        val virtualFile = file.virtualFile
+
+        return if (virtualFile.extension == BuiltInSerializerProtocol.BUILTINS_FILE_EXTENSION) {
+            CfirDeclarationOrigin.BuiltIns
+        } else {
+            CfirDeclarationOrigin.Library
+        }
+    }
+
+    private fun findAndDeserializeTypeAlias(
+        classId: ClassId,
+        context: StubBasedCfirDeserializationContext?,
+    ): Pair<CfirTypeAliasSymbol?, DeserializedTypeAliasPostProcessor?> {
+        val declaration = context?.classLikeDeclaration
+            ?: declarationProvider.getClassLikeDeclarationByClassId(classId)
+            ?: return Pair(null, null)
+
+        return findAndDeserializeTypeAlias(classId, declaration, context)
+    }
+
+    private fun findAndDeserializeTypeAlias(
+        classId: ClassId,
+        declaration: CjClassLikeDeclaration,
+        context: StubBasedCfirDeserializationContext?,
+    ): Pair<CfirTypeAliasSymbol?, DeserializedTypeAliasPostProcessor?> {
+        if (declaration !is CjTypeAlias) return Pair(null, null)
+
+        checkDeclarationAndContextConsistency(declaration, context)
+
+        val symbol = CfirTypeAliasSymbol(classId)
+        val postProcessor: DeserializedTypeAliasPostProcessor = {
+            val rootContext = context ?: StubBasedCfirDeserializationContext.createRootContext(
+                moduleData,
+                StubBasedAnnotationDeserializer(session),
+                classId.packageFqName,
+                classId.relativeClassName,
+                declaration,
+                null, null, symbol,
+                initialOrigin = getDeclarationOriginFor(declaration.containingCjFile)
+            )
+            rootContext.memberDeserializer.loadTypeAlias(declaration, symbol, kotlinScopeProvider)
+        }
+        return symbol to postProcessor
+    }
+
+    private fun findAndDeserializeClass(
+        classId: ClassId,
+        parentContext: StubBasedCfirDeserializationContext?,
+    ): CfirRegularClassSymbol? {
+        val declaration = parentContext?.classLikeDeclaration
+            ?: declarationProvider.getClassLikeDeclarationByClassId(classId)
+            ?: return null
+
+        return findAndDeserializeClass(classId, declaration, parentContext)
+    }
+
+    private fun findAndDeserializeClass(
+        classId: ClassId,
+        declaration: CjClassLikeDeclaration,
+        parentContext: StubBasedCfirDeserializationContext?,
+    ): CfirRegularClassSymbol? {
+        if (declaration !is CjClassOrObject) return null
+
+        checkDeclarationAndContextConsistency(declaration, parentContext)
+
+        val symbol = CfirRegularClassSymbol(classId)
+        deserializeClassToSymbol(
+            classId,
+            declaration,
+            symbol,
+            session,
+            moduleData,
+            StubBasedAnnotationDeserializer(session),
+            kotlinScopeProvider,
+            parentContext = parentContext,
+            containerSource = deserializedContainerSourceProvider.getClassContainerSource(classId),
+            deserializeNestedClassLikeDeclaration = this::getNestedClassLikeDeclaration,
+            initialOrigin = parentContext?.initialOrigin ?: getDeclarationOriginFor(declaration.containingCjFile)
+        )
+
+        return symbol
+    }
+
+    private fun checkDeclarationAndContextConsistency(
+        declaration: CjClassLikeDeclaration,
+        context: StubBasedCfirDeserializationContext?,
+    ) {
+        requireWithAttachment(
+            context?.classLikeDeclaration == null || declaration === context.classLikeDeclaration,
+            { "The declaration to deserialize should be the same as the context's declaration." },
+        ) {
+            withPsiEntry("declaration", declaration, module)
+            withPsiEntry("context.classLikeDeclaration", context?.classLikeDeclaration, module)
+        }
+    }
+
+    private fun loadFunctionsByCallableId(
+        callableId: CallableId,
+        foundFunctions: Collection<CjNamedFunction>?,
+    ): List<CfirNamedFunctionSymbol> {
+        val topLevelFunctions = foundFunctions ?: declarationProvider.getTopLevelFunctions(callableId)
+
+        return ArrayList<CfirNamedFunctionSymbol>(topLevelFunctions.size).apply {
+            for (function in topLevelFunctions) {
+                val symbol = loadFunction(
+                    function = function,
+                    callableId = callableId,
+                    functionOrigin = getDeclarationOriginFor(function.containingCjFile),
+                    deserializedContainerSourceProvider = deserializedContainerSourceProvider,
+                    session = session,
+                )
+                add(symbol)
+            }
+        }
+    }
+
+    private fun loadPropertiesByCallableId(callableId: CallableId, foundProperties: Collection<CjProperty>?): List<CfirPropertySymbol> {
+        val topLevelProperties = foundProperties ?: declarationProvider.getTopLevelProperties(callableId)
+
+        return ArrayList<CfirPropertySymbol>(topLevelProperties.size).apply {
+            for (property in topLevelProperties) {
+                val symbol = loadProperty(
+                    property = property,
+                    callableId = callableId,
+                    propertyOrigin = getDeclarationOriginFor(property.containingCjFile),
+                    deserializedContainerSourceProvider = deserializedContainerSourceProvider,
+                    session = session,
+                )
+                add(symbol)
+            }
+        }
+    }
+
+    private fun getNestedClassLikeDeclaration(
+        classId: ClassId,
+        declaration: CjClassLikeDeclaration,
+        parentContext: StubBasedCfirDeserializationContext,
+    ): CfirClassLikeSymbol<*>? {
+        requireWithAttachment(
+            parentContext.classLikeDeclaration != null,
+            { "The context should have a class-like declaration when deserializing nested classes or type aliases." },
+        ) {
+            withPsiEntry("declaration", declaration, module)
+        }
+
+        // We can assume that the outer class is in the scope since we're deserializing it with this symbol provider. Since the nested class or typealias
+        // is in the same file as its outer class, it's definitely also in the scope of the symbol provider.
+        val cache = if (declaration is CjClassOrObject) {
+            classCache
+        } else {
+            require(declaration is CjTypeAlias)
+            typeAliasCache
+        }
+        @OptIn(LLModuleSpecificSymbolProviderAccess::class)
+        return cache.getSymbolByPsi(classId, declaration, parentContext)
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelCallableSymbolsTo(destination: MutableList<CfirCallableSymbol<*>>, packageFqName: FqName, name: Name) {
+        val callableId = CallableId(packageFqName, name)
+        destination += functionCache.getCallablesWithoutContext(callableId)
+        destination += propertyCache.getCallablesWithoutContext(callableId)
+    }
+
+    private fun <C : CfirCallableSymbol<*>, CONTEXT> CfirCache<CallableId, List<C>, CONTEXT?>.getCallablesWithoutContext(
+        id: CallableId,
+    ): List<C> {
+        if (!symbolNamesProvider.mayHaveTopLevelCallable(id.packageName, id.callableName)) return emptyList()
+        return getValue(id, null)
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelCallableSymbolsTo(
+        destination: MutableList<CfirCallableSymbol<*>>,
+        callableId: CallableId,
+        callables: Collection<CjCallableDeclaration>,
+    ) {
+        callables.filterIsInstance<CjNamedFunction>().ifNotEmpty {
+            destination += functionCache.getValue(callableId, this)
+        }
+
+        callables.filterIsInstance<CjProperty>().ifNotEmpty {
+            destination += propertyCache.getValue(callableId, this)
+        }
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelFunctionSymbolsTo(destination: MutableList<CfirNamedFunctionSymbol>, packageFqName: FqName, name: Name) {
+        destination += functionCache.getCallablesWithoutContext(CallableId(packageFqName, name))
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelFunctionSymbolsTo(
+        destination: MutableList<CfirNamedFunctionSymbol>,
+        callableId: CallableId,
+        functions: Collection<CjNamedFunction>,
+    ) {
+        destination += functionCache.getValue(callableId, functions)
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelPropertySymbolsTo(destination: MutableList<CfirPropertySymbol>, packageFqName: FqName, name: Name) {
+        destination += propertyCache.getCallablesWithoutContext(CallableId(packageFqName, name))
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelPropertySymbolsTo(
+        destination: MutableList<CfirPropertySymbol>,
+        callableId: CallableId,
+        properties: Collection<CjProperty>,
+    ) {
+        destination += propertyCache.getValue(callableId, properties)
+    }
+
+    override fun hasPackage(fqName: FqName): Boolean =
+        packageProvider.doesKotlinOnlyPackageExist(fqName)
+
+    override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
+        getCachedClassLikeSymbol(classId)?.let { return it }
+
+        if (!symbolNamesProvider.mayHaveTopLevelClassifier(classId)) return null
+
+        classId.takeIf(ClassId::isNestedClass)?.outermostClassId?.let { outermostClassId ->
+            // We have to load the root declaration to initialize nested classes correctly.
+            getClassLikeSymbolByClassId(outermostClassId)
+
+            // Nested declarations are already loaded.
+            getCachedClassLikeSymbol(classId)?.let { return it }
+        }
+
+        return getClass(classId) ?: getTypeAlias(classId)
+    }
+
+    private fun getCachedClassLikeSymbol(classId: ClassId): CfirClassLikeSymbol<*>? {
+        return classCache.getCachedSymbolByClassId(classId)
+            ?: typeAliasCache.getCachedSymbolByClassId(classId)
+    }
+
+    private fun getClass(classId: ClassId): CfirRegularClassSymbol? {
+        @OptIn(LLModuleSpecificSymbolProviderAccess::class)
+        return classCache.getSymbolByClassId(classId, context = null)
+    }
+
+    private fun getTypeAlias(classId: ClassId): CfirTypeAliasSymbol? {
+        @OptIn(LLModuleSpecificSymbolProviderAccess::class)
+        return typeAliasCache.getSymbolByClassId(classId, context = null)
+    }
+
+    @LLModuleSpecificSymbolProviderAccess
+    override fun getClassLikeSymbolByClassId(classId: ClassId, classLikeDeclaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? {
+        val cache = if (classLikeDeclaration is CjClassOrObject) classCache else typeAliasCache
+        cache.getCachedSymbolByClassId(classId)?.let { return it }
+
+        classLikeDeclaration.runIfNested(classId) { topLevelDeclaration, topLevelClassId ->
+            // We have to load the root declaration to initialize nested classes correctly.
+            getClassLikeSymbolByClassId(topLevelClassId, topLevelDeclaration)
+
+            // Nested declarations are already loaded. In contrast to `getClassLikeSymbolByPsi`, we want to specifically load by `classId`
+            // here, so there's no need to access the ambiguity cache.
+            cache.getCachedSymbolByClassId(classId)?.let { return it }
+        }
+
+        return cache.getSymbolByClassId(classId, createClassLikeDeserializationContext(classId, classLikeDeclaration))
+    }
+
+    @LLModuleSpecificSymbolProviderAccess
+    override fun getClassLikeSymbolByPsi(classId: ClassId, declaration: PsiElement): CfirClassLikeSymbol<*>? {
+        if (declaration !is CjClassLikeDeclaration) return null
+
+        val cache = if (declaration is CjClassOrObject) classCache else typeAliasCache
+        cache.getCachedSymbolByPsi(classId, declaration)?.let { return it }
+
+        declaration.runIfNested(classId) { topLevelDeclaration, topLevelClassId ->
+            // We have to load the root declaration to initialize nested classes correctly.
+            getClassLikeSymbolByPsi(topLevelClassId, topLevelDeclaration)
+
+            // Nested declarations are already loaded.
+            cache.getCachedSymbolByPsi(classId, declaration)?.let { return it }
+        }
+
+        return cache.getSymbolByPsi(classId, declaration, createClassLikeDeserializationContext(classId, declaration))
+    }
+
+    private inline fun CjClassLikeDeclaration.runIfNested(
+        classId: ClassId,
+        action: (CjClassLikeDeclaration, ClassId) -> Unit,
+    ) {
+        if (!classId.isNestedClass) return
+
+        val topLevelDeclaration = getTopmostParentOfType<CjClassLikeDeclaration>() ?: return
+        val topLevelClassId = topLevelDeclaration.getClassId() ?: return
+
+        action(topLevelDeclaration, topLevelClassId)
+    }
+
+    private fun createClassLikeDeserializationContext(
+        classId: ClassId,
+        classLikeDeclaration: CjClassLikeDeclaration,
+    ): StubBasedCfirDeserializationContext {
+        val annotationDeserializer = StubBasedAnnotationDeserializer(session)
+        val classOrigin = getDeclarationOriginFor(classLikeDeclaration.containingCjFile)
+        return StubBasedCfirDeserializationContext(
+            moduleData,
+            classId.packageFqName,
+            classId.relativeClassName,
+            StubBasedCfirTypeDeserializer(
+                moduleData,
+                annotationDeserializer,
+                parent = null,
+                containingSymbol = null,
+                owner = null,
+                classOrigin
+            ),
+            annotationDeserializer,
+            containerSource = null,
+            outerClassSymbol = null,
+            outerTypeParameters = emptyList(),
+            classOrigin,
+            classLikeDeclaration,
+        )
+    }
+
+    fun getTopLevelCallableSymbol(
+        packageFqName: FqName,
+        shortName: Name,
+        callableDeclaration: CjCallableDeclaration,
+    ): CfirCallableSymbol<*>? {
+        //possible overloads spoils here
+        //we can't use only this callable instead of index access to fill the cache
+        //names check is redundant though as we already have existing callable in scope
+        val callableId = CallableId(packageFqName, shortName)
+        val callableSymbols = when (callableDeclaration) {
+            is CjNamedFunction -> functionCache.getValue(callableId)
+            is CjProperty -> propertyCache.getValue(callableId)
+            else -> null
+        }
+
+        return callableSymbols?.singleOrNull { it.cfir.realPsi == callableDeclaration }
+    }
+
+    @OptIn(CfirCacheInternals::class)
+    @LLStatisticsOnlyApi
+    internal val cachedDeclarations: List<CfirDeclaration>
+        get() = buildList {
+            typeAliasCache.cachedValues.forEach { addIfNotNull(it?.fir) }
+            classCache.cachedValues.forEach { addIfNotNull(it?.fir) }
+            functionCache.cachedValues.forEach { functions ->
+                functions.forEach { add(it.fir) }
+            }
+            propertyCache.cachedValues.forEach { properties ->
+                properties.forEach { add(it.fir) }
+            }
+        }
+
+    companion object {
+        fun loadProperty(
+            property: CjProperty,
+            callableId: CallableId,
+            propertyOrigin: CfirDeclarationOrigin,
+            deserializedContainerSourceProvider: DeserializedContainerSourceProvider,
+            session: CfirSession,
+        ): CfirPropertySymbol {
+            val propertyStub: KotlinPropertyStubImpl = property.compiledStub
+            val containerSource = deserializedContainerSourceProvider.getFacadeContainerSource(
+                file = property.containingCjFile,
+                stubOrigin = propertyStub.origin,
+                declarationOrigin = propertyOrigin,
+            )
+
+            val symbol = CfirRegularPropertySymbol(callableId)
+            val rootContext = StubBasedCfirDeserializationContext.createRootContext(
+                session = session,
+                moduleData = session.moduleData,
+                callableId = callableId,
+                parameterListOwner = property,
+                symbol = symbol,
+                initialOrigin = propertyOrigin,
+                containerSource = containerSource,
+            )
+
+            return rootContext.memberDeserializer.loadProperty(
+                property = property,
+                classSymbol = null,
+                existingSymbol = symbol,
+            ).symbol
+        }
+
+        fun loadFunction(
+            function: CjNamedFunction,
+            callableId: CallableId,
+            functionOrigin: CfirDeclarationOrigin,
+            deserializedContainerSourceProvider: DeserializedContainerSourceProvider,
+            session: CfirSession,
+        ): CfirNamedFunctionSymbol {
+            val functionStub: KotlinFunctionStubImpl = function.compiledStub
+            val containerSource = deserializedContainerSourceProvider.getFacadeContainerSource(
+                file = function.containingCjFile,
+                stubOrigin = functionStub.origin,
+                declarationOrigin = functionOrigin,
+            )
+
+            val symbol = CfirNamedFunctionSymbol(callableId)
+            val rootContext = StubBasedCfirDeserializationContext.createRootContext(
+                session = session,
+                moduleData = session.moduleData,
+                callableId = callableId,
+                parameterListOwner = function,
+                symbol = symbol,
+                initialOrigin = functionOrigin,
+                containerSource = containerSource,
+            )
+
+            return rootContext.memberDeserializer.loadFunction(
+                function = function,
+                classSymbol = null,
+                session = session,
+                existingSymbol = symbol,
+            ).symbol
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\symbolProviders\LLKotlinSymbolNamesProvider.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
+
+import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinDeclarationProvider
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.resolve.providers.CfirCachedSymbolNamesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirDelegatingCachedSymbolNamesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.utils.filterToSetOrEmpty
+
+/**
+ * A [CfirSymbolNamesProvider] that fetches top-level names from a Kotlin [declarationProvider].
+ *
+ * @param allowKotlinPackage Whether the associated symbol provider is allowed to provide symbols from the `kotlin` package.
+ */
+internal open class LLCfirKotlinSymbolNamesProvider(
+    private val declarationProvider: KotlinDeclarationProvider,
+    private val allowKotlinPackage: Boolean? = null,
+) : CfirSymbolNamesProvider() {
+    override fun getPackageNames(): Set<String>? = declarationProvider.computePackageNames()?.excludeKotlinPackageNamesIfNecessary()
+
+    override val hasSpecificClassifierPackageNamesComputation: Boolean
+        get() = declarationProvider.hasSpecificClassifierPackageNamesComputation
+
+    override fun getPackageNamesWithTopLevelClassifiers(): Set<String>? =
+        declarationProvider
+            .computePackageNamesWithTopLevelClassifiers()
+            ?.excludeKotlinPackageNamesIfNecessary()
+
+    override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name> {
+        if (allowKotlinPackage == false && packageFqName.isKotlinPackage()) return emptySet()
+
+        return declarationProvider.getTopLevelKotlinClassLikeDeclarationNamesInPackage(packageFqName)
+    }
+
+    override val hasSpecificCallablePackageNamesComputation: Boolean
+        get() = declarationProvider.hasSpecificCallablePackageNamesComputation
+
+    override fun getPackageNamesWithTopLevelCallables(): Set<String>? =
+        declarationProvider
+            .computePackageNamesWithTopLevelCallables()
+            ?.excludeKotlinPackageNamesIfNecessary()
+
+    override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name> {
+        if (allowKotlinPackage == false && packageFqName.isKotlinPackage()) return emptySet()
+
+        return declarationProvider.getTopLevelCallableNamesInPackage(packageFqName).ifEmpty { emptySet() }
+    }
+
+    private fun Set<String>.excludeKotlinPackageNamesIfNecessary(): Set<String> {
+        if (allowKotlinPackage == false && any { it.isKotlinPackage() }) {
+            return filterToSetOrEmpty { !it.isKotlinPackage() }
+        }
+        return this
+    }
+
+    companion object {
+        fun cached(
+            session: CfirSession,
+            declarationProvider: KotlinDeclarationProvider,
+            allowKotlinPackage: Boolean? = null,
+        ): CfirCachedSymbolNamesProvider =
+            CfirDelegatingCachedSymbolNamesProvider(session, LLCfirKotlinSymbolNamesProvider(declarationProvider, allowKotlinPackage))
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\symbolProviders\LLKotlinSymbolProvider.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
+
+import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinDeclarationProvider
+import org.cangnova.cangjie.analysis.api.platform.packages.KotlinPackageProvider
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
+import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirPropertySymbol
+import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.psi.CjCallableDeclaration
+import org.cangnova.cangjie.psi.CjClassLikeDeclaration
+import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjProperty
+
+/**
+ * A [CfirSymbolProvider] which provides symbols from Kotlin sources via [KotlinDeclarationProvider].
+ *
+ * @see org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedKotlinSymbolProvider
+ */
+internal abstract class LLKotlinSymbolProvider(session: CfirSession) :
+    CfirSymbolProvider(session),
+    LLKnownClassDeclarationSymbolProvider<CjClassLikeDeclaration>,
+    LLPsiAwareSymbolProvider {
+    abstract val declarationProvider: KotlinDeclarationProvider
+
+    abstract val packageProvider: KotlinPackageProvider
+
+    /**
+     * Whether the [LLKotlinSymbolProvider] should be able to find symbols defined in `kotlin` packages. This is usually not the case for
+     * source sessions, unless the `allowKotlinPackage` flag is enabled in the session's `languageVersionSettings`.
+     */
+    abstract val allowKotlinPackage: Boolean
+
+    /**
+     * Maps the [CfirCallableSymbol]s with the given [callableId] for known [callables] to [destination].
+     *
+     * As the [callables] are already known, this function is optimized to avoid declaration provider accesses. However, the given callable
+     * declarations have to be coherent with the union of [KotlinDeclarationProvider.getTopLevelFunctions] and
+     * [KotlinDeclarationProvider.getTopLevelProperties]. In other words, the callables must be chosen such that the resulting
+     * [CfirCallableSymbol]s are the same as the result of [getTopLevelCallableSymbolsTo] without known declarations.
+     */
+    @CfirSymbolProviderInternals
+    abstract fun getTopLevelCallableSymbolsTo(
+        destination: MutableList<CfirCallableSymbol<*>>,
+        callableId: CallableId,
+        callables: Collection<CjCallableDeclaration>,
+    )
+
+    /**
+     * Maps the [CfirNamedFunctionSymbol]s with the given [callableId] for known [functions] to [destination].
+     *
+     * As the [functions] are already known, this function is optimized to avoid declaration provider accesses. However, the given function
+     * declarations have to be coherent with [KotlinDeclarationProvider.getTopLevelFunctions]. In other words, the functions must be chosen
+     * such that the resulting [CfirNamedFunctionSymbol]s are the same as the result of [getTopLevelFunctionSymbolsTo] without known
+     * declarations.
+     */
+    @CfirSymbolProviderInternals
+    abstract fun getTopLevelFunctionSymbolsTo(
+        destination: MutableList<CfirNamedFunctionSymbol>,
+        callableId: CallableId,
+        functions: Collection<CjNamedFunction>,
+    )
+
+    /**
+     * Maps the [CfirPropertySymbol]s with the given [callableId] for known [properties] to [destination].
+     *
+     * As the [properties] are already known, this function is optimized to avoid declaration provider accesses. However, the given property
+     * declarations have to be coherent with [KotlinDeclarationProvider.getTopLevelProperties]. In other words, the properties must be
+     * chosen such that the resulting [CfirPropertySymbol]s are the same as the result of [getTopLevelPropertySymbolsTo] without known
+     * declarations.
+     */
+    @CfirSymbolProviderInternals
+    abstract fun getTopLevelPropertySymbolsTo(
+        destination: MutableList<CfirPropertySymbol>,
+        callableId: CallableId,
+        properties: Collection<CjProperty>,
+    )
+
+    override fun toString(): String {
+        return "${this::class.simpleName} for $session"
+    }
+}
+
+*** End Patch

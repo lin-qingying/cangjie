@@ -1,0 +1,477 @@
+/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure
+
+import com.intellij.openapi.util.registry.Registry
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiErrorElement
+import org.cangnova.cangjie.CjFakeSourceElementKind
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.*
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.body
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.findStringPlusSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialAnalyzable
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialBodyResolvable
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.correspondingProperty
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.impl.CfirPrimaryConstructor
+import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
+import org.cangnova.cangjie.cfir.expressions.impl.CfirEmptyExpressionBlock
+import org.cangnova.cangjie.cfir.expressions.impl.CfirSingleExpressionBlock
+import org.cangnova.cangjie.cfir.realPsi
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.impl.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.builder.buildTypeProjectionWithVariance
+import org.cangnova.cangjie.cfir.types.coneType
+import org.cangnova.cangjie.cfir.types.resolvedType
+import org.cangnova.cangjie.name.StandardClassIds
+import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.toCjPsiSourceElement
+import org.cangnova.cangjie.types.Variance
+import org.cangnova.cangjie.util.OperatorNameConventions
+
+/**
+ * Collects [KT -> CFIR][CjToCfirMapping] mapping and [diagnostics][FileStructureElementDiagnostics] for [declaration].
+ *
+ * @param declaration is a fully resolved declaration (not necessary in [CfirResolvePhase.BODY_RESOLVE] phase)
+ *
+ * @see FileStructure
+ * @see org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.cfir.LLCfirStructureElementDiagnosticsCollector
+ */
+internal sealed class FileStructureElement(
+    val declaration: CfirDeclaration,
+    val diagnostics: FileStructureElementDiagnostics,
+    elementMapper: LLElementMapper = LLEagerElementMapper(declaration)
+) {
+    val mappings: CjToCfirMapping = CjToCfirMapping(elementMapper)
+
+    companion object {
+        fun recorderFor(fir: CfirDeclaration): CfirElementsRecorder = when (fir) {
+            is CfirFile -> RootStructureElement.Recorder(fir)
+            is CfirRegularClass -> ClassDeclarationStructureElement.Recorder(fir)
+            else -> DeclarationStructureElement.Recorder
+        }
+    }
+}
+
+internal class CjToCfirMapping(private val elementMapper: LLElementMapper) {
+    fun get(element: CjElement): CfirElement? {
+        return elementMapper(element)
+    }
+
+    companion object {
+        private fun checkStringLiteralFolderExpression(
+            element: CjElement,
+            session: CfirSession,
+            mapping: Map<CjElement, CfirElement>,
+        ): CfirElement? {
+            var current: PsiElement? = element
+            var fir: CfirElement? = null
+            while (fir == null && (current is CjBinaryExpression || current is CjOperationReferenceExpression)) {
+                fir = mapping[current]
+                if (fir is CfirStringConcatenationCall && fir.isFoldedStrings) {
+                    // In case of folded string literals, we have to return plus operator reference for operation reference.
+                    return if (element is CjOperationReferenceExpression)
+                        findStringPlusSymbol(session)?.let {
+                            buildResolvedNamedReference {
+                                source = element.toCjPsiSourceElement()
+                                name = OperatorNameConventions.PLUS
+                                resolvedSymbol = it
+                            }
+                        }
+                    else
+                        fir
+                }
+
+                if (fir != null) {
+                    return null
+                }
+
+                current = current.parent
+            }
+
+            return null
+        }
+
+        /**
+         * If [element] is a reference with the name "suspend", returns a fake [CfirResolvedNamedReference] to `kotlin.suspend`.
+         */
+        private fun fakeReferenceToBuiltInSuspendOrNull(
+            element: CjElement,
+            session: CfirSession,
+        ): CfirResolvedNamedReference? {
+            if (element !is CjNameReferenceExpression) return null
+            if (element.getReferencedName() != StandardClassIds.Callables.suspend.callableName.identifier) return null
+
+            return session.symbolProvider
+                .getTopLevelCallableSymbols(
+                    packageFqName = StandardClassIds.Callables.suspend.packageName,
+                    name = StandardClassIds.Callables.suspend.callableName
+                )
+                .singleOrNull()
+                ?.let {
+                    buildResolvedNamedReference {
+                        source = element.toCjPsiSourceElement()
+                        name = StandardClassIds.Callables.suspend.callableName
+                        resolvedSymbol = it
+                    }
+                }
+        }
+
+        private fun fakeCallToBuiltInSuspendOrNull(
+            call: CjCallExpression,
+            mapping: Map<CjElement, CfirElement>,
+            session: CfirSession,
+        ): CfirFunctionCall? {
+            val calleeExpression = call.calleeExpression ?: return null
+            val lambdaArgument = call.lambdaArguments.firstOrNull()?.getLambdaExpression() ?: return null
+            val argument = mapping[lambdaArgument] as? CfirAnonymousFunctionExpression ?: return null
+            val reference = fakeReferenceToBuiltInSuspendOrNull(calleeExpression, session) ?: return null
+            val symbol = reference.resolvedSymbol as? CfirFunctionSymbol ?: return null
+            val valueParameter = symbol.valueParameterSymbols.singleOrNull() ?: return null
+            return buildFunctionCall {
+                calleeReference = reference
+                source = call.toCjPsiSourceElement()
+                argumentList = buildResolvedArgumentList(
+                    original = null,
+                    mapping = LinkedHashMap<CfirExpression, CfirValueParameter>().apply {
+                        put(argument, valueParameter.fir)
+                    }
+                )
+                typeArguments += buildTypeProjectionWithVariance {
+                    typeRef = buildResolvedTypeRef {
+                        coneType = argument.anonymousFunction.returnTypeRef.coneType
+                    }
+                    variance = Variance.INVARIANT
+                }
+                coneTypeOrNull = argument.resolvedType
+            }
+        }
+
+        fun getCfir(element: CjElement, session: CfirSession, mapping: Map<CjElement, CfirElement>): CfirElement? {
+            var current: PsiElement? = element
+            while (
+                current == element ||
+                current is CjUserType ||
+                current is CjTypeReference ||
+                current is CjDotQualifiedExpression ||
+                current is CjNullableType
+            ) {
+                // We are still referring to the same element with possible type parameter/name qualification/nullability,
+                // hence it is always correct to return a corresponding element if present
+                if (current is CjElement) mapping[current]?.let { return it }
+                if (current is CjCallExpression) fakeCallToBuiltInSuspendOrNull(current, mapping, session)?.let {
+                    return it
+                }
+                current = current.parent
+            }
+
+            // Here current is the lowest ancestor that has different corresponding text
+            return when (current) {
+                // Constants with unary operation (i.e., +1 or -1) are saved as a leaf element of CFIR tree
+                is CjPrefixExpression,
+                    // There is no separate element for annotation construction call
+                is CjAnnotationEntry,
+                    // We replace a source for selector with the whole expression
+                is CjSafeQualifiedExpression,
+                    // Top level destructuring declarations do not have CFIR for r-value at the moment, would probably be changed later
+                is CjDestructuringDeclaration,
+                    // There is no separate CFIR node for this in this@foo expressions, same for super@Foo
+                is CjThisExpression,
+                is CjSuperExpression,
+                    // Part of the path in import/package directives has no CFIR node
+                is CjImportDirective,
+                is CjPackageDirective,
+                    // Super type refs are not recorded
+                is CjSuperTypeCallEntry,
+                    // this/super in delegation calls are not part of CFIR tree, this(args) is
+                is CjConstructorDelegationCall,
+                    // In case of type projection we are not recording the corresponding type reference
+                is CjTypeProjection,
+                    -> mapping[current as CjElement]
+                is CjCallExpression -> {
+                    // Case 1:
+                    // If we have, say, A(), reference A is not recorded, while call A() is recorded.
+                    //
+                    // Case 2:
+                    // A<Ty> and B<Ty> in `A<Ty>.B<Ty>` are both calls, but neither A nor B nor B<Ty> are recorded.
+                    // Only A<Ty> and the whole qualified expression (as CfirResolvedQualifier) are recorded.
+                    val parent = current.parent
+                    if (current.valueArgumentList == null &&
+                        parent is CjQualifiedExpression &&
+                        parent.selectorExpression == current
+                    ) {
+                        mapping[parent]
+                    } else {
+                        mapping[current] ?: fakeReferenceToBuiltInSuspendOrNull(element, session)
+                    }
+                }
+                is CjParenthesizedExpression -> checkStringLiteralFolderExpression(element, session, mapping)
+                is CjBinaryExpression -> checkStringLiteralFolderExpression(element, session, mapping)
+                // Here there is no separate CFIR node for partial operator calls (like for a[i] = 1, there is no separate node for a[i])
+                    ?: if (element is CjArrayAccessExpression || element is CjOperationReferenceExpression) mapping[current] else null
+                is CjBlockExpression -> null
+                is PsiErrorElement -> {
+                    val parent = current.parent
+                    if (parent is CjDestructuringDeclaration) mapping[parent] else null
+                }
+                // Value argument names and corresponding references are not part of the CFIR tree
+                is CjValueArgumentName -> mapping[current.parent as CjValueArgument]
+                is CjContainerNode -> {
+                    val parent = current.parent
+                    // Labels in labeled expression (i.e., return@foo) have no CFIR node
+                    if (parent is CjExpressionWithLabel) mapping[parent] else null
+                }
+                // Enum entries/annotation entries constructor calls
+                is CjConstructorCalleeExpression -> mapping[current.parent as CjCallElement]
+                // CjParameter for destructuring declaration
+                is CjParameter -> mapping[current as CjElement]
+                else -> null
+            }
+        }
+    }
+}
+
+internal class ClassDeclarationStructureElement(
+    file: CfirFile,
+    clazz: CfirRegularClass,
+    moduleComponents: LLCfirModuleResolveComponents,
+) : FileStructureElement(
+    declaration = clazz,
+    diagnostics = FileStructureElementDiagnostics(
+        ClassDiagnosticRetriever(
+            declaration = clazz,
+            file = file,
+            moduleComponents = moduleComponents,
+        )
+    ),
+) {
+    class Recorder(firClass: CfirRegularClass) : CfirElementContainerRecorder(
+        container = firClass,
+        declarationsToIgnore = firClass.declarationsToIgnore,
+    )
+}
+
+/** @see ClassDeclarationStructureElement */
+internal val CfirRegularClass.declarationsToIgnore: Set<CfirDeclaration>
+    get() = declarations.filterNot(CfirDeclaration::isPartOfClassStructureElement).toSet()
+
+/**
+ * The recorder is supposed to visit only elements that belong to the [container].
+ *
+ * For instance, it should visit annotations, but not regular declarations.
+ */
+internal abstract class CfirElementContainerRecorder(
+    private val container: CfirDeclaration,
+    private val declarationsToIgnore: Set<CfirDeclaration>,
+) : CfirElementsRecorder() {
+    override fun visitElement(element: CfirElement, data: MutableMap<CjElement, CfirElement>) {
+        // Entry point to the visitor
+        if (element === container) {
+            return super.visitElement(element, data)
+        }
+
+        val recordElement = if (element is CfirDeclaration) {
+            element !in declarationsToIgnore
+        } else {
+            true
+        }
+
+        if (recordElement) {
+            // A separate recorder is called here as we don't have to check
+            // conditions for nested elements – they should be recorded deeply
+            element.accept(DeclarationStructureElement.Recorder, data)
+        }
+    }
+}
+
+/**
+ * Whether a class member declaration is a part of the [ClassDeclarationStructureElement].
+ *
+ * [CfirRegularClass] stands as an anchor for synthetic declarations which it produces (like an implicit constructor).
+ * This is necessary to process diagnostics from such elements as they don't have real sources
+ * (and a dedicated [FileStructureElement] as a consequence).
+ *
+ * @see ClassDeclarationStructureElement
+ * @see ClassDiagnosticRetriever
+ */
+internal val CfirDeclaration.isPartOfClassStructureElement: Boolean
+    get() = when (source?.kind) {
+        CjFakeSourceElementKind.ImplicitConstructor,
+        CjFakeSourceElementKind.DataClassGeneratedMembers,
+        CjFakeSourceElementKind.EnumGeneratedDeclaration,
+        CjFakeSourceElementKind.ClassDelegationField,
+            -> true
+
+        else -> false
+    }
+
+internal class DeclarationStructureElement(
+    file: CfirFile,
+    declaration: CfirDeclaration,
+    moduleComponents: LLCfirModuleResolveComponents,
+) : FileStructureElement(
+    declaration = declaration,
+    diagnostics = FileStructureElementDiagnostics(
+        SingleNonLocalDeclarationDiagnosticRetriever(
+            declaration = declaration,
+            file = file,
+            moduleComponents = moduleComponents,
+        )
+    ),
+    elementMapper = createMapper(declaration),
+) {
+    private companion object {
+        private val IS_PARTIAL_RESOLVE_ENABLED by lazy(LazyThreadSafetyMode.PUBLICATION) {
+            Registry.`is`("kotlin.analysis.partialBodyAnalysis", true)
+        }
+
+        private fun createMapper(declaration: CfirDeclaration): LLElementMapper {
+            val partialBodyMapper = createPartialBodyMapperIfApplicable(declaration)
+            if (partialBodyMapper != null) {
+                return partialBodyMapper
+            }
+
+            declaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+            return LLEagerElementMapper(declaration)
+        }
+
+        private fun createPartialBodyMapperIfApplicable(declaration: CfirDeclaration): LLElementMapper? {
+            if (!IS_PARTIAL_RESOLVE_ENABLED) {
+                return null
+            }
+
+            val bodyBlock = declaration.body
+            if (!declaration.isPartialBodyResolvable || bodyBlock == null || declaration.resolvePhase >= CfirResolvePhase.BODY_RESOLVE) {
+                return null
+            }
+
+            require(declaration.resolvePhase >= CfirResolvePhase.BODY_RESOLVE.previous)
+
+            val isPartiallyResolvable = when (bodyBlock) {
+                is CfirSingleExpressionBlock -> false
+                is CfirEmptyExpressionBlock -> false
+                is CfirLazyBlock -> true // Optimistic (however, below we also check the PSI statement count)
+                else -> bodyBlock.isPartialAnalyzable
+            }
+
+            if (!isPartiallyResolvable) {
+                return null
+            }
+
+            val session = declaration.llCfirResolvableSession ?: return null
+            val psiDeclaration = declaration.realPsi as? CjDeclaration
+            val psiBodyBlock = psiDeclaration?.bodyBlock
+            val psiStatements = psiBodyBlock?.statements?.takeIf { it.size > 1 } ?: return null
+
+            // Although we don't require the body to be resolved here, its changes must invalidate the element mapper.
+            // Note that there might be changes in a number of statements, so here we keep the guarantee – a partial element mapper
+            // is only created if there are more than one body statement.
+            LLCfirDeclarationModificationService.bodyResolved(declaration, phase = CfirResolvePhase.BODY_RESOLVE)
+
+            return LLPartialBodyElementMapper(declaration, psiDeclaration, psiBodyBlock, psiStatements, session)
+        }
+    }
+
+    object Recorder : AbstractRecorder()
+
+    /**
+     * A recorder that skips content analyzed on the [CfirResolvePhase.BODY_RESOLVE] phase.
+     *
+     * Sic! The recorder currently is only intended to be used for computing signature mappings in [LLPartialBodyElementMapper]
+     * for [isPartialBodyResolvable] declarations.
+     * For other usages, the behavior is unspecified.
+     */
+    class SignatureRecorder(private val declaration: CfirDeclaration) : AbstractRecorder() {
+        private var parent: CfirElement? = null
+
+        // Sic! The declaration might be resolved to 'BODY_RESOLVE' in some other thread while we traverse over it.
+        override fun visitElement(element: CfirElement, data: MutableMap<CjElement, CfirElement>) {
+            // Skip elements only directly nested in the declaration.
+            // Note that annotation values technically can contain arbitrary code that we don't want to filter out here.
+            val currentParent = parent
+
+            if (element is CfirBlock && currentParent == declaration) {
+                // Skip declaration body
+                return
+            }
+
+            if (element is CfirExpression && currentParent is CfirValueParameter && currentParent.defaultValue == element) {
+                // Skip default value parameters
+                return
+            }
+
+            if (element is CfirDelegatedConstructorCall && currentParent is CfirConstructor && currentParent == declaration) {
+                // Skip delegated constructors
+                return
+            }
+
+            cacheElement(element, data)
+
+            try {
+                parent = element
+                element.acceptChildren(this, data)
+            } finally {
+                parent = currentParent
+            }
+        }
+    }
+
+    class BodyBlockRecorder(block: CfirBlock) : AbstractRecorder() {
+        private val statements = block.statements.toSet()
+
+        override fun visitElement(element: CfirElement, data: MutableMap<CjElement, CfirElement>) {
+            // Statements are already registered
+            if (element !in statements) {
+                super.visitElement(element, data)
+            }
+        }
+    }
+
+    abstract class AbstractRecorder : CfirElementsRecorder() {
+        override fun visitConstructor(constructor: CfirConstructor, data: MutableMap<CjElement, CfirElement>) {
+            super.visitConstructor(constructor, data)
+
+            if (constructor is CfirPrimaryConstructor) {
+                constructor.valueParameters.forEach { parameter ->
+                    parameter.correspondingProperty?.let { property ->
+                        visitProperty(property, data)
+                    }
+                }
+            }
+        }
+    }
+}
+
+internal class RootStructureElement(
+    file: CfirFile,
+    moduleComponents: LLCfirModuleResolveComponents,
+) : FileStructureElement(
+    declaration = file,
+    diagnostics = FileStructureElementDiagnostics(
+        FileDiagnosticRetriever(
+            file = file,
+            moduleComponents = moduleComponents,
+        )
+    ),
+) {
+    class Recorder(file: CfirFile) : CfirElementContainerRecorder(
+        container = file,
+        declarationsToIgnore = file.declarationsToIgnore,
+    )
+}
+
+/** @see RootStructureElement */
+internal val CfirFile.declarationsToIgnore: Set<CfirDeclaration>
+    get() = declarations.toSet()

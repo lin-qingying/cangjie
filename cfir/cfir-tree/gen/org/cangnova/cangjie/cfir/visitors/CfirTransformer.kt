@@ -619,6 +619,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformThrowExpression(throwExpression, data)
     }
 
+    open fun transformResolvedDeclarationStatus(resolvedDeclarationStatus: CfirResolvedDeclarationStatus, data: D): CfirDeclarationStatus {
+        return transformElement(resolvedDeclarationStatus, data)
+    }
+
+    final override fun visitResolvedDeclarationStatus(resolvedDeclarationStatus: CfirResolvedDeclarationStatus, data: D): CfirDeclarationStatus {
+        return transformResolvedDeclarationStatus(resolvedDeclarationStatus, data)
+    }
+
     open fun transformPerformExpression(performExpression: CfirPerformExpression, data: D): CfirExpression {
         return transformElement(performExpression, data)
     }

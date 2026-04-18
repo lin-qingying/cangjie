@@ -7,7 +7,7 @@ import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.incremental.components.EnumMatchTracker
@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap
 abstract class CfirLookupTrackerComponent : CfirSessionComponent {
     abstract fun recordLookup(name: String, inScopes: Iterable<String>, source: CjSourceElement?, fileSource: CjSourceElement?)
     abstract fun recordLookup(name: String, inScope: String, source: CjSourceElement?, fileSource: CjSourceElement?)
-    abstract fun recordDirtyDeclaration(symbol: CfirSymbol<*>)
+    abstract fun recordDirtyDeclaration(symbol: CfirBasedSymbol<*>)
 }
 
 val CfirSession.lookupTracker: CfirLookupTrackerComponent? by CfirSession.nullableSessionComponentAccessor()
@@ -72,7 +72,7 @@ class IncrementalPassThroughLookupTrackerComponent(
         recordLookup(name, listOf(inScope), source, fileSource)
     }
 
-    override fun recordDirtyDeclaration(symbol: CfirSymbol<*>) {
+    override fun recordDirtyDeclaration(symbol: CfirBasedSymbol<*>) {
         if (fileMappingTracker == null || !symbol.isBound) return
 
         val declaration = symbol.cfir

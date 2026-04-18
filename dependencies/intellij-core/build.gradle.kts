@@ -10,6 +10,10 @@ dependencies {
     api("com.jetbrains.intellij.platform:util:$intellijVersion") { isTransitive = false }
     api("com.jetbrains.intellij.platform:util-base:$intellijVersion") { isTransitive = false }
     api("com.jetbrains.intellij.platform:util-xml-dom:$intellijVersion") { isTransitive = false }
+    // 253 起插件 XML 解析模型拆分到独立的 plugins-parser-impl。
+    // analysis-api-impl-base 的 headless 插件装配需要直接访问其中的 RawPluginDescriptor /
+    // PluginDescriptorReaderContext / PluginDescriptorBuilder 等类型。
+    api("com.jetbrains.intellij.platform:plugins-parser-impl:$intellijVersion") { isTransitive = false }
     api("com.jetbrains.intellij.platform:core:$intellijVersion") { isTransitive = false }
     api("com.jetbrains.intellij.platform:core-impl:$intellijVersion") { isTransitive = false }
     // Required by AppUIExecutor/AsyncExecutionService in stub-backed PSI tests.

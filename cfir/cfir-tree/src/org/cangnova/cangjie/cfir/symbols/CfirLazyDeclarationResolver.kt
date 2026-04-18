@@ -1,8 +1,6 @@
 package org.cangnova.cangjie.cfir.symbols
 
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
-import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -23,7 +21,7 @@ import org.cangnova.cangjie.util.PrivateForInline
  * @receiver [CfirBasedSymbol] which should be resolved
  * @param toPhase the minimum phase, the declaration should be resolved to after an execution of the [lazyResolveToPhase]
  */
-fun CfirSymbol<*>.lazyResolveToPhase(toPhase: CfirResolvePhase) {
+fun CfirBasedSymbol<*>.lazyResolveToPhase(toPhase: CfirResolvePhase) {
     cfir.lazyResolveToPhase(toPhase)
 }
 

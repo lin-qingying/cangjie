@@ -1,0 +1,1136 @@
+*** Begin Patch
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\resolver\SingleCandidateResolver.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.resolver
+
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
+import org.cangnova.cangjie.cfir.expressions.CfirEmptyArgumentList
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
+import org.cangnova.cangjie.cfir.resolve.DoubleColonLHS
+import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.resolve.calls.ImplicitReceiverValue
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.*
+import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
+import org.cangnova.cangjie.cfir.resolve.createConeDiagnosticForCandidateWithError
+import org.cangnova.cangjie.cfir.resolve.inference.CfirCallCompleter
+import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.types.CfirTypeProjection
+import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
+
+class SingleCandidateResolver(
+    private val firSession: CfirSession,
+    private val firFile: CfirFile,
+) {
+    val bodyResolveComponents = createStubBodyResolveComponents(firSession)
+    private val firCallCompleter = CfirCallCompleter(
+        bodyResolveComponents.transformer,
+        bodyResolveComponents,
+    )
+    private val resolutionStageRunner = ResolutionStageRunner()
+
+    fun resolveSingleCandidate(
+        resolutionParameters: ResolutionParameters
+    ): CfirFunctionCall? {
+
+        val infoProvider = createCandidateInfoProvider(resolutionParameters)
+        if (infoProvider.shouldFailBeforeResolve())
+            return null
+
+        val callInfo = infoProvider.callInfo()
+        val explicitReceiverKind = infoProvider.explicitReceiverKind()
+        val dispatchReceiverValue = infoProvider.dispatchReceiverValue()
+        val implicitExtensionReceiverValue = infoProvider.implicitExtensionReceiverValue()
+
+        val resolutionContext = bodyResolveComponents.transformer.resolutionContext
+
+        val candidate = CandidateFactory(resolutionContext, callInfo).createCandidate(
+            callInfo,
+            resolutionParameters.callableSymbol,
+            explicitReceiverKind = explicitReceiverKind,
+            dispatchReceiver = dispatchReceiverValue?.receiverExpression,
+            givenExtensionReceiver = if (explicitReceiverKind.isExtensionReceiver)
+                callInfo.explicitReceiver
+            else
+                implicitExtensionReceiverValue?.receiverExpression,
+            scope = null,
+        )
+
+        val applicability = resolutionStageRunner.processCandidate(candidate, resolutionContext, stopOnCfirstError = true)
+
+        val fakeCall = if (candidate.isSuccessful) {
+            buildCallForResolvedCandidate(candidate, resolutionParameters)
+        } else if (
+            resolutionParameters.allowUnsafeCall && applicability == CandidateApplicability.UNSAFE_CALL ||
+            resolutionParameters.allowUnstableSmartCast && applicability == CandidateApplicability.UNSTABLE_SMARTCAST
+        ) {
+            resolutionStageRunner.fullyProcessCandidate(candidate, resolutionContext)
+            buildCallForCandidateWithError(candidate, applicability, resolutionParameters)
+        } else {
+            return null
+        }
+
+        return firCallCompleter.completeCall(fakeCall, ResolutionMode.ContextIndependent)
+    }
+
+    private fun createCandidateInfoProvider(resolutionParameters: ResolutionParameters): CandidateInfoProvider {
+        return when (resolutionParameters.singleCandidateResolutionMode) {
+            SingleCandidateResolutionMode.CHECK_EXTENSION_FOR_COMPLETION -> CheckExtensionForCompletionCandidateInfoProvider(
+                resolutionParameters,
+                firFile,
+                firSession
+            )
+            SingleCandidateResolutionMode.CHECK_EXTENSION_CALLABlE_REFERENCE_FOR_COMPLETION -> CheckCallableReferenceForCompletionCandidateInfoProvider(
+                resolutionParameters,
+                firFile,
+                firSession
+            )
+        }
+    }
+
+    private fun buildCallForResolvedCandidate(candidate: Candidate, resolutionParameters: ResolutionParameters): CfirFunctionCall =
+        buildFunctionCall {
+            calleeReference = CfirNamedReferenceWithCandidate(
+                source = null,
+                name = resolutionParameters.callableSymbol.name,
+                candidate = candidate
+            )
+        }
+
+    private fun buildCallForCandidateWithError(
+        candidate: Candidate,
+        applicability: CandidateApplicability,
+        resolutionParameters: ResolutionParameters
+    ): CfirFunctionCall {
+        val diagnostic = createConeDiagnosticForCandidateWithError(applicability, candidate)
+        val name = resolutionParameters.callableSymbol.name
+        return buildFunctionCall {
+            calleeReference = CfirErrorReferenceWithCandidate(source = null, name, candidate, diagnostic)
+        }
+    }
+}
+
+/**
+ * @param allowUnsafeCall if true, then candidate is resolved even if receiver's nullability doesn't match
+ * @param allowUnstableSmartCast if true, then candidate is resolved even if it requires unstable smart cast
+ */
+class ResolutionParameters(
+    val singleCandidateResolutionMode: SingleCandidateResolutionMode,
+    val callableSymbol: CfirCallableSymbol<*>,
+    val implicitReceiver: ImplicitReceiverValue<*>? = null,
+    val explicitReceiver: CfirExpression? = null,
+    /** THIS IS UNSAFE TO PASS ORIGINAL ARGUMENTS. THEY HAVE TO BE COPIED TO AVOID MUTABILITY ISSUES */
+    val argumentList: CfirArgumentList = CfirEmptyArgumentList,
+    val callableReferenceLHS: DoubleColonLHS? = null,
+    val typeArgumentList: List<CfirTypeProjection> = emptyList(),
+    val allowUnsafeCall: Boolean = false,
+    val allowUnstableSmartCast: Boolean = false,
+)
+
+enum class SingleCandidateResolutionMode {
+    /**
+     * Run resolution stages necessary to type check extension receiver (explicit/implicit) for candidate function.
+     * Candidate is expected to be taken from context scope.
+     * Arguments and type arguments are not expected and not checked.
+     * Explicit receiver can be passed and will always be interpreted as extension receiver.
+     */
+    CHECK_EXTENSION_FOR_COMPLETION,
+
+    /**
+     * Run resolution stages necessary to type check callable extension receiver (explicit/implicit) for candidate function.
+     * Candidate is expected to be taken from context scope.
+     * Arguments and type arguments are not expected and not checked.
+     * Explicit receiver can be passed and will always be interpreted as callable reference LHS.
+     */
+    CHECK_EXTENSION_CALLABlE_REFERENCE_FOR_COMPLETION,
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\services\LLCfirJavaAnnotationProvider.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.services
+
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
+import com.intellij.openapi.project.Project
+import com.intellij.psi.*
+import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.platform.caches.getOrPut
+import org.cangnova.cangjie.cfir.java.CfirJavaAnnotationProvider
+import org.cangnova.cangjie.load.java.structure.JavaAnnotation
+import org.cangnova.cangjie.load.java.structure.JavaPackage
+import org.cangnova.cangjie.load.java.structure.impl.JavaAnnotationImpl
+import org.cangnova.cangjie.load.java.structure.impl.JavaPackageImpl
+import org.cangnova.cangjie.load.java.structure.impl.source.JavaElementSourceFactory
+import org.cangnova.cangjie.name.FqName
+
+internal class LLCfirJavaAnnotationProvider(
+    private val project: Project,
+    private val scope: GlobalSearchScope,
+) : CfirJavaAnnotationProvider {
+    private val javaElementSourceFactory: JavaElementSourceFactory by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        JavaElementSourceFactory.getInstance(project)
+    }
+
+    private val packageAnnotationCache: Cache<FqName, List<JavaAnnotation>> = Caffeine
+        .newBuilder()
+        .maximumSize(1024)
+        .build()
+
+    override fun getPackageAnnotations(owner: JavaPackage): List<JavaAnnotation> {
+        require(owner is JavaPackageImpl)
+        return packageAnnotationCache.getOrPut(owner.fqName) {
+            computePackageAnnotations(owner.psi)
+        }
+    }
+
+    private fun computePackageAnnotations(psi: PsiPackage): List<JavaAnnotation> {
+        val directories = psi.getDirectories(scope)
+        if (directories.isEmpty()) {
+            return emptyList()
+        }
+
+        return buildList {
+            for (directory in directories) {
+                val file = directory.findFile(PsiPackage.PACKAGE_INFO_FILE)
+                    ?: directory.findFile(PsiPackage.PACKAGE_INFO_CLS_FILE)
+                val packageStatement = (file as? PsiJavaFile)?.packageStatement ?: continue
+                val psiAnnotations = packageStatement.patchedAnnotationList?.annotations ?: continue
+                for (psiAnnotation in psiAnnotations) {
+                    val psiSource = javaElementSourceFactory.createPsiSource(psiAnnotation)
+                    val javaAnnotation = JavaAnnotationImpl(psiSource)
+                    add(javaAnnotation)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Not all implementations of [PsiPackageStatement] used to have a proper implementation of [PsiPackageStatement.annotationList].
+ * Specifically, [com.intellij.psi.impl.compiled.ClsPackageStatementImpl] was simply throwing an [UnsupportedOperationException]
+ * before IJ Platform 252.1.
+ *
+ * This property provides a workaround by catching the exception and extracting annotations directly from the
+ * `package-info.class` file's single class modifier list when available.
+ *
+ * The current version of IJ Platform dependency in Kotlin repo is 251 (see KT-80525).
+ *
+ * Starting from IJ Platform version 252.1, `ClsPackageStatementImpl` has a similar workaround built-in (see IDEA-375444).
+ * And starting from IJ Platform version 253, `ClsPackageStatementImpl` properly supports `annotationList` (see IDEA-375067).
+ *
+ * When the IJ Platform dependency is updated to 252.1 or higher, this extension property can be removed - see KT-83480 for that task.
+ */
+private val PsiPackageStatement.patchedAnnotationList: PsiModifierList?
+    get() = try {
+        annotationList
+    } catch (_: UnsupportedOperationException) {
+        val file = containingFile
+
+        if (file.name == PsiPackage.PACKAGE_INFO_CLS_FILE) {
+            val singlePackageInfoClass = (file as? PsiClassOwner)?.classes?.singleOrNull()
+
+            singlePackageInfoClass?.modifierList
+        } else {
+            null
+        }
+    }
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\services\LLRealCfirElementByPsiElementChooser.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.services
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.services.LLCfirElementByPsiElementChooser
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumEntry
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.realPsi
+import org.cangnova.cangjie.psi.CjCallableDeclaration
+import org.cangnova.cangjie.psi.CjEnumEntry
+import org.cangnova.cangjie.psi.CjParameter
+import org.cangnova.cangjie.psi.CjTypeParameter
+
+internal class LLRealCfirElementByPsiElementChooser : LLCfirElementByPsiElementChooser() {
+    override fun isMatchingValueParameter(psi: CjParameter, fir: CfirValueParameter): Boolean = fir.realPsi === psi
+
+    override fun isMatchingTypeParameter(psi: CjTypeParameter, fir: CfirTypeParameter): Boolean = fir.realPsi === psi
+
+    override fun isMatchingEnumEntry(psi: CjEnumEntry, fir: CfirEnumEntry): Boolean = fir.realPsi === psi
+
+    override fun isMatchingCallableDeclaration(psi: CjCallableDeclaration, fir: CfirCallableDeclaration): Boolean = fir.realPsi === psi
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\CfirScriptingCompilerExtensionIdeRegistrar.kt
++
+
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
+import org.cangnova.cangjie.scripting.compiler.plugin.definitions.*
+import org.cangnova.cangjie.scripting.compiler.plugin.services.CfirScriptConfiguratorExtensionImpl
+import org.cangnova.cangjie.scripting.compiler.plugin.services.CfirScriptDefinitionProviderService
+import org.cangnova.cangjie.scripting.compiler.plugin.services.CfirScriptResolutionConfigurationExtensionImpl
+import org.cangnova.cangjie.scripting.definitions.K1SpecificScriptingServiceAccessor
+import org.cangnova.cangjie.scripting.definitions.ScriptConfigurationsProvider
+import org.cangnova.cangjie.scripting.definitions.ScriptDefinition
+import org.cangnova.cangjie.scripting.definitions.ScriptDefinitionProvider
+import kotlin.script.experimental.host.ScriptingHostConfiguration
+import kotlin.script.experimental.host.with
+
+/**
+ * The class is a copy of [org.cangnova.cangjie.scripting.compiler.plugin.CfirScriptingCompilerExtensionRegistrar] adapted for the usage
+ * outside the compiler context. Difference lies in its constructor parameters, namely in
+ * [org.cangnova.cangjie.config.CompilerConfiguration] replaced with a pair of explicit [scriptDefinitionSources] and [scriptDefinitions].
+ */
+internal class CfirScriptingCompilerExtensionIdeRegistrar(
+    private val project: Project,
+    private val hostConfiguration: ScriptingHostConfiguration,
+    @Suppress("DEPRECATION") //KT-82551
+    private val scriptDefinitionSources: List<org.cangnova.cangjie.scripting.definitions.ScriptDefinitionsSource>,
+    private val scriptDefinitions: List<ScriptDefinition>,
+) : CfirExtensionRegistrar() {
+
+    @OptIn(K1SpecificScriptingServiceAccessor::class)
+    override fun ExtensionRegistrarContext.configurePlugin() {
+        +CfirScriptDefinitionProviderService.getFactory {
+            hostConfiguration.with {
+                scriptCompilationConfigurationProvider.replaceOnlyDefault {
+                    val provider = ScriptDefinitionProvider.getInstance(project) ?: run {
+                        if (scriptDefinitionSources.isNotEmpty() || scriptDefinitions.isNotEmpty()) {
+                            CliScriptDefinitionProvider().also {
+                                it.setScriptDefinitionsSources(scriptDefinitionSources)
+                                it.setScriptDefinitions(scriptDefinitions)
+                            }
+                        } else null
+                    }
+                    provider?.let {
+                        ScriptCompilationConfigurationProviderOverDefinitionProvider(it)
+                    }
+                }
+                scriptRefinedCompilationConfigurationsCache.replaceOnlyDefault {
+                    val providerFromProject = ScriptConfigurationsProvider.getInstance(project)
+                    providerFromProject?.let {
+                        ScriptRefinedCompilationConfigurationCacheOverConfigurationsProvider(
+                            legacyConfigurationsProvider = it,
+                            definitionsProvider = this@with[ScriptingHostConfiguration.scriptCompilationConfigurationProvider]
+                        )
+                    } ?: ScriptRefinedCompilationConfigurationCacheImpl()
+                }
+            }
+        }
+
+        +CfirScriptConfiguratorExtensionImpl.getFactory()
+        +CfirScriptResolutionConfigurationExtensionImpl.getFactory()
+    }
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirAbstractSessionFactory.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import com.intellij.openapi.project.Project
+import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.platform.CaCachedService
+import org.cangnova.cangjie.analysis.api.platform.declarations.*
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaDanglingFileModuleImpl
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinAnchorModuleProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.utils.mergeInto
+import org.cangnova.cangjie.analysis.api.projectStructure.*
+import org.cangnova.cangjie.analysis.api.utils.errors.withCaModuleEntry
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirLazyDeclarationResolver
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.*
+import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirIdeRegisteredPluginAnnotations
+import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirLibrarySessionProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLNameConflictsTracker
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.*
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedJavaSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedKotlinSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedPackageDelegationSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedSyntheticFunctionSymbolProvider
+import org.cangnova.cangjie.assignment.plugin.AssignmentCommandLineProcessor
+import org.cangnova.cangjie.assignment.plugin.AssignmentConfigurationKeys
+import org.cangnova.cangjie.assignment.plugin.k2.CfirAssignmentPluginExtensionRegistrar
+import org.cangnova.cangjie.cli.create
+import org.cangnova.cangjie.cli.plugins.processCompilerPluginsOptions
+import org.cangnova.cangjie.compiler.plugin.ExperimentalCompilerApi
+import org.cangnova.cangjie.config.*
+import org.cangnova.cangjie.diagnostics.CjRegisteredDiagnosticFactoriesStorage
+import org.cangnova.cangjie.cfir.CfirNameConflictsTracker
+import org.cangnova.cangjie.cfir.PrivateSessionConstructor
+import org.cangnova.cangjie.cfir.SessionConfiguration
+import org.cangnova.cangjie.cfir.backend.jvm.CfirJvmTypeMapper
+import org.cangnova.cangjie.cfir.extensions.*
+import org.cangnova.cangjie.cfir.java.JavaSymbolProvider
+import org.cangnova.cangjie.cfir.languageVersionSettings
+import org.cangnova.cangjie.cfir.resolve.providers.*
+import org.cangnova.cangjie.cfir.resolve.providers.impl.CfirBuiltinSyntheticFunctionInterfaceProvider
+import org.cangnova.cangjie.cfir.resolve.providers.impl.CfirCompositeSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.impl.CfirExtensionSyntheticFunctionInterfaceProvider
+import org.cangnova.cangjie.cfir.resolve.providers.impl.syntheticFunctionInterfacesSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.scopes.wrapScopeWithJvmMapped
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirDummyCompilerLazyDeclarationResolver
+import org.cangnova.cangjie.cfir.scopes.CfirKotlinScopeProvider
+import org.cangnova.cangjie.cfir.session.*
+import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
+import org.cangnova.cangjie.platform.jvm.JvmPlatforms
+import org.cangnova.cangjie.platform.jvm.isJvm
+import org.cangnova.cangjie.psi.CjCodeFragment
+import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.resolve.jvm.modules.JavaModuleResolver
+import org.cangnova.cangjie.scripting.compiler.plugin.CfirScriptingSamWithReceiverExtensionRegistrar
+import org.cangnova.cangjie.scripting.compiler.plugin.impl.makeScriptCompilerArguments
+import org.cangnova.cangjie.scripting.definitions.findScriptDefinition
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withPsiEntry
+import org.cangnova.cangjie.utils.exceptions.withVirtualFileEntry
+
+@OptIn(PrivateSessionConstructor::class, SessionConfiguration::class)
+internal abstract class LLCfirAbstractSessionFactory(protected val project: Project) {
+    @CaCachedService
+    private val globalResolveComponents: LLCfirGlobalResolveComponents by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        LLCfirGlobalResolveComponents.getInstance(project)
+    }
+
+    @CaCachedService
+    private val resolutionScopeProvider: CaResolutionScopeProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        CaResolutionScopeProvider.getInstance(project)
+    }
+
+    abstract fun createSourcesSession(module: CaSourceModule): LLCfirSourcesSession
+
+    abstract fun createResolvableLibrarySession(module: CaModule): LLCfirLibraryOrLibrarySourceResolvableModuleSession
+
+    /**
+     * Creates a binary [LLCfirLibrarySession] for a [CaLibraryModule] or [CaLibraryFallbackDependenciesModule].
+     *
+     * Both regular libraries and library fallback dependencies can be treated from the same point of view of a binary session. Hence, it
+     * doesn't make practical sense to have separate session creation machinery for [CaLibraryFallbackDependenciesModule].
+     */
+    abstract fun createBinaryLibrarySession(module: CaModule): LLCfirLibrarySession
+
+    abstract fun createProjectLibraryProvidersForScope(
+        session: LLCfirSession,
+        scope: GlobalSearchScope,
+    ): List<CfirSymbolProvider>
+
+    fun createScriptSession(module: CaScriptModule): LLCfirScriptSession {
+        val platform = module.targetPlatform
+        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(platform)
+        val languageVersionSettings = wrapLanguageVersionSettings(module.languageVersionSettings)
+        val scopeProvider = CfirKotlinScopeProvider(::wrapScopeWithJvmMapped)
+
+        val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
+
+        val session = LLCfirScriptSession(module, components, builtinsSession.builtinTypes)
+        components.session = session
+
+        val moduleData = createModuleData(session)
+        val resolutionScope = resolutionScopeProvider.getResolutionScope(module)
+
+        return session.apply {
+            registerModuleData(moduleData)
+            register(CfirKotlinScopeProvider::class, scopeProvider)
+
+            registerAllCommonComponents(languageVersionSettings, module, resolutionScope)
+            registerSourceLikeComponents()
+
+            registerCommonComponentsAfterExtensionsAreConfigured()
+            registerJavaComponents(JavaModuleResolver.getInstance(project))
+
+            val provider = LLCfirProvider(
+                this,
+                components,
+                canContainKotlinPackage = true,
+            ) { scope ->
+                createScopedDeclarationProviderForFiles(scope, listOf(module.file))
+            }
+
+            register(CfirProvider::class, provider)
+            register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
+
+            val dependencyProvider = LLDependenciesSymbolProvider(this) {
+                buildList {
+                    addMerged(session, computeDependencySymbolProviders(module))
+                    add(builtinsSession.symbolProvider)
+                }
+            }
+
+            val javaSymbolProvider = LLCfirJavaSymbolProvider(this, module.contentScope)
+            register(JavaSymbolProvider::class, javaSymbolProvider)
+
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOfNotNull(
+                        javaSymbolProvider,
+                        provider.symbolProvider,
+                    ),
+                    dependencyProvider,
+                )
+            )
+
+            register(CfirPredicateBasedProvider::class, CfirEmptyPredicateBasedProvider)
+            register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, dependencyProvider)
+            register(CfirRegisteredPluginAnnotations::class, CfirRegisteredPluginAnnotationsImpl(this))
+            register(CfirJvmTypeMapper::class, CfirJvmTypeMapper(this))
+
+            CfirSessionConfigurator(session).apply {
+                registerCompilerPluginExtensions(project, module)
+                registerScriptExtensions(module.file)
+            }.configure()
+
+            LLCfirSessionConfigurator.configure(this)
+        }
+    }
+
+    @OptIn(ExperimentalCompilerApi::class)
+    private fun CfirSessionConfigurator.registerScriptExtensions(file: CjFile) {
+        val scriptDefinition = file.findScriptDefinition()
+            ?: errorWithAttachment("Cannot load script definition") {
+                withVirtualFileEntry("file", file.virtualFile)
+            }
+        val hostConfiguration = scriptDefinition.hostConfiguration
+
+        val compilerArguments = makeScriptCompilerArguments(scriptDefinition.compilerOptions.toList())
+        val commandLineProcessors = listOf(AssignmentCommandLineProcessor())
+        val compilerConfiguration = CompilerConfiguration.create()
+        processCompilerPluginsOptions(
+            compilerConfiguration, compilerArguments.pluginOptions.asIterable(), commandLineProcessors
+        )
+
+        val extensionRegistrar = CfirScriptingCompilerExtensionIdeRegistrar(
+            project,
+            hostConfiguration,
+            scriptDefinitionSources = emptyList(),
+            scriptDefinitions = listOf(scriptDefinition)
+        )
+
+        registerExtensions(extensionRegistrar.configure())
+        registerExtensions(CfirScriptingSamWithReceiverExtensionRegistrar().configure())
+
+        compilerConfiguration.getList(AssignmentConfigurationKeys.ASSIGNMENT_ANNOTATION).takeIf { it.isNotEmpty() }?.let {
+            registerExtensions(CfirAssignmentPluginExtensionRegistrar(it).configure())
+        }
+    }
+
+    fun createNotUnderContentRootResolvableSession(module: CaNotUnderContentRootModule): LLCfirNotUnderContentRootResolvableModuleSession {
+        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(JvmPlatforms.unspecifiedJvmPlatform)
+        val languageVersionSettings = KotlinProjectStructureProvider.getInstance(project).globalLanguageVersionSettings
+        val scopeProvider = CfirKotlinScopeProvider(::wrapScopeWithJvmMapped)
+        val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
+
+        val session = LLCfirNotUnderContentRootResolvableModuleSession(module, components, builtinsSession.builtinTypes)
+        components.session = session
+
+        val moduleData = createModuleData(session)
+        val resolutionScope = resolutionScopeProvider.getResolutionScope(module)
+
+        return session.apply {
+            registerModuleData(moduleData)
+            register(CfirKotlinScopeProvider::class, scopeProvider)
+
+            registerAllCommonComponents(languageVersionSettings, module, resolutionScope)
+            registerSourceLikeComponents()
+
+            registerCommonComponentsAfterExtensionsAreConfigured()
+            registerJavaComponents(JavaModuleResolver.getInstance(project))
+
+
+            val ktFile = module.file as? CjFile
+
+            val provider = LLCfirProvider(
+                this,
+                components,
+                canContainKotlinPackage = true,
+            ) { scope ->
+                createScopedDeclarationProviderForFiles(scope, listOfNotNull(ktFile))
+            }
+
+            register(CfirProvider::class, provider)
+            register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
+
+            val dependencyProvider = LLDependenciesSymbolProvider(this) {
+                buildList {
+                    addMerged(session, computeDependencySymbolProviders(module))
+                    add(builtinsSession.symbolProvider)
+                }
+            }
+
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOf(
+                        provider.symbolProvider,
+                    ),
+                    dependencyProvider,
+                )
+            )
+
+            register(CfirPredicateBasedProvider::class, CfirEmptyPredicateBasedProvider)
+            register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, dependencyProvider)
+            register(CfirJvmTypeMapper::class, CfirJvmTypeMapper(this))
+            register(CfirRegisteredPluginAnnotations::class, CfirRegisteredPluginAnnotations.Empty)
+
+            LLCfirSessionConfigurator.configure(this)
+        }
+    }
+
+    protected class SourceSessionCreationContext(
+        val contentScope: GlobalSearchScope,
+        val firProvider: LLCfirProvider,
+        val dependencyProvider: LLDependenciesSymbolProvider,
+        val syntheticFunctionInterfaceProvider: CfirExtensionSyntheticFunctionInterfaceProvider?,
+        val switchableExtensionDeclarationsSymbolProvider: CfirSwitchableExtensionDeclarationsSymbolProvider?,
+    )
+
+    protected fun doCreateSourcesSession(
+        module: CaSourceModule,
+        scopeProvider: CfirKotlinScopeProvider = CfirKotlinScopeProvider(),
+        additionalSessionConfiguration: LLCfirSourcesSession.(context: SourceSessionCreationContext) -> Unit,
+    ): LLCfirSourcesSession {
+        val platform = module.targetPlatform
+        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(platform)
+        val languageVersionSettings = wrapLanguageVersionSettings(module.languageVersionSettings)
+
+        val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
+
+        val session = LLCfirSourcesSession(module, components, builtinsSession.builtinTypes) {
+            computeDependencySessions(module)
+        }
+
+        components.session = session
+
+        val moduleData = createModuleData(session)
+        val resolutionScope = resolutionScopeProvider.getResolutionScope(module)
+
+        return session.apply {
+            registerModuleData(moduleData)
+            register(CfirKotlinScopeProvider::class, scopeProvider)
+
+            registerAllCommonComponents(languageVersionSettings, module, resolutionScope)
+            registerSourceLikeComponents()
+
+            val firProvider = LLCfirProvider(
+                this,
+                components,
+                /* Source modules can contain `kotlin` package only if `-Xallow-kotlin-package` is specified, this is handled in LLCfirProvider */
+                canContainKotlinPackage = false,
+            ) { scope ->
+                project.createDeclarationProvider(scope, module)
+            }
+
+            register(CfirProvider::class, firProvider)
+            register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
+
+            registerCompilerPluginServices(project, resolutionScope)
+            registerCompilerPluginExtensions(project, module)
+            registerCommonComponentsAfterExtensionsAreConfigured()
+
+            val dependencyProvider = LLDependenciesSymbolProvider(this) {
+                buildList {
+                    addMerged(session, computeDependencySymbolProviders(session.dependencies))
+                    add(builtinsSession.symbolProvider)
+                }
+            }
+
+            register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, dependencyProvider)
+
+            LLCfirSessionConfigurator.configure(this)
+
+            val syntheticFunctionInterfaceProvider =
+                CfirExtensionSyntheticFunctionInterfaceProvider.createIfNeeded(this, moduleData, scopeProvider)
+            val switchableExtensionDeclarationsSymbolProvider =
+                LLCfirSwitchableExtensionDeclarationsSymbolProvider.createIfNeeded(this)?.also {
+                    register(CfirSwitchableExtensionDeclarationsSymbolProvider::class, it)
+                }
+
+            val context = SourceSessionCreationContext(
+                module.contentScope,
+                firProvider,
+                dependencyProvider,
+                syntheticFunctionInterfaceProvider,
+                switchableExtensionDeclarationsSymbolProvider,
+            )
+
+            register(
+                CfirBuiltinSyntheticFunctionInterfaceProvider::class,
+                builtinsSession.syntheticFunctionInterfacesSymbolProvider
+            )
+
+            additionalSessionConfiguration(context)
+        }
+    }
+
+    protected class LibrarySessionCreationContext(
+        val contentScope: GlobalSearchScope,
+        val firProvider: LLCfirProvider,
+        val dependencyProvider: LLDependenciesSymbolProvider,
+    )
+
+    protected fun doCreateResolvableLibrarySession(
+        module: CaModule,
+        additionalSessionConfiguration: LLCfirLibraryOrLibrarySourceResolvableModuleSession.(context: LibrarySessionCreationContext) -> Unit,
+    ): LLCfirLibraryOrLibrarySourceResolvableModuleSession {
+        val binaryModule = when (module) {
+            is CaLibraryModule, is CaBuiltinsModule -> module
+            is CaLibrarySourceModule -> module.binaryLibrary
+            else -> errorWithAttachment("Unexpected module ${module::class.simpleName}") {
+                withCaModuleEntry("module", module)
+            }
+        }
+
+        val platform = module.targetPlatform
+        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(platform)
+        val languageVersionSettings = KotlinProjectStructureProvider.getInstance(project).libraryLanguageVersionSettings
+
+        val scopeProvider = CfirKotlinScopeProvider()
+        val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
+
+        val session = LLCfirLibraryOrLibrarySourceResolvableModuleSession(module, components, builtinsSession.builtinTypes)
+        components.session = session
+
+        val moduleData = createModuleData(session)
+        val binaryContentScope = binaryModule.contentScope
+
+        return session.apply {
+            registerModuleData(moduleData)
+            register(CfirKotlinScopeProvider::class, scopeProvider)
+
+            registerAllCommonComponents(languageVersionSettings, module, binaryContentScope)
+            registerCommonComponentsAfterExtensionsAreConfigured()
+
+            val firProvider = LLCfirProvider(
+                this,
+                components,
+                canContainKotlinPackage = true,
+            ) { scope ->
+                project.createDeclarationProvider(scope, module)
+            }
+
+            register(CfirProvider::class, firProvider)
+
+            register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
+
+            // We need CfirRegisteredPluginAnnotations during extensions' registration process
+            val annotationsResolver = project.createAnnotationResolver(binaryContentScope)
+            register(CfirRegisteredPluginAnnotations::class, LLCfirIdeRegisteredPluginAnnotations(this, annotationsResolver))
+            register(CfirPredicateBasedProvider::class, CfirEmptyPredicateBasedProvider)
+
+            val dependencyProvider = LLDependenciesSymbolProvider(this) {
+                buildList {
+                    if (module !is CaBuiltinsModule) {
+                        add(builtinsSession.symbolProvider)
+                    }
+
+                    // The library (source) module will usually have a `CaLibraryFallbackDependenciesModule`, which will be added here, but
+                    // this also works when the library (source) module has precise dependencies.
+                    addMerged(session, computeDependencySymbolProviders(binaryModule))
+
+                    if (binaryModule is CaLibraryModule) {
+                        KotlinAnchorModuleProvider.getInstance(project)?.getAnchorModule(binaryModule)?.let { anchorModule ->
+                            val anchorModuleSession = LLCfirSessionCache.getInstance(project).getSession(anchorModule)
+                            val anchorModuleSymbolProvider =
+                                anchorModuleSession.symbolProvider as LLModuleWithDependenciesSymbolProvider
+
+                            addAll(anchorModuleSymbolProvider.providers)
+                            addAll(anchorModuleSymbolProvider.dependencyProvider.providers)
+                        }
+                    }
+                }
+            }
+
+            register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, dependencyProvider)
+
+            val context = LibrarySessionCreationContext(binaryContentScope, firProvider, dependencyProvider)
+            additionalSessionConfiguration(context)
+
+            LLCfirSessionConfigurator.configure(this)
+        }
+    }
+
+    protected class BinaryLibrarySessionCreationContext
+
+    protected fun doCreateBinaryLibrarySession(
+        module: CaModule,
+        additionalSessionConfiguration: LLCfirLibrarySession.(context: BinaryLibrarySessionCreationContext) -> Unit,
+    ): LLCfirLibrarySession {
+        require(module is CaLibraryModule || module is CaLibraryFallbackDependenciesModule) {
+            "A binary library session can only be created for a `${CaLibraryModule::class.simpleName}` or a " +
+                    "`${CaLibraryFallbackDependenciesModule::class.simpleName}`. Instead got: `${module::class.simpleName}`."
+        }
+
+        val platform = module.targetPlatform
+        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(platform)
+
+        val session = LLCfirLibrarySession(module, builtinsSession.builtinTypes)
+
+        val moduleData = createModuleData(session)
+        val contentScope = module.contentScope
+
+        return session.apply {
+            val languageVersionSettings = KotlinProjectStructureProvider.getInstance(project).libraryLanguageVersionSettings
+            registerModuleData(moduleData)
+            registerIdeComponents(project, languageVersionSettings, contentScope)
+            register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
+            registerCommonComponents(languageVersionSettings, isMetadataCompilation = false)
+            registerCommonComponentsAfterExtensionsAreConfigured()
+
+            val kotlinScopeProvider = when {
+                platform.isJvm() -> CfirKotlinScopeProvider(::wrapScopeWithJvmMapped)
+                else -> CfirKotlinScopeProvider()
+            }
+
+            register(CfirKotlinScopeProvider::class, kotlinScopeProvider)
+
+            val symbolProvider = LLModuleWithDependenciesSymbolProvider(
+                this,
+                providers = createProjectLibraryProvidersForScope(this, contentScope),
+                LLDependenciesSymbolProvider(this) {
+                    // A binary library session should not have any dependencies (apart from fallback builtins), as library module
+                    // dependencies only apply to *resolvable* sessions, including fallback dependencies.
+                    listOf(builtinsSession.symbolProvider)
+                },
+            )
+
+            register(CfirProvider::class, LLCfirLibrarySessionProvider(symbolProvider))
+            register(CfirSymbolProvider::class, symbolProvider)
+
+            val context = BinaryLibrarySessionCreationContext()
+            additionalSessionConfiguration(context)
+            LLCfirSessionConfigurator.configure(this)
+        }
+    }
+
+    abstract fun createDanglingFileSession(module: CaDanglingFileModule, contextSession: LLCfirSession): LLCfirSession
+
+    protected fun doCreateDanglingFileSession(
+        module: CaDanglingFileModule,
+        contextSession: LLCfirSession,
+        additionalSessionConfiguration: LLCfirDanglingFileSession.(DanglingFileSessionCreationContext) -> Unit,
+    ): LLCfirSession {
+        val platform = module.targetPlatform
+
+        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(platform)
+        val languageVersionSettings = wrapLanguageVersionSettings(contextSession.languageVersionSettings)
+        val scopeProvider = CfirKotlinScopeProvider(::wrapScopeWithJvmMapped)
+
+        val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
+
+        val session = LLCfirDanglingFileSession(module, components, builtinsSession.builtinTypes)
+        components.session = session
+
+        val moduleData = createModuleData(session)
+        val resolutionScope = resolutionScopeProvider.getResolutionScope(module)
+
+        return session.apply {
+            registerModuleData(moduleData)
+            register(CfirKotlinScopeProvider::class, scopeProvider)
+
+            registerAllCommonComponents(languageVersionSettings, module, resolutionScope)
+            registerSourceLikeComponents()
+
+            val firProvider = LLCfirProvider(
+                this,
+                components,
+                canContainKotlinPackage = true,
+                disregardSelfDeclarations = module.resolutionMode == CaDanglingFileResolutionMode.IGNORE_SELF,
+                declarationProviderFactory = { scope -> createScopedDeclarationProviderForFiles(scope, module.files) }
+            )
+
+            register(CfirProvider::class, firProvider)
+            register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
+
+            register(CfirRegisteredPluginAnnotations::class, CfirRegisteredPluginAnnotationsImpl(session))
+            register(CfirPredicateBasedProvider::class, CfirEmptyPredicateBasedProvider)
+
+            val contextModule = module.contextModule
+            when (contextModule) {
+                is CaSourceModule -> {
+                    registerCompilerPluginServices(project, resolutionScope)
+                    registerCompilerPluginExtensions(project, contextModule)
+                }
+                is CaScriptModule -> {
+                    CfirSessionConfigurator(session).apply {
+                        registerScriptExtensions(contextModule.file)
+                        registerCompilerPluginExtensions(project, contextModule)
+                    }.configure()
+                }
+            }
+
+            registerCommonComponentsAfterExtensionsAreConfigured()
+
+            val dependencyProvider = LLDependenciesSymbolProvider(this) {
+                buildList {
+                    // The default implementation must have no extra dependencies (so we can delegate to the context module dependencies).
+                    // For other implementations, we need to at least perform the check.
+                    if (module !is CaDanglingFileModuleImpl) {
+                        val allDependencies = computeAggregatedModuleDependencies(module)
+                        val contextDependencies = computeAggregatedModuleDependencies(contextModule)
+
+                        val hasAllContextDependencies = contextDependencies.all { it in allDependencies }
+                        if (hasAllContextDependencies) {
+                            // Exclude dependencies of the context module as they are submitted below
+                            val ownDependencies = allDependencies - contextDependencies
+                            if (ownDependencies.isNotEmpty()) {
+                                val dependencySessions = computeDependencySessionsFromDependencyModules(ownDependencies, module)
+                                addMerged(session, computeDependencySymbolProviders(dependencySessions))
+                            }
+                            // Share symbol providers (and their caches) with the context session
+                            addMerged(session, computeDependencySymbolProviders(listOf(contextSession)))
+                        } else {
+                            // Dependencies are original, so we need a separate set of providers
+                            val dependencySessions = computeDependencySessionsFromDependencyModules(allDependencies, module)
+                            addMerged(session, computeDependencySymbolProviders(dependencySessions))
+                        }
+                    } else {
+                        addMerged(session, computeDependencySymbolProviders(listOf(contextSession)))
+                    }
+
+                    when (contextSession.ktModule) {
+                        is CaLibraryModule, is CaLibrarySourceModule -> {
+                            // Wrap library dependencies into a single classpath-filtering provider
+                            // Also see 'LLDanglingFileDependenciesSymbolProvider.filterSymbols()'
+                            add(LLDanglingFileDependenciesSymbolProvider(contextSession.dependenciesSymbolProvider))
+                        }
+                        else -> add(contextSession.dependenciesSymbolProvider)
+                    }
+
+                    add(builtinsSession.symbolProvider)
+                }
+            }
+
+            register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, dependencyProvider)
+
+            LLCfirSessionConfigurator.configure(this)
+
+            val syntheticFunctionInterfaceProvider = CfirExtensionSyntheticFunctionInterfaceProvider
+                .createIfNeeded(this, moduleData, scopeProvider)
+
+            val switchableExtensionDeclarationsSymbolProvider = LLCfirSwitchableExtensionDeclarationsSymbolProvider
+                .createIfNeeded(this)
+                ?.also { register(CfirSwitchableExtensionDeclarationsSymbolProvider::class, it) }
+
+            val context = DanglingFileSessionCreationContext(
+                moduleData,
+                dependencyProvider,
+                syntheticFunctionInterfaceProvider,
+                switchableExtensionDeclarationsSymbolProvider
+            )
+
+            additionalSessionConfiguration(this, context)
+        }
+    }
+
+    protected class DanglingFileSessionCreationContext(
+        val moduleData: LLCfirModuleData,
+        val dependencyProvider: LLDependenciesSymbolProvider,
+        val syntheticFunctionInterfaceProvider: CfirExtensionSyntheticFunctionInterfaceProvider?,
+        val switchableExtensionDeclarationsSymbolProvider: CfirSwitchableExtensionDeclarationsSymbolProvider?,
+    )
+
+    private fun wrapLanguageVersionSettings(original: LanguageVersionSettings): LanguageVersionSettings {
+        return object : LanguageVersionSettings by original {
+
+            override fun <T> getFlag(flag: AnalysisFlag<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                if (flag == JvmAnalysisFlags.suppressMissingBuiltinsError) return true as T
+                return original.getFlag(flag)
+            }
+
+            override fun getFeatureSupport(feature: LanguageFeature): LanguageFeature.State {
+                return when (feature) {
+                    LanguageFeature.EnableDfaWarningsInK2 -> LanguageFeature.State.ENABLED
+                    else -> original.getFeatureSupport(feature)
+                }
+            }
+
+            override fun supportsFeature(feature: LanguageFeature): Boolean {
+                return when (getFeatureSupport(feature)) {
+                    LanguageFeature.State.ENABLED -> true
+                    else -> false
+                }
+            }
+        }
+    }
+
+    private fun computeDependencySessions(module: CaModule): List<LLCfirSession> {
+        val dependencyModules = computeAggregatedModuleDependencies(module)
+        return computeDependencySessionsFromDependencyModules(dependencyModules, module)
+    }
+
+    private fun computeAggregatedModuleDependencies(module: CaModule): Set<CaModule> {
+        // Please update KmpModuleSorterTest#buildDependenciesToTest if the logic of collecting dependencies changes
+        return buildSet {
+            addAll(module.directRegularDependencies)
+            addAll(module.directFriendDependencies)
+
+            // The dependency provider needs to have access to all direct and indirect `dependsOn` dependencies, as `dependsOn`
+            // dependencies are transitive.
+            addAll(module.transitiveDependsOnDependencies)
+        }
+    }
+
+    private fun computeDependencySessionsFromDependencyModules(dependencyModules: Set<CaModule>, module: CaModule): List<LLCfirSession> {
+        val sessionCache = LLCfirSessionCache.getInstance(project)
+
+        fun getOrCreateSessionForDependency(dependency: CaModule): LLCfirSession? = when (dependency) {
+            is CaBuiltinsModule -> null // Built-ins are already added
+
+            is CaLibraryModule, is CaLibraryFallbackDependenciesModule -> sessionCache.getDependencySession(dependency)
+
+            is CaSourceModule -> sessionCache.getDependencySession(dependency)
+
+            is CaScriptModule -> sessionCache.getDependencySession(dependency)
+
+            is CaDanglingFileModule -> {
+                requireWithAttachment(dependency.isStable, message = { "Unstable dangling modules cannot be used as a dependency" }) {
+                    withCaModuleEntry("module", module)
+                    withCaModuleEntry("dependency", dependency)
+                    dependency.files.forEachIndexed { index, file -> withPsiEntry("dependencyFile$index", file) }
+                }
+                sessionCache.getDependencySession(dependency)
+            }
+
+            else -> {
+                errorWithAttachment("Module ${module::class} cannot depend on ${dependency::class}") {
+                    withCaModuleEntry("module", module)
+                    withCaModuleEntry("dependency", dependency)
+                }
+            }
+        }
+
+        val orderedDependencyModules = KmpModuleSorter.order(dependencyModules.toList())
+
+        return orderedDependencyModules.mapNotNull(::getOrCreateSessionForDependency)
+    }
+
+    private fun computeDependencySymbolProviders(module: CaModule): List<CfirSymbolProvider> =
+        computeDependencySymbolProviders(computeDependencySessions(module))
+
+    private fun computeDependencySymbolProviders(dependencySessions: List<LLCfirSession>): List<CfirSymbolProvider> =
+        buildList {
+            dependencySessions.forEach { session ->
+                when (val dependencyProvider = session.symbolProvider) {
+                    is LLModuleWithDependenciesSymbolProvider -> dependencyProvider.providers.forEach { it.flattenTo(this) }
+                    else -> dependencyProvider.flattenTo(this)
+                }
+            }
+        }
+
+    private fun CfirSymbolProvider.flattenTo(destination: MutableList<CfirSymbolProvider>) {
+        when (this) {
+            is CfirCompositeSymbolProvider -> providers.forEach { it.flattenTo(destination) }
+            else -> destination.add(this)
+        }
+    }
+
+    private fun createModuleData(session: LLCfirSession): LLCfirModuleData {
+        return LLCfirModuleData(session)
+    }
+
+    private fun LLCfirSession.registerAllCommonComponents(
+        languageVersionSettings: LanguageVersionSettings,
+        module: CaModule,
+        annotationSearchScope: GlobalSearchScope,
+    ) {
+        registerIdeComponents(project, languageVersionSettings, annotationSearchScope)
+        registerCommonComponents(languageVersionSettings, isMetadataCompilation = false)
+        registerResolveComponents(CjRegisteredDiagnosticFactoriesStorage())
+    }
+
+    private fun LLCfirSession.registerSourceLikeComponents() {
+        register(CfirNameConflictsTracker::class, LLNameConflictsTracker(this))
+    }
+
+    /**
+     * Merges dependency symbol providers of the same kind, and adds the result to the receiver [MutableList].
+     * See [mergeDependencySymbolProvidersInto] for more information on symbol provider merging.
+     */
+    private fun MutableList<CfirSymbolProvider>.addMerged(session: LLCfirSession, dependencies: List<CfirSymbolProvider>) {
+        dependencies.mergeDependencySymbolProvidersInto(session, this)
+    }
+
+    /**
+     * Merges dependency symbol providers of the same kind if possible. The merged symbol provider usually delegates to its subordinate
+     * symbol providers to preserve session semantics, but it will have some form of advantage over individual symbol providers (such as
+     * querying an index once instead of N times).
+     *
+     * [session] should be the session of the dependent module. Because all symbol providers are tied to a session, we need a session to
+     * create a combined symbol provider.
+     */
+    private fun List<CfirSymbolProvider>.mergeDependencySymbolProvidersInto(
+        session: LLCfirSession,
+        destination: MutableList<CfirSymbolProvider>,
+    ) {
+        mergeInto(destination) {
+            merge<LLKotlinSourceSymbolProvider> { LLCombinedKotlinSymbolProvider.merge(session, project, it) }
+
+            // We place the combined Kotlin library symbol provider before the combined Java symbol provider because the former is generally
+            // faster due to package and name set checks. The placement leads to fewer requests for class-like symbols arriving at the Java
+            // symbol provider, since the Kotlin library symbol provider answers a good number of them.
+            merge<LLKotlinStubBasedLibrarySymbolProvider> { LLCombinedPackageDelegationSymbolProvider.merge(session, it) }
+
+            merge<LLCfirJavaSymbolProvider> { LLCombinedJavaSymbolProvider.merge(session, project, it) }
+            merge<CfirExtensionSyntheticFunctionInterfaceProvider> { LLCombinedSyntheticFunctionSymbolProvider.merge(session, it) }
+        }
+    }
+
+    /**
+     * Creates a [KotlinDeclarationProvider] for the provided files if they are in the search [scope].
+     *
+     * Otherwise, returns `null`.
+     */
+    private fun createScopedDeclarationProviderForFiles(scope: GlobalSearchScope, files: List<CjFile>): KotlinDeclarationProvider? {
+        if (files.isEmpty()) {
+            return null
+        }
+
+        val fileProviders = buildList {
+            for (file in files) {
+                if (file is CjCodeFragment) {
+                    // All declarations inside code fragments are local
+                    continue
+                }
+
+                val virtualFile = file.virtualFile
+
+                // 'CjFile's without a backing 'VirtualFile' can't be covered by a shadow scope, and are thus assumed in-scope.
+                if (virtualFile == null || scope.contains(virtualFile)) {
+                    add(KotlinFileBasedDeclarationProvider(file))
+                }
+            }
+        }
+
+        return KotlinCompositeDeclarationProvider.create(fileProviders)
+    }
+}
+
+*** End Patch

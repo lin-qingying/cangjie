@@ -7,7 +7,7 @@ package org.cangnova.cangjie.cfir.references
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirPureAbstractElement
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.name.Name
@@ -19,7 +19,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 abstract class CfirNamedReferenceWithCandidateBase : CfirPureAbstractElement(), CfirNamedReference {
     abstract override val source: CjSourceElement?
     abstract override val name: Name
-    abstract val candidateSymbol: CfirSymbol<*>
+    abstract val candidateSymbol: CfirBasedSymbol<*>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitNamedReferenceWithCandidateBase(this, data)

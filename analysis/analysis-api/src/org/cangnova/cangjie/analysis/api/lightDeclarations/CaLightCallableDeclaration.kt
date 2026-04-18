@@ -6,5 +6,5 @@ import org.cangnova.cangjie.name.CallableId
 interface CaLightCallableDeclaration : CaLightDeclaration {
     val callableId: CallableId?
 
-    val signature: CaSignature?
+    val signature: CaSignature<*>?
 }

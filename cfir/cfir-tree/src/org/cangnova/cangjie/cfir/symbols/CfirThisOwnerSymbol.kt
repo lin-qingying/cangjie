@@ -5,4 +5,4 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 /**
  * Mirrors Kotlin FIR's `FirThisOwnerSymbol`.
  */
-sealed class CfirThisOwnerSymbol<out D : CfirDeclaration> : CfirSymbol<D>()
+sealed class CfirThisOwnerSymbol<out D : CfirDeclaration> : CfirBasedSymbol<D>()

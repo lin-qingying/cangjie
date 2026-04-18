@@ -2,6 +2,9 @@ package org.cangnova.cangjie.analysis.api.cfir.types
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.utils.asPublicTypeProjections
+import org.cangnova.cangjie.analysis.api.cfir.utils.createTypePointer
+import org.cangnova.cangjie.analysis.api.cfir.utils.restoreUsualClassType
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.types.CaResolvedClassTypeQualifier

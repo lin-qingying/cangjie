@@ -8,10 +8,13 @@ sealed class CfirDeclarationOrigin(
 ) {
     object Source : CfirDeclarationOrigin(fromSource = true)
     object Library : CfirDeclarationOrigin()
+    object IntersectionOverride : CfirDeclarationOrigin(fromSupertypes = true)
 
     sealed class Synthetic : CfirDeclarationOrigin(generated = true) {
         data object Default : Synthetic()
         data object FakeFunction : Synthetic()
+        object TypeAliasConstructor : Synthetic()
+
         object Error : Synthetic()
 
     }

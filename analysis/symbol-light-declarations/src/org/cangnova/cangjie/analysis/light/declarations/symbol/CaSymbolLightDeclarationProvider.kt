@@ -287,7 +287,7 @@ class CaSymbolLightDeclarationProvider(
                 ),
                 token = symbol.token,
                 callableId = symbol.callableId,
-                signature = symbol.signature,
+                signature = symbol.asSignature(),
             )
         }
     }

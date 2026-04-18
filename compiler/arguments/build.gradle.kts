@@ -5,5 +5,5 @@ plugins {
 description = "Cangjie frontend argument model and generated argument descriptions."
 
 dependencies {
-    implementation(project(":generators"))
+    compileOnly(project(":generators"))
 }

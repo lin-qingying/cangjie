@@ -1,0 +1,144 @@
+*** Begin Patch
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\statistics\domains\LLAnalysisSessionStatistics.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains
+
+import io.opentelemetry.api.metrics.LongCounter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsScopes
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getMeter
+
+/**
+ * Statistics for analysis sessions and `analyze` calls.
+ */
+class LLAnalysisSessionStatistics(statisticsService: LLStatisticsService) : LLStatisticsDomain {
+    private val meter = statisticsService.openTelemetry.getMeter(LLStatisticsScopes.AnalysisSessions)
+
+    val analyzeCallCounter: LongCounter = meter.counterBuilder(LLStatisticsScopes.AnalysisSessions.Analyze.Invocations.name).build()
+
+    val lowMemoryCacheCleanupInvocationCounter: LongCounter =
+        meter.counterBuilder(LLStatisticsScopes.AnalysisSessions.LowMemoryCacheCleanup.Invocations.name).build()
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\statistics\domains\LLStatisticsDomain.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains
+
+/**
+ * An [LLStatisticsDomain] encapsulates the meters, update logic, and any additional internal state required to support statistics
+ * collection and reporting in a specific area of concern.
+ */
+interface LLStatisticsDomain {
+    /**
+     * Performs an update on a fixed schedule which cannot be covered by eager or asynchronous meters.
+     */
+    fun update() {}
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\statistics\domains\LLSymbolProviderStatistics.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLCaffeineStatsCounter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsScopes
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getMeter
+
+internal class LLSymbolProviderStatistics(statisticsService: LLStatisticsService) : LLStatisticsDomain {
+    private val meter = statisticsService.openTelemetry.getMeter(LLStatisticsScopes.SymbolProviders)
+
+    /**
+     * A global [Caffeine stats counter][com.github.benmanes.caffeine.cache.stats.StatsCounter] for combined symbol provider *class* caches.
+     */
+    val combinedSymbolProviderClassCacheStatsCounter =
+        LLCaffeineStatsCounter(meter, LLStatisticsScopes.SymbolProviders.Combined.Classes)
+
+    /**
+     * A global [Caffeine stats counter][com.github.benmanes.caffeine.cache.stats.StatsCounter] for combined symbol provider *callable*
+     * caches.
+     */
+    val combinedSymbolProviderCallableCacheStatsCounter =
+        LLCaffeineStatsCounter(meter, LLStatisticsScopes.SymbolProviders.Combined.Callables)
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\statistics\LLCaffeineStatsCounter.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
+
+import com.github.benmanes.caffeine.cache.RemovalCause
+import com.github.benmanes.caffeine.cache.stats.CacheStats
+import com.github.benmanes.caffeine.cache.stats.StatsCounter
+import io.opentelemetry.api.metrics.Meter
+import org.checkerframework.checker.index.qual.NonNegative
+
+/**
+ * A Caffeine [StatsCounter] which delegates to OpenTelemetry counters.
+ */
+internal class LLCaffeineStatsCounter(meter: Meter, scope: LLCaffeineStatisticsScope) : StatsCounter {
+    private val hitCounter = meter.counterBuilder(scope.hits.name).build()
+
+    private val missCounter = meter.counterBuilder(scope.misses.name).build()
+
+    private val evictionCounter = meter.counterBuilder(scope.evictions.name).build()
+
+    override fun recordHits(count: @NonNegative Int) {
+        hitCounter.add(count.toLong())
+    }
+
+    override fun recordMisses(count: @NonNegative Int) {
+        missCounter.add(count.toLong())
+    }
+
+    override fun recordLoadSuccess(loadTime: @NonNegative Long) {
+    }
+
+    override fun recordLoadFailure(loadTime: @NonNegative Long) {
+    }
+
+    @Deprecated("Deprecated in Caffeine")
+    override fun recordEviction() {
+        evictionCounter.add(1)
+    }
+
+    override fun recordEviction(weight: @NonNegative Int, cause: RemovalCause?) {
+        evictionCounter.add(1)
+    }
+
+    /**
+     * We cannot retrieve any stats from OpenTelemetry, so the snapshot will be empty.
+     */
+    override fun snapshot(): CacheStats = CacheStats.empty()
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\statistics\LLStatisticsOnlyApi.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
+
+/**
+ * [LLStatisticsOnlyApi] is applied to endpoints of regular (non-statistics) LL CFIR declarations. The annotation ensures that the specific
+ * endpoint is only used for statistics and not for resolution purposes.
+ */
+@RequiresOptIn("This API is intended only for statistics collection. It must not be used for other purposes.")
+annotation class LLStatisticsOnlyApi
+
+*** End Patch

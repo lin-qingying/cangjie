@@ -619,6 +619,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(throwExpression)
     }
 
+    final override fun visitResolvedDeclarationStatus(resolvedDeclarationStatus: CfirResolvedDeclarationStatus, data: Nothing?) {
+        visitResolvedDeclarationStatus(resolvedDeclarationStatus)
+    }
+
+    open fun visitResolvedDeclarationStatus(resolvedDeclarationStatus: CfirResolvedDeclarationStatus) {
+        visitElement(resolvedDeclarationStatus)
+    }
+
     final override fun visitPerformExpression(performExpression: CfirPerformExpression, data: Nothing?) {
         visitPerformExpression(performExpression)
     }

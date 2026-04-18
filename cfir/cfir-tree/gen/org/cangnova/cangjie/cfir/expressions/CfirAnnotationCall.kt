@@ -7,7 +7,7 @@ package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.references.CfirReference
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -25,7 +25,7 @@ abstract class CfirAnnotationCall : CfirAnnotation(), CfirCall, CfirResolvable {
     abstract override val arguments: List<CfirElement>
     abstract override val argumentList: CfirArgumentList
     abstract override val calleeReference: CfirReference
-    abstract val containingDeclarationSymbol: CfirSymbol<*>
+    abstract val containingDeclarationSymbol: CfirBasedSymbol<*>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitAnnotationCall(this, data)

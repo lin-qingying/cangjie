@@ -2,7 +2,9 @@ package org.cangnova.cangjie.analysis.api.cfir.types
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.components.createTypeParameterSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.createTypeParameterSymbol
+import org.cangnova.cangjie.analysis.api.cfir.utils.createTypePointer
+import org.cangnova.cangjie.analysis.api.cfir.utils.restoreTypeParameterType
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.types.CaTypeParameterType
 import org.cangnova.cangjie.analysis.api.types.CaTypePointer
