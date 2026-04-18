@@ -87,6 +87,7 @@
       <module name="cangjie.analysis.low-level-api-cfir" options="-proc:none" />
       <module name="cangjie.analysis.low-level-api-cfir.main" options="-proc:none" />
       <module name="cangjie.analysis.low-level-api-cfir.test" options="-proc:none" />
+      <module name="cangjie.analysis.low-level-api-cfir.testFixtures" options="-proc:none" />
       <module name="cangjie.analysis.stubs" options="-proc:none" />
       <module name="cangjie.analysis.stubs.main" options="-proc:none" />
       <module name="cangjie.analysis.stubs.test" options="-proc:none" />

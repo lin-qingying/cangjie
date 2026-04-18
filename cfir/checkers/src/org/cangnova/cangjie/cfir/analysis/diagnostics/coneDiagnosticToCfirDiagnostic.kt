@@ -85,8 +85,7 @@ import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
@@ -122,7 +121,6 @@ import org.cangnova.cangjie.resolve.calls.inference.model.NotEnoughInformationFo
 import org.cangnova.cangjie.resolve.calls.inference.model.OnlyInputTypesDiagnostic
 import org.cangnova.cangjie.resolve.checkers.EmptyIntersectionTypeKind
 import org.cangnova.cangjie.source.AbstractCjSourceElement
-import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjRealSourceElementKind
@@ -1179,7 +1177,7 @@ private fun org.cangnova.cangjie.type.model.TypeVariableMarker.asDeclaredTypePar
     else -> null
 }
 
-private fun CfirSymbol<*>.memberDeclarationNameOrNull(): Name? = when (this) {
+private fun CfirBasedSymbol<*>.memberDeclarationNameOrNull(): Name? = when (this) {
     is CfirCallableSymbol<*> -> name
     is CfirClassLikeSymbol<*> -> classId.shortClassName
     else -> null

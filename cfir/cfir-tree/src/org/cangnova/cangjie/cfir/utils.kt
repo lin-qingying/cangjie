@@ -1,9 +1,15 @@
 package org.cangnova.cangjie.cfir
 
+import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirFunctionTypeRef
@@ -25,9 +31,13 @@ import org.cangnova.cangjie.cfir.types.impl.CfirImplicitTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirTupleTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirUserTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirVArrayTypeRefImpl
+import org.cangnova.cangjie.source.CjRealPsiSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.util.wrapIntoFileAnalysisExceptionIfNeeded
 import org.cangnova.cangjie.util.wrapIntoSourceCodeAnalysisExceptionIfNeeded
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
+import kotlin.reflect.KClass
 
 inline fun <R> whileAnalysing(session: CfirSession, element: CfirElement, block: () -> R): R {
     return try {
@@ -139,4 +149,26 @@ fun ConeCangJieType.toCfirResolvedTypeRef(
             this.delegatedTypeRef = delegatedTypeRef
         }
     }
+}
+
+val CfirElement.realPsi: PsiElement? get() = (source as? CjRealPsiSourceElement)?.psi
+
+
+internal fun CfirBasedSymbol<*>.errorInLazyResolve(name: String, actualClass: KClass<*>, expected: KClass<*>): Nothing {
+    errorWithAttachment("Unexpected $name. Expected is ${expected.simpleName}, but was ${actualClass.simpleName}") {
+        withCfirEntry("cfirElement", cfir)
+        withCfirSymbolIdEntry("cfirSymbol", this@errorInLazyResolve)
+    }
+}
+
+
+internal fun CfirMemberDeclaration.resolvedStatus(): CfirResolvedDeclarationStatus {
+    lazyResolveToPhase(CfirResolvePhase.STATUS)
+
+    val status = status
+    if (status !is CfirResolvedDeclarationStatus) {
+        symbol.errorInLazyResolve("status", status::class, CfirResolvedDeclarationStatus::class)
+    }
+
+    return status
 }

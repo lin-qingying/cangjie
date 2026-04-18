@@ -1,0 +1,141 @@
+package org.cangnova.cangjie.analysis.api.cfir.symbols
+
+import org.cangnova.cangjie.analysis.api.cfir.*
+
+import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
+import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFinalizerSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirMainFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.session.extendIndexStore
+import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.Name
+
+internal fun CaCfirSession.restoreCallablePublicSymbol(
+    callableId: CallableId,
+    kind: CaCfirCallableSymbolKind,
+): CaCallableSymbol? {
+    val ownerClassId = callableId.classId
+    val candidates = when (ownerClassId) {
+        null -> getOrCreateTopLevelPublicSymbols(callableId.packageName, callableId.callableName).callableSymbols
+        else -> scopeQueries.queryDeclaredMemberScope(ownerClassId)
+            ?.let { scope ->
+                buildList {
+                    scope.processCallablesByName(callableId.callableName) { symbol ->
+                        add(createCallableSymbol(symbol))
+                    }
+                }
+            }
+            .orEmpty()
+    }
+    val stableCandidate = candidates.singleOrNull { candidate -> candidate.matchesStableCallable(callableId, kind) }
+    if (stableCandidate != null) return stableCandidate
+
+    if (kind == CaCfirCallableSymbolKind.PATTERN_VARIABLE || kind == CaCfirCallableSymbolKind.PATTERN_BINDING) {
+        return resolutionFacade.cfirFiles
+            .asSequence()
+            .mapNotNull { file -> file.findCallableSymbol(callableId, kind) }
+            .firstOrNull()
+            ?.let(::createCallableSymbol)
+    }
+
+    return null
+}
+
+internal fun CaCfirSession.restoreExtendMemberCallablePublicSymbol(
+    extendIdentity: CaCfirExtendSymbolIdentity,
+    callableName: Name,
+    kind: CaCfirCallableSymbolKind,
+): CaCallableSymbol? {
+    val extendSymbol = restoreExtendPublicSymbol(extendIdentity) ?: return null
+    val candidates = with(this) {
+        extendSymbol.declaredMemberScope.getCallableSymbols(callableName)
+    }
+    val expectedKey = CaCfirExtendMemberCallableSymbolCacheKey(extendIdentity, callableName, kind)
+    return candidates.singleOrNull { candidate ->
+        candidate.publicSymbolCacheKeyOrNull() == expectedKey
+    }
+}
+
+internal fun CaCfirSession.restoreExtendPublicSymbol(
+    extendIdentity: CaCfirExtendSymbolIdentity,
+): org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol? {
+    val extendDeclaration = cfirSession.extendIndexStore
+        .modelsInPackage(extendIdentity.packageFqName)
+        .firstOrNull { model -> model.toPublicSymbolIdentity() == extendIdentity }
+        ?.declaration
+        ?: return null
+    return createExtendSymbol(extendDeclaration.symbol)
+}
+
+private fun CfirFile.findCallableSymbol(
+    callableId: CallableId,
+    kind: CaCfirCallableSymbolKind,
+): CfirCallableSymbol<*>? {
+    var result: CfirCallableSymbol<*>? = null
+    accept(object : CfirVisitorVoid() {
+        override fun visitElement(element: org.cangnova.cangjie.cfir.CfirElement) {
+            if (result != null) return
+            when (element) {
+                is CfirCallableDeclaration -> {
+                    val symbol = element.symbol
+                    if (symbol.callableId == callableId && symbol.matchesKind(kind)) {
+                        result = symbol
+                        return
+                    }
+                }
+            }
+            element.acceptChildren(this)
+        }
+    }, null)
+    return result
+}
+
+private fun CfirCallableSymbol<*>.matchesKind(kind: CaCfirCallableSymbolKind): Boolean = when (kind) {
+    CaCfirCallableSymbolKind.PATTERN_VARIABLE -> this is CfirPatternVariableSymbol
+    CaCfirCallableSymbolKind.PATTERN_BINDING -> this is CfirPatternBindingSymbol
+    CaCfirCallableSymbolKind.NAMED_FUNCTION -> this is CfirNamedFunctionSymbol
+    CaCfirCallableSymbolKind.MAIN_FUNCTION -> this is CfirMainFunctionSymbol
+    CaCfirCallableSymbolKind.MACRO -> this is CfirMacroDeclarationSymbol
+    CaCfirCallableSymbolKind.FINALIZER -> this is CfirFinalizerSymbol
+    CaCfirCallableSymbolKind.CONSTRUCTOR -> this is CfirConstructorSymbol
+    CaCfirCallableSymbolKind.PROPERTY -> this is CfirPropertySymbol
+    CaCfirCallableSymbolKind.FIELD -> this is CfirFieldVariableSymbol
+    CaCfirCallableSymbolKind.ENUM_CONSTRUCTOR -> this is CfirEnumConstructorSymbol
+}
+
+private fun CaCallableSymbol.matchesStableCallable(
+    callableId: CallableId,
+    kind: CaCfirCallableSymbolKind,
+): Boolean {
+    if (this.callableId != callableId) return false
+    return when (kind) {
+        CaCfirCallableSymbolKind.NAMED_FUNCTION -> this is org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol &&
+            this !is org.cangnova.cangjie.analysis.api.symbols.CaMainFunctionSymbol &&
+            this !is org.cangnova.cangjie.analysis.api.symbols.CaMacroSymbol
+
+        CaCfirCallableSymbolKind.MAIN_FUNCTION -> this is org.cangnova.cangjie.analysis.api.symbols.CaMainFunctionSymbol
+        CaCfirCallableSymbolKind.MACRO -> this is org.cangnova.cangjie.analysis.api.symbols.CaMacroSymbol
+        CaCfirCallableSymbolKind.FINALIZER -> this is org.cangnova.cangjie.analysis.api.symbols.CaFinalizerSymbol
+        CaCfirCallableSymbolKind.CONSTRUCTOR -> this is org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
+        CaCfirCallableSymbolKind.PROPERTY -> this is CaPropertySymbol
+        CaCfirCallableSymbolKind.FIELD -> this is org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
+        CaCfirCallableSymbolKind.PATTERN_VARIABLE -> this is org.cangnova.cangjie.analysis.api.symbols.CaPatternVariableSymbol
+        CaCfirCallableSymbolKind.PATTERN_BINDING -> this is org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
+        CaCfirCallableSymbolKind.ENUM_CONSTRUCTOR -> this is org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
+    }
+}

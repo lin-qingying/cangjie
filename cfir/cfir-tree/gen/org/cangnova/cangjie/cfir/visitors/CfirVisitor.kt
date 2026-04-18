@@ -245,6 +245,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitThrowExpression(throwExpression: CfirThrowExpression, data: D): R =
         visitElement(throwExpression, data)
 
+    open fun visitResolvedDeclarationStatus(resolvedDeclarationStatus: CfirResolvedDeclarationStatus, data: D): R =
+        visitElement(resolvedDeclarationStatus, data)
+
     open fun visitPerformExpression(performExpression: CfirPerformExpression, data: D): R =
         visitElement(performExpression, data)
 

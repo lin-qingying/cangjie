@@ -1,13 +1,13 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols.pointers
 
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirClassLikeSymbolCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirExtendSymbolCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirFileSymbolCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirPackageSymbolCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.components.createFileSymbol
-import org.cangnova.cangjie.analysis.api.cfir.components.getClassLikePublicSymbol
-import org.cangnova.cangjie.analysis.api.cfir.components.getPackagePublicSymbol
-import org.cangnova.cangjie.analysis.api.cfir.components.restoreExtendPublicSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassLikeSymbolCacheKey
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbolCacheKey
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFileSymbolCacheKey
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPackageSymbolCacheKey
+import org.cangnova.cangjie.analysis.api.cfir.symbols.createFileSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.getClassLikePublicSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.getPackagePublicSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.restoreExtendPublicSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 
@@ -42,5 +42,5 @@ internal class CaCfirExtendSymbolPointer(
     private val cacheKey: CaCfirExtendSymbolCacheKey,
 ) : CaCfirSymbolPointerBase<org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol>() {
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol? =
-        restoreSession(session)?.restoreExtendPublicSymbol(cacheKey.extendId)
+        restoreSession(session)?.restoreExtendPublicSymbol(cacheKey.identity)
 }

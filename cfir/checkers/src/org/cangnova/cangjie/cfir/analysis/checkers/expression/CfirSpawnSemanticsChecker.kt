@@ -48,13 +48,15 @@ object CfirSpawnSemanticsChecker : CfirBasicExpressionChecker() {
      * spawn 参数在当前后端不生效时发出警告。
      *
      * 对齐 C++ DiagKind::sema_spawn_arg_no_effect:
-     * 当 spawn 表达式有额外参数（如自定义 ThreadContext）但后端不支持时警告。
-     * 当前仓颉后端始终忽略 spawn 参数，因此只要 spawn body 成功就不报警告。
-     * 此处预留检查入口，当后端支持参数时启用。
+     * 当 spawn 表达式携带 thread-context 参数(CFIR `threadContextArgument`,对齐 C++ AST 中 `SpawnExpr.arg`)
+     * 但当前后端不消费该参数时发警告。仓颉前端始终忽略 spawn 参数,因此只要存在参数即报警告。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkSpawnArgNoEffect(@Suppress("UNUSED_PARAMETER") spawn: CfirSpawnExpression) {
-        // 当前后端不支持 spawn 参数，预留入口
-        // TODO: 当编译选项或后端标记指示不支持 spawn 参数时，报告 SPAWN_ARG_NO_EFFECT
+    private fun checkSpawnArgNoEffect(spawn: CfirSpawnExpression) {
+        val ctxArg = spawn.threadContextArgument ?: return
+        reporter.reportOn(
+            source = ctxArg.source ?: spawn.source,
+            factory = CfirErrors.SPAWN_ARG_NO_EFFECT,
+        )
     }
 }

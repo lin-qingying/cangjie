@@ -3,7 +3,7 @@
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.CfirLoopTarget
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
@@ -30,9 +30,9 @@ class Context<T> {
     private val loopBaseSizeAtFunctionEntry: ArrayDeque<Int> = ArrayDeque()
     private val loopTargets: ArrayDeque<CfirLoopTarget> = ArrayDeque()
     private val labelNames: ArrayDeque<Name> = ArrayDeque()
-    private val containerSymbolStack: ArrayDeque<CfirSymbol<*>> = ArrayDeque()
+    private val containerSymbolStack: ArrayDeque<CfirBasedSymbol<*>> = ArrayDeque()
 
-    var forcedContainerSymbol: CfirSymbol<*>? = null
+    var forcedContainerSymbol: CfirBasedSymbol<*>? = null
 
     fun <R> withPackage(fqName: FqName, block: () -> R): R {
         val hadPrevious = this::packageFqName.isInitialized
@@ -55,20 +55,20 @@ class Context<T> {
         }
     }
 
-    fun pushContainerSymbol(symbol: CfirSymbol<*>) {
+    fun pushContainerSymbol(symbol: CfirBasedSymbol<*>) {
         val actual = if (containerSymbolStack.isEmpty() && forcedContainerSymbol != null) forcedContainerSymbol!! else symbol
         containerSymbolStack.addLast(actual)
     }
 
-    fun popContainerSymbol(symbol: CfirSymbol<*>) {
+    fun popContainerSymbol(symbol: CfirBasedSymbol<*>) {
         if (containerSymbolStack.isEmpty()) return
         containerSymbolStack.removeLast()
     }
 
-    val containerSymbolIfAny: CfirSymbol<*>?
+    val containerSymbolIfAny: CfirBasedSymbol<*>?
         get() = containerSymbolStack.lastOrNull()
 
-    val containerSymbol: CfirSymbol<*>
+    val containerSymbol: CfirBasedSymbol<*>
         get() = containerSymbolStack.last()
 
     fun enterFunction(target: CfirFunctionTarget) {

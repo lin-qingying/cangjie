@@ -2,7 +2,7 @@
 // 不使用 plugins {} 块：预编译脚本插件中不能带版本号的插件请求
 // Kotlin 插件由各子项目自行应用，此处仅在插件已存在时进行配置
 
-project.configureJvmDefaultToolchain()
+project.configureJvmToolchain(JdkMajorVersion.JDK_21_0)
 
 repositories {
     mavenCentral()

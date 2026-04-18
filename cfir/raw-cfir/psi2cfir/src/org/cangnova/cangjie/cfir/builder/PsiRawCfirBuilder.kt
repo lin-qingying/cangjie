@@ -29,10 +29,8 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
-import org.cangnova.cangjie.cfir.types.builder.buildTupleTypeRef
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.lexer.CjTokens
-import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.SpecialNames
@@ -124,7 +122,7 @@ class PsiRawCfirBuilder(
         return converter.convertExpression(cjExpression)
     }
 
-    private inline fun <D : CfirDeclaration, S : CfirSymbol<D>> buildSourceDeclaration(
+    private inline fun <D : CfirDeclaration, S : CfirBasedSymbol<D>> buildSourceDeclaration(
         symbol: S,
         builder: (S) -> D,
     ): D {
@@ -759,7 +757,7 @@ class PsiRawCfirBuilder(
 
         private fun convertTypeParameter(
             psi: CjTypeParameter,
-            containingDeclarationSymbol: CfirSymbol<*>,
+            containingDeclarationSymbol: CfirBasedSymbol<*>,
             additionalBounds: List<CfirTypeRef> = emptyList(),
         ): CfirTypeParameter {
             val name = Name.identifier(psi.name ?: "<error>")
@@ -1027,7 +1025,13 @@ class PsiRawCfirBuilder(
                 val body = lambda?.bodyExpression?.let { convertBlock(it) } ?: buildBlock {
                     source = (lambda ?: psi).toCjPsiSourceElement()
                 }
-                return buildSpawnExpression { source = psi.toCjPsiSourceElement(); this.body = body }
+                val ctxArg = psi.valueArgumentList?.arguments?.firstOrNull()?.getArgumentExpression()
+                    ?.let { convertExpression(it) }
+                return buildSpawnExpression {
+                    source = psi.toCjPsiSourceElement()
+                    this.body = body
+                    this.threadContextArgument = ctxArg
+                }
             }
 
             val callee = psi.calleeExpression
@@ -1862,7 +1866,7 @@ class PsiRawCfirBuilder(
 
         private fun convertTypeParameters(
             psi: CjClassLikeDeclaration,
-            containingSymbol: CfirSymbol<*>,
+            containingSymbol: CfirBasedSymbol<*>,
         ): List<CfirTypeParameter> {
             val owner = psi as? CjTypeParameterListOwner ?: return emptyList()
             val typeConstraintBounds = collectTypeConstraintBounds(owner)
@@ -1877,7 +1881,7 @@ class PsiRawCfirBuilder(
 
         private fun convertTypeParameters(
             psi: CjExtend,
-            containingSymbol: CfirSymbol<*>,
+            containingSymbol: CfirBasedSymbol<*>,
         ): List<CfirTypeParameter> {
             val owner = psi as? CjTypeParameterListOwner ?: return emptyList()
             val typeConstraintBounds = collectTypeConstraintBounds(owner)
@@ -1892,7 +1896,7 @@ class PsiRawCfirBuilder(
 
         private fun convertTypeAliasTypeParameters(
             psi: CjTypeAlias,
-            containingSymbol: CfirSymbol<*>,
+            containingSymbol: CfirBasedSymbol<*>,
         ): List<CfirTypeParameter> {
             val owner = psi as? CjTypeParameterListOwner ?: return emptyList()
             val typeConstraintBounds = collectTypeConstraintBounds(owner)
@@ -1907,7 +1911,7 @@ class PsiRawCfirBuilder(
 
         private fun convertFunctionTypeParameters(
             psi: CjNamedFunction,
-            containingDeclarationSymbol: CfirSymbol<*>,
+            containingDeclarationSymbol: CfirBasedSymbol<*>,
         ): List<CfirTypeParameter> {
             val typeConstraintBounds = collectTypeConstraintBounds(psi)
             return psi.typeParameters.map { typeParameter ->

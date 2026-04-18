@@ -1,0 +1,2547 @@
+*** Begin Patch
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirJvmSessionFactory.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import com.intellij.openapi.project.Project
+import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.platform.packages.createPackagePartProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories.LLLibrarySymbolProviderFactory
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.moduleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCfirJavaSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleWithDependenciesSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.nullableJavaSymbolProvider
+import org.cangnova.cangjie.cfir.SessionConfiguration
+import org.cangnova.cangjie.cfir.backend.jvm.CfirJvmTypeMapper
+import org.cangnova.cangjie.cfir.deserialization.SingleModuleDataProvider
+import org.cangnova.cangjie.cfir.java.JavaSymbolProvider
+import org.cangnova.cangjie.cfir.java.deserialization.OptionalAnnotationClassesProvider
+import org.cangnova.cangjie.cfir.java.javaAnnotationProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.firProvider
+import org.cangnova.cangjie.cfir.resolve.scopes.wrapScopeWithJvmMapped
+import org.cangnova.cangjie.cfir.scopes.CfirKotlinScopeProvider
+import org.cangnova.cangjie.cfir.scopes.kotlinScopeProvider
+import org.cangnova.cangjie.cfir.session.registerJavaComponents
+import org.cangnova.cangjie.load.java.createJavaClassFinder
+import org.cangnova.cangjie.resolve.jvm.modules.JavaModuleResolver
+import org.cangnova.cangjie.utils.addIfNotNull
+
+@OptIn(SessionConfiguration::class)
+internal class LLCfirJvmSessionFactory(project: Project) : LLCfirAbstractSessionFactory(project) {
+    override fun createSourcesSession(module: CaSourceModule): LLCfirSourcesSession {
+        return doCreateSourcesSession(module, CfirKotlinScopeProvider(::wrapScopeWithJvmMapped)) { context ->
+            registerJavaComponents(JavaModuleResolver.getInstance(project))
+            val javaSymbolProvider = LLCfirJavaSymbolProvider(this, context.contentScope)
+            register(JavaSymbolProvider::class, javaSymbolProvider)
+
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOfNotNull(
+                        context.firProvider.symbolProvider,
+                        context.switchableExtensionDeclarationsSymbolProvider,
+                        javaSymbolProvider,
+                        context.syntheticFunctionInterfaceProvider,
+                    ),
+                    context.dependencyProvider,
+                )
+            )
+
+            register(CfirJvmTypeMapper::class, CfirJvmTypeMapper(this))
+        }
+    }
+
+    override fun createResolvableLibrarySession(module: CaModule): LLCfirLibraryOrLibrarySourceResolvableModuleSession {
+        return doCreateResolvableLibrarySession(module) { context ->
+            registerJavaComponents(JavaModuleResolver.getInstance(project))
+            val javaSymbolProvider = LLCfirJavaSymbolProvider(this, context.contentScope)
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOf(
+                        context.firProvider.symbolProvider,
+                        javaSymbolProvider,
+                    ),
+                    context.dependencyProvider,
+                )
+            )
+            register(JavaSymbolProvider::class, javaSymbolProvider)
+            register(CfirJvmTypeMapper::class, CfirJvmTypeMapper(this))
+        }
+    }
+
+    override fun createBinaryLibrarySession(module: CaModule): LLCfirLibrarySession {
+        return doCreateBinaryLibrarySession(module) {
+            registerJavaComponents(JavaModuleResolver.getInstance(project))
+            register(CfirJvmTypeMapper::class, CfirJvmTypeMapper(this))
+        }
+    }
+
+    override fun createDanglingFileSession(module: CaDanglingFileModule, contextSession: LLCfirSession): LLCfirSession {
+        return doCreateDanglingFileSession(module, contextSession) { context ->
+            registerJavaComponents(JavaModuleResolver.getInstance(project))
+
+            val contextJavaSymbolProvider = contextSession.nullableJavaSymbolProvider
+            if (contextJavaSymbolProvider != null) {
+                register(JavaSymbolProvider::class, contextJavaSymbolProvider)
+            }
+
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOfNotNull(
+                        firProvider.symbolProvider,
+                        context.switchableExtensionDeclarationsSymbolProvider,
+                        context.syntheticFunctionInterfaceProvider,
+                        contextJavaSymbolProvider
+                    ),
+                    context.dependencyProvider
+                )
+            )
+
+            register(CfirJvmTypeMapper::class, CfirJvmTypeMapper(this))
+        }
+    }
+
+    override fun createProjectLibraryProvidersForScope(
+        session: LLCfirSession,
+        scope: GlobalSearchScope,
+    ): List<CfirSymbolProvider> {
+        val moduleData = session.moduleData
+        val moduleDataProvider = SingleModuleDataProvider(moduleData)
+        val packagePartProvider = project.createPackagePartProvider(scope)
+        return buildList {
+            val javaClassFinder = project.createJavaClassFinder(scope, session.javaAnnotationProvider)
+            val firJavaFacade = LLCfirJavaFacadeForBinaries(session, javaClassFinder)
+            val deserializedSymbolProviderFactory = LLLibrarySymbolProviderFactory.fromSettings(project)
+            addAll(
+                deserializedSymbolProviderFactory.createJvmLibrarySymbolProvider(
+                    session,
+                    firJavaFacade,
+                    packagePartProvider,
+                    scope,
+                )
+            )
+            addIfNotNull(
+                OptionalAnnotationClassesProvider.createIfNeeded(
+                    session,
+                    moduleDataProvider,
+                    session.kotlinScopeProvider,
+                    packagePartProvider
+                )
+            )
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirLibraryLikeSession.kt
++/*
+ * Copyright 2010-2022 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLCfirScopeSessionProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.cfir.BuiltinTypes
+import org.cangnova.cangjie.cfir.resolve.ScopeSession
+
+abstract class LLCfirLibraryLikeSession(
+    ktModule: CaModule,
+    builtinTypes: BuiltinTypes,
+) : LLCfirSession(ktModule, builtinTypes, Kind.Library) {
+    private val scopeSessionProvider = LLCfirScopeSessionProvider.create(project, invalidationTrackers = emptyList())
+
+    override fun getScopeSession(): ScopeSession {
+        return scopeSessionProvider.getScopeSession()
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirLibraryOrLibrarySourceResolvableModuleSession.kt
++/*
+ * Copyright 2010-2022 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.cfir.BuiltinTypes
+
+internal class LLCfirLibraryOrLibrarySourceResolvableModuleSession(
+    ktModule: CaModule,
+    override val moduleComponents: LLCfirModuleResolveComponents,
+    builtinTypes: BuiltinTypes,
+) : LLCfirResolvableModuleSession(ktModule, builtinTypes) {
+    init {
+        checkIsValidCjModule(ktModule)
+    }
+
+    companion object {
+        fun checkIsValidCjModule(module: CaModule) {
+            require(module is CaLibraryModule || module is CaLibrarySourceModule || module is CaBuiltinsModule) {
+                "Expected ${CaLibraryModule::class.simpleName} or ${CaLibrarySourceModule::class.simpleName}, but ${module::class.simpleName} found"
+            }
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirLibrarySession.kt
++/*
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.cfir.BuiltinTypes
+import org.cangnova.cangjie.cfir.PrivateSessionConstructor
+
+/**
+ * [org.cangnova.cangjie.cfir.CfirSession] responsible for all libraries analysing module transitively depends on
+ */
+internal class LLCfirLibrarySession @PrivateSessionConstructor constructor(
+    ktModule: CaModule,
+    builtinTypes: BuiltinTypes,
+) : LLCfirLibraryLikeSession(ktModule, builtinTypes)
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirNativeSessionFactory.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import com.intellij.openapi.project.Project
+import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.platform.packages.createPackagePartProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories.LLLibrarySymbolProviderFactory
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.moduleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleWithDependenciesSymbolProvider
+import org.cangnova.cangjie.cfir.SessionConfiguration
+import org.cangnova.cangjie.cfir.deserialization.SingleModuleDataProvider
+import org.cangnova.cangjie.cfir.java.deserialization.OptionalAnnotationClassesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.firProvider
+import org.cangnova.cangjie.cfir.scopes.CfirOverrideChecker
+import org.cangnova.cangjie.cfir.scopes.impl.CfirStandardOverrideChecker
+import org.cangnova.cangjie.cfir.scopes.kotlinScopeProvider
+import org.cangnova.cangjie.cfir.session.CfirNativeSessionFactory.Companion.registerNativeComponents
+import org.cangnova.cangjie.utils.addIfNotNull
+
+@OptIn(SessionConfiguration::class)
+internal class LLCfirNativeSessionFactory(project: Project) : LLCfirAbstractSessionFactory(project) {
+    override fun createSourcesSession(module: CaSourceModule): LLCfirSourcesSession {
+        return doCreateSourcesSession(module) { context ->
+            registerNativeComponents()
+
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOfNotNull(
+                        context.firProvider.symbolProvider,
+                        context.switchableExtensionDeclarationsSymbolProvider,
+                        context.syntheticFunctionInterfaceProvider,
+                    ),
+                    context.dependencyProvider,
+                )
+            )
+        }
+    }
+
+    override fun createResolvableLibrarySession(module: CaModule): LLCfirLibraryOrLibrarySourceResolvableModuleSession {
+        return doCreateResolvableLibrarySession(module) { context ->
+            registerNativeComponents()
+            // Resolvable library session for decompiled libraries can miss annotation arguments
+            // necessary for correct work of the native overload checker
+            register(CfirOverrideChecker::class, CfirStandardOverrideChecker(this))
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOf(
+                        context.firProvider.symbolProvider,
+                    ),
+                    context.dependencyProvider,
+                )
+            )
+        }
+    }
+
+    override fun createBinaryLibrarySession(module: CaModule): LLCfirLibrarySession {
+        return doCreateBinaryLibrarySession(module) {
+            registerNativeComponents()
+        }
+    }
+
+    override fun createDanglingFileSession(module: CaDanglingFileModule, contextSession: LLCfirSession): LLCfirSession {
+        return doCreateDanglingFileSession(module, contextSession) { context ->
+            registerNativeComponents()
+
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOfNotNull(
+                        firProvider.symbolProvider,
+                        context.switchableExtensionDeclarationsSymbolProvider,
+                        context.syntheticFunctionInterfaceProvider,
+                    ),
+                    context.dependencyProvider,
+                )
+            )
+        }
+    }
+
+    override fun createProjectLibraryProvidersForScope(
+        session: LLCfirSession,
+        scope: GlobalSearchScope,
+    ): List<CfirSymbolProvider> {
+        val moduleData = session.moduleData
+        val moduleDataProvider = SingleModuleDataProvider(moduleData)
+        val packagePartProvider = project.createPackagePartProvider(scope)
+        return buildList {
+            addAll(
+                LLLibrarySymbolProviderFactory.fromSettings(project).createNativeLibrarySymbolProvider(
+                    session,
+                    scope,
+                )
+            )
+            addIfNotNull(
+                OptionalAnnotationClassesProvider.createIfNeeded(
+                    session,
+                    moduleDataProvider,
+                    session.kotlinScopeProvider,
+                    packagePartProvider
+                )
+            )
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirNotUnderContentRootResolvableModuleSession.kt
++/*
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
+import org.cangnova.cangjie.cfir.BuiltinTypes
+import org.cangnova.cangjie.cfir.PrivateSessionConstructor
+
+internal class LLCfirNotUnderContentRootResolvableModuleSession @PrivateSessionConstructor constructor(
+    ktModule: CaNotUnderContentRootModule,
+    override val moduleComponents: LLCfirModuleResolveComponents,
+    builtinTypes: BuiltinTypes,
+) : LLCfirResolvableModuleSession(ktModule, builtinTypes)
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirResolvableModuleSession.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.cfir.BuiltinTypes
+import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+
+abstract class LLCfirResolvableModuleSession(
+    ktModule: CaModule,
+    builtinTypes: BuiltinTypes
+) : LLCfirModuleSession(ktModule, builtinTypes, Kind.Source) {
+    internal abstract val moduleComponents: LLCfirModuleResolveComponents
+
+    final override fun getScopeSession(): ScopeSession {
+        return moduleComponents.scopeSessionProvider.getScopeSession()
+    }
+}
+
+internal val CfirElementWithResolveState.llCfirResolvableSession: LLCfirResolvableModuleSession?
+    get() = llCfirSession as? LLCfirResolvableModuleSession
+
+internal val CfirBasedSymbol<*>.llCfirResolvableSession: LLCfirResolvableModuleSession?
+    get() = fir.llCfirResolvableSession
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirScriptSession.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.api.projectStructure.CaScriptModule
+import org.cangnova.cangjie.cfir.BuiltinTypes
+import org.cangnova.cangjie.cfir.PrivateSessionConstructor
+
+internal class LLCfirScriptSession @PrivateSessionConstructor constructor(
+    ktModule: CaScriptModule,
+    override val moduleComponents: LLCfirModuleResolveComponents,
+    builtinTypes: BuiltinTypes
+) : LLCfirResolvableModuleSession(ktModule, builtinTypes)
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirSession.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.ModificationTracker
+import org.cangnova.cangjie.analysis.api.platform.lifetime.ModificationTrackerWithInvalidationReason
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.cfir.BuiltinTypes
+import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.PrivateSessionConstructor
+import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import java.lang.ref.WeakReference
+import java.util.concurrent.atomic.AtomicLongFieldUpdater
+import kotlin.time.TimeSource
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+
+/**
+ * An [LLCfirSession] stores all symbols, components, and configuration needed for the resolution of Kotlin code/binaries from a [CaModule].
+ *
+ * ### Invalidation
+ *
+ * [LLCfirSession] will be invalidated by [LLCfirSessionInvalidationService] when its [CaModule] or one of the module's dependencies is
+ * modified, or when a global modification event occurs. Sessions are managed by [LLCfirSessionCache], which holds a soft reference to its
+ * [LLCfirSession]s. This allows a session to be garbage collected when it is softly reachable. The session's [LLCfirSessionCleaner] ensures
+ * that its associated [Disposable] is properly disposed even after garbage collection.
+ *
+ * When a session is invalidated after a modification event, the [LLCfirSessionInvalidationEventPublisher] will publish a
+ * [session invalidation event][LLCfirSessionInvalidationTopics]. This allows entities whose lifetime depends on the session's lifetime to be
+ * invalidated with the session. Such an event is not published when the session is garbage collected due to being softly reachable, because
+ * the [LLCfirSessionCleaner] is not guaranteed to be executed in a write action. If we try to publish a session invalidation event outside
+ * a write action, another thread might already have built another [LLCfirSession] for the same [CaModule], causing a race between the new
+ * session and the session invalidation event (which can only refer to the [CaModule] because the session has already been garbage
+ * collected).
+ *
+ * Because of this, it's important that cached entities which depend on a session's lifetime (and therefore its session invalidation events)
+ * are *exactly as softly reachable* as the [LLCfirSession]. This means that the cached entity should keep a strong reference to the session,
+ * but the entity itself should be softly reachable if not currently in use. For example, `CaCfirSession`s are softly reachable via
+ * `CaCfirSessionProvider`, but keep a strong reference to the [LLCfirSession].
+ */
+@OptIn(PrivateSessionConstructor::class)
+abstract class LLCfirSession(
+    val ktModule: CaModule,
+    override val builtinTypes: BuiltinTypes,
+    kind: Kind
+) : CfirSession(kind) {
+    abstract fun getScopeSession(): ScopeSession
+
+    val project: Project
+        get() = ktModule.project
+
+    /**
+     * The session's UUID to identify it for diagnostic purposes.
+     *
+     * For example, the UUID can be used to identify a session across multiple session structure files (see
+     * [LLSessionStructureWriter][org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure.LLSessionStructureWriter]).
+     */
+    @OptIn(ExperimentalUuidApi::class)
+    val uuid: Uuid = Uuid.random()
+
+    /**
+     * Whether the [LLCfirSession] is valid. The session should not be used if it is invalid.
+     */
+    @Volatile
+    var isValid: Boolean = true
+        internal set
+
+    /**
+     * Information about where the invalidation occurred used for diagnostic purposes.
+     */
+    var invalidationInformation: String? = null
+        internal set
+
+    /**
+     * The time at which the session was created. This is used for diagnostic purposes.
+     */
+    val creationTimeMark: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
+
+    /**
+     * Creates a [ModificationTracker] which tracks the validity of this session via [isValid].
+     */
+    fun createValidityTracker(): ModificationTracker = LLCfirSessionValidityModificationTracker(WeakReference(this))
+
+    private val lazyDisposable: Lazy<Disposable> = lazy {
+        val disposable = Disposer.newDisposable()
+
+        // `LLCfirSessionCache` is used as a disposable parent so that disposal is triggered after the Kotlin plugin is unloaded. We don't
+        // register a module as a disposable parent, because (1) IJ `Module`s may persist beyond the plugin's lifetime, (2) not all
+        // `CaModule`s have a corresponding `Module`, and (3) sessions are invalidated (and subsequently cleaned up) when their module is
+        // removed.
+        Disposer.register(LLCfirSessionCache.getInstance(project), disposable)
+
+        disposable
+    }
+
+    /**
+     * Returns an already registered [Disposable] which is alive until the session is invalidated. It can be used as a parent disposable for
+     * disposable session components, such as [resolve extensions][org.cangnova.cangjie.analysis.api.resolve.extensions.CaResolveExtension].
+     * When the session is invalidated or garbage-collected, all disposable session components will be disposed with this parent disposable.
+     *
+     * Because not all sessions have disposable components, this disposable is created and registered on-demand with the first call to
+     * [requestDisposable]. This avoids polluting [Disposer] with unneeded disposables.
+     *
+     * The disposable must only be requested during session creation, before the session is added to [LLCfirSessionCache].
+     */
+    fun requestDisposable(): Disposable = lazyDisposable.value
+
+    /**
+     * A [Disposable] that has already been requested with [requestDisposable], or `null` otherwise.
+     */
+    internal val requestedDisposableOrNull: Disposable?
+        get() = if (lazyDisposable.isInitialized()) lazyDisposable.value else null
+
+    override fun toString(): String {
+        return "${this::class.simpleName} for ${ktModule.moduleDescription}"
+    }
+}
+
+/**
+ * The validity tracker must not strongly reference the session to avoid leaking it, as the validity tracker may survive it.
+ *
+ * Similarly, by convention, the [LLCfirSession] doesn't keep a strong reference to the validity tracker, to avoid overly complicated
+ * reference cycles (from the developer's perspective).
+ */
+private class LLCfirSessionValidityModificationTracker(private val sessionRef: WeakReference<LLCfirSession>) : ModificationTrackerWithInvalidationReason {
+    @Suppress("Unused")
+    @Volatile
+    private var count = 0L
+
+    override fun getModificationCount(): Long {
+        if (sessionRef.get()?.isValid == true) return 0
+
+        // When the session is invalid, we cannot simply return a static modification count of 1. For example, consider situations where
+        // a cached value was created with an already invalid session (so it remembers the modification count of 1). Then, if we return
+        // a static modification count of 1, the modification count never changes and the cached value misses that the session has been
+        // invalidated. Hence, `count` is incremented on each modification count access.
+        return COUNT_UPDATER.incrementAndGet(this)
+    }
+
+    override fun getInvalidationReason(): String? {
+        val session = sessionRef.get()
+            ?: return "`${LLCfirSession::class.simpleName}` is garbage collected"
+        if (!session.isValid) {
+            return "`${session::class.simpleName}` for `${session.ktModule::class.simpleName}` is invalid"
+        }
+        return null
+    }
+
+    companion object {
+        private val COUNT_UPDATER = AtomicLongFieldUpdater.newUpdater(LLCfirSessionValidityModificationTracker::class.java, "count")
+    }
+}
+
+abstract class LLCfirModuleSession(
+    ktModule: CaModule,
+    builtinTypes: BuiltinTypes,
+    kind: Kind
+) : LLCfirSession(ktModule, builtinTypes, kind)
+
+val CfirElementWithResolveState.llCfirSession: LLCfirSession
+    get() = moduleData.session as LLCfirSession
+
+val CfirBasedSymbol<*>.llCfirSession: LLCfirSession
+    get() = moduleData.session as LLCfirSession
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirSessionCache.kt
++/*
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.analysis.api.platform.CaCachedService
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinModuleInformationProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.*
+import org.cangnova.cangjie.analysis.api.utils.errors.withCaModuleEntry
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirBuiltinsSessionFactory
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkCanceled
+import org.cangnova.cangjie.cfir.CfirSourceModuleData
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.PrivateSessionConstructor
+import org.cangnova.cangjie.cfir.session.registerModuleData
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.platform.JsPlatform
+import org.cangnova.cangjie.platform.WasmPlatform
+import org.cangnova.cangjie.platform.jvm.JvmPlatform
+import org.cangnova.cangjie.platform.jvm.JvmPlatforms
+import org.cangnova.cangjie.platform.konan.NativePlatform
+import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+
+@LLCfirInternals
+class LLCfirSessionCache(
+    private val project: Project,
+    val storage: LLCfirSessionCacheStorage,
+) : Disposable {
+    constructor(project: Project) : this(
+        project,
+        LLCfirSessionCacheStorage.createEmpty { LLCfirSessionCleaner(it.requestedDisposableOrNull) }
+    )
+
+    @CaCachedService
+    private val moduleInformationProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        KotlinModuleInformationProvider.getInstance(project)
+    }
+
+    /**
+     * Returns the existing session if found, or creates a new session and caches it.
+     * Analyzable session will be returned for a library module.
+     *
+     * Must be called from a read action.
+     */
+    fun getSession(module: CaModule, preferBinary: Boolean = false): LLCfirSession =
+        when (module) {
+            is CaBuiltinsModule if preferBinary ->
+                LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
+
+            is CaLibraryModule if preferBinary -> getBinaryLibraryCachedSession(module, storage.binaryCache)
+
+            // Fallback dependencies aren't resolvable and thus always binary, regardless of `preferBinary`.
+            is CaLibraryFallbackDependenciesModule -> getBinaryLibraryCachedSession(module, storage.libraryFallbackDependenciesCache)
+
+            is CaDanglingFileModule -> getDanglingFileCachedSession(module)
+            else -> getCachedSession(module, storage.sourceCache, factory = ::createSession)
+        }
+
+    /**
+     * Returns the [LLCfirSession] for [module], to be used as a *dependency*, or `null` if it doesn't make sense to create such a session as
+     * a dependency. This is an optimization for [CaModule]s of certain kinds, like empty modules.
+     *
+     * Dependency sessions are implicitly binary-preferred because sessions used as dependencies do not need to be resolvable.
+     */
+    fun getDependencySession(module: CaModule): LLCfirSession? {
+        if (moduleInformationProvider?.isEmpty(module) == true) return null
+        return getSession(module, preferBinary = true)
+    }
+
+    private fun getBinaryLibraryCachedSession(module: CaModule, storage: SessionStorage): LLCfirSession =
+        getCachedSession(module, storage) {
+            createPlatformAwareSessionFactory(module).createBinaryLibrarySession(module)
+        }
+
+    private fun getDanglingFileCachedSession(module: CaDanglingFileModule): LLCfirSession {
+        if (module.isStable) {
+            return getCachedSession(module, storage.danglingFileSessionCache, ::createSession)
+        }
+
+        checkCanceled()
+
+        val session = storage.unstableDanglingFileSessionCache.compute(module) { _, existingSession ->
+            if (existingSession is LLCfirDanglingFileSession && !existingSession.hasFileModifications) {
+                existingSession
+            } else {
+                createSession(module)
+            }
+        }
+
+        requireNotNull(session)
+        checkSessionValidity(session)
+
+        return session
+    }
+
+    private fun <T : CaModule> getCachedSession(module: T, storage: SessionStorage, factory: (T) -> LLCfirSession): LLCfirSession {
+        checkCanceled()
+
+        val session = if (module.supportsIsolatedSessionCreation) {
+            storage.computeIfAbsent(module) { factory(module) }
+        } else {
+            // Non-isolated session creation may need to access other sessions, so we should create the session outside `computeIfAbsent` to
+            // avoid recursive update exceptions.
+            storage[module] ?: run {
+                val newSession = factory(module)
+                storage.computeIfAbsent(module) { newSession }
+            }
+        }
+
+        checkSessionValidity(session)
+        return session
+    }
+
+    private fun checkSessionValidity(session: LLCfirSession) {
+        requireWithAttachment(session.isValid, { "A session acquired via `getSession` should always be valid." }) {
+            withCaModuleEntry("module", session.ktModule)
+            withEntry("invalidationInformation", session.invalidationInformation)
+        }
+    }
+
+    /**
+     * Whether the session for this [CaModule] can be created without getting other sessions from the cache. Should be kept in sync with
+     * [createSession].
+     */
+    private val CaModule.supportsIsolatedSessionCreation: Boolean
+        get() = this !is CaDanglingFileModule
+
+    private fun createSession(module: CaModule): LLCfirSession {
+        val sessionFactory = createPlatformAwareSessionFactory(module)
+        return when (module) {
+            is CaSourceModule -> sessionFactory.createSourcesSession(module)
+            is CaBuiltinsModule -> sessionFactory.createResolvableLibrarySession(module)
+            is CaLibraryModule -> sessionFactory.createResolvableLibrarySession(module)
+            is CaLibrarySourceModule -> sessionFactory.createResolvableLibrarySession(module)
+            is CaLibraryFallbackDependenciesModule -> sessionFactory.createBinaryLibrarySession(module)
+            is CaScriptModule -> sessionFactory.createScriptSession(module)
+            is CaDanglingFileModule -> {
+                //  Dangling file context must have an analyzable session, so we can properly compile code against it.
+                val contextSession = getSession(module.contextModule, preferBinary = false)
+                sessionFactory.createDanglingFileSession(module, contextSession)
+            }
+            is CaNotUnderContentRootModule -> sessionFactory.createNotUnderContentRootResolvableSession(module)
+            else -> error("Unexpected module kind: ${module::class.simpleName}")
+        }
+    }
+
+    private fun createPlatformAwareSessionFactory(module: CaModule): LLCfirAbstractSessionFactory {
+        val targetPlatform = module.targetPlatform
+        return when {
+            targetPlatform.all { it is JvmPlatform } -> LLCfirJvmSessionFactory(project)
+            targetPlatform.all { it is JsPlatform } -> LLCfirJsSessionFactory(project)
+            targetPlatform.all { it is WasmPlatform } -> LLCfirWasmSessionFactory(project)
+            targetPlatform.all { it is NativePlatform } -> LLCfirNativeSessionFactory(project)
+            else -> LLCfirCommonSessionFactory(project)
+        }
+    }
+
+    override fun dispose() {
+    }
+
+    companion object {
+        fun getInstance(project: Project): LLCfirSessionCache = project.service()
+    }
+}
+
+internal fun LLCfirSessionConfigurator.Companion.configure(session: LLCfirSession) {
+    val project = session.project
+    for (extension in extensionPointName.getExtensionList(project)) {
+        extension.configure(session)
+    }
+}
+
+@Deprecated(
+    "This is a dirty hack used only for one usage (building fir for psi from stubs) and it should be removed after fix of that usage",
+    level = DeprecationLevel.ERROR
+)
+@OptIn(PrivateSessionConstructor::class)
+fun createEmptySession(): CfirSession {
+    return object : CfirSession(Kind.Source) {}.apply {
+        val moduleData = CfirSourceModuleData(
+            Name.identifier("<stub module>"),
+            dependencies = emptyList(),
+            dependsOnDependencies = emptyList(),
+            friendDependencies = emptyList(),
+            platform = JvmPlatforms.unspecifiedJvmPlatform,
+        )
+        registerModuleData(moduleData)
+        moduleData.bindSession(this)
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirSessionCacheStorage.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+import org.cangnova.cangjie.analysis.low.level.api.cfir.caches.cleanable.CleanableSoftValueReferenceCache
+import org.cangnova.cangjie.analysis.low.level.api.cfir.caches.cleanable.CleanableValueReferenceCache
+import org.cangnova.cangjie.analysis.low.level.api.cfir.caches.cleanable.CleanableWeakValueReferenceCache
+import org.cangnova.cangjie.analysis.low.level.api.cfir.caches.cleanable.ValueReferenceCleaner
+
+/**
+ * A type of cache which is used by [LLCfirSessionCache] to store [LLCfirSession]s.
+ *
+ * Removal from the session storage invokes the [LLCfirSession]'s cleaner, which marks the session as invalid and disposes any disposables
+ * registered with the session's disposable.
+ */
+internal typealias SessionStorage = CleanableValueReferenceCache<CaModule, LLCfirSession>
+
+/**
+ * Holds all the caches which are operated by [LLCfirSessionCache].
+ */
+@LLCfirInternals
+class LLCfirSessionCacheStorage(
+    val sourceCache: SessionStorage,
+    val binaryCache: SessionStorage,
+
+    /**
+     * A cache for the binary sessions of [org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryFallbackDependenciesModule]s.
+     *
+     * We keep this cache separate from [binaryCache] for the following reasons:
+     *
+     * 1. We usually have to invalidate *all* fallback dependencies sessions at once. It's cheaper to clear a whole cache instead of
+     *    traversing the binary cache.
+     * 2. There is no sense in holding fallback dependencies on soft references, as they exist for a single use-site resolvable library
+     *    session. Furthermore, such a session can grow arbitrarily large as it spans (almost) all libraries in the project.
+     */
+    val libraryFallbackDependenciesCache: SessionStorage,
+
+    val danglingFileSessionCache: SessionStorage,
+    val unstableDanglingFileSessionCache: SessionStorage,
+    val getCleaner: (LLCfirSession) -> ValueReferenceCleaner<LLCfirSession>,
+) {
+
+    fun createCopy(): LLCfirSessionCacheStorage {
+        return LLCfirSessionCacheStorage(
+            sourceCache = sourceCache.createCopy(),
+            binaryCache = binaryCache.createCopy(),
+            libraryFallbackDependenciesCache = libraryFallbackDependenciesCache.createCopy(),
+            danglingFileSessionCache = danglingFileSessionCache.createCopy(),
+            unstableDanglingFileSessionCache = unstableDanglingFileSessionCache.createCopy(),
+            getCleaner = getCleaner,
+        )
+    }
+
+    companion object {
+        fun createEmpty(
+            getCleaner: (LLCfirSession) -> ValueReferenceCleaner<LLCfirSession>,
+        ): LLCfirSessionCacheStorage {
+            return LLCfirSessionCacheStorage(
+                sourceCache = CleanableWeakValueReferenceCache(getCleaner = getCleaner),
+                binaryCache = CleanableSoftValueReferenceCache(getCleaner = getCleaner),
+                libraryFallbackDependenciesCache = CleanableWeakValueReferenceCache(getCleaner = getCleaner),
+                danglingFileSessionCache = CleanableWeakValueReferenceCache(getCleaner = getCleaner),
+                unstableDanglingFileSessionCache = CleanableWeakValueReferenceCache(getCleaner = getCleaner),
+                getCleaner = getCleaner,
+            )
+        }
+    }
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirSessionCacheStorageInvalidator.kt
++/*
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.analysis.api.platform.analysisMessageBus
+import org.cangnova.cangjie.analysis.api.platform.modification.KotlinCodeFragmentContextModificationEvent
+import org.cangnova.cangjie.analysis.api.platform.modification.KotlinGlobalModuleStateModificationEvent
+import org.cangnova.cangjie.analysis.api.platform.modification.KotlinGlobalScriptModuleStateModificationEvent
+import org.cangnova.cangjie.analysis.api.platform.modification.KotlinGlobalSourceModuleStateModificationEvent
+import org.cangnova.cangjie.analysis.api.platform.modification.KotlinGlobalSourceOutOfBlockModificationEvent
+import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModificationEvent
+import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModuleOutOfBlockModificationEvent
+import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModuleStateModificationEvent
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinAnchorModuleProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinModuleDependentsProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.*
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirBuiltinsSessionFactory
+
+/**
+ * Invalidates sessions in [LLCfirSessionCacheStorage] when the corresponding module state has changed.
+ *
+ * Its invalidation functions should always be invoked in a **write action** because invalidation affects multiple sessions in
+ * [LLCfirSessionCache] and the cache has to be kept consistent. The exception is [invalidateAll] – it is called from a stop-the-world
+ * cache invalidation (see `CaCfirStopWorldCacheCleaner` in Analysis API K2) when it's guaranteed no threads perform code analysis.
+ *
+ * ### Cache consistency
+ *
+ * Invalidation must also preserve cache consistency. A cache is consistent when none of the sessions are outdated and all sessions
+ * referenced by other sessions also exist in the cache. Ensuring this is straightforward on the happy path but gets more complicated when
+ * exceptions are involved.
+ *
+ * To achieve resilience, the invalidator takes the following measures:
+ *
+ * - All invalidation is performed in non-cancellable sections, which avoids (most) cancellation exceptions.
+ * - When removing entries from [LLCfirSessionCacheStorage] caches, session cleanup with [LLCfirSessionCleaner] might cause exceptions. The
+ *   cache implementation ensures that if such an exception happens, removal from the cache is still guaranteed.
+ * - An invalidation operation might be composed of several, independent cache removal operations. The invalidator uses
+ *   [withIndependentRemoval] to ensure that all removal operations run even if one of them throws an exception.
+ */
+@LLCfirInternals
+class LLCfirSessionCacheStorageInvalidator(
+    private val project: Project,
+    private val storage: LLCfirSessionCacheStorage,
+) {
+    private val sessionInvalidationEventPublisher: LLCfirSessionInvalidationEventPublisher
+        get() = LLCfirSessionInvalidationEventPublisher.getInstance(project)
+
+    fun invalidate(event: KotlinModificationEvent) {
+        when (event) {
+            is KotlinModuleStateModificationEvent ->
+                when (val module = event.module) {
+                    is CaBuiltinsModule -> {
+                        // Modification of fallback builtins might affect any session, so all sessions need to be invalidated.
+                        invalidateAll(includeLibraryModules = true, "builtins module state modification")
+                    }
+                    is CaLibraryModule -> {
+                        invalidate(module)
+
+                        // A modification to a library module is also a (likely) modification of any fallback dependency module.
+                        invalidateFallbackDependencies()
+                    }
+                    else -> invalidate(module)
+                }
+
+            // We do not need to handle `CaBuiltinsModule` and `CaLibraryModule` here because builtins/libraries cannot be affected by
+            // out-of-block modification.
+            is KotlinModuleOutOfBlockModificationEvent -> invalidate(event.module)
+
+            is KotlinGlobalModuleStateModificationEvent -> invalidateAll(includeLibraryModules = true, "global module state modification")
+
+            is KotlinGlobalSourceModuleStateModificationEvent ->
+                invalidateAll(includeLibraryModules = false, "source module state modification")
+
+            is KotlinGlobalScriptModuleStateModificationEvent -> invalidateScriptSessions()
+
+            is KotlinGlobalSourceOutOfBlockModificationEvent ->
+                invalidateAll(includeLibraryModules = false, "global source out-of-block modification")
+
+            is KotlinCodeFragmentContextModificationEvent -> invalidateContextualDanglingFileSessions(event.module)
+        }
+    }
+
+    /**
+     * Invalidates the session(s) associated with [module].
+     *
+     * We do not need to handle [CaBuiltinsModule] and invalidate [LLCfirBuiltinsSessionFactory] here because we invoke [invalidateAll] when
+     * a builtins module receives a targeted modification event.
+     *
+     * Per the contract of [LLCfirSessionInvalidationService], [invalidate] may only be called from a write action.
+     */
+    private fun invalidate(module: CaModule) = performInvalidation {
+        ApplicationManager.getApplication().assertWriteAccessAllowed()
+
+        sessionInvalidationEventPublisher.collectSessionsAndPublishInvalidationEvent {
+            val didSessionExist = removeSession(module)
+
+            // We don't have to invalidate dependent sessions if the root session does not exist in the cache. It is true that sessions can
+            // be created without their dependency sessions being created, as session dependencies are lazy. So some of the root session's
+            // dependents might exist. But if the root session does not exist, its dependent sessions won't contain any elements resolved by
+            // the root session, so they effectively don't depend on the root session at that moment and don't need to be invalidated.
+            if (!didSessionExist) return@collectSessionsAndPublishInvalidationEvent
+
+            KotlinModuleDependentsProvider.getInstance(project)
+                .getTransitiveDependents(module)
+                .forEach(::invalidateDependent)
+
+            // Due to a missing IDE implementation for script dependents (see KTIJ-25620), script sessions need to be invalidated globally:
+            //  - A script may include other scripts, so a script modification may affect any other script.
+            //  - Script dependencies are also not linked via dependents yet, so any script dependency modification may affect any script.
+            //  - Scripts may depend on libraries, and the IDE module dependents provider doesn't provide script dependents for libraries
+            //    yet.
+            if (module is CaScriptModule || module is CaScriptDependencyModule || module is CaLibraryModule) {
+                removeAllScriptSessions()
+            }
+
+            if (module is CaDanglingFileModule) {
+                removeContextualDanglingFileSessions(module)
+            } else {
+                removeAllDanglingFileSessions()
+            }
+        }
+    }
+
+    /**
+     * Invalidates the session(s) associated with [module]. The module must be a *dependent* of the [CaModule] for which the modification
+     * event was received.
+     *
+     * Dependents have to be handled specially because of a special relationship between a [CaLibraryModule] and its dependencies. Only a
+     * resolvable session for a [CaLibraryModule] takes its dependencies into account. A binary session for a library module cannot have any
+     * dependencies. Conversely, when we encounter a [CaLibraryModule] as a *dependent*, it can only describe a resolvable session, not a
+     * binary session. So it would be inefficient to remove the binary session for the library module from the cache.
+     *
+     * For example, if the [CaLibraryModule] is a dependent of a [CaLibraryFallbackDependenciesModule], only resolvable library sessions
+     * which actually rely on the fallback dependencies should be invalidated.
+     */
+    private fun invalidateDependent(module: CaModule) {
+        if (module is CaLibraryModule) {
+            removeSourceSession(module)
+        } else {
+            removeSession(module)
+        }
+    }
+
+    /**
+     * Invalidates the sessions of all [CaLibraryFallbackDependenciesModule]s and all dependent resolvable library sessions.
+     *
+     * When we receive a modification event for a [CaLibraryModule], we have to assume that the content of the library module has been
+     * changed in some way. Such a change not only affects the library session, but also all [CaLibraryFallbackDependenciesModule]s, each of
+     * which essentially covers (almost) all libraries in the project. So a modification to any library module is also a modification to all
+     * fallback dependency modules.
+     */
+    private fun invalidateFallbackDependencies() = performInvalidation {
+        // This solution assumes that only resolvable library sessions can be dependents of fallback dependencies sessions. It would be
+        // better to call `invalidate` on each `CaLibraryFallbackDependenciesModule` in the cache ony-by-one as a more general solution.
+        // However, this approach is blocked by KT-75688: If we kick off the individual invalidation of fallback modules right now, all
+        // source sessions that depend on any fallback module's `dependentLibrary` would be invalidated as well.
+        sessionInvalidationEventPublisher.collectSessionsAndPublishInvalidationEvent {
+            // Technically, the `CaLibraryFallbackDependenciesModule` which has the modified `CaLibraryModule` as a dependent is *not*
+            // affected by a modification to that library module. But there's no large practical advantage in being this selective, so the
+            // simpler solution of invalidating all sessions is better.
+            removeAllLibraryFallbackDependenciesSessions()
+
+            // This is an approximation. Not all resolvable library sessions might depend on fallback dependencies, in which case removing
+            // them here is a waste. However, for all practical purposes (especially considering usage in IJ), most of them do, and so this
+            // is a sensible simplification.
+            removeAllResolvableLibrarySessions()
+        }
+    }
+
+    private fun invalidateScriptSessions() = performInvalidation { removeAllScriptSessions() }
+
+    /**
+     * Invalidates all cached sessions. If [includeLibraryModules] is `true`, also invalidates sessions for libraries and builtins.
+     *
+     * The method must be called in a write action, or alternatively when the caller can guarantee that no other threads can perform
+     * invalidation or code analysis until the invalidation is complete.
+     */
+    fun invalidateAll(includeLibraryModules: Boolean, diagnosticInformation: String? = null) = performInvalidation {
+        try {
+            withIndependentRemoval {
+                if (includeLibraryModules) {
+                    // Builtins modules and sessions are not part of `LLCfirSessionCache`, so they need to be invalidated separately. This
+                    // can be triggered either by a global module state modification or a local module state modification of the builtins
+                    // module itself.
+                    independently { LLCfirBuiltinsSessionFactory.getInstance(project).invalidateAll() }
+                } else {
+                    // When anchor modules are configured and `includeLibraryModules` is `false`, we get a situation where the anchor module session
+                    // will be invalidated (because it is a source session), while its library dependents won't be invalidated. But such library
+                    // sessions also need to be invalidated because they depend on the anchor module.
+                    //
+                    // Invalidating anchor modules before all source sessions has the advantage that `invalidate`'s session existence check will
+                    // work, so we do not have to invalidate dependent sessions if the anchor module does not exist in the first place.
+                    val anchorModules = KotlinAnchorModuleProvider.getInstance(project)?.getAllAnchorModulesIfComputed()
+                    anchorModules?.forEach { anchorModule ->
+                        independently { invalidate(anchorModule) }
+                    }
+                }
+
+                independently { removeAllSessions(includeLibraryModules, diagnosticInformation) }
+            }
+        } finally {
+            // The session invalidation event is published in a `finally` to ensure that `CaCfirSession`s are invalidated even when LL CFIR
+            // session invalidation partially fails. This is an essential part of exception resilience.
+            //
+            // We could also take `includeLibraryModules` into account here, but this will complicate the handling of the global session
+            // invalidation event, and it isn't currently necessary for `CaCfirSession` invalidation to be more granular.
+            project.analysisMessageBus.syncPublisher(LLCfirSessionInvalidationTopics.SESSION_INVALIDATION).afterGlobalInvalidation()
+        }
+    }
+
+    private fun invalidateContextualDanglingFileSessions(contextModule: CaModule) = performInvalidation {
+        ApplicationManager.getApplication().assertWriteAccessAllowed()
+
+        sessionInvalidationEventPublisher.collectSessionsAndPublishInvalidationEvent {
+            removeContextualDanglingFileSessions(contextModule)
+        }
+    }
+
+    fun invalidateUnstableDanglingFileSessions() = performInvalidation {
+        ApplicationManager.getApplication().assertWriteAccessAllowed()
+
+        // We don't need to publish any session invalidation events for unstable dangling file modules.
+        removeUnstableDanglingFileSessions()
+    }
+
+    /**
+     * Ensures that the invalidated [block] does not run concurrently and cannot be canceled.
+     *
+     * Invalidation caused by a listener only happens in a write action. However, `CaCfirCacheCleaner` can perform immediate invalidation
+     * from outside one if there are no ongoing analyses. There might happen a situation when both an invalidation listener and the
+     * stop-world cache cleaner request invalidation at once.
+     *
+     * The synchronization protects concurrent-unsafe cleanup in [SessionStorage].
+     */
+    private inline fun performInvalidation(crossinline block: () -> Unit) {
+        synchronized(this) {
+            // Cancellation exceptions can bring session caches into an inconsistent state (see KT-78994). Conceptually, session
+            // invalidation is a critical operation that must not be interrupted. Historically, this was not an issue because session
+            // invalidation was performed only in write actions. However, with low-memory cache cleanup, session invalidation can be
+            // executed in a read action.
+            //
+            // Note that this does not prevent all cancellation exceptions, for example, when awaiting on an external cancellable resource.
+            // However, it covers all known cases of such exceptions occurring during session invalidation.
+            ProgressManager.getInstance().executeNonCancelableSection {
+                block()
+            }
+        }
+    }
+
+    /**
+     * Removes the session(s) associated with [module] after it has been invalidated. Must be called in a write action.
+     *
+     * @return `true` if any sessions were removed.
+     */
+    private fun removeSession(module: CaModule): Boolean {
+        ApplicationManager.getApplication().assertWriteAccessAllowed()
+
+        val didSourceSessionExist = removeSourceSessionInWriteAction(module)
+
+        val didOtherSessionExist = when (module) {
+            is CaLibraryModule -> removeSessionFrom(module, storage.binaryCache)
+            is CaLibraryFallbackDependenciesModule -> removeSessionFrom(module, storage.libraryFallbackDependenciesCache)
+            is CaDanglingFileModule -> {
+                val didStableSessionExist = removeSessionFrom(module, storage.danglingFileSessionCache)
+                val didUnstableSessionExist = removeSessionFrom(module, storage.unstableDanglingFileSessionCache)
+                didStableSessionExist || didUnstableSessionExist
+            }
+            else -> false
+        }
+
+        return didSourceSessionExist || didOtherSessionExist
+    }
+
+    /**
+     * Removes the source session associated with the given [module] after it has been invalidated. Must be called in a write action.
+     *
+     * @return `true` if the source session was removed successfully.
+     */
+    private fun removeSourceSession(module: CaModule): Boolean {
+        ApplicationManager.getApplication().assertWriteAccessAllowed()
+        return removeSourceSessionInWriteAction(module)
+    }
+
+    private fun removeSourceSessionInWriteAction(module: CaModule): Boolean = removeSessionFrom(module, storage.sourceCache)
+
+    private fun removeSessionFrom(module: CaModule, storage: SessionStorage): Boolean = storage.remove(module) != null
+
+    /**
+     * Removes all sessions after global invalidation. If [includeLibraryModules] is `false`, sessions of library modules will not be
+     * removed.
+     *
+     * [removeAllSessions] must be called in a write action, or in the case if the caller can guarantee no other threads can perform
+     * invalidation or code analysis until the cleanup is complete.
+     */
+    private fun removeAllSessions(includeLibraryModules: Boolean, diagnosticInformation: String? = null) {
+        withIndependentRemoval {
+            if (includeLibraryModules) {
+                independently { removeAllSessionsFrom(storage.sourceCache, diagnosticInformation) }
+                independently { removeAllSessionsFrom(storage.binaryCache, diagnosticInformation) }
+                independently { removeAllLibraryFallbackDependenciesSessions() }
+            } else {
+                // `binaryCache` and `libraryFallbackDependenciesCache` can only contain library modules, so we only need to remove sessions
+                // from `sourceCache`.
+                independently {
+                    removeAllMatchingSessionsFrom(storage.sourceCache) { it !is CaLibraryModule && it !is CaLibrarySourceModule }
+                }
+            }
+
+            independently { removeAllDanglingFileSessions() }
+        }
+    }
+
+    private fun removeUnstableDanglingFileSessions() {
+        removeAllSessionsFrom(storage.unstableDanglingFileSessionCache)
+    }
+
+    private fun removeContextualDanglingFileSessions(contextModule: CaModule) {
+        removeUnstableDanglingFileSessions()
+
+        if (contextModule is CaDanglingFileModule) {
+            removeAllMatchingSessionsFrom(storage.danglingFileSessionCache) {
+                it is CaDanglingFileModule && hasContextModule(
+                    it,
+                    contextModule
+                )
+            }
+        } else {
+            // Only code fragments can have a dangling file context
+            removeAllMatchingSessionsFrom(storage.danglingFileSessionCache) { it is CaDanglingFileModule && it.isCodeFragment }
+        }
+    }
+
+    private tailrec fun hasContextModule(module: CaDanglingFileModule, contextModule: CaModule): Boolean {
+        return when (val candidate = module.contextModule) {
+            contextModule -> true
+            is CaDanglingFileModule -> hasContextModule(candidate, contextModule)
+            else -> false
+        }
+    }
+
+    private fun removeAllDanglingFileSessions() {
+        withIndependentRemoval {
+            independently { removeAllSessionsFrom(storage.danglingFileSessionCache) }
+            independently { removeAllSessionsFrom(storage.unstableDanglingFileSessionCache) }
+        }
+    }
+
+    // Removing script sessions is only needed temporarily until KTIJ-25620 has been implemented.
+    private fun removeAllScriptSessions() {
+        ApplicationManager.getApplication().assertWriteAccessAllowed()
+
+        removeAllScriptSessionsFrom(storage.sourceCache)
+        removeAllScriptSessionsFrom(storage.binaryCache)
+    }
+
+    private fun removeAllScriptSessionsFrom(storage: SessionStorage) {
+        removeAllMatchingSessionsFrom(storage) { it is CaScriptModule || it is CaScriptDependencyModule }
+    }
+
+    private fun removeAllLibraryFallbackDependenciesSessions() {
+        removeAllSessionsFrom(storage.libraryFallbackDependenciesCache)
+    }
+
+    /**
+     * Removes all resolvable sessions for [CaLibraryModule]s and [CaLibrarySourceModule]s from the session cache. The function does not
+     * affect *binary* library sessions.
+     */
+    private fun removeAllResolvableLibrarySessions() {
+        removeAllMatchingSessionsFrom(storage.sourceCache) { it is CaLibraryModule || it is CaLibrarySourceModule }
+    }
+
+    private fun removeAllSessionsFrom(storage: SessionStorage, diagnosticInformation: String? = null) {
+        storage.clear(diagnosticInformation)
+    }
+
+    private inline fun removeAllMatchingSessionsFrom(storage: SessionStorage, shouldBeRemoved: (CaModule) -> Boolean) {
+        // Because this function is executed in a single thread, we do not need concurrency guarantees to remove all matching sessions, so a
+        // "collect and remove" approach also works.
+        withIndependentRemoval {
+            storage.keys.forEach { module ->
+                if (shouldBeRemoved(module)) {
+                    independently { storage.remove(module) }
+                }
+            }
+        }
+    }
+
+    /**
+     * Allows running multiple different removal operations with [independently] while avoiding interference caused by exceptions. This
+     * ensures that all removal operations can run during an invalidation operation, supporting cache consistency.
+     *
+     * Exceptions disrupting session invalidation have so far only been encountered outside write actions, so at this time, usage of this
+     * function is limited to cases where invalidation is performed outside a write action.
+     */
+    private inline fun withIndependentRemoval(block: MutableList<Result<Unit>>.() -> Unit) {
+        val results = buildList {
+            block()
+        }
+
+        results.forEach { result -> result.onFailure { throw it } }
+    }
+
+    /**
+     * Runs [block], deferring any exception until it is handled by [withIndependentRemoval] after all operations have been run.
+     */
+    private inline fun MutableList<Result<Unit>>.independently(block: () -> Unit) {
+        val result = runCatching { block() }
+        add(result)
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirSessionCleaner.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.Disposer
+import org.cangnova.cangjie.analysis.low.level.api.cfir.caches.cleanable.ValueReferenceCleaner
+
+/**
+ * [LLCfirSessionCleaner] is a [ValueReferenceCleaner] which handles cleanup of the session after it has been explicitly invalidated or
+ * garbage-collected.
+ *
+ * It must not keep a strong reference to its associated [LLCfirSession], because otherwise the weak reference-based garbage collection of
+ * unused sessions will not work.
+ *
+ * @param disposable The associated [LLCfirSession]'s [disposable]. Keeping a separate reference ensures that the disposable can be disposed
+ *  even after the session has been reclaimed by the GC.
+ */
+internal class LLCfirSessionCleaner(private val disposable: Disposable?) : ValueReferenceCleaner<LLCfirSession> {
+    override fun cleanUp(value: LLCfirSession?) {
+        // If both the session and the disposable are present, we can check their consistency. Otherwise, this is not possible, because
+        // we cannot store the session in the session cleaner (otherwise the session will never be garbage-collected).
+        if (value != null && disposable != null) {
+            val sessionDisposable = value.requestedDisposableOrNull
+
+            require(sessionDisposable != null) {
+                "The session to clean up should have a registered disposable when a disposable is also registered with this" +
+                        " cleaner. The session to clean up might not be consistent with the session from which this cleaner was created."
+            }
+
+            require(sessionDisposable == disposable) {
+                "The session to clean up should have a disposable that is equal to the disposable registered with this cleaner. The" +
+                        " session to clean up might not be consistent with the session from which this cleaner was created."
+            }
+        }
+
+        value?.isValid = false
+        disposable?.let { Disposer.dispose(it) }
+
+        if (value != null) {
+            // We only publish session invalidation events for sessions which haven't been garbage collected yet.
+            LLCfirSessionInvalidationEventPublisher.getInstance(value.project).collectSession(value)
+        }
+    }
+
+    override fun cleanUp(value: LLCfirSession?, diagnosticInformation: String?) {
+        value?.invalidationInformation = buildString {
+            if (diagnosticInformation != null) {
+                append(diagnosticInformation)
+                append(", ")
+            }
+            append("write-access:")
+            append(ApplicationManager.getApplication().isWriteAccessAllowed)
+            append(", has-disposable:")
+            append(disposable != null)
+        }
+
+        try {
+            cleanUp(value)
+        } catch (t: Throwable) {
+            value?.invalidationInformation += "\nException occurred in `cleanUp`:\n${t.stackTraceToString()}]"
+            throw t
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirSessionConfigurator.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import org.cangnova.cangjie.extensions.ProjectExtensionDescriptor
+
+interface LLCfirSessionConfigurator {
+    companion object : ProjectExtensionDescriptor<LLCfirSessionConfigurator>(
+        "org.cangnova.cangjie.llCfirSessionConfigurator",
+        LLCfirSessionConfigurator::class.java
+    )
+
+    fun configure(session: LLCfirSession)
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirSessionInvalidationEventPublisher.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.isStable
+import org.cangnova.cangjie.analysis.api.platform.analysisMessageBus
+
+/**
+ * [LLCfirSessionInvalidationEventPublisher] publishes [session invalidation events][LLCfirSessionInvalidationTopics] after session
+ * invalidation to allow caches that depend on [LLCfirSession]s to be invalidated actively. These events are not published after garbage
+ * collection of softly reachable sessions. See [LLCfirSession] for more information.
+ */
+internal class LLCfirSessionInvalidationEventPublisher(private val project: Project) {
+    /**
+     * [invalidatedModules] can only exist during write actions while executing [collectSessionsAndPublishInvalidationEvent], so we don't
+     * have to use a thread-safe collection.
+     */
+    private var invalidatedModules: MutableSet<CaModule>? = null
+
+    /**
+     * Invokes [action] and collects all sessions which were invalidated during its execution. At the end, publishes a session invalidation
+     * event if at least one session was invalidated.
+     *
+     * Invalidated sessions are tracked via [collectSession].
+     *
+     * Must be called in a write action.
+     */
+    inline fun collectSessionsAndPublishInvalidationEvent(action: () -> Unit) {
+        require(invalidatedModules == null) {
+            "The set of invalidated modules should be `null` when `collectSessionsAndPublishInvalidationEvent` has just been called."
+        }
+        invalidatedModules = mutableSetOf()
+
+        try {
+            action()
+
+            if (invalidatedModules?.isNotEmpty() == true) {
+                project.analysisMessageBus
+                    .syncPublisher(LLCfirSessionInvalidationTopics.SESSION_INVALIDATION)
+                    .afterInvalidation(invalidatedModules!!)
+            }
+        } finally {
+            invalidatedModules = null
+        }
+    }
+
+    fun collectSession(session: LLCfirSession) {
+        // We don't want to collect any modules outside `collectSessionsAndPublishInvalidationEvent`. For example, this might happen during
+        // global invalidation, or when unstable dangling file sessions are replaced during `LLCfirSessionCache.getSession`.
+        val invalidatedModules = this.invalidatedModules ?: return
+
+        // Session invalidation events don't need to be published for unstable dangling file modules. However, since the file(s) might have
+        // been modified, we need to check the module's validity before checking `isStable`, as otherwise an exception might occur in
+        // `isStable`. Even if the module is invalid, we still want to publish a session invalidation event so that the downstream analysis
+        // session can be invalidated.
+        val ktModule = session.ktModule
+        if (ktModule is CaDanglingFileModule && ktModule.isValid && !ktModule.isStable) {
+            return
+        }
+
+        invalidatedModules.add(ktModule)
+    }
+
+    companion object {
+        fun getInstance(project: Project): LLCfirSessionInvalidationEventPublisher =
+            project.getService(LLCfirSessionInvalidationEventPublisher::class.java)
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirSessionInvalidationService.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import com.intellij.openapi.project.Project
+import com.intellij.psi.util.PsiModificationTracker
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
+import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModificationEvent
+import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModificationEventListener
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+
+/**
+ * [LLCfirSessionInvalidationService] listens to [modification events][org.cangnova.cangjie.analysis.api.platform.modification.KotlinModificationEvent]
+ * and invalidates [LLCfirSession]s which depend on the modified [CaModule].
+ */
+@CaImplementationDetail
+class LLCfirSessionInvalidationService(private val project: Project) {
+    internal class LLKotlinModificationEventListener(val project: Project) : KotlinModificationEventListener {
+        override fun onModification(event: KotlinModificationEvent) {
+            getInstance(project).invalidate(event)
+        }
+    }
+
+    internal class LLPsiModificationTrackerListener(val project: Project) : PsiModificationTracker.Listener {
+        override fun modificationCountChanged() {
+            getInstance(project).invalidator.invalidateUnstableDanglingFileSessions()
+        }
+    }
+
+    private val invalidator by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        LLCfirSessionCacheStorageInvalidator(project, LLCfirSessionCache.getInstance(project).storage)
+    }
+
+    /**
+     * @see LLCfirSessionCacheStorageInvalidator.invalidate
+     */
+    fun invalidate(event: KotlinModificationEvent) {
+        invalidator.invalidate(event)
+    }
+
+    /**
+     * @see LLCfirSessionCacheStorageInvalidator.invalidateAll
+     */
+    fun invalidateAll(includeLibraryModules: Boolean, diagnosticInformation: String? = null) {
+        invalidator.invalidateAll(includeLibraryModules, diagnosticInformation)
+    }
+
+    companion object {
+        fun getInstance(project: Project): LLCfirSessionInvalidationService =
+            project.getService(LLCfirSessionInvalidationService::class.java)
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirSessionInvalidationTopics.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import com.intellij.util.messages.Topic
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+
+/**
+ * [Topic]s for events published by [LLCfirSessionInvalidationService] *after* session invalidation. These topics should be subscribed to via
+ * the Analysis API message bus: [analysisMessageBus][org.cangnova.cangjie.analysis.api.platform.analysisMessageBus].
+ *
+ * Session invalidation events are guaranteed to be published after the associated sessions have been invalidated.
+ * Sessions can be invalidated either in a write action, or in the case if the caller can guarantee no other threads can perform
+ * invalidation or code analysis until the cleanup is complete. Session invalidation events are published on the same thread – it means
+ * only the reporter thread has access to sessions.
+ *
+ * When a session is garbage-collected due to being softly reachable, no session invalidation event will be published for it. See the
+ * documentation of [LLCfirSession] for background information.
+ *
+ * Session invalidation events are not published for unstable
+ * [CjDanglingFileModules][org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule].
+ */
+@CaImplementationDetail
+object LLCfirSessionInvalidationTopics {
+    val SESSION_INVALIDATION: Topic<LLCfirSessionInvalidationListener> =
+        Topic(LLCfirSessionInvalidationListener::class.java, Topic.BroadcastDirection.TO_CHILDREN, true)
+}
+
+@CaImplementationDetail
+interface LLCfirSessionInvalidationListener {
+    /**
+     * [afterInvalidation] is published when sessions for the given [modules] have been invalidated. Because the sessions are already
+     * invalid, the event carries their [CaModule][CaModule]s.
+     *
+     * @see LLCfirSessionInvalidationTopics
+     */
+    fun afterInvalidation(modules: Set<CaModule>)
+
+    /**
+     * [afterGlobalInvalidation] is published when all sessions may have been invalidated. The event doesn't guarantee that all sessions
+     * have been invalidated, but e.g. caches should be cleared as if this was the case. This event is published when the invalidated
+     * sessions cannot be easily enumerated.
+     *
+     * @see LLCfirSessionInvalidationTopics
+     */
+    fun afterGlobalInvalidation()
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirSourcesSession.kt
++/*
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
+import org.cangnova.cangjie.cfir.BuiltinTypes
+import org.cangnova.cangjie.cfir.PrivateSessionConstructor
+
+internal class LLCfirSourcesSession @PrivateSessionConstructor constructor(
+    ktModule: CaSourceModule,
+    override val moduleComponents: LLCfirModuleResolveComponents,
+    builtinTypes: BuiltinTypes,
+    computeDependencies: () -> List<LLCfirSession>,
+) : LLCfirResolvableModuleSession(ktModule, builtinTypes) {
+    /**
+     * Dependencies are lazy to support cyclic dependencies between modules.
+     */
+    val dependencies: List<LLCfirSession> by lazy(LazyThreadSafetyMode.PUBLICATION, computeDependencies)
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirWasmSessionFactory.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import com.intellij.openapi.project.Project
+import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories.LLLibrarySymbolProviderFactory
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleWithDependenciesSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.getWasmTarget
+import org.cangnova.cangjie.cfir.SessionConfiguration
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.firProvider
+import org.cangnova.cangjie.cfir.session.CfirWasmSessionFactory
+
+@OptIn(SessionConfiguration::class)
+internal class LLCfirWasmSessionFactory(project: Project) : LLCfirAbstractSessionFactory(project) {
+    override fun createSourcesSession(module: CaSourceModule): LLCfirSourcesSession {
+        return doCreateSourcesSession(module) { context ->
+            registerWasmComponents()
+
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOfNotNull(
+                        context.firProvider.symbolProvider,
+                        context.switchableExtensionDeclarationsSymbolProvider,
+                        context.syntheticFunctionInterfaceProvider,
+                    ),
+                    context.dependencyProvider,
+                )
+            )
+        }
+    }
+
+    override fun createResolvableLibrarySession(module: CaModule): LLCfirLibraryOrLibrarySourceResolvableModuleSession {
+        return doCreateResolvableLibrarySession(module) { context ->
+            registerWasmComponents()
+
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOf(
+                        context.firProvider.symbolProvider,
+                    ),
+                    context.dependencyProvider,
+                )
+            )
+        }
+    }
+
+    override fun createBinaryLibrarySession(module: CaModule): LLCfirLibrarySession {
+        return doCreateBinaryLibrarySession(module) {
+            registerWasmComponents()
+        }
+    }
+
+    override fun createDanglingFileSession(module: CaDanglingFileModule, contextSession: LLCfirSession): LLCfirSession {
+        return doCreateDanglingFileSession(module, contextSession) { context ->
+            registerWasmComponents()
+
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOfNotNull(
+                        firProvider.symbolProvider,
+                        context.switchableExtensionDeclarationsSymbolProvider,
+                        context.syntheticFunctionInterfaceProvider,
+                    ),
+                    context.dependencyProvider,
+                )
+            )
+        }
+    }
+
+    private fun LLCfirSession.registerWasmComponents() {
+        val target = ktModule.targetPlatform.getWasmTarget()
+        with(CfirWasmSessionFactory.of(target)) {
+            registerWasmComponents()
+        }
+    }
+
+    override fun createProjectLibraryProvidersForScope(
+        session: LLCfirSession,
+        scope: GlobalSearchScope,
+    ): List<CfirSymbolProvider> {
+        return LLLibrarySymbolProviderFactory.fromSettings(project).createWasmLibrarySymbolProvider(
+            session,
+            scope,
+        )
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\structure\LLSessionStatistics.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure
+
+/**
+ * [LLSessionStatistics] aggregates statistics about a specific [LLCfirSession][org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession]
+ * in the session structure graph.
+ *
+ * The **weight** of a session is the weight of all CFIR elements that it contains. This weight is approximated by the shallow sizes of CFIR
+ * elements and disregards secondary objects like CFIR symbols, source elements (PSI), names, and so on. The weight is thus not an absolute
+ * number meant to be read as "memory consumption of the session," but rather a measure of the relative weight between sessions, or the same
+ * session over time (comparing multiple session structure snapshots).
+ *
+ * @property kotlinWeight The weight of all *Kotlin* CFIR elements in the session.
+ * @property javaWeight The weight of all *Java* CFIR elements in the session.
+ * @property lifetime The time in seconds since the creation of the session.
+ */
+internal class LLSessionStatistics(
+    val kotlinWeight: Long,
+    val javaWeight: Long,
+    val lifetime: Double,
+) {
+    /**
+     * The total weight of the session, combining both [kotlinWeight] and [javaWeight].
+     */
+    val weight: Long get() = kotlinWeight + javaWeight
+
+    companion object {
+        val ZERO = LLSessionStatistics(0, 0, 0.0)
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\structure\LLSessionStatisticsCalculator.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure
+
+import org.cangnova.cangjie.analysis.api.platform.statistics.KotlinObjectSizeCalculator
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirLibrarySession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsOnlyApi
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCfirJavaSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLKotlinStubBasedLibrarySymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleWithDependenciesSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.nullableJavaSymbolProvider
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.java.CfirLazyJavaDeclarationList
+import org.cangnova.cangjie.cfir.java.declarations.*
+import org.cangnova.cangjie.cfir.java.enhancement.CfirJavaAnnotationList
+import org.cangnova.cangjie.cfir.java.enhancement.CfirJavaDeclarationList
+import org.cangnova.cangjie.cfir.java.enhancement.CfirLazyJavaAnnotationList
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+import org.cangnova.cangjie.cfir.types.jvm.CfirJavaTypeRef
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
+import kotlin.time.DurationUnit
+
+@OptIn(LLStatisticsOnlyApi::class)
+internal object LLSessionStatisticsCalculator {
+    /**
+     * Calculates the weight and other statistics for the given [session].
+     */
+    fun calculateSessionStatistics(session: LLCfirSession): LLSessionStatistics {
+        val objectSizeCalculator = KotlinObjectSizeCalculator.getInstance(session.project)
+
+        return context(objectSizeCalculator) {
+            when (session) {
+                is LLCfirResolvableModuleSession -> calculateResolvableSessionStatistics(session)
+                is LLCfirLibrarySession -> calculateLibrarySessionStatistics(session)
+                else -> LLSessionStatistics.ZERO
+            }
+        }
+    }
+
+    context(_: KotlinObjectSizeCalculator?)
+    private fun calculateResolvableSessionStatistics(session: LLCfirResolvableModuleSession): LLSessionStatistics {
+        val moduleFileCache = session.moduleComponents.cache
+        val firFiles = moduleFileCache.getAllCachedCfirFiles()
+
+        val kotlinWeight = calculateCfirElementWeight(firFiles)
+
+        val javaWeight = (session.nullableJavaSymbolProvider as? LLCfirJavaSymbolProvider)
+            ?.cachedDeclarations
+            ?.let { calculateCfirElementWeight(it) }
+            ?: 0L
+
+        return LLSessionStatistics(kotlinWeight, javaWeight, session.currentLifetime)
+    }
+
+    context(_: KotlinObjectSizeCalculator?)
+    private fun calculateLibrarySessionStatistics(session: LLCfirLibrarySession): LLSessionStatistics {
+        val symbolProviders = (session.symbolProvider as? LLModuleWithDependenciesSymbolProvider)?.providers
+            ?: return LLSessionStatistics.ZERO
+
+        val kotlinWeight = symbolProviders
+            .filterIsInstance<LLKotlinStubBasedLibrarySymbolProvider>()
+            .sumOf { calculateCfirElementWeight(it.cachedDeclarations) }
+
+        val javaWeight = symbolProviders
+            .filterIsInstance<LLCfirJavaSymbolProvider>()
+            .sumOf { calculateCfirElementWeight(it.cachedDeclarations) }
+
+        return LLSessionStatistics(kotlinWeight, javaWeight, session.currentLifetime)
+    }
+
+    private val LLCfirSession.currentLifetime: Double
+        get() = creationTimeMark.elapsedNow().toDouble(DurationUnit.SECONDS)
+
+    context(objectSizeCalculator: KotlinObjectSizeCalculator?)
+    private fun calculateCfirElementWeight(firElements: Collection<CfirElement>): Long {
+        if (objectSizeCalculator == null) return 0L
+
+        return firElements.sumOf { calculateCfirElementWeight(it) }
+    }
+
+    context(objectSizeCalculator: KotlinObjectSizeCalculator)
+    private fun calculateCfirElementWeight(firElement: CfirElement): Long {
+        val visitor = CfirElementWeightCalculatorVisitor(objectSizeCalculator)
+        firElement.accept(visitor, null)
+        return visitor.totalWeight
+    }
+
+    /**
+     * CFIR element weight calculation is an approximation. See [LLSessionStatistics] for details.
+     */
+    private class CfirElementWeightCalculatorVisitor(private val objectSizeCalculator: KotlinObjectSizeCalculator) : CfirVisitorVoid() {
+        var totalWeight = 0L
+            private set
+
+        override fun visitElement(element: CfirElement) {
+            totalWeight += objectSizeCalculator.shallowSize(element)
+
+            // CFIR Java elements contain lazily computed properties. When logging the session structure, it is not feasible to perform all
+            // of these computations at once because it would take too much time. Any corresponding read action would likely be canceled.
+            // And furthermore, we want to log everything *currently* cached, so we should avoid computing lazy properties.
+            //
+            // Unfortunately, it is not easy to turn off this laziness, and the API is transparent. Therefore, we have to use reflection to
+            // check the status of known lazy properties. If lazy properties are added or removed in the future, the visitor will likely
+            // break. As this is simply a diagnostic (non-production) feature, that's perfectly fine. Missing child traversals will not lead
+            // to an error (i.e., when a CFIR Java element adds a new line to its `acceptChildren`), but this will at most make the weight
+            // calculation slightly less precise.
+            //
+            // Lazy CFIR Java elements are mainly a workaround for KT-55387, so with a better architecture, the lazy avoidance wouldn't be
+            // needed.
+            when (element) {
+                is CfirJavaClass -> {
+                    visitJavaDeclarationList(element.declarationList)
+                    visitJavaAnnotationList(element.annotations)
+                    if (CfirJavaClass::typeParameters.isLazyInitialized(element)) {
+                        element.typeParameters.forEach { it.accept(this, null) }
+                    }
+                    if (CfirJavaClass::status.isLazyInitialized(element)) {
+                        element.status.accept(this, null)
+                    }
+                    if (CfirJavaClass::superTypeRefs.isLazyInitialized(element)) {
+                        element.superTypeRefs.forEach { it.accept(this, null) }
+                    }
+                }
+
+                is CfirJavaConstructor -> {
+                    element.returnTypeRef.accept(this, null)
+                    element.controlFlowGraphReference?.accept(this, null)
+                    element.typeParameters.forEach { it.accept(this, null) }
+                    element.valueParameters.forEach { it.accept(this, null) }
+                    if (CfirJavaConstructor::status.isLazyInitialized(element)) {
+                        element.status.accept(this, null)
+                    }
+                    visitJavaAnnotationList(element.annotations)
+                }
+
+                is CfirJavaField -> {
+                    element.returnTypeRef.accept(this, null)
+                    visitJavaAnnotationList(element.annotations)
+                    element.typeParameters.forEach { it.accept(this, null) }
+                    if (CfirJavaField::status.isLazyInitialized(element)) {
+                        element.status.accept(this, null)
+                    }
+                    if (element.lazyInitializer.isInitialized()) {
+                        element.initializer?.accept(this, null)
+                    }
+                }
+
+                is CfirJavaMethod -> {
+                    element.returnTypeRef.accept(this, null)
+                    element.receiverParameter?.accept(this, null)
+                    element.controlFlowGraphReference?.accept(this, null)
+                    element.valueParameters.forEach { it.accept(this, null) }
+                    element.body?.accept(this, null)
+                    if (CfirJavaMethod::status.isLazyInitialized(element)) {
+                        element.status.accept(this, null)
+                    }
+                    visitJavaAnnotationList(element.annotations)
+                    element.typeParameters.forEach { it.accept(this, null) }
+                }
+
+                is CfirJavaTypeParameter -> {
+                    // We skip type parameter bounds because the property is not lazy but performs heavy calculations.
+
+                    visitJavaAnnotationList(element.annotations)
+                }
+
+                is CfirJavaValueParameter -> {
+                    element.returnTypeRef.accept(this, null)
+                    visitJavaAnnotationList(element.annotations)
+                    if (element.lazyDefaultValue?.isInitialized() == true) {
+                        element.defaultValue?.accept(this, null)
+                    }
+                }
+
+                is CfirJavaTypeRef -> {
+                    if (CfirJavaTypeRef::annotations.isLazyInitialized(element)) {
+                        element.annotations.forEach { it.accept(this, null) }
+                    }
+                }
+
+                else -> element.acceptChildren(this, null)
+            }
+        }
+
+        @OptIn(CfirImplementationDetail::class)
+        private fun visitJavaDeclarationList(declarationList: CfirJavaDeclarationList) {
+            if (declarationList is CfirLazyJavaDeclarationList) {
+                if (CfirLazyJavaDeclarationList::declarations.isLazyInitialized(declarationList)) {
+                    declarationList.declarations.forEach { it.accept(this, null) }
+                }
+            }
+        }
+
+        private fun visitJavaAnnotationList(annotationList: List<CfirAnnotation>) {
+            val annotations = when (annotationList) {
+                is CfirLazyJavaAnnotationList -> if (annotationList.isInitialized) annotationList else null
+                is CfirJavaAnnotationList -> null // Defensively ignore `CfirDelegatedJavaAnnotationList`.
+                else -> annotationList
+            }
+
+            annotations?.forEach { it.accept(this, null) }
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\structure\LLSessionStructureGraph.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure
+
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaScriptModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+
+/**
+ * A graph of [LLCfirSession]s following the dependency structure of the currently cached sessions. Only sessions which exist in the cache
+ * are included in the graph.
+ *
+ * The purpose of the graph, once written to GraphML with [LLSessionStructureWriter], is to visualize and analyze the structure of
+ * cached sessions and their memory usage.
+ *
+ * The graph has the following features:
+ *
+ * - Each node in the graph represents a session with relevant statistics like its weight. The label of the node is the session module's
+ *   name.
+ * - Directed edges represent dependencies between sessions.
+ */
+internal class LLSessionStructureGraph(
+    val nodesBySession: Map<LLCfirSession, LLSessionStructureGraphNode>,
+)
+
+/**
+ * Represents a node in the [LLSessionStructureGraph].
+ *
+ * Each node corresponds to an [LLCfirSession] with its associated [LLSessionStatistics] and dependencies. Dependencies are represented as
+ * child nodes, forming a directed graph structure.
+ *
+ * @property id A unique numeric ID. It is used to link the node in GraphML.
+ */
+internal class LLSessionStructureGraphNode(
+    val id: Int,
+    val session: LLCfirSession,
+    val statistics: LLSessionStatistics,
+) {
+    /**
+     * The graph can be circular, so we need to assign dependencies some time after all nodes have been created.
+     */
+    var dependencies: List<LLSessionStructureGraphNode> = emptyList()
+
+    /**
+     * The session's distance from the nearest session that has a corresponding analysis session.
+     *
+     * A value of 0 means that this session has a corresponding analysis session.
+     */
+    var analysisRootDistance: Int? = null
+
+    val label: String
+        get() = when (val module = session.ktModule) {
+            is CaSourceModule -> "[SRC] ${module.name}"
+            is CaLibraryModule -> "[LIB] ${module.libraryName}"
+
+            // We cannot get the module description for a script since it might try to find the `CjFile`, which requires a read action.
+            is CaScriptModule -> "[SCRIPT]"
+
+            else -> module.moduleDescription
+        }
+
+    /**
+     * Returns true if this node should be included in the GraphML output.
+     *
+     * Even nodes with no weight need to be included in [LLSessionStructureGraph] to properly calculate session properties, like the
+     * distance to the nearest analysis session.
+     */
+    val isSignificant: Boolean
+        get() = statistics.weight > 0
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\structure\LLSessionStructureGraphBuilder.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCacheStorage
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSourcesSession
+
+internal object LLSessionStructureGraphBuilder {
+    /**
+     * Builds an [LLSessionStructureGraph] from all sessions in the given [storage].
+     *
+     * @param analysisRoots The list of sessions which currently have an associated cached analysis session. They are the root sessions from
+     *  which resolution is started.
+     */
+    fun buildGraph(storage: LLCfirSessionCacheStorage, analysisRoots: List<LLCfirSession>): LLSessionStructureGraph {
+        val sourceSessions = storage.sourceCache.values
+        val librarySessions = storage.binaryCache.values
+
+        val sessions = sourceSessions + librarySessions
+
+        val nodesBySession = sessions
+            .mapIndexed { index, session ->
+                LLSessionStructureGraphNode(
+                    index,
+                    session,
+                    LLSessionStatisticsCalculator.calculateSessionStatistics(session),
+                )
+            }
+            .associateBy { it.session }
+
+        assignDependencies(nodesBySession)
+
+        val graph = LLSessionStructureGraph(nodesBySession)
+
+        val analysisRootNodes = analysisRoots.mapNotNull { nodesBySession[it] }
+        assignDistancesFromAnalysisRoots(analysisRootNodes)
+
+        return graph
+    }
+
+    private fun assignDependencies(nodesBySession: Map<LLCfirSession, LLSessionStructureGraphNode>) {
+        nodesBySession.values.forEach { node ->
+            val session = node.session
+            if (session !is LLCfirSourcesSession) return@forEach
+
+            // The graph should only contain already cached sessions. Furthermore, we might be outside a read action here, so we shouldn't
+            // compute lazily calculated dependencies.
+            if (LLCfirSourcesSession::dependencies.isLazyInitialized(session)) {
+                node.dependencies = session.dependencies.mapNotNull(nodesBySession::get)
+            }
+        }
+    }
+
+    private fun assignDistancesFromAnalysisRoots(analysisRootNodes: List<LLSessionStructureGraphNode>) {
+        val queue = ArrayDeque<LLSessionStructureGraphNode>()
+
+        analysisRootNodes.forEach { rootNode ->
+            rootNode.analysisRootDistance = 0
+            queue.add(rootNode)
+        }
+
+        while (queue.isNotEmpty()) {
+            val currentNode = queue.removeCfirst()
+            val currentDistance = currentNode.analysisRootDistance ?: 0
+            val newDistance = currentDistance + 1
+
+            currentNode.dependencies.forEach { dependency ->
+                // Only update if we haven't visited this node yet or if we found a shorter path. This also breaks cycles.
+                val currentDependencyDistance = dependency.analysisRootDistance
+                if (currentDependencyDistance == null || currentDependencyDistance > newDistance) {
+                    dependency.analysisRootDistance = newDistance
+                    queue.add(dependency)
+                }
+            }
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\structure\LLSessionStructureWriter.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCacheStorage
+import java.io.BufferedWriter
+import kotlin.uuid.ExperimentalUuidApi
+
+/**
+ * [LLSessionStructureWriter] writes a GraphML graph of [LLCfirSession]s which is used to visualize and analyze the structure of cached
+ * sessions and their memory usage.
+ *
+ * ### Gephi Setup
+ *
+ * To view the GraphML, [Gephi](https://gephi.org) is recommended. Read on for recommended settings to make the graph useful. By default,
+ * the graph will likely be unreadable.
+ *
+ * Appearance settings:
+ *
+ * - Show Node Labels in the bottom Graph window
+ * - Appearance (Nodes):
+ *   - Color: Partition -> analysisRootDistance (always click "Apply")
+ *   - Size: Ranking -> weight, 20 - 200
+ *   - Label size: Unique -> 0.05
+ *
+ * Layouts (applied in this order):
+ *
+ * - Yifan Hu:
+ *   - Optimal distance: 100
+ *   - Relative strength: 20.0
+ *   - Initial step size: 40.0
+ * - Label Adjust
+ *   - Nicely spaces out nodes.
+ *
+ * Computing degrees:
+ *
+ * - In the right-hand toolbar, click on Statistics and run "Average Degree".
+ * - This will calculate in and out degrees for each node. Now the data can be used to visualize the degree distribution.
+ */
+object LLSessionStructureWriter {
+    /**
+     * Writes the session structure described by [storage] and [analysisRoots] to [writer].
+     */
+    fun writeSessionStructure(storage: LLCfirSessionCacheStorage, analysisRoots: List<LLCfirSession>, writer: BufferedWriter) {
+        val graph = LLSessionStructureGraphBuilder.buildGraph(storage, analysisRoots)
+        writeGraph(graph, writer)
+    }
+
+    @OptIn(ExperimentalUuidApi::class)
+    private fun writeGraph(graph: LLSessionStructureGraph, writer: BufferedWriter) {
+        with(writer) {
+            appendLine("""<?xml version="1.0" encoding="UTF-8"?>""")
+            appendLine("""<graphml xmlns="http://graphml.graphdrawing.org/xmlns"""")
+            appendLine("""         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"""")
+            appendLine("""         xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">""")
+
+            // Define attributes for nodes
+            appendLine("""  <key id="label" for="node" attr.name="label" attr.type="string"/>""")
+            appendLine("""  <key id="uuid" for="node" attr.name="uuid" attr.type="string"/>""")
+            appendLine("""  <key id="weight" for="node" attr.name="weight" attr.type="long"/>""")
+            appendLine("""  <key id="kotlinWeight" for="node" attr.name="kotlinWeight" attr.type="long"/>""")
+            appendLine("""  <key id="javaWeight" for="node" attr.name="javaWeight" attr.type="long"/>""")
+            appendLine("""  <key id="lifetime" for="node" attr.name="lifetime" attr.type="double"/>""")
+            appendLine("""  <key id="analysisRootDistance" for="node" attr.name="analysisRootDistance" attr.type="int"/>""")
+
+            appendLine("""  <graph id="SessionWeightGraph" edgedefault="directed">""")
+
+            graph.nodesBySession.values.forEach { node ->
+                if (!node.isSignificant) return@forEach
+
+                appendLine("""    <node id="n${node.id}">""")
+                appendLine("""      <data key="label">${escapeXml(node.label)}</data>""")
+                appendLine("""      <data key="uuid">${escapeXml(node.session.uuid.toHexDashString())}</data>""")
+                appendLine("""      <data key="weight">${node.statistics.weight}</data>""")
+                appendLine("""      <data key="kotlinWeight">${node.statistics.kotlinWeight}</data>""")
+                appendLine("""      <data key="javaWeight">${node.statistics.javaWeight}</data>""")
+                appendLine("""      <data key="lifetime">${node.statistics.lifetime}</data>""")
+                node.analysisRootDistance?.let { distance ->
+                    appendLine("""      <data key="analysisRootDistance">$distance</data>""")
+                }
+                appendLine("""    </node>""")
+
+                node.dependencies.forEach { dependencyNode ->
+                    if (!dependencyNode.isSignificant) return@forEach
+
+                    appendLine("""    <edge source="n${node.id}" target="n${dependencyNode.id}"/>""")
+                }
+            }
+
+            appendLine("""  </graph>""")
+            appendLine("""</graphml>""")
+        }
+    }
+
+    private fun escapeXml(text: String): String {
+        return text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&apos;")
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\structure\utils.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure
+
+import kotlin.reflect.KProperty1
+import kotlin.reflect.jvm.isAccessible
+
+internal fun <T> KProperty1<T, *>.isLazyInitialized(receiver: T): Boolean {
+    isAccessible = true
+
+    // If we don't error out here, we won't notice if a property actually isn't `by lazy`. Since the code is only run when
+    // explicitly enabled by an internal flag, an error is fine.
+    val lazy = getDelegate(receiver) as? Lazy<*> ?: error("Expected a lazy property.")
+
+    return lazy.isInitialized()
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\state\LLDiagnosticProvider.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.state
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
+import org.cangnova.cangjie.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjFile
+
+interface LLDiagnosticProvider {
+    /**
+     * Returns all compiler diagnostics for the [file], matching the [filter].
+     */
+    fun collectDiagnostics(file: CjFile, filter: DiagnosticCheckerFilter): List<CjPsiDiagnostic>
+
+    /**
+     * Returns all compiler diagnostics for the specific [element], matching the [filter].
+     * This function is not recursive; diagnostics for nested elements are not returned.
+     */
+    fun getDiagnostics(element: CjElement, filter: DiagnosticCheckerFilter): List<CjPsiDiagnostic>
+}
+
+internal object LLEmptyDiagnosticProvider : LLDiagnosticProvider {
+    override fun collectDiagnostics(file: CjFile, filter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
+        return emptyList()
+    }
+
+    override fun getDiagnostics(element: CjElement, filter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
+        return emptyList()
+    }
+}
+
+internal class LLSourceDiagnosticProvider(
+    private val moduleProvider: LLModuleProvider,
+    private val sessionProvider: LLSessionProvider
+) : LLDiagnosticProvider {
+    override fun collectDiagnostics(file: CjFile, filter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
+        val module = moduleProvider.getModule(file)
+        val moduleComponents = sessionProvider.getResolvableSession(module).moduleComponents
+        return moduleComponents.diagnosticsCollector.collectDiagnosticsForFile(file, filter)
+    }
+
+    override fun getDiagnostics(element: CjElement, filter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
+        val module = moduleProvider.getModule(element)
+        val moduleComponents = sessionProvider.getResolvableSession(module).moduleComponents
+        return moduleComponents.diagnosticsCollector.getDiagnosticsFor(element, filter)
+    }
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\state\LLModuleProvider.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.state
+
+import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
+
+class LLModuleProvider(val useSiteModule: CaModule) {
+    /**
+     * Returns a [CaModule] for a given [element] in context of the current session.
+     *
+     * See [KotlinProjectStructureProvider] for more information on contextual modules.
+     */
+    fun getModule(element: PsiElement): CaModule {
+        return KotlinProjectStructureProvider.getModule(useSiteModule.project, element, useSiteModule)
+    }
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\state\LLModuleResolutionStrategyProvider.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.state
+
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaScriptModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+
+interface LLModuleResolutionStrategyProvider {
+    /**
+     * Returns [LLModuleResolutionStrategy.STATIC] if the [module] is treated as a binary for the current session,
+     * and [LLModuleResolutionStrategy.LAZY] otherwise.
+     *
+     * In some cases, modules of the same type might be treated differently by the session, and have a different [LLModuleResolutionStrategy].
+     * For instance, for a resolvable library session, only the target library is considered resolvable, and its dependencies are binary.
+     */
+    fun getKind(module: CaModule): LLModuleResolutionStrategy
+}
+
+/**
+ * Specifies the way declarations are loaded and handled in the module.
+ */
+enum class LLModuleResolutionStrategy {
+    /**
+     * When a module is analyzed with a [LAZY] resolution strategy, its declarations might be in an unresolved
+     * (or partially resolved) state. Call [lazyResolveToPhase] on the declarations before usage if needed.
+     *
+     * Some modules, such as [CaSourceModule] or [CaScriptModule], are always analyzed as [LAZY].
+     * [CaLibraryModule] can be analyzed both ways (different types of sessions will be created).
+     */
+    LAZY,
+
+    /**
+     * With a [STATIC] resolution strategy, all declarations in a module are always considered fully resolved. Typically, they are loaded
+     * from a binary storage, such as a JAR file, or a klib, where the complete type information is present.
+     * Normally, declarations inside [STATIC] modules do not change. On a backing binary storage change, the whole session is invalided.
+     */
+    STATIC
+}
+
+/**
+ * A resolution strategy that treats all modules but the [useSiteModule] as [LLModuleResolutionStrategy.STATIC].
+ */
+internal class LLSimpleResolutionStrategyProvider(private val useSiteModule: CaModule) : LLModuleResolutionStrategyProvider {
+    override fun getKind(module: CaModule): LLModuleResolutionStrategy {
+        return when (module) {
+            useSiteModule -> LLModuleResolutionStrategy.LAZY
+            else -> LLModuleResolutionStrategy.STATIC
+        }
+    }
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\state\LLScopeSessionProvider.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.state
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.cfir.resolve.ScopeSession
+
+interface LLScopeSessionProvider {
+    fun getScopeSession(session: LLCfirSession): ScopeSession
+}
+
+internal object LLDefaultScopeSessionProvider : LLScopeSessionProvider {
+    override fun getScopeSession(session: LLCfirSession): ScopeSession {
+        return session.getScopeSession()
+    }
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\state\LLSessionProvider.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.state
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCache
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+
+class LLSessionProvider(
+    val useSiteModule: CaModule,
+    private val useSiteSessionFactory: (CaModule) -> LLCfirSession
+) {
+    /**
+     * The [LLCfirSession] must be strongly reachable from the resolvable session and ultimately the `CaCfirSession` so that soft
+     * reference garbage collection doesn't collect the [LLCfirSession] without collecting its dependent `CaCfirSession`. See
+     * [LLCfirSession] for more details.
+     */
+    val useSiteSession: LLCfirSession by lazy(LazyThreadSafetyMode.PUBLICATION) { useSiteSessionFactory(useSiteModule) }
+
+    /**
+     * Returns an [LLCfirSession] for the [module].
+     * For a binary module, the resulting session will be a binary (non-resolvable) one.
+     */
+    fun getSession(module: CaModule): LLCfirSession {
+        return getSession(module, preferBinary = true)
+    }
+
+    /**
+     * Returns an analyzable [LLCfirSession] for the module.
+     * For a binary module, the resulting session will still be a resolvable one.
+     *
+     * Note: prefer using [getSession] unless you need to perform resolution actively.
+     * Resolvable sessions for libraries are much less performant.
+     */
+    fun getResolvableSession(module: CaModule): LLCfirResolvableModuleSession {
+        return getSession(module, preferBinary = false) as LLCfirResolvableModuleSession
+    }
+
+    private fun getSession(module: CaModule, preferBinary: Boolean): LLCfirSession {
+        if (module == useSiteModule) {
+            return useSiteSession
+        }
+
+        val cache = LLCfirSessionCache.getInstance(module.project)
+        return cache.getSession(module, preferBinary)
+    }
+
+    /**
+     * Returns the [LLCfirSession] for [module], to be used as a *dependency*, or `null` if it doesn't make sense to create such a session as
+     * a dependency. This is an optimization for [CaModule]s of certain kinds, like empty modules.
+     */
+    fun getDependencySession(module: CaModule): LLCfirSession? {
+        if (module == useSiteModule) return useSiteSession
+
+        val cache = LLCfirSessionCache.getInstance(module.project)
+        return cache.getDependencySession(module)
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\statistics\domains\LLAnalysisSessionStatistics.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains
+
+import io.opentelemetry.api.metrics.LongCounter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsScopes
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getMeter
+
+/**
+ * Statistics for analysis sessions and `analyze` calls.
+ */
+class LLAnalysisSessionStatistics(statisticsService: LLStatisticsService) : LLStatisticsDomain {
+    private val meter = statisticsService.openTelemetry.getMeter(LLStatisticsScopes.AnalysisSessions)
+
+    val analyzeCallCounter: LongCounter = meter.counterBuilder(LLStatisticsScopes.AnalysisSessions.Analyze.Invocations.name).build()
+
+    val lowMemoryCacheCleanupInvocationCounter: LongCounter =
+        meter.counterBuilder(LLStatisticsScopes.AnalysisSessions.LowMemoryCacheCleanup.Invocations.name).build()
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\statistics\domains\LLStatisticsDomain.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains
+
+/**
+ * An [LLStatisticsDomain] encapsulates the meters, update logic, and any additional internal state required to support statistics
+ * collection and reporting in a specific area of concern.
+ */
+interface LLStatisticsDomain {
+    /**
+     * Performs an update on a fixed schedule which cannot be covered by eager or asynchronous meters.
+     */
+    fun update() {}
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\statistics\domains\LLSymbolProviderStatistics.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLCaffeineStatsCounter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsScopes
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getMeter
+
+internal class LLSymbolProviderStatistics(statisticsService: LLStatisticsService) : LLStatisticsDomain {
+    private val meter = statisticsService.openTelemetry.getMeter(LLStatisticsScopes.SymbolProviders)
+
+    /**
+     * A global [Caffeine stats counter][com.github.benmanes.caffeine.cache.stats.StatsCounter] for combined symbol provider *class* caches.
+     */
+    val combinedSymbolProviderClassCacheStatsCounter =
+        LLCaffeineStatsCounter(meter, LLStatisticsScopes.SymbolProviders.Combined.Classes)
+
+    /**
+     * A global [Caffeine stats counter][com.github.benmanes.caffeine.cache.stats.StatsCounter] for combined symbol provider *callable*
+     * caches.
+     */
+    val combinedSymbolProviderCallableCacheStatsCounter =
+        LLCaffeineStatsCounter(meter, LLStatisticsScopes.SymbolProviders.Combined.Callables)
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\statistics\LLCaffeineStatsCounter.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
+
+import com.github.benmanes.caffeine.cache.RemovalCause
+import com.github.benmanes.caffeine.cache.stats.CacheStats
+import com.github.benmanes.caffeine.cache.stats.StatsCounter
+import io.opentelemetry.api.metrics.Meter
+import org.checkerframework.checker.index.qual.NonNegative
+
+/**
+ * A Caffeine [StatsCounter] which delegates to OpenTelemetry counters.
+ */
+internal class LLCaffeineStatsCounter(meter: Meter, scope: LLCaffeineStatisticsScope) : StatsCounter {
+    private val hitCounter = meter.counterBuilder(scope.hits.name).build()
+
+    private val missCounter = meter.counterBuilder(scope.misses.name).build()
+
+    private val evictionCounter = meter.counterBuilder(scope.evictions.name).build()
+
+    override fun recordHits(count: @NonNegative Int) {
+        hitCounter.add(count.toLong())
+    }
+
+    override fun recordMisses(count: @NonNegative Int) {
+        missCounter.add(count.toLong())
+    }
+
+    override fun recordLoadSuccess(loadTime: @NonNegative Long) {
+    }
+
+    override fun recordLoadFailure(loadTime: @NonNegative Long) {
+    }
+
+    @Deprecated("Deprecated in Caffeine")
+    override fun recordEviction() {
+        evictionCounter.add(1)
+    }
+
+    override fun recordEviction(weight: @NonNegative Int, cause: RemovalCause?) {
+        evictionCounter.add(1)
+    }
+
+    /**
+     * We cannot retrieve any stats from OpenTelemetry, so the snapshot will be empty.
+     */
+    override fun snapshot(): CacheStats = CacheStats.empty()
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\statistics\LLStatisticsOnlyApi.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
+
+/**
+ * [LLStatisticsOnlyApi] is applied to endpoints of regular (non-statistics) LL CFIR declarations. The annotation ensures that the specific
+ * endpoint is only used for statistics and not for resolution purposes.
+ */
+@RequiresOptIn("This API is intended only for statistics collection. It must not be used for other purposes.")
+annotation class LLStatisticsOnlyApi
+
+*** End Patch

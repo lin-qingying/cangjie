@@ -3,13 +3,13 @@ package org.cangnova.cangjie.cfir
 import org.cangnova.cangjie.cfir.render.ConeTypeRendererForDebugging
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassifierLookupTag
 import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
 
-fun ExceptionAttachmentBuilder.withCfirSymbolIdEntry(name: String, symbol: CfirSymbol<*>?) {
+fun ExceptionAttachmentBuilder.withCfirSymbolIdEntry(name: String, symbol: CfirBasedSymbol<*>?) {
     when (symbol) {
         is CfirClassifierSymbol -> withCfirLookupTagEntry(name, symbol.toLookupTag())
         is CfirCallableSymbol -> withEntry(name, symbol.callableId.toString())

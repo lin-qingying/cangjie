@@ -11,3 +11,10 @@ dependencies {
     api(project(":common"))
     api(project(":util"))
 }
+
+configurations.configureEach {
+    exclude(group = "com.jetbrains.intellij.platform")
+    exclude(group = "com.jetbrains.intellij")
+    exclude(group = "org.jetbrains.intellij")
+    exclude(group = "com.intellij.platform")
+}

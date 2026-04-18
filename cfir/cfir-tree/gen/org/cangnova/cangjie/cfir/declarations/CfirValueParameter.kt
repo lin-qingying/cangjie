@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
@@ -33,6 +34,7 @@ abstract class CfirValueParameter : CfirVariable(), CfirControlFlowGraphOwner {
     abstract override val isVar: Boolean
     abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
     abstract override val symbol: CfirValueParameterSymbol
+    abstract val containingDeclarationSymbol: CfirBasedSymbol<*>
     abstract val isNamed: Boolean
     abstract override val status: CfirDeclarationStatus
     abstract override val typeParameters: List<CfirTypeParameter>

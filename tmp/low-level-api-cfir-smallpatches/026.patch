@@ -1,0 +1,503 @@
+*** Begin Patch
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\structure\LLSessionStatisticsCalculator.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure
+
+import org.cangnova.cangjie.analysis.api.platform.statistics.KotlinObjectSizeCalculator
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirLibrarySession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsOnlyApi
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCfirJavaSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLKotlinStubBasedLibrarySymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleWithDependenciesSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.nullableJavaSymbolProvider
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.java.CfirLazyJavaDeclarationList
+import org.cangnova.cangjie.cfir.java.declarations.*
+import org.cangnova.cangjie.cfir.java.enhancement.CfirJavaAnnotationList
+import org.cangnova.cangjie.cfir.java.enhancement.CfirJavaDeclarationList
+import org.cangnova.cangjie.cfir.java.enhancement.CfirLazyJavaAnnotationList
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+import org.cangnova.cangjie.cfir.types.jvm.CfirJavaTypeRef
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
+import kotlin.time.DurationUnit
+
+@OptIn(LLStatisticsOnlyApi::class)
+internal object LLSessionStatisticsCalculator {
+    /**
+     * Calculates the weight and other statistics for the given [session].
+     */
+    fun calculateSessionStatistics(session: LLCfirSession): LLSessionStatistics {
+        val objectSizeCalculator = KotlinObjectSizeCalculator.getInstance(session.project)
+
+        return context(objectSizeCalculator) {
+            when (session) {
+                is LLCfirResolvableModuleSession -> calculateResolvableSessionStatistics(session)
+                is LLCfirLibrarySession -> calculateLibrarySessionStatistics(session)
+                else -> LLSessionStatistics.ZERO
+            }
+        }
+    }
+
+    context(_: KotlinObjectSizeCalculator?)
+    private fun calculateResolvableSessionStatistics(session: LLCfirResolvableModuleSession): LLSessionStatistics {
+        val moduleFileCache = session.moduleComponents.cache
+        val firFiles = moduleFileCache.getAllCachedCfirFiles()
+
+        val kotlinWeight = calculateCfirElementWeight(firFiles)
+
+        val javaWeight = (session.nullableJavaSymbolProvider as? LLCfirJavaSymbolProvider)
+            ?.cachedDeclarations
+            ?.let { calculateCfirElementWeight(it) }
+            ?: 0L
+
+        return LLSessionStatistics(kotlinWeight, javaWeight, session.currentLifetime)
+    }
+
+    context(_: KotlinObjectSizeCalculator?)
+    private fun calculateLibrarySessionStatistics(session: LLCfirLibrarySession): LLSessionStatistics {
+        val symbolProviders = (session.symbolProvider as? LLModuleWithDependenciesSymbolProvider)?.providers
+            ?: return LLSessionStatistics.ZERO
+
+        val kotlinWeight = symbolProviders
+            .filterIsInstance<LLKotlinStubBasedLibrarySymbolProvider>()
+            .sumOf { calculateCfirElementWeight(it.cachedDeclarations) }
+
+        val javaWeight = symbolProviders
+            .filterIsInstance<LLCfirJavaSymbolProvider>()
+            .sumOf { calculateCfirElementWeight(it.cachedDeclarations) }
+
+        return LLSessionStatistics(kotlinWeight, javaWeight, session.currentLifetime)
+    }
+
+    private val LLCfirSession.currentLifetime: Double
+        get() = creationTimeMark.elapsedNow().toDouble(DurationUnit.SECONDS)
+
+    context(objectSizeCalculator: KotlinObjectSizeCalculator?)
+    private fun calculateCfirElementWeight(firElements: Collection<CfirElement>): Long {
+        if (objectSizeCalculator == null) return 0L
+
+        return firElements.sumOf { calculateCfirElementWeight(it) }
+    }
+
+    context(objectSizeCalculator: KotlinObjectSizeCalculator)
+    private fun calculateCfirElementWeight(firElement: CfirElement): Long {
+        val visitor = CfirElementWeightCalculatorVisitor(objectSizeCalculator)
+        firElement.accept(visitor, null)
+        return visitor.totalWeight
+    }
+
+    /**
+     * CFIR element weight calculation is an approximation. See [LLSessionStatistics] for details.
+     */
+    private class CfirElementWeightCalculatorVisitor(private val objectSizeCalculator: KotlinObjectSizeCalculator) : CfirVisitorVoid() {
+        var totalWeight = 0L
+            private set
+
+        override fun visitElement(element: CfirElement) {
+            totalWeight += objectSizeCalculator.shallowSize(element)
+
+            // CFIR Java elements contain lazily computed properties. When logging the session structure, it is not feasible to perform all
+            // of these computations at once because it would take too much time. Any corresponding read action would likely be canceled.
+            // And furthermore, we want to log everything *currently* cached, so we should avoid computing lazy properties.
+            //
+            // Unfortunately, it is not easy to turn off this laziness, and the API is transparent. Therefore, we have to use reflection to
+            // check the status of known lazy properties. If lazy properties are added or removed in the future, the visitor will likely
+            // break. As this is simply a diagnostic (non-production) feature, that's perfectly fine. Missing child traversals will not lead
+            // to an error (i.e., when a CFIR Java element adds a new line to its `acceptChildren`), but this will at most make the weight
+            // calculation slightly less precise.
+            //
+            // Lazy CFIR Java elements are mainly a workaround for KT-55387, so with a better architecture, the lazy avoidance wouldn't be
+            // needed.
+            when (element) {
+                is CfirJavaClass -> {
+                    visitJavaDeclarationList(element.declarationList)
+                    visitJavaAnnotationList(element.annotations)
+                    if (CfirJavaClass::typeParameters.isLazyInitialized(element)) {
+                        element.typeParameters.forEach { it.accept(this, null) }
+                    }
+                    if (CfirJavaClass::status.isLazyInitialized(element)) {
+                        element.status.accept(this, null)
+                    }
+                    if (CfirJavaClass::superTypeRefs.isLazyInitialized(element)) {
+                        element.superTypeRefs.forEach { it.accept(this, null) }
+                    }
+                }
+
+                is CfirJavaConstructor -> {
+                    element.returnTypeRef.accept(this, null)
+                    element.controlFlowGraphReference?.accept(this, null)
+                    element.typeParameters.forEach { it.accept(this, null) }
+                    element.valueParameters.forEach { it.accept(this, null) }
+                    if (CfirJavaConstructor::status.isLazyInitialized(element)) {
+                        element.status.accept(this, null)
+                    }
+                    visitJavaAnnotationList(element.annotations)
+                }
+
+                is CfirJavaField -> {
+                    element.returnTypeRef.accept(this, null)
+                    visitJavaAnnotationList(element.annotations)
+                    element.typeParameters.forEach { it.accept(this, null) }
+                    if (CfirJavaField::status.isLazyInitialized(element)) {
+                        element.status.accept(this, null)
+                    }
+                    if (element.lazyInitializer.isInitialized()) {
+                        element.initializer?.accept(this, null)
+                    }
+                }
+
+                is CfirJavaMethod -> {
+                    element.returnTypeRef.accept(this, null)
+                    element.receiverParameter?.accept(this, null)
+                    element.controlFlowGraphReference?.accept(this, null)
+                    element.valueParameters.forEach { it.accept(this, null) }
+                    element.body?.accept(this, null)
+                    if (CfirJavaMethod::status.isLazyInitialized(element)) {
+                        element.status.accept(this, null)
+                    }
+                    visitJavaAnnotationList(element.annotations)
+                    element.typeParameters.forEach { it.accept(this, null) }
+                }
+
+                is CfirJavaTypeParameter -> {
+                    // We skip type parameter bounds because the property is not lazy but performs heavy calculations.
+
+                    visitJavaAnnotationList(element.annotations)
+                }
+
+                is CfirJavaValueParameter -> {
+                    element.returnTypeRef.accept(this, null)
+                    visitJavaAnnotationList(element.annotations)
+                    if (element.lazyDefaultValue?.isInitialized() == true) {
+                        element.defaultValue?.accept(this, null)
+                    }
+                }
+
+                is CfirJavaTypeRef -> {
+                    if (CfirJavaTypeRef::annotations.isLazyInitialized(element)) {
+                        element.annotations.forEach { it.accept(this, null) }
+                    }
+                }
+
+                else -> element.acceptChildren(this, null)
+            }
+        }
+
+        @OptIn(CfirImplementationDetail::class)
+        private fun visitJavaDeclarationList(declarationList: CfirJavaDeclarationList) {
+            if (declarationList is CfirLazyJavaDeclarationList) {
+                if (CfirLazyJavaDeclarationList::declarations.isLazyInitialized(declarationList)) {
+                    declarationList.declarations.forEach { it.accept(this, null) }
+                }
+            }
+        }
+
+        private fun visitJavaAnnotationList(annotationList: List<CfirAnnotation>) {
+            val annotations = when (annotationList) {
+                is CfirLazyJavaAnnotationList -> if (annotationList.isInitialized) annotationList else null
+                is CfirJavaAnnotationList -> null // Defensively ignore `CfirDelegatedJavaAnnotationList`.
+                else -> annotationList
+            }
+
+            annotations?.forEach { it.accept(this, null) }
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\structure\LLSessionStructureGraph.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure
+
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaScriptModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+
+/**
+ * A graph of [LLCfirSession]s following the dependency structure of the currently cached sessions. Only sessions which exist in the cache
+ * are included in the graph.
+ *
+ * The purpose of the graph, once written to GraphML with [LLSessionStructureWriter], is to visualize and analyze the structure of
+ * cached sessions and their memory usage.
+ *
+ * The graph has the following features:
+ *
+ * - Each node in the graph represents a session with relevant statistics like its weight. The label of the node is the session module's
+ *   name.
+ * - Directed edges represent dependencies between sessions.
+ */
+internal class LLSessionStructureGraph(
+    val nodesBySession: Map<LLCfirSession, LLSessionStructureGraphNode>,
+)
+
+/**
+ * Represents a node in the [LLSessionStructureGraph].
+ *
+ * Each node corresponds to an [LLCfirSession] with its associated [LLSessionStatistics] and dependencies. Dependencies are represented as
+ * child nodes, forming a directed graph structure.
+ *
+ * @property id A unique numeric ID. It is used to link the node in GraphML.
+ */
+internal class LLSessionStructureGraphNode(
+    val id: Int,
+    val session: LLCfirSession,
+    val statistics: LLSessionStatistics,
+) {
+    /**
+     * The graph can be circular, so we need to assign dependencies some time after all nodes have been created.
+     */
+    var dependencies: List<LLSessionStructureGraphNode> = emptyList()
+
+    /**
+     * The session's distance from the nearest session that has a corresponding analysis session.
+     *
+     * A value of 0 means that this session has a corresponding analysis session.
+     */
+    var analysisRootDistance: Int? = null
+
+    val label: String
+        get() = when (val module = session.ktModule) {
+            is CaSourceModule -> "[SRC] ${module.name}"
+            is CaLibraryModule -> "[LIB] ${module.libraryName}"
+
+            // We cannot get the module description for a script since it might try to find the `CjFile`, which requires a read action.
+            is CaScriptModule -> "[SCRIPT]"
+
+            else -> module.moduleDescription
+        }
+
+    /**
+     * Returns true if this node should be included in the GraphML output.
+     *
+     * Even nodes with no weight need to be included in [LLSessionStructureGraph] to properly calculate session properties, like the
+     * distance to the nearest analysis session.
+     */
+    val isSignificant: Boolean
+        get() = statistics.weight > 0
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\structure\LLSessionStructureGraphBuilder.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCacheStorage
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSourcesSession
+
+internal object LLSessionStructureGraphBuilder {
+    /**
+     * Builds an [LLSessionStructureGraph] from all sessions in the given [storage].
+     *
+     * @param analysisRoots The list of sessions which currently have an associated cached analysis session. They are the root sessions from
+     *  which resolution is started.
+     */
+    fun buildGraph(storage: LLCfirSessionCacheStorage, analysisRoots: List<LLCfirSession>): LLSessionStructureGraph {
+        val sourceSessions = storage.sourceCache.values
+        val librarySessions = storage.binaryCache.values
+
+        val sessions = sourceSessions + librarySessions
+
+        val nodesBySession = sessions
+            .mapIndexed { index, session ->
+                LLSessionStructureGraphNode(
+                    index,
+                    session,
+                    LLSessionStatisticsCalculator.calculateSessionStatistics(session),
+                )
+            }
+            .associateBy { it.session }
+
+        assignDependencies(nodesBySession)
+
+        val graph = LLSessionStructureGraph(nodesBySession)
+
+        val analysisRootNodes = analysisRoots.mapNotNull { nodesBySession[it] }
+        assignDistancesFromAnalysisRoots(analysisRootNodes)
+
+        return graph
+    }
+
+    private fun assignDependencies(nodesBySession: Map<LLCfirSession, LLSessionStructureGraphNode>) {
+        nodesBySession.values.forEach { node ->
+            val session = node.session
+            if (session !is LLCfirSourcesSession) return@forEach
+
+            // The graph should only contain already cached sessions. Furthermore, we might be outside a read action here, so we shouldn't
+            // compute lazily calculated dependencies.
+            if (LLCfirSourcesSession::dependencies.isLazyInitialized(session)) {
+                node.dependencies = session.dependencies.mapNotNull(nodesBySession::get)
+            }
+        }
+    }
+
+    private fun assignDistancesFromAnalysisRoots(analysisRootNodes: List<LLSessionStructureGraphNode>) {
+        val queue = ArrayDeque<LLSessionStructureGraphNode>()
+
+        analysisRootNodes.forEach { rootNode ->
+            rootNode.analysisRootDistance = 0
+            queue.add(rootNode)
+        }
+
+        while (queue.isNotEmpty()) {
+            val currentNode = queue.removeCfirst()
+            val currentDistance = currentNode.analysisRootDistance ?: 0
+            val newDistance = currentDistance + 1
+
+            currentNode.dependencies.forEach { dependency ->
+                // Only update if we haven't visited this node yet or if we found a shorter path. This also breaks cycles.
+                val currentDependencyDistance = dependency.analysisRootDistance
+                if (currentDependencyDistance == null || currentDependencyDistance > newDistance) {
+                    dependency.analysisRootDistance = newDistance
+                    queue.add(dependency)
+                }
+            }
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\structure\LLSessionStructureWriter.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCacheStorage
+import java.io.BufferedWriter
+import kotlin.uuid.ExperimentalUuidApi
+
+/**
+ * [LLSessionStructureWriter] writes a GraphML graph of [LLCfirSession]s which is used to visualize and analyze the structure of cached
+ * sessions and their memory usage.
+ *
+ * ### Gephi Setup
+ *
+ * To view the GraphML, [Gephi](https://gephi.org) is recommended. Read on for recommended settings to make the graph useful. By default,
+ * the graph will likely be unreadable.
+ *
+ * Appearance settings:
+ *
+ * - Show Node Labels in the bottom Graph window
+ * - Appearance (Nodes):
+ *   - Color: Partition -> analysisRootDistance (always click "Apply")
+ *   - Size: Ranking -> weight, 20 - 200
+ *   - Label size: Unique -> 0.05
+ *
+ * Layouts (applied in this order):
+ *
+ * - Yifan Hu:
+ *   - Optimal distance: 100
+ *   - Relative strength: 20.0
+ *   - Initial step size: 40.0
+ * - Label Adjust
+ *   - Nicely spaces out nodes.
+ *
+ * Computing degrees:
+ *
+ * - In the right-hand toolbar, click on Statistics and run "Average Degree".
+ * - This will calculate in and out degrees for each node. Now the data can be used to visualize the degree distribution.
+ */
+object LLSessionStructureWriter {
+    /**
+     * Writes the session structure described by [storage] and [analysisRoots] to [writer].
+     */
+    fun writeSessionStructure(storage: LLCfirSessionCacheStorage, analysisRoots: List<LLCfirSession>, writer: BufferedWriter) {
+        val graph = LLSessionStructureGraphBuilder.buildGraph(storage, analysisRoots)
+        writeGraph(graph, writer)
+    }
+
+    @OptIn(ExperimentalUuidApi::class)
+    private fun writeGraph(graph: LLSessionStructureGraph, writer: BufferedWriter) {
+        with(writer) {
+            appendLine("""<?xml version="1.0" encoding="UTF-8"?>""")
+            appendLine("""<graphml xmlns="http://graphml.graphdrawing.org/xmlns"""")
+            appendLine("""         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"""")
+            appendLine("""         xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">""")
+
+            // Define attributes for nodes
+            appendLine("""  <key id="label" for="node" attr.name="label" attr.type="string"/>""")
+            appendLine("""  <key id="uuid" for="node" attr.name="uuid" attr.type="string"/>""")
+            appendLine("""  <key id="weight" for="node" attr.name="weight" attr.type="long"/>""")
+            appendLine("""  <key id="kotlinWeight" for="node" attr.name="kotlinWeight" attr.type="long"/>""")
+            appendLine("""  <key id="javaWeight" for="node" attr.name="javaWeight" attr.type="long"/>""")
+            appendLine("""  <key id="lifetime" for="node" attr.name="lifetime" attr.type="double"/>""")
+            appendLine("""  <key id="analysisRootDistance" for="node" attr.name="analysisRootDistance" attr.type="int"/>""")
+
+            appendLine("""  <graph id="SessionWeightGraph" edgedefault="directed">""")
+
+            graph.nodesBySession.values.forEach { node ->
+                if (!node.isSignificant) return@forEach
+
+                appendLine("""    <node id="n${node.id}">""")
+                appendLine("""      <data key="label">${escapeXml(node.label)}</data>""")
+                appendLine("""      <data key="uuid">${escapeXml(node.session.uuid.toHexDashString())}</data>""")
+                appendLine("""      <data key="weight">${node.statistics.weight}</data>""")
+                appendLine("""      <data key="kotlinWeight">${node.statistics.kotlinWeight}</data>""")
+                appendLine("""      <data key="javaWeight">${node.statistics.javaWeight}</data>""")
+                appendLine("""      <data key="lifetime">${node.statistics.lifetime}</data>""")
+                node.analysisRootDistance?.let { distance ->
+                    appendLine("""      <data key="analysisRootDistance">$distance</data>""")
+                }
+                appendLine("""    </node>""")
+
+                node.dependencies.forEach { dependencyNode ->
+                    if (!dependencyNode.isSignificant) return@forEach
+
+                    appendLine("""    <edge source="n${node.id}" target="n${dependencyNode.id}"/>""")
+                }
+            }
+
+            appendLine("""  </graph>""")
+            appendLine("""</graphml>""")
+        }
+    }
+
+    private fun escapeXml(text: String): String {
+        return text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&apos;")
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\structure\utils.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure
+
+import kotlin.reflect.KProperty1
+import kotlin.reflect.jvm.isAccessible
+
+internal fun <T> KProperty1<T, *>.isLazyInitialized(receiver: T): Boolean {
+    isAccessible = true
+
+    // If we don't error out here, we won't notice if a property actually isn't `by lazy`. Since the code is only run when
+    // explicitly enabled by an internal flag, an error is fine.
+    val lazy = getDelegate(receiver) as? Lazy<*> ?: error("Expected a lazy property.")
+
+    return lazy.isInitialized()
+}
+
+*** End Patch

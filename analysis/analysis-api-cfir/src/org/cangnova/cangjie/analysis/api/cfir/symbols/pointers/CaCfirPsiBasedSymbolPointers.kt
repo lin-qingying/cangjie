@@ -2,7 +2,7 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols.pointers
 
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartPsiElementPointer
-import org.cangnova.cangjie.analysis.api.cfir.components.createScriptSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.createScriptSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.getPublicSymbolByPsi
 import org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol

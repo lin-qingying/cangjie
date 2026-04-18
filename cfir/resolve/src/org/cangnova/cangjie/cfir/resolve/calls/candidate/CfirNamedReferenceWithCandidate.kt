@@ -3,7 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.candidate
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -15,7 +15,7 @@ open class CfirNamedReferenceWithCandidate(
     override val name: Name,
     val candidate: Candidate
 ) : CfirNamedReferenceWithCandidateBase() {
-    override val candidateSymbol: CfirSymbol<*>
+    override val candidateSymbol: CfirBasedSymbol<*>
         get() = candidate.symbol
 
     open val isError: Boolean get() = false

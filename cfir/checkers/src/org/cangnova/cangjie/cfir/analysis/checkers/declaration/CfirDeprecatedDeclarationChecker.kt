@@ -56,34 +56,40 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
             else -> "declaration"
         }
 
-        // 通过 PSI 回溯查找父声明（被 override/redef 的声明）是否有 @Deprecated
         val owner = declaration.source?.psi as? CjModifierListOwner ?: return
-        val parentHasDeprecated = checkParentDeprecated(declaration)
+        val parentDecl = findOverriddenDeclaration(declaration)
+        val parentHasDeprecated = parentDecl?.let { hasDeprecatedAnnotation(it) } ?: false
+        val parentIsError = parentDecl?.let { isDeprecatedErrorLevel(it) } ?: false
 
         if (parentHasDeprecated && !selfHasDeprecated) {
-            // 父声明有 @Deprecated 但子声明没有
             if (isOverride) {
+                val factory = if (parentIsError)
+                    CfirErrors.DEPRECATION_OVERRIDE_ERROR
+                else
+                    CfirErrors.DEPRECATION_OVERRIDE_WARNING
                 reporter.reportOn(
                     source = declaration.source,
-                    factory = CfirErrors.DEPRECATION_OVERRIDE_WARNING,
+                    factory = factory,
                     a = kind,
                     b = declName,
                 )
             }
             if (isRedef) {
+                val factory = if (parentIsError)
+                    CfirErrors.DEPRECATION_REDEF_ERROR
+                else
+                    CfirErrors.DEPRECATION_REDEF_WARNING
                 reporter.reportOn(
                     source = declaration.source,
-                    factory = CfirErrors.DEPRECATION_REDEF_WARNING,
+                    factory = factory,
                     a = kind,
                     b = declName,
                 )
             }
         }
 
-        // 如果子声明减弱了 @Deprecated（父声明是 error 但子声明是 warning 或去掉了）
         if (selfHasDeprecated && parentHasDeprecated) {
             val selfIsError = isDeprecatedErrorLevel(declaration)
-            val parentIsError = true // 简化：假设父声明是 error 级别时才报 weakening
             if (parentIsError && !selfIsError) {
                 reporter.reportOn(
                     source = declaration.source,
@@ -94,15 +100,32 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
     }
 
     /**
-     * 检查被 override/redef 的父声明是否标记了 @Deprecated。
-     * 通过 CfirOverrideChecker 的逻辑查找对应的 overridden symbol。
+     * 在父类型中查找被 override/redef 的对应声明（同名同 kind）。
      */
     context(context: CheckerContext)
-    private fun checkParentDeprecated(declaration: CfirCallableDeclaration): Boolean {
-        val symbol = declaration.symbol as? CfirCallableSymbol<*> ?: return false
-        // 通过 symbol 的 overriddenCallableSymbols 查找父声明
-        // 如果 overriddenCallableSymbols 不可用，退回 PSI 检查
-        return false // 当 overriddenCallableSymbols API 可用时完善
+    private fun findOverriddenDeclaration(declaration: CfirCallableDeclaration): CfirDeclaration? {
+        val ownerClassId = (declaration.symbol as? CfirCallableSymbol<*>)?.callableId?.classId ?: return null
+        val ownerSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId) ?: return null
+        val ownerDecl = ownerSymbol.cfir as? org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration ?: return null
+        val declName = when (declaration) {
+            is CfirNamedFunction -> declaration.name
+            is CfirProperty -> declaration.name
+            else -> return null
+        }
+        for (superRef in ownerDecl.superTypeRefs) {
+            val t = (superRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: continue
+            val sd = context.session.symbolProvider.getClassLikeSymbolByClassId(t.classId)?.cfir
+                as? org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration ?: continue
+            val match = sd.declarations.firstOrNull { m ->
+                when (declaration) {
+                    is CfirNamedFunction -> m is CfirNamedFunction && m.name == declName
+                    is CfirProperty -> m is CfirProperty && m.name == declName
+                    else -> false
+                }
+            }
+            if (match != null) return match
+        }
+        return null
     }
 
     private fun hasDeprecatedAnnotation(declaration: CfirDeclaration): Boolean {

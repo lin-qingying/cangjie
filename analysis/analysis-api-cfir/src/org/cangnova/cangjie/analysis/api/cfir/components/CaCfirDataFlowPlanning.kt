@@ -1,7 +1,9 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
+import org.cangnova.cangjie.analysis.api.cfir.*
+
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.types.asCaType
+import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
 import org.cangnova.cangjie.analysis.api.dataFlow.CaDataFlowInfo
 import org.cangnova.cangjie.analysis.api.dataFlow.CaDataFlowStability
 import org.cangnova.cangjie.analysis.api.evaluation.CaCompileTimeValue
@@ -44,7 +46,7 @@ internal fun CaCfirSession.getDataFlowInfo(expression: CjExpression): CaDataFlow
         val resolvedSymbol = resolveStableReferenceTarget(expression)
         val isPureReference = expression.isPureReferenceExpression()
         CaCfirDataFlowInfoImpl(
-            expressionType = queryExpressionType(expression)?.asCaType(this),
+            expressionType = typeQueries.queryExpressionType(expression)?.asCaType(this),
             compileTimeValue = compileTimeValue,
             isPureReference = isPureReference,
             stability = computeDataFlowStability(

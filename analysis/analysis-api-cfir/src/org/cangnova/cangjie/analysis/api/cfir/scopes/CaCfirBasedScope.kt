@@ -1,8 +1,8 @@
 package org.cangnova.cangjie.analysis.api.cfir.scopes
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.components.completionDecisionKey
-import org.cangnova.cangjie.analysis.api.cfir.components.getPublicSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.completionDecisionKey
+import org.cangnova.cangjie.analysis.api.cfir.symbols.getPublicSymbol
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.scopes.CaScope
@@ -14,7 +14,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -78,7 +78,7 @@ internal abstract class CaCfirBasedScope<S : CfirContainingNamesAwareScope>(
 
     private fun scopes(): List<CfirContainingNamesAwareScope> = listOf(primaryScope) + additionalScopes
 
-    private fun collectScopeSymbols(name: Name): List<CfirSymbol<*>> {
+    private fun collectScopeSymbols(name: Name): List<CfirBasedSymbol<*>> {
         return buildList {
             scopes().forEach { scope ->
                 scope.processClassifiersByName(name) { symbol -> add(symbol) }
@@ -104,9 +104,9 @@ internal abstract class CaCfirBasedScope<S : CfirContainingNamesAwareScope>(
     }
 }
 
-private fun CfirSymbol<*>.scopeIdentity(): String = when (this) {
+private fun CfirBasedSymbol<*>.scopeIdentity(): String = when (this) {
     is CfirClassLikeSymbol<*> -> "class:${classId.asString()}"
     is CfirCallableSymbol<*> -> "callable:${callableId?.toString() ?: name.asString()}"
-    is CfirFileSymbol -> "file:${cfir.source?.psi?.containingFile?.name ?: "<unknown>"}"
+    is CfirFileSymbol -> "file:${cfir.name}"
     else -> "${this::class.qualifiedName}:$debugName"
 }

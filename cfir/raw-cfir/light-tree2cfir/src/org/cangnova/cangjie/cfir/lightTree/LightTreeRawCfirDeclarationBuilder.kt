@@ -2,7 +2,6 @@ package org.cangnova.cangjie.cfir.lightTree
 
 import com.intellij.lang.LighterASTNode
 import com.intellij.util.diff.FlyweightCapableTreeStructure
-import org.cangnova.cangjie.CjInMemoryTextSourceFile
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.builder.*
@@ -17,12 +16,9 @@ import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 import org.cangnova.cangjie.source.fakeElement
-import org.cangnova.cangjie.source.toSourceLinesMapping
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.builder.buildTupleTypeRef
 import org.cangnova.cangjie.lexer.CjTokens
-import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
@@ -860,7 +856,7 @@ class LightTreeRawCfirDeclarationBuilder(
     /** 提取类型参数列表 */
     private fun extractTypeParameters(
         node: LighterASTNode,
-        containingDeclarationSymbol: CfirSymbol<*>,
+        containingDeclarationSymbol: CfirBasedSymbol<*>,
     ): List<CfirTypeParameter> {
         val typeParamList = tree.findChildByType(node, CjNodeTypes.TYPE_PARAMETER_LIST) ?: return emptyList()
         val typeConstraintBounds = collectTypeConstraintBounds(node)
@@ -876,7 +872,7 @@ class LightTreeRawCfirDeclarationBuilder(
     /** 提取函数类型参数列表 */
     private fun extractFunctionTypeParameters(
         node: LighterASTNode,
-        containingDeclarationSymbol: CfirSymbol<*>,
+        containingDeclarationSymbol: CfirBasedSymbol<*>,
     ): List<CfirTypeParameter> {
         val typeParamList = tree.findChildByType(node, CjNodeTypes.TYPE_PARAMETER_LIST) ?: return emptyList()
         val typeConstraintBounds = collectTypeConstraintBounds(node)
@@ -918,7 +914,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     private fun convertTypeParameter(
         node: LighterASTNode,
-        containingDeclarationSymbol: CfirSymbol<*>,
+        containingDeclarationSymbol: CfirBasedSymbol<*>,
         additionalBounds: List<CfirTypeRef> = emptyList(),
     ): CfirTypeParameter {
         val name = typeParameterName(node)
@@ -1164,7 +1160,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
-    private inline fun <D : CfirDeclaration, S : CfirSymbol<D>> buildSourceDeclaration(
+    private inline fun <D : CfirDeclaration, S : CfirBasedSymbol<D>> buildSourceDeclaration(
         symbol: S,
         builder: (S) -> D,
     ): D {

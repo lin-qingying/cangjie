@@ -1,0 +1,344 @@
+*** Begin Patch
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirJvmSessionFactory.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import com.intellij.openapi.project.Project
+import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.platform.packages.createPackagePartProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories.LLLibrarySymbolProviderFactory
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.moduleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCfirJavaSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleWithDependenciesSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.nullableJavaSymbolProvider
+import org.cangnova.cangjie.cfir.SessionConfiguration
+import org.cangnova.cangjie.cfir.backend.jvm.CfirJvmTypeMapper
+import org.cangnova.cangjie.cfir.deserialization.SingleModuleDataProvider
+import org.cangnova.cangjie.cfir.java.JavaSymbolProvider
+import org.cangnova.cangjie.cfir.java.deserialization.OptionalAnnotationClassesProvider
+import org.cangnova.cangjie.cfir.java.javaAnnotationProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.firProvider
+import org.cangnova.cangjie.cfir.resolve.scopes.wrapScopeWithJvmMapped
+import org.cangnova.cangjie.cfir.scopes.CfirKotlinScopeProvider
+import org.cangnova.cangjie.cfir.scopes.kotlinScopeProvider
+import org.cangnova.cangjie.cfir.session.registerJavaComponents
+import org.cangnova.cangjie.load.java.createJavaClassFinder
+import org.cangnova.cangjie.resolve.jvm.modules.JavaModuleResolver
+import org.cangnova.cangjie.utils.addIfNotNull
+
+@OptIn(SessionConfiguration::class)
+internal class LLCfirJvmSessionFactory(project: Project) : LLCfirAbstractSessionFactory(project) {
+    override fun createSourcesSession(module: CaSourceModule): LLCfirSourcesSession {
+        return doCreateSourcesSession(module, CfirKotlinScopeProvider(::wrapScopeWithJvmMapped)) { context ->
+            registerJavaComponents(JavaModuleResolver.getInstance(project))
+            val javaSymbolProvider = LLCfirJavaSymbolProvider(this, context.contentScope)
+            register(JavaSymbolProvider::class, javaSymbolProvider)
+
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOfNotNull(
+                        context.firProvider.symbolProvider,
+                        context.switchableExtensionDeclarationsSymbolProvider,
+                        javaSymbolProvider,
+                        context.syntheticFunctionInterfaceProvider,
+                    ),
+                    context.dependencyProvider,
+                )
+            )
+
+            register(CfirJvmTypeMapper::class, CfirJvmTypeMapper(this))
+        }
+    }
+
+    override fun createResolvableLibrarySession(module: CaModule): LLCfirLibraryOrLibrarySourceResolvableModuleSession {
+        return doCreateResolvableLibrarySession(module) { context ->
+            registerJavaComponents(JavaModuleResolver.getInstance(project))
+            val javaSymbolProvider = LLCfirJavaSymbolProvider(this, context.contentScope)
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOf(
+                        context.firProvider.symbolProvider,
+                        javaSymbolProvider,
+                    ),
+                    context.dependencyProvider,
+                )
+            )
+            register(JavaSymbolProvider::class, javaSymbolProvider)
+            register(CfirJvmTypeMapper::class, CfirJvmTypeMapper(this))
+        }
+    }
+
+    override fun createBinaryLibrarySession(module: CaModule): LLCfirLibrarySession {
+        return doCreateBinaryLibrarySession(module) {
+            registerJavaComponents(JavaModuleResolver.getInstance(project))
+            register(CfirJvmTypeMapper::class, CfirJvmTypeMapper(this))
+        }
+    }
+
+    override fun createDanglingFileSession(module: CaDanglingFileModule, contextSession: LLCfirSession): LLCfirSession {
+        return doCreateDanglingFileSession(module, contextSession) { context ->
+            registerJavaComponents(JavaModuleResolver.getInstance(project))
+
+            val contextJavaSymbolProvider = contextSession.nullableJavaSymbolProvider
+            if (contextJavaSymbolProvider != null) {
+                register(JavaSymbolProvider::class, contextJavaSymbolProvider)
+            }
+
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOfNotNull(
+                        firProvider.symbolProvider,
+                        context.switchableExtensionDeclarationsSymbolProvider,
+                        context.syntheticFunctionInterfaceProvider,
+                        contextJavaSymbolProvider
+                    ),
+                    context.dependencyProvider
+                )
+            )
+
+            register(CfirJvmTypeMapper::class, CfirJvmTypeMapper(this))
+        }
+    }
+
+    override fun createProjectLibraryProvidersForScope(
+        session: LLCfirSession,
+        scope: GlobalSearchScope,
+    ): List<CfirSymbolProvider> {
+        val moduleData = session.moduleData
+        val moduleDataProvider = SingleModuleDataProvider(moduleData)
+        val packagePartProvider = project.createPackagePartProvider(scope)
+        return buildList {
+            val javaClassFinder = project.createJavaClassFinder(scope, session.javaAnnotationProvider)
+            val firJavaFacade = LLCfirJavaFacadeForBinaries(session, javaClassFinder)
+            val deserializedSymbolProviderFactory = LLLibrarySymbolProviderFactory.fromSettings(project)
+            addAll(
+                deserializedSymbolProviderFactory.createJvmLibrarySymbolProvider(
+                    session,
+                    firJavaFacade,
+                    packagePartProvider,
+                    scope,
+                )
+            )
+            addIfNotNull(
+                OptionalAnnotationClassesProvider.createIfNeeded(
+                    session,
+                    moduleDataProvider,
+                    session.kotlinScopeProvider,
+                    packagePartProvider
+                )
+            )
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirLibraryLikeSession.kt
++/*
+ * Copyright 2010-2022 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLCfirScopeSessionProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.cfir.BuiltinTypes
+import org.cangnova.cangjie.cfir.resolve.ScopeSession
+
+abstract class LLCfirLibraryLikeSession(
+    ktModule: CaModule,
+    builtinTypes: BuiltinTypes,
+) : LLCfirSession(ktModule, builtinTypes, Kind.Library) {
+    private val scopeSessionProvider = LLCfirScopeSessionProvider.create(project, invalidationTrackers = emptyList())
+
+    override fun getScopeSession(): ScopeSession {
+        return scopeSessionProvider.getScopeSession()
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirLibraryOrLibrarySourceResolvableModuleSession.kt
++/*
+ * Copyright 2010-2022 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.cfir.BuiltinTypes
+
+internal class LLCfirLibraryOrLibrarySourceResolvableModuleSession(
+    ktModule: CaModule,
+    override val moduleComponents: LLCfirModuleResolveComponents,
+    builtinTypes: BuiltinTypes,
+) : LLCfirResolvableModuleSession(ktModule, builtinTypes) {
+    init {
+        checkIsValidCjModule(ktModule)
+    }
+
+    companion object {
+        fun checkIsValidCjModule(module: CaModule) {
+            require(module is CaLibraryModule || module is CaLibrarySourceModule || module is CaBuiltinsModule) {
+                "Expected ${CaLibraryModule::class.simpleName} or ${CaLibrarySourceModule::class.simpleName}, but ${module::class.simpleName} found"
+            }
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirLibrarySession.kt
++/*
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.cfir.BuiltinTypes
+import org.cangnova.cangjie.cfir.PrivateSessionConstructor
+
+/**
+ * [org.cangnova.cangjie.cfir.CfirSession] responsible for all libraries analysing module transitively depends on
+ */
+internal class LLCfirLibrarySession @PrivateSessionConstructor constructor(
+    ktModule: CaModule,
+    builtinTypes: BuiltinTypes,
+) : LLCfirLibraryLikeSession(ktModule, builtinTypes)
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\sessions\LLCfirNativeSessionFactory.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
+
+import com.intellij.openapi.project.Project
+import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.platform.packages.createPackagePartProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories.LLLibrarySymbolProviderFactory
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.moduleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleWithDependenciesSymbolProvider
+import org.cangnova.cangjie.cfir.SessionConfiguration
+import org.cangnova.cangjie.cfir.deserialization.SingleModuleDataProvider
+import org.cangnova.cangjie.cfir.java.deserialization.OptionalAnnotationClassesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.firProvider
+import org.cangnova.cangjie.cfir.scopes.CfirOverrideChecker
+import org.cangnova.cangjie.cfir.scopes.impl.CfirStandardOverrideChecker
+import org.cangnova.cangjie.cfir.scopes.kotlinScopeProvider
+import org.cangnova.cangjie.cfir.session.CfirNativeSessionFactory.Companion.registerNativeComponents
+import org.cangnova.cangjie.utils.addIfNotNull
+
+@OptIn(SessionConfiguration::class)
+internal class LLCfirNativeSessionFactory(project: Project) : LLCfirAbstractSessionFactory(project) {
+    override fun createSourcesSession(module: CaSourceModule): LLCfirSourcesSession {
+        return doCreateSourcesSession(module) { context ->
+            registerNativeComponents()
+
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOfNotNull(
+                        context.firProvider.symbolProvider,
+                        context.switchableExtensionDeclarationsSymbolProvider,
+                        context.syntheticFunctionInterfaceProvider,
+                    ),
+                    context.dependencyProvider,
+                )
+            )
+        }
+    }
+
+    override fun createResolvableLibrarySession(module: CaModule): LLCfirLibraryOrLibrarySourceResolvableModuleSession {
+        return doCreateResolvableLibrarySession(module) { context ->
+            registerNativeComponents()
+            // Resolvable library session for decompiled libraries can miss annotation arguments
+            // necessary for correct work of the native overload checker
+            register(CfirOverrideChecker::class, CfirStandardOverrideChecker(this))
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOf(
+                        context.firProvider.symbolProvider,
+                    ),
+                    context.dependencyProvider,
+                )
+            )
+        }
+    }
+
+    override fun createBinaryLibrarySession(module: CaModule): LLCfirLibrarySession {
+        return doCreateBinaryLibrarySession(module) {
+            registerNativeComponents()
+        }
+    }
+
+    override fun createDanglingFileSession(module: CaDanglingFileModule, contextSession: LLCfirSession): LLCfirSession {
+        return doCreateDanglingFileSession(module, contextSession) { context ->
+            registerNativeComponents()
+
+            register(
+                CfirSymbolProvider::class,
+                LLModuleWithDependenciesSymbolProvider(
+                    this,
+                    providers = listOfNotNull(
+                        firProvider.symbolProvider,
+                        context.switchableExtensionDeclarationsSymbolProvider,
+                        context.syntheticFunctionInterfaceProvider,
+                    ),
+                    context.dependencyProvider,
+                )
+            )
+        }
+    }
+
+    override fun createProjectLibraryProvidersForScope(
+        session: LLCfirSession,
+        scope: GlobalSearchScope,
+    ): List<CfirSymbolProvider> {
+        val moduleData = session.moduleData
+        val moduleDataProvider = SingleModuleDataProvider(moduleData)
+        val packagePartProvider = project.createPackagePartProvider(scope)
+        return buildList {
+            addAll(
+                LLLibrarySymbolProviderFactory.fromSettings(project).createNativeLibrarySymbolProvider(
+                    session,
+                    scope,
+                )
+            )
+            addIfNotNull(
+                OptionalAnnotationClassesProvider.createIfNeeded(
+                    session,
+                    moduleDataProvider,
+                    session.kotlinScopeProvider,
+                    packagePartProvider
+                )
+            )
+        }
+    }
+}
+
+*** End Patch

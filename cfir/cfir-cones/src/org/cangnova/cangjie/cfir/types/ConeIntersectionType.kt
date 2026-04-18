@@ -7,7 +7,7 @@ package org.cangnova.cangjie.cfir.types
 class ConeIntersectionType(
     val intersectedTypes: List<ConeCangJieType>,
     override val attributes: ConeAttributes = ConeAttributes.Empty,
-) : ConeRigidType(), ConeTypeConstructorMarker {
+) : ConeSimpleCangJieType(), ConeTypeConstructorMarker {
     override val typeArguments: List<ConeTypeProjection>
         get() = intersectedTypes.map(::ConeTypeProjection)
 

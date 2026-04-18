@@ -1,0 +1,3526 @@
+*** Begin Patch
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\annotations.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir
+
+@RequiresOptIn("Internal Low Level API component which should not be used outside the Low Level API module as it does not have any compatibility guarantees")
+annotation class LLCfirInternals
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\DiagnosticCheckerFilter.kt
++/*
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api
+
+data class DiagnosticCheckerFilter(
+    val runDefaultCheckers: Boolean,
+    val runExtraCheckers: Boolean,
+    val runExperimentalCheckers: Boolean,
+) {
+    companion object {
+        val ONLY_DEFAULT_CHECKERS = DiagnosticCheckerFilter(
+            runDefaultCheckers = true, runExtraCheckers = false, runExperimentalCheckers = false,
+        )
+        val ONLY_EXTRA_CHECKERS = DiagnosticCheckerFilter(
+            runDefaultCheckers = false, runExtraCheckers = true, runExperimentalCheckers = false,
+        )
+        val ONLY_EXPERIMENTAL_CHECKERS = DiagnosticCheckerFilter(
+            runDefaultCheckers = false, runExtraCheckers = false, runExperimentalCheckers = true,
+        )
+    }
+}
+
+operator fun DiagnosticCheckerFilter.plus(other: DiagnosticCheckerFilter) =
+    DiagnosticCheckerFilter(
+        runDefaultCheckers || other.runDefaultCheckers,
+        runExtraCheckers || other.runExtraCheckers,
+        runExperimentalCheckers || other.runExperimentalCheckers,
+    )
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\CfirDesignation.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api
+
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileResolutionMode
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirDanglingFileSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirLibraryOrLibrarySourceResolvableModuleSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.nullableJavaSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.*
+import org.cangnova.cangjie.analysis.utils.errors.unexpectedElementError
+import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.cfir.*
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.synthetic.CfirSyntheticProperty
+import org.cangnova.cangjie.cfir.declarations.synthetic.CfirSyntheticPropertyAccessor
+import org.cangnova.cangjie.cfir.resolve.getContainingClassSymbol
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.firProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.impl.CfirRegularClassSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirScriptSymbol
+import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.ClassIdBasedLocality
+import org.cangnova.cangjie.psi.CjClassOrObject
+import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjScript
+import org.cangnova.cangjie.utils.SmartList
+import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
+import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+
+/**
+ * This class describes where locates [target] element and its essential [path].
+ *
+ * Usually a resolver uses [path] to resolve [target] in the proper context.
+ *
+ * @see org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirResolveTarget
+ */
+class CfirDesignation(
+    /**
+     * The path to [target] element.
+     *
+     * ### Contracts:
+     * * Can contain [CfirFile] only in the first position
+     * * Can contain [CfirScript] only in the first or second position
+     *
+     * @see file
+     * @see fileOrNull
+     * @see script
+     * @see scriptOrNull
+     */
+    val path: List<CfirDeclaration>,
+    val target: CfirElementWithResolveState,
+) {
+    constructor(target: CfirElementWithResolveState) : this(emptyList(), target)
+
+    init {
+        for ((index, declaration) in path.withIndex()) {
+            when (declaration) {
+                is CfirFile -> requireWithAttachment(
+                    index == 0,
+                    { "${CfirFile::class.simpleName} can be only in the first position of the path, but actual is '$index'" },
+                ) {
+                    withCfirDesignationEntry("designation", this@CfirDesignation)
+                }
+
+                is CfirScript -> requireWithAttachment(
+                    index == 0 || index == 1 && path.first() is CfirFile,
+                    { "${CfirScript::class.simpleName} can be only in the first or second position of the path, but actual is '$index'" },
+                ) {
+                    withCfirDesignationEntry("designation", this@CfirDesignation)
+                }
+
+                is CfirRegularClass -> {}
+                else -> errorWithAttachment("Unexpected declaration type: ${declaration::class.simpleName}") {
+                    withCfirDesignationEntry("designation", this@CfirDesignation)
+                }
+            }
+        }
+    }
+
+    val file: CfirFile
+        get() = fileOrNull ?: errorWithAttachment("File is not found") {
+            withCfirDesignationEntry("designation", this@CfirDesignation)
+        }
+
+    val fileOrNull: CfirFile? get() = path.firstOrNull() as? CfirFile ?: target as? CfirFile
+
+    val script: CfirScript
+        get() = scriptOrNull ?: errorWithAttachment("Script is not found") {
+            withCfirDesignationEntry("designation", this@CfirDesignation)
+        }
+
+    val scriptOrNull: CfirScript? get() = path.getOrNull(0) as? CfirScript ?: path.getOrNull(1) as? CfirScript ?: target as? CfirScript
+
+    override fun toString(): String = path.plus(target).joinToString(separator = " -> ") {
+        it::class.simpleName ?: it.toString()
+    }
+}
+
+fun ExceptionAttachmentBuilder.withCfirDesignationEntry(name: String, designation: CfirDesignation) {
+    withEntryGroup(name) {
+        for ((index, declaration) in designation.path.withIndex()) {
+            withCfirEntry("path$index", declaration)
+        }
+
+        withCfirEntry("target", designation.target)
+    }
+}
+
+fun CfirDesignation.toSequence(includeTarget: Boolean): Sequence<CfirElementWithResolveState> = sequence {
+    yieldAll(path)
+    if (includeTarget) yield(target)
+}
+
+private fun tryCollectDesignation(providedFile: CfirFile?, target: CfirElementWithResolveState): CfirDesignation? {
+    if (target !is CfirDeclaration) {
+        unexpectedElementError<CfirDeclaration>(target)
+    }
+
+    return when (target) {
+        is CfirSyntheticProperty,
+        is CfirSyntheticPropertyAccessor,
+        is CfirReplSnippet,
+        is CfirAnonymousFunction,
+        is CfirErrorFunction,
+        is CfirAnonymousObject,
+        is CfirPropertyAccessor,
+        is CfirBackingField,
+        is CfirTypeParameter,
+        is CfirValueParameter,
+        is CfirReceiverParameter,
+            -> null
+
+        is CfirNamedFunction,
+        is CfirProperty,
+        is CfirField,
+        is CfirConstructor,
+        is CfirEnumEntry,
+            -> {
+            // We shouldn't try to build a designation path for such fake declarations as they
+            // do not depend on outer classes during resolution
+            if (target.canHaveDeferredReturnTypeCalculation) return CfirDesignation(target)
+
+            if (target.symbol.isLocalForLazyResolutionPurposes) {
+                return null
+            }
+
+            val containingClassId = target.containingClassLookupTag()?.classId
+            collectDesignationPathWithContainingClass(providedFile, target, containingClassId)
+        }
+
+        is CfirClassLikeDeclaration -> {
+            if (target.isLocal) {
+                return null
+            }
+
+            val containingClassId = target.symbol.classId.outerClassId
+            collectDesignationPathWithContainingClass(providedFile, target, containingClassId)
+        }
+
+        is CfirDanglingModifierList -> {
+            val containingClassId = target.containingClass()?.classId
+            collectDesignationPathWithContainingClass(providedFile, target, containingClassId)
+        }
+
+        is CfirAnonymousInitializer -> {
+            val containingClassId = target.containingClassIdOrNull()
+            collectDesignationPathWithContainingClass(providedFile, target, containingClassId)
+        }
+
+        is CfirFile -> CfirDesignation(target)
+        is CfirScript, is CfirCodeFragment -> {
+            collectDesignationPathWithContainingClass(providedFile, target, containingClassId = null)
+        }
+    }
+}
+
+private fun collectDesignationPathWithContainingClass(
+    providedFile: CfirFile?,
+    target: CfirDeclaration,
+    containingClassId: ClassId?,
+): CfirDesignation? {
+    @OptIn(ClassIdBasedLocality::class)
+    if (containingClassId?.isLocal == true) {
+        return null
+    }
+
+    val file = providedFile ?: target.getContainingFile()
+    if (file != null && (containingClassId == null || file.packageFqName == containingClassId.packageFqName)) {
+        val designationPath = CfirElementFinder.collectDesignationPath(
+            firFile = file,
+            declarationContainerClassId = containingClassId,
+            targetMemberDeclaration = target,
+        )
+
+        if (designationPath != null) {
+            return designationPath
+        }
+    }
+
+    val fallbackClassPath = containingClassId?.let { collectDesignationPathWithContainingClassFallback(target, it) }.orEmpty()
+    val fallbackFile = providedFile ?: fallbackClassPath.lastOrNull()?.getContainingFile() ?: file
+    val fallbackScript = fallbackFile?.declarations?.singleOrNull() as? CfirScript
+    val fallbackPath = listOfNotNull(fallbackFile, fallbackScript) + fallbackClassPath
+    val patchedPath = patchDesignationPathIfNeeded(target, fallbackPath)
+    return CfirDesignation(patchedPath, target)
+}
+
+/**
+ * Whether the search via [CfirSymbolProvider] is required to find a declaration in the context of [this] session.
+ *
+ * Not all sessions have required providers in the session itself (not its dependencies).
+ * In such cases, the search might not be able to find even the containing declaration
+ */
+private val LLCfirSession.requiresDependenciesSearch: Boolean
+    get() = when (this) {
+        is LLCfirLibraryOrLibrarySourceResolvableModuleSession -> true
+        is LLCfirDanglingFileSession -> {
+            val module = ktModule as CaDanglingFileModule
+            // Dangling files in the ignore self mode have the empty declaration provider,
+            // so they cannot find any declarations inside themselves. Search in the context is required
+            module.resolutionMode == CaDanglingFileResolutionMode.IGNORE_SELF
+        }
+
+        else -> false
+    }
+
+private fun collectDesignationPathWithContainingClassFallback(
+    target: CfirDeclaration,
+    containingClassId: ClassId,
+): List<CfirDeclaration> {
+    val useSiteSession by lazy(LazyThreadSafetyMode.NONE) { getTargetSession(target) }
+
+    fun resolveChunk(classId: ClassId): CfirRegularClass {
+        val declaration = if (useSiteSession.requiresDependenciesSearch) {
+            useSiteSession.symbolProvider.getClassLikeSymbolByClassId(classId)?.fir
+        } else {
+            useSiteSession.firProvider.getCfirClassifierByFqName(classId)
+                ?: useSiteSession.nullableJavaSymbolProvider?.getClassLikeSymbolByClassId(classId)?.fir
+                ?: findKotlinStdlibClass(classId, target)
+        }
+
+        checkWithAttachment(
+            declaration is CfirRegularClass,
+            message = {
+                "'${CfirRegularClass::class.simpleName}' expected as a containing declaration, " +
+                        "got '${declaration?.javaClass?.simpleName}'. " +
+                        "Module: ${useSiteSession.ktModule::class.simpleName}"
+            },
+            buildAttachment = {
+                withEntry("chunk", "$classId in $containingClassId")
+                withCfirEntry("target", target)
+                if (declaration != null) {
+                    withCfirEntry("foundDeclaration", declaration)
+                }
+            }
+        )
+
+        return declaration
+    }
+
+    val containingClassIds = generateSequence(containingClassId) { it.outerClassId }
+    val (_, containingClasses) = containingClassIds.fold(target to SmartList<CfirRegularClass>()) { (declaration, result), classId ->
+        // Psi-based calculator is called explicitly to avoid `LLCfirProvider#getContainingClassSymbol`
+        // since we have a fallback logic with strict checking (no dependencies in the search scope)
+        val psiBasedContainingClass = LLContainingClassCalculator.getContainingClassSymbol(declaration.symbol)?.fir
+        checkWithAttachment(
+            psiBasedContainingClass == null || psiBasedContainingClass is CfirRegularClass,
+            message = {
+                "${LLContainingClassCalculator::class.simpleName} is supposed to return '${CfirRegularClass::class.simpleName}' " +
+                        "as a containing declaration since the class is not local (classId exists), got '${psiBasedContainingClass?.javaClass?.simpleName}'. " +
+                        "Module: ${useSiteSession.ktModule::class.simpleName}"
+            },
+        ) {
+            withEntry("classId", classId.toString())
+            withEntry("containingClassId", containingClassId.toString())
+            withCfirEntry("declaration", declaration)
+        }
+
+        if (psiBasedContainingClass == null && classId.shortClassName.isSpecial) {
+            errorWithAttachment(
+                "Special classes are supposed to be covered via ${LLContainingClassCalculator::class.simpleName}. " +
+                        "Module: ${useSiteSession.ktModule::class.simpleName}"
+            ) {
+                withEntry("classId", classId.toString())
+                withEntry("containingClassId", containingClassId.toString())
+                withCfirEntry("declaration", declaration)
+            }
+        }
+
+        val containingClass = psiBasedContainingClass ?: resolveChunk(classId)
+        result += containingClass
+        containingClass to result
+    }
+
+    return containingClasses.asReversed()
+}
+
+private fun getTargetSession(target: CfirDeclaration): LLCfirSession {
+    if (target is CfirCallableDeclaration) {
+        val containingSymbol = target.getContainingClassSymbol()
+        if (containingSymbol != null) {
+            // Synthetic declarations might have a call site session
+            return containingSymbol.llCfirSession
+        }
+    }
+
+    return target.llCfirSession
+}
+
+private fun findKotlinStdlibClass(classId: ClassId, target: CfirDeclaration): CfirRegularClass? {
+    if (!classId.packageFqName.startsWith(StandardNames.BUILT_INS_PACKAGE_NAME)) {
+        return null
+    }
+
+    val firFile = target.getContainingFile() ?: return null
+    return CfirElementFinder.findClassifierWithClassId(firFile, classId) as? CfirRegularClass
+}
+
+/**
+ * Consider using this function only if [collectDesignation] is not applicable.
+ *
+ * This extension function can be used in the case there your [CfirElementWithResolveState] probably
+ * doesn't have [getContainingFile] and it doesn't matter for your purposes.
+ * Potentially, this function can become obsolete if we support all possible cases in [getContainingFile]
+ *
+ * @return [CfirDesignation] where [CfirDesignation.fileOrNull] can be null or throws an exception.
+ *
+ * @see collectDesignation
+ * @see tryCollectDesignation
+ * @see tryCollectDesignationWithOptionalFile
+ */
+fun CfirElementWithResolveState.collectDesignationWithOptionalFile(providedFile: CfirFile? = null): CfirDesignation =
+    tryCollectDesignationWithOptionalFile(providedFile) ?: errorWithAttachment("No designation of local declaration") {
+        providedFile?.let { withCfirEntry("firFile", it) }
+    }
+
+/**
+ * @return [CfirDesignation] where [CfirDesignation.fileOrNull] not null or throws an exception.
+ *
+ * @see collectDesignationWithOptionalFile
+ * @see tryCollectDesignation
+ * @see tryCollectDesignationWithOptionalFile
+ */
+fun CfirElementWithResolveState.collectDesignation(providedFile: CfirFile? = null): CfirDesignation =
+    tryCollectDesignation(providedFile) ?: errorWithAttachment("No designation of local declaration") {
+        withCfirEntry("CfirDeclaration", this@collectDesignation)
+    }
+
+/**
+ * Consider using this function only if [tryCollectDesignation] is not applicable.
+ *
+ * This extension function can be used in the case there your [CfirElementWithResolveState] probably
+ * doesn't have [getContainingFile] and it doesn't matter for your purposes.
+ * Potentially, this function can become obsolete if we support all possible cases in [getContainingFile]
+ *
+ * @return [CfirDesignation] where [CfirDesignation.fileOrNull] can be null or null.
+ *
+ * @see collectDesignationWithOptionalFile
+ * @see collectDesignation
+ * @see tryCollectDesignation
+ */
+fun CfirElementWithResolveState.tryCollectDesignationWithOptionalFile(providedFile: CfirFile? = null): CfirDesignation? =
+    tryCollectDesignation(providedFile = providedFile, target = this)
+
+/**
+ * @return [CfirDesignation] with not-null [CfirDesignation.file] or null.
+ *
+ * @see collectDesignation
+ * @see tryCollectDesignationWithOptionalFile
+ * @see collectDesignationWithOptionalFile
+ */
+fun CfirElementWithResolveState.tryCollectDesignation(providedFile: CfirFile? = null): CfirDesignation? {
+    val designation = tryCollectDesignation(providedFile = providedFile, target = this)
+    return designation?.takeIf { it.fileOrNull != null }
+}
+
+internal fun patchDesignationPathIfNeeded(target: CfirElementWithResolveState, targetPath: List<CfirDeclaration>): List<CfirDeclaration> {
+    return patchDesignationPathForCopy(target, targetPath) ?: targetPath
+}
+
+private fun patchDesignationPathForCopy(target: CfirElementWithResolveState, targetPath: List<CfirDeclaration>): List<CfirDeclaration>? {
+    val targetModule = target.llCfirModuleData.ktModule
+
+    if (targetModule is CaDanglingFileModule && targetModule.resolutionMode == CaDanglingFileResolutionMode.IGNORE_SELF) {
+        val targetPsiFile = targetModule.files.singleOrNull() ?: return targetPath
+
+        val contextModule = targetModule.contextModule
+        val contextResolutionFacade = contextModule.getResolutionFacade(contextModule.project)
+
+        return buildList {
+            for (targetPathDeclaration in targetPath) {
+                val targetPathPsi = targetPathDeclaration.psi ?: return null
+                if (targetPathPsi !is CjClassOrObject && targetPathPsi !is CjScript && targetPathPsi !is CjFile) return null
+
+                val originalPathPsi = targetPathPsi.unwrapCopy(targetPsiFile) ?: return null
+                val originalPathDeclaration = when (originalPathPsi) {
+                    is CjClassOrObject -> originalPathPsi.resolveToCfirSymbolOfTypeSafe<CfirRegularClassSymbol>(contextResolutionFacade)?.fir
+                    is CjScript -> originalPathPsi.resolveToCfirSymbolOfTypeSafe<CfirScriptSymbol>(contextResolutionFacade)?.fir
+                    is CjFile -> originalPathPsi.getOrBuildCfirFile(contextResolutionFacade)
+                    else -> null
+                } ?: return null
+
+                add(originalPathDeclaration)
+            }
+        }
+    }
+
+    return targetPath
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\InvalidCfirElementTypeException.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api
+
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.types.ConeKotlinType
+import org.cangnova.cangjie.cfir.utils.exceptions.withConeTypeEntry
+import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
+import org.cangnova.cangjie.cfir.utils.exceptions.withCfirSymbolEntry
+import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.utils.exceptions.KotlinIllegalArgumentExceptionWithAttachments
+import org.cangnova.cangjie.utils.exceptions.buildAttachment
+import org.cangnova.cangjie.utils.exceptions.withPsiEntry
+import java.util.Locale
+import kotlin.reflect.KClass
+
+class InvalidCfirElementTypeException(
+    actualCfirElement: Any?,
+    ktElement: CjElement?,
+    expectedCfirClasses: List<KClass<*>>,
+) : KotlinIllegalArgumentExceptionWithAttachments("") {
+    init {
+        buildAttachment {
+            when (actualCfirElement) {
+                is CfirElement -> withCfirEntry("firElement", actualCfirElement)
+                is CfirBasedSymbol<*> -> withCfirSymbolEntry("firSymbol", actualCfirElement)
+                is ConeKotlinType -> withConeTypeEntry("coneType", actualCfirElement)
+                null -> {}
+                else -> withEntry("element", actualCfirElement) { it.toString() }
+            }
+
+            ktElement?.let {
+                withPsiEntry("ktElement", ktElement)
+            }
+        }
+    }
+
+    override val message: String = buildString {
+        ktElement?.let {
+            "For ${ktElement::class.simpleName}, "
+        }
+
+        val message = when (expectedCfirClasses.size) {
+            0 -> "Unexpected element of type:"
+            1 -> "The element of type ${expectedCfirClasses.single()} expected, but"
+            else -> "One of [${expectedCfirClasses.joinToString()}] element types expected, but"
+        }
+
+        append(if (ktElement == null) message else message.replaceCfirstChar { it.lowercase(Locale.getDefault()) })
+        if (actualCfirElement != null) {
+            append(" ${actualCfirElement::class.simpleName} found")
+        } else {
+            append(" no element found")
+        }
+    }
+}
+
+
+fun throwUnexpectedCfirElementError(
+    firElement: Any?,
+    ktElement: CjElement? = null,
+    vararg expectedCfirClasses: KClass<*>
+): Nothing {
+    throw InvalidCfirElementTypeException(firElement, ktElement, expectedCfirClasses.toList())
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\LLResolutionFacade.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api
+
+import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiTypeParameter
+import com.intellij.psi.impl.compiled.ClsElementImpl
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.utils.errors.withPsiEntry
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisElement
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.state.*
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleSpecificSymbolProviderAccess
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.getClassLikeSymbolByPsiWithoutDependencies
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.*
+import org.cangnova.cangjie.analysis.utils.classId
+import org.cangnova.cangjie.analysis.utils.errors.requireIsInstance
+import org.cangnova.cangjie.analysis.utils.isLocalClass
+import org.cangnova.cangjie.asJava.CjLightClassMarker
+import org.cangnova.cangjie.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
+import org.cangnova.cangjie.cfir.expressions.CfirAnonymousObjectExpression
+import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.providers.firProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirRegularClassSymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.load.java.JvmAnnotationNames
+import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+
+/**
+ * An entry point for a CFIR Low Level API resolution. Represents a project view from a use-site [CaModule].
+ */
+class LLResolutionFacade internal constructor(
+    val moduleProvider: LLModuleProvider,
+    val resolutionStrategyProvider: LLModuleResolutionStrategyProvider,
+    val sessionProvider: LLSessionProvider,
+    val diagnosticProvider: LLDiagnosticProvider,
+) {
+    val useSiteModule: CaModule
+        get() = moduleProvider.useSiteModule
+
+    val project: Project
+        get() = useSiteModule.project
+
+    val useSiteCfirSession: LLCfirSession
+        get() = sessionProvider.useSiteSession
+
+    fun getSessionFor(module: CaModule): LLCfirSession {
+        return sessionProvider.getSession(module)
+    }
+
+    /**
+     * @see LLSessionProvider.getDependencySession
+     */
+    fun getDependencySessionFor(module: CaModule): LLCfirSession? =
+        sessionProvider.getDependencySession(module)
+
+    fun getScopeSessionFor(firSession: CfirSession): ScopeSession {
+        requireIsInstance<LLCfirSession>(firSession)
+        return LLDefaultScopeSessionProvider.getScopeSession(firSession)
+    }
+
+    /**
+     * Build [CfirElement] node in its final resolved state for a requested element.
+     *
+     * Note: that it isn't always [BODY_RESOLVE][CfirResolvePhase.BODY_RESOLVE]
+     * as not all declarations have types/bodies/etc. to resolve.
+     *
+     * This operation could be time-consuming because it creates
+     * [FileStructureElement][org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.FileStructureElement]
+     * and may resolve non-local declarations into [BODY_RESOLVE][CfirResolvePhase.BODY_RESOLVE] phase.
+     *
+     * Please use [getOrBuildCfirFile] to get [CfirFile] in undefined phase.
+     *
+     * @return associated [CfirElement] in final resolved state if it exists.
+     *
+     * @see getOrBuildCfirFile
+     * @see org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.CfirElementBuilder.getOrBuildCfirFor
+     */
+    internal fun getOrBuildCfirFor(element: CjElement): CfirElement? {
+        val moduleComponents = getModuleComponentsForElement(element)
+        return moduleComponents.elementsBuilder.getOrBuildCfirFor(element)
+    }
+
+    /**
+     * Get or build or get cached [CfirFile] for the requested file in undefined phase
+     */
+    internal fun getOrBuildCfirFile(ktFile: CjFile): CfirFile {
+        val moduleComponents = getModuleComponentsForElement(ktFile)
+        return moduleComponents.firFileBuilder.buildRawCfirFileWithCaching(ktFile)
+    }
+
+    private fun getModuleComponentsForElement(element: CjElement): LLCfirModuleResolveComponents {
+        val module = getModule(element)
+        return sessionProvider.getResolvableSession(module).moduleComponents
+    }
+
+    /**
+     * @see LLDiagnosticProvider.getDiagnostics
+     */
+    internal fun getDiagnostics(element: CjElement, filter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
+        return diagnosticProvider.getDiagnostics(element, filter)
+    }
+
+    /**
+     * @see LLDiagnosticProvider.collectDiagnostics
+     */
+    internal fun collectDiagnosticsForFile(ktFile: CjFile, filter: DiagnosticCheckerFilter): Collection<CjPsiDiagnostic> {
+        return diagnosticProvider.collectDiagnostics(ktFile, filter)
+    }
+
+    internal fun resolveToCfirSymbol(ktDeclaration: CjDeclaration, phase: CfirResolvePhase): CfirBasedSymbol<*> {
+        val containingCjFile = ktDeclaration.containingCjFile
+        val module = getModule(containingCjFile)
+
+        return when (getModuleResolutionStrategy(module)) {
+            LLModuleResolutionStrategy.LAZY -> findSourceCfirSymbol(ktDeclaration).also { it.cfir.lazyResolveToPhase(phase) }
+            LLModuleResolutionStrategy.STATIC -> findCompiledCfirSymbol(ktDeclaration, module)
+        }
+    }
+
+    private fun getModuleResolutionStrategy(module: CaModule): LLModuleResolutionStrategy {
+        return resolutionStrategyProvider.getKind(module)
+    }
+
+    private fun findSourceCfirSymbol(ktDeclaration: CjDeclaration): CfirBasedSymbol<*> {
+        val targetDeclaration = ktDeclaration.originalDeclaration ?: ktDeclaration
+        val targetModule = getModule(targetDeclaration)
+
+        require(getModuleResolutionStrategy(targetModule) == LLModuleResolutionStrategy.LAZY) {
+            "Declaration should be resolvable module, instead it had ${targetModule::class}"
+        }
+
+        // All elements inside a code fragment are local
+        val nonLocalContainer = targetDeclaration.containingCjFile as? CjCodeFragment
+            ?: targetDeclaration.getNonLocalContainingOrThisElement()
+            ?: errorWithAttachment("Declaration should have non-local container") {
+                withPsiEntry("ktDeclaration", targetDeclaration, ::getModule)
+                withEntry("module", targetModule) { it.moduleDescription }
+            }
+
+        val firDeclaration = if ((nonLocalContainer as? CjDeclaration) == targetDeclaration) {
+            val session = sessionProvider.getResolvableSession(targetModule)
+            nonLocalContainer.findSourceNonLocalCfirDeclaration(
+                firFileBuilder = session.moduleComponents.firFileBuilder,
+                provider = session.firProvider,
+            )
+        } else {
+            findSourceCfirDeclarationViaResolve(targetDeclaration)
+        }
+
+        return firDeclaration.symbol
+    }
+
+    private fun findSourceCfirDeclarationViaResolve(ktDeclaration: CjExpression): CfirDeclaration {
+        return when (val fir = getOrBuildCfirFor(ktDeclaration)) {
+            is CfirDeclaration -> fir
+            is CfirAnonymousFunctionExpression -> fir.anonymousFunction
+            is CfirAnonymousObjectExpression -> fir.anonymousObject
+            else -> errorWithCfirSpecificEntries(
+                "CfirDeclaration was not found for ${ktDeclaration::class}, fir is ${fir?.let { it::class }}",
+                fir = fir,
+                psi = ktDeclaration,
+            )
+        }
+    }
+
+    private fun findCompiledCfirSymbol(ktDeclaration: CjDeclaration, module: CaModule): CfirBasedSymbol<*> {
+        requireWithAttachment(
+            ktDeclaration.containingCjFile.isCompiled,
+            { "`findCfirCompiledSymbol` only works on compiled declarations, but the given declaration is not compiled." },
+        ) {
+            withPsiEntry("declaration", ktDeclaration, module)
+        }
+
+        val session = getSessionFor(module)
+        val searcher = CfirDeclarationForCompiledElementSearcher(session)
+        val firDeclaration = searcher.findNonLocalDeclaration(ktDeclaration)
+        return firDeclaration.symbol
+    }
+
+    /**
+     * Resolves a **non-Kotlin** [PsiClass] to a [CfirRegularClassSymbol].
+     */
+    internal fun resolveToCfirSymbol(psiClass: PsiClass): CfirRegularClassSymbol {
+        checkPsiClassApplicability(psiClass)
+
+        val module = getModule(psiClass)
+        val classId = psiClass.classIdOrError()
+
+        val symbolProvider = getSessionFor(module).symbolProvider
+
+        // We're using the symbol provider for the PSI class's module, so module-specific accesses are valid.
+        @OptIn(LLModuleSpecificSymbolProviderAccess::class)
+        return symbolProvider.getClassLikeSymbolByPsiWithoutDependencies(classId, psiClass) as? CfirRegularClassSymbol
+            ?: errorWithAttachment("Class symbol not found for PSI class") {
+                withEntry("classId", classId) { it.asString() }
+                withPsiEntry("psiClass", psiClass, module)
+            }
+    }
+
+    private fun checkPsiClassApplicability(psiClass: PsiClass) {
+        require(psiClass !is PsiTypeParameter) {
+            "`PsiClass.resolveToCfirSymbol` can only resolve regular classes."
+        }
+
+        require(psiClass !is CjLightClassMarker) {
+            "`PsiClass.resolveToCfirSymbol` can only provide non-Kotlin classes."
+        }
+
+        checkWithAttachment(
+            psiClass !is ClsElementImpl || !psiClass.hasAnnotation(JvmAnnotationNames.METADATA_FQ_NAME.asString()),
+            {
+                "`PsiClass.resolveToCfirSymbol` can only provide non-Kotlin classes, but got `${psiClass::class}` with" +
+                        " `${JvmAnnotationNames.METADATA_FQ_NAME.asString()}` annotation."
+            }
+        ) {
+            withEntry("virtualFilePath", psiClass.containingFile.virtualFile?.path)
+            withPsiEntry("psiClass", psiClass, useSiteCfirSession.ktModule)
+        }
+
+        checkWithAttachment(
+            !psiClass.isLocalClass(),
+            { "`PsiClass.resolveToCfirSymbol` can only provide non-local classes, but `${psiClass::class}` is local." },
+        ) {
+            withEntry("virtualFilePath", psiClass.containingFile.virtualFile?.path)
+            withPsiEntry("psiClass", psiClass, useSiteCfirSession.ktModule)
+            withEntry("psiClass.qualifiedName", psiClass.qualifiedName)
+            withEntry("psiClass.classId", psiClass.classId?.asString())
+        }
+    }
+}
+
+fun LLResolutionFacade.getModule(element: PsiElement): CaModule {
+    return KotlinProjectStructureProvider.getModule(project, element, useSiteModule)
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\LowLevelCfirApiFacade.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api
+
+import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiClass
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLResolutionFacadeService
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirRegularClassSymbol
+import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjFile
+
+/**
+ * Returns [LLResolutionFacade] which corresponds to containing module
+ */
+fun CaModule.getResolutionFacade(project: Project): LLResolutionFacade =
+    LLResolutionFacadeService.getInstance(project).getResolutionFacade(this)
+
+/**
+ * Resolves this [CjDeclaration] to a [CfirBasedSymbol].
+ *
+ * The underlying [CfirDeclaration][org.cangnova.cangjie.cfir.declarations.CfirDeclaration] will be resolved at least to [phase].
+ */
+fun CjDeclaration.resolveToCfirSymbol(
+    resolutionFacade: LLResolutionFacade,
+    phase: CfirResolvePhase = CfirResolvePhase.RAW_CFIR,
+): CfirBasedSymbol<*> {
+    return resolutionFacade.resolveToCfirSymbol(this, phase)
+}
+
+/**
+ * Resolves this [CjDeclaration] to a [CfirBasedSymbol]. If the resulting [CfirBasedSymbol] is not subtype of [S],
+ * [InvalidCfirElementTypeException] is thrown.
+ *
+ * The underlying [CfirDeclaration][org.cangnova.cangjie.cfir.declarations.CfirDeclaration] will be resolved at least to [phase].
+ */
+@Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+inline fun <reified S : CfirBasedSymbol<*>> CjDeclaration.resolveToCfirSymbolOfType(
+    resolutionFacade: LLResolutionFacade,
+    phase: CfirResolvePhase = CfirResolvePhase.RAW_CFIR,
+): @kotlin.internal.NoInfer S {
+    val symbol = resolveToCfirSymbol(resolutionFacade, phase)
+    if (symbol !is S) {
+        throwUnexpectedCfirElementError(symbol, this, S::class)
+    }
+    return symbol
+}
+
+/**
+ * Resolves this [CjDeclaration] to a [CfirBasedSymbol]. If the resulting [CfirBasedSymbol] is not subtype of [S], returns `null`.
+ *
+ * The underlying [CfirDeclaration][org.cangnova.cangjie.cfir.declarations.CfirDeclaration] will be resolved at least to [phase].
+ */
+@Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+inline fun <reified S : CfirBasedSymbol<*>> CjDeclaration.resolveToCfirSymbolOfTypeSafe(
+    resolutionFacade: LLResolutionFacade,
+    phase: CfirResolvePhase = CfirResolvePhase.RAW_CFIR,
+): @kotlin.internal.NoInfer S? {
+    return resolveToCfirSymbol(resolutionFacade, phase) as? S
+}
+
+/**
+ * Resolve a **non-Kotlin** [PsiClass] to a [CfirRegularClassSymbol]
+ */
+fun PsiClass.resolveToCfirSymbol(resolutionFacade: LLResolutionFacade): CfirRegularClassSymbol =
+    resolutionFacade.resolveToCfirSymbol(this)
+
+/**
+ * Returns a list of Diagnostics compiler finds for given [CjElement]
+ * This operation could be performance affective because it create FIleStructureElement and resolve non-local declaration into BODY phase
+ */
+fun CjElement.getDiagnostics(resolutionFacade: LLResolutionFacade, filter: DiagnosticCheckerFilter): Collection<CjPsiDiagnostic> =
+    resolutionFacade.getDiagnostics(this, filter)
+
+/**
+ * Returns a list of Diagnostics compiler finds for given [CjFile]
+ * This operation could be performance affective because it create FIleStructureElement and resolve non-local declaration into BODY phase
+ */
+fun CjFile.collectDiagnosticsForFile(
+    resolutionFacade: LLResolutionFacade,
+    filter: DiagnosticCheckerFilter
+): Collection<CjPsiDiagnostic> =
+    resolutionFacade.collectDiagnosticsForFile(this, filter)
+
+/**
+ * Build [CfirElement] node in its final resolved state for a requested element.
+ *
+ * Note: that it isn't always [BODY_RESOLVE][CfirResolvePhase.BODY_RESOLVE]
+ * as not all declarations have types/bodies/etc. to resolve.
+ *
+ * This operation could be time-consuming because it creates
+ * [FileStructureElement][org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.FileStructureElement]
+ * and may resolve non-local declarations into [BODY_RESOLVE][CfirResolvePhase.BODY_RESOLVE] phase.
+ *
+ * Please use [getOrBuildCfirFile] to get [CfirFile] in undefined phase.
+ *
+ * @return associated [CfirElement] in final resolved state if it exists.
+ *
+ * @see getOrBuildCfirFile
+ * @see LLResolutionFacade.getOrBuildCfirFor
+ */
+fun CjElement.getOrBuildCfir(resolutionFacade: LLResolutionFacade): CfirElement? =
+    resolutionFacade.getOrBuildCfirFor(this)
+
+/**
+ * Get a [CfirElement] which was created by [CjElement], but only if it is subtype of [E], `null` otherwise
+ * Returned [CfirElement] is guaranteed to be resolved to [CfirResolvePhase.BODY_RESOLVE] phase
+ * This operation could be performance affective because it create FIleStructureElement and resolve non-local declaration into BODY phase
+ */
+inline fun <reified E : CfirElement> CjElement.getOrBuildCfirSafe(resolutionFacade: LLResolutionFacade) =
+    getOrBuildCfir(resolutionFacade) as? E
+
+/**
+ * Get a [CfirElement] which was created by [CjElement], but only if it is subtype of [E], throws [InvalidCfirElementTypeException] otherwise
+ * Returned [CfirElement] is guaranteed to be resolved to [CfirResolvePhase.BODY_RESOLVE] phase
+ * This operation could be performance affective because it create FIleStructureElement and resolve non-local declaration into BODY phase
+ */
+inline fun <reified E : CfirElement> CjElement.getOrBuildCfirOfType(resolutionFacade: LLResolutionFacade): E {
+    val fir = getOrBuildCfir(resolutionFacade)
+    if (fir is E) return fir
+    throwUnexpectedCfirElementError(fir, this, E::class)
+}
+
+/**
+ * Get a [CfirFile] which was created by [CjElement]
+ * Returned [CfirFile] can be resolved to any phase from [CfirResolvePhase.RAW_CFIR] to [CfirResolvePhase.BODY_RESOLVE]
+ */
+fun CjFile.getOrBuildCfirFile(resolutionFacade: LLResolutionFacade): CfirFile =
+    resolutionFacade.getOrBuildCfirFile(this)
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\services\LLCfirElementByPsiElementChooser.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api.services
+
+import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumEntry
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.psi.CjCallableDeclaration
+import org.cangnova.cangjie.psi.CjEnumEntry
+import org.cangnova.cangjie.psi.CjParameter
+import org.cangnova.cangjie.psi.CjTypeParameter
+
+/**
+ * [LLCfirElementByPsiElementChooser] helps with choosing a [org.cangnova.cangjie.cfir.CfirElement] from multiple *sibling* CFIR elements that
+ * matches a given [org.cangnova.cangjie.psi.CjElement].
+ *
+ * The chooser requires the CFIR elements to belong to the same conceptual parent (such as top-level scope, class, parameter list, etc.), as
+ * the algorithm is only required to consider structural aspects of the given elements, but not their parents.
+ *
+ * Using this service only makes sense when a CFIR element may not have an underlying PSI, which may be the case for deserialized elements.
+ * When elements are deserialized from stubs, this issue does not occur because the PSI is provided during deserialization. However, in
+ * Standalone mode, deserialized symbols do not have sources and require more sophisticated choosing logic.
+ */
+abstract class LLCfirElementByPsiElementChooser {
+    abstract fun isMatchingValueParameter(psi: CjParameter, fir: CfirValueParameter): Boolean
+
+    abstract fun isMatchingTypeParameter(psi: CjTypeParameter, fir: CfirTypeParameter): Boolean
+
+    abstract fun isMatchingEnumEntry(psi: CjEnumEntry, fir: CfirEnumEntry): Boolean
+
+    abstract fun isMatchingCallableDeclaration(psi: CjCallableDeclaration, fir: CfirCallableDeclaration): Boolean
+
+    companion object {
+        fun getInstance(project: Project): LLCfirElementByPsiElementChooser =
+            project.getService(LLCfirElementByPsiElementChooser::class.java)
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\targets\LLCfirClassSpecificMembersResolveTarget.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirRegularClass
+
+/**
+ * Resolves [members] of [designation]. Ignores the class itself.
+ */
+internal class LLCfirClassSpecificMembersResolveTarget(
+    designation: CfirDesignation,
+    val members: List<CfirDeclaration>,
+) : LLCfirRegularClassResolveTarget(designation) {
+    override val visitClass: Boolean get() = false
+    override fun visitMembers(visitor: LLCfirResolveTargetVisitor, firRegularClass: CfirRegularClass) {
+        members.forEach(visitor::performAction)
+    }
+
+    override fun toStringAdditionalSuffix(): String = members.joinToString(prefix = "[", postfix = "]") { it.symbol.toString() }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\targets\LLCfirClassWithAllCallablesResolveTarget.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.forEachDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirRegularClass
+
+/**
+ * [LLCfirResolveTarget] representing a class with all callable members (functions and properties).
+ */
+internal class LLCfirClassWithAllCallablesResolveTarget(designation: CfirDesignation) : LLCfirRegularClassResolveTarget(designation) {
+    override val visitClass: Boolean get() = true
+    override fun visitMembers(visitor: LLCfirResolveTargetVisitor, firRegularClass: CfirRegularClass) {
+        firRegularClass.forEachDeclaration {
+            if (it is CfirCallableDeclaration) {
+                visitor.performAction(it)
+            }
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\targets\LLCfirPartialBodyResolveTarget.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialBodyResolvable
+import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.psi.CjElement
+
+/**
+ * Resolves a single callable declaration.
+ * If available, performs partial body analysis.
+ */
+internal class LLCfirPartialBodyResolveTarget(
+    designation: CfirDesignation,
+    val request: LLPartialBodyResolveRequest
+) : LLCfirResolveTarget(designation) {
+    override fun visitTargetElement(element: CfirElementWithResolveState, visitor: LLCfirResolveTargetVisitor) {
+        visitor.performAction(element)
+    }
+}
+
+/**
+ * A partial body analysis request.
+ *
+ * @param target A callable to be analyzed. The [target] is required to be partial body resolvable (see [isPartialBodyResolvable]).
+ * @param totalPsiStatementCount The total number of statements in the AST.
+ * @param targetPsiStatementCount The number of statements in the AST to be analyzed as a result of this request.
+ * @param stopElement The first element that does not belong to the analyzed part of the declaration. If `null`, the whole [target] body
+ *        is analyzed.
+ */
+internal class LLPartialBodyResolveRequest(
+    val target: CfirDeclaration,
+    val totalPsiStatementCount: Int,
+    val targetPsiStatementCount: Int,
+    val stopElement: CjElement?
+) {
+    init {
+        require(target.isPartialBodyResolvable)
+    }
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\targets\LLCfirRegularClassResolveTarget.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.withCfirDesignationEntry
+import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.declarations.CfirRegularClass
+import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+
+internal sealed class LLCfirRegularClassResolveTarget(designation: CfirDesignation) : LLCfirResolveTarget(designation) {
+    init {
+        requireWithAttachment(
+            target is CfirRegularClass,
+            { "Expected type of '${::target.name}' is ${CfirRegularClass::class.simpleName}, but ${target::class.simpleName} is found" },
+        ) {
+            withCfirDesignationEntry("designation", this@LLCfirRegularClassResolveTarget.designation)
+        }
+    }
+
+    abstract fun visitMembers(visitor: LLCfirResolveTargetVisitor, firRegularClass: CfirRegularClass)
+
+    abstract val visitClass: Boolean
+
+    final override fun visitTargetElement(
+        element: CfirElementWithResolveState,
+        visitor: LLCfirResolveTargetVisitor,
+    ) {
+        if (visitClass) {
+            visitor.performAction(element)
+        }
+
+        visitor.withRegularClass(element as CfirRegularClass) {
+            visitMembers(visitor, element)
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\targets\LLCfirResolveTarget.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
+import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousInitializer
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirRegularClass
+import org.cangnova.cangjie.cfir.declarations.CfirScript
+
+/**
+ * [target] element and optionally its subgraph to be lazily resolved by LL CFIR lazy resolver.
+ *
+ * Specifies the path to resolve targets and resolve targets themselves.
+ * Those targets are going to be resolved by [LLCfirModuleLazyDeclarationResolver][org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirModuleLazyDeclarationResolver].
+ *
+ * @see CfirDesignation
+ */
+internal sealed class LLCfirResolveTarget(val designation: CfirDesignation) {
+    /**
+     * [CfirFile] where the targets are located.
+     * Can be null if [target] does not belong to any file.
+     * E.g., fake overrides.
+     * @see org.cangnova.cangjie.cfir.scopes.impl.CfirFakeOverrideGenerator
+     */
+    val firFile: CfirFile? get() = designation.fileOrNull
+
+    /**
+     * The list of [CfirFile], [CfirScript] and [CfirRegularClass] which are
+     * the required to go from file to target declarations in the top-down order.
+     *
+     * If resolve target is [CfirFile], [CfirScript] or [CfirRegularClass] itself, it's not included into the [path].
+     */
+    val path: List<CfirDeclaration> get() = designation.path
+
+    /**
+     * A dedicated main element.
+     */
+    val target: CfirElementWithResolveState get() = designation.target
+
+    /**
+     * Visit [path], [target] and optionally its subgraph.
+     * Each nested declaration will be wrapped with corresponding [LLCfirResolveTargetVisitor.withFile],
+     * [LLCfirResolveTargetVisitor.withRegularClass] and [LLCfirResolveTargetVisitor.withScript] recursively.
+     */
+    fun visit(visitor: LLCfirResolveTargetVisitor) {
+        if (target is CfirFile) {
+            visitor.performAction(target)
+        }
+
+        goToTarget(visitor)
+    }
+
+    private fun goToTarget(visitor: LLCfirResolveTargetVisitor) {
+        val pathIterator = path.iterator()
+        goToTarget(pathIterator, visitor)
+    }
+
+    private fun goToTarget(
+        pathIterator: Iterator<CfirDeclaration>,
+        visitor: LLCfirResolveTargetVisitor,
+    ) {
+        if (pathIterator.hasNext()) {
+            when (val declaration = pathIterator.next()) {
+                is CfirRegularClass -> visitor.withRegularClass(declaration) { goToTarget(pathIterator, visitor) }
+                is CfirScript -> visitor.withScript(declaration) { goToTarget(pathIterator, visitor) }
+                is CfirFile -> visitor.withFile(declaration) { goToTarget(pathIterator, visitor) }
+                else -> errorWithCfirSpecificEntries(
+                    "Unexpected declaration in path: ${declaration::class.simpleName}",
+                    fir = declaration,
+                )
+            }
+        } else {
+            visitTargetElement(target, visitor)
+        }
+    }
+
+    /**
+     * [element] with [CfirFile] will be processed before.
+     */
+    protected abstract fun visitTargetElement(
+        element: CfirElementWithResolveState,
+        visitor: LLCfirResolveTargetVisitor,
+    )
+
+    /**
+     * Executions the [action] for each target that this [LLCfirResolveTarget] represents.
+     */
+    fun forEachTarget(action: (CfirElementWithResolveState) -> Unit) {
+        visit(object : LLCfirResolveTargetVisitor {
+            override fun performAction(element: CfirElementWithResolveState) {
+                action(element)
+            }
+        })
+    }
+
+    override fun toString(): String = buildString {
+        append(this@LLCfirResolveTarget::class.simpleName)
+        append("(")
+        buildList {
+            path.mapTo(this) {
+                when (it) {
+                    is CfirFile -> it.name
+                    is CfirRegularClass -> it.name
+                    is CfirScript -> it.name
+                    else -> errorWithCfirSpecificEntries("Unsupported path declaration: ${it::class.simpleName}", fir = it)
+                }
+            }
+
+            add(toStringForTarget())
+            toStringAdditionalSuffix()?.let(this::add)
+        }.joinTo(this, separator = " -> ")
+        append(")")
+    }
+
+    protected open fun toStringAdditionalSuffix(): String? = null
+
+    private fun toStringForTarget(): String = when (val fir = target) {
+        is CfirConstructor -> "constructor"
+        is CfirClassLikeDeclaration -> fir.symbol.name.asString()
+        is CfirCallableDeclaration -> fir.symbol.name.asString()
+        is CfirAnonymousInitializer -> ("<init-block>")
+        is CfirFile -> fir.name
+        is CfirScript -> fir.name.asString()
+        else -> "???"
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\targets\LLCfirResolveTargetVisitor.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
+
+import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirRegularClass
+import org.cangnova.cangjie.cfir.declarations.CfirScript
+
+/**
+ * This interface describes how to process nested declarations.
+ *
+ * @see LLCfirResolveTarget
+ */
+internal interface LLCfirResolveTargetVisitor {
+    /**
+     * Access to [CfirFile] declaration will be performed inside [action].
+     */
+    fun withFile(firFile: CfirFile, action: () -> Unit): Unit = action()
+
+    /**
+     * Access to elements inside [CfirRegularClass] will be performed inside [action].
+     * Will be called for each nested [CfirRegularClass] on the path.
+     */
+    fun withRegularClass(firClass: CfirRegularClass, action: () -> Unit): Unit = action()
+
+    /**
+     * Access to elements inside [CfirScript] will be performed inside [action].
+     */
+    fun withScript(firScript: CfirScript, action: () -> Unit): Unit = action()
+
+    /**
+     * This method will be performed on some target element depends on [LLCfirResolveTarget] implementation.
+     */
+    fun performAction(element: CfirElementWithResolveState)
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\targets\LLCfirSingleResolveTarget.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.declarations.*
+
+private object PartialBodyAnalysisStateKey : CfirDeclarationDataKey()
+
+/**
+ * Represents the partial (incomplete) body resolve state.
+ *
+ * If the function body was ever analyzed partially, this attribute must be present.
+ * This includes cases when the function was once analyzed partially, and then fully – the attribute still must be there.
+ *
+ * The attribute must be removed, though, if the declaration phase is reverted (for example, because of in-block modifications).
+ *
+ * @see LLPartialBodyAnalysisState
+ */
+internal var CfirDeclaration.partialBodyAnalysisState: LLPartialBodyAnalysisState?
+        by CfirDeclarationDataRegistry.data(PartialBodyAnalysisStateKey)
+
+/**
+ * [LLCfirResolveTarget] representing single target to resolve. The [target] can be any of [CfirElementWithResolveState]
+ */
+internal class LLCfirSingleResolveTarget(designation: CfirDesignation) : LLCfirResolveTarget(designation) {
+    override fun visitTargetElement(
+        element: CfirElementWithResolveState,
+        visitor: LLCfirResolveTargetVisitor,
+    ) {
+        if (element !is CfirFile) {
+            visitor.performAction(element)
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\targets\LLCfirWholeElementResolveTarget.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.forEachDeclaration
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isDeclarationContainer
+import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirRegularClass
+import org.cangnova.cangjie.cfir.declarations.CfirScript
+
+/**
+ * [LLCfirResolveTarget] representing all declarations in [target] recursively.
+ * All of them are going to be resolved.
+ */
+internal class LLCfirWholeElementResolveTarget(designation: CfirDesignation) : LLCfirResolveTarget(designation) {
+    override fun visitTargetElement(
+        element: CfirElementWithResolveState,
+        visitor: LLCfirResolveTargetVisitor,
+    ) {
+        if (element !is CfirFile) {
+            visitor.performAction(element)
+        }
+
+        when {
+            element !is CfirDeclaration || !element.isDeclarationContainer -> {}
+
+            element is CfirRegularClass -> visitor.withRegularClass(element) {
+                element.forEachDeclaration {
+                    visitTargetElement(it, visitor)
+                }
+            }
+
+            element is CfirFile -> visitor.withFile(element) {
+                element.forEachDeclaration {
+                    visitTargetElement(it, visitor)
+                }
+            }
+
+            element is CfirScript -> visitor.withScript(element) {
+                element.forEachDeclaration {
+                    visitTargetElement(it, visitor)
+                }
+            }
+
+            else -> errorWithCfirSpecificEntries("Unexpected declaration: ${element::class.simpleName}", fir = element)
+        }
+    }
+
+    override fun toStringAdditionalSuffix(): String = "*"
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\targets\LLPartialBodyAnalysisState.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
+
+import org.cangnova.cangjie.cfir.declarations.CfirTowerDataContext
+import org.cangnova.cangjie.cfir.expressions.CfirDelegatedConstructorCall
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.resolve.dfa.DataFlowAnalyzerContext
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.CFGNode
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.CfgInternals
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
+
+/**
+ * Represents the partial (incomplete) body resolve state.
+ * The attribute is only present if the function body was analyzed partially.
+ *
+ * If the attribute is added, it must never be removed. For a fully analyzed declaration, [analyzedPsiStatementCount] is equal to
+ * [totalPsiStatementCount]. Also, [analysisStateSnapshot] is kept `null` as unneeded (a fully analyzed function is never analyzed again).
+ */
+internal data class LLPartialBodyAnalysisState(
+    /**
+     * A number of topmost [org.cangnova.cangjie.psi.CjExpression] statements in the declaration's body block.
+     *
+     * A topmost statement is a statement directly nested inside the declaration's body block.
+     * Such as, in the following example, `foo()` and `baz {}` are topmost statements while `baz()` is not.
+     *
+     * ```
+     * fun test() {
+     *     foo()
+     *     bar {
+     *         baz()
+     *     }
+     * }
+     * ```
+     */
+    val totalPsiStatementCount: Int,
+
+    /**
+     * A number of analyzed [org.cangnova.cangjie.psi.CjExpression] statements in the declaration's body block.
+     * @see totalPsiStatementCount
+     */
+    val analyzedPsiStatementCount: Int,
+
+    /**
+     * A number of analyzed [CfirStatement] in the declaration's body block.
+     */
+    val analyzedCfirStatementCount: Int,
+
+    /**
+     * A number of partial body analyses happened with the declaration up to this point.
+     * Note that even if [performedAnalysesCount] is greater than zero, only function signature parts (e.g., default parameter values)
+     * might be analyzed.
+     *
+     * After a certain number of analyses, the resolution engine might decide to perform full body analysis.
+     */
+    val performedAnalysesCount: Int,
+
+    /**
+     * Data required for subsequent analysis.
+     * [analysisStateSnapshot] is `null` if the declaration is fully analyzed.
+     */
+    val analysisStateSnapshot: LLPartialBodyAnalysisSnapshot?
+) {
+    /**
+     * Whether a declaration is fully analyzed.
+     * Prefer [org.cangnova.cangjie.cfir.declarations.CfirResolveState.resolvePhase] if you have a declaration in hands.
+     */
+    val isFullyAnalyzed: Boolean
+        get() = totalPsiStatementCount == analyzedPsiStatementCount
+
+    override fun toString(): String {
+        return "$analyzedCfirStatementCount($analyzedPsiStatementCount/$totalPsiStatementCount) #$performedAnalysesCount"
+    }
+}
+
+internal class LLPartialBodyAnalysisSnapshot(
+    val result: LLPartialBodyAnalysisResult,
+    val towerDataContext: CfirTowerDataContext,
+    val dataFlowAnalyzerContext: DataFlowAnalyzerContext
+) {
+    @OptIn(CfgInternals::class)
+    val controlFlowGraphNodes: List<CFGNode<*>> by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        /**
+         * Here we cannot use [ControlFlowGraph.nodes] directly, as the graph is incomplete.
+         * Still, partial body resolution only covers the topmost block statements, and there should be no jumps between them.
+         * So CFG for the analyzed part is complete and can be used for getting smartcast information.
+         * */
+        dataFlowAnalyzerContext.currentGraph.orderNodes(isComplete = false)
+    }
+}
+
+/**
+ * Contains already resolved parts of the declaration.
+ *
+ * In cases when a declaration may be only partially resolved, access the resolved state through this class instead of checking
+ * the CFIR tree directly (such as getting statements from [org.cangnova.cangjie.cfir.declarations.CfirFunction.body]),
+ * as these parts can be concurrently replaced with lazy blocks/expressions by a state keeper.
+ */
+internal class LLPartialBodyAnalysisResult(
+    /**
+     * A list of already resolved statements.
+     * The list contains [LLPartialBodyAnalysisState.analyzedCfirStatementCount] first statements from the function body.
+     */
+    val statements: List<CfirStatement>,
+    /**
+     * A resolved delegated constructor call.
+     */
+    val delegatedConstructorCall: CfirDelegatedConstructorCall?,
+    /**
+     * A list of resolved default parameter values.
+     * The list is empty if there are no value parameters with default values.
+     *
+     * Now, this does not include corresponding parameter names as this has never been needed.
+     */
+    val defaultParameterValues: List<CfirExpression>
+)
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\api\targets\targetUtils.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirSession
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+
+internal fun CfirDesignation.asResolveTarget(): LLCfirSingleResolveTarget = LLCfirSingleResolveTarget(this)
+
+/**
+ * Resolves the target to the specified [phase].
+ * The owning session must be a resolvable one.
+ */
+internal fun LLCfirResolveTarget.resolve(phase: CfirResolvePhase) {
+    val session = target.llCfirResolvableSession
+        ?: errorWithAttachment("Resolvable session expected, got '${target.llCfirSession::class.java}'") {
+            withEntry("firSession", target.llCfirSession) { it.toString() }
+        }
+
+    val lazyDeclarationResolver = session.moduleComponents.firModuleLazyDeclarationResolver
+    lazyDeclarationResolver.lazyResolveTarget(this, phase)
+}
+
+internal val LLCfirResolveTarget.session: LLCfirSession get() = target.llCfirSession
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\caches\cleanable\CleanableSoftValueReferenceCache.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.caches.cleanable
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+import java.lang.ref.ReferenceQueue
+import java.lang.ref.SoftReference
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * A [CleanableValueReferenceCache] with a [SoftReference] to values [V].
+ *
+ * @param getCleaner Returns the [ValueReferenceCleaner] that should be invoked after [V] has been collected or removed from the cache. The
+ *  function will be invoked once when the value is added to the cache.
+ */
+@LLCfirInternals
+class CleanableSoftValueReferenceCache<K : Any, V : Any>(
+    backingMap: ConcurrentHashMap<K, ReferenceWithCleanup<K, V>> = ConcurrentHashMap(),
+    referenceQueue: ReferenceQueue<V> = ReferenceQueue(),
+    private val getCleaner: (V) -> ValueReferenceCleaner<V>,
+) : CleanableValueReferenceCache<K, V>(backingMap, referenceQueue) {
+
+    override fun createCopy(
+        mapCopy: ConcurrentHashMap<K, ReferenceWithCleanup<K, V>>,
+        queueCopy: ReferenceQueue<V>
+    ): CleanableValueReferenceCache<K, V> {
+        return CleanableSoftValueReferenceCache(mapCopy, queueCopy, getCleaner)
+    }
+
+    override fun createReference(key: K, value: V, queue: ReferenceQueue<V>): ReferenceWithCleanup<K, V> {
+        return SoftReferenceWithCleanup(key, value, getCleaner(value), queue)
+    }
+}
+
+private class SoftReferenceWithCleanup<K, V>(
+    override val key: K,
+    value: V,
+    override val cleaner: ValueReferenceCleaner<V>,
+    referenceQueue: ReferenceQueue<V>,
+) : SoftReference<V>(value, referenceQueue), ReferenceWithCleanup<K, V> {
+    override fun equals(other: Any?): Boolean = equalsImpl(other)
+    override fun hashCode(): Int = hashKeyImpl()
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\caches\cleanable\CleanableValueReferenceCache.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.caches.cleanable
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+import java.lang.ref.ReferenceQueue
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * A cache with strong references to its keys [K] and non-strong references to its values [V], which will be cleaned up after manual removal
+ * and garbage collection. **The cache should only be used in read/write actions, as specified by the individual functions.**
+ *
+ * Each value of the cache has a [ValueReferenceCleaner] associated with it. The cache ensures that this cleaner is invoked when the value
+ * is removed from or replaced in the cache or when the value has been garbage-collected. Already collected values from the cache's
+ * reference queue are guaranteed to be processed on mutating operations (such as `put`, `remove`, and so on). The [ValueReferenceCleaner]
+ * will be strongly referenced from the cache until collected values have been processed.
+ *
+ * To ensure exception resilience, as exceptions can happen during value cleanup with [ValueReferenceCleaner], the cache has the following
+ * contract: Removing one or more entries from the cache must succeed even when value cleanup throws an exception.
+ *
+ * `null` keys or values are not allowed.
+ */
+@LLCfirInternals
+abstract class CleanableValueReferenceCache<K : Any, V : Any>(
+    protected val backingMap: ConcurrentHashMap<K, ReferenceWithCleanup<K, V>>,
+    protected val referenceQueue: ReferenceQueue<V>,
+) {
+    /**
+     * Creates a copy of the cache with copies of [backingMap] and [referenceQueue]
+     */
+    fun createCopy(): CleanableValueReferenceCache<K, V> {
+        val mapCopy = ConcurrentHashMap<K, ReferenceWithCleanup<K, V>>(backingMap.size)
+        val queueCopy = ReferenceQueue<V>()
+
+        for ((key, reference) in backingMap) {
+            val value = reference.get() ?: continue
+            mapCopy[key] = createReference(key, value, queueCopy)
+        }
+        return createCopy(mapCopy, queueCopy)
+    }
+
+    protected abstract fun createCopy(
+        mapCopy: ConcurrentHashMap<K, ReferenceWithCleanup<K, V>>,
+        queueCopy: ReferenceQueue<V>,
+    ): CleanableValueReferenceCache<K, V>
+
+    internal fun createReference(key: K, value: V): ReferenceWithCleanup<K, V> {
+        return createReference(key, value, referenceQueue)
+    }
+
+    internal abstract fun createReference(key: K, value: V ,queue: ReferenceQueue<V>): ReferenceWithCleanup<K, V>
+
+    private fun processQueue() {
+        while (true) {
+            val ref = referenceQueue.poll() ?: break
+            check(ref is ReferenceWithCleanup<*, *>)
+
+            @Suppress("UNCHECKED_CAST")
+            ref as ReferenceWithCleanup<K, V>
+
+            val wasRemoved = backingMap.remove(ref.key, ref)
+
+            // If `ref` already wasn't part of the map,
+            // it will have been cleaned up by a deterministic removal operation
+            if (wasRemoved) {
+                ref.performCleanup("CleanableValueReferenceCache.processQueue")
+            }
+        }
+    }
+
+    /**
+     * Returns a value for the given [key] if it exists in the map. **Must be called in a read action.**
+     */
+    operator fun get(key: K): V? = backingMap[key]?.get()
+
+    /**
+     * If [key] is currently absent, attempts to add a value computed by [computeValue] to the cache. [computeValue] is invoked exactly once
+     * if [key] is present, and otherwise never. **Must be called in a read action.**
+     *
+     * [computeValue] should not modify the cache during computation.
+     *
+     * @return The already present or newly computed value associated with [key].
+     */
+    fun computeIfAbsent(key: K, computeValue: (K) -> V): V {
+        get(key)?.let { return it }
+
+        return compute(key) { _, currentValue -> currentValue ?: computeValue(key) }
+            ?: error("`computeIfAbsent` should always return a non-null value.")
+    }
+
+    /**
+     * Replaces the current value at [key] with a new value computed by [computeValue]. [computeValue] is invoked exactly once. **Must be
+     * called in a read action.**
+     *
+     * If the cache already contains a value `v` at [key], cleanup will be performed on it, *unless* the result of the computation is
+     * referentially equal to `v`. This behavior enables computation functions to decide to retain an existing value, without triggering
+     * cleanup.
+     *
+     * [computeValue] should not modify the cache during computation.
+     *
+     * @return The computed value now associated with [key].
+     */
+    fun compute(key: K, computeValue: (K, V?) -> V?): V? {
+        // We need to keep a potentially newly computed value on the stack so that it isn't accidentally garbage-collected before the end of
+        // this function. Without this variable, after `backingMap.compute` and before the end of this function, the reference kept in the
+        // cache might be the only reference to the new value. With unlucky GC timing, it might be collected.
+        var newValue: V? = null
+
+        // If we replace an existing reference, we need to clean it up per the contract of the cache.
+        var removedRef: ReferenceWithCleanup<K, V>? = null
+
+        val newRef = backingMap.compute(key) { _, currentRef ->
+            // If `currentRef` exists but its value is `null`, to the outside it will look like no value existed in the cache. It will be
+            // cleaned up at the end of `compute`.
+            val currentValue = currentRef?.get()
+            newValue = computeValue(key, currentValue)
+
+            when {
+                newValue == null -> {
+                    removedRef = currentRef
+                    null
+                }
+
+                // Avoid creating another reference for the same value, for example if `f` doesn't need to change the cached value, though
+                // it isn't necessary for correct functioning of the cache. If there are multiple references for the same value, they will
+                // all remain valid until the value itself is garbage-collected. Cleanup in `processQueue` will be performed once for each
+                // such reference, which will result in multiple cleanup calls. This is legal given the contract of `ValueReferenceCleaner`,
+                // but wasteful and thus best to avoid. Also, we shouldn't clean up such a reference, as per the contract of the `compute`
+                // function.
+                newValue === currentValue -> currentRef
+
+                else -> {
+                    removedRef = currentRef
+                    createReference(key, newValue!!,)
+                }
+            }
+        }
+
+        removedRef?.performCleanup("CleanableValueReferenceCache.compute")
+        processQueue()
+
+        require(newRef?.get() === newValue) {
+            "The newly computed value was already garbage-collected before the end of the `compute` function."
+        }
+
+        return newValue
+    }
+
+    /**
+     * Adds or replaces [value] to/in the cache at the given [key]. **Must be called in a read action.**
+     *
+     * As replacement constitutes removal, cleanup will be performed on the replaced value. When the existing value and the new value are
+     * the same (referentially equal), cleanup will not be performed, because the existing value effectively wasn't removed from the cache.
+     *
+     * @return The old value that has been replaced, if any.
+     */
+    fun put(key: K, value: V): V? {
+        // We implement `put` in terms of `backingMap.compute` to avoid creation of a new reference when the old and the new value are
+        // referentially equal. A combination of `backingMap.get` and `backingMap.put` would not be atomic, because the existing value
+        // fetched with `backingMap.get` might be outdated by the time we invoke `backingMap.put` based on the `old === new` comparison.
+        // This function's implementation is different from `CleanableValueReferenceCache.compute` because `put` needs to return the old value,
+        // not the new value.
+        var oldValue: V? = null
+        var removedRef: ReferenceWithCleanup<K, V>? = null
+
+        // See `compute` for additional comments on the implementation, as it is similar to this implementation.
+        backingMap.compute(key) { _, currentRef ->
+            val currentValue = currentRef?.get()
+            oldValue = currentValue
+
+            if (value === currentValue) {
+                return@compute currentRef
+            }
+
+            removedRef = currentRef
+            createReference(key, value,)
+        }
+
+        removedRef?.performCleanup("CleanableValueReferenceCache.put")
+        processQueue()
+
+        return oldValue
+    }
+
+    /**
+     * Removes the value associated with [key] from the cache, performs cleanup on it, and returns it if it exists. **Must be called in a
+     * read action.**
+     */
+    fun remove(key: K): V? {
+        val ref = backingMap.remove(key)
+        ref?.performCleanup("CleanableValueReferenceCache.remove")
+
+        processQueue()
+        return ref?.get()
+    }
+
+    /**
+     * Removes all values from the cache and performs cleanup on them.
+     *
+     * **Must be called in a *write* action, or in the case if the caller can guarantee no other threads can perform invalidation or
+     * code analysis until the cleanup is complete.**
+     *
+     * The write action requirement is due to the complexity associated with atomically clearing a concurrent cache while also performing
+     * cleanup on exactly the cleared values. Because this cache implementation is used by components which operate in read and write
+     * actions, requiring a write action is more economical than synchronizing on some cache-wide lock.
+     */
+    fun clear(diagnosticInformation: String? = null) {
+        val fullDiagnosticInformation =
+            diagnosticInformation?.let { "CleanableValueReferenceCache.clear ($it)" } ?: "CleanableValueReferenceCache.clear"
+
+        // The backing map will not be modified by other threads during `clean` because it is executed in a write action.
+        try {
+            backingMap.values.forEach { it.performCleanup(fullDiagnosticInformation) }
+        } finally {
+            // In case an unexpected exception happens during cleanup, we need to make sure that all values are still removed from the
+            // cache. Otherwise, the cache might be left in an inconsistent state where some cleaned-up values remain.
+            //
+            // This is the only place in the implementation where we perform the cleanup *first* and then remove the entries from the
+            // backing map.
+            backingMap.clear()
+        }
+
+        processQueue()
+    }
+
+    /**
+     * Returns the number of elements in the cache. **Must be called in a read action.**
+     */
+    val size: Int
+        get() {
+            // Process the reference queue first to remove values which have already been garbage-collected to get a more accurate size.
+            // Still, an accurate size is not fully guaranteed, as additional garbage collection may occur between `processQueue` and the
+            // end of the function.
+            processQueue()
+            return backingMap.size
+        }
+
+    /**
+     * Returns whether the cache is empty. **Must be called in a read action.**
+     */
+    fun isEmpty(): Boolean {
+        // Process the reference queue first to remove values which have already been garbage-collected to get a more accurate answer.
+        // Still, accuracy is not fully guaranteed, as additional garbage collection may occur between `processQueue` and the end of the
+        // function.
+        processQueue()
+        return backingMap.isEmpty()
+    }
+
+    /**
+     * Returns a snapshot of all keys in the cache. Changes to the cache do not reflect in the resulting set. **Must be called in a read
+     * action.**
+     */
+    val keys: Set<K>
+        get() {
+            // Process the reference queue first to avoid returning keys whose values have already been garbage-collected. Still, this is
+            // not fully guaranteed, as additional garbage collection may occur between `processQueue` and the end of the function.
+            processQueue()
+            return backingMap.keys.toSet()
+        }
+
+    /**
+     * Returns a snapshot of all values in the cache. Changes to the cache do not reflect in the resulting collection. **Must be called in a
+     * read action.**
+     */
+    val values: Collection<V>
+        get() {
+            processQueue()
+            return backingMap.values.mapNotNull { it.get() }
+        }
+
+    override fun toString(): String = "${this::class.simpleName} size:$size"
+
+    private fun ReferenceWithCleanup<K, V>.performCleanup(diagnosticInformation: String?) {
+        cleaner.cleanUp(get(), diagnosticInformation)
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\caches\cleanable\CleanableWeakValueReferenceCache.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.caches.cleanable
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+import java.lang.ref.ReferenceQueue
+import java.lang.ref.WeakReference
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * A [CleanableValueReferenceCache] with a [WeakReference] to values [V].
+ *
+ * @param getCleaner Returns the [ValueReferenceCleaner] that should be invoked after [V] has been collected or removed from the cache. The
+ *  function will be invoked once when the value is added to the cache.
+ */
+@LLCfirInternals
+class CleanableWeakValueReferenceCache<K : Any, V : Any>(
+    backingMap: ConcurrentHashMap<K, ReferenceWithCleanup<K, V>> = ConcurrentHashMap(),
+    referenceQueue: ReferenceQueue<V> = ReferenceQueue(),
+    private val getCleaner: (V) -> ValueReferenceCleaner<V>,
+) : CleanableValueReferenceCache<K, V>(backingMap, referenceQueue) {
+    override fun createCopy(
+        mapCopy: ConcurrentHashMap<K, ReferenceWithCleanup<K, V>>,
+        queueCopy: ReferenceQueue<V>
+    ): CleanableValueReferenceCache<K, V> {
+        return CleanableWeakValueReferenceCache(mapCopy, queueCopy, getCleaner)
+    }
+
+    override fun createReference(key: K, value: V, queue: ReferenceQueue<V>): ReferenceWithCleanup<K, V> {
+        return WeakReferenceWithCleanup(key, value, getCleaner(value), queue)
+    }
+}
+
+private class WeakReferenceWithCleanup<K, V>(
+    override val key: K,
+    value: V,
+    override val cleaner: ValueReferenceCleaner<V>,
+    referenceQueue: ReferenceQueue<V>,
+) : WeakReference<V>(value, referenceQueue), ReferenceWithCleanup<K, V> {
+    override fun equals(other: Any?): Boolean = equalsImpl(other)
+    override fun hashCode(): Int = hashKeyImpl()
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\caches\cleanable\ReferenceWithCleanup.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.caches.cleanable
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+
+@LLCfirInternals
+interface ReferenceWithCleanup<K, V> {
+    val key: K
+    val cleaner: ValueReferenceCleaner<V>
+    fun get(): V?
+}
+
+internal fun <K, V> ReferenceWithCleanup<K, V>.equalsImpl(other: Any?): Boolean {
+    // When the referent is collected, equality should be identity-based (for `processQueue` to remove this very same reference).
+    // Hence, we skip the value equality check if the referent has been collected and `get()` returns `null`. If the reference is still
+    // valid, this is just a canonical equals on referents for `replace(K,V,V)`.
+    //
+    // The `cleaner` is not part of equality, because `value` equality implies `cleaner` equivalence.
+    if (this === other) return true
+    if (other == null || other !is ReferenceWithCleanup<*, *>) return false
+    if (key != other.key) return false
+
+    val value = get() ?: return false
+    return value == other.get()
+}
+
+internal fun <K, V> ReferenceWithCleanup<K, V>.hashKeyImpl(): Int = key.hashCode()
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\caches\cleanable\ValueReferenceCleaner.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.caches.cleanable
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+
+/**
+ * [ValueReferenceCleaner] performs a cleaning operation after its associated value has been removed from a [CleanableValueReferenceCache]
+ * or was garbage-collected. The cleaner will be strongly referenced from the value reference held by the cache.
+ *
+ * You **must not** store a reference to the associated value [V] in its [ValueReferenceCleaner]. Otherwise, the cached values will never
+ * become non-strongly reachable.
+ *
+ * The cleaner may be invoked multiple times by the cache, in any thread. Implementations of [ValueReferenceCleaner] must ensure that the
+ * operation is repeatable and thread-safe.
+ */
+@LLCfirInternals
+fun interface ValueReferenceCleaner<V> {
+    /**
+     * Cleans up after [value] has been removed from the [CleanableValueReferenceCache] or was garbage-collected.
+     *
+     * [value] is non-null if it was removed from the cache and is still referable, or `null` if it has already been garbage-collected.
+     */
+    fun cleanUp(value: V?)
+
+    /**
+     * A version of [cleanUp] which allows adding additional diagnostic information.
+     */
+    fun cleanUp(value: V?, diagnosticInformation: String?) = cleanUp(value)
+}
+
+@LLCfirInternals
+@Suppress("unused")// used in IDE
+class NoOpValueReferenceCleaner<V> : ValueReferenceCleaner<V> {
+    override fun cleanUp(value: V?) {}
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\caches\CfirCacheWithInvalidation.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.caches
+
+import org.cangnova.cangjie.cfir.caches.CfirCache
+import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
+
+internal interface CfirCacheWithInvalidation<K : Any, V, CONTEXT> {
+    /**
+     * Drops the incorrect value from the cache and add a new value instead.
+     */
+    fun fixInconsistentValue(
+        key: K,
+        context: CONTEXT & Any,
+        mapping: (oldValue: V, newValue: V & Any) -> V & Any,
+        inconsistencyMessage: String,
+        buildAdditionalAttachments: (ExceptionAttachmentBuilder.(K, CONTEXT) -> Unit)? = null,
+    ): V & Any
+}
+
+/**
+ * Return cached value or created a new one from [context].
+ * This method assumes that we can't return null for not-null context.
+ * Logs inconsistency error if it is present.
+ *
+ * @return not-null [VALUE] in case of [CfirCacheWithInvalidation] cache.
+ */
+internal fun <KEY : Any, VALUE, CONTEXT> CfirCache<KEY, VALUE, CONTEXT>.getNotNullValueForNotNullContext(
+    key: KEY,
+    context: CONTEXT,
+    buildAdditionalAttachments: (ExceptionAttachmentBuilder.(KEY, CONTEXT) -> Unit)? = null,
+): VALUE {
+    val value = getValue(key, context)
+    @Suppress("CANNOT_CHECK_FOR_ERASED")
+    return if (value != null ||
+        context == null ||
+        this !is CfirCacheWithInvalidation<KEY, VALUE, CONTEXT>
+    ) {
+        value
+    } else {
+        fixInconsistentValue(
+            key = key,
+            context = context,
+            mapping = { old, new -> old ?: new },
+            inconsistencyMessage = "Inconsistency in the cache. Someone without context put a null value in the cache",
+            buildAdditionalAttachments = buildAdditionalAttachments,
+        )
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\caches\CfirThreadSafeCache.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.caches
+
+import com.intellij.openapi.diagnostic.Logger
+import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.platform.caches.getOrPutWithNullableValue
+import org.cangnova.cangjie.analysis.api.platform.caches.nullValueToNull
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.caches.CfirCache
+import org.cangnova.cangjie.cfir.caches.CfirCacheInternals
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
+import org.cangnova.cangjie.cfir.utils.exceptions.withCfirSymbolEntry
+import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
+import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
+import org.cangnova.cangjie.utils.exceptions.logErrorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withPsiEntry
+import java.util.concurrent.ConcurrentHashMap
+
+internal class CfirThreadSafeCache<K : Any, V, CONTEXT>(
+    private val map: ConcurrentHashMap<K, Any> = ConcurrentHashMap(),
+    private val createValue: (K, CONTEXT) -> V,
+) : CfirCache<K, V, CONTEXT>(), CfirCacheWithInvalidation<K, V, CONTEXT> {
+    override fun getValue(key: K, context: CONTEXT): V = map.getOrPutWithNullableValue(key) {
+        createValue(it, context)
+    }
+
+    override fun getValueIfComputed(key: K): V? = map[key]?.nullValueToNull()
+
+    @CfirCacheInternals
+    override val cachedValues: Collection<V>
+        get() = map.values.mapNotNull { it.nullValueToNull() }
+
+    override fun fixInconsistentValue(
+        key: K,
+        context: CONTEXT & Any,
+        mapping: (oldValue: V, newValue: V & Any) -> V & Any,
+        inconsistencyMessage: String,
+        buildAdditionalAttachments: (ExceptionAttachmentBuilder.(K, CONTEXT) -> Unit)?,
+    ): V & Any {
+        val newValue = createValue(key, context)
+        checkWithAttachment(
+            newValue != null,
+            message = { "A value for requested key & context must not be null due to the contract" },
+        ) {
+            buildAttachments(key, context, newValue)
+        }
+
+        LOG.logErrorWithAttachment(inconsistencyMessage) {
+            buildAttachments(key, context, newValue)
+            if (buildAdditionalAttachments != null) {
+                buildAdditionalAttachments(key, context)
+            }
+        }
+
+        val result = map.merge(key, newValue) { old, _ ->
+            mapping(old.nullValueToNull(), newValue)
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        return result as (V & Any)
+    }
+
+    private fun ExceptionAttachmentBuilder.buildAttachments(key: K, context: CONTEXT, value: V) {
+        withEntry("key", key.toString())
+
+        if (context is PsiElement) {
+            withPsiEntry("context", context)
+        } else {
+            withEntry("context", context.toString())
+        }
+
+        val unwrapped = (value as? Collection<*>)?.singleOrNull() ?: value
+        when (unwrapped) {
+            is CfirElement -> withCfirEntry("value", unwrapped)
+            is CfirBasedSymbol<*> -> withCfirSymbolEntry("value", unwrapped)
+            else -> withEntry("value", unwrapped.toString())
+        }
+    }
+}
+
+private val LOG = Logger.getInstance(CfirThreadSafeCache::class.java)
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\caches\CfirThreadSafeCachesFactory.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.caches
+
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
+import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.analysis.api.platform.caches.getOrPutWithNullableValue
+import org.cangnova.cangjie.analysis.api.platform.caches.nullValueToNull
+import org.cangnova.cangjie.cfir.caches.CfirCache
+import org.cangnova.cangjie.cfir.caches.CfirCacheInternals
+import org.cangnova.cangjie.cfir.caches.CfirCachesFactory
+import org.cangnova.cangjie.cfir.caches.CfirLazyValue
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration
+import kotlin.time.toJavaDuration
+
+internal class CfirThreadSafeCachesFactory(private val project: Project) : CfirCachesFactory() {
+    override fun <KEY : Any, VALUE, CONTEXT> createCache(createValue: (KEY, CONTEXT) -> VALUE): CfirCache<KEY, VALUE, CONTEXT> =
+        CfirThreadSafeCache(createValue = createValue)
+
+    override fun <K : Any, V, CONTEXT> createCache(
+        initialCapacity: Int,
+        loadFactor: Float,
+        createValue: (K, CONTEXT) -> V
+    ): CfirCache<K, V, CONTEXT> =
+        CfirThreadSafeCache(
+            ConcurrentHashMap<K, Any>(initialCapacity, loadFactor),
+            createValue
+        )
+
+
+    override fun <KEY : Any, VALUE, CONTEXT, DATA> createCacheWithPostCompute(
+        createValue: (KEY, CONTEXT) -> Pair<VALUE, DATA>,
+        postCompute: (KEY, VALUE, DATA) -> Unit
+    ): CfirCache<KEY, VALUE, CONTEXT> =
+        CfirThreadSafeCacheWithPostCompute(createValue, postCompute)
+
+    override fun <K : Any, V, CONTEXT> createCacheWithSuggestedLimits(
+        expirationAfterAccess: Duration?,
+        maximumSize: Long?,
+        keyStrength: KeyReferenceStrength,
+        valueStrength: ValueReferenceStrength,
+        createValue: (K, CONTEXT) -> V
+    ): CfirCache<K, V, CONTEXT> {
+        if (
+            expirationAfterAccess == null &&
+            maximumSize == null &&
+            keyStrength == KeyReferenceStrength.STRONG &&
+            valueStrength == ValueReferenceStrength.STRONG
+        ) {
+            return createCache(createValue)
+        }
+
+        val builder = Caffeine<K, V>.newBuilder()
+
+        if (expirationAfterAccess != null) {
+            builder.expireAfterAccess(expirationAfterAccess.toJavaDuration())
+        }
+
+        if (maximumSize != null) {
+            builder.maximumSize(maximumSize)
+        }
+
+        if (keyStrength == KeyReferenceStrength.WEAK) {
+            builder.weakKeys()
+        }
+
+        when (valueStrength) {
+            ValueReferenceStrength.STRONG -> {}
+            ValueReferenceStrength.SOFT -> builder.softValues()
+            ValueReferenceStrength.WEAK -> builder.weakValues()
+        }
+
+        return CfirCaffeineCache(builder.build(), createValue)
+    }
+
+    override fun <V> createLazyValue(createValue: () -> V): CfirLazyValue<V> =
+        CfirThreadSafeValue(createValue)
+
+    override fun <V> createPossiblySoftLazyValue(createValue: () -> V): CfirLazyValue<V> =
+        LLCfirSoftLazyValue(project, createValue)
+}
+
+private class CfirCaffeineCache<K : Any, V, CONTEXT>(
+    private val cache: Cache<K, Any>,
+    private val createValue: (K, CONTEXT) -> V,
+) : CfirCache<K, V, CONTEXT>() {
+
+    /**
+     * [Cache.get] cannot be used here as [createValue] may access the map recursively.
+     */
+    override fun getValue(key: K, context: CONTEXT): V = cache.getOrPutWithNullableValue(key) {
+        createValue(it, context)
+    }
+
+    override fun getValueIfComputed(key: K): V? = cache.getIfPresent(key)?.nullValueToNull()
+
+    @CfirCacheInternals
+    override val cachedValues: Collection<V>
+        get() = cache.asMap().values.mapNotNull { it.nullValueToNull() }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\caches\CfirThreadSafeCacheWithPostCompute.kt
++/*
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.caches
+
+import org.cangnova.cangjie.cfir.caches.CfirCache
+import org.cangnova.cangjie.cfir.caches.CfirCacheInternals
+import java.util.concurrent.ConcurrentHashMap
+
+internal class CfirThreadSafeCacheWithPostCompute<K : Any, V, CONTEXT, DATA>(
+    private val createValue: (K, CONTEXT) -> Pair<V, DATA>,
+    private val postCompute: (K, V, DATA) -> Unit
+) : CfirCache<K, V, CONTEXT>() {
+    private val map = ConcurrentHashMap<K, ValueWithPostCompute<K, V, DATA>>()
+
+    override fun getValue(key: K, context: CONTEXT): V =
+        map.getOrPut(key) {
+            ValueWithPostCompute(
+                key,
+                calculate = { createValue(it, context) },
+                postCompute = postCompute
+            )
+        }.getValue()
+
+    override fun getValueIfComputed(key: K): V? =
+        map[key]?.getValueIfComputed()
+
+    @CfirCacheInternals
+    override val cachedValues: Collection<V>
+        get() = map.values.mapNotNull { it.getValueIfComputed() }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\caches\CfirThreadSafeValue.kt
++/*
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.caches
+
+import org.cangnova.cangjie.cfir.caches.CfirLazyValue
+
+internal class CfirThreadSafeValue<V>(createValue: () -> V) : CfirLazyValue<V>() {
+    private val lazyValue by lazy(LazyThreadSafetyMode.SYNCHRONIZED, createValue)
+    override fun getValue(): V = lazyValue
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\caches\LLCfirSoftLazyValue.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.caches
+
+import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.analysis.utils.caches.softCachedValue
+import org.cangnova.cangjie.cfir.caches.CfirLazyValue
+
+internal class LLCfirSoftLazyValue<V>(project: Project, createValue: () -> V) : CfirLazyValue<V>() {
+    private val cachedValue = softCachedValue(project) { createValue() }
+
+    override fun getValue(): V = cachedValue.getValue()
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\caches\ValueWithPostCompute.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.caches
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.lockWithPCECheck
+import java.util.concurrent.locks.ReentrantLock
+
+/**
+ * Lazily calculated value which runs postCompute in the same thread,
+ * assuming that postCompute may try to read that value inside current thread,
+ * So in the period then value is calculated but post compute was not finished,
+ * only thread that initiated the calculating may see the value,
+ * other threads will have to wait until that value is calculated
+ */
+internal class ValueWithPostCompute<KEY, VALUE, DATA>(
+    /**
+     * We need at least one final field to be written in constructor to guarantee safe initialization of our [ValueWithPostCompute]
+     */
+    private val key: KEY,
+    calculate: (KEY) -> Pair<VALUE, DATA>,
+    postCompute: (KEY, VALUE, DATA) -> Unit,
+) {
+    private var _calculate: ((KEY) -> Pair<VALUE, DATA>)? = calculate
+    private var _postCompute: ((KEY, VALUE, DATA) -> Unit)? = postCompute
+
+    /**
+     * [lock] being volatile ensures the consistent reads between [lock] and [value] in different threads.
+     */
+    @Volatile
+    private var lock: ReentrantLock? = ReentrantLock()
+
+    /**
+     * can be in one of the following three states:
+     * [ValueIsNotComputed] -- value is not initialized and thread are now executing [_postCompute]
+     * [ValueIsPostComputingNow] -- thread with threadId has computed the value and only it can access it during post compute
+     * some value of type [VALUE] -- value is computed and post compute was executed, values is visible for all threads
+     *
+     * Value may be set only under [ValueWithPostCompute] intrinsic lock hold
+     * And may be read from any thread
+     */
+    @Volatile
+    private var value: Any? = ValueIsNotComputed
+
+    private inline fun <T> recursiveGuarded(body: () -> T): T {
+        check(lock!!.holdCount == 1) {
+            "Should not be called recursively"
+        }
+        return body()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun getValue(): VALUE = when (val stateSnapshot = value) {
+        is ValueIsPostComputingNow -> {
+            if (stateSnapshot.threadId == Thread.currentThread().id) {
+                stateSnapshot.value as VALUE
+            } else {
+                // wait until another thread that holds the lock now computes the value
+                lock?.lockWithPCECheck {
+                    when (value) {
+                        ValueIsNotComputed -> {
+                            // if we have a PCE during value computation,
+                            // then we will enter the critical section with `value == ValueIsNotComputed`
+                            // in this case, we should try to recalculate the value
+                            computeValueWithoutLock()
+                        }
+
+                        // another thread computed the value for us
+                        else -> value as VALUE
+                    }
+                } ?: (value as VALUE)
+            }
+        }
+        ValueIsNotComputed -> lock?.lockWithPCECheck {
+            computeValueWithoutLock()
+        } ?: (value as VALUE)
+
+        else -> stateSnapshot as VALUE
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    // should be called under a synchronized section
+    private fun computeValueWithoutLock(): VALUE {
+        // if we entered synchronized section that's mean that the value is not yet calculated and was not started to be calculated
+        // or the some other thread calculated the value while we were waiting to acquire the lock
+
+        when (value) {
+            ValueIsNotComputed -> {
+                // will be computed later, the read of `ValueIsNotComputed` guarantees that lock is not null
+                require(lock!!.isHeldByCurrentThread)
+            }
+            else -> {
+                // other thread computed the value for us and set `lock` to null
+                require(lock == null)
+                return value as VALUE
+            }
+        }
+
+        val calculatedValue = try {
+            val (calculated, data) = recursiveGuarded {
+                _calculate!!(key)
+            }
+            value = ValueIsPostComputingNow(calculated, Thread.currentThread().id) // only current thread may see the value
+            _postCompute!!(key, calculated, data)
+            calculated
+        } catch (e: Throwable) {
+            value = ValueIsNotComputed
+            throw e
+        }
+        // reading lock = null implies that the value is calculated and stored
+        value = calculatedValue
+        _calculate = null
+        _postCompute = null
+        lock = null
+
+        return calculatedValue
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun getValueIfComputed(): VALUE? = when (value) {
+        ValueIsNotComputed -> null
+        is ValueIsPostComputingNow -> null
+        else -> value as VALUE
+    }
+
+    private class ValueIsPostComputingNow(val value: Any?, val threadId: Long)
+    private object ValueIsNotComputed
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\compile\CodeFragmentCapturedValueAnalyzer.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.compile
+
+import com.intellij.psi.PsiElement
+import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.CjFakeSourceElementKind
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
+import org.cangnova.cangjie.analysis.api.compile.CaCodeFragmentCapturedValue
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.containingCjFileIfAny
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.parentsCodeFragmentAware
+import org.cangnova.cangjie.descriptors.ClassKind
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.utils.isInline
+import org.cangnova.cangjie.cfir.declarations.utils.isLocal
+import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.extensions.captureValueInAnalyze
+import org.cangnova.cangjie.cfir.generatedContextParameterName
+import org.cangnova.cangjie.cfir.references.CfirSuperReference
+import org.cangnova.cangjie.cfir.references.CfirThisReference
+import org.cangnova.cangjie.cfir.references.toResolvedCallableSymbol
+import org.cangnova.cangjie.cfir.resolve.defaultType
+import org.cangnova.cangjie.cfir.resolve.toSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.impl.*
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.forEachType
+import org.cangnova.cangjie.cfir.types.resolvedType
+import org.cangnova.cangjie.cfir.types.toRegularClassSymbol
+import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.StandardClassIds
+import org.cangnova.cangjie.psi
+import org.cangnova.cangjie.psi.CjCodeFragment
+import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjFunction
+import java.util.*
+
+@CaImplementationDetail
+class CodeFragmentCapturedSymbol(
+    val value: CaCodeFragmentCapturedValue,
+    val symbol: CfirBasedSymbol<*>,
+    val typeRef: CfirTypeRef,
+)
+
+@CaImplementationDetail
+data class CodeFragmentCapturedId(val symbol: CfirBasedSymbol<*>)
+
+@CaImplementationDetail
+class InlineLambdaArgument(val expr: CfirExpression, val stackRollbackDepth: Int)
+
+@CaImplementationDetail
+object CodeFragmentCapturedValueAnalyzer {
+    fun analyze(
+        resolutionFacade: LLResolutionFacade,
+        codeFragment: CfirCodeFragment,
+        inlineLambdaArgumentsToDepth: Map<CfirValueParameterSymbol, InlineLambdaArgument>,
+    ): CodeFragmentCapturedValueData {
+        val selfSymbols = CodeFragmentDeclarationCollector().apply {
+            codeFragment.accept(this)
+            inlineLambdaArgumentsToDepth.values.map { it.expr }.forEach { inlineLambdaArgumentExpr ->
+                inlineLambdaArgumentExpr.accept(this)
+            }
+        }.symbols.toSet()
+        val capturedVisitor = CodeFragmentCapturedValueVisitor(resolutionFacade, selfSymbols, inlineLambdaArgumentsToDepth)
+        codeFragment.accept(capturedVisitor)
+        return CodeFragmentCapturedValueData(capturedVisitor.values, capturedVisitor.files, selfSymbols)
+    }
+}
+
+@CaImplementationDetail
+class CodeFragmentCapturedValueData(
+    val symbols: List<CodeFragmentCapturedSymbol>,
+    val files: List<CjFile>,
+    val selfSymbols: Set<CfirBasedSymbol<*>>,
+)
+
+private class CodeFragmentDeclarationCollector : CfirDefaultVisitorVoid() {
+    private val collectedSymbols = mutableListOf<CfirBasedSymbol<*>>()
+
+    val symbols: List<CfirBasedSymbol<*>>
+        get() = Collections.unmodifiableList(collectedSymbols)
+
+    override fun visitElement(element: CfirElement) {
+        if (element is CfirDeclaration) {
+            collectedSymbols += element.symbol
+        }
+
+        element.acceptChildren(this)
+    }
+}
+
+private class CodeFragmentCapturedValueVisitor(
+    private val resolutionFacade: LLResolutionFacade,
+    private val selfSymbols: Set<CfirBasedSymbol<*>>,
+    private val inlineLambdaParametersMapping: Map<CfirValueParameterSymbol, InlineLambdaArgument>,
+) : CfirDefaultVisitorVoid() {
+    private val collectedMappings = LinkedHashMap<CodeFragmentCapturedId, CodeFragmentCapturedSymbol>()
+    private val collectedFiles = LinkedHashSet<CjFile>()
+
+    private val assignmentLhs = mutableListOf<CfirBasedSymbol<*>>()
+
+    val values: List<CodeFragmentCapturedSymbol>
+        get() = collectedMappings.values.toList()
+
+    val files: List<CjFile>
+        get() = collectedFiles.toList()
+
+    private val session: CfirSession
+        get() = resolutionFacade.useSiteCfirSession
+
+    private var depth = 0
+
+    override fun visitElement(element: CfirElement) {
+        if (element is CfirPropertyAccessExpression) {
+            val symbol = element.toResolvedCallableSymbol() as? CfirValueParameterSymbol
+            val inlineLambdaArgument = inlineLambdaParametersMapping[symbol]
+            if (inlineLambdaArgument != null) {
+                val oldDepth = depth
+                depth = inlineLambdaArgument.stackRollbackDepth
+                visitElement(inlineLambdaArgument.expr)
+                depth = oldDepth
+                return
+            }
+        }
+
+        processElement(element)
+
+        val lhs = (element as? CfirVariableAssignment)?.lValue?.toResolvedCallableSymbol(session)
+        if (lhs != null) {
+            assignmentLhs.add(lhs)
+        }
+
+        element.acceptChildren(this)
+
+        if (lhs != null) {
+            require(assignmentLhs.removeLast() == lhs)
+        }
+    }
+
+    private fun processElement(element: CfirElement) {
+        if (element is CfirExpression) {
+            element.resolvedType.forEachType { type ->
+                val symbol = type.toSymbol(session)
+                if (symbol != null) {
+                    registerFileIfRequired(symbol)
+                }
+            }
+        }
+
+        when (element) {
+            is CfirSuperReference -> {
+                val symbol = (element.superTypeRef as? CfirResolvedTypeRef)?.toRegularClassSymbol(session)
+                if (symbol != null && symbol !in selfSymbols) {
+                    val isCrossingInlineBounds = isCrossingInlineBounds(element, symbol)
+                    val capturedValue = CaCodeFragmentCapturedValue.SuperClass(symbol.classId, isCrossingInlineBounds, depth)
+                    register(CodeFragmentCapturedSymbol(capturedValue, symbol, element.superTypeRef))
+                }
+            }
+            is CfirThisReference -> {
+                val symbol = element.boundSymbol
+                if (symbol != null && (symbol as CfirBasedSymbol<*>?) !in selfSymbols) {
+                    fun registerClassSymbolIfNotObject(classSymbol: CfirClassSymbol<*>) {
+                        if (classSymbol.classKind != ClassKind.OBJECT) {
+                            val isCrossingInlineBounds = isCrossingInlineBounds(element, classSymbol)
+                            val capturedValue = CaCodeFragmentCapturedValue.ContainingClass(classSymbol.classId, isCrossingInlineBounds, depth)
+                            val typeRef = buildResolvedTypeRef { coneType = classSymbol.defaultType() }
+                            register(CodeFragmentCapturedSymbol(capturedValue, classSymbol, typeRef))
+                        }
+                    }
+
+                    when (symbol) {
+                        is CfirClassSymbol<*> -> {
+                            registerClassSymbolIfNotObject(symbol)
+                        }
+                        is CfirReceiverParameterSymbol -> {
+                            if (symbol.captureValueInAnalyze) {
+                                val receiverParameter = symbol.fir
+                                val labelName = element.labelName
+                                    ?: (receiverParameter.containingDeclarationSymbol as? CfirAnonymousFunctionSymbol)?.label?.name
+                                    ?: (receiverParameter.containingDeclarationSymbol as CfirCallableSymbol).name.asString()
+
+                                val typeRef = receiverParameter.typeRef
+                                val isCrossingInlineBounds = isCrossingInlineBounds(element, symbol)
+                                val capturedValue = CaCodeFragmentCapturedValue.ExtensionReceiver(labelName, isCrossingInlineBounds, depth)
+                                register(
+                                    CodeFragmentCapturedSymbol(capturedValue, receiverParameter.symbol, typeRef)
+                                )
+                            }
+                        }
+                        is CfirTypeAliasSymbol, is CfirTypeParameterSymbol -> errorWithCfirSpecificEntries(
+                            message = "Unexpected CfirThisOwnerSymbol ${symbol::class.simpleName}", fir = symbol.fir
+                        )
+                    }
+                }
+            }
+            is CfirResolvable -> {
+                val symbol = element.calleeReference.toResolvedCallableSymbol()
+                if (symbol != null && symbol !in selfSymbols) {
+                    processCall(element, symbol)
+                }
+            }
+        }
+    }
+
+    private fun processCall(element: CfirElement, symbol: CfirCallableSymbol<*>) {
+        // Desugared inc/dec CFIR looks as follows:
+        // lval <unary>: R|kotlin/Int| = R|<local>/x|
+        // R|<local>/x| = R|<local>/<unary>|.R|kotlin/Int.inc|()
+        // We visit the x in the first line before we visit the assignment and need to check the source to determine that the variable
+        // is mutated.
+        // The x in the second line isn't visited because it's a CfirDesugaredAssignmentValueReferenceExpression.
+        val isMutated = assignmentLhs.lastOrNull() == symbol || element.source?.kind is CjFakeSourceElementKind.DesugaredIncrementOrDecrement
+        when (symbol) {
+            is CfirValueParameterSymbol -> {
+                val isCrossingInlineBounds = isCrossingInlineBounds(element, symbol)
+                val name = symbol.generatedContextParameterName ?: symbol.name
+                val capturedValue = CaCodeFragmentCapturedValue.Local(name, isMutated, isCrossingInlineBounds, depth)
+                register(CodeFragmentCapturedSymbol(capturedValue, symbol, symbol.resolvedReturnTypeRef))
+            }
+            is CfirLocalPropertySymbol -> {
+                val isCrossingInlineBounds = isCrossingInlineBounds(element, symbol)
+                val capturedValue = when {
+                    symbol.isForeignValue -> CaCodeFragmentCapturedValue.ForeignValue(symbol.name, isCrossingInlineBounds, depth)
+                    symbol.hasDelegate -> CaCodeFragmentCapturedValue.LocalDelegate(symbol.name, isMutated, isCrossingInlineBounds, depth)
+                    else -> CaCodeFragmentCapturedValue.Local(symbol.name, isMutated, isCrossingInlineBounds, depth)
+                }
+                register(CodeFragmentCapturedSymbol(capturedValue, symbol, symbol.resolvedReturnTypeRef))
+            }
+            is CfirRegularPropertySymbol -> {
+                // Property call generation depends on complete backing field resolution (Cfir2IrLazyProperty.backingField)
+                symbol.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+                registerFileIfRequired(symbol)
+            }
+            is CfirBackingFieldSymbol -> {
+                val propertyName = symbol.propertySymbol.name
+                val isCrossingInlineBounds = isCrossingInlineBounds(element, symbol)
+                val capturedValue = CaCodeFragmentCapturedValue.BackingField(propertyName, isMutated, isCrossingInlineBounds, depth)
+                register(CodeFragmentCapturedSymbol(capturedValue, symbol, symbol.resolvedReturnTypeRef))
+            }
+            is CfirNamedFunctionSymbol -> {
+                registerFileIfRequired(symbol)
+            }
+        }
+
+        if (symbol.callableId == StandardClassIds.Callables.coroutineContext) {
+            val isCrossingInlineBounds = isCrossingInlineBounds(element, symbol)
+            val capturedValue = CaCodeFragmentCapturedValue.CoroutineContext(isCrossingInlineBounds, depth)
+            register(CodeFragmentCapturedSymbol(capturedValue, symbol, symbol.resolvedReturnTypeRef))
+        }
+    }
+
+    private fun register(mapping: CodeFragmentCapturedSymbol) {
+        val id = CodeFragmentCapturedId(mapping.symbol)
+        val previousMapping = collectedMappings[id]
+
+        if (previousMapping != null) {
+            val previousValue = previousMapping.value
+            val newValue = mapping.value
+
+            require(previousValue.javaClass == newValue.javaClass)
+
+            // Only replace non-mutated value with a mutated one.
+            if (previousValue.isMutated || !newValue.isMutated) {
+                return
+            }
+        }
+
+        collectedMappings[id] = mapping
+        registerFileIfRequired(mapping.symbol)
+    }
+
+    private val CfirFunctionSymbol<*>.isAnnotatedWithNonLiteralJvmName: Boolean
+        get() {
+            val jvmNameAnnotation = annotations.getAnnotationByClassId(StandardClassIds.Annotations.jvmName, session) ?: return false
+
+            lazyResolveToPhase(CfirResolvePhase.ANNOTATION_ARGUMENTS)
+
+            val argument = jvmNameAnnotation.argumentMapping.mapping[Name.identifier("name")]
+            return argument != null && argument !is CfirLiteralExpression
+        }
+
+    private val CfirFunctionSymbol<*>.hasAnnotationArgumentShouldBeEvaluated: Boolean
+        get() {
+            return isAnnotatedWithNonLiteralJvmName
+        }
+
+    private fun registerFileIfRequired(symbol: CfirBasedSymbol<*>) {
+        val needsRegistration = when (symbol) {
+            is CfirRegularClassSymbol -> symbol.isLocal
+            is CfirAnonymousObjectSymbol -> true
+            is CfirNamedFunctionSymbol -> symbol.isLocal || symbol.hasAnnotationArgumentShouldBeEvaluated
+            is CfirPropertySymbol ->
+                symbol.getterSymbol?.hasAnnotationArgumentShouldBeEvaluated == true
+                        || symbol.setterSymbol?.hasAnnotationArgumentShouldBeEvaluated == true
+            else -> false
+        }
+
+        if (!needsRegistration) {
+            return
+        }
+
+        val file = symbol.cfir.containingCjFileIfAny ?: return
+        if (!file.isCompiled) {
+            collectedFiles.add(file)
+        }
+    }
+
+    private fun isCrossingInlineBounds(element: CfirElement, symbol: CfirBasedSymbol<*>): Boolean {
+        val callSite = element.source?.psi ?: return false
+        val declarationSite = symbol.cfir.source?.psi ?: return false
+        val commonParent = findCommonParentContextAware(callSite, declarationSite) ?: return false
+
+        for (elementInBetween in callSite.parentsCodeFragmentAware) {
+            if (elementInBetween === commonParent) {
+                break
+            }
+
+            if (elementInBetween is CjFunction) {
+                val symbolInBetween = elementInBetween.resolveToCfirSymbol(resolutionFacade)
+                if (symbolInBetween is CfirCallableSymbol<*> && !symbolInBetween.isInline) {
+                    return true
+                }
+            }
+        }
+
+        return false
+    }
+
+    private fun findCommonParentContextAware(callSite: PsiElement, declarationSite: PsiElement): PsiElement? {
+        val directParent = PsiTreeUtil.findCommonParent(callSite, declarationSite)
+        if (directParent != null) {
+            return directParent
+        }
+
+        val codeFragment = callSite.containingFile as? CjCodeFragment ?: return null
+        val codeFragmentContext = codeFragment.context ?: return null
+        return PsiTreeUtil.findCommonParent(codeFragmentContext, declarationSite)
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\compile\CodeFragmentScopeProvider.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.compile
+
+import com.intellij.psi.impl.compiled.ClsTypeElementImpl
+import com.intellij.psi.impl.compiled.SignatureParsing
+import com.intellij.psi.impl.compiled.StubBuildingVisitor
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
+import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinForeignValueProviderService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+import org.cangnova.cangjie.descriptors.EffectiveVisibility
+import org.cangnova.cangjie.descriptors.Modality
+import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.CfirSessionComponent
+import org.cangnova.cangjie.cfir.caches.firCachesFactory
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.builder.buildProperty
+import org.cangnova.cangjie.cfir.declarations.impl.CfirResolvedDeclarationStatusImpl
+import org.cangnova.cangjie.cfir.java.JavaTypeParameterStack
+import org.cangnova.cangjie.cfir.java.resolveIfJavaType
+import org.cangnova.cangjie.cfir.moduleData
+import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
+import org.cangnova.cangjie.cfir.symbols.impl.CfirLocalPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.impl.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.jvm.buildJavaTypeRef
+import org.cangnova.cangjie.load.java.structure.impl.JavaTypeImpl
+import org.cangnova.cangjie.load.java.structure.impl.source.JavaElementSourceFactory
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjCodeFragment
+import org.jetbrains.org.objectweb.asm.Type
+
+@LLCfirInternals
+val CfirSession.codeFragmentScopeProvider: CodeFragmentScopeProvider by CfirSession.sessionComponentAccessor()
+
+private object ForeignValueMarkerDataKey : CfirDeclarationDataKey()
+
+private var CfirProperty.foreignValueMarker: Boolean? by CfirDeclarationDataRegistry.data(ForeignValueMarkerDataKey)
+
+@CaImplementationDetail
+val CfirPropertySymbol.isForeignValue: Boolean
+    get() = fir.foreignValueMarker == true
+
+@CaImplementationDetail
+class CodeFragmentScopeProvider(private val session: CfirSession) : CfirSessionComponent {
+    private val foreignValueProvider = KotlinForeignValueProviderService.getInstance()
+
+    private val typeCache = session.firCachesFactory.createCache<String, CfirTypeRef, CjCodeFragment> { typeDescriptor, ktCodeFragment ->
+        getPrimitiveType(typeDescriptor, session)?.let { return@createCache it }
+
+        val project = ktCodeFragment.project
+        val javaElementSourceFactory = JavaElementSourceFactory.getInstance(project)
+
+        val signatureIterator = SignatureParsing.CharIterator(typeDescriptor)
+        val typeInfo = SignatureParsing.parseTypeStringToTypeInfo(signatureIterator, StubBuildingVisitor.GUESSING_PROVIDER)
+        val psiType = ClsTypeElementImpl(ktCodeFragment, typeInfo.text(), '\u0000').type
+        val javaType = JavaTypeImpl.create(psiType, javaElementSourceFactory.createTypeSource(psiType))
+
+        val javaTypeRef = buildJavaTypeRef {
+            annotationBuilder = { emptyList() }
+            type = javaType
+        }
+
+        javaTypeRef.resolveIfJavaType(session, JavaTypeParameterStack.EMPTY, source = null)
+    }
+
+    fun getExtraScopes(codeFragment: CjCodeFragment): List<CfirLocalScope> {
+        val foreignValues = foreignValueProvider?.getForeignValues(codeFragment)?.takeUnless { it.isEmpty() } ?: return emptyList()
+        return listOf(getForeignValuesScope(codeFragment, foreignValues))
+    }
+
+    private fun getForeignValuesScope(ktCodeFragment: CjCodeFragment, foreignValues: Map<String, String>): CfirLocalScope {
+        var result = CfirLocalScope(session)
+
+        for ((variableNameString, typeDescriptor) in foreignValues) {
+            val variableName = Name.identifier(variableNameString)
+
+            val variable = buildProperty {
+                resolvePhase = CfirResolvePhase.BODY_RESOLVE
+                moduleData = session.moduleData
+                origin = CfirDeclarationOrigin.ForeignValue
+                status = CfirResolvedDeclarationStatusImpl(Visibilities.Local, Modality.FINAL, EffectiveVisibility.Local)
+                isLocal = true
+                returnTypeRef = typeCache.getValue(typeDescriptor, ktCodeFragment)
+                deprecationsProvider = EmptyDeprecationsProvider
+                name = variableName
+                isVar = false
+                symbol = CfirLocalPropertySymbol()
+            }
+
+            variable.foreignValueMarker = true
+
+            result = result.storeVariable(variable, session)
+        }
+
+        return result
+    }
+}
+
+private fun getPrimitiveType(typeDescriptor: String, session: CfirSession): CfirTypeRef? {
+    val asmType = Type.getType(typeDescriptor)
+    return when (asmType.sort) {
+        Type.VOID -> session.builtinTypes.unitType
+        Type.BOOLEAN -> session.builtinTypes.booleanType
+        Type.CHAR -> session.builtinTypes.charType
+        Type.BYTE -> session.builtinTypes.byteType
+        Type.SHORT -> session.builtinTypes.shortType
+        Type.INT -> session.builtinTypes.intType
+        Type.FLOAT -> session.builtinTypes.floatType
+        Type.LONG -> session.builtinTypes.longType
+        Type.DOUBLE -> session.builtinTypes.doubleType
+        else -> null
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\compile\CompilationPeerCollector.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.compile
+
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinActualDeclarationProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLResolutionFacadeService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLPlatformActualizer
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.containingCjFileIfAny
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.getContainingFile
+import org.cangnova.cangjie.codegen.state.GenerationState
+import org.cangnova.cangjie.cfir.*
+import org.cangnova.cangjie.cfir.contracts.CfirContractDescription
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.utils.hasBody
+import org.cangnova.cangjie.cfir.declarations.utils.isExpect
+import org.cangnova.cangjie.cfir.declarations.utils.isInline
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirResolvable
+import org.cangnova.cangjie.cfir.expressions.impl.CfirContractCallBlock
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.symbols.SymbolInternals
+import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
+import org.cangnova.cangjie.psi
+import org.cangnova.cangjie.psi.CjClassOrObject
+import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.utils.addIfNotNull
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+
+/**
+ * Processes the declaration, collecting files that would need to be submitted to the backend (or handled specially)
+ * in case if the declaration is compiled.
+ *
+ * Besides the file that owns the declaration, the visitor also recursively collects source files with called inline functions.
+ * In addition, the visitor collects a list of inlined local classes. Such a list might be useful in [GenerationState.GenerateClassFilter]
+ * to filter out class files unrelated to the current compilation.
+ *
+ * Note that compiled declarations are not analyzed, as the backend can inline them natively.
+ */
+@CaImplementationDetail
+class CompilationPeerCollector private constructor(private val actualizer: LLPlatformActualizer?) {
+    companion object {
+        fun process(files: Collection<CfirFile>, actualizer: LLPlatformActualizer?): CompilationPeerData {
+            val collector = CompilationPeerCollector(actualizer)
+            files.forEach { collector.process(it) }
+
+            return CompilationPeerData(
+                peers = collector.peers,
+                inlinedClasses = collector.inlinedClasses
+            )
+        }
+    }
+
+    private val peers = LinkedHashMap<CaModule, MutableList<CjFile>>()
+    private val inlinedClasses = LinkedHashSet<CjClassOrObject>()
+
+    private val visited = HashSet<CfirFile>()
+    private val moduleStack = ArrayDeque<CaModule>()
+
+    private fun process(file: CfirFile) {
+        ProgressManager.checkCanceled()
+
+        val ktFile = file.containingCjFileIfAny
+        if (ktFile == null || ktFile.isCompiled) {
+            return
+        }
+
+        val module = file.llCfirModuleData.ktModule
+        if (module in moduleStack && module != moduleStack.last()) {
+            // We cannot compile two or more modules together
+            errorWithAttachment("Cyclic dependency between modules") {
+                withEntry("cycle") {
+                    (moduleStack + module).forEach { this@withEntry.println(it) }
+                }
+            }
+
+            // Skip non-inlined indirect recursion
+            return
+        }
+
+        if (!visited.add(file)) {
+            // Skip the declaration we visited before
+            // Sic: this happens after the inline recursion check
+            return
+        }
+
+        // Avoid deep stacks by gathering callee files first
+        val visitor = CompilationPeerCollectingVisitor(ktFile.project, actualizer)
+        file.accept(visitor)
+
+        inlinedClasses.addAll(visitor.inlinedClasses)
+
+        withModule(module) {
+            visitor.files.forEach(::process)
+        }
+
+        peers.getOrPut(module, ::ArrayList).add(ktFile)
+    }
+
+    private inline fun withModule(module: CaModule, block: () -> Unit) {
+        if (moduleStack.lastOrNull() == module) {
+            block()
+            return
+        }
+
+        moduleStack.addLast(module)
+        try {
+            block()
+        } finally {
+            moduleStack.removeLast()
+        }
+    }
+}
+
+@CaImplementationDetail
+class CompilationPeerData(
+    /**
+     * The original file and all files that contain inline functions/properties called from that file or any other files from the list.
+     * The returned list is in post-order.
+     * Files in the list are unique.
+     *
+     * For example,
+     *  - A is a source file in module M(A) to be compiled; it calls an inline function from the file B of module M(B).
+     *  - B calls another inline function defined in C in module M(C).
+     *  - [peers] returned by [CompilationPeerCollector.process] then will be {C, B, A}.
+     *
+     * More formally, i-th element of [peers] will not have inline-dependency on any j-th element of
+     * [peers], where j > i.
+     *
+     * This list does not contain duplicated files.
+     */
+    val peers: Map<CaModule, List<CjFile>>,
+
+    /** Local classes inlined as a part of inline functions. */
+    val inlinedClasses: Set<CjClassOrObject>,
+)
+
+private class CompilationPeerCollectingVisitor(
+    val project: Project,
+    val actualizer: LLPlatformActualizer?,
+) : CfirDefaultVisitorVoid() {
+    private val collectedFunctions = HashSet<CfirFunction>()
+
+    private var isInlineFunctionContext: Boolean = false
+
+    val files: Set<CfirFile>
+        field = LinkedHashSet<CfirFile>()
+
+    val inlinedClasses: Set<CjClassOrObject>
+        field = LinkedHashSet<CjClassOrObject>()
+
+    override fun visitElement(element: CfirElement) {
+        if (element is CfirResolvable) {
+            processResolvable(element)
+        }
+
+        element.acceptChildren(this)
+    }
+
+    override fun visitBlock(block: CfirBlock) {
+        if (block !is CfirContractCallBlock) {
+            super.visitBlock(block)
+        }
+    }
+
+    override fun visitContractDescription(contractDescription: CfirContractDescription) {
+        // Skip contract description.
+        // Contract blocks are skipped in BE, so we would never need to inline contract DSL calls.
+    }
+
+    override fun visitConstructor(constructor: CfirConstructor) {
+        constructor.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+
+        super.visitConstructor(constructor)
+    }
+
+    override fun visitNamedFunction(namedFunction: CfirNamedFunction) {
+        namedFunction.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+
+        withInlineFunctionContext(namedFunction) {
+            super.visitFunction(namedFunction)
+        }
+    }
+
+    override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor) {
+        withInlineFunctionContext(propertyAccessor) {
+            super.visitPropertyAccessor(propertyAccessor)
+        }
+    }
+
+    override fun visitProperty(property: CfirProperty) {
+        property.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+
+        super.visitProperty(property)
+    }
+
+    override fun visitClass(klass: CfirClass) {
+        super.visitClass(klass)
+
+        if (isInlineFunctionContext) {
+            inlinedClasses.addIfNotNull(klass.psi as? CjClassOrObject)
+        }
+    }
+
+    @OptIn(SymbolInternals::class)
+    private fun processResolvable(element: CfirResolvable) {
+        val reference = element.calleeReference
+        if (reference !is CfirResolvedNamedReference) {
+            return
+        }
+
+        val symbol = reference.resolvedSymbol
+        if (symbol is CfirCallableSymbol<*>) {
+            when (val fir = symbol.fir) {
+                is CfirFunction -> {
+                    register(fir)
+                }
+                is CfirProperty -> {
+                    fir.getter?.let(::register)
+                    fir.setter?.let(::register)
+                }
+                else -> {}
+            }
+        }
+    }
+
+    private val actualDeclarationProvider by lazy { KotlinActualDeclarationProvider.getInstance(project) }
+    private val projectStructureProvider by lazy { KotlinProjectStructureProvider.getInstance(project) }
+    private val resolutionFacadeService by lazy { LLResolutionFacadeService.getInstance(project) }
+
+    /**
+     * Register a containing source file for an inline function.
+     */
+    private fun register(callee: CfirFunction) {
+        val originalFunction = callee.unwrapSubstitutionOverrides()
+        if (originalFunction.isInline) {
+            if (originalFunction.isExpect) {
+                registerActualCounterpart(callee)
+            } else if (originalFunction.hasBody) {
+                if (collectedFunctions.add(originalFunction)) {
+                    val calleeFile = callee.getContainingFile()
+                    if (calleeFile != null && calleeFile.origin == CfirDeclarationOrigin.Source) {
+                        files.add(calleeFile)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Find and register the implementation of the used function.
+     *
+     * The 'expect' function is supposed to lack body, so compiling it won't have any effect.
+     * Instead, we need to compile the 'actual' counterpart that does have a body.
+     */
+    private fun registerActualCounterpart(originalFunction: CfirFunction) {
+        if (actualizer == null) {
+            // We aren't sure which implementation platform to choose. So, aborting
+            return
+        }
+
+        val originalPsi = originalFunction.source?.psi as? CjDeclaration ?: return
+        val originalModule = projectStructureProvider.getModule(originalPsi, useSiteModule = null)
+
+        val targetModule = actualizer.actualize(originalModule) ?: return
+
+        // Across all 'actual' declarations, find those with a matching platform kind, and register their containing files
+        for (actualPsi in actualDeclarationProvider?.getActualDeclarations(originalPsi).orEmpty()) {
+            val actualPsiFile = actualPsi.containingFile as? CjFile ?: continue
+            val actualModule = projectStructureProvider.getModule(actualPsiFile, useSiteModule = null)
+
+            // The file we found is from the correct actualized module
+            if (targetModule == actualModule) {
+                val actualResolutionFacade = resolutionFacadeService.getResolutionFacade(actualModule)
+                val actualFile = actualResolutionFacade.getOrBuildCfirFile(actualPsiFile)
+                files.add(actualFile)
+            }
+        }
+    }
+
+    private inline fun withInlineFunctionContext(function: CfirFunction, block: () -> Unit) {
+        val needsInlineContext = !isInlineFunctionContext && function.isInline
+
+        try {
+            if (needsInlineContext) {
+                isInlineFunctionContext = true
+            }
+            block()
+        } finally {
+            if (needsInlineContext) {
+                isInlineFunctionContext = false
+            }
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\diagnostics\AbstractCfirIdeDiagnosticsCollector.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
+
+import com.intellij.util.SmartFMap
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCheckersFactory.Provider.Companion.filterToCheckersMapUpdater
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.diagnostics.PendingDiagnosticReporter
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.CfirSessionComponent
+import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
+import org.cangnova.cangjie.cfir.analysis.checkers.*
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.ComposedDeclarationCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.DeclarationCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.DeclarationCheckersDiagnosticComponent
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.ComposedExpressionCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.ExpressionCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.ExpressionCheckersDiagnosticComponent
+import org.cangnova.cangjie.cfir.analysis.checkers.type.ComposedTypeCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.type.TypeCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.type.TypeCheckersDiagnosticComponent
+import org.cangnova.cangjie.cfir.analysis.collectors.AbstractDiagnosticCollector
+import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponents
+import org.cangnova.cangjie.cfir.analysis.collectors.components.ControlFlowAnalysisDiagnosticComponent
+import org.cangnova.cangjie.cfir.analysis.collectors.components.ErrorNodeDiagnosticCollectorComponent
+import org.cangnova.cangjie.cfir.analysis.collectors.components.ReportCommitterDiagnosticComponent
+import org.cangnova.cangjie.cfir.analysis.extensions.CfirAdditionalCheckersExtension
+import org.cangnova.cangjie.cfir.analysis.extensions.additionalCheckers
+import org.cangnova.cangjie.cfir.analysis.js.checkers.JsDeclarationCheckers
+import org.cangnova.cangjie.cfir.analysis.js.checkers.JsExpressionCheckers
+import org.cangnova.cangjie.cfir.analysis.jvm.checkers.JvmDeclarationCheckers
+import org.cangnova.cangjie.cfir.analysis.jvm.checkers.JvmExpressionCheckers
+import org.cangnova.cangjie.cfir.analysis.jvm.checkers.JvmTypeCheckers
+import org.cangnova.cangjie.cfir.analysis.native.checkers.NativeDeclarationCheckers
+import org.cangnova.cangjie.cfir.analysis.native.checkers.NativeExpressionCheckers
+import org.cangnova.cangjie.cfir.analysis.native.checkers.NativeTypeCheckers
+import org.cangnova.cangjie.cfir.analysis.wasm.checkers.*
+import org.cangnova.cangjie.cfir.extensions.extensionService
+import org.cangnova.cangjie.platform.TargetPlatform
+import org.cangnova.cangjie.platform.isJs
+import org.cangnova.cangjie.platform.isWasm
+import org.cangnova.cangjie.platform.jvm.isJvm
+import org.cangnova.cangjie.platform.konan.isNative
+import org.cangnova.cangjie.platform.wasm.isWasmJs
+import org.cangnova.cangjie.platform.wasm.isWasmWasi
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater
+
+internal abstract class AbstractLLCfirDiagnosticsCollector(
+    session: CfirSession,
+    filter: DiagnosticCheckerFilter,
+) : AbstractDiagnosticCollector(
+    session,
+    createComponents = { reporter ->
+        session.checkersFactory.createComponents(filter, reporter)
+    }
+)
+
+private val CfirSession.checkersFactory: LLCheckersFactory by CfirSession.sessionComponentAccessor()
+
+/**
+ * In the CLI mode all checkers are created once during the session initialization phase.
+ * In the Analysis API checkers depend on [DiagnosticCheckerFilter].
+ *
+ * This factory provides an efficient way to get checkers for a given filter.
+ *
+ * @see org.cangnova.cangjie.cfir.analysis.CheckersComponent
+ */
+internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionComponent {
+    private val declarationCheckersProvider = Provider(session, ::createDeclarationCheckers)
+    private val expressionCheckersProvider = Provider(session, ::createExpressionCheckers)
+    private val typeCheckersProvider = Provider(session, ::createTypeCheckers)
+
+    fun createComponents(filter: DiagnosticCheckerFilter, reporter: PendingDiagnosticReporter): DiagnosticCollectorComponents {
+        val declarationCheckers = declarationCheckersProvider.getOrCreateCheckers(filter)
+        val expressionCheckers = expressionCheckersProvider.getOrCreateCheckers(filter)
+        val typeCheckers = typeCheckersProvider.getOrCreateCheckers(filter)
+
+        val regularComponents = buildList {
+            if (!filter.runExtraCheckers && !filter.runExperimentalCheckers) {
+                add(ErrorNodeDiagnosticCollectorComponent(session, reporter))
+            }
+            add(DeclarationCheckersDiagnosticComponent(session, reporter, declarationCheckers))
+            add(ExpressionCheckersDiagnosticComponent(session, reporter, expressionCheckers))
+            add(TypeCheckersDiagnosticComponent(session, reporter, typeCheckers))
+            add(ControlFlowAnalysisDiagnosticComponent(session, reporter, declarationCheckers))
+        }.toTypedArray()
+
+        return DiagnosticCollectorComponents(regularComponents, ReportCommitterDiagnosticComponent(session, reporter))
+    }
+
+    /**
+     * This provider allows creating checkers lazily based on a given [filter][DiagnosticCheckerFilter].
+     */
+    private class Provider<T>(
+        private val session: CfirSession,
+        private val checkersFactory: (
+            filter: DiagnosticCheckerFilter,
+            platform: TargetPlatform,
+            additionalCheckers: List<CfirAdditionalCheckersExtension>,
+        ) -> T,
+    ) {
+        /** @see filterToCheckersMapUpdater */
+        @Volatile
+        private var filterToCheckersMap: SmartFMap<DiagnosticCheckerFilter, T> = SmartFMap.emptyMap()
+
+        fun getOrCreateCheckers(filter: DiagnosticCheckerFilter): T {
+            // Happy-path to avoid checkers recreation
+            filterToCheckersMap[filter]?.let { return it }
+
+            val checkers = createCheckers(filter)
+            do {
+                val oldMap = filterToCheckersMap
+                oldMap[filter]?.let { return it }
+
+                val newMap = oldMap.plus(filter, checkers)
+            } while (!filterToCheckersMapUpdater.compareAndSet(/* obj = */ this, /* expect = */ oldMap, /* update = */ newMap))
+
+            return checkers
+        }
+
+        private fun createCheckers(filter: DiagnosticCheckerFilter): T {
+            val platform = session.llCfirModuleData.platform
+            val additionalCheckers = session.extensionService.additionalCheckers
+            return checkersFactory(filter, platform, additionalCheckers)
+        }
+
+        companion object {
+            private val filterToCheckersMapUpdater = AtomicReferenceFieldUpdater.newUpdater(
+                /* tclass = */ Provider::class.java,
+                /* vclass = */ SmartFMap::class.java,
+                /* fieldName = */ "filterToCheckersMap",
+            )
+        }
+    }
+
+    private fun createDeclarationCheckers(
+        filter: DiagnosticCheckerFilter,
+        platform: TargetPlatform,
+        extensionCheckers: List<CfirAdditionalCheckersExtension>
+    ) = createDeclarationCheckers {
+        if (filter.runDefaultCheckers) {
+            add(CommonDeclarationCheckers)
+            add(CommonIdeOnlyDeclarationCheckers)
+            when {
+                platform.isJvm() -> add(JvmDeclarationCheckers)
+                platform.isJs() -> add(JsDeclarationCheckers)
+                platform.isWasm() -> {
+                    add(WasmBaseDeclarationCheckers)
+                    if (platform.isWasmJs()) add(WasmJsDeclarationCheckers)
+                    if (platform.isWasmWasi()) add(WasmWasiDeclarationCheckers)
+                }
+                platform.isNative() -> add(NativeDeclarationCheckers)
+                else -> {}
+            }
+            addAll(extensionCheckers.map { it.declarationCheckers })
+        }
+
+        if (filter.runExtraCheckers) {
+            add(ExtraDeclarationCheckers)
+        }
+    }
+
+    private fun createExpressionCheckers(
+        filter: DiagnosticCheckerFilter,
+        platform: TargetPlatform,
+        extensionCheckers: List<CfirAdditionalCheckersExtension>
+    ) = createExpressionCheckers {
+        if (filter.runDefaultCheckers) {
+            add(CommonExpressionCheckers)
+            when {
+                platform.isJvm() -> add(JvmExpressionCheckers)
+                platform.isJs() -> add(JsExpressionCheckers)
+                platform.isWasm() -> {
+                    add(WasmBaseExpressionCheckers)
+                    if (platform.isWasmJs()) add(WasmJsExpressionCheckers)
+                }
+                platform.isNative() -> add(NativeExpressionCheckers)
+                else -> {
+                }
+            }
+            addAll(extensionCheckers.map { it.expressionCheckers })
+        }
+
+        if (filter.runExtraCheckers) {
+            add(ExtraExpressionCheckers)
+        }
+
+        if (filter.runExperimentalCheckers) {
+            add(ExperimentalExpressionCheckers)
+        }
+    }
+
+    private fun createTypeCheckers(
+        filter: DiagnosticCheckerFilter,
+        platform: TargetPlatform,
+        extensionCheckers: List<CfirAdditionalCheckersExtension>,
+    ) = createTypeCheckers {
+        if (filter.runDefaultCheckers) {
+            add(CommonTypeCheckers)
+            when {
+                platform.isJvm() -> add(JvmTypeCheckers)
+                platform.isWasm() -> add(WasmBaseTypeCheckers)
+                platform.isNative() -> add(NativeTypeCheckers)
+                else -> {}
+            }
+            addAll(extensionCheckers.map { it.typeCheckers })
+        }
+
+        if (filter.runExperimentalCheckers) {
+            add(ExperimentalTypeCheckers)
+        }
+    }
+
+
+    private inline fun createDeclarationCheckers(
+        createDeclarationCheckers: MutableList<DeclarationCheckers>.() -> Unit
+    ): DeclarationCheckers =
+        createDeclarationCheckers(buildList(createDeclarationCheckers))
+
+
+    @OptIn(CheckersComponentInternal::class)
+    private fun createDeclarationCheckers(declarationCheckers: List<DeclarationCheckers>): DeclarationCheckers {
+        return when (declarationCheckers.size) {
+            1 -> declarationCheckers.single()
+            else -> ComposedDeclarationCheckers { true }.apply {
+                declarationCheckers.forEach(::register)
+            }
+        }
+    }
+
+    private inline fun createExpressionCheckers(
+        createExpressionCheckers: MutableList<ExpressionCheckers>.() -> Unit
+    ): ExpressionCheckers = createExpressionCheckers(buildList(createExpressionCheckers))
+
+    @OptIn(CheckersComponentInternal::class)
+    private fun createExpressionCheckers(expressionCheckers: List<ExpressionCheckers>): ExpressionCheckers {
+        return when (expressionCheckers.size) {
+            1 -> expressionCheckers.single()
+            else -> ComposedExpressionCheckers { true }.apply {
+                expressionCheckers.forEach(::register)
+            }
+        }
+    }
+
+    private inline fun createTypeCheckers(
+        createTypeCheckers: MutableList<TypeCheckers>.() -> Unit
+    ): TypeCheckers = createTypeCheckers(buildList(createTypeCheckers))
+
+    @OptIn(CheckersComponentInternal::class)
+    private fun createTypeCheckers(typeCheckers: List<TypeCheckers>): TypeCheckers {
+        return when (typeCheckers.size) {
+            1 -> typeCheckers.single()
+            else -> ComposedTypeCheckers { true }.apply {
+                typeCheckers.forEach(::register)
+            }
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\diagnostics\BeforeElementDiagnosticCollectionHandler.kt
++/*
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
+
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.CfirSessionComponent
+import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+
+abstract class BeforeElementDiagnosticCollectionHandler: CfirSessionComponent {
+    open fun beforeCollectingForElement(element: CfirElement) {}
+    open fun beforeGoingNestedDeclaration(declaration: CfirDeclaration, context: CheckerContext) {}
+}
+
+val CfirSession.beforeElementDiagnosticCollectionHandler: BeforeElementDiagnosticCollectionHandler? by CfirSession.nullableSessionComponentAccessor()
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\diagnostics\DiagnosticsCollector.kt
++/*
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.ModuleFileCache
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.FileStructureCache
+import org.cangnova.cangjie.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjFile
+
+internal class DiagnosticsCollector(private val fileStructureCache: FileStructureCache) {
+    fun getDiagnosticsFor(element: CjElement, filter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
+        val fileStructure = fileStructureCache.getFileStructure(element.containingCjFile)
+        val structureElement = fileStructure.getStructureElementFor(element)
+        val diagnostics = structureElement.diagnostics
+        return diagnostics.diagnosticsFor(filter, element)
+    }
+
+    fun collectDiagnosticsForFile(ktFile: CjFile, filter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
+        val fileStructure = fileStructureCache.getFileStructure(ktFile)
+        return fileStructure.getAllDiagnosticsForFile(filter)
+    }
+}
+
+*** End Patch

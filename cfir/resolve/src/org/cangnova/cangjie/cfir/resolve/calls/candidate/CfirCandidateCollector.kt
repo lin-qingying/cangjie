@@ -88,7 +88,7 @@ open class CfirAllCandidatesCollector(
     components: CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
     resolutionStageRunner: ResolutionStageRunner,
 ) : CfirCandidateCollector(components, resolutionStageRunner) {
-    private val allCandidates = LinkedHashMap<org.cangnova.cangjie.cfir.symbols.CfirSymbol<*>, Candidate>()
+    private val allCandidates = LinkedHashMap<org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol<*>, Candidate>()
 
     override fun consumeCandidate(
         group: CfirTowerGroup,

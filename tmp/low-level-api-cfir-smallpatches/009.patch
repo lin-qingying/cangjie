@@ -1,0 +1,361 @@
+*** Begin Patch
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\diagnostics\cfir\LLCfirStructureElementDiagnosticsCollector.kt
++/*
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.fir
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.analysis.collectors.CheckerRunningDiagnosticCollectorVisitor
+import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.AbstractLLCfirDiagnosticsCollector
+import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponents
+
+internal class LLCfirStructureElementDiagnosticsCollector(
+    session: CfirSession,
+    private val doCreateVisitor: (components: DiagnosticCollectorComponents) -> CheckerRunningDiagnosticCollectorVisitor,
+    filter: DiagnosticCheckerFilter,
+) : AbstractLLCfirDiagnosticsCollector(
+    session,
+    filter,
+) {
+    override fun createVisitor(components: DiagnosticCollectorComponents): CheckerRunningDiagnosticCollectorVisitor {
+        return doCreateVisitor(components)
+    }
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\diagnostics\cfir\PersistentCheckerContextFactory.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.fir
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.LLCfirReturnTypeCalculatorWithJump
+import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.LLImplicitBodyResolveComputationSession
+import org.cangnova.cangjie.cfir.analysis.checkers.context.PersistentCheckerContext
+import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
+
+internal object PersistentCheckerContextFactory {
+    fun createEmptyPersistenceCheckerContext(sessionHolder: SessionAndScopeSessionHolder): PersistentCheckerContext {
+        val returnTypeCalculator = LLCfirReturnTypeCalculatorWithJump(
+            scopeSession = sessionHolder.scopeSession,
+            implicitBodyResolveComputationSession = LLImplicitBodyResolveComputationSession(),
+        )
+
+        return PersistentCheckerContext(sessionHolder, returnTypeCalculator)
+    }
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\diagnostics\LLCfirDiagnosticReporter.kt
++/*
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
+
+import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.AbstractCjSourceElement
+import org.cangnova.cangjie.CjFakePsiSourceElement
+import org.cangnova.cangjie.CjFakeSourceElementKind
+import org.cangnova.cangjie.SuspiciousFakeSourceCheck
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.addValueFor
+import org.cangnova.cangjie.diagnostics.*
+
+internal class LLCfirDiagnosticReporter : PendingDiagnosticReporter() {
+    private val pendingDiagnostics = mutableMapOf<PsiElement, MutableList<CjPsiDiagnostic>>()
+    private val _committedDiagnostics = mutableMapOf<PsiElement, MutableList<CjPsiDiagnostic>>()
+
+    val committedDiagnostics get() = _committedDiagnostics.ifEmpty { emptyMap() }
+    override val hasErrors: Boolean
+        get() = committedDiagnostics.any { (_, diagnostics) -> diagnostics.any { it.severity.isError } }
+
+    override val hasWarningsForWError: Boolean
+        get() = committedDiagnostics.any { (_, diagnostics) -> diagnostics.any { it.severity.isErrorWhenWError } }
+
+    override fun report(diagnostic: CjDiagnostic?, context: DiagnosticContext) {
+        if (diagnostic == null) return
+        if (context.isDiagnosticSuppressed(diagnostic)) return
+
+        // Implicit imports for scripts are currently implemented via CFIR-tree mutation (they do not exist in default importing scopes).
+        // So as a temporary solution we filter out related diagnostics here.
+        if (diagnostic.isAboutImplicitImport()) return
+
+        val psiDiagnostic = when (diagnostic) {
+            is CjPsiDiagnostic -> diagnostic
+            is CjLightDiagnostic -> diagnostic.toPsiDiagnostic()
+            else -> error("Unknown diagnostic type ${diagnostic::class.simpleName}")
+        }
+        pendingDiagnostics.addValueFor(psiDiagnostic.psiElement, psiDiagnostic)
+    }
+
+    override fun checkAndCommitReportsOn(element: AbstractCjSourceElement, context: DiagnosticContext, commitEverything: Boolean) {
+        for ((diagnosticElement, pendingList) in pendingDiagnostics) {
+            val committedList = _committedDiagnostics.getOrPut(diagnosticElement) { mutableListOf() }
+            val iterator = pendingList.iterator()
+            while (iterator.hasNext()) {
+                val diagnostic = iterator.next()
+                when {
+                    context.isDiagnosticSuppressed(diagnostic as CjDiagnostic) -> {
+                        if (diagnostic.element == element ||
+                            diagnostic.element.startOffset >= element.startOffset && diagnostic.element.endOffset <= element.endOffset
+                        ) {
+                            iterator.remove()
+                        }
+                    }
+                    diagnostic.element == element || commitEverything -> {
+                        iterator.remove()
+                        committedList += diagnostic
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(SuspiciousFakeSourceCheck::class)
+private fun CjDiagnostic.isAboutImplicitImport(): Boolean {
+    if (this !is CjPsiDiagnostic) return false
+    return (element is CjFakePsiSourceElement && (element as CjFakePsiSourceElement).kind == CjFakeSourceElementKind.ImplicitImport)
+}
+
+
+private fun CjLightDiagnostic.toPsiDiagnostic(): CjPsiDiagnostic {
+    val psiSourceElement = element.unwrapToCjPsiSourceElement()
+        ?: error("Diagnostic should be created from PSI in IDE")
+    @Suppress("UNCHECKED_CAST")
+    return when (this) {
+        is CjLightSimpleDiagnostic -> CjPsiSimpleDiagnostic(
+            psiSourceElement,
+            severity,
+            factory,
+            positioningStrategy,
+            context,
+        )
+
+        is CjLightDiagnosticWithParameters1<*> -> CjPsiDiagnosticWithParameters1(
+            psiSourceElement,
+            a,
+            severity,
+            factory as CjDiagnosticFactory1<Any?>,
+            positioningStrategy,
+            context,
+        )
+
+        is CjLightDiagnosticWithParameters2<*, *> -> CjPsiDiagnosticWithParameters2(
+            psiSourceElement,
+            a, b,
+            severity,
+            factory as CjDiagnosticFactory2<Any?, Any?>,
+            positioningStrategy,
+            context,
+        )
+
+        is CjLightDiagnosticWithParameters3<*, *, *> -> CjPsiDiagnosticWithParameters3(
+            psiSourceElement,
+            a, b, c,
+            severity,
+            factory as CjDiagnosticFactory3<Any?, Any?, Any?>,
+            positioningStrategy,
+            context,
+        )
+
+        is CjLightDiagnosticWithParameters4<*, *, *, *> -> CjPsiDiagnosticWithParameters4(
+            psiSourceElement,
+            a, b, c, d,
+            severity,
+            factory as CjDiagnosticFactory4<Any?, Any?, Any?, Any?>,
+            positioningStrategy,
+            context,
+        )
+        else -> error("Unknown diagnostic type ${this::class.simpleName}")
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\diagnostics\LLCfirDiagnosticVisitor.kt
++/*
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
+
+import com.intellij.openapi.diagnostic.thisLogger
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getResolutionFacade
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkCanceled
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.forEachDeclaration
+import org.cangnova.cangjie.analysis.utils.printer.parentsOfType
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContextForProvider
+import org.cangnova.cangjie.cfir.analysis.collectors.CheckerRunningDiagnosticCollectorVisitor
+import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponents
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.psi.CjCodeFragment
+import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.utils.exceptions.rethrowIntellijPlatformExceptionIfNeeded
+
+internal open class LLCfirDiagnosticVisitor(
+    context: CheckerContextForProvider,
+    components: DiagnosticCollectorComponents,
+) : CheckerRunningDiagnosticCollectorVisitor(context, components) {
+    private val beforeElementDiagnosticCollectionHandler = context.session.beforeElementDiagnosticCollectionHandler
+
+    override fun visitNestedElements(element: CfirElement) {
+        if (element is CfirDeclaration) {
+            beforeElementDiagnosticCollectionHandler?.beforeGoingNestedDeclaration(element, context)
+        }
+
+        super.visitNestedElements(element)
+    }
+
+    override fun checkElement(element: CfirElement) {
+        beforeElementDiagnosticCollectionHandler?.beforeCollectingForElement(element)
+        components.regularComponents.forEach { diagnosticVisitor ->
+            checkCanceled()
+            suppressAndLogExceptions {
+                element.accept(diagnosticVisitor, context)
+            }
+        }
+
+        checkCanceled()
+        suppressAndLogExceptions {
+            element.accept(components.reportCommitter, context)
+        }
+
+        suppressAndLogExceptions {
+            commitPendingDiagnosticsOnNestedDeclarations(element)
+        }
+    }
+
+    override fun visitCodeFragment(codeFragment: CfirCodeFragment, data: Nothing?) {
+        val ktCodeFragment = codeFragment.psi as CjCodeFragment
+
+        val contextElement = ktCodeFragment.context
+        if (contextElement != null) {
+            fun process(containingSymbols: List<CfirDeclaration>) {
+                if (containingSymbols.isEmpty()) {
+                    super.visitCodeFragment(codeFragment, data)
+                } else {
+                    withDeclaration(containingSymbols.first()) {
+                        process(containingSymbols.subList(1, containingSymbols.size))
+                    }
+                }
+            }
+
+            val project = contextElement.project
+            val module = KotlinProjectStructureProvider.getModule(project, contextElement, useSiteModule = null)
+            val resolutionFacade = module.getResolutionFacade(project)
+
+            // Register containing declarations of a context element
+            contextElement.parentsOfType<CjDeclaration>().toList().asReversed()
+                .map { it.resolveToCfirSymbol(resolutionFacade).fir }
+                .run(::process)
+
+            return
+        }
+
+        super.visitCodeFragment(codeFragment, data)
+    }
+
+    /**
+     * File and class checkers may report diagnostics on top-level declarations and class members, such as conflicting overload errors.
+     * Because we are collecting diagnostics for each structure element separately, this visitor will not visit these nested declarations by
+     * default, as the file/class and its nested declarations are different structure elements. Instead, all diagnostics produced during the
+     * visitor run will be committed at the end (see [FileStructureElementDiagnosticsCollector.collectForStructureElement]).
+     *
+     * Skipping nested declarations circumvents error suppression with `@Suppress` on top-level declarations and class members. This is
+     * because suppression usually works as such: When a diagnostic is first reported on an element `E`, it is "pending". Once element `E`
+     * is visited by the diagnostic visitor, it commits all pending diagnostics for `E`, including those reported by a file/class checker.
+     * Diagnostics which are suppressed in the current context are instead removed. Without committing pending diagnostics on each element
+     * `E`, suppression cannot take effect.
+     *
+     * [commitPendingDiagnosticsOnNestedDeclarations] commits pending diagnostics for directly nested elements, allowing the report
+     * committer to take suppression into account.
+     *
+     * It suffices to commit pending diagnostics for directly nested declarations, because checkers can only report diagnostics on directly
+     * accessible children. For example, a file checker can report a diagnostic on a top-level class, but not its member function.
+     */
+    private fun commitPendingDiagnosticsOnNestedDeclarations(element: CfirElement) {
+        val declarationContainer = when (element) {
+            // Script `CfirFile`s can be checked by file checkers, which report diagnostics on the declarations inside the `CfirScript`, so we
+            // have to unwrap the script from the file to commit the diagnostics on the script's declarations.
+            is CfirFile -> element.declarations.singleOrNull() as? CfirScript ?: element
+
+            is CfirScript, is CfirRegularClass -> element
+            else -> return
+        }
+
+        // Casting to `CfirDeclaration` is required in K1.
+        @Suppress("USELESS_CAST")
+        (declarationContainer as CfirDeclaration).forEachDeclaration { declaration ->
+            withAnnotationContainer(declaration) {
+                declaration.accept(components.reportCommitter, context)
+            }
+        }
+    }
+
+    companion object {
+        /**
+         * We don't want to throw exceptions right away to not interrupt other checkers there possible.
+         * It is better to report as much as possible and not crash the entire visitor.
+         *
+         * By default, a logger throws exceptions, but it is up to the user code to provide
+         * an alternative handler.
+         *
+         * For instance, the IntelliJ plugin reports such exceptions and doesn't interrupt the execution flow.
+         */
+        inline fun <T> suppressAndLogExceptions(block: () -> T): T? = try {
+            block()
+        } catch (e: Throwable) {
+            rethrowIntellijPlatformExceptionIfNeeded(e)
+
+            thisLogger().error("The diagnostic collector has been interrupted by an exception. The result may be incomplete", e)
+            null
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\element\builder\DuplicatedCfirSourceElementsException.kt
++/*
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder
+
+import org.cangnova.cangjie.psi.psiUtil.getElementTextWithContext
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.render
+import org.cangnova.cangjie.psi.CjElement
+
+class DuplicatedCfirSourceElementsException(
+    existingCfir: CfirElement,
+    newCfir: CfirElement,
+    psi: CjElement
+) : IllegalStateException() {
+    override val message: String? = """|The PSI element should be used only once as a real PSI source of CfirElement,
+       |the elements ${if (existingCfir.source === newCfir.source) "HAVE" else "DON'T HAVE"} the same instances of source elements 
+       |
+       |existing CFIR element is $existingCfir with text:
+       |${existingCfir.render().trim()}
+       |
+       |new CFIR element is $newCfir with text:
+       | ${newCfir.render().trim()}
+       |
+       |PSI element is $psi with text in context:
+       |${psi.getElementTextWithContext()}""".trimMargin()
+
+
+    companion object {
+        // The are some cases which are still generates CFIR elements with duplicated source elements
+        // Then such case is met, it's better to be fixed
+        // but exception reporting can be easily disabled by setting this to false
+        var IS_ENABLED = false
+    }
+}
+*** End Patch

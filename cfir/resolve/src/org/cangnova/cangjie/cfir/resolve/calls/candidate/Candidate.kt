@@ -9,7 +9,6 @@ import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
 import org.cangnova.cangjie.cfir.resolve.calls.CallableReferenceAdaptation
 import org.cangnova.cangjie.cfir.resolve.calls.ConePostponedResolvedAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
-import org.cangnova.cangjie.cfir.resolve.calls.ConeSimpleLeafResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.stages.TypeArgumentMapping
 import org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
@@ -20,7 +19,7 @@ import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
@@ -36,7 +35,7 @@ import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 
 class Candidate(
-    symbol: CfirSymbol<*>,
+    symbol: CfirBasedSymbol<*>,
     // Here we may have an ExpressionReceiverValue
     // - in case a use-site receiver is explicit
     // - in some cases with static entities, no matter is a use-site receiver explicit or not
@@ -56,11 +55,11 @@ class Candidate(
 
     // ---------------------------------------- Symbol ----------------------------------------
 
-    override var symbol: CfirSymbol<*> = symbol
+    override var symbol: CfirBasedSymbol<*> = symbol
         private set
 
     @UpdatingCandidateInvariants
-    fun updateSymbol(symbol: CfirSymbol<*>) {
+    fun updateSymbol(symbol: CfirBasedSymbol<*>) {
         this.symbol = symbol
     }
 

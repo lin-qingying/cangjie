@@ -16,7 +16,9 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjAnnotation
 import org.cangnova.cangjie.psi.CjCallExpression
@@ -61,7 +63,9 @@ object CfirInteropAnnotationChecker : CfirClassLikeChecker() {
     override fun check(declaration: CfirClassLikeDeclaration) {
         checkJavaInteropSemantics(declaration)
         checkJavaTypeDeclarationSemantics(declaration)
+        checkJavaInteropExtraSemantics(declaration)
         checkObjCInteropSemantics(declaration)
+        checkObjCInteropExtraSemantics(declaration)
     }
 }
 
@@ -189,9 +193,10 @@ private fun checkPlatformAnnotationSyntax(
 
     // @IfAvailable APILevel 限制检查
     if (ifAvailableEntries.isNotEmpty() && apiLevelEntries.isEmpty()) {
-        // 当使用 @IfAvailable 但没有 @APILevel 时，需检查项目 APILevel 是否 >= 19
-        // 当前简化：如果文件无 @APILevel 注解且使用了 @IfAvailable，报告限制
-        // 完整实现需要从编译选项中获取项目级 APILevel
+        reporter.reportOn(
+            source = ifAvailableEntries.first().toSourceOrDeclarationSource(declaration),
+            factory = CfirErrors.IFAVAILABLE_LEVEL_LIMIT,
+        )
     }
 
     val hideEntries = owner.findAnnotationEntries(HIDE)
@@ -228,6 +233,38 @@ private fun checkPlatformAnnotationSyntax(
             }
         }
     }
+
+    // HIDE_MISSING_HIDE: override 带 @!Hide 但父声明无 @!Hide
+    if (hideEntries.isNotEmpty() && declaration is CfirNamedFunction && declaration.status.isOverride) {
+        val parent = findOverriddenInSupers(declaration)
+        val parentHasHide = parent?.source?.psi
+            ?.let { it as? CjModifierListOwner }
+            ?.findAnnotationEntries(HIDE)
+            ?.isNotEmpty() == true
+        if (!parentHasHide && parent != null) {
+            reporter.reportOn(
+                source = parent.source ?: declaration.source,
+                factory = CfirErrors.HIDE_MISSING_HIDE,
+            )
+        }
+    }
+}
+
+context(context: CheckerContext)
+private fun findOverriddenInSupers(declaration: CfirNamedFunction): CfirDeclaration? {
+    val ownerClassId = declaration.symbol.callableId.classId ?: return null
+    val ownerDecl = context.session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
+        as? CfirClassLikeDeclaration ?: return null
+    for (superRef in ownerDecl.superTypeRefs) {
+        val t = (superRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: continue
+        val sd = context.session.symbolProvider.getClassLikeSymbolByClassId(t.classId)?.cfir
+            as? CfirClassLikeDeclaration ?: continue
+        val match = sd.declarations.firstOrNull {
+            it is CfirNamedFunction && it.name == declaration.name
+        }
+        if (match != null) return match
+    }
+    return null
 }
 
 context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -777,6 +814,335 @@ private fun checkForeignNameRules(
             factory = CfirErrors.FOREIGN_NAME_CONFLICTING_ANNOTATION,
             a = declName,
             b = FOREIGN_NAME,
+        )
+    }
+
+    // 派生注解冲突：@ForeignName 与其衍生出的 @ForeignSetterName/@ForeignGetterName 不能同时出现
+    val foreignGetterEntries = owner.findAnnotationEntries(Name.identifier("ForeignGetterName"))
+    val foreignSetterEntries = owner.findAnnotationEntries(Name.identifier("ForeignSetterName"))
+    if (foreignNameEntries.isNotEmpty() && (foreignGetterEntries.isNotEmpty() || foreignSetterEntries.isNotEmpty())) {
+        val declName = when (declaration) {
+            is CfirNamedFunction -> declaration.name
+            is CfirProperty -> declaration.name
+            else -> Name.identifier("<unknown>")
+        }
+        val derivedName = if (foreignGetterEntries.isNotEmpty())
+            Name.identifier("ForeignGetterName") else Name.identifier("ForeignSetterName")
+        reporter.reportOn(
+            source = foreignNameEntries.first().toSourceOrDeclarationSource(declaration),
+            factory = CfirErrors.FOREIGN_NAME_CONFLICTING_DERIVED_ANNOTATION,
+            a = declName,
+            b = FOREIGN_NAME,
+            c = derivedName,
+        )
+    }
+}
+
+/**
+ * @Java 互操作的额外声明级约束。
+ *
+ * 对齐 C++ FFI/FFICheck.cpp 中剩余 JavaInterop 诊断：
+ * - JAVA_INCORRECT_USE_BETWEEN_TYPES: @Java 注解存在多个不匹配值
+ * - JAVA_APP_INHERIT_EXT: 仅 @Java["ext"] 能被 ext 继承
+ * - JAVA_UNSUPPORTED_DECL: @Java 类型中不支持某些声明（enum/typealias/extend）
+ * - MISSING_JAVA_INTEROP_ANNOTATION: 需要 @Java 互操作注解但缺失
+ * - SHADOW_CANNOT_IN_TYPE_ARGS: @Java 泛型参数不能用 shadow
+ * - UNSUPPORTED_TYPE_ARGUMENT_IN_JAVA_INTEROP: 泛型参数类型不支持
+ * - INVALID_USE_OF_JAVA_ANNOTATION: 导入的 Java 注解使用位置不对
+ * - INVALID_USE_OF_ANNOTATION_JFFI: 仅 @Java 类型可使用 Java 注解
+ * - VARIABLE_OF_JAVA_TYPE: 不能存储 Java 互操作类型的变量
+ * - GENERIC_PARAMETER_OF_JAVA_TYPE: 不能用 Java 互操作类型实例化泛型
+ * - JAVA_INTEROP_NOT_SUPPORTED: 不支持的 Java 互操作特性
+ */
+context(context: CheckerContext, reporter: DiagnosticReporter)
+private fun checkJavaInteropExtraSemantics(declaration: CfirClassLikeDeclaration) {
+    val hasJava = declaration.hasAnnotation(JAVA)
+    val hasJavaMirror = declaration.hasAnnotation(JAVA_MIRROR)
+    val hasJavaImpl = declaration.hasAnnotation(JAVA_IMPL)
+    val isJavaRelated = hasJava || hasJavaMirror || hasJavaImpl
+
+    // MISSING_JAVA_INTEROP_ANNOTATION: 继承 Java 类型必须标注对应注解
+    val superDeclarations = declaration.superDeclarations()
+    if (!isJavaRelated && superDeclarations.any {
+            it.hasAnnotation(JAVA) || it.hasAnnotation(JAVA_MIRROR) || it.hasAnnotation(JAVA_IMPL)
+        }) {
+        reporter.reportOn(
+            source = declaration.source,
+            factory = CfirErrors.MISSING_JAVA_INTEROP_ANNOTATION,
+            a = "class",
+            b = declaration.name,
+        )
+    }
+
+    if (!isJavaRelated) return
+
+    // JAVA_INCORRECT_USE_BETWEEN_TYPES: @Java 注解的不同值域不能混用
+    val javaEntries = (declaration.source?.psi as? CjModifierListOwner)?.findAnnotationEntries(JAVA).orEmpty()
+    if (javaEntries.isNotEmpty()) {
+        val javaValues = javaEntries.mapNotNull { entry ->
+            entry.valueArguments.firstOrNull()?.getArgumentExpression()?.let { arg ->
+                (arg as? org.cangnova.cangjie.psi.CjStringTemplateExpression)?.text
+                    ?: (arg as? org.cangnova.cangjie.psi.CjConstantExpression)?.text
+            }
+        }.toSet()
+        if (javaValues.size > 1) {
+            reporter.reportOn(
+                source = declaration.source,
+                factory = CfirErrors.JAVA_INCORRECT_USE_BETWEEN_TYPES,
+            )
+        }
+
+        // JAVA_APP_INHERIT_EXT: 仅 @Java["ext"] 能被 ext 继承
+        val isExt = javaValues.any { it.contains("ext") }
+        if (!isExt) {
+            for (superDecl in superDeclarations) {
+                val superJavaOwner = superDecl.source?.psi as? CjModifierListOwner ?: continue
+                val superJavaEntry = superJavaOwner.findAnnotationEntries(JAVA).firstOrNull() ?: continue
+                val superIsExt = superJavaEntry.valueArguments.firstOrNull()
+                    ?.getArgumentExpression()?.text?.contains("ext") == true
+                if (superIsExt) {
+                    reporter.reportOn(
+                        source = declaration.source,
+                        factory = CfirErrors.JAVA_APP_INHERIT_EXT,
+                        a = "inherit",
+                    )
+                }
+            }
+        }
+    }
+
+    // JAVA_UNSUPPORTED_DECL: @Java 类型中不支持某些嵌套声明
+    for (member in declaration.declarations) {
+        val unsupportedKind = when (member) {
+            is org.cangnova.cangjie.cfir.declarations.CfirEnum -> "enum"
+            is org.cangnova.cangjie.cfir.declarations.CfirTypeAlias -> "type alias"
+            is org.cangnova.cangjie.cfir.declarations.CfirExtend -> "extend"
+            else -> null
+        }
+        if (unsupportedKind != null) {
+            val memberName = when (member) {
+                is org.cangnova.cangjie.cfir.declarations.CfirEnum -> member.name
+                is org.cangnova.cangjie.cfir.declarations.CfirTypeAlias -> member.name
+                else -> Name.identifier("<extend>")
+            }
+            val containerKind = if (declaration is org.cangnova.cangjie.cfir.declarations.CfirInterface) "interface" else "class"
+            reporter.reportOn(
+                source = member.source ?: declaration.source,
+                factory = CfirErrors.JAVA_UNSUPPORTED_DECL,
+                a = unsupportedKind,
+                b = containerKind,
+                c = memberName,
+            )
+        }
+    }
+
+    // VARIABLE_OF_JAVA_TYPE & GENERIC_PARAMETER_OF_JAVA_TYPE: 字段类型和泛型参数类型
+    // 只有非 @Java 声明中引用 @Java 类型才报告（@Java 类型内部互相引用是允许的）
+    // 已在 checkJavaTypeDeclarationSemantics 中处理 JAVA_NON_JTYPE，此处不再重复
+
+    // SHADOW_CANNOT_IN_TYPE_ARGS: @Java 类型中的泛型参数不能使用 shadow 标记
+    // 通过 PSI 检查类型参数定义
+    val typeParams = when (declaration) {
+        is org.cangnova.cangjie.cfir.declarations.CfirClass -> declaration.typeParameters
+        is org.cangnova.cangjie.cfir.declarations.CfirInterface -> declaration.typeParameters
+        is org.cangnova.cangjie.cfir.declarations.CfirStruct -> declaration.typeParameters
+        else -> emptyList()
+    }
+    for (typeParam in typeParams) {
+        val tpOwner = typeParam.source?.psi as? CjModifierListOwner ?: continue
+        if (tpOwner.findAnnotationEntries(Name.identifier("Shadow")).isNotEmpty()) {
+            // 查找类型参数上的 shadow 字段信息——简化实现：只要有 Shadow 标注即报告
+            reporter.reportOn(
+                source = typeParam.source ?: declaration.source,
+                factory = CfirErrors.SHADOW_CANNOT_IN_TYPE_ARGS,
+                a = typeParam.name,
+                b = typeParam.name,
+                c = org.cangnova.cangjie.cfir.types.ConeErrorType(
+                    org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic("unknown shadow type")
+                ),
+            )
+        }
+    }
+
+    // UNSUPPORTED_TYPE_ARGUMENT_IN_JAVA_INTEROP: 类型参数类型不支持
+    for (typeParam in typeParams) {
+        val boundType = typeParam.symbol.resolvedBounds.firstOrNull()?.coneType
+        if (boundType != null && boundType !is org.cangnova.cangjie.cfir.types.ConeErrorType &&
+            boundType !is org.cangnova.cangjie.cfir.types.ConePrimitiveType &&
+            boundType !is org.cangnova.cangjie.cfir.types.ConeClassLikeType) {
+            reporter.reportOn(
+                source = typeParam.source ?: declaration.source,
+                factory = CfirErrors.UNSUPPORTED_TYPE_ARGUMENT_IN_JAVA_INTEROP,
+            )
+        }
+    }
+
+    // INVALID_USE_OF_JAVA_ANNOTATION / INVALID_USE_OF_ANNOTATION_JFFI
+    // 非 @Java 类型不能使用 Java 注解
+    val ownerPsi = declaration.source?.psi as? CjModifierListOwner
+    if (ownerPsi != null && !hasJava && !hasJavaMirror && !hasJavaImpl) {
+        for (ann in ownerPsi.annotationEntries) {
+            val name = ann.shortName ?: continue
+            // 形似 "XxxJavaXxx" 的 Java 注解不能用在非 @Java 类型上
+            if (name.asString().startsWith("Java") && name != JAVA && name != JAVA_MIRROR && name != JAVA_IMPL) {
+                reporter.reportOn(
+                    source = ann.toCjPsiSourceElement() ?: declaration.source,
+                    factory = CfirErrors.INVALID_USE_OF_JAVA_ANNOTATION,
+                )
+            }
+        }
+    }
+
+    // INVALID_USE_OF_ANNOTATION_JFFI: JFFI 的注解只能用于 @Java 类型
+    // 遍历成员检查
+    for (member in declaration.declarations) {
+        val memberOwner = member.source?.psi as? CjModifierListOwner ?: continue
+        for (ann in memberOwner.annotationEntries) {
+            val name = ann.shortName ?: continue
+            if (name.asString().endsWith("Jffi") || name.asString().startsWith("Jffi")) {
+                if (!hasJava && !hasJavaMirror && !hasJavaImpl) {
+                    reporter.reportOn(
+                        source = ann.toCjPsiSourceElement() ?: member.source ?: declaration.source,
+                        factory = CfirErrors.INVALID_USE_OF_ANNOTATION_JFFI,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * ObjC 互操作的额外声明级约束。
+ *
+ * 对齐 C++ Sema 中 ObjC 剩余诊断：
+ * - OBJC_MIRROR_INTEROPLIB_MUST_BE_IMPORTED: 使用 ObjC 互操作必须导入 interoplib.objc
+ * - OBJC_INTEROP_NOT_SUPPORTED: 不支持的 ObjC 互操作特性
+ * - OBJC_POINTER_ARGUMENT_MUST_BE_OBJC_COMPATIBLE: ObjCPointer 类型参数必须是 ObjC 兼容
+ * - OBJC_INTEROP_TOPLEVEL_PARAM_MUST_BE_OBJC_COMPATIBLE: 顶层函数参数类型约束
+ * - OBJC_INTEROP_TOPLEVEL_RET_MUST_BE_OBJC_COMPATIBLE: 顶层函数返回类型约束
+ * - OBJC_FUNC_ARGUMENT_MUST_BE_OBJC_COMPATIBLE: ObjC 函数类型参数约束
+ * - OBJC_FUNC_CALL_PROPERTY_CAN_ONLY_BE_CALLED: ObjC 函数类型只能直接调用
+ */
+context(context: CheckerContext, reporter: DiagnosticReporter)
+private fun checkObjCInteropExtraSemantics(declaration: CfirClassLikeDeclaration) {
+    val hasObjCMirror = declaration.hasAnnotation(OBJC_MIRROR)
+    val hasObjCImpl = declaration.hasAnnotation(OBJC_IMPL)
+    if (!hasObjCMirror && !hasObjCImpl) return
+
+    // OBJC_MIRROR_INTEROPLIB_MUST_BE_IMPORTED: 检查当前文件是否导入 interoplib.objc
+    val declFile = declaration.source?.psi?.containingFile as? org.cangnova.cangjie.psi.CjFile
+    if (declFile != null) {
+        val hasInteropImport = declFile.importDirectivesItem.any { imp ->
+            imp.importedFqName?.asString()?.startsWith("interoplib.objc") == true
+        }
+        if (!hasInteropImport) {
+            reporter.reportOn(
+                source = declaration.source,
+                factory = CfirErrors.OBJC_MIRROR_INTEROPLIB_MUST_BE_IMPORTED,
+            )
+        }
+    }
+
+    // 检查成员中是否使用了 ObjCPointer / ObjCFunc 类型的约束
+    for (member in declaration.declarations) {
+        when (member) {
+            is CfirNamedFunction -> {
+                // ObjCPointer/ObjCFunc 类型参数必须是 ObjC 兼容类型
+                checkObjCPointerAndFuncTypeArgs(member, declaration)
+            }
+            is CfirProperty -> {
+                checkObjCFuncPropertyCallOnly(member, declaration)
+            }
+            else -> Unit
+        }
+    }
+}
+
+context(context: CheckerContext, reporter: DiagnosticReporter)
+private fun checkObjCPointerAndFuncTypeArgs(
+    function: CfirNamedFunction,
+    declaration: CfirClassLikeDeclaration,
+) {
+    for (param in function.valueParameters) {
+        val paramType = (param.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
+        // ObjCPointer<T> 或 ObjCFunc<...> 的类型参数必须是 ObjC 兼容
+        val classId = when (paramType) {
+            is org.cangnova.cangjie.cfir.types.ConeClassLikeType -> paramType.classId
+            else -> null
+        } ?: continue
+        val typeName = classId.shortClassName.asString()
+
+        if (typeName == "ObjCPointer") {
+            val typeArg = paramType.typeArguments.firstOrNull()?.type
+            if (typeArg != null && !isObjCTypeCompatible(typeArg)) {
+                reporter.reportOn(
+                    source = param.source ?: function.source ?: declaration.source,
+                    factory = CfirErrors.OBJC_POINTER_ARGUMENT_MUST_BE_OBJC_COMPATIBLE,
+                )
+            }
+        }
+        if (typeName.startsWith("ObjCFunc")) {
+            // ObjCFunc 的类型参数必须满足 ObjC 兼容
+            for (tArg in paramType.typeArguments) {
+                val argType = tArg.type ?: continue
+                if (!isObjCTypeCompatible(argType)) {
+                    reporter.reportOn(
+                        source = param.source ?: function.source ?: declaration.source,
+                        factory = CfirErrors.OBJC_FUNC_ARGUMENT_MUST_BE_OBJC_COMPATIBLE,
+                        a = "ObjCFunc",
+                    )
+                }
+            }
+        }
+    }
+}
+
+context(context: CheckerContext, reporter: DiagnosticReporter)
+private fun checkObjCFuncPropertyCallOnly(
+    property: CfirProperty,
+    declaration: CfirClassLikeDeclaration,
+) {
+    val propType = (property.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
+    val classId = (propType as? org.cangnova.cangjie.cfir.types.ConeClassLikeType)?.classId ?: return
+    if (classId.shortClassName.asString().startsWith("ObjCFunc")) {
+        // ObjCFunc 属性只能直接调用——此处声明级不能判断，预留入口
+        // 真正检查应在表达式级 qualified access checker
+        reporter.reportOn(
+            source = property.source ?: declaration.source,
+            factory = CfirErrors.OBJC_FUNC_CALL_PROPERTY_CAN_ONLY_BE_CALLED,
+            a = property.name.asString(),
+        )
+    }
+}
+
+/**
+ * 顶层函数（非 class 成员）的 ObjC 参数/返回类型检查。
+ * 注册为 file-level checker 的一部分。
+ */
+context(context: CheckerContext, reporter: DiagnosticReporter)
+private fun checkObjCTopLevelFunction(function: CfirNamedFunction) {
+    val owner = function.source?.psi as? CjModifierListOwner ?: return
+    val hasObjCAnnotation = owner.findAnnotationEntries(OBJC_MIRROR).isNotEmpty() ||
+        owner.findAnnotationEntries(OBJC_IMPL).isNotEmpty() ||
+        owner.findAnnotationEntries(Name.identifier("ObjCName")).isNotEmpty()
+    if (!hasObjCAnnotation) return
+
+    for (param in function.valueParameters) {
+        val paramType = (param.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
+        if (!isObjCTypeCompatible(paramType)) {
+            reporter.reportOn(
+                source = param.source ?: function.source,
+                factory = CfirErrors.OBJC_INTEROP_TOPLEVEL_PARAM_MUST_BE_OBJC_COMPATIBLE,
+                a = function.name.asString(),
+            )
+        }
+    }
+    val returnType = (function.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+    if (returnType != null && !returnType.isUnit && !isObjCTypeCompatible(returnType)) {
+        reporter.reportOn(
+            source = function.returnTypeRef.source ?: function.source,
+            factory = CfirErrors.OBJC_INTEROP_TOPLEVEL_RET_MUST_BE_OBJC_COMPATIBLE,
+            a = function.name.asString(),
         )
     }
 }

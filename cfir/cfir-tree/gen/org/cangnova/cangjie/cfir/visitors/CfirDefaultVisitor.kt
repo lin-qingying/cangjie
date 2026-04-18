@@ -158,6 +158,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitThrowExpression(throwExpression: CfirThrowExpression, data: D): R =
         visitExpression(throwExpression, data)
 
+    override fun visitResolvedDeclarationStatus(resolvedDeclarationStatus: CfirResolvedDeclarationStatus, data: D): R =
+        visitDeclarationStatus(resolvedDeclarationStatus, data)
+
     override fun visitPerformExpression(performExpression: CfirPerformExpression, data: D): R =
         visitExpression(performExpression, data)
 

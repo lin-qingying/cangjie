@@ -5,8 +5,8 @@ import com.intellij.mock.MockProject
 import com.intellij.openapi.project.Project
 import com.intellij.psi.impl.search.PsiSearchHelperImpl
 import org.cangnova.cangjie.analysis.api.projectStructure.CaTargetPlatform
-import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.AnalysisApiServiceRegistrar
-import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.PluginStructureProvider
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker

@@ -29,6 +29,7 @@ open class CfirFunctionCallImpl @CfirImplementationDetail constructor(
     override var typeArguments: MutableOrEmptyList<CfirTypeRef>,
     override var argumentList: CfirArgumentList,
     override val origin: CfirFunctionCallOrigin,
+    override val hasTrailingLambda: Boolean,
 ) : CfirFunctionCall() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {

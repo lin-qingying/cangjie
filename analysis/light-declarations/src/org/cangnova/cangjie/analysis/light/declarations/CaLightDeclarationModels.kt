@@ -94,7 +94,7 @@ class CaLightCallableDeclarationImpl(
     origin: CaLightDeclarationOrigin,
     token: CaLifetimeToken,
     override val callableId: CallableId?,
-    override val signature: CaSignature?,
+    override val signature: CaSignature<*>?,
 ) : CaLightDeclarationBase(
     kind = CaLightDeclarationKind.CALLABLE,
     name = name,

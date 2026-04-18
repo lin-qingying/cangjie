@@ -2,7 +2,9 @@ package org.cangnova.cangjie.analysis.api.cfir.types
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.components.createClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.createClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.cfir.utils.createTypePointer
+import org.cangnova.cangjie.analysis.api.cfir.utils.restoreClassErrorType
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.types.CaClassErrorType
@@ -54,10 +56,11 @@ internal class CaCfirClassErrorType(
             when (diagnostic) {
                 is ConeDiagnosticWithCandidates -> diagnostic.candidateSymbols
                     .filterIsInstance<CfirClassLikeSymbol<*>>()
-                    .map { symbol -> analysisSession.createClassLikeSymbol(symbol) }
+                    .map { symbol -> analysisSession.createClassLikeSymbol(symbol) as CaClassLikeSymbol }
 
-                else -> analysisSession.queryTypeClassLikeSymbol(coneType.delegatedType ?: coneType)
+                else -> analysisSession.typeQueries.queryTypeClassLikeSymbol(coneType.delegatedType ?: coneType)
                     ?.let { symbol -> analysisSession.createClassLikeSymbol(symbol) }
+                    ?.let { symbol -> symbol as CaClassLikeSymbol }
                     ?.let(::listOf)
                     .orEmpty()
             }

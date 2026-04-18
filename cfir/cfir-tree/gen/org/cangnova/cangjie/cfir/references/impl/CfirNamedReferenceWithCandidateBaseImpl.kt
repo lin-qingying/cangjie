@@ -8,7 +8,7 @@
 package org.cangnova.cangjie.cfir.references.impl
 
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.name.Name
@@ -17,7 +17,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 internal class CfirNamedReferenceWithCandidateBaseImpl(
     override val source: CjSourceElement?,
     override val name: Name,
-    override val candidateSymbol: CfirSymbol<*>,
+    override val candidateSymbol: CfirBasedSymbol<*>,
 ) : CfirNamedReferenceWithCandidateBase() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}

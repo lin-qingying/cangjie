@@ -1,6 +1,5 @@
 package org.cangnova.cangjie.test.frontend
 
-import com.intellij.openapi.util.TextRange
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
@@ -34,7 +33,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.test.Constructor
@@ -243,7 +242,7 @@ class CfirDiagnosticsHandler(
         }
     }
 
-    private fun getTypeOfCall(reference: CfirNamedReference, resolvedSymbol: CfirSymbol<*>?): String {
+    private fun getTypeOfCall(reference: CfirNamedReference, resolvedSymbol: CfirBasedSymbol<*>?): String {
         if (resolvedSymbol == null) return TypeOfCall.UNRESOLVED.nameToRender
 
         if ((resolvedSymbol as? CfirFunctionSymbol<*>)?.name == Name.identifier("invoke")
@@ -263,7 +262,7 @@ class CfirDiagnosticsHandler(
         }
     }
 
-    private fun CfirSymbol<*>.fqNameForDebug(): String? = when (this) {
+    private fun CfirBasedSymbol<*>.fqNameForDebug(): String? = when (this) {
         is CfirCallableSymbol<*> -> callableNameForDebug(cfir)
         else -> cfir.toString()
     }

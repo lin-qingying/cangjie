@@ -2,7 +2,6 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
@@ -14,7 +13,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory1
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.bindingOccurrences
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
@@ -25,9 +23,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
-import org.cangnova.cangjie.descriptors.Visibilities
-import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.utils.SmartSet
@@ -35,15 +31,15 @@ import org.cangnova.cangjie.utils.SmartSet
 interface CfirPlatformConflictDeclarationsDiagnosticDispatcher : CfirSessionComponent {
     context(context: CheckerContext)
     fun getDiagnostic(
-        conflictingDeclaration: CfirSymbol<*>,
-        symbols: SmartSet<CfirSymbol<*>>,
+        conflictingDeclaration: CfirBasedSymbol<*>,
+        symbols: SmartSet<CfirBasedSymbol<*>>,
     ): CjDiagnosticFactory1<Collection<String>>?
 
     object DEFAULT : CfirPlatformConflictDeclarationsDiagnosticDispatcher {
         context(context: CheckerContext)
         override fun getDiagnostic(
-            conflictingDeclaration: CfirSymbol<*>,
-            symbols: SmartSet<CfirSymbol<*>>,
+            conflictingDeclaration: CfirBasedSymbol<*>,
+            symbols: SmartSet<CfirBasedSymbol<*>>,
         ): CjDiagnosticFactory1<Collection<String>> {
             return when (conflictingDeclaration) {
                 is CfirConstructorSymbol,
@@ -70,7 +66,7 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker() {
     override fun check(declaration: CfirDeclaration) {
         when (declaration) {
             is CfirFile -> {
-                val inspector = CfirDeclarationCollector<CfirSymbol<*>>(context)
+                val inspector = CfirDeclarationCollector<CfirBasedSymbol<*>>(context)
                 checkFile(declaration, inspector)
                 reportConflicts(inspector.declarationConflictingSymbols, declaration)
             }
@@ -80,7 +76,7 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker() {
                     checkForLocalRedeclarations(declaration.typeParameters)
                 }
 
-                val inspector = CfirDeclarationCollector<CfirSymbol<*>>(context)
+                val inspector = CfirDeclarationCollector<CfirBasedSymbol<*>>(context)
                 inspector.collectClassMembers(declaration)
                 reportConflicts(inspector.declarationConflictingSymbols, declaration)
             }
@@ -105,7 +101,7 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker() {
 
     context(reporter: DiagnosticReporter, context: CheckerContext)
     private fun reportConflicts(
-        declarationConflictingSymbols: Map<CfirSymbol<*>, SmartSet<CfirSymbol<*>>>,
+        declarationConflictingSymbols: Map<CfirBasedSymbol<*>, SmartSet<CfirBasedSymbol<*>>>,
         container: CfirDeclaration,
     ) {
         declarationConflictingSymbols.forEach { (conflictingDeclaration, symbols) ->
@@ -152,7 +148,7 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker() {
     }
 
     context(context: CheckerContext)
-    private fun checkFile(file: CfirFile, inspector: CfirDeclarationCollector<CfirSymbol<*>>) {
+    private fun checkFile(file: CfirFile, inspector: CfirDeclarationCollector<CfirBasedSymbol<*>>) {
         val packageMemberScope = context.session.cangjieScopeProvider.getPackageMemberScope(
             packageFqName = file.packageDirective.packageFqName,
             symbolProvider = context.session.symbolProvider,
@@ -163,8 +159,8 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker() {
     }
 }
 
-private fun CfirSymbol<*>.boundSourceOrNull(): CjSourceElement? =
+private fun CfirBasedSymbol<*>.boundSourceOrNull(): CjSourceElement? =
     if (isBound) cfir.source else null
 
-private fun Collection<CfirSymbol<*>>.renderNames(): List<String> =
+private fun Collection<CfirBasedSymbol<*>>.renderNames(): List<String> =
     asSequence().mapNotNull(CfirRedeclarationPresenter::diagnosticName).distinct().sorted().toList()

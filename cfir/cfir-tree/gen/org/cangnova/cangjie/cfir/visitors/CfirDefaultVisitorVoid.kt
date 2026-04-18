@@ -204,6 +204,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitExpression(throwExpression)
     }
 
+    override fun visitResolvedDeclarationStatus(resolvedDeclarationStatus: CfirResolvedDeclarationStatus) {
+        visitDeclarationStatus(resolvedDeclarationStatus)
+    }
+
     override fun visitPerformExpression(performExpression: CfirPerformExpression) {
         visitExpression(performExpression)
     }

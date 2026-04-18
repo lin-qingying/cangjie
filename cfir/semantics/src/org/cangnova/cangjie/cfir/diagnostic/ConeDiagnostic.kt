@@ -6,7 +6,7 @@ import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -34,7 +34,7 @@ class ConeConstraintSystemHasContradiction(
                 candidateSymbol
             )
         }"
-    override val candidateSymbol:CfirSymbol<*> get() = candidate.symbol
+    override val candidateSymbol:CfirBasedSymbol<*> get() = candidate.symbol
 }
 
 data class ConeUnresolvedSymbolError(
@@ -45,7 +45,7 @@ data class ConeUnresolvedSymbolError(
 
 interface ConeDiagnosticWithCandidates : ConeDiagnostic {
     val candidates: Collection<AbstractCandidate>
-    val candidateSymbols: Collection<CfirSymbol<*>> get() = candidates.map { it.symbol }
+    val candidateSymbols: Collection<CfirBasedSymbol<*>> get() = candidates.map { it.symbol }
 }
 
 class ConeAmbiguityError(
@@ -59,9 +59,9 @@ class ConeAmbiguityError(
 
 interface ConeDiagnosticWithSingleCandidate : ConeDiagnosticWithCandidates {
     val candidate: AbstractCallCandidate<*>
-    val candidateSymbol: CfirSymbol<*> get() = candidate.symbol
+    val candidateSymbol: CfirBasedSymbol<*> get() = candidate.symbol
     override val candidates: Collection<AbstractCallCandidate<*>> get() = listOf(candidate)
-    override val candidateSymbols: Collection<CfirSymbol<*>> get() = listOf(candidateSymbol)
+    override val candidateSymbols: Collection<CfirBasedSymbol<*>> get() = listOf(candidateSymbol)
 }
 
 class ConeInapplicableCandidateError(
@@ -78,7 +78,7 @@ class ConeHiddenCandidateError(
 }
 
 class ConeVisibilityError(
-    val symbol: CfirSymbol<*>,
+    val symbol: CfirBasedSymbol<*>,
 ) : ConeDiagnostic {
     override val reason: String get() = "Cannot access: ${describeSymbol(symbol)}"
 }
@@ -206,7 +206,7 @@ object ConeNoImplicitDefaultConstructorOnExpectClass : ConeDiagnostic {
     override val reason: String = "No implicit default constructor on expect-like declaration"
 }
 
-private fun describeSymbol(symbol: CfirSymbol<*>): String {
+private fun describeSymbol(symbol: CfirBasedSymbol<*>): String {
     return when (symbol) {
         is CfirClassLikeSymbol<*> -> symbol.classId.asString()
         is CfirCallableSymbol<*> -> symbol.callableIdAsString()

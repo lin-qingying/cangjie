@@ -143,7 +143,7 @@ data class CfirTowerDataContext private constructor(
         val implicitValueMapper = object : ImplicitValueMapper {
             private val implicitValueCache = HashMap<ImplicitValue<*>, ImplicitValue<*>>()
 
-            override fun <S : org.cangnova.cangjie.cfir.symbols.CfirSymbol<*>, T : ImplicitValue<S>> invoke(value: T): T {
+            override fun <S : org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol<*>, T : ImplicitValue<S>> invoke(value: T): T {
                 @Suppress("UNCHECKED_CAST")
                 return implicitValueCache.getOrPut(value) { value.createSnapshot(keepMutable) } as T
             }

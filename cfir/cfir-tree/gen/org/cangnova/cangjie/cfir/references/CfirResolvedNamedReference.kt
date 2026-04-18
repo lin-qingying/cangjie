@@ -6,7 +6,7 @@
 package org.cangnova.cangjie.cfir.references
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.name.Name
@@ -18,7 +18,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 interface CfirResolvedNamedReference : CfirNamedReference {
     override val source: CjSourceElement?
     override val name: Name
-    val resolvedSymbol: CfirSymbol<*>
+    val resolvedSymbol: CfirBasedSymbol<*>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitResolvedNamedReference(this, data)

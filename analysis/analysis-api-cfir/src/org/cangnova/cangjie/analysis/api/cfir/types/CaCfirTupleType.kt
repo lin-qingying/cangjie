@@ -2,6 +2,9 @@ package org.cangnova.cangjie.analysis.api.cfir.types
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
+import org.cangnova.cangjie.analysis.api.cfir.utils.createTypePointer
+import org.cangnova.cangjie.analysis.api.cfir.utils.restoreTupleType
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.types.CaTupleType
 import org.cangnova.cangjie.analysis.api.types.CaType

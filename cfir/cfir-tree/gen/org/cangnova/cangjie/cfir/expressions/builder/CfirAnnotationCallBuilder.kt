@@ -16,7 +16,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
 import org.cangnova.cangjie.cfir.expressions.impl.CfirAnnotationCallImpl
 import org.cangnova.cangjie.cfir.references.CfirReference
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
@@ -30,7 +30,7 @@ class CfirAnnotationCallBuilder {
     val arguments: MutableList<CfirElement> = mutableListOf()
     lateinit var argumentList: CfirArgumentList
     lateinit var calleeReference: CfirReference
-    lateinit var containingDeclarationSymbol: CfirSymbol<*>
+    lateinit var containingDeclarationSymbol: CfirBasedSymbol<*>
 
     fun build(): CfirAnnotationCall {
         return CfirAnnotationCallImpl(

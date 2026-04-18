@@ -1,0 +1,862 @@
+*** Begin Patch
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\providers\providerUtils.kt
++/*
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.providers
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.DeserializedContainerSourceWithJvmClassName
+import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.JvmStubDeserializedBuiltInsContainerSource
+import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
+import org.cangnova.cangjie.load.kotlin.FacadeClassSource
+import org.cangnova.cangjie.load.kotlin.KotlinJvmBinarySourceElement
+import org.cangnova.cangjie.resolve.jvm.JvmClassName
+import java.util.*
+
+internal fun <T : Any> Optional<T>.getOrNull(): T? = orElse(null)
+
+fun CfirCallableSymbol<*>.jvmClassNameIfDeserialized(): JvmClassName? {
+    return when (val containerSource = fir.containerSource) {
+        is JvmStubDeserializedBuiltInsContainerSource -> containerSource.facadeClassName
+        is FacadeClassSource -> containerSource.facadeClassName ?: containerSource.className
+        is DeserializedContainerSourceWithJvmClassName -> containerSource.className
+        is KotlinJvmBinarySourceElement -> JvmClassName.byClassId(containerSource.binaryClass.classId)
+        else -> null
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\resolve\extensions\LLCfirResolveExtensionTool.kt
++
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.extensions
+
+import com.intellij.openapi.util.Key
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.permissions.forbidAnalysis
+import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinDeclarationProvider
+import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinFileBasedDeclarationProvider
+import org.cangnova.cangjie.analysis.api.platform.packages.KotlinPackageProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.resolveExtensionFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.resolve.extensions.CaResolveExtension
+import org.cangnova.cangjie.analysis.api.resolve.extensions.CaResolveExtensionFile
+import org.cangnova.cangjie.analysis.api.resolve.extensions.CaResolveExtensionNavigationTargetsProvider
+import org.cangnova.cangjie.analysis.api.resolve.extensions.CaResolveExtensionProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.CfirSessionComponent
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
+import org.cangnova.cangjie.load.kotlin.PackagePartClassUtils
+import org.cangnova.cangjie.name.*
+import org.cangnova.cangjie.platform.TargetPlatform
+import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.utils.mapToSetOrEmpty
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * Encapsulate all the work with the [CaResolveExtension] for the LL API.
+ *
+ * Caches generated [CaResolveExtensionFile]s, creates [KotlinDeclarationProvider], [KotlinPackageProvider], [CfirSymbolNamesProvider] needed
+ * for the [org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider].
+ */
+abstract class LLCfirResolveExtensionTool : CfirSessionComponent {
+    internal abstract val extensions: List<CaResolveExtension>
+
+    abstract val declarationProvider: LLCfirResolveExtensionToolDeclarationProvider
+    abstract val packageProvider: KotlinPackageProvider
+    abstract val packageFilter: LLCfirResolveExtensionToolPackageFilter
+    abstract val shadowedSearchScope: GlobalSearchScope
+    internal abstract val symbolNamesProvider: CfirSymbolNamesProvider
+}
+
+/**
+ * The session's [LLCfirResolveExtensionTool], or `null` if the session's module defines no resolve extensions.
+ */
+val CfirSession.llResolveExtensionTool: LLCfirResolveExtensionTool? by CfirSession.nullableSessionComponentAccessor()
+
+internal class LLCfirNonEmptyResolveExtensionTool(
+    session: LLCfirSession,
+    override val extensions: List<CaResolveExtension>,
+) : LLCfirResolveExtensionTool() {
+    init {
+        require(extensions.isNotEmpty())
+    }
+
+    private val fileProvider = LLCfirResolveExtensionsFileProvider(extensions)
+
+    override val packageFilter = LLCfirResolveExtensionToolPackageFilter(extensions)
+
+    override val declarationProvider: LLCfirResolveExtensionToolDeclarationProvider =
+        LLCfirResolveExtensionToolDeclarationProvider(fileProvider, session.ktModule)
+
+    override val packageProvider: KotlinPackageProvider = LLCfirResolveExtensionToolPackageProvider(packageFilter)
+
+    override val shadowedSearchScope by lazy {
+        forbidAnalysis {
+            GlobalSearchScope.union(extensions.mapTo(mutableSetOf()) { it.getShadowedScope() })
+        }
+    }
+
+    override val symbolNamesProvider: CfirSymbolNamesProvider = LLCfirResolveExtensionToolSymbolNamesProvider(packageFilter, fileProvider)
+}
+
+private class LLCfirResolveExtensionToolSymbolNamesProvider(
+    private val packageFilter: LLCfirResolveExtensionToolPackageFilter,
+    private val fileProvider: LLCfirResolveExtensionsFileProvider,
+) : CfirSymbolNamesProvider() {
+    override fun getPackageNames(): Set<String> = forbidAnalysis {
+        packageFilter.getAllPackages().mapToSetOrEmpty(FqName::asString)
+    }
+
+    override val hasSpecificClassifierPackageNamesComputation: Boolean get() = false
+    override val hasSpecificCallablePackageNamesComputation: Boolean get() = false
+
+    override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name> = forbidAnalysis {
+        if (!packageFilter.packageExists(packageFqName)) return emptySet()
+        fileProvider.getFilesByPackage(packageFqName).flatMap { it.getTopLevelClassifierNames() }.toSet()
+    }
+
+    override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name> = forbidAnalysis {
+        if (!packageFilter.packageExists(packageFqName)) return emptySet()
+        fileProvider.getFilesByPackage(packageFqName)
+            .flatMapTo(mutableSetOf()) { it.getTopLevelCallableNames() }
+    }
+
+    override fun mayHaveTopLevelClassifier(classId: ClassId): Boolean = forbidAnalysis {
+        if (!packageFilter.packageExists(classId.packageFqName)) return false
+
+        fileProvider.getFilesByPackage(classId.packageFqName)
+            .any { it.mayHaveTopLevelClassifier(classId.getTopLevelShortClassName()) }
+    }
+
+    override fun mayHaveTopLevelCallable(packageFqName: FqName, name: Name): Boolean = forbidAnalysis {
+        if (!packageFilter.packageExists(packageFqName)) return false
+
+        fileProvider.getFilesByPackage(packageFqName)
+            .any { it.mayHaveTopLevelCallable(name) }
+    }
+}
+
+class LLCfirResolveExtensionToolPackageFilter(
+    private val extensions: List<CaResolveExtension>
+) {
+    private val packageSubPackages: Map<FqName, Set<Name>> by lazy {
+        val packagesFromExtensions = forbidAnalysis {
+            extensions.flatMapTo(mutableSetOf()) { it.getContainedPackages() }
+        }
+        createSubPackagesMapping(packagesFromExtensions)
+    }
+
+    fun getAllPackages(): Set<FqName> {
+        return packageSubPackages.keys
+    }
+
+    fun getAllSubPackages(packageFqName: FqName): Set<Name> {
+        return packageSubPackages[packageFqName].orEmpty()
+    }
+
+    fun packageExists(packageFqName: FqName): Boolean {
+        return packageFqName in packageSubPackages
+    }
+
+    private fun createSubPackagesMapping(packages: Set<FqName>): Map<FqName, Set<Name>> {
+        return buildMap<FqName, MutableSet<Name>> {
+            for (packageName in packages) {
+                collectAllSubPackages(packageName)
+            }
+        }
+    }
+
+    private fun MutableMap<FqName, MutableSet<Name>>.collectAllSubPackages(packageName: FqName) {
+        var currentPackage = FqName.ROOT
+        for (packagePart in packageName.pathSegments()) {
+            getOrPut(currentPackage) { mutableSetOf<Name>() }.add(packagePart)
+            currentPackage = currentPackage.child(packagePart)
+        }
+        putIfAbsent(currentPackage, mutableSetOf())
+    }
+}
+
+class LLCfirResolveExtensionToolDeclarationProvider internal constructor(
+    private val extensionProvider: LLCfirResolveExtensionsFileProvider,
+    private val ktModule: CaModule,
+) : KotlinDeclarationProvider {
+
+    private val extensionFileToDeclarationProvider: ConcurrentHashMap<CaResolveExtensionFile, KotlinFileBasedDeclarationProvider> =
+        ConcurrentHashMap()
+
+    fun getTopLevelCallables(): Sequence<CjCallableDeclaration> = sequence {
+        forEachDeclarationOfType<CjCallableDeclaration> { callable ->
+            yield(callable)
+        }
+    }
+
+    fun getTopLevelClassifiers(): Sequence<CjClassLikeDeclaration> = sequence {
+        forEachDeclarationOfType<CjClass> { classLike ->
+            yield(classLike)
+        }
+    }
+
+    fun getTopLevelCallableNames(): Sequence<Name> = sequence {
+        forEachDeclarationOfType<CjCallableDeclaration> { callable ->
+            callable.nameAsName?.let { yield(it) }
+        }
+    }
+
+    fun getTopLevelClassifierNames(): Sequence<Name> = sequence {
+        forEachDeclarationOfType<CjClassLikeDeclaration> { classLike ->
+            classLike.nameAsName?.let { yield(it) }
+        }
+    }
+
+    override fun getClassLikeDeclarationByClassId(classId: ClassId): CjClassLikeDeclaration? = forbidAnalysis {
+        return getDeclarationProvidersByPackage(classId.packageFqName) { it.mayHaveTopLevelClassifier(classId.getTopLevelShortClassName()) }
+            .firstNotNullOfOrNull { it.getClassLikeDeclarationByClassId(classId) }
+    }
+
+    override fun getAllClassesByClassId(classId: ClassId): Collection<CjClassOrObject> = forbidAnalysis {
+        return getDeclarationProvidersByPackage(classId.packageFqName) { it.mayHaveTopLevelClassifier(classId.getTopLevelShortClassName()) }
+            .flatMapTo(mutableListOf()) { it.getAllClassesByClassId(classId) }
+    }
+
+    override fun getAllTypeAliasesByClassId(classId: ClassId): Collection<CjTypeAlias> = forbidAnalysis {
+        return getDeclarationProvidersByPackage(classId.packageFqName) { it.mayHaveTopLevelClassifier(classId.getTopLevelShortClassName()) }
+            .flatMapTo(mutableListOf()) { it.getAllTypeAliasesByClassId(classId) }
+    }
+
+    override fun getTopLevelKotlinClassLikeDeclarationNamesInPackage(packageFqName: FqName): Set<Name> = forbidAnalysis {
+        return getDeclarationProvidersByPackage(packageFqName) { true }
+            .flatMapTo(mutableSetOf()) { it.getTopLevelKotlinClassLikeDeclarationNamesInPackage(packageFqName) }
+    }
+
+    override fun getTopLevelProperties(callableId: CallableId): Collection<CjProperty> = forbidAnalysis {
+        return getDeclarationProvidersByPackage(callableId.packageName) { it.mayHaveTopLevelCallable(callableId.callableName) }
+            .flatMapTo(mutableListOf()) { it.getTopLevelProperties(callableId) }
+    }
+
+    override fun getTopLevelFunctions(callableId: CallableId): Collection<CjNamedFunction> = forbidAnalysis {
+        return getDeclarationProvidersByPackage(callableId.packageName) { it.mayHaveTopLevelCallable(callableId.callableName) }
+            .flatMapTo(mutableListOf()) { it.getTopLevelFunctions(callableId) }
+    }
+
+    override fun getTopLevelCallableFiles(callableId: CallableId): Collection<CjFile> = forbidAnalysis {
+        return getDeclarationProvidersByPackage(callableId.packageName) { it.mayHaveTopLevelCallable(callableId.callableName) }
+            .mapTo(mutableListOf()) { it.kotlinFile }
+    }
+
+    override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name> = forbidAnalysis {
+        return extensionProvider.getFilesByPackage(packageFqName).flatMapTo(mutableSetOf()) { it.getTopLevelCallableNames() }
+    }
+
+    override fun findFilesForFacadeByPackage(packageFqName: FqName): Collection<CjFile> = forbidAnalysis {
+        return getDeclarationProvidersByPackage(packageFqName) { file ->
+            file.getTopLevelCallableNames().isNotEmpty()
+        }.mapTo(mutableListOf()) { it.kotlinFile }
+    }
+
+    override fun findFilesForFacade(facadeFqName: FqName): Collection<CjFile> = forbidAnalysis {
+        if (facadeFqName.isRoot) return emptyList()
+        val packageFqName = facadeFqName.parent()
+        return getDeclarationProvidersByPackage(packageFqName) { file ->
+            facadeFqName.shortName().asString() == PackagePartClassUtils.getFilePartShortName(file.getFileName())
+        }
+            .mapTo(mutableListOf()) { it.kotlinFile }
+    }
+
+    override fun findInternalFilesForFacade(facadeFqName: FqName): Collection<CjFile> = forbidAnalysis {
+        // no decompiled files here (see the `org.cangnova.cangjie.analysis.api.platform.KotlinDeclarationProvider.findInternalFilesForFacade` KDoc)
+        return emptyList()
+    }
+
+    override fun findFilesForScript(scriptFqName: FqName): Collection<CjScript> = forbidAnalysis {
+        if (scriptFqName.isRoot) return emptyList()
+        val packageFqName = scriptFqName.parent()
+        return getDeclarationProvidersByPackage(packageFqName) { file ->
+            scriptFqName.shortName() == NameUtils.getScriptNameForFile(file.getFileName())
+        }
+            .mapNotNullTo(mutableListOf()) { it.kotlinFile.script }
+    }
+
+    override fun computePackageNames(): Set<String> =
+        buildSet {
+            extensionProvider.extensions.forEach { extension ->
+                extension.getContainedPackages().forEach { fqName ->
+                    add(fqName.asString())
+                }
+            }
+        }
+
+    override val hasSpecificClassifierPackageNamesComputation: Boolean get() = false
+    override val hasSpecificCallablePackageNamesComputation: Boolean get() = false
+
+    private inline fun getDeclarationProvidersByPackage(
+        packageFqName: FqName,
+        crossinline filter: (CaResolveExtensionFile) -> Boolean
+    ): Sequence<KotlinFileBasedDeclarationProvider> = forbidAnalysis {
+        return extensionProvider.getFilesByPackage(packageFqName)
+            .filter { filter(it) }
+            .map { createDeclarationProviderByFile(it) }
+    }
+
+    private fun createDeclarationProviderByFile(file: CaResolveExtensionFile): KotlinFileBasedDeclarationProvider = forbidAnalysis {
+        return extensionFileToDeclarationProvider.getOrPut(file) {
+            val factory = CjPsiFactory(
+                ktModule.project,
+                markGenerated = true,
+                eventSystemEnabled = true // so every generated CjFile backed by some VirtualFile
+            )
+            val ktFile = createCjFile(
+                factory,
+                file.getFileName(),
+                file.buildFileText(),
+                file.createNavigationTargetsProvider(),
+            )
+            KotlinFileBasedDeclarationProvider(ktFile)
+        }
+    }
+
+    private fun createCjFile(
+        factory: CjPsiFactory,
+        fileName: String,
+        fileText: String,
+        navigationTargetsProvider: CaResolveExtensionNavigationTargetsProvider
+    ): CjFile {
+        val ktFile = factory.createFile(fileName, fileText)
+        val virtualFile = ktFile.virtualFile
+        virtualFile.resolveExtensionFileModule = ktModule
+        virtualFile.navigationTargetsProvider = navigationTargetsProvider
+        return ktFile
+    }
+
+    private inline fun <reified D : CjDeclaration> forEachDeclarationOfType(action: (D) -> Unit) {
+        for (file in extensionProvider.getAllFiles()) {
+            val provider = createDeclarationProviderByFile(file)
+            val ktFile = provider.kotlinFile
+            for (declaration in ktFile.declarations) {
+                if (declaration is D) {
+                    action(declaration)
+                }
+            }
+        }
+    }
+}
+
+internal class LLCfirResolveExtensionsFileProvider(
+    val extensions: List<CaResolveExtension>,
+) {
+    fun getFilesByPackage(packageFqName: FqName): Sequence<CaResolveExtensionFile> = forbidAnalysis {
+        return extensions
+            .asSequence()
+            .filter { packageFqName in it.getContainedPackages() }
+            .flatMap { it.getCjFiles() }
+            .filter { it.getFilePackageName() == packageFqName }
+    }
+
+    fun getAllFiles(): Sequence<CaResolveExtensionFile> = forbidAnalysis {
+        return extensions
+            .asSequence()
+            .flatMap { it.getCjFiles() }
+    }
+}
+
+private class LLCfirResolveExtensionToolPackageProvider(
+    private val packageFilter: LLCfirResolveExtensionToolPackageFilter,
+) : KotlinPackageProvider {
+    override fun doesPackageExist(packageFqName: FqName, platform: TargetPlatform): Boolean =
+        doesKotlinOnlyPackageExist(packageFqName)
+
+    override fun getSubpackageNames(packageFqName: FqName, platform: TargetPlatform): Set<Name> =
+        getKotlinOnlySubpackageNames(packageFqName)
+
+    override fun doesPlatformSpecificPackageExist(packageFqName: FqName, platform: TargetPlatform): Boolean = false
+
+    override fun getPlatformSpecificSubpackageNames(packageFqName: FqName, platform: TargetPlatform) = emptySet<Name>()
+
+    override fun doesKotlinOnlyPackageExist(packageFqName: FqName): Boolean =
+        packageFilter.packageExists(packageFqName)
+
+    override fun getKotlinOnlySubpackageNames(packageFqName: FqName): Set<Name> =
+        packageFilter.getAllSubPackages(packageFqName)
+}
+
+private fun ClassId.getTopLevelShortClassName(): Name {
+    return Name.guessByCfirstCharacter(relativeClassName.asString().substringBefore("."))
+}
+
+private fun CaResolveExtensionFile.mayHaveTopLevelClassifier(name: Name): Boolean {
+    return name in getTopLevelClassifierNames()
+}
+
+private fun CaResolveExtensionFile.mayHaveTopLevelCallable(name: Name): Boolean {
+    return name in getTopLevelCallableNames()
+}
+
+var VirtualFile.navigationTargetsProvider: CaResolveExtensionNavigationTargetsProvider?
+        by UserDataProperty(Key.create("KT_RESOLVE_EXTENSION_NAVIGATION_TARGETS_PROVIDER"))
+
+private inline fun <R> forbidAnalysis(action: () -> R): R {
+    return forbidAnalysis(CaResolveExtensionProvider::class.java.simpleName, action)
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\resolver\AllCandidatesResolver.kt
++/*
+ * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.resolver
+
+import com.intellij.openapi.diagnostic.logger
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.ContextCollector
+import org.cangnova.cangjie.analysis.utils.printer.parentsOfType
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.builder.buildAnonymousFunctionCopy
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
+import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.expressions.builder.*
+import org.cangnova.cangjie.cfir.expressions.impl.CfirResolvedArgumentList
+import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.calls.*
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.fullyProcessCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerResolver
+import org.cangnova.cangjie.cfir.resolve.diagnostics.ConeInapplicableCandidateError
+import org.cangnova.cangjie.cfir.resolve.initialTypeOfCandidate
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirBodyResolveTransformer
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirExpressionsResolveTransformer
+import org.cangnova.cangjie.cfir.symbols.SymbolInternals
+import org.cangnova.cangjie.cfir.symbols.impl.CfirAnonymousFunctionSymbol
+import org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.coneType
+import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionMode
+import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
+import org.cangnova.cangjie.util.PrivateForInline
+import org.cangnova.cangjie.utils.exceptions.logErrorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withPsiEntry
+
+class AllCandidatesResolver(private val firSession: CfirSession) {
+    private val scopeSession = ScopeSession()
+
+    // This transformer is not intended for actual transformations and created here only to simplify access to resolve components
+    private val stubBodyResolveTransformer = CfirBodyResolveTransformer(
+        session = firSession,
+        phase = CfirResolvePhase.BODY_RESOLVE,
+        implicitTypeOnly = false,
+        scopeSession = scopeSession,
+    )
+
+    private val bodyResolveComponents = object : StubBodyResolveTransformerComponents(
+        firSession,
+        scopeSession,
+        stubBodyResolveTransformer,
+        stubBodyResolveTransformer.context,
+    ) {
+        val collector = AllCandidatesCollector(this, resolutionStageRunner)
+        val towerResolver = CfirTowerResolver(this, resolutionStageRunner, collector)
+        override val callResolver = CfirCallResolver(this, towerResolver)
+
+        init {
+            callResolver.initTransformer(CfirExpressionsResolveTransformer(stubBodyResolveTransformer))
+        }
+    }
+
+    private val resolutionContext = ResolutionContext(firSession, bodyResolveComponents, bodyResolveComponents.transformer.context)
+
+    fun getAllCandidates(
+        resolutionFacade: LLResolutionFacade,
+        qualifiedAccess: CfirQualifiedAccessExpression,
+        calleeName: Name,
+        element: CjElement,
+        resolutionMode: ResolutionMode,
+    ): List<OverloadCandidate> {
+        initializeBodyResolveContext(resolutionFacade, element)
+
+        val copiedAccess = copyQualifiedAccess(qualifiedAccess, element) ?: return emptyList()
+        return run {
+            bodyResolveComponents.callResolver
+                .collectAllCandidates(
+                    copiedAccess,
+                    calleeName,
+                    bodyResolveComponents.context.containers,
+                    resolutionContext,
+                    resolutionMode,
+                )
+                .apply { postProcessCandidates(copiedAccess) }
+        }
+    }
+
+    fun getAllCandidatesForDelegatedConstructor(
+        resolutionFacade: LLResolutionFacade,
+        delegatedConstructorCall: CfirDelegatedConstructorCall,
+        derivedClassLookupTag: ConeClassLikeLookupTag,
+        element: CjElement
+    ): List<OverloadCandidate> {
+        initializeBodyResolveContext(resolutionFacade, element)
+
+        val constructedType = delegatedConstructorCall.constructedTypeRef.coneType as ConeClassLikeType
+        return run {
+            val callInfo = bodyResolveComponents.callResolver.callInfoForDelegatingConstructorCall(
+                delegatedConstructorCall,
+                constructedType,
+            )
+
+            with(bodyResolveComponents.towerResolver) {
+                reset()
+                runResolverForDelegatingConstructor(callInfo, constructedType, derivedClassLookupTag, resolutionContext)
+            }
+
+            bodyResolveComponents.collector.allCandidates
+                .map { OverloadCandidate(it, isInBestCandidates = it in bodyResolveComponents.collector.bestCandidates()) }
+                .apply { postProcessCandidates(delegatedConstructorCall) }
+        }
+    }
+
+    @OptIn(PrivateForInline::class, SymbolInternals::class)
+    private fun initializeBodyResolveContext(resolutionFacade: LLResolutionFacade, element: CjElement) {
+        val firFile = element.containingCjFile.getOrBuildCfirFile(resolutionFacade)
+
+        // Set up needed context to get all candidates.
+        val towerContext = ContextCollector.process(resolutionFacade, firFile, element)?.towerDataContext
+        towerContext?.let { bodyResolveComponents.context.replaceTowerDataContext(it) }
+        val containingDeclarations =
+            element.parentsOfType<CjDeclaration>().map { it.resolveToCfirSymbol(resolutionFacade).fir }.toList().asReversed()
+        bodyResolveComponents.context.containers.addAll(containingDeclarations)
+
+        // `towerContext` from above should already contain all the scopes for the file,
+        // so we just set it manually without calling `withFile`
+        bodyResolveComponents.context.file = firFile
+    }
+
+    @OptIn(ConstraintSystemCompletionMode.ExclusiveForOverloadResolutionByLambdaReturnType::class)
+    private fun <T> List<OverloadCandidate>.postProcessCandidates(call: T) where T : CfirExpression, T : CfirResolvable {
+        val callCompleter = bodyResolveComponents.callCompleter
+        val analyzer = callCompleter.createPostponedArgumentsAnalyzer(resolutionContext)
+        val components = resolutionContext.bodyResolveComponents
+
+        forEach { overloadCandidate ->
+            val candidate = overloadCandidate.candidate
+
+            // Runs resolution stages. In particular, this action initiates type constraints
+            components.resolutionStageRunner.fullyProcessCandidate(candidate, resolutionContext)
+
+            // Runs completion for the candidate. This step is required to solve the constraint system
+            callCompleter.runCompletionForCall(
+                candidate = candidate,
+                // The lambda's processing logic modifies the original tree,
+                // so we cannot analyze them in the current state.
+                // See KT-82121 for more details.
+                completionMode = ConstraintSystemCompletionMode.UNTIL_CFIRST_LAMBDA,
+                call = call,
+                initialType = components.initialTypeOfCandidate(candidate),
+                analyzer = analyzer,
+            )
+
+            overloadCandidate.preserveCalleeInapplicability()
+        }
+    }
+
+    /**
+     * Post-processes a candidate to carry the callee's inapplicability over into the candidate. Without this post-processing, an issue may
+     * arise where [getAllCandidates] produces "applicable" candidates with inapplicable callee references.
+     *
+     * For example, a function call `generic<String, String>` of function `fun <A, B, C> generic() { }` is correctly marked as inapplicable
+     * by the compiler (due to the missing type argument), but the `firFile` built during [getAllCandidates] will contain an inapplicable
+     * function call `generic<String, String, ERROR>` (with the missing type argument inferred as an error type). The *subsequent*
+     * resolution by `bodyResolveComponents.callResolver.collectAllCandidates` feeds this call to
+     * [org.cangnova.cangjie.cfir.resolve.calls.CandidateFactory], which doesn't make any guarantees for inapplicable calls. Hence, the
+     * resulting candidate is *not* marked as inapplicable and needs to be post-processed.
+     */
+    private fun OverloadCandidate.preserveCalleeInapplicability() {
+        val callSite = candidate.callInfo.callSite
+        val calleeReference = callSite.toReference(firSession) as? CfirDiagnosticHolder ?: return
+        val diagnostic = calleeReference.diagnostic as? ConeInapplicableCandidateError ?: return
+        if (diagnostic.applicability != CandidateApplicability.INAPPLICABLE) return
+
+        candidate.addDiagnostic(InapplicableCandidate)
+    }
+}
+
+/**
+ * The passed [qualifiedAccess] is copied to avoid modification of the original tree.
+ *
+ * The copied tree is then passed to the [org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirOverloadByLambdaReturnTypeResolver]
+ * which may modify the tree. In particular, it may change the callee reference and lambdas.
+ *
+ * There is no goal to make a proper deep copy of the subtree – it is enough to cover the known cases there
+ * the modification is possible.
+ */
+private fun copyQualifiedAccess(
+    qualifiedAccess: CfirQualifiedAccessExpression,
+    element: CjElement,
+): CfirQualifiedAccessExpression? = when (qualifiedAccess) {
+    is CfirFunctionCall -> buildFunctionCallCopy(qualifiedAccess) {
+        argumentList = when (val argumentListToCopy = qualifiedAccess.argumentList) {
+            is CfirEmptyArgumentList -> argumentListToCopy
+            is CfirResolvedArgumentList -> {
+                val newMapping = argumentListToCopy.mapping.mapKeysTo(LinkedHashMap()) { copyArgument(it.key) }
+
+                /**
+                 * Arguments from the original argument list are used, so it has to be copied as well.
+                 * This usage can be found in [org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo.arguments]
+                 * and was introduced in KT-66124
+                 */
+                val originalArgumentList = argumentListToCopy.originalArgumentList
+                val newOriginalList = if (originalArgumentList != null) {
+                    buildArgumentListCopy(originalArgumentList) {
+                        arguments.replaceAll(::copyArgument)
+                    }
+                } else {
+                    null
+                }
+
+                buildResolvedArgumentList(
+                    original = newOriginalList,
+                    mapping = newMapping,
+                )
+            }
+
+            else -> {
+                logger<AllCandidatesResolver>().logErrorWithAttachment("Unexpected argument list ${argumentListToCopy::class.simpleName}") {
+                    withCfirEntry("argumentList", argumentListToCopy)
+                    withPsiEntry("psi", element)
+                }
+
+                return null
+            }
+        }
+    }
+    is CfirPropertyAccessExpression -> buildPropertyAccessExpressionCopy(qualifiedAccess) {}
+    else -> {
+        logger<AllCandidatesResolver>().logErrorWithAttachment("Unsupported qualified access ${qualifiedAccess::class.simpleName}") {
+            withCfirEntry("qualifiedAccess", qualifiedAccess)
+            withPsiEntry("psi", element)
+        }
+
+        null
+    }
+}
+
+private fun copyArgument(argument: CfirExpression): CfirExpression = when (argument) {
+    is CfirWrappedArgumentExpression -> {
+        val newExpression = copyArgument(argument.expression)
+        when (argument) {
+            is CfirNamedArgumentExpression -> buildNamedArgumentExpressionCopy(argument) { expression = newExpression }
+            is CfirSpreadArgumentExpression -> buildSpreadArgumentExpressionCopy(argument) { expression = newExpression }
+        }
+    }
+    is CfirAnonymousFunctionExpression -> {
+        buildAnonymousFunctionExpressionCopy(argument) {
+            anonymousFunction = buildAnonymousFunctionCopy(argument.anonymousFunction) { symbol = CfirAnonymousFunctionSymbol() }
+        }
+    }
+    else -> argument
+}
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\resolver\candidateInfoProviders.kt
++/*
+ * Copyright 2010-2022 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.resolver
+
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.resolve.calls.ImplicitReceiverValue
+import org.cangnova.cangjie.cfir.resolve.calls.ReceiverValue
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.*
+import org.cangnova.cangjie.cfir.types.coneType
+import org.cangnova.cangjie.cfir.types.receiverType
+import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
+
+/**
+ * A supplier of information for resolving a call against a single provided candidate.
+ * Implementors of this interface form a candidate from provided resolution parameters to fit requested resolution mode.
+ * This includes creating artificial CallInfo, combining receivers and generating CallKind with specific resolution sequence.
+ */
+interface CandidateInfoProvider {
+    fun callInfo(): CallInfo
+
+    fun callKind(): CallKind
+
+    fun explicitReceiverKind(): ExplicitReceiverKind
+
+    fun dispatchReceiverValue(): ReceiverValue?
+
+    fun implicitExtensionReceiverValue(): ImplicitReceiverValue<*>?
+
+    fun shouldFailBeforeResolve(): Boolean
+}
+
+abstract class AbstractBaseCandidateInfoProvider(
+    protected val resolutionParameters: ResolutionParameters,
+    protected val firFile: CfirFile,
+    protected val firSession: CfirSession,
+) : CandidateInfoProvider {
+    override fun callInfo(): CallInfo = with(resolutionParameters) {
+        CallInfo(
+            firFile, // TODO: consider passing more precise info here, if needed
+            callKind = callKind(),
+            name = callableSymbol.name,
+            explicitReceiver = explicitReceiver,
+            argumentList = argumentList,
+            typeArguments = typeArgumentList,
+            containingDeclarations = emptyList(), // TODO - maybe we should pass declarations from context here (no visible differences atm)
+            containingFile = firFile,
+            resolutionMode = ResolutionMode.ContextIndependent,
+            isUsedAsGetClassReceiver = false,
+            session = firSession,
+            implicitInvokeMode = ImplicitInvokeMode.None,
+        )
+    }
+
+    override fun shouldFailBeforeResolve(): Boolean = false
+}
+
+abstract class AbstractExtensionCandidateInfoProvider(
+    resolutionParameters: ResolutionParameters,
+    firFile: CfirFile,
+    firSession: CfirSession,
+) : AbstractBaseCandidateInfoProvider(resolutionParameters, firFile, firSession) {
+    override fun callKind(): CallKind = buildCallKindWithCustomResolutionSequence {
+        checkExtensionReceiver = true
+    }
+
+    override fun explicitReceiverKind(): ExplicitReceiverKind =
+        if (resolutionParameters.explicitReceiver == null)
+            ExplicitReceiverKind.NO_EXPLICIT_RECEIVER
+        else ExplicitReceiverKind.EXTENSION_RECEIVER
+
+    // Right now it's impossible to reason about dispatch receiver when candidate comes from arbitrary scope with no other information.
+    // So dispatch receiver is not passed from provider and later not checked during the resolution sequence.
+    override fun dispatchReceiverValue(): ReceiverValue? = null
+
+    override fun implicitExtensionReceiverValue(): ImplicitReceiverValue<*>? = with(resolutionParameters) {
+        if (explicitReceiver == null) implicitReceiver else null
+    }
+
+    // Candidates with inconsistent extension receivers are skipped in tower resolver before resolution stages.
+    // Passing them through can lead to false positives.
+    override fun shouldFailBeforeResolve(): Boolean = with(resolutionParameters) {
+        val callHasExtensionReceiver = explicitReceiverKind() == ExplicitReceiverKind.EXTENSION_RECEIVER
+                || implicitExtensionReceiverValue() != null
+        val fir = callableSymbol.fir
+        val candidateHasExtensionReceiver = fir.receiverParameter != null
+                || fir is CfirVariable && fir.returnTypeRef.coneType.receiverType(firSession) != null
+        callHasExtensionReceiver != candidateHasExtensionReceiver
+    }
+}
+
+/**
+ * Provider for [SingleCandidateResolutionMode.CHECK_EXTENSION_FOR_COMPLETION] mode.
+ */
+class CheckExtensionForCompletionCandidateInfoProvider(
+    resolutionParameters: ResolutionParameters,
+    firFile: CfirFile,
+    firSession: CfirSession,
+) : AbstractExtensionCandidateInfoProvider(resolutionParameters, firFile, firSession)
+
+/**
+ * Provider for [SingleCandidateResolutionMode.CHECK_EXTENSION_CALLABlE_REFERENCE_FOR_COMPLETION] mode.
+ */
+class CheckCallableReferenceForCompletionCandidateInfoProvider(
+    resolutionParameters: ResolutionParameters,
+    firFile: CfirFile,
+    firSession: CfirSession,
+) : AbstractExtensionCandidateInfoProvider(resolutionParameters, firFile, firSession) {
+    override fun callInfo(): CallInfo {
+        return with(resolutionParameters) {
+            CallableReferenceInfo(
+                callSite = firFile,
+                name = callableSymbol.name,
+                explicitReceiver = explicitReceiver,
+                containingDeclarations = emptyList(),
+                containingFile = firFile,
+                session = firSession,
+                expectedType = null,
+                lhs = resolutionParameters.callableReferenceLHS,
+                hasSyntheticOuterCall = false,
+                callKind = callKind(),
+            )
+        }
+    }
+}
+
+*** Add File: analysis\low-level-api-cfir\src\org\cangnova\cangjie\analysis\low\level\api\cfir\resolver\resolverUtils.kt
++/*
+ * Copyright 2010-2022 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
+package org.cangnova.cangjie.analysis.low.level.api.cfir.resolver
+
+import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.resolve.ImplicitValueStorage
+import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.dfa.*
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirAbstractBodyResolveTransformer
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirBodyResolveTransformer
+
+internal fun createStubBodyResolveComponents(firSession: CfirSession): CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents {
+    val scopeSession = ScopeSession()
+
+    // This transformer is not intended for actual transformations and created here only to simplify access to resolve components
+    val stubBodyResolveTransformer = CfirBodyResolveTransformer(
+        session = firSession,
+        phase = CfirResolvePhase.BODY_RESOLVE,
+        implicitTypeOnly = false,
+        scopeSession = scopeSession,
+    )
+
+    return StubBodyResolveTransformerComponents(
+        firSession,
+        scopeSession,
+        stubBodyResolveTransformer,
+        stubBodyResolveTransformer.context,
+    )
+}
+
+internal open class StubBodyResolveTransformerComponents(
+    session: CfirSession,
+    scopeSession: ScopeSession,
+    transformer: CfirBodyResolveTransformer,
+    context: BodyResolveContext
+) : CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents(
+    session,
+    scopeSession,
+    transformer,
+    context,
+    expandTypeAliases = true,
+) {
+    override val dataFlowAnalyzer: CfirDataFlowAnalyzer
+        get() = object : CfirDataFlowAnalyzer(this@StubBodyResolveTransformerComponents, context.dataFlowAnalyzerContext) {
+            override val logicSystem: LogicSystem
+                get() = error("Should not be called")
+
+            override val receiverStack: ImplicitValueStorage
+                get() = error("Should not be called")
+
+            override fun implicitUpdated(info: TypeStatement) =
+                error("Should not be called")
+
+            override fun extractTypeStatementFrom(flow: Flow, variable: DataFlowVariable): TypeStatement? =
+                null
+        }
+}
+*** End Patch

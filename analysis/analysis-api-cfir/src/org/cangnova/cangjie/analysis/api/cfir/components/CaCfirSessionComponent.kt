@@ -4,7 +4,7 @@ import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.asCaDiagnostic
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirType
-import org.cangnova.cangjie.analysis.api.cfir.types.asCaType
+import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
 import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacade
 import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponent
 import org.cangnova.cangjie.analysis.api.types.CaType

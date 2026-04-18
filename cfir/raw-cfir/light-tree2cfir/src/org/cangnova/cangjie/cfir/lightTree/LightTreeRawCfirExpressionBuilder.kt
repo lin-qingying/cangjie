@@ -20,11 +20,9 @@ import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
-import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.lexer.CjTokens
-import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
@@ -1517,7 +1515,7 @@ class LightTreeRawCfirExpressionBuilder(
         return null
     }
 
-    private inline fun <D : CfirDeclaration, S : CfirSymbol<D>> buildSourceDeclaration(
+    private inline fun <D : CfirDeclaration, S : CfirBasedSymbol<D>> buildSourceDeclaration(
         symbol: S,
         builder: (S) -> D,
     ): D {
