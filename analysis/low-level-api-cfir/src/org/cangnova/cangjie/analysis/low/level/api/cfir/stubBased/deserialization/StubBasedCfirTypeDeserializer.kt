@@ -8,6 +8,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserializati
 import org.cangnova.cangjie.CjRealPsiSourceElement
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.CfirModuleData
+import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.computeTypeAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -21,8 +22,11 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildAnnotationArgumentMapp
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.impl.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.impl.ConeClassLikeTypeImpl

@@ -5,19 +5,12 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 
-import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.low.level.api.cfir.util.classIdOrError
 import org.cangnova.cangjie.builtins.StandardNames
-import org.cangnova.cangjie.cfir.java.CfirJavaFacade
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirRegularClassSymbol
-import org.cangnova.cangjie.load.java.structure.JavaClass
-import org.cangnova.cangjie.load.java.structure.impl.JavaClassImpl
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 
@@ -34,7 +27,7 @@ internal fun String.isKotlinPackage(): Boolean = startsWith(KOTLIN_PACKAGE_PREFI
  *
  * [hasPsi] exists to ensure a consistent approach to compare PSI in symbol providers, e.g. by [LLPsiAwareSymbolProvider].
  */
-internal fun CfirBasedSymbol<*>.hasPsi(element: PsiElement): Boolean = fir.psi == element
+internal fun CfirBasedSymbol<*>.hasPsi(element: PsiElement): Boolean = cfir.psi == element
 
 /**
  * Returns a [CfirClassLikeSymbol] with the given [classId] that matches [declaration].
@@ -77,16 +70,3 @@ internal fun CfirSymbolProvider.getAllClassLikeSymbolsByClassIdOrSingle(classId:
         else -> listOfNotNull(getClassLikeSymbolByClassId(classId))
     }
 
-@LLModuleSpecificSymbolProviderAccess
-internal fun LLPsiAwareSymbolProvider.getParentPsiClassSymbol(psiClass: PsiClass): CfirRegularClassSymbol? =
-    psiClass.containingClass?.let { getClassLikeSymbolByPsi(it.classIdOrError(), it) as? CfirRegularClassSymbol }
-
-internal fun CfirJavaFacade.createPsiClassSymbol(
-    psiClass: PsiClass,
-    javaClass: JavaClass?,
-    parentClassSymbol: CfirRegularClassSymbol?,
-): CfirRegularClassSymbol {
-    val classId = psiClass.classIdOrError()
-    val symbol = CfirRegularClassSymbol(classId)
-    return convertJavaClassToCfir(symbol, parentClassSymbol, javaClass ?: JavaClassImpl(psiClass)).symbol
-}

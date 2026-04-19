@@ -1,3 +1,5 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 /*
  * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
@@ -7,6 +9,8 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.analysis.api.platform.CaCachedService
 import org.cangnova.cangjie.analysis.api.platform.declarations.*
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaDanglingFileModuleImpl
@@ -14,7 +18,7 @@ import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionS
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieAnchorModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.utils.mergeInto
 import org.cangnova.cangjie.analysis.api.projectStructure.*
-import org.cangnova.cangjie.analysis.api.utils.errors.withCaModuleEntry
+import org.cangnova.cangjie.analysis.api.util.withCaModuleEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirLazyDeclarationResolver
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
@@ -26,24 +30,18 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLNameConflict
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedKotlinSymbolProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedPackageDelegationSymbolProvider
-import org.cangnova.cangjie.assignment.plugin.AssignmentCommandLineProcessor
-import org.cangnova.cangjie.assignment.plugin.AssignmentConfigurationKeys
-import org.cangnova.cangjie.assignment.plugin.k2.CfirAssignmentPluginExtensionRegistrar
-import org.cangnova.cangjie.cli.create
-import org.cangnova.cangjie.cli.plugins.processCompilerPluginsOptions
-import org.cangnova.cangjie.compiler.plugin.ExperimentalCompilerApi
-import org.cangnova.cangjie.config.*
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.diagnostics.CjRegisteredDiagnosticFactoriesStorage
 import org.cangnova.cangjie.cfir.CfirNameConflictsTracker
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.SessionConfiguration
+import org.cangnova.cangjie.cfir.diagnostics.CjRegisteredDiagnosticFactoriesStorage
 import org.cangnova.cangjie.cfir.extensions.*
-import org.cangnova.cangjie.cfir.languageVersionSettings
 import org.cangnova.cangjie.cfir.resolve.providers.*
 import org.cangnova.cangjie.cfir.resolve.providers.impl.CfirCompositeSymbolProvider
-import org.cangnova.cangjie.cfir.resolve.transformers.CfirDummyCompilerLazyDeclarationResolver
-import org.cangnova.cangjie.cfir.scopes.CfirKotlinScopeProvider
+import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.*
+import org.cangnova.cangjie.cfir.symbols.CfirDummyCompilerLazyDeclarationResolver
 import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
@@ -83,7 +81,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
     fun createNotUnderContentRootResolvableSession(module: CaNotUnderContentRootModule): LLCfirNotUnderContentRootResolvableModuleSession {
         val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession()
         val languageVersionSettings = LanguageVersionSettings.DEFAULT
-        val scopeProvider = CfirKotlinScopeProvider()
+        val scopeProvider = CfirCangJieScopeProvider()
         val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
 
         val session = LLCfirNotUnderContentRootResolvableModuleSession(module, components, builtinsSession.builtinTypes)
@@ -94,7 +92,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
         return session.apply {
             registerModuleData(moduleData)
-            register(CfirKotlinScopeProvider::class, scopeProvider)
+            register(CfirCangJieScopeProvider::class, scopeProvider)
 
             registerAllCommonComponents(languageVersionSettings, module, resolutionScope)
             registerSourceLikeComponents()
@@ -149,7 +147,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
     protected fun doCreateSourcesSession(
         module: CaSourceModule,
-        scopeProvider: CfirKotlinScopeProvider = CfirKotlinScopeProvider(),
+        scopeProvider: CfirCangJieScopeProvider = CfirCangJieScopeProvider(),
         additionalSessionConfiguration: LLCfirSourcesSession.(context: SourceSessionCreationContext) -> Unit,
     ): LLCfirSourcesSession {
         val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession()
@@ -168,7 +166,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
         return session.apply {
             registerModuleData(moduleData)
-            register(CfirKotlinScopeProvider::class, scopeProvider)
+            register(CfirCangJieScopeProvider::class, scopeProvider)
 
             registerAllCommonComponents(languageVersionSettings, module, resolutionScope)
             registerSourceLikeComponents()
@@ -222,7 +220,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
     ): LLCfirLibraryOrLibrarySourceResolvableModuleSession {
         val binaryModule = when (module) {
             is CaLibraryModule, is CaBuiltinsModule -> module
-            is CaLibrarySourceModule -> module.binaryLibrary
+            is CaLibrarySourceModule -> module.binaryLibraryModule
             else -> errorWithAttachment("Unexpected module ${module::class.simpleName}") {
                 withCaModuleEntry("module", module)
             }
@@ -231,7 +229,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession()
         val languageVersionSettings = LanguageVersionSettings.DEFAULT
 
-        val scopeProvider = CfirKotlinScopeProvider()
+        val scopeProvider = CfirCangJieScopeProvider()
         val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
 
         val session = LLCfirLibraryOrLibrarySourceResolvableModuleSession(module, components, builtinsSession.builtinTypes)
@@ -242,7 +240,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
         return session.apply {
             registerModuleData(moduleData)
-            register(CfirKotlinScopeProvider::class, scopeProvider)
+            register(CfirCangJieScopeProvider::class, scopeProvider)
 
             registerAllCommonComponents(languageVersionSettings, module, binaryContentScope)
             registerCommonComponentsAfterExtensionsAreConfigured()
@@ -319,12 +317,12 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             registerModuleData(moduleData)
             registerIdeComponents(project, languageVersionSettings, contentScope)
             register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
-            registerCommonComponents(languageVersionSettings, isMetadataCompilation = false)
+            registerCommonComponents(languageVersionSettings)
             registerCommonComponentsAfterExtensionsAreConfigured()
 
-            val kotlinScopeProvider = CfirKotlinScopeProvider()
+            val kotlinScopeProvider = CfirCangJieScopeProvider()
 
-            register(CfirKotlinScopeProvider::class, kotlinScopeProvider)
+            register(CfirCangJieScopeProvider::class, kotlinScopeProvider)
 
             val symbolProvider = LLModuleWithDependenciesSymbolProvider(
                 this,
@@ -354,7 +352,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
     ): LLCfirSession {
         val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession()
         val languageVersionSettings = wrapLanguageVersionSettings(contextSession.languageVersionSettings)
-        val scopeProvider = CfirKotlinScopeProvider()
+        val scopeProvider = CfirCangJieScopeProvider()
 
         val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
 
@@ -366,7 +364,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
         return session.apply {
             registerModuleData(moduleData)
-            register(CfirKotlinScopeProvider::class, scopeProvider)
+            register(CfirCangJieScopeProvider::class, scopeProvider)
 
             registerAllCommonComponents(languageVersionSettings, module, resolutionScope)
             registerSourceLikeComponents()
@@ -454,27 +452,10 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
     )
 
     private fun wrapLanguageVersionSettings(original: LanguageVersionSettings): LanguageVersionSettings {
-        return object : LanguageVersionSettings by original {
-
-            override fun <T> getFlag(flag: AnalysisFlag<T>): T {
-                @Suppress("UNCHECKED_CAST")
-                if (flag == JvmAnalysisFlags.suppressMissingBuiltinsError) return true as T
-                return original.getFlag(flag)
-            }
-
-            override fun getFeatureSupport(feature: LanguageFeature): LanguageFeature.State {
-                return when (feature) {
-                    LanguageFeature.EnableDfaWarningsInK2 -> LanguageFeature.State.ENABLED
-                    else -> original.getFeatureSupport(feature)
-                }
-            }
-
-            override fun supportsFeature(feature: LanguageFeature): Boolean {
-                return when (getFeatureSupport(feature)) {
-                    LanguageFeature.State.ENABLED -> true
-                    else -> false
-                }
-            }
+        return if (original.supportsFeature(LanguageFeature.EnableDfaWarnings)) {
+            original
+        } else {
+            original.copy(enabledFeatures = original.enabledFeatures + LanguageFeature.EnableDfaWarnings)
         }
     }
 
@@ -522,7 +503,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             }
         }
 
-        val orderedDependencyModules = KmpModuleSorter.order(dependencyModules.toList())
+        val orderedDependencyModules = dependencyModules.toList()
 
         return orderedDependencyModules.mapNotNull(::getOrCreateSessionForDependency)
     }
@@ -557,7 +538,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         annotationSearchScope: GlobalSearchScope,
     ) {
         registerIdeComponents(project, languageVersionSettings, annotationSearchScope)
-        registerCommonComponents(languageVersionSettings, isMetadataCompilation = false)
+        registerCommonComponents(languageVersionSettings)
         registerResolveComponents(CjRegisteredDiagnosticFactoriesStorage())
     }
 

@@ -3,12 +3,12 @@ package org.cangnova.cangjie.cfir
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
-import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
 
 abstract class CfirNameConflictsTracker : CfirSessionComponent {
     abstract class ClassifierRedeclaration {
-        abstract val classifierSymbol: CfirClassifierSymbol<*>
+        abstract val classifierSymbol: CfirClassLikeSymbol<*>
         abstract val containingFile: CfirFile?
     }
 
@@ -16,12 +16,11 @@ abstract class CfirNameConflictsTracker : CfirSessionComponent {
 
     abstract fun registerClassifierRedeclaration(
         classId: ClassId,
-        newSymbol: CfirClassifierSymbol<*>,
+        newSymbol: CfirClassLikeSymbol<*>,
         newSymbolFile: CfirFile,
-        prevSymbol: CfirClassifierSymbol<*>,
+        prevSymbol: CfirClassLikeSymbol<*>,
         prevSymbolFile: CfirFile?,
     )
 }
 
 val CfirSession.nameConflictsTracker: CfirNameConflictsTracker? by CfirSession.nullableSessionComponentAccessor()
-

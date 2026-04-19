@@ -2,6 +2,8 @@ package org.cangnova.cangjie.analysis.test.framework.projectStructure
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFileSystemItem
+import com.intellij.psi.SmartPointerManager
+import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
@@ -15,6 +17,8 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootM
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaTargetPlatform
 import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
+import org.cangnova.cangjie.psi.CjCodeFragment
+import org.cangnova.cangjie.psi.CjFile
 
 /**
  * 测试阶段允许回填依赖的模块视图。
@@ -44,7 +48,7 @@ sealed class CaTestModuleBase(
     final override val targetPlatform: CaTargetPlatform
         get() = platform
 
-    final override val baseContentScope: GlobalSearchScope = GlobalSearchScope.filesWithoutLibrariesScope(
+    override val baseContentScope: GlobalSearchScope = GlobalSearchScope.filesWithoutLibrariesScope(
         project,
         scopeRoots.mapNotNull { it.virtualFile },
     )
@@ -122,13 +126,42 @@ class CaDanglingFileModuleImpl(
     psiRoots: List<PsiFileSystemItem>,
     targetPlatform: CaTargetPlatform = CaTargetPlatform.STANDALONE,
 ) : CaTestModuleBase(project, psiRoots, targetPlatform), CaDanglingFileModule {
+    private val filePointers: List<SmartPsiElementPointer<CjFile>> =
+        psiRoots.map { psiRoot ->
+            val file = psiRoot as? CjFile
+                ?: error("Dangling file module expects CjFile roots, but got ${psiRoot::class.qualifiedName}")
+            SmartPointerManager.getInstance(project).createSmartPsiElementPointer(file)
+        }
+
     override val psiRoots: List<PsiFileSystemItem> = psiRoots.toList()
 
-    override var contextModule: CaModule? = null
+    override val files: List<CjFile>
+        get() = validFilesOrNull ?: error("Dangling file module is invalid")
+
+    override lateinit var contextModule: CaModule
 
     override val resolutionMode: CaDanglingFileResolutionMode = CaDanglingFileResolutionMode.PREFER_SELF
 
+    override val isCodeFragment: Boolean
+        get() = files.any { it is CjCodeFragment || it.isCodeFragment }
+
+    override val isValid: Boolean
+        get() = validFilesOrNull != null
+
+    override val baseContentScope: GlobalSearchScope
+        get() = GlobalSearchScope.filesWithoutLibrariesScope(project, files.map { it.viewProvider.virtualFile })
+
     override fun toString(): String = name
+
+    private val validFilesOrNull: List<CjFile>?
+        get() {
+            val result = ArrayList<CjFile>(filePointers.size)
+            for (filePointer in filePointers) {
+                val file = filePointer.element?.takeIf { it.isValid } ?: return null
+                result += file
+            }
+            return result
+        }
 }
 
 class CaNotUnderContentRootModuleImpl(

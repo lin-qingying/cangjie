@@ -339,9 +339,8 @@ private fun patchDesignationPathForCopy(target: CfirElementWithResolveState, tar
     val targetModule = target.llCfirModuleData.ktModule
 
     if (targetModule is CaDanglingFileModule && targetModule.resolutionMode == CaDanglingFileResolutionMode.IGNORE_SELF) {
-        val targetPsiFile = targetModule.psiRoots.singleOrNull() as? CjFile ?: return targetPath
-
-        val contextModule = targetModule.contextModule ?: return targetPath
+        val targetPsiFile = targetModule.files.singleOrNull() ?: return targetPath
+        val contextModule = targetModule.contextModule
         val contextResolutionFacade = contextModule.getResolutionFacade(contextModule.project)
 
         return buildList {

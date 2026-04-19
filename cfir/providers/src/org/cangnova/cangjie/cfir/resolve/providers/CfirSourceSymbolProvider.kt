@@ -103,7 +103,7 @@ class CfirProviderImpl(
     }
 
     private inner class SourceSymbolProvider : CfirSymbolProvider(session) {
-        override val symbolNamesProvider: CfirSymbolNamesProvider = object : CfirSymbolNamesProvider {
+        override val symbolNamesProvider: CfirSymbolNamesProvider = object : CfirSymbolNamesProvider() {
             override fun getPackageNames(): Set<FqName> = state.allSubPackages
 
             override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name> =

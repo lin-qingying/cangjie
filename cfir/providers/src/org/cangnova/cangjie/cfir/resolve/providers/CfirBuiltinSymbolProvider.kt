@@ -143,7 +143,7 @@ class CfirBuiltinSymbolProvider(
             }
         }
 
-    private object BuiltinNamesProvider : CfirSymbolNamesProvider {
+    private object BuiltinNamesProvider : CfirSymbolNamesProvider() {
         private val builtinClassifierNames: Set<Name> = PrimitiveTypeKind.entries
             .filter(PrimitiveTypeKind::isExposedBuiltinClassifier)
             .mapTo(linkedSetOf()) { Name.identifier(it.typeName) }

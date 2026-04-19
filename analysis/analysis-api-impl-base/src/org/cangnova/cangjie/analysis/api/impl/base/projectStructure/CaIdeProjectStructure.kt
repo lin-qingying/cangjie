@@ -20,6 +20,7 @@ import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvide
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaDanglingFileModuleImpl
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
@@ -71,7 +72,7 @@ class CaIdeProjectStructureState(
     private val libraryModulesByKey = ConcurrentHashMap<LibraryBinaryKey, CaIdeLibraryModule>()
     private val librarySourceModulesByKey = ConcurrentHashMap<LibrarySourceKey, CaIdeLibrarySourceModule>()
     private val fallbackDependencyModulesByOwnerKey = ConcurrentHashMap<String, CaIdeLibraryFallbackDependenciesModule>()
-    private val danglingFileModulesByPath = ConcurrentHashMap<String, CaIdeDanglingFileModule>()
+    private val danglingFileModulesByPath = ConcurrentHashMap<String, CaDanglingFileModuleImpl>()
     private val outsideContentModulesByPath = ConcurrentHashMap<String, CaIdeNotUnderContentRootModule>()
     @Volatile
     private var cachedSnapshotState: CachedSnapshotState? = null
@@ -171,22 +172,26 @@ class CaIdeProjectStructureState(
             refreshRegularDependencies(entry.module, entry.root.virtualFile, snapshotStamp)
         }
 
+        val danglingModules = danglingFileModulesByPath.values
+            .filter(CaDanglingFileModuleImpl::isValid)
+            .sortedBy(CaModule::moduleDescription)
+
         val allModules = buildList {
             add(builtinsModule)
             addAll(sourceEntries.map(ModuleRootEntry::module))
             addAll(librarySourceModulesByKey.values.sortedBy(CaModule::moduleDescription))
             addAll(libraryModulesByKey.values.sortedBy(CaModule::moduleDescription))
             addAll(fallbackDependencyModulesByOwnerKey.values.sortedBy(CaModule::moduleDescription))
-            addAll(danglingFileModulesByPath.values.sortedBy(CaModule::moduleDescription))
+            addAll(danglingModules)
             addAll(outsideContentModulesByPath.values.sortedBy(CaModule::moduleDescription))
         }.distinctBy { module ->
-            module.stableModuleName ?: module.moduleDescription
+            module.stableModuleName ?: module
         }
 
         val allSourceFiles = buildList {
             sourceEntries.mapTo(this, ModuleRootEntry::root)
             librarySourceModulesByKey.values.flatMapTo(this) { it.sourceRoots }
-            danglingFileModulesByPath.values.mapTo(this, CaIdeDanglingFileModule::item)
+            danglingModules.flatMapTo(this, CaDanglingFileModuleImpl::files)
             outsideContentModulesByPath.values.mapTo(this, CaIdeNotUnderContentRootModule::item)
         }.distinctBy { item ->
             item.virtualFile?.url ?: item.name
@@ -293,23 +298,28 @@ class CaIdeProjectStructureState(
         }
     }
 
-    private fun danglingFileModuleFor(file: CjFile): CaIdeDanglingFileModule {
+    private fun danglingFileModuleFor(file: CjFile): CaDanglingFileModuleImpl {
         val virtualFile = file.virtualFile
             ?: error("代码片段 `${file.name}` 缺少 VirtualFile，无法构建游离文件模块。")
         val pathKey = virtualFile.path.ifBlank { virtualFile.url }
-        return danglingFileModulesByPath.computeIfAbsent(pathKey) {
-            val contextModule = (file as? CjCodeFragment)?.context?.let { contextElement ->
-                getModule(contextElement, null)
+        val contextModule = danglingFileContextModuleFor(file)
+        return danglingFileModulesByPath.compute(pathKey) { _, existingModule ->
+            if (
+                existingModule != null &&
+                existingModule.isValid &&
+                existingModule.contextModule == contextModule &&
+                existingModule.resolutionMode == CaDanglingFileResolutionMode.PREFER_SELF &&
+                existingModule.files.singleOrNull() == file
+            ) {
+                existingModule
+            } else {
+                CaDanglingFileModuleImpl(
+                    files = listOf(file),
+                    contextModule = contextModule,
+                    resolutionMode = CaDanglingFileResolutionMode.PREFER_SELF,
+                )
             }
-            CaIdeDanglingFileModule(
-                project = project,
-                item = file,
-                pathKey = pathKey,
-                contextModule = contextModule,
-            )
-        }.also { module ->
-            refreshDanglingDependencies(module, virtualFile, currentSnapshotStamp())
-        }
+        } ?: error("无法为 `${file.name}` 构建 dangling file module。")
     }
 
     private fun outsideContentModuleFor(item: PsiFileSystemItem): CaIdeNotUnderContentRootModule {
@@ -396,18 +406,6 @@ class CaIdeProjectStructureState(
         }
     }
 
-    private fun refreshDanglingDependencies(
-        module: CaIdeDanglingFileModule,
-        anchorFile: VirtualFile,
-        snapshotStamp: SnapshotStamp,
-    ) {
-        module.directRegularDependencies.clear()
-        val fallbackModule = fallbackDependencyModuleFor(module, anchorFile, snapshotStamp)
-        if (fallbackModule.directRegularDependencies.isNotEmpty()) {
-            module.directRegularDependencies += fallbackModule
-        }
-    }
-
     private fun refreshOutsideContentDependencies(
         module: CaIdeNotUnderContentRootModule,
         anchorFile: VirtualFile,
@@ -476,6 +474,25 @@ class CaIdeProjectStructureState(
 
     private fun isDanglingLikeFile(file: CjFile): Boolean {
         return file.isCodeFragment || file is CjCodeFragment || !file.isPhysical
+    }
+
+    /**
+     * IDE dangling file 必须显式绑定到一个上下文模块。
+     *
+     * 代码片段走其 context element，普通非物理文件则回溯 original file。
+     * 若两者都不存在，说明平台侧没有给出可分析的宿主模块，直接在 project-structure 层报错。
+     */
+    private fun danglingFileContextModuleFor(file: CjFile): CaModule {
+        (file as? CjCodeFragment)?.context?.let { contextElement ->
+            return getModule(contextElement, null)
+        }
+
+        val originalFile = file.originalFile.takeUnless { it == file } as? CjFile
+        if (originalFile != null) {
+            return getModule(originalFile, null)
+        }
+
+        error("游离文件 `${file.name}` 缺少 context module，无法构建 Analysis API dangling file module。")
     }
 
     private fun toPsiFileSystemItem(file: VirtualFile): PsiFileSystemItem? {
@@ -551,7 +568,7 @@ private sealed class CaIdeMutableModule(
     final override val targetPlatform: CaTargetPlatform
         get() = CaTargetPlatform.IDE
 
-    final override val baseContentScope: GlobalSearchScope =
+    override val baseContentScope: GlobalSearchScope =
         if (includeLibrariesInScope) {
             GlobalSearchScope.filesWithLibrariesScope(project, scopeRoots.mapNotNull { it.virtualFile })
         } else {
@@ -712,34 +729,6 @@ private class CaIdeBuiltinsModule(
 
     override val moduleDescription: String
         get() = "IDE builtins"
-}
-
-/**
- * IDE 中的游离文件模块。
- */
-private class CaIdeDanglingFileModule(
-    project: Project,
-    val item: CjFile,
-    private val pathKey: String,
-    override val contextModule: CaModule?,
-) : CaIdeMutableModule(project, listOf(item), includeLibrariesInScope = false), CaDanglingFileModule {
-    override val name: String
-        get() = item.name.ifBlank { pathKey.substringAfterLast('/', pathKey) }
-
-    override val languageVersionSettings: LanguageVersionSettings
-        get() = LanguageVersionSettings.DEFAULT
-
-    override val psiRoots: List<PsiFileSystemItem>
-        get() = listOf(item)
-
-    override val resolutionMode: CaDanglingFileResolutionMode
-        get() = CaDanglingFileResolutionMode.PREFER_SELF
-
-    override val stableModuleName: String
-        get() = "ide-dangling:$pathKey"
-
-    override val moduleDescription: String
-        get() = "IDE dangling file $pathKey"
 }
 
 /**

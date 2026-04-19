@@ -36,18 +36,18 @@ internal sealed class LLCfirAbstractBodyTargetResolver(
 
     @Deprecated("Should never be called directly, only for override purposes, please use withFile", level = DeprecationLevel.ERROR)
     override fun withContainingFile(firFile: CfirFile, action: () -> Unit) {
-        transformer.declarationsTransformer?.withFile(firFile) {
+        transformer.declarationsTransformer.context.withFile(firFile) {
             action()
-            firFile
         }
     }
 
     @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
     override fun withContainingClass(firClass: CfirClass, action: () -> Unit) {
-        transformer.declarationsTransformer?.context?.withContainingClass(firClass) {
-            transformer.declarationsTransformer?.forRegularClassBody(firClass) {
+        val declarationsTransformer = transformer.declarationsTransformer
+        val context = declarationsTransformer.context
+        context.withContainingClass(firClass) {
+            context.withScopesForClass(firClass, declarationsTransformer.components) {
                 action()
-                firClass
             }
         }
     }

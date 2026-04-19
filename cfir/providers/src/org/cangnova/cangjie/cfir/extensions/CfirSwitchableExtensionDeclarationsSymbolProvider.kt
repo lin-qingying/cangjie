@@ -22,7 +22,7 @@ open class CfirSwitchableExtensionDeclarationsSymbolProvider protected construct
 
     protected open var disabled: Boolean = false
 
-    override val symbolNamesProvider: CfirSymbolNamesProvider = object : CfirSymbolNamesProvider {
+    override val symbolNamesProvider: CfirSymbolNamesProvider = object : CfirSymbolNamesProvider() {
         override fun getPackageNames(): Set<FqName>? =
             if (disabled) null else delegate.symbolNamesProvider.getPackageNames()
 

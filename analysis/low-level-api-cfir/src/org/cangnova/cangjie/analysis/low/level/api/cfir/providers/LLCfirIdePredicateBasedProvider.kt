@@ -1,3 +1,5 @@
+@file:OptIn(CaPlatformInterface::class)
+
 /*
  * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
@@ -7,6 +9,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.providers
 
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getResolutionFacade
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
@@ -22,18 +25,24 @@ import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.extensions.*
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.extensions.predicate.AbstractPredicate
 import org.cangnova.cangjie.cfir.extensions.predicate.DeclarationPredicate
 import org.cangnova.cangjie.cfir.extensions.predicate.LookupPredicate
 import org.cangnova.cangjie.cfir.extensions.predicate.PredicateVisitor
 import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.*
 
 /**
@@ -80,7 +89,7 @@ internal class LLCfirIdePredicateBasedProvider(
 
         val moduleForFile = projectStructureProvider.getModule(this, session.ktModule)
         val resolutionFacadeForFile = moduleForFile.getResolutionFacade(project)
-        return this.resolveToCfirSymbol(resolutionFacadeForFile).fir
+        return this.resolveToCfirSymbol(resolutionFacadeForFile).cfir
     }
 
     override fun getOwnersOfDeclaration(declaration: CfirDeclaration): List<CfirBasedSymbol<*>>? {
@@ -98,7 +107,9 @@ internal class LLCfirIdePredicateBasedProvider(
             val annotationId = ClassId.topLevel(it)
             val markedDeclarations = annotationsResolver.declarationsByAnnotation(annotationId)
 
-            targetCjFile in markedDeclarations
+            markedDeclarations.any { declaration ->
+                declaration == targetCjFile || declaration.containingFile == targetCjFile
+            }
         }
     }
 
@@ -156,7 +167,7 @@ internal class LLCfirIdePredicateBasedProvider(
         }
 
         private val CfirDeclaration.directParentDeclaration: CfirDeclaration?
-            get() = getOwnersOfDeclaration(this)?.lastOrNull()?.fir
+            get() = getOwnersOfDeclaration(this)?.lastOrNull()?.cfir
     }
 
     private fun CfirDeclaration.anyDirectChildDeclarationMatches(childPredicate: DeclarationPredicate): Boolean {
@@ -174,7 +185,7 @@ internal class LLCfirIdePredicateBasedProvider(
 
         val firResolvedAnnotations = declaration.annotations
             .asSequence()
-            .mapNotNull { it.annotationTypeRef as? CfirResolvedTypeRef }
+            .mapNotNull { it.typeRef as? CfirResolvedTypeRef }
             .mapNotNull { it.coneType.classId }
             .map { it.asSingleFqName() }
             .toSet()
@@ -188,7 +199,38 @@ internal class LLCfirIdePredicateBasedProvider(
     }
 
     private fun annotationsOnOuterDeclarations(declaration: CfirDeclaration): Set<AnnotationFqn> {
-        return getOwnersOfDeclaration(declaration)?.flatMap { annotationsOnDeclaration(it.fir) }.orEmpty().toSet()
+        return getOwnersOfDeclaration(declaration)?.flatMap { annotationsOnDeclaration(it.cfir) }.orEmpty().toSet()
+    }
+}
+
+private fun CfirAnnotation.markedWithMetaAnnotation(
+    session: LLCfirSession,
+    containingDeclaration: CfirDeclaration,
+    metaAnnotations: Set<AnnotationFqn>,
+    includeItself: Boolean,
+): Boolean {
+    containingDeclaration.symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+    val annotationType = (typeRef as? CfirResolvedTypeRef)?.coneType ?: return false
+    val annotationSymbol = annotationType.toSymbol(session) as? CfirClassSymbol ?: return false
+    return annotationSymbol.markedWithMetaAnnotation(session, metaAnnotations, includeItself, mutableSetOf())
+}
+
+private fun CfirClassSymbol.markedWithMetaAnnotation(
+    session: LLCfirSession,
+    metaAnnotations: Set<AnnotationFqn>,
+    includeItself: Boolean,
+    visited: MutableSet<CfirClassSymbol>,
+): Boolean {
+    if (!visited.add(this)) return false
+
+    val annotationFqName = classId.asSingleFqName()
+    if (annotationFqName in metaAnnotations) return includeItself
+
+    lazyResolveToPhase(CfirResolvePhase.TYPES)
+    return cfir.annotations.any { annotation ->
+        val nestedAnnotationType = (annotation.typeRef as? CfirResolvedTypeRef)?.coneType ?: return@any false
+        val nestedAnnotationSymbol = nestedAnnotationType.toSymbol(session) as? CfirClassSymbol ?: return@any false
+        nestedAnnotationSymbol.markedWithMetaAnnotation(session, metaAnnotations, includeItself = true, visited)
     }
 }
 

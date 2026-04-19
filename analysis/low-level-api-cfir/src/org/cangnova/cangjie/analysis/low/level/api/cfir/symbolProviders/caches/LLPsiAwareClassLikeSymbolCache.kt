@@ -14,8 +14,8 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.hasPsi
 import org.cangnova.cangjie.cfir.caches.CfirCache
 import org.cangnova.cangjie.cfir.caches.CfirCacheInternals
-import org.cangnova.cangjie.cfir.caches.firCachesFactory
-import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.caches.cfirCachesFactory
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
 
@@ -46,10 +46,10 @@ internal open class LLPsiAwareClassLikeSymbolCache<E : PsiElement, V : CfirClass
         computeSymbolByClassId: (ClassId, CONTEXT) -> V,
         computeSymbolByPsi: (E, CONTEXT) -> V,
     ) : this(
-        session.firCachesFactory.createCache<ClassId, V, CONTEXT> { classId, context ->
+        session.cfirCachesFactory.createCache<ClassId, V, CONTEXT> { classId, context ->
             computeSymbolByClassId(classId, context)
         },
-        session.firCachesFactory.createCache<E, V, CONTEXT> { declaration, context ->
+        session.cfirCachesFactory.createCache<E, V, CONTEXT> { declaration, context ->
             computeSymbolByPsi(declaration, context)
         },
     )

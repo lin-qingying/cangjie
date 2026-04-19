@@ -6,6 +6,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
 
 import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.isStable
@@ -31,6 +32,7 @@ internal class LLCfirSessionInvalidationEventPublisher(private val project: Proj
      *
      * Must be called in a write action.
      */
+    @OptIn(CaPlatformInterface::class)
     inline fun collectSessionsAndPublishInvalidationEvent(action: () -> Unit) {
         require(invalidatedModules == null) {
             "The set of invalidated modules should be `null` when `collectSessionsAndPublishInvalidationEvent` has just been called."

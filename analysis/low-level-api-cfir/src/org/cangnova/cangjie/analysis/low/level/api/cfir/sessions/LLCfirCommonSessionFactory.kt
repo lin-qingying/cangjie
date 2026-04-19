@@ -7,21 +7,17 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
-import org.cangnova.cangjie.analysis.api.platform.packages.createPackagePartProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories.LLLibrarySymbolProviderFactory
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.moduleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleWithDependenciesSymbolProvider
-import org.cangnova.cangjie.analyzer.common.CommonDefaultImportsProvider
 import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.deserialization.SingleModuleDataProvider
-import org.cangnova.cangjie.cfir.java.deserialization.OptionalAnnotationClassesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.resolve.providers.firProvider
 import org.cangnova.cangjie.cfir.scopes.CfirDefaultImportsProviderHolder
-import org.cangnova.cangjie.cfir.scopes.kotlinScopeProvider
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.utils.addIfNotNull
 
 @OptIn(SessionConfiguration::class)
@@ -73,7 +69,7 @@ internal class LLCfirCommonSessionFactory(project: Project) : LLCfirAbstractSess
                 LLModuleWithDependenciesSymbolProvider(
                     this,
                     providers = listOf(
-                        firProvider.symbolProvider,
+                        cfirProvider.symbolProvider,
                     ),
                     context.dependencyProvider,
                 )

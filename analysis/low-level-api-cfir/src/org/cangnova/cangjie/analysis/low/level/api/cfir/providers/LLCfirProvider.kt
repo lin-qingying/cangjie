@@ -1,8 +1,9 @@
-
+@file:OptIn(CaPlatformInterface::class)
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.providers
 
 import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProvider
@@ -26,6 +27,7 @@ import org.cangnova.cangjie.psi.CjClassLikeDeclaration
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 
 @ThreadSafeMutableState
+@OptIn(CaPlatformInterface::class)
 internal class LLCfirProvider(
     val session: LLCfirSession,
     private val moduleComponents: LLCfirModuleResolveComponents,

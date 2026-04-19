@@ -1,3 +1,5 @@
+@file:OptIn(CaPlatformInterface::class)
+
 /*
  * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
@@ -5,6 +7,7 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.providers
 
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieAnnotationsResolver
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.caches.*
@@ -13,7 +16,9 @@ import org.cangnova.cangjie.cfir.extensions.AbstractCfirRegisteredPluginAnnotati
 import org.cangnova.cangjie.cfir.extensions.AnnotationFqn
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
-import org.cangnova.cangjie.psi.CjClass
+import org.cangnova.cangjie.psi.CjBuiltInAnnotation
+import org.cangnova.cangjie.psi.CjClassLikeDeclaration
+import org.cangnova.cangjie.psi.CjFile
 
 internal class LLCfirIdeRegisteredPluginAnnotations(
     session: CfirSession,
@@ -50,9 +55,14 @@ internal class LLCfirIdeRegisteredPluginAnnotations(
 
         return annotatedDeclarations
             .asSequence()
-            .filterIsInstance<CjClass>()
-            .filter { it.isAnnotation() && it.isTopLevel() }
-            .mapNotNull { it.fqName }
+            .filterIsInstance<CjClassLikeDeclaration>()
+            .filter { declaration ->
+                declaration.parent is CjFile &&
+                    declaration.annotationEntries.any { annotation ->
+                        annotation.builtInAnnotation == CjBuiltInAnnotation.ANNOTATION
+                    }
+            }
+            .mapNotNull { it.getClassId()?.asSingleFqName() }
             .toSet()
     }
 
