@@ -6,7 +6,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 
 internal class FileStructureElementDiagnosticList(
     private val map: Map<PsiElement, List<CjPsiDiagnostic>>

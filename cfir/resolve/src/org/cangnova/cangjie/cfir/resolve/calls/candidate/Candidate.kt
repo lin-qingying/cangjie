@@ -377,8 +377,7 @@ class Candidate(
 
     private fun enumConstructorOwnerType(declaration: CfirEnumConstructor): ConeCangJieType? {
         val enumConstructorSymbol = symbol as? CfirEnumConstructorSymbol ?: return null
-        val ownerClassId = callInfo.session.symbolProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
-            ?: callInfo.session.cfirProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
+        val ownerClassId = callInfo.session.cfirProvider.getContainingClass(enumConstructorSymbol)?.classId
             ?: return null
         val ownerTypeArguments = enumConstructorTypeParameters(declaration).map { typeParameter ->
             ConeTypeProjection(ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag()))
@@ -389,8 +388,7 @@ class Candidate(
     private fun enumConstructorTypeParameters(declaration: CfirEnumConstructor): List<CfirTypeParameter> {
         if (declaration.typeParameters.isNotEmpty()) return declaration.typeParameters
         val enumConstructorSymbol = symbol as? CfirEnumConstructorSymbol ?: return emptyList()
-        val ownerClassId = callInfo.session.symbolProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
-            ?: callInfo.session.cfirProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
+        val ownerClassId = callInfo.session.cfirProvider.getContainingClass(enumConstructorSymbol)?.classId
             ?: return emptyList()
         val ownerDeclaration = callInfo.session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
             ?: return emptyList()

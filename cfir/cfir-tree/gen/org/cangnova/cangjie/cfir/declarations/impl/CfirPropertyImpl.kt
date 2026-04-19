@@ -32,14 +32,16 @@ class CfirPropertyImpl @CfirImplementationDetail constructor(
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
     override val isLocal: Boolean,
+    override var deprecationsProvider: DeprecationsProvider,
     override val dispatchReceiverType: ConeSimpleCangJieType?,
     override val symbol: CfirPropertySymbol,
     override var status: CfirDeclarationStatus,
     override val typeParameters: MutableList<CfirTypeParameter>,
     override var returnTypeRef: CfirTypeRef,
     override val name: Name,
-    override var getter: CfirFunction?,
-    override var setter: CfirFunction?,
+    override var getter: CfirPropertyAccessor?,
+    override var setter: CfirPropertyAccessor?,
+    override var bodyResolveState: CfirPropertyBodyResolveState,
 ) : CfirProperty() {
     override var controlFlowGraphReference: CfirControlFlowGraphReference? = null
 
@@ -102,6 +104,10 @@ class CfirPropertyImpl @CfirImplementationDetail constructor(
         annotations = newAnnotations.toMutableOrEmpty()
     }
 
+    override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider) {
+        deprecationsProvider = newDeprecationsProvider
+    }
+
     override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?) {
         controlFlowGraphReference = newControlFlowGraphReference
     }
@@ -112,5 +118,17 @@ class CfirPropertyImpl @CfirImplementationDetail constructor(
 
     override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef) {
         returnTypeRef = newReturnTypeRef
+    }
+
+    override fun replaceGetter(newGetter: CfirPropertyAccessor?) {
+        getter = newGetter
+    }
+
+    override fun replaceSetter(newSetter: CfirPropertyAccessor?) {
+        setter = newSetter
+    }
+
+    override fun replaceBodyResolveState(newBodyResolveState: CfirPropertyBodyResolveState) {
+        bodyResolveState = newBodyResolveState
     }
 }

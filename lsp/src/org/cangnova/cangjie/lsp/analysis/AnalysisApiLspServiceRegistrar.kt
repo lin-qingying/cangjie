@@ -9,7 +9,7 @@ import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissi
 import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.lsp.CangjieLspEnvironment
 
@@ -48,7 +48,7 @@ internal object AnalysisApiLspServiceRegistrar {
             AnalysisApiLspPermissionChecker::class.java,
         )
         project.registerService(
-            CaProjectStructureProvider::class.java,
+            CangJieProjectStructureProvider::class.java,
             AnalysisApiLspProjectStructureProvider::class.java,
         )
         project.registerService(

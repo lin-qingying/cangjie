@@ -1,4 +1,9 @@
-﻿package org.cangnova.cangjie.analysis.api.impl.base.projectStructure
+@file:OptIn(
+    org.cangnova.cangjie.analysis.api.CaImplementationDetail::class,
+    org.cangnova.cangjie.analysis.api.CaPlatformInterface::class,
+)
+
+package org.cangnova.cangjie.analysis.api.impl.base.projectStructure
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.OrderRootType
@@ -16,10 +21,13 @@ import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTra
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScope
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileResolutionMode
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryFallbackDependenciesModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
@@ -51,7 +59,7 @@ import java.util.concurrent.atomic.AtomicLong
  */
 class CaIdeProjectStructureState(
     private val project: Project,
-) : CaProjectStructureProvider, CaModuleProvider, CaContentScopeRefiner, CaModificationTracker, CaSessionInvalidationService {
+) : CangJieProjectStructureProvider, CaModuleProvider, CaContentScopeRefiner, CaModificationTracker, CaSessionInvalidationService, CaResolutionScopeProvider {
     private val psiManager = PsiManager.getInstance(project)
     private val projectFileIndex = ProjectFileIndex.getInstance(project)
     private val projectRootManager = ProjectRootManager.getInstance(project)
@@ -67,6 +75,7 @@ class CaIdeProjectStructureState(
     private val outsideContentModulesByPath = ConcurrentHashMap<String, CaIdeNotUnderContentRootModule>()
     @Volatile
     private var cachedSnapshotState: CachedSnapshotState? = null
+    private val resolutionScopeProvider = CaBaseResolutionScopeProvider()
 
     private val builtinsModule: CaIdeBuiltinsModule by lazy {
         CaIdeBuiltinsModule(project = project)
@@ -129,6 +138,10 @@ class CaIdeProjectStructureState(
 
     override fun getModuleModificationCount(module: CaModule): Long {
         return explicitModuleInvalidationCounts[module]?.get() ?: modificationCount
+    }
+
+    override fun getResolutionScope(module: CaModule): CaResolutionScope {
+        return resolutionScopeProvider.getResolutionScope(module)
     }
 
     override fun invalidate(modules: Set<CaModule>) {
@@ -719,6 +732,9 @@ private class CaIdeDanglingFileModule(
     override val psiRoots: List<PsiFileSystemItem>
         get() = listOf(item)
 
+    override val resolutionMode: CaDanglingFileResolutionMode
+        get() = CaDanglingFileResolutionMode.PREFER_SELF
+
     override val stableModuleName: String
         get() = "ide-dangling:$pathKey"
 
@@ -755,7 +771,7 @@ private class CaIdeNotUnderContentRootModule(
  */
 class CaIdeProjectStructureProvider(
     project: Project,
-) : CaProjectStructureProvider {
+) : CangJieProjectStructureProvider {
     private val state = project.getService(CaIdeProjectStructureState::class.java)
 
     override val snapshot: CaProjectStructureSnapshot
@@ -821,5 +837,21 @@ class CaIdeSessionInvalidationService(
 
     override fun invalidate(modules: Set<CaModule>) {
         state.invalidate(modules)
+    }
+}
+
+/**
+ * IDE 平台 resolution-scope 服务。
+ *
+ * 解析作用域的真相与模块图、内容范围一样都来自 [CaIdeProjectStructureState]，
+ * 这里保持与其它平台 service 一致的委托边界。
+ */
+class CaIdeResolutionScopeProvider(
+    project: Project,
+) : CaResolutionScopeProvider {
+    private val state = project.getService(CaIdeProjectStructureState::class.java)
+
+    override fun getResolutionScope(module: CaModule): CaResolutionScope {
+        return state.getResolutionScope(module)
     }
 }

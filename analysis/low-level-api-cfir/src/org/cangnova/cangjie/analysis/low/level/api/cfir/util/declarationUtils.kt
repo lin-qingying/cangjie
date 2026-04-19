@@ -5,14 +5,12 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 
-import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
-import org.cangnova.cangjie.analysis.api.projectStructure.copyOrigin
-import org.cangnova.cangjie.analysis.api.utils.errors.withPsiEntry
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.util.withPsiEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.containingDeclaration
@@ -20,22 +18,23 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLo
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.isAutonomousElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirFileBuilder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirProvider
-import org.cangnova.cangjie.analysis.utils.classId
+import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
-import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirClassSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.types.toRegularClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.*
-import org.cangnova.cangjie.psi.psiUtil.containingClassOrObject
-import org.cangnova.cangjie.util.OperatorNameConventions
+import org.cangnova.cangjie.psi.psiUtil.containingTypeStatement
+import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 
 internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(
@@ -59,10 +58,10 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(firFile: CfirFile, 
                 if (declaration is CjClassLikeDeclaration) {
                     declaration.findCfir(provider)
                 } else {
-                    val containingClassOrObject = declaration.containingClassOrObject
-                    val declarations = if (containingClassOrObject != null) {
-                        val containerClassCfir = containingClassOrObject.findCfir(provider) as? CfirRegularClass
-                        containerClassCfir?.declarations
+                    val containingTypeStatement = declaration.containingTypeStatement
+                    val declarations = if (containingTypeStatement != null) {
+                        val containerClassLikeCfir = containingTypeStatement.findCfir(provider) as? CfirClassLikeDeclaration
+                        containerClassLikeCfir?.declarations
                     } else {
                         firFile.declarations
                     }
@@ -107,7 +106,7 @@ internal fun CjElement.findSourceByTraversingWholeTree(
     val isDeclaration = this is CjDeclaration
     return CfirElementFinder.findElementIn(
         firFile,
-        canGoInside = { it is CfirRegularClass || it is CfirFunction || it is CfirProperty },
+        canGoInside = { it is CfirClassLikeDeclaration || it is CfirFunction || it is CfirProperty },
         predicate = { firDeclaration ->
             firDeclaration.psi == this || isDeclaration && firDeclaration.psi == originalDeclaration
         }
@@ -118,7 +117,7 @@ private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
     firDeclarationProvider: (CjDeclaration) -> CfirDeclaration?,
 ): CfirDeclaration? {
     val candidate = when (this) {
-        is CjClassOrObject,
+        is CjTypeStatement,
         is CjProperty,
         is CjNamedFunction,
         is CjConstructor<*>,
@@ -128,7 +127,7 @@ private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
         is CjPropertyAccessor -> {
             val firPropertyDeclaration = property.findSourceNonLocalCfirDeclarationByProvider(
                 firDeclarationProvider,
-            ) as? CfirVariable ?: return null
+            ) as? CfirProperty ?: return null
 
             if (isGetter) {
                 firPropertyDeclaration.getter
@@ -138,7 +137,7 @@ private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
         }
 
         is CjParameter -> {
-            val ownerDeclaration = ownerDeclaration ?: errorWithCfirSpecificEntries(
+            val ownerDeclaration = ownerFunction ?: errorWithCfirSpecificEntries(
                 "Containing declaration should be not null for ${CjParameter::class.simpleName}",
                 psi = this,
             )
@@ -168,12 +167,8 @@ private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
         else -> errorWithCfirSpecificEntries("Invalid container", psi = this)
     }
 
-    //property accessors for properties with delegation have CjFakeSourceElementKind.DelegatedPropertyAccessor kind
     return candidate?.takeIf { it.psi == this }
 }
-
-fun CfirAnonymousInitializer.containingClassIdOrNull(): ClassId? =
-    (containingDeclarationSymbol as? CfirClassSymbol<*>)?.classId
 
 val ORIGINAL_DECLARATION_KEY = com.intellij.openapi.util.Key<CjDeclaration>("ORIGINAL_DECLARATION_KEY")
 var CjDeclaration.originalDeclaration by UserDataProperty(ORIGINAL_DECLARATION_KEY)
@@ -201,7 +196,7 @@ val CfirFile.codeFragment: CfirCodeFragment
 val CfirDeclaration.isGeneratedDeclaration
     get() = realPsi == null
 
-internal inline fun CfirRegularClass.forEachDeclaration(action: (CfirDeclaration) -> Unit) {
+internal inline fun CfirClassLikeDeclaration.forEachDeclaration(action: (CfirDeclaration) -> Unit) {
     declarations.forEach(action)
 }
 
@@ -209,11 +204,11 @@ internal inline fun CfirFile.forEachDeclaration(action: (CfirDeclaration) -> Uni
     declarations.forEach(action)
 }
 
-internal val CfirDeclaration.isDeclarationContainer: Boolean get() = this is CfirRegularClass || this is CfirFile
+internal val CfirDeclaration.isDeclarationContainer: Boolean get() = this is CfirClassLikeDeclaration || this is CfirFile
 
 internal inline fun CfirDeclaration.forEachDeclaration(action: (CfirDeclaration) -> Unit) {
     when (this) {
-        is CfirRegularClass -> forEachDeclaration(action)
+        is CfirClassLikeDeclaration -> forEachDeclaration(action)
         is CfirFile -> forEachDeclaration(action)
         else -> errorWithCfirSpecificEntries("Unsupported declarations container", fir = this)
     }
@@ -228,7 +223,7 @@ internal inline fun CfirDeclaration.forEachDeclaration(action: (CfirDeclaration)
 internal val CfirElementWithResolveState.isPartialBodyResolvable: Boolean
     get() = when (this) {
         is CfirConstructor -> !isPrimary
-        is CfirNamedFunction, is CfirAnonymousInitializer -> true
+        is CfirNamedFunction -> true
         else -> false
     }
 
@@ -245,7 +240,6 @@ internal val CfirBlock.isPartialAnalyzable: Boolean
 internal val CfirElementWithResolveState.body: CfirBlock?
     get() = when (this) {
         is CfirFunction -> body
-        is CfirAnonymousInitializer -> body
         else -> null
     }
 
@@ -253,8 +247,8 @@ internal val CfirElementWithResolveState.body: CfirBlock?
  * Some "local" declarations are not local from the lazy resolution perspective.
  */
 internal val CfirCallableSymbol<*>.isLocalForLazyResolutionPurposes: Boolean
-    get() = when (fir.origin) {
-        else -> isLocal
+    get() = when (cfir.origin) {
+        else -> cfir.isLocal
     }
 
 val PsiElement.parentsWithSelfCodeFragmentAware: Sequence<PsiElement>
@@ -270,8 +264,9 @@ val PsiElement.parentsCodeFragmentAware: Sequence<PsiElement>
     get() = parentsWithSelfCodeFragmentAware.drop(1)
 
 internal fun <T : PsiElement> T.unwrapCopy(containingFile: PsiFile = this.containingFile): T? {
-    val originalFile = containingFile.copyOrigin
-        ?: (containingFile as? CjFile)?.analysisContext?.containingFile
+    val originalFile = (containingFile as? CjFile)?.originalCjFile
+        ?: containingFile.originalFile.takeUnless { it == containingFile }
+        ?: (containingFile as? CjFile)?.elementContext?.containingFile
         ?: return null
 
     return try {
@@ -283,19 +278,8 @@ internal fun <T : PsiElement> T.unwrapCopy(containingFile: PsiFile = this.contai
 }
 
 fun findStringPlusSymbol(session: CfirSession): CfirNamedFunctionSymbol? {
-    val stringClassSymbol = session.builtinTypes.stringType.toRegularClassSymbol(session)
-    return stringClassSymbol?.fir?.declarations?.singleOrNull {
+    val stringClassId = ClassId.topLevel(StandardNames.FqNames.stringFqName)
+    return session.symbolProvider.getClassLikeSymbolByClassId(stringClassId)?.cfir?.declarations?.singleOrNull {
         it is CfirNamedFunction && it.name == OperatorNameConventions.PLUS
     }?.symbol as? CfirNamedFunctionSymbol
 }
-
-internal fun PsiClass.classIdOrError(): ClassId =
-    classId
-        ?: errorWithAttachment("No classId for non-local class") {
-            withPsiEntry(
-                "psiClass",
-                this@classIdOrError,
-                KotlinProjectStructureProvider.getModule(project, this@classIdOrError, useSiteModule = null)
-            )
-            withEntry("qualifiedName", qualifiedName)
-        }

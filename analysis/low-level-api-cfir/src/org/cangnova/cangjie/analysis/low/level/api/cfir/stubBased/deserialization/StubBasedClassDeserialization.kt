@@ -96,7 +96,7 @@ private fun <S, T> T.calculateStub(): Stub where T : StubBasedPsiElementBase<in 
 
 internal fun deserializeClassToSymbol(
     classId: ClassId,
-    classOrObject: CjClassOrObject,
+    classOrObject: CjTypeStatement,
     symbol: CfirRegularClassSymbol,
     session: CfirSession,
     moduleData: CfirModuleData,
@@ -189,12 +189,12 @@ internal fun deserializeClassToSymbol(
                     )
                 )
                 is CjEnumEntry -> addDeclaration(memberDeserializer.loadEnumEntry(declaration, symbol, classId))
-                is CjClassOrObject,
+                is CjTypeStatement,
                 is CjTypeAlias
                     -> {
                     val name = declaration.name
-                        ?: errorWithAttachment("${if (declaration is CjClassOrObject) "Class" else "Typealias"} doesn't have name") {
-                            withPsiEntry(if (declaration is CjClassOrObject) "Class" else "Typealias", declaration)
+                        ?: errorWithAttachment("${if (declaration is CjTypeStatement) "Class" else "Typealias"} doesn't have name") {
+                            withPsiEntry(if (declaration is CjTypeStatement) "Class" else "Typealias", declaration)
                         }
 
                     val nestedClassId = classId.createNestedClassId(Name.identifier(name))
@@ -262,7 +262,7 @@ internal fun deserializeClassToSymbol(
     }
 }
 
-private fun CfirRegularClassBuilder.addCloneForEnumIfNeeded(classOrObject: CjClassOrObject, dispatchReceiver: ConeClassLikeType?) {
+private fun CfirRegularClassBuilder.addCloneForEnumIfNeeded(classOrObject: CjTypeStatement, dispatchReceiver: ConeClassLikeType?) {
     val hasCloneFunction = classOrObject.declarations
         .any { it is CjNamedFunction && it.name == "clone" && it.valueParameters.isEmpty() }
 

@@ -12,7 +12,7 @@ import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalida
 import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneAnalysisPermissionChecker
 import org.cangnova.cangjie.analysis.test.services.CaTestIdeAnalysisPermissionChecker
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModuleStructure
@@ -125,7 +125,7 @@ open class CaCfirConfiguredAnalysisApiTestConfigurator(
                     project.registerService(CaAnalysisPermissionChecker::class.java, CaStandaloneAnalysisPermissionChecker::class.java)
                 }
             }
-            project.registerService(CaProjectStructureProvider::class.java, CaTestProjectStructureProvider::class.java)
+            project.registerService(CangJieProjectStructureProvider::class.java, CaTestProjectStructureProvider::class.java)
             project.registerService(CaModuleProvider::class.java, CaTestModuleProvider::class.java)
             project.registerService(CaContentScopeRefiner::class.java, CaTestContentScopeRefiner::class.java)
             project.registerService(CaModificationTracker::class.java, CaTestModificationTracker::class.java)

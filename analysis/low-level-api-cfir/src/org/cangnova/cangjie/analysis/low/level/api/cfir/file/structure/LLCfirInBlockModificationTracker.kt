@@ -21,7 +21,7 @@ import org.cangnova.cangjie.psi.CjElement
  *
  * @see LLCfirDeclarationModificationService
  */
-@CaImplementationDetail
+
 class LLCfirInBlockModificationTracker : SimpleModificationTracker() {
     companion object {
         fun getInstance(project: Project): ModificationTracker = project.service<LLCfirInBlockModificationTracker>()

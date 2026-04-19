@@ -32,8 +32,8 @@ class CfirBlockImpl @CfirImplementationDetail constructor(
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirBlockImpl {
-        transformAnnotations(transformer, data)
         transformStatements(transformer, data)
+        transformOtherChildren(transformer, data)
         return this
     }
 
@@ -44,6 +44,11 @@ class CfirBlockImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformStatements(transformer: CfirTransformer<D>, data: D): CfirBlockImpl {
         statements.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformOtherChildren(transformer: CfirTransformer<D>, data: D): CfirBlockImpl {
+        transformAnnotations(transformer, data)
         return this
     }
 

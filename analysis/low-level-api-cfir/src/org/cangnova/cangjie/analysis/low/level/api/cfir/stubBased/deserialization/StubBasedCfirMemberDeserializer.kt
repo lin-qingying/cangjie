@@ -10,13 +10,10 @@ import org.cangnova.cangjie.descriptors.EffectiveVisibility
 import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.descriptors.Visibility
-import org.cangnova.cangjie.descriptors.annotations.AnnotationUseSiteTarget
 import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.declarations.impl.*
-import org.cangnova.cangjie.cfir.declarations.utils.hasBackingFieldAttr
-import org.cangnova.cangjie.cfir.declarations.utils.isDelegatedPropertyAttr
 import org.cangnova.cangjie.cfir.declarations.utils.sourceElement
 import org.cangnova.cangjie.cfir.deserialization.toLazyEffectiveVisibility
 import org.cangnova.cangjie.cfir.expressions.builder.buildExpressionStub
@@ -34,7 +31,6 @@ import org.cangnova.cangjie.cfir.utils.exceptions.withCfirSymbolEntry
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.*
 import org.cangnova.cangjie.psi.*
-import org.cangnova.cangjie.psi.stubs.impl.KotlinPropertyStubImpl
 import org.cangnova.cangjie.serialization.deserialization.descriptors.DeserializedContainerSource
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
@@ -105,7 +101,7 @@ internal class StubBasedCfirDeserializationContext(
 
         fun createForClass(
             classId: ClassId,
-            classOrObject: CjClassOrObject,
+            classOrObject: CjTypeStatement,
             moduleData: CfirModuleData,
             annotationDeserializer: StubBasedAnnotationDeserializer,
             containerSource: DeserializedContainerSource?,
@@ -217,10 +213,8 @@ internal class StubBasedCfirMemberDeserializer(
         classSymbol: CfirClassSymbol<*>?,
         returnTypeRef: CfirTypeRef,
         propertySymbol: CfirPropertySymbol,
-        propertySource: CjSourceElement?,
-        propertyStatus: CfirResolvedDeclarationStatusWithLazyEffectiveVisibility,
-    ): CfirPropertyAccessor {
-        val accessor = if (getter?.hasBody() == true) {
+    ): CfirPropertyAccessor? {
+        val accessor = if (getter != null) {
             buildPropertyAccessor {
                 source = CjRealPsiSourceElement(getter)
                 moduleData = c.moduleData
@@ -238,20 +232,7 @@ internal class StubBasedCfirMemberDeserializer(
                 this.propertySymbol = propertySymbol
             }
         } else {
-            @OptIn(CfirImplementationDetail::class)
-            CfirDefaultPropertyGetter(
-                source = propertySource?.fakeElement(CjFakeSourceElementKind.DefaultAccessor),
-                moduleData = c.moduleData,
-                origin = initialOrigin,
-                propertyTypeRef = returnTypeRef.copyWithNewSourceKind(CjFakeSourceElementKind.DefaultAccessor),
-                propertySymbol = propertySymbol,
-                status = CfirResolvedDeclarationStatusWithLazyEffectiveVisibility(
-                    visibility = propertyStatus.visibility,
-                    modality = propertyStatus.modality,
-                    lazyEffectiveVisibility = propertyStatus.lazyEffectiveVisibility,
-                ),
-                resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES,
-            )
+            return null
         }
 
         return accessor.apply {
@@ -270,10 +251,8 @@ internal class StubBasedCfirMemberDeserializer(
         returnTypeRef: CfirTypeRef,
         propertySymbol: CfirPropertySymbol,
         local: StubBasedCfirDeserializationContext,
-        propertySource: CjSourceElement?,
-        propertyStatus: CfirResolvedDeclarationStatusWithLazyEffectiveVisibility,
-    ): CfirPropertyAccessor {
-        val accessor = if (setter?.hasBody() == true) {
+    ): CfirPropertyAccessor? {
+        val accessor = if (setter != null) {
             buildPropertyAccessor {
                 source = CjRealPsiSourceElement(setter)
                 moduleData = c.moduleData
@@ -296,20 +275,7 @@ internal class StubBasedCfirMemberDeserializer(
                 this.propertySymbol = propertySymbol
             }
         } else {
-            @OptIn(CfirImplementationDetail::class)
-            CfirDefaultPropertySetter(
-                source = propertySource?.fakeElement(CjFakeSourceElementKind.DefaultAccessor),
-                moduleData = c.moduleData,
-                origin = initialOrigin,
-                propertyTypeRef = returnTypeRef.copyWithNewSourceKind(CjFakeSourceElementKind.DefaultAccessor),
-                propertySymbol = propertySymbol,
-                status = CfirResolvedDeclarationStatusWithLazyEffectiveVisibility(
-                    visibility = propertyStatus.visibility,
-                    modality = propertyStatus.modality,
-                    lazyEffectiveVisibility = propertyStatus.lazyEffectiveVisibility,
-                ),
-                resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES,
-            )
+            return null
         }
 
         return accessor.apply {
@@ -366,40 +332,22 @@ internal class StubBasedCfirMemberDeserializer(
             typeParameters += local.typeDeserializer.ownTypeParameters.map { it.fir }
             val allAnnotations = c.annotationDeserializer.loadAnnotations(property)
             annotations += allAnnotations.filter { it.useSiteTarget == null }
-            val backingFieldAnnotations = allAnnotations.filter {
-                it.useSiteTarget == AnnotationUseSiteTarget.FIELD || it.useSiteTarget == AnnotationUseSiteTarget.PROPERTY_DELEGATE_FIELD
-            }
-
-            backingField = CfirDefaultPropertyBackingField(
-                c.moduleData,
-                initialOrigin,
-                source = property.toCjPsiSourceElement(CjFakeSourceElementKind.DefaultAccessor),
-                backingFieldAnnotations.toMutableList(),
-                returnTypeRef.copyWithNewSourceKind(CjFakeSourceElementKind.DefaultAccessor),
-                isVar,
-                symbol,
-                status,
-            )
 
             this.getter = loadPropertyGetter(
                 getter = property.getter,
                 classSymbol = classSymbol,
                 returnTypeRef = returnTypeRef,
                 propertySymbol = symbol,
-                propertySource = source,
-                propertyStatus = resolvedStatus,
             )
 
             val setter = property.setter
-            this.setter = if (setter != null || isVar) {
+            this.setter = if (setter != null) {
                 loadPropertySetter(
                     setter = setter,
                     classSymbol = classSymbol,
                     returnTypeRef = returnTypeRef,
                     propertySymbol = symbol,
                     local = local,
-                    propertySource = source,
-                    propertyStatus = resolvedStatus,
                 )
             } else {
                 null
@@ -412,12 +360,6 @@ internal class StubBasedCfirMemberDeserializer(
             )
 
         }.apply {
-            val propertyStub: KotlinPropertyStubImpl = property.compiledStub
-            propertyStub.hasBackingField?.let { hasBackingField ->
-                @OptIn(CfirImplementationDetail::class)
-                hasBackingFieldAttr = hasBackingField
-            }
-
             setLazyPublishedVisibility(c.session)
 
             this.getter?.setLazyPublishedVisibility(annotations, this, c.session)
@@ -476,7 +418,7 @@ internal class StubBasedCfirMemberDeserializer(
     @OptIn(SuspiciousFakeSourceCheck::class)
     fun loadConstructor(
         constructor: CjConstructor<*>,
-        classOrObject: CjClassOrObject,
+        classOrObject: CjTypeStatement,
         classBuilder: CfirRegularClassBuilder,
     ): CfirConstructor {
         val relativeClassName = c.relativeClassName!!

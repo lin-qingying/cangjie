@@ -267,6 +267,18 @@ data class ConeNoMatchingInvokeOperatorError(
 // ════════════════════════════════════════════════════════════════
 
 /**
+ * 包名不能独立作为引用使用。
+ *
+ * 对齐 C++ sema_cannot_ref_to_pkg_name:引用解析到一个包路径(不是包内声明),
+ * 则视作裸包引用,不允许作为值/类型使用。
+ */
+data class ConeCannotRefToPackageNameError(
+    val packageFqName: org.cangnova.cangjie.name.FqName,
+) : ConeDiagnostic {
+    override val reason: String get() = "package name '$packageFqName' cannot be referred independently"
+}
+
+/**
  * 泛型类型替换不一致。
  *
  * 对齐 C++ sema_generic_type_inconsistent。

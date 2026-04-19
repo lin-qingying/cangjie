@@ -163,6 +163,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(file)
     }
 
+    final override fun visitCodeFragment(codeFragment: CfirCodeFragment, data: Nothing?) {
+        visitCodeFragment(codeFragment)
+    }
+
+    open fun visitCodeFragment(codeFragment: CfirCodeFragment) {
+        visitElement(codeFragment)
+    }
+
     final override fun visitClass(klass: CfirClass, data: Nothing?) {
         visitClass(klass)
     }
@@ -283,6 +291,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(property)
     }
 
+    final override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor, data: Nothing?) {
+        visitPropertyAccessor(propertyAccessor)
+    }
+
+    open fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor) {
+        visitElement(propertyAccessor)
+    }
+
     final override fun visitVariable(variable: CfirVariable, data: Nothing?) {
         visitVariable(variable)
     }
@@ -395,6 +411,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(namedReferenceWithCandidateBase)
     }
 
+    final override fun visitErrorPrimaryConstructor(errorPrimaryConstructor: CfirErrorPrimaryConstructor, data: Nothing?) {
+        visitErrorPrimaryConstructor(errorPrimaryConstructor)
+    }
+
+    open fun visitErrorPrimaryConstructor(errorPrimaryConstructor: CfirErrorPrimaryConstructor) {
+        visitElement(errorPrimaryConstructor)
+    }
+
     final override fun visitFunctionCall(functionCall: CfirFunctionCall, data: Nothing?) {
         visitFunctionCall(functionCall)
     }
@@ -417,6 +441,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitArgumentList(argumentList: CfirArgumentList) {
         visitElement(argumentList)
+    }
+
+    final override fun visitInoutArgumentExpression(inoutArgumentExpression: CfirInoutArgumentExpression, data: Nothing?) {
+        visitInoutArgumentExpression(inoutArgumentExpression)
+    }
+
+    open fun visitInoutArgumentExpression(inoutArgumentExpression: CfirInoutArgumentExpression) {
+        visitElement(inoutArgumentExpression)
     }
 
     final override fun visitCall(call: CfirCall, data: Nothing?) {

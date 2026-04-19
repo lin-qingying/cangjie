@@ -6,12 +6,12 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
-import org.cangnova.cangjie.analysis.api.utils.errors.withPsiEntry
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.util.withPsiEntry
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.types.ConeKotlinType
-import org.cangnova.cangjie.cfir.utils.exceptions.withConeTypeEntry
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.withConeTypeEntry
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
 import org.cangnova.cangjie.utils.exceptions.buildErrorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
@@ -22,7 +22,7 @@ fun errorWithCfirSpecificEntries(
     message: String,
     cause: Exception? = null,
     fir: CfirElement? = null,
-    coneType: ConeKotlinType? = null,
+    coneType: ConeCangJieType? = null,
     psi: PsiElement? = null,
     additionalInfos: ExceptionAttachmentBuilder.() -> Unit = {},
 ): Nothing {
@@ -33,7 +33,7 @@ fun buildErrorWithCfirSpecificEntries(
     message: String,
     cause: Exception? = null,
     fir: CfirElement? = null,
-    coneType: ConeKotlinType? = null,
+    coneType: ConeCangJieType? = null,
     psi: PsiElement? = null,
     additionalInfos: ExceptionAttachmentBuilder.() -> Unit = {},
 ): Throwable =
@@ -43,7 +43,7 @@ fun buildErrorWithCfirSpecificEntries(
         }
 
         if (psi != null) {
-            withPsiEntry("psi", psi, KotlinProjectStructureProvider.getModule(psi.project, psi, useSiteModule = null))
+            withPsiEntry("psi", psi, CangJieProjectStructureProvider.getModule(psi.project, psi, useSiteModule = null))
         }
 
         if (coneType != null) {

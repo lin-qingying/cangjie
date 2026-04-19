@@ -32,6 +32,7 @@ class CfirPatternBindingVariableImpl @CfirImplementationDetail constructor(
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
     override val isLocal: Boolean,
+    override var deprecationsProvider: DeprecationsProvider,
     override val dispatchReceiverType: ConeSimpleCangJieType?,
     override var status: CfirDeclarationStatus,
     override var initializer: CfirExpression?,
@@ -92,8 +93,16 @@ class CfirPatternBindingVariableImpl @CfirImplementationDetail constructor(
         annotations = newAnnotations.toMutableOrEmpty()
     }
 
+    override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider) {
+        deprecationsProvider = newDeprecationsProvider
+    }
+
     override fun replaceStatus(newStatus: CfirDeclarationStatus) {
         status = newStatus
+    }
+
+    override fun replaceInitializer(newInitializer: CfirExpression?) {
+        initializer = newInitializer
     }
 
     override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef) {

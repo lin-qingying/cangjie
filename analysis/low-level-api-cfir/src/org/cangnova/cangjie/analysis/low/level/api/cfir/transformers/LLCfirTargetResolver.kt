@@ -21,15 +21,14 @@ import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.canHaveDeferredReturnTypeCalculation
 import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.declarations.utils.componentFunctionSymbol
-import org.cangnova.cangjie.cfir.declarations.utils.correspondingValueParameterFromPrimaryConstructor
 import org.cangnova.cangjie.cfir.originalIfFakeOverrideOrDelegated
-import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
-import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 /**
  * This class represents the resolver for each [CfirResolvePhase].
@@ -42,7 +41,7 @@ import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
  * we cannot transform class member declaration under the class lock – we have to take the corresponding declaration lock
  * to avoid concurrent issues.
  *
- * So, at least we have a different implementation for transformations of such declarations as [CfirFile], [CfirScript] and [CfirRegularClass].
+ * So, at least we have a different implementation for transformations of such declarations as [CfirFile], [CfirScript] and [CfirClass].
  *
  * Due to lazy resolution, we have to maintain the resolution order explicitly in some cases as we are not guaranteed by default that all
  * dependencies or outer declarations are resolved before the target one.
@@ -50,16 +49,12 @@ import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
  * Also, each [LLCfirResolveTarget] can define phase-specific rules.
  *
  * Implementations:
- * - [COMPILER_REQUIRED_ANNOTATIONS][CfirResolvePhase.COMPILER_REQUIRED_ANNOTATIONS] – [LLCfirCompilerRequiredAnnotationsTargetResolver]
- * - [COMPANION_GENERATION][CfirResolvePhase.COMPANION_GENERATION] – [LLCfirCompanionGenerationTargetResolver]
+ * - [MACRO_EXPAND][CfirResolvePhase.MACRO_EXPAND] – [LLCfirMacroExpandLazyResolver]
  * - [SUPER_TYPES][CfirResolvePhase.SUPER_TYPES] – [LLCfirSuperTypeTargetResolver]
- * - [SEALED_CLASS_INHERITORS][CfirResolvePhase.SEALED_CLASS_INHERITORS] – [LLCfirSealedClassInheritorsLazyResolver]
  * - [TYPES][CfirResolvePhase.TYPES] – [LLCfirTypeTargetResolver]
  * - [STATUS][CfirResolvePhase.STATUS] – [LLCfirStatusTargetResolver]
- * - [EXPECT_ACTUAL_MATCHING][CfirResolvePhase.EXPECT_ACTUAL_MATCHING] – [LLCfirExpectActualMatchingTargetResolver]
- * - [IMPLICIT_TYPES_BODY_RESOLVE][CfirResolvePhase.IMPLICIT_TYPES_BODY_RESOLVE] – [LLCfirImplicitBodyTargetResolver]
- * - [CONSTANT_EVALUATION][CfirResolvePhase.CONSTANT_EVALUATION] - [LLCfirConstantEvaluationTargetResolver]
- * - [ANNOTATION_ARGUMENTS][CfirResolvePhase.ANNOTATION_ARGUMENTS] – [LLCfirAnnotationArgumentsTargetResolver]
+ * - [EXTENSIONS][CfirResolvePhase.EXTENSIONS] – [LLCfirExtensionsTargetResolver]
+ * - [IMPLICIT_TYPES][CfirResolvePhase.IMPLICIT_TYPES] – [LLCfirImplicitBodyTargetResolver]
  * - [BODY_RESOLVE][CfirResolvePhase.BODY_RESOLVE] – [LLCfirBodyTargetResolver]
  *
  * @see LLCfirLockProvider
@@ -81,7 +76,7 @@ internal sealed class LLCfirTargetResolver(
      * @param context used as a context in the case of exception
      * @return the last class from [containingDeclarations]
      */
-    fun containingClass(context: CfirDeclaration): CfirRegularClass {
+    fun containingClass(context: CfirDeclaration): CfirClass {
         val containingDeclaration = containingDeclarations.lastOrNull() ?: errorWithAttachment("Containing declaration is not found") {
             withCfirEntry("context", context)
             withCfirDesignationEntry("designation", resolveTarget.designation)
@@ -90,8 +85,8 @@ internal sealed class LLCfirTargetResolver(
         }
 
         requireWithAttachment(
-            containingDeclaration is CfirRegularClass,
-            { "${CfirRegularClass::class.simpleName} expected, but ${containingDeclaration::class.simpleName} found" },
+            containingDeclaration is CfirClass,
+            { "${CfirClass::class.simpleName} expected, but ${containingDeclaration::class.simpleName} found" },
         ) {
             withCfirEntry("context", context)
             withCfirDesignationEntry("designation", resolveTarget.designation)
@@ -167,15 +162,15 @@ internal sealed class LLCfirTargetResolver(
         action()
     }
 
-    @Deprecated("Should never be called directly, only for override purposes, please use withRegularClass", level = DeprecationLevel.ERROR)
-    protected open fun withContainingRegularClass(firClass: CfirRegularClass, action: () -> Unit) {
+    @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
+    protected open fun withContainingClass(firClass: CfirClass, action: () -> Unit) {
         action()
     }
 
-    final override fun withRegularClass(firClass: CfirRegularClass, action: () -> Unit) {
+    final override fun withClass(firClass: CfirClass, action: () -> Unit) {
         withContainingDeclaration(firClass) {
             @Suppress("DEPRECATION_ERROR")
-            withContainingRegularClass(firClass, action)
+            withContainingClass(firClass, action)
         }
     }
 
@@ -189,7 +184,7 @@ internal sealed class LLCfirTargetResolver(
      * This method can be useful to resolve some dependencies (like [resolveDependencies] in general),
      * but with some phase-specific rules.
      *
-     * For instance, to pre-resolve [CfirRegularClass] members before the class itself as it is required
+     * For instance, to pre-resolve [CfirClass] members before the class itself as it is required
      * to build the [CFG][org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph].
      *
      * @return **true** if [performCustomResolveUnderLock] has been called
@@ -319,3 +314,12 @@ internal sealed class LLCfirTargetResolver(
         }
     }
 }
+
+private val CfirProperty.correspondingValueParameterFromPrimaryConstructor: CfirValueParameter?
+    get() {
+        val ownerClass = symbol.callableId.classId?.let(moduleData.session.symbolProvider::getClassLikeSymbolByClassId)?.cfir as? CfirClass
+            ?: return null
+        val primaryConstructor = ownerClass.declarations.firstOrNull { it is CfirConstructor && it.isPrimary } as? CfirConstructor
+            ?: return null
+        return primaryConstructor.valueParameters.firstOrNull { it.correspondingProperty === this }
+    }

@@ -7,13 +7,13 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
-import org.cangnova.cangjie.cfir.BuiltinTypes
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
+import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 
 internal class LLCfirSourcesSession @PrivateSessionConstructor constructor(
     ktModule: CaSourceModule,
     override val moduleComponents: LLCfirModuleResolveComponents,
-    builtinTypes: BuiltinTypes,
+    builtinTypes: CfirBuiltinTypes,
     computeDependencies: () -> List<LLCfirSession>,
 ) : LLCfirResolvableModuleSession(ktModule, builtinTypes) {
     /**

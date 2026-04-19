@@ -16,8 +16,8 @@ import org.cangnova.cangjie.analysis.api.platform.modification.KotlinGlobalSourc
 import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModificationEvent
 import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModuleOutOfBlockModificationEvent
 import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModuleStateModificationEvent
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinAnchorModuleProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinModuleDependentsProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieAnchorModuleProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieModuleDependentsProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirBuiltinsSessionFactory
@@ -104,7 +104,7 @@ class LLCfirSessionCacheStorageInvalidator(
             // the root session, so they effectively don't depend on the root session at that moment and don't need to be invalidated.
             if (!didSessionExist) return@collectSessionsAndPublishInvalidationEvent
 
-            KotlinModuleDependentsProvider.getInstance(project)
+            CangJieModuleDependentsProvider.getInstance(project)
                 .getTransitiveDependents(module)
                 .forEach(::invalidateDependent)
 
@@ -183,7 +183,7 @@ class LLCfirSessionCacheStorageInvalidator(
                     //
                     // Invalidating anchor modules before all source sessions has the advantage that `invalidate`'s session existence check will
                     // work, so we do not have to invalidate dependent sessions if the anchor module does not exist in the first place.
-                    val anchorModules = KotlinAnchorModuleProvider.getInstance(project)?.getAllAnchorModulesIfComputed()
+                    val anchorModules = CangJieAnchorModuleProvider.getInstance(project)?.getAllAnchorModulesIfComputed()
                     anchorModules?.forEach { anchorModule ->
                         independently { invalidate(anchorModule) }
                     }

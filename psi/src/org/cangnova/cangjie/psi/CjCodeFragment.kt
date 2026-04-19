@@ -27,6 +27,7 @@ package org.cangnova.cangjie.psi
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.psi.psiUtil.getElementTextWithContext
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.mock.MockProject
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.psi.*
@@ -35,6 +36,7 @@ import com.intellij.psi.impl.source.tree.FileElement
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.tree.IElementType
 import com.intellij.testFramework.LightVirtualFile
+import com.intellij.util.messages.Topic
 import java.util.LinkedHashSet
 
 abstract class CjCodeFragment(
@@ -91,24 +93,12 @@ abstract class CjCodeFragment(
         return hasNewImports
     }
 
-    fun addImportsFromString(imports: String?) {
-        if (imports.isNullOrEmpty()) return
-
-        imports.split(IMPORT_SEPARATOR).forEach {
-            addImportsFromString(it)
-        }
-
-        // we need this code to force re-highlighting, otherwise it does not work by some reason
-        val tempElement = CjPsiFactory(project).createColon()
-        add(tempElement).delete()
-    }
-
     init {
         @Suppress("LeakingThis")
         getViewProvider().forceCachedPsi(this)
         init(TokenType.CODE_FRAGMENT, elementType)
-        if (context != null) {
-            initImports(imports)
+        if (imports != null) {
+            appendImports(imports)
         }
     }
 
@@ -177,6 +167,25 @@ abstract class CjCodeFragment(
 
     final override fun getViewProvider() = viewProvider
 
+    fun addImportsFromString(imports: String?) {
+        val notifyChanged = viewProvider.isEventSystemEnabled && project !is MockProject
+
+        if (imports != null && appendImports(imports)) {
+            if (notifyChanged) {
+                // This forces the code fragment to be re-highlighted.
+                add(CjPsiFactory(project).createColon()).delete()
+            }
+
+            clearCaches()
+
+            if (notifyChanged) {
+                project.messageBus
+                    .syncPublisher(IMPORT_MODIFICATION)
+                    .onCodeFragmentImportsModification(this)
+            }
+        }
+    }
+
     @Deprecated(
         "Use 'addImportsFromString()w' instead",
         ReplaceWith("addImportsFromString(import)"),
@@ -212,18 +221,12 @@ abstract class CjCodeFragment(
         return contextElement
     }
 
-    private fun initImports(imports: String?) {
-        if (imports != null && imports.isNotEmpty()) {
-            val importsWithPrefix =
-                imports.split(IMPORT_SEPARATOR).map { it.takeIf { it.startsWith("import ") } ?: "import ${it.trim()}" }
-            importsWithPrefix.forEach {
-                addImportsFromString(it)
-            }
-        }
-    }
-
     companion object {
         const val IMPORT_SEPARATOR: String = ","
+
+        @Suppress("UnstableApiUsage")
+        val IMPORT_MODIFICATION: Topic<CangJieCodeFragmentImportModificationListener> =
+            Topic(CangJieCodeFragmentImportModificationListener::class.java, Topic.BroadcastDirection.TO_CHILDREN, true)
 
         val FAKE_CONTEXT_FOR_JAVA_FILE: Key<Function0<CjElement>> = Key.create("FAKE_CONTEXT_FOR_JAVA_FILE")
 
@@ -241,4 +244,8 @@ abstract class CjCodeFragment(
             )
         }
     }
+}
+
+fun interface CangJieCodeFragmentImportModificationListener {
+    fun onCodeFragmentImportsModification(codeFragment: CjCodeFragment)
 }

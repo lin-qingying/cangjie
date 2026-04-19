@@ -9,8 +9,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirReplSnippetSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -19,14 +18,13 @@ internal class LLCfirLibrarySessionProvider(
     override val symbolProvider: CfirSymbolProvider
 ) : CfirProvider() {
     override fun getCfirClassifierByFqName(classId: ClassId): CfirClassLikeDeclaration? {
-        return symbolProvider.getClassLikeSymbolByClassId(classId)?.fir
+        return symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
     }
 
     override fun getCfirClassifierContainerFile(fqName: ClassId): CfirFile = shouldNotBeCalled()
 
     override fun getCfirClassifierContainerFileIfAny(fqName: ClassId): CfirFile? = null
     override fun getCfirCallableContainerFile(symbol: CfirCallableSymbol<*>): CfirFile? = null
-    override fun getCfirReplSnippetContainerFile(symbol: CfirReplSnippetSymbol): CfirFile? = null
     override fun getCfirFilesByPackage(fqName: FqName): List<CfirFile> = emptyList()
 
     override fun getClassNamesInPackage(fqName: FqName): Set<Name> = shouldNotBeCalled()

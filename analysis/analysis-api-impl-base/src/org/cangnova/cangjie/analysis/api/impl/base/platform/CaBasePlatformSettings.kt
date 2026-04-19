@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.api.impl.base.platform
 
+import org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 
 /**
@@ -9,4 +10,7 @@ import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
  * 允许库模块作为 use-site 模块参与分析。后续在模块分层对齐 Kotlin 后，
  * 再由更具体的平台实现覆盖该策略。
  */
-internal class CaBasePlatformSettings : CaPlatformSettings
+internal class CaBasePlatformSettings : CaPlatformSettings {
+    override val deserializedDeclarationsOrigin: CaDeserializedDeclarationsOrigin
+        get() = CaDeserializedDeclarationsOrigin.STUBS
+}

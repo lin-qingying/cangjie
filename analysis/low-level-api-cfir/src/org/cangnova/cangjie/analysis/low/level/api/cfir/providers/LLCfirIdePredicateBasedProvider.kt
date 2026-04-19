@@ -11,12 +11,12 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getResolutionFacade
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.getContainingFile
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
-import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinAnnotationsResolver
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieAnnotationsResolver
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.caches.CfirCache
+import org.cangnova.cangjie.cfir.caches.cfirCachesFactory
 import org.cangnova.cangjie.cfir.caches.createCache
-import org.cangnova.cangjie.cfir.caches.firCachesFactory
 import org.cangnova.cangjie.cfir.caches.getValue
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -41,15 +41,15 @@ import org.cangnova.cangjie.psi.*
  */
 internal class LLCfirIdePredicateBasedProvider(
     private val session: LLCfirSession,
-    private val annotationsResolver: KotlinAnnotationsResolver,
+    private val annotationsResolver: CangJieAnnotationsResolver,
 ) : CfirPredicateBasedProvider() {
-    private val projectStructureProvider by lazy { KotlinProjectStructureProvider.getInstance(session.project) }
+    private val projectStructureProvider by lazy { CangJieProjectStructureProvider.getInstance(session.project) }
 
     private val registeredPluginAnnotations: CfirRegisteredPluginAnnotations
         get() = session.registeredPluginAnnotations
 
     private val declarationOwnersCache: CfirCache<CfirFile, CfirOwnersStorage, Nothing?> =
-        session.firCachesFactory.createCache { firFile -> CfirOwnersStorage.collectOwners(firFile) }
+        session.cfirCachesFactory.createCache { firFile -> CfirOwnersStorage.collectOwners(firFile) }
 
     override fun getSymbolsByPredicate(predicate: LookupPredicate): List<CfirBasedSymbol<*>> {
         val annotations = predicate.annotations

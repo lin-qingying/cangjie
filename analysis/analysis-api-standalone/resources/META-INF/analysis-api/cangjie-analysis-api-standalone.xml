@@ -18,7 +18,7 @@
         serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandalonePlatformSettings"
     />
     <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider"
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider"
         serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneProjectStructureProvider"
     />
     <projectService
@@ -28,6 +28,10 @@
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner"
         serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneContentScopeRefiner"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneResolutionScopeProvider"
     />
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker"

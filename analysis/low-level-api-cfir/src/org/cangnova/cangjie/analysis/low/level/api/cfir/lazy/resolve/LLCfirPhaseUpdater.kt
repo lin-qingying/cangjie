@@ -21,16 +21,14 @@ internal object LLCfirPhaseUpdater {
             when (target) {
                 is CfirVariable -> {
                     target.initializer?.accept(LocalElementPhaseUpdatingTransformer)
-                    target.delegate?.accept(LocalElementPhaseUpdatingTransformer)
-                    target.getter?.let(::updateFunctionBody)
-                    target.setter?.let(::updateFunctionBody)
-                    target.backingField?.initializer?.accept(LocalElementPhaseUpdatingTransformer)
                 }
 
+                is CfirProperty -> {
+                    target.getter?.let(::updateFunctionBody)
+                    target.setter?.let(::updateFunctionBody)
+                }
                 is CfirFunction -> updateFunctionBody(target)
-                is CfirAnonymousInitializer -> target.body?.accept(LocalElementPhaseUpdatingTransformer)
                 is CfirCodeFragment -> target.block.accept(LocalElementPhaseUpdatingTransformer)
-                is CfirDanglingModifierList -> target.acceptChildren(LocalElementPhaseUpdatingTransformer)
             }
         }
     }
@@ -54,16 +52,12 @@ internal object LLCfirPhaseUpdater {
 
     private fun updateDeclarationSignatureBody(target: CfirElementWithResolveState) {
         when (target) {
-            is CfirConstructor -> {
-                target.delegatedConstructor?.accept(LocalElementPhaseUpdatingTransformer)
-                updateFunctionSignatureBody(target)
-            }
-
+            is CfirConstructor -> updateFunctionSignatureBody(target)
             is CfirFunction -> {
                 updateFunctionSignatureBody(target)
             }
 
-            is CfirVariable -> {
+            is CfirProperty -> {
                 target.getter?.let(::updateFunctionSignatureBody)
                 target.setter?.let(::updateFunctionSignatureBody)
             }
@@ -96,17 +90,14 @@ internal object LLCfirPhaseUpdater {
         }
 
         when (element) {
-            is CfirRegularClass -> {
+            is CfirClass -> {
             }
             is CfirFunction -> {
                 element.valueParameters.forEach { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
-                element.receiverParameter?.let { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
             }
             is CfirProperty -> {
                 element.getter?.let { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
                 element.setter?.let { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
-                element.backingField?.let { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
-                element.receiverParameter?.let { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
             }
             else -> {}
         }

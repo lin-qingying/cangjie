@@ -18,6 +18,7 @@ import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
 import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.util.PrivateForInline
 
 internal class CfirStatusResolveProcessor(
     session: CfirSession,
@@ -71,8 +72,20 @@ class CfirStatusComputationSession(
 open class AbstractCfirStatusResolveTransformer(
     val statusComputationSession: CfirStatusComputationSession,
 ) : CfirAbstractTreeTransformer<Nothing?>(CfirResolvePhase.STATUS) {
+    @PrivateForInline
+    val classes: MutableList<CfirClass> = mutableListOf()
     override val session: CfirSession
         get() = statusComputationSession.useSiteSession
+    @OptIn(PrivateForInline::class)
+    inline fun storeClass(
+        klass: CfirClass,
+        computeResult: () -> CfirDeclaration
+    ): CfirDeclaration {
+        classes += klass
+        val result = computeResult()
+        classes.removeAt(classes.lastIndex)
+        return result
+    }
 
     override fun <E : CfirElement> transformElement(element: E, data: Nothing?): E {
         if (element is CfirDeclaration) {

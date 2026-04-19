@@ -3,28 +3,23 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.fir
+package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.cfir
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.ContextByDesignationCollector
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.collectDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.withCfirDesignationEntry
-import org.cangnova.cangjie.analysis.low.level.api.cfir.util.containingClassIdOrNull
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isLocalForLazyResolutionPurposes
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContextForProvider
 import org.cangnova.cangjie.cfir.analysis.collectors.AbstractDiagnosticCollectorVisitor
-import org.cangnova.cangjie.cfir.containingClass
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.declarations.utils.isLocal
-import org.cangnova.cangjie.cfir.resolve.getContainingClassSymbol
-import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 private class ContextCollectingDiagnosticCollectorVisitor private constructor(
     sessionHolder: SessionAndScopeSessionHolder,
@@ -75,10 +70,8 @@ internal object PersistenceContextCollector {
         declaration: CfirDeclaration,
     ): CheckerContextForProvider {
         val isLocal = when (declaration) {
-            is CfirClassLikeDeclaration -> declaration.symbol.isLocal
+            is CfirClassLikeDeclaration -> false
             is CfirCallableDeclaration -> declaration.symbol.isLocalForLazyResolutionPurposes
-            is CfirDanglingModifierList -> declaration.containingClass()?.toSymbol(sessionHolder.session)?.isLocal == true
-            is CfirAnonymousInitializer -> declaration.getContainingClassSymbol()?.isLocal == true
             is CfirCodeFragment -> false
             else -> errorWithAttachment("Unsupported declaration ${declaration::class}") {
                 withCfirEntry("declaration", declaration)

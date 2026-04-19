@@ -30,6 +30,10 @@ AnalysisApiSimpleServiceRegistrar.public final override fun registerApplicationS
 AnalysisApiSimpleServiceRegistrar.public final override fun registerProjectExtensionPoints(project: MockProject, data: Any)
 AnalysisApiSimpleServiceRegistrar.public final override fun registerProjectServices(project: MockProject, data: Any)
 AnalysisApiSimpleServiceRegistrar.public final override fun registerProjectModelServices(project: MockProject, disposable: Disposable, data: Any)
+## org/cangnova/cangjie/analysis/api/impl/base/projectStructure/CaBuiltinsModuleImpl.kt
+package org.cangnova.cangjie.analysis.api.impl.base.projectStructure
+public class CaBuiltinsModuleImpl( override val project: Project, override val targetPlatform: CaTargetPlatform = CaTargetPlatform.DEFAULT, ) : CaBuiltinsModule
+CaBuiltinsModuleImpl.public override val baseContentScope: GlobalSearchScope
 ## org/cangnova/cangjie/analysis/api/impl/base/projectStructure/CaIdeProjectStructure.kt
 package <root>
 public class CaIdeProjectStructureProvider( project: Project, ) : CaProjectStructureProvider

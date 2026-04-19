@@ -12,7 +12,7 @@ import com.intellij.psi.search.LocalSearchScope
 import com.intellij.psi.search.SearchScope
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.util.Processor
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.idea.references.CangJieReferenceSearchSupport
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.psi.CjFile
@@ -61,7 +61,7 @@ class CangJieReferencesSearchExecutor :
             }
 
             is GlobalSearchScope -> {
-                val sourceItems = target.project.getService(CaProjectStructureProvider::class.java)
+                val sourceItems = target.project.getService(CangJieProjectStructureProvider::class.java)
                     ?.snapshot
                     ?.allSourceFiles
                     .orEmpty()

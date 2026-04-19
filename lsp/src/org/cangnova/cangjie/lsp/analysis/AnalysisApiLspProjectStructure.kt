@@ -16,13 +16,14 @@ import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.CaSourceModule
 import org.cangnova.cangjie.analysis.api.CaTargetPlatform
 import org.cangnova.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry
+import org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
 import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
@@ -542,7 +543,7 @@ private fun buildSourceModuleContentScope(
 
 internal class AnalysisApiLspProjectStructureProvider(
     private val project: Project,
-) : CaProjectStructureProvider {
+) : CangJieProjectStructureProvider {
     private val state: AnalysisApiLspProjectStructureState
         get() = AnalysisApiLspProjectStructureState.getInstance(project)
 
@@ -655,6 +656,9 @@ internal class AnalysisApiLspRestrictedAnalysisService : CaRestrictedAnalysisSer
  * LSP 平台设置。
  */
 internal class AnalysisApiLspPlatformSettings : CaPlatformSettings {
+    override val deserializedDeclarationsOrigin: CaDeserializedDeclarationsOrigin
+        get() = CaDeserializedDeclarationsOrigin.STUBS
+
     override val allowUseSiteLibraryModuleAnalysis: Boolean
         get() = false
 }

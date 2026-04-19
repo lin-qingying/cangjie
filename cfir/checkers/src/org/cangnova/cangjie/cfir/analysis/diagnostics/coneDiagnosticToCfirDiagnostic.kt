@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferTypeParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
+import org.cangnova.cangjie.cfir.diagnostic.ConeCannotRefToPackageNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandIncompatibleTypeError
@@ -23,6 +24,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeEnumTypeCannotBeUsedAsConstructo
 import org.cangnova.cangjie.cfir.diagnostic.ConeEffectsFeatureDisabledError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionCallExpectedError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionExpectedError
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeImplicitResumeOutsideHandlerError
 import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingHandleBlockError
@@ -498,7 +500,7 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
         val extendOriginNames = candidateSymbols
             .mapNotNull { symbol ->
                 val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return@mapNotNull null
-                val containingClassId = session.symbolProvider.getContainingClassId(callableSymbol)
+                val containingClassId = session.cfirProvider.getContainingClass(callableSymbol)?.classId
                 containingClassId?.shortClassName
             }
         if (extendOriginNames.size >= 2) {
@@ -745,7 +747,7 @@ private fun ConeVisibilityError.mapConeVisibilityError(
         else -> "invisible"
     }
     val isMemberAccess = when (invisibleSymbol) {
-        is CfirCallableSymbol<*> -> session.symbolProvider.getContainingClassId(invisibleSymbol) != null
+        is CfirCallableSymbol<*> -> session.cfirProvider.getContainingClass(invisibleSymbol) != null
         else -> false
     }
 
@@ -915,6 +917,10 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
         )
 
         // ── resolve 管线补齐映射 ──
+
+        is ConeCannotRefToPackageNameError -> CfirErrors.CANNOT_REF_TO_PKG_NAME.on(
+            diagnosticSource, session,
+        )
 
         is ConeGenericTypeInconsistentError -> CfirErrors.GENERIC_TYPE_INCONSISTENT.on(
             diagnosticSource, typeParameterName, session,

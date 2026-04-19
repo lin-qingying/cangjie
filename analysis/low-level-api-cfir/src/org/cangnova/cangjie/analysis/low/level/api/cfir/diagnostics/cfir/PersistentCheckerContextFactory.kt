@@ -3,20 +3,21 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.fir
+package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.cfir
 
-import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.LLCfirReturnTypeCalculatorWithJump
-import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.LLImplicitBodyResolveComputationSession
-import org.cangnova.cangjie.cfir.analysis.checkers.context.PersistentCheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContextForProvider
+import org.cangnova.cangjie.cfir.analysis.checkers.context.MutableCheckerContext
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
+import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticCollector
+import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculatorForFullBodyResolve
 
 internal object PersistentCheckerContextFactory {
-    fun createEmptyPersistenceCheckerContext(sessionHolder: SessionAndScopeSessionHolder): PersistentCheckerContext {
-        val returnTypeCalculator = LLCfirReturnTypeCalculatorWithJump(
-            scopeSession = sessionHolder.scopeSession,
-            implicitBodyResolveComputationSession = LLImplicitBodyResolveComputationSession(),
+    fun createEmptyPersistenceCheckerContext(sessionHolder: SessionAndScopeSessionHolder): CheckerContextForProvider {
+        return MutableCheckerContext(
+            sessionHolder = sessionHolder,
+            returnTypeCalculator = ReturnTypeCalculatorForFullBodyResolve.Default,
+            reporter = CfirDiagnosticCollector(),
+            containingFileSymbol = null,
         )
-
-        return PersistentCheckerContext(sessionHolder, returnTypeCalculator)
     }
 }

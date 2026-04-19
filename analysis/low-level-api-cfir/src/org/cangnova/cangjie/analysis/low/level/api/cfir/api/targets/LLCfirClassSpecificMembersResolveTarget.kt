@@ -6,8 +6,8 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirRegularClass
 
 /**
  * Resolves [members] of [designation]. Ignores the class itself.
@@ -15,9 +15,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirRegularClass
 internal class LLCfirClassSpecificMembersResolveTarget(
     designation: CfirDesignation,
     val members: List<CfirDeclaration>,
-) : LLCfirRegularClassResolveTarget(designation) {
+) : LLCfirClassResolveTarget(designation) {
     override val visitClass: Boolean get() = false
-    override fun visitMembers(visitor: LLCfirResolveTargetVisitor, firRegularClass: CfirRegularClass) {
+    override fun visitMembers(visitor: LLCfirResolveTargetVisitor, firClass: CfirClass) {
         members.forEach(visitor::performAction)
     }
 

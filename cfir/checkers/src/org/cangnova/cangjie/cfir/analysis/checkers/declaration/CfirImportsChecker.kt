@@ -147,7 +147,7 @@ object CfirImportsChecker : CfirFileChecker() {
         val importedName = importedFqName.shortName()
         if (!packageFqName.isRoot && !symbolProvider.hasPackage(packageFqName)) return false
 
-        return symbolProvider.getTopLevelClassifierSymbols(packageFqName, importedName).isNotEmpty() ||
+        return symbolProvider.getClassLikeSymbolByClassId(org.cangnova.cangjie.name.ClassId(packageFqName, importedName)) != null ||
             symbolProvider.getTopLevelCallableSymbols(packageFqName, importedName).isNotEmpty()
     }
 

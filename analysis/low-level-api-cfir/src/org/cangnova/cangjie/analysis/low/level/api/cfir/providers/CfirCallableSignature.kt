@@ -9,13 +9,12 @@ import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.renderer.ConeAttributeRenderer
-import org.cangnova.cangjie.cfir.renderer.ConeIdFullRenderer
-import org.cangnova.cangjie.cfir.renderer.ConeTypeRenderer
+import org.cangnova.cangjie.cfir.render.ConeAttributeRenderer
+import org.cangnova.cangjie.cfir.render.ConeFullyQualifiedIdRenderer
+import org.cangnova.cangjie.cfir.render.ConeTypeRenderer
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
-import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
-import org.cangnova.cangjie.cfir.types.AbbreviatedTypeAttribute
 import org.cangnova.cangjie.cfir.types.ConeAttribute
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 
@@ -24,20 +23,17 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
  */
 @CaImplementationDetail
 class CfirCallableSignature private constructor(
-    private val receiverType: String?,
     private val parameters: List<String>?,
     private val typeParametersCount: Int,
     private val returnType: String,
 ) {
-    fun hasTheSameSignature(declaration: CfirCallableSymbol<*>): Boolean = hasTheSameSignature(declaration.fir)
+    fun hasTheSameSignature(declaration: CfirCallableSymbol<*>): Boolean = hasTheSameSignature(declaration.cfir)
 
     fun hasTheSameSignature(declaration: CfirCallableDeclaration): Boolean {
-        if ((receiverType == null) != (declaration.receiverParameter == null)) return false
         if (typeParametersCount != declaration.typeParameters.size) return false
         if (parameters?.size != (declaration as? CfirFunction)?.valueParameters?.size) return false
 
         declaration.lazyResolveToPhase(CfirResolvePhase.TYPES)
-        if (receiverType != declaration.receiverParameter?.typeRef?.renderType()) return false
 
         if (declaration is CfirFunction) {
             requireNotNull(parameters)
@@ -53,7 +49,6 @@ class CfirCallableSignature private constructor(
         if (this === other) return true
         if (other !is CfirCallableSignature) return false
 
-        if (receiverType != other.receiverType) return false
         if (parameters != other.parameters) return false
         if (typeParametersCount != other.typeParametersCount) return false
         return returnType == other.returnType
@@ -61,21 +56,19 @@ class CfirCallableSignature private constructor(
     }
 
     override fun hashCode(): Int {
-        var result = receiverType?.hashCode() ?: 0
-        result = 31 * result + parameters.hashCode()
+        var result = parameters.hashCode()
         result = 31 * result + typeParametersCount.hashCode()
         result = 31 * result + returnType.hashCode()
         return result
     }
 
     companion object {
-        fun createSignature(callableSymbol: CfirCallableSymbol<*>): CfirCallableSignature = createSignature(callableSymbol.fir)
+        fun createSignature(callableSymbol: CfirCallableSymbol<*>): CfirCallableSignature = createSignature(callableSymbol.cfir)
 
         fun createSignature(callableDeclaration: CfirCallableDeclaration): CfirCallableSignature {
             callableDeclaration.lazyResolveToPhase(CfirResolvePhase.TYPES)
 
             return CfirCallableSignature(
-                receiverType = callableDeclaration.receiverParameter?.typeRef?.renderType(),
                 parameters = if (callableDeclaration is CfirFunction) {
                     callableDeclaration.valueParameters.map { it.returnTypeRef.renderType() }
                 } else {
@@ -88,27 +81,28 @@ class CfirCallableSignature private constructor(
     }
 }
 
-private fun CfirTypeRef.renderType(builder: StringBuilder = StringBuilder()): String = CfirRenderer(
-    builder = builder,
-    annotationRenderer = null,
-    bodyRenderer = null,
-    callArgumentsRenderer = null,
-    classMemberRenderer = null,
-    contractRenderer = null,
-    declarationRenderer = null,
-    idRenderer = ConeIdFullRenderer(),
-    modifierRenderer = null,
-    packageDirectiveRenderer = null,
-    propertyAccessorRenderer = null,
-    resolvePhaseRenderer = null,
-    typeRenderer = ConeTypeRenderer(attributeRenderer = MinimalConeTypeAttributeRenderer),
-    callableSignatureRenderer = null,
-    errorExpressionRenderer = null,
-).renderElementAsString(this)
+private fun CfirTypeRef.renderType(builder: StringBuilder = StringBuilder()): String {
+    val typeRenderer = ConeTypeRenderer(attributeRenderer = MinimalConeTypeAttributeRenderer).apply {
+        idRenderer = ConeFullyQualifiedIdRenderer()
+    }
+    return CfirRenderer(
+        builder = builder,
+        annotationRenderer = null,
+        declarationRenderer = null,
+        packageDirectiveRenderer = null,
+        resolvePhaseRenderer = null,
+        errorExpressionRenderer = null,
+        typeRenderer = typeRenderer,
+        callableSignatureRenderer = null,
+        modifierRenderer = null,
+        inlineExpressionRenderer = null,
+        patternRenderer = null,
+    ).renderElementAsString(this)
+}
 
 private object MinimalConeTypeAttributeRenderer : ConeAttributeRenderer() {
     override fun render(attributes: Iterable<ConeAttribute<*>>): String =
         attributes.filter { it.isImportant }.let(ToString::render)
 
-    private val ConeAttribute<*>.isImportant get() = this is AbbreviatedTypeAttribute
+    private val ConeAttribute<*>.isImportant get() = false
 }

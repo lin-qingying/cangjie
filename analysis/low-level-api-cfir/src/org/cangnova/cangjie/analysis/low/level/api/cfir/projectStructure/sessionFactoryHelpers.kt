@@ -1,3 +1,5 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 /*
  * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
@@ -8,30 +10,30 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure
 import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.api.platform.declarations.createAnnotationResolver
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinCompilerPluginsProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieCompilerPluginsProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.analysis.low.level.api.cfir.caches.CfirThreadSafeCachesFactory
 import org.cangnova.cangjie.analysis.low.level.api.cfir.compile.CodeFragmentScopeProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCheckersFactory
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.*
+import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirPrivateVisibleFromDifferentModuleExtension
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
-import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.LLJumpingPhaseComputationSessionForLocalClassesProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.CfirElementFinder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLCfirExceptionHandler
-import org.cangnova.cangjie.config.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.caches.CfirCachesFactory
 import org.cangnova.cangjie.cfir.declarations.CfirHiddenDeprecationProvider
-import org.cangnova.cangjie.cfir.declarations.SealedClassInheritorsProvider
+import org.cangnova.cangjie.cfir.entrypoint.session.configure
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrarAdapter
 import org.cangnova.cangjie.cfir.extensions.CfirPredicateBasedProvider
 import org.cangnova.cangjie.cfir.extensions.CfirRegisteredPluginAnnotations
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.resolve.providers.impl.CfirCompositeSymbolProvider
-import org.cangnova.cangjie.cfir.resolve.transformers.CfirJumpingPhaseComputationSessionForLocalClassesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirLookupDefaultStarImportsInSourcesSettingHolder
-import org.cangnova.cangjie.cfir.session.CfirSessionConfigurator
+import org.cangnova.cangjie.cfir.entrypoint.session.CfirSessionConfigurator
+import org.cangnova.cangjie.cfir.session.CfirSession
 
 @SessionConfiguration
 internal fun LLCfirSession.registerIdeComponents(
@@ -40,7 +42,6 @@ internal fun LLCfirSession.registerIdeComponents(
     annotationSearchScope: GlobalSearchScope
 ) {
     register(CfirCachesFactory::class, CfirThreadSafeCachesFactory(project))
-    register(SealedClassInheritorsProvider::class, LLSealedInheritorsProvider(project))
     register(CfirExceptionHandler::class, LLCfirExceptionHandler)
     register(CodeFragmentScopeProvider::class, CodeFragmentScopeProvider(this))
     register(CfirElementFinder::class, CfirElementFinder())
@@ -51,9 +52,6 @@ internal fun LLCfirSession.registerIdeComponents(
     )
     register(LLCheckersFactory::class, LLCheckersFactory(this))
     register(CfirHiddenDeprecationProvider::class, LLHiddenDeprecationProvider(this))
-
-    @OptIn(CfirImplementationDetail::class)
-    register(CfirJumpingPhaseComputationSessionForLocalClassesProvider::class, LLJumpingPhaseComputationSessionForLocalClassesProvider)
 }
 
 internal inline fun createCompositeSymbolProvider(
@@ -75,7 +73,7 @@ internal fun CfirSessionConfigurator.registerCompilerPluginExtensions(project: P
         .extensionList
         .forEach(::applyExtensionRegistrar)
 
-    val pluginsProvider = KotlinCompilerPluginsProvider.getInstance(project) ?: return
+    val pluginsProvider = CangJieCompilerPluginsProvider.getInstance(project) ?: return
     pluginsProvider
         .getRegisteredExtensions(module, CfirExtensionRegistrarAdapter)
         .forEach(::applyExtensionRegistrar)

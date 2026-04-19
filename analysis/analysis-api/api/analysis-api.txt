@@ -15,6 +15,12 @@ public inline fun <R> analyze( useSiteElement: CjElement, action: CaSession.() -
 public inline fun <R> analyze( useSiteModule: CaModule, crossinline action: CaSession.() -> R, ): R
 public fun <R> analyze( useSiteElements: Collection<CjElement>, action: CaSession.(CjElement) -> R, ): List<R>
 public fun <R> analyze( useSiteModules: Collection<CaModule>, action: CaSession.(CaModule) -> R, ): List<R>
+## org/cangnova/cangjie/analysis/api/annnotations.kt
+package org.cangnova.cangjie.analysis.api
+public annotation class CaImplementationDetail
+public annotation class CaIdeApi
+public annotation class CaExperimentalApi
+public annotation class CaPlatformInterface
 ## org/cangnova/cangjie/analysis/api/annotations/CaAnnotated.kt
 package org.cangnova.cangjie.analysis.api.annotations
 public interface CaAnnotated

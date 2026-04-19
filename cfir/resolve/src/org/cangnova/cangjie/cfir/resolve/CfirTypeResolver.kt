@@ -137,7 +137,7 @@ class CfirTypeResolverImpl(
     }
 
     override fun resolveClass(classId: ClassId): CfirClassLikeDeclaration? {
-        session.cfirProvider.getClassByClassId(classId)?.let { return it }
+        session.cfirProvider.getCfirClassifierByFqName(classId)?.let { return it }
         return session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
     }
 

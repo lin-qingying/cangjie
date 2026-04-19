@@ -1072,21 +1072,7 @@ class CangJieParsing private constructor(
     }
 
 
-    /**
-     * 解析脚本文件
-     *
-     * Grammar:
-     * ```
-     * cangJieScript
-     *   : statement*
-     *   ;
-     * ```
-     */
-    context(parseContext: ParsingContext)
-    fun parseScript() {
-        val fileMarker = mark()
-        fileMarker.done(CJ_SCRIPT)
-    }
+
 
     fun parseOnlyAnnotationFile() {
 

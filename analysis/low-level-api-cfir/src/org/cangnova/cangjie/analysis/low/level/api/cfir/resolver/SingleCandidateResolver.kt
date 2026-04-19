@@ -5,7 +5,7 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.resolver
 
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
 import org.cangnova.cangjie.cfir.expressions.CfirEmptyArgumentList
@@ -44,7 +44,6 @@ class SingleCandidateResolver(
         val callInfo = infoProvider.callInfo()
         val explicitReceiverKind = infoProvider.explicitReceiverKind()
         val dispatchReceiverValue = infoProvider.dispatchReceiverValue()
-        val implicitExtensionReceiverValue = infoProvider.implicitExtensionReceiverValue()
 
         val resolutionContext = bodyResolveComponents.transformer.resolutionContext
 
@@ -53,10 +52,7 @@ class SingleCandidateResolver(
             resolutionParameters.callableSymbol,
             explicitReceiverKind = explicitReceiverKind,
             dispatchReceiver = dispatchReceiverValue?.receiverExpression,
-            givenExtensionReceiver = if (explicitReceiverKind.isExtensionReceiver)
-                callInfo.explicitReceiver
-            else
-                implicitExtensionReceiverValue?.receiverExpression,
+            givenExtensionReceiver = null,
             scope = null,
         )
 

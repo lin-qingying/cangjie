@@ -20,35 +20,27 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirM
 import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.PartialBodyAnalysisSuspendedException
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
-import org.cangnova.cangjie.cfir.declarations.CfirAnonymousInitializer
-import org.cangnova.cangjie.cfir.declarations.CfirBackingField
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirDanglingModifierList
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirEnumEntry
-import org.cangnova.cangjie.cfir.declarations.CfirField
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
-import org.cangnova.cangjie.cfir.declarations.CfirReceiverParameter
-import org.cangnova.cangjie.cfir.declarations.CfirReplSnippet
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.declarations.CfirScript
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameterKind
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
-import org.cangnova.cangjie.cfir.declarations.utils.classId
-import org.cangnova.cangjie.cfir.declarations.utils.nameOrSpecialName
+import org.cangnova.cangjie.cfir.declarations.util.classId
 import org.cangnova.cangjie.utils.exceptions.shouldIjPlatformExceptionBeRethrown
 
 private const val KOTLIN_CODE_ANALYSIS_EVENT_CATEGORY = "Kotlin Code Analysis"
 
-@CaImplementationDetail
+
 object LLFlightRecorder {
     private val includePhaseTraces: Boolean by lazy(LazyThreadSafetyMode.PUBLICATION) {
         System.getProperty("kotlin.analysis.jfr.includePhaseTraces") == "true"
@@ -226,31 +218,20 @@ object LLFlightRecorder {
         @Suppress("SpellCheckingInspection")
         return when (declaration) {
             is CfirFile -> "fl/" + declaration.name
-            is CfirScript -> "s/" + declaration.name.asString()
             is CfirTypeParameter -> "tp/" + declaration.name.asString()
             is CfirTypeAlias -> "ta/" + declaration.classId.asString()
             is CfirClass -> "c/" + declaration.classId.asString()
-            is CfirEnumEntry -> "ee/" + declaration.name.asString()
-            is CfirField -> "fi/" + declaration.name.asString()
             is CfirProperty -> "p/" + declaration.name.asString()
-            is CfirBackingField -> "bf/" + declaration.name.asString()
-            is CfirValueParameter -> {
-                val kind = if (declaration.valueParameterKind == CfirValueParameterKind.Regular) "vp/" else "cp/"
-                kind + declaration.name.asString()
-            }
-            is CfirVariable -> "v/" + declaration.name.asString() + "/${declaration::class.java.simpleName.lowercase()}"
+            is CfirValueParameter -> "vp/" + declaration.name.asString()
+            is CfirVariable -> "v/" + declaration.symbol.name.asString() + "/${declaration::class.java.simpleName.lowercase()}"
             is CfirPropertyAccessor -> (if (declaration.isGetter) "pg/" else "ps/") + declaration.propertySymbol.name.asString()
             is CfirConstructor -> "ctor/" + signature(declaration)
             is CfirAnonymousFunction -> "lambda"
-            is CfirFunction -> {
-                val baseName = "f/" + declaration.nameOrSpecialName.asString()
+            is CfirNamedFunction, is CfirMainFunction -> {
+                val baseName = "f/" + declaration.symbol.name.asString()
                 baseName + '/' + signature(declaration)
             }
-            is CfirReplSnippet -> "repl"
             is CfirCodeFragment -> "code"
-            is CfirReceiverParameter -> "recv"
-            is CfirDanglingModifierList -> "dml"
-            is CfirAnonymousInitializer -> "init"
             else -> "?/" + declaration.javaClass.simpleName
         }
     }
@@ -293,18 +274,13 @@ private val PHASE_COMPACT_NAMES = run {
         when (phases[it]) {
             CfirResolvePhase.RAW_CFIR -> 0
             CfirResolvePhase.IMPORTS -> 1
-            CfirResolvePhase.COMPILER_REQUIRED_ANNOTATIONS -> 2
-            CfirResolvePhase.COMPANION_GENERATION -> 3
             CfirResolvePhase.SUPER_TYPES -> 4
-            CfirResolvePhase.SEALED_CLASS_INHERITORS -> 5
             CfirResolvePhase.TYPES -> 6
             CfirResolvePhase.STATUS -> 7
-            CfirResolvePhase.EXPECT_ACTUAL_MATCHING -> 8
-            CfirResolvePhase.CONTRACTS -> 9
-            CfirResolvePhase.IMPLICIT_TYPES_BODY_RESOLVE -> 10
-            CfirResolvePhase.CONSTANT_EVALUATION -> 11
-            CfirResolvePhase.ANNOTATION_ARGUMENTS -> 12
             CfirResolvePhase.BODY_RESOLVE -> 13
+            CfirResolvePhase.MACRO_EXPAND -> 14
+            CfirResolvePhase.EXTENSIONS -> 15
+            CfirResolvePhase.IMPLICIT_TYPES -> 16
         }
     }
 }

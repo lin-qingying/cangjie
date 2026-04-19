@@ -29,7 +29,7 @@ internal object LLCfirDeclarationModificationTopics {
  * @see LLCfirDeclarationModificationTopics.IN_BLOCK_MODIFICATION
  * @see org.cangnova.cangjie.analysis.api.platform.modification.CaSourceModificationLocality.InBlock
  */
-@CaImplementationDetail
+
 interface LLCfirInBlockModificationListener {
     /**
      * @param element the element where the in-block modification happened

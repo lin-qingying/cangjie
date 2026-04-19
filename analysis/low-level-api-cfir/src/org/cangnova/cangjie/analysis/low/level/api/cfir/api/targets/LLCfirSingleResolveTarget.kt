@@ -6,8 +6,10 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.cfir.CfirDeclarationDataKey
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationDataRegistry
 
 private object PartialBodyAnalysisStateKey : CfirDeclarationDataKey()
 

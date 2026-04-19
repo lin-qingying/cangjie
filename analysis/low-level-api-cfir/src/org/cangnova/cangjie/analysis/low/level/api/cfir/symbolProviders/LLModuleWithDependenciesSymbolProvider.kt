@@ -9,7 +9,7 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.jvmClassNameIfDeserialized
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.utils.collections.buildSmartList
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.deserialization.AbstractCfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.*
 import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
@@ -47,7 +47,7 @@ import org.cangnova.cangjie.utils.addIfNotNull
  * content scope. This is not always intuitive. For example, the content scope of a library module may exclude certain files from the
  * library which are nonetheless physically present in an underlying JAR.
  *
- * [KotlinProjectStructureProvider][org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider] has the same
+ * [CangJieProjectStructureProvider][org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider] has the same
  * responsibility, which is the burden of the Analysis API platform.
  */
 internal class LLModuleWithDependenciesSymbolProvider(

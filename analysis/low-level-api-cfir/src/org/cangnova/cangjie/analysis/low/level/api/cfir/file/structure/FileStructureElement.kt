@@ -8,38 +8,21 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiErrorElement
-import org.cangnova.cangjie.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.body
-import org.cangnova.cangjie.analysis.low.level.api.cfir.util.findStringPlusSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialAnalyzable
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialBodyResolvable
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.declarations.impl.CfirPrimaryConstructor
 import org.cangnova.cangjie.cfir.expressions.*
-import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
-import org.cangnova.cangjie.cfir.expressions.impl.CfirEmptyExpressionBlock
-import org.cangnova.cangjie.cfir.expressions.impl.CfirSingleExpressionBlock
 import org.cangnova.cangjie.cfir.realPsi
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
-import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
-import org.cangnova.cangjie.cfir.symbols.impl.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
-import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.builder.buildTypeProjectionWithVariance
-import org.cangnova.cangjie.cfir.types.coneType
-import org.cangnova.cangjie.cfir.types.resolvedType
-import org.cangnova.cangjie.name.StandardClassIds
 import org.cangnova.cangjie.psi.*
-import org.cangnova.cangjie.toCjPsiSourceElement
-import org.cangnova.cangjie.types.Variance
-import org.cangnova.cangjie.util.OperatorNameConventions
 
 /**
  * Collects [KT -> CFIR][CjToCfirMapping] mapping and [diagnostics][FileStructureElementDiagnostics] for [declaration].
@@ -59,7 +42,7 @@ internal sealed class FileStructureElement(
     companion object {
         fun recorderFor(fir: CfirDeclaration): CfirElementsRecorder = when (fir) {
             is CfirFile -> RootStructureElement.Recorder(fir)
-            is CfirRegularClass -> ClassDeclarationStructureElement.Recorder(fir)
+            is CfirClass -> ClassDeclarationStructureElement.Recorder(fir)
             else -> DeclarationStructureElement.Recorder
         }
     }
@@ -71,109 +54,22 @@ internal class CjToCfirMapping(private val elementMapper: LLElementMapper) {
     }
 
     companion object {
-        private fun checkStringLiteralFolderExpression(
+        fun getCfir(
             element: CjElement,
-            session: CfirSession,
+            @Suppress("UNUSED_PARAMETER") session: CfirSession,
             mapping: Map<CjElement, CfirElement>,
         ): CfirElement? {
-            var current: PsiElement? = element
-            var fir: CfirElement? = null
-            while (fir == null && (current is CjBinaryExpression || current is CjOperationReferenceExpression)) {
-                fir = mapping[current]
-                if (fir is CfirStringConcatenationCall && fir.isFoldedStrings) {
-                    // In case of folded string literals, we have to return plus operator reference for operation reference.
-                    return if (element is CjOperationReferenceExpression)
-                        findStringPlusSymbol(session)?.let {
-                            buildResolvedNamedReference {
-                                source = element.toCjPsiSourceElement()
-                                name = OperatorNameConventions.PLUS
-                                resolvedSymbol = it
-                            }
-                        }
-                    else
-                        fir
-                }
-
-                if (fir != null) {
-                    return null
-                }
-
-                current = current.parent
-            }
-
-            return null
-        }
-
-        /**
-         * If [element] is a reference with the name "suspend", returns a fake [CfirResolvedNamedReference] to `kotlin.suspend`.
-         */
-        private fun fakeReferenceToBuiltInSuspendOrNull(
-            element: CjElement,
-            session: CfirSession,
-        ): CfirResolvedNamedReference? {
-            if (element !is CjNameReferenceExpression) return null
-            if (element.getReferencedName() != StandardClassIds.Callables.suspend.callableName.identifier) return null
-
-            return session.symbolProvider
-                .getTopLevelCallableSymbols(
-                    packageFqName = StandardClassIds.Callables.suspend.packageName,
-                    name = StandardClassIds.Callables.suspend.callableName
-                )
-                .singleOrNull()
-                ?.let {
-                    buildResolvedNamedReference {
-                        source = element.toCjPsiSourceElement()
-                        name = StandardClassIds.Callables.suspend.callableName
-                        resolvedSymbol = it
-                    }
-                }
-        }
-
-        private fun fakeCallToBuiltInSuspendOrNull(
-            call: CjCallExpression,
-            mapping: Map<CjElement, CfirElement>,
-            session: CfirSession,
-        ): CfirFunctionCall? {
-            val calleeExpression = call.calleeExpression ?: return null
-            val lambdaArgument = call.lambdaArguments.firstOrNull()?.getLambdaExpression() ?: return null
-            val argument = mapping[lambdaArgument] as? CfirAnonymousFunctionExpression ?: return null
-            val reference = fakeReferenceToBuiltInSuspendOrNull(calleeExpression, session) ?: return null
-            val symbol = reference.resolvedSymbol as? CfirFunctionSymbol ?: return null
-            val valueParameter = symbol.valueParameterSymbols.singleOrNull() ?: return null
-            return buildFunctionCall {
-                calleeReference = reference
-                source = call.toCjPsiSourceElement()
-                argumentList = buildResolvedArgumentList(
-                    original = null,
-                    mapping = LinkedHashMap<CfirExpression, CfirValueParameter>().apply {
-                        put(argument, valueParameter.fir)
-                    }
-                )
-                typeArguments += buildTypeProjectionWithVariance {
-                    typeRef = buildResolvedTypeRef {
-                        coneType = argument.anonymousFunction.returnTypeRef.coneType
-                    }
-                    variance = Variance.INVARIANT
-                }
-                coneTypeOrNull = argument.resolvedType
-            }
-        }
-
-        fun getCfir(element: CjElement, session: CfirSession, mapping: Map<CjElement, CfirElement>): CfirElement? {
             var current: PsiElement? = element
             while (
                 current == element ||
                 current is CjUserType ||
                 current is CjTypeReference ||
                 current is CjDotQualifiedExpression ||
-                current is CjNullableType
+                current is CjOptionType
             ) {
                 // We are still referring to the same element with possible type parameter/name qualification/nullability,
                 // hence it is always correct to return a corresponding element if present
                 if (current is CjElement) mapping[current]?.let { return it }
-                if (current is CjCallExpression) fakeCallToBuiltInSuspendOrNull(current, mapping, session)?.let {
-                    return it
-                }
                 current = current.parent
             }
 
@@ -182,11 +78,9 @@ internal class CjToCfirMapping(private val elementMapper: LLElementMapper) {
                 // Constants with unary operation (i.e., +1 or -1) are saved as a leaf element of CFIR tree
                 is CjPrefixExpression,
                     // There is no separate element for annotation construction call
-                is CjAnnotationEntry,
+                is CjAnnotation,
                     // We replace a source for selector with the whole expression
                 is CjSafeQualifiedExpression,
-                    // Top level destructuring declarations do not have CFIR for r-value at the moment, would probably be changed later
-                is CjDestructuringDeclaration,
                     // There is no separate CFIR node for this in this@foo expressions, same for super@Foo
                 is CjThisExpression,
                 is CjSuperExpression,
@@ -195,10 +89,6 @@ internal class CjToCfirMapping(private val elementMapper: LLElementMapper) {
                 is CjPackageDirective,
                     // Super type refs are not recorded
                 is CjSuperTypeCallEntry,
-                    // this/super in delegation calls are not part of CFIR tree, this(args) is
-                is CjConstructorDelegationCall,
-                    // In case of type projection we are not recording the corresponding type reference
-                is CjTypeProjection,
                     -> mapping[current as CjElement]
                 is CjCallExpression -> {
                     // Case 1:
@@ -214,18 +104,18 @@ internal class CjToCfirMapping(private val elementMapper: LLElementMapper) {
                     ) {
                         mapping[parent]
                     } else {
-                        mapping[current] ?: fakeReferenceToBuiltInSuspendOrNull(element, session)
+                        mapping[current]
                     }
                 }
-                is CjParenthesizedExpression -> checkStringLiteralFolderExpression(element, session, mapping)
-                is CjBinaryExpression -> checkStringLiteralFolderExpression(element, session, mapping)
+                is CjParenthesizedExpression -> null
                 // Here there is no separate CFIR node for partial operator calls (like for a[i] = 1, there is no separate node for a[i])
-                    ?: if (element is CjArrayAccessExpression || element is CjOperationReferenceExpression) mapping[current] else null
-                is CjBlockExpression -> null
-                is PsiErrorElement -> {
-                    val parent = current.parent
-                    if (parent is CjDestructuringDeclaration) mapping[parent] else null
+                is CjBinaryExpression -> if (element is CjArrayAccessExpression || element is CjOperationReferenceExpression) {
+                    mapping[current]
+                } else {
+                    null
                 }
+                is CjBlockExpression -> null
+                is PsiErrorElement -> null
                 // Value argument names and corresponding references are not part of the CFIR tree
                 is CjValueArgumentName -> mapping[current.parent as CjValueArgument]
                 is CjContainerNode -> {
@@ -245,7 +135,7 @@ internal class CjToCfirMapping(private val elementMapper: LLElementMapper) {
 
 internal class ClassDeclarationStructureElement(
     file: CfirFile,
-    clazz: CfirRegularClass,
+    clazz: CfirClass,
     moduleComponents: LLCfirModuleResolveComponents,
 ) : FileStructureElement(
     declaration = clazz,
@@ -257,14 +147,14 @@ internal class ClassDeclarationStructureElement(
         )
     ),
 ) {
-    class Recorder(firClass: CfirRegularClass) : CfirElementContainerRecorder(
+    class Recorder(firClass: CfirClass) : CfirElementContainerRecorder(
         container = firClass,
         declarationsToIgnore = firClass.declarationsToIgnore,
     )
 }
 
 /** @see ClassDeclarationStructureElement */
-internal val CfirRegularClass.declarationsToIgnore: Set<CfirDeclaration>
+internal val CfirClass.declarationsToIgnore: Set<CfirDeclaration>
     get() = declarations.filterNot(CfirDeclaration::isPartOfClassStructureElement).toSet()
 
 /**
@@ -299,7 +189,7 @@ internal abstract class CfirElementContainerRecorder(
 /**
  * Whether a class member declaration is a part of the [ClassDeclarationStructureElement].
  *
- * [CfirRegularClass] stands as an anchor for synthetic declarations which it produces (like an implicit constructor).
+ * [CfirClass] stands as an anchor for synthetic declarations which it produces (like an implicit constructor).
  * This is necessary to process diagnostics from such elements as they don't have real sources
  * (and a dedicated [FileStructureElement] as a consequence).
  *
@@ -309,8 +199,6 @@ internal abstract class CfirElementContainerRecorder(
 internal val CfirDeclaration.isPartOfClassStructureElement: Boolean
     get() = when (source?.kind) {
         CjFakeSourceElementKind.ImplicitConstructor,
-        CjFakeSourceElementKind.DataClassGeneratedMembers,
-        CjFakeSourceElementKind.EnumGeneratedDeclaration,
         CjFakeSourceElementKind.ClassDelegationField,
             -> true
 
@@ -359,9 +247,9 @@ internal class DeclarationStructureElement(
 
             require(declaration.resolvePhase >= CfirResolvePhase.BODY_RESOLVE.previous)
 
+            // 仓颉主干当前没有 Kotlin FIR 的 empty/single-expression block 声明形态，
+            // partial body 分支只保留主干真实存在的 lazy block 与普通 block。
             val isPartiallyResolvable = when (bodyBlock) {
-                is CfirSingleExpressionBlock -> false
-                is CfirEmptyExpressionBlock -> false
                 is CfirLazyBlock -> true // Optimistic (however, below we also check the PSI statement count)
                 else -> bodyBlock.isPartialAnalyzable
             }
@@ -412,7 +300,7 @@ internal class DeclarationStructureElement(
                 return
             }
 
-            if (element is CfirDelegatedConstructorCall && currentParent is CfirConstructor && currentParent == declaration) {
+            if (element is CfirFunctionCall && element.origin.isConstructorDelegation && currentParent is CfirConstructor && currentParent == declaration) {
                 // Skip delegated constructors
                 return
             }
@@ -443,7 +331,7 @@ internal class DeclarationStructureElement(
         override fun visitConstructor(constructor: CfirConstructor, data: MutableMap<CjElement, CfirElement>) {
             super.visitConstructor(constructor, data)
 
-            if (constructor is CfirPrimaryConstructor) {
+            if (constructor.isPrimary) {
                 constructor.valueParameters.forEach { parameter ->
                     parameter.correspondingProperty?.let { property ->
                         visitProperty(property, data)

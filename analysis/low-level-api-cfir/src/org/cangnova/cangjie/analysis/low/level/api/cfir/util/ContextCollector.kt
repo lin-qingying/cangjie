@@ -9,7 +9,6 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
-import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLPartialBodyAnalysisState
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.partialBodyAnalysisState
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.withCfirDesignationEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisDeclaration
@@ -22,89 +21,80 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.ContextCollector.Co
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.ContextCollector.FilterResponse
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
-import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.declarations.utils.isScriptTopLevelDeclaration
-import org.cangnova.cangjie.cfir.declarations.utils.memberDeclarationNameOrNull
-import org.cangnova.cangjie.cfir.expressions.*
-import org.cangnova.cangjie.cfir.extensions.scriptResolutionHacksComponent
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.resolve.codeFragmentContext
 import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.resolve.SessionHolderImpl
-import org.cangnova.cangjie.cfir.resolve.calls.ImplicitValue
-import org.cangnova.cangjie.cfir.resolve.dfa.DataFlowAnalyzerContext
-import org.cangnova.cangjie.cfir.resolve.dfa.RealVariable
-import org.cangnova.cangjie.cfir.resolve.dfa.cfg.CFGNode
-import org.cangnova.cangjie.cfir.resolve.dfa.cfg.CfgInternals
-import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ClassExitNode
-import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
-import org.cangnova.cangjie.cfir.resolve.dfa.controlFlowGraph
-import org.cangnova.cangjie.cfir.resolve.dfa.smartCastedType
+import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
+import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculatorForFullBodyResolve
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
-import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.addReceiversFromExtensions
-import org.cangnova.cangjie.cfir.symbols.impl.CfirLocalPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirRegularPropertySymbol
+import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
+import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
-import org.cangnova.cangjie.cfir.types.ConeKotlinType
-import org.cangnova.cangjie.cfir.types.typeContext
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.psiUtil.getParentOfType
 import org.cangnova.cangjie.psi.psiUtil.parentsWithSelf
-import org.cangnova.cangjie.types.SmartcastStability
 import org.cangnova.cangjie.util.PrivateForInline
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
-import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
+/**
+ * 收集 PSI 位置对应的 tower 上下文。
+ *
+ * Kotlin `ContextCollector` 还会拼接 CFG / smart-cast 状态。
+ * 当前仓颉主干没有接入那套完整 DFA，因此这里只保留已经在主干中成立的
+ * `CfirTowerDataContext` 收集逻辑，不再伪造不存在的 smart-cast 快照。
+ */
 object ContextCollector {
     enum class ContextKind {
-        /** Represents the context of the declaration itself. */
+        /** 声明或表达式本身所在的位置上下文。 */
         SELF,
 
-        /** Represents the context inside the body (of a class, function, block, etc.) */
-        BODY
+        /** 进入 body 之后的位置上下文。 */
+        BODY,
     }
 
-    /**
-     * Represents resolution context of a specific place in code (a context).
-     *
-     * @param towerDataContext a list of tower data elements that may define declaration scopes, implicit receivers,
-     * and additional information applicable either to the context element or its semantic parents.
-     *
-     * @param smartCasts a set of smart-casts (potentially) available to the context element. Note that the key, [RealVariable], includes
-     * stability. Only stable smart casts impact data flow. Check the "Smart cast sink stability" in the Kotlin language specification.
-     * Unstable smart casts are still provided for more precise checking and diagnosing.
-     */
     class Context(
         val towerDataContext: CfirTowerDataContext,
-        val smartCasts: Map<RealVariable, Set<ConeKotlinType>>,
     )
 
     enum class FilterResponse {
-        /** Store context for the element and continue the traversal. */
         CONTINUE,
-
-        /** Store context for the element and stop traversal. */
         STOP,
-
-        /** Skip the element and continue the traversal. */
-        SKIP
+        SKIP,
     }
 
-    /**
-     * Get the most precise context available for the [targetElement] in the [file].
-     *
-     * @param resolutionFacade A resolve session accessing the [file].
-     * @param file The file to process.
-     * @param targetElement The most precise element for which the context is required.
-     * @param preferBodyContext Whether a [ContextKind.BODY] context is preferred for the [targetElement].
-     * For parents of [targetElement], [ContextKind.BODY] is *never* returned.
-     *
-     * @return The context of the [targetElement] if available, or of one of its tree parents.
-     * Returns `null` if the context was not collected.
-     */
     fun process(
         resolutionFacade: LLResolutionFacade,
         file: CfirFile,
@@ -113,7 +103,6 @@ object ContextCollector {
     ): Context? {
         val designation = computeDesignation(file, targetElement)
         val shouldTriggerBodyAnalysis = !partiallyResolveTargetElementIfPossible(resolutionFacade, designation, targetElement)
-
         val acceptedElements = targetElement.parentsWithSelf.toSet()
 
         val contextProvider = process(file, designation, preferBodyContext, shouldTriggerBodyAnalysis) { candidate ->
@@ -147,45 +136,27 @@ object ContextCollector {
         targetElement: PsiElement,
     ): Boolean {
         val declaration = designation?.target?.realPsi as? CjDeclaration ?: return false
-
         val resolvedElement = targetElement
-            .getParentOfType<CjElement>(strict = false) // In case we got some leaf element
+            .getParentOfType<CjElement>(strict = false)
             ?.takeIf { LLPartialBodyElementMapper.isPartiallyAnalyzable(it, declaration) }
             ?: return false
 
-        /** [LLCfirResolveSession.getOrBuildCfirFor] will run partial body analysis if applicable. */
         return resolutionFacade.getOrBuildCfirFor(resolvedElement) != null
     }
 
     fun computeDesignation(file: CfirFile, targetElement: PsiElement): CfirDesignation? {
         val contextCjDeclaration = targetElement.getNonLocalContainingOrThisDeclaration(::isValidTarget)
         if (contextCjDeclaration != null) {
-            val designationPath = CfirElementFinder.collectDesignationPath(file, contextCjDeclaration)
-            if (designationPath != null) {
-                return designationPath
-            }
+            return CfirElementFinder.collectDesignationPath(file, contextCjDeclaration)
         }
 
         return null
     }
 
     private fun isValidTarget(declaration: CjDeclaration): Boolean {
-        if (declaration.isAutonomousElement) {
-            return true
-        }
-
-        return false
+        return declaration.isAutonomousElement
     }
 
-    /**
-     * Processes the [CfirFile], collecting contexts for elements matching the [filter].
-     *
-     * @param file The file to process.
-     * @param designation The declaration to process. If `null`, all declarations in the [file] are processed.
-     * @param preferBodyContext If `true`, [ContextKind.BODY] is collected where available.
-     * @param filter The filter predicate. Context is collected only for [PsiElement]s for which the [filter] returns
-     *     [FilterResponse.CONTINUE] or [FilterResponse.STOP].
-     */
     fun process(
         file: CfirFile,
         designation: CfirDesignation?,
@@ -195,10 +166,9 @@ object ContextCollector {
     ): ContextProvider {
         val fileSession = file.llCfirSession
         val holder = SessionHolderImpl(fileSession, fileSession.getScopeSession())
-
         val interceptor = designation?.let(::DesignationInterceptor)
-
         val visitor = ContextCollectorVisitor(holder, preferBodyContext, shouldTriggerBodyAnalysis, filter, interceptor)
+
         visitor.collect(file)
 
         return ContextProvider { element, kind -> visitor[element, kind] }
@@ -218,17 +188,6 @@ private class DesignationInterceptor(val designation: CfirDesignation) : () -> C
     override fun invoke(): CfirElement? = if (targetIterator.hasNext()) targetIterator.next() else null
 }
 
-/**
- * A visitor collecting the [Context] for elements.
- *
- * @param shouldCollectBodyContext Whether the visitor needs to accumulate [ContextKind.BODY] contexts.
- *     If `false`, might stop processing elements if a [FilterResponse.STOP] match is found.
- * @param shouldTriggerBodyAnalysis Whether the visitor forces complete body resolution for traversed declarations.
- *     Can be `false` if the caller guarantees to pass already (partially or fully) resolved body.
- * @param filter The filter predicate. Context is collected only for [PsiElement]s for which the [filter] returns
- *     [FilterResponse.CONTINUE] or [FilterResponse.STOP].
- * @param designationPathInterceptor An interceptor helping to skip unrelated parts of a [CfirFile] if a designation is known.
- */
 private class ContextCollectorVisitor(
     private val bodyHolder: SessionAndScopeSessionHolder,
     private val shouldCollectBodyContext: Boolean,
@@ -236,38 +195,37 @@ private class ContextCollectorVisitor(
     private val filter: (PsiElement) -> FilterResponse,
     private val designationPathInterceptor: DesignationInterceptor?,
 ) : CfirDefaultVisitorVoid() {
-    fun collect(file: CfirFile) {
-        if (designationPathInterceptor != null) {
-            withInterceptor {
-                // This code is unreachable in the case of a not empty path
-                errorWithAttachment("Designation path is empty") {
-                    withCfirEntry("file", file)
-                    withCfirDesignationEntry("designation", designationPathInterceptor.designation)
-                }
-            }
-        } else {
-            file.accept(this)
-        }
-    }
-
     private data class ContextKey(val element: PsiElement, val kind: ContextKind)
 
-    operator fun get(element: PsiElement, kind: ContextKind): Context? {
-        val key = ContextKey(element, kind)
-        return result[key]
-    }
-
-    private var isActive = true
-
+    private val result = HashMap<ContextKey, Context>()
     private val parents = ArrayList<CfirElement>()
 
     private val context = BodyResolveContext(
         returnTypeCalculator = ReturnTypeCalculatorForFullBodyResolve.Default,
-        dataFlowAnalyzerContext = DataFlowAnalyzerContext(bodyHolder.session),
+        dataFlowAnalyzerContext = CfirDataFlowAnalyzerContext(),
         isContextCollectorMode = true,
     )
 
-    private val result = HashMap<ContextKey, Context>()
+    private var isActive = true
+
+    fun collect(file: CfirFile) {
+        context.withFile(file) {
+            if (designationPathInterceptor != null) {
+                withInterceptor {
+                    errorWithAttachment("Designation path is empty") {
+                        withCfirEntry("file", file)
+                        withCfirDesignationEntry("designation", designationPathInterceptor.designation)
+                    }
+                }
+            } else {
+                file.accept(this)
+            }
+        }
+    }
+
+    operator fun get(element: PsiElement, kind: ContextKind): Context? {
+        return result[ContextKey(element, kind)]
+    }
 
     private fun getSessionHolder(declaration: CfirDeclaration): SessionAndScopeSessionHolder {
         return when (val session = declaration.moduleData.session) {
@@ -281,683 +239,276 @@ private class ContextCollectorVisitor(
 
         withParent(element) {
             dumpContext(element, ContextKind.BODY)
-
             element.acceptChildren(this)
         }
     }
 
-    private fun dumpContext(fir: CfirElement, kind: ContextKind, hasBodyContext: Boolean = true) {
-        ProgressManager.checkCanceled()
-
-        if (kind == ContextKind.BODY && !shouldCollectBodyContext) {
-            return
-        }
-
-        val psi = fir.anchorPsi ?: return
-
-        val key = ContextKey(psi, kind)
-        if (key in result) {
-            return
-        }
-
-        val response = filter(psi)
-        if (response != FilterResponse.SKIP) {
-            result[key] = computeContext(fir, kind)
-        }
-
-        if (response == FilterResponse.STOP) {
-            // Wait until the body context is also collected if necessary (and available)
-            if (kind == ContextKind.BODY || !(hasBodyContext && shouldCollectBodyContext)) {
-                isActive = false
-            }
-        }
-    }
-
-    @OptIn(ImplicitValue.ImplicitValueInternals::class)
-    private fun computeContext(fir: CfirElement, kind: ContextKind): Context {
-        val implicitReceiverStack = context.towerDataContext.implicitValueStorage
-
-        val smartCasts = mutableMapOf<RealVariable, Set<ConeKotlinType>>()
-
-        val cfgNode = getClosestControlFlowNode(fir, kind)
-
-        if (cfgNode != null) {
-            val flow = cfgNode.flow
-
-            val realVariables = flow.knownVariables.filterIsInstance<RealVariable>()
-                .sortedBy { it.symbol.memberDeclarationNameOrNull?.asString() }
-
-            for (realVariable in realVariables) {
-                val typeStatement = flow.getTypeStatement(realVariable) ?: continue
-                val stability = realVariable.getStability(flow, bodyHolder.session)
-                if (stability != SmartcastStability.STABLE_VALUE && stability != SmartcastStability.CAPTURED_VARIABLE) {
-                    continue
-                }
-
-                val typeStatementVariable = typeStatement.variable
-                requireWithAttachment(
-                    typeStatementVariable is RealVariable,
-                    { "Expecting a ${RealVariable::class.simpleName}, got ${typeStatementVariable::class.simpleName}" },
-                ) {
-                    withEntry("variable", typeStatementVariable) { it.toString() }
-                }
-                smartCasts[typeStatementVariable] = typeStatement.upperTypes
-
-                // The compiler pushes smart-cast types for implicit receivers to ease later lookups.
-                // Here we emulate such behavior. Unlike the compiler, though, modified types are only reflected in the created snapshot.
-                // See other usages of 'replaceReceiverType()' for more information.
-                if (realVariable.isImplicit) {
-                    val smartCastedType = typeStatement.smartCastedType(bodyHolder.session.typeContext)
-                    implicitReceiverStack.replaceImplicitValueType(realVariable.symbol, smartCastedType)
-                }
-            }
-        }
-
-        val towerDataContextSnapshot = context.towerDataContext.createSnapshot(keepMutable = true)
-
-        for (realVariable in smartCasts.keys) {
-            if (realVariable.isImplicit) {
-                implicitReceiverStack.replaceImplicitValueType(realVariable.symbol, realVariable.originalType)
-            }
-        }
-
-        return Context(towerDataContextSnapshot, smartCasts)
-    }
-
-    private fun getClosestControlFlowNode(fir: CfirElement, kind: ContextKind): CFGNode<*>? {
-        val selfNode = getControlFlowNode(fir, kind)
-        if (selfNode != null) {
-            return selfNode
-        }
-
-        // For some specific elements, such as types or references, there is usually no associated 'CFGNode'.
-        for (parent in parents.asReversed()) {
-            val parentNode = getControlFlowNode(parent, kind)
-            if (parentNode != null) {
-                return parentNode
-            }
-        }
-
-        return null
-    }
-
-    private val nodesCache = HashMap<CfirControlFlowGraphOwner, Map<CfirElement, CFGNode<*>>>()
-
-    /**
-     * Returns the first occurrence of an [element] inside the [ControlFlowGraphData.graph].
-     *
-     * @param container a [CfirControlFlowGraphOwner] where [element] should be searched
-     * @param element an [CfirElement] to search
-     * @param data a [ControlFlowGraphData] from [container], either complete or incomplete.
-     */
-    private fun findNode(container: CfirControlFlowGraphOwner, element: CfirElement, data: ControlFlowGraphData): CFGNode<*>? {
-        when (data) {
-            is ControlFlowGraphData.Complete -> {
-                val map = nodesCache.getOrPut(container) { buildDeclarationNodesMapping(data.graph) }
-                return map[element]
-            }
-            is ControlFlowGraphData.Incomplete -> {
-                return data.nodes.firstOrNull { isAcceptedControlFlowNode(it) && it.fir === element }
-            }
-        }
-    }
-
-    /**
-     * @see findNode
-     */
-    private fun buildDeclarationNodesMapping(
-        flow: ControlFlowGraph,
-    ): Map<CfirElement, CFGNode<*>> = HashMap<CfirElement, CFGNode<*>>().apply {
-        for (node in flow.nodes) {
-            if (isAcceptedControlFlowNode(node)) {
-                val fir = node.fir
-                // We are interested only in the first one
-                putIfAbsent(fir, node)
-            }
-        }
-    }.ifEmpty(::emptyMap)
-
-    private fun getControlFlowNode(fir: CfirElement, kind: ContextKind): CFGNode<*>? {
-        for (container in context.containers.asReversed()) {
-            if (container !is CfirControlFlowGraphOwner) {
-                continue
-            }
-
-            val graphData = getControlFlowGraph(container) ?: continue
-
-            val node = findNode(container, fir, graphData)
-            when {
-                node != null -> return when (kind) {
-                    ContextKind.SELF -> {
-                        // For the 'SELF' mode, we need to find the state *before* the 'CfirElement'
-                        node.previousNodes.singleOrNull()?.takeIf { it in graphData.nodes } ?: node
-                    }
-                    ContextKind.BODY -> {
-                        node
-                    }
-                }
-                !graphData.graph.isSubGraph -> {
-                    return null
-                }
-            }
-        }
-
-        return null
-    }
-
-    @OptIn(CfgInternals::class)
-    private fun getControlFlowGraph(container: CfirControlFlowGraphOwner): ControlFlowGraphData? {
-        val graph = container.controlFlowGraphReference?.controlFlowGraph
-        if (graph != null) {
-            return ControlFlowGraphData.Complete(graph)
-        }
-
-        if (container is CfirDeclaration) {
-            /**
-             * If a declaration is only partially resolved, the graph is not yet available by using
-             * the [CfirControlFlowGraphOwner.controlFlowGraphReference]. However, it's still possible to get the finalized part
-             * from the [CfirDeclaration.partialBodyAnalysisState].
-             *
-             * A lock on the [container] isn't used here as the [LLPartialBodyAnalysisState], once added, can never disappear.
-             * The caller is responsible for resolving the required part of the [container]'s body, so the CFG for all relevant expressions
-             * should be there.
-             */
-            val snapshot = container.partialBodyAnalysisState?.analysisStateSnapshot
-            if (snapshot != null) {
-                val graph = snapshot.dataFlowAnalyzerContext.currentGraph
-                if (graph.declaration == container) {
-                    return ControlFlowGraphData.Incomplete(graph, snapshot.controlFlowGraphNodes)
-                }
-            }
-        }
-
-        return null
-    }
-
-    private sealed class ControlFlowGraphData(val graph: ControlFlowGraph) {
-        abstract val nodes: List<CFGNode<*>>
-
-        class Complete(graph: ControlFlowGraph) : ControlFlowGraphData(graph) {
-            override val nodes: List<CFGNode<*>>
-                get() = graph.nodes
-        }
-
-        class Incomplete(graph: ControlFlowGraph, override val nodes: List<CFGNode<*>>) : ControlFlowGraphData(graph)
-    }
-
-    private fun isAcceptedControlFlowNode(node: CFGNode<*>): Boolean = node !is ClassExitNode
-
     override fun visitFile(file: CfirFile) = withProcessor(file) {
-        val holder = getSessionHolder(file)
+        dumpContext(file, ContextKind.SELF)
 
-        context.withFile(file, holder) {
-            dumpContext(file, ContextKind.SELF, hasBodyContext = false)
-
-            processFileHeader(file)
-
-            onActive {
-                withInterceptor {
-                    processChildren(file)
-                }
-            }
-        }
-    }
-
-    override fun visitCodeFragment(codeFragment: CfirCodeFragment) {
-        codeFragment.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
-
-        val holder = getSessionHolder(codeFragment)
-
-        context.withCodeFragment(codeFragment, holder) {
-            super.visitCodeFragment(codeFragment)
-        }
-    }
-
-    override fun visitAnnotationCall(annotationCall: CfirAnnotationCall) {
-        dumpContext(annotationCall, ContextKind.SELF)
-
-        onActive {
-            dumpContext(annotationCall, ContextKind.BODY)
-
-            // Technically, annotation arguments might contain arbitrary expressions.
-            // However, such cases are very rare, as it's currently forbidden in Kotlin.
-            // Here we ignore declarations that might be inside such expressions, avoiding unnecessary tree traversal.
-        }
-    }
-
-    /**
-     * If the whole function call looks like `foo().bar()`, then we want
-     * the implicit receivers from extensions generated for the `foo()` call
-     * to be available at the `bar()` position.
-     *
-     * That's why we have to accept the children (i.e., the receivers)
-     * and call [addReceiversFromExtensions] on them first, and only then to
-     * dump the context for the [functionCall] itself.
-     *
-     * @see addReceiversFromExtensions
-     */
-    override fun visitFunctionCall(functionCall: CfirFunctionCall) {
-        onActive {
-            withParent(functionCall) {
-                functionCall.acceptChildren(this)
-            }
-        }
-
-        dumpContext(functionCall, ContextKind.SELF, hasBodyContext = false)
-
-        context.addReceiversFromExtensions(functionCall, bodyHolder)
-    }
-
-    /**
-     * If the whole property access call looks like `foo().baz`, then we want
-     * the implicit receivers from extensions generated for the `foo()` call
-     * to be available at the `baz` position.
-     *
-     * That's why we have to accept the children (i.e., the receivers)
-     * and call [addReceiversFromExtensions] on them first, and only then to
-     * dump the context for the [propertyAccessExpression] itself.
-     *
-     * N.B. [CfirPropertyAccessExpression.acceptChildren] implementation visits [CfirPropertyAccessExpression.calleeReference]
-     * before it visits the receivers.
-     * We want to visit `calleeReference` last so its context contains
-     * the implicit receivers generated for the receivers' calls.
-     *
-     * @see addReceiversFromExtensions
-     */
-    override fun visitPropertyAccessExpression(propertyAccessExpression: CfirPropertyAccessExpression) {
-        onActive {
-            withParent(propertyAccessExpression) {
-                val calleeReference = propertyAccessExpression.calleeReference
-
-                val visitor = FilteringVisitor(this, elementsToSkip = setOf(calleeReference), checkIsActive = true)
-                propertyAccessExpression.acceptChildren(visitor)
-                calleeReference.accept(this)
-            }
-        }
-
-        dumpContext(propertyAccessExpression, ContextKind.SELF, hasBodyContext = false)
-    }
-
-    override fun visitRegularClass(regularClass: CfirRegularClass) = withProcessor(regularClass) {
-        dumpContext(regularClass, ContextKind.SELF)
-
-        context.withClassHeader(regularClass) {
-            processRawAnnotations(regularClass)
-        }
-
-        onActive {
-            regularClass.lazyResolveToPhase(CfirResolvePhase.STATUS)
-
-            context.withContainingClass(regularClass) {
-                processClassHeader(regularClass)
-
-                val holder = getSessionHolder(regularClass)
-
-                context.forRegularClassBody(regularClass, holder) {
-                    dumpContext(regularClass, ContextKind.BODY)
-
-                    onActive {
-                        withInterceptor {
-                            processChildren(regularClass)
-                        }
-                    }
-                }
-            }
-        }
-
-        if (regularClass.isLocal) {
-            context.storeClassOrTypealiasIfNotNested(regularClass, regularClass.moduleData.session)
-        }
-    }
-
-    override fun visitTypeAlias(typeAlias: CfirTypeAlias) {
-        context.forTypeAlias(typeAlias) {
-            super.visitTypeAlias(typeAlias)
-        }
-
-        if (typeAlias.isLocal) {
-            context.storeClassOrTypealiasIfNotNested(typeAlias, typeAlias.moduleData.session)
-        }
-    }
-
-    override fun visitDoWhileLoop(doWhileLoop: CfirDoWhileLoop) = withProcessor(doWhileLoop) {
-        dumpContext(doWhileLoop, ContextKind.SELF)
-
-        onActive {
-            dumpContext(doWhileLoop, ContextKind.BODY)
-
-            context.forBlock(bodyHolder.session) {
-                process(doWhileLoop.block) { block ->
-                    doVisitBlock(block, isolateBlock = false)
-                }
-
-                process(doWhileLoop.condition)
-            }
-
-            processChildren(doWhileLoop)
-        }
-    }
-
-    /**
-     * Process the parts of the class declaration which resolution is not affected
-     * by the class own supertypes.
-     *
-     * Processing those parts before adding the implicit receiver of the class
-     * to the [context] allows to not collect incorrect contexts for them later on.
-     */
-    @OptIn(PrivateForInline::class)
-    private fun Processor.processClassHeader(regularClass: CfirRegularClass) {
-        context.withClassHeader(regularClass) {
-            context.withTypeParametersOf(regularClass) {
-                processList(regularClass.typeParameters)
-                processList(regularClass.superTypeRefs)
-            }
-        }
-    }
-
-    private fun Processor.processFileHeader(file: CfirFile) {
         process(file.packageDirective)
         processList(file.imports)
-        processRawAnnotations(file)
+        processAnnotations(file)
+
+        onActive {
+            dumpContext(file, ContextKind.BODY)
+            withInterceptor {
+                processChildren(file)
+            }
+        }
     }
 
-    /**
-     * Same as [processClassHeader], but for anonymous objects.
-     *
-     * N.B. Anonymous classes cannot have its own explicit type parameters, so we do not process them.
-     */
-    private fun Processor.processAnonymousObjectHeader(anonymousObject: CfirAnonymousObject) {
-        processList(anonymousObject.superTypeRefs)
+    override fun visitCodeFragment(codeFragment: CfirCodeFragment) = withProcessor(codeFragment) {
+        dumpContext(codeFragment, ContextKind.SELF)
+
+        codeFragment.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+
+        onActive {
+            val holder = getSessionHolder(codeFragment)
+            context.withCodeFragmentCompat(codeFragment, holder) {
+                dumpContext(codeFragment, ContextKind.BODY)
+                process(codeFragment.block)
+            }
+        }
     }
 
-    override fun visitErrorPrimaryConstructor(errorPrimaryConstructor: CfirErrorPrimaryConstructor) {
-        visitConstructor(errorPrimaryConstructor)
+    override fun visitClass(klass: CfirClass) {
+        handleClassLikeDeclaration(klass)
+    }
+
+    override fun visitInterface(`interface`: CfirInterface) {
+        handleClassLikeDeclaration(`interface`)
+    }
+
+    override fun visitStruct(struct: CfirStruct) {
+        handleClassLikeDeclaration(struct)
+    }
+
+    override fun visitEnum(enum: CfirEnum) {
+        handleClassLikeDeclaration(enum)
+    }
+
+    private fun handleClassLikeDeclaration(declaration: CfirClassLikeDeclaration) = withProcessor(declaration) {
+        dumpContext(declaration, ContextKind.SELF)
+        processAnnotations(declaration)
+
+        context.withContainer(declaration) {
+            processList(declaration.typeParameters)
+            processList(declaration.superTypeRefs)
+        }
+
+        onActive {
+            declaration.lazyResolveToPhase(CfirResolvePhase.STATUS)
+
+            val holder = getSessionHolder(declaration)
+            context.withClassLikeBodyCompat(declaration, holder) {
+                dumpContext(declaration, ContextKind.BODY)
+                withInterceptor {
+                    processChildren(declaration)
+                }
+            }
+        }
+    }
+
+    override fun visitExtend(extend: CfirExtend) = withProcessor(extend) {
+        dumpContext(extend, ContextKind.SELF)
+        processAnnotations(extend)
+
+        context.withTypeParametersCompat(extend) {
+            process(extend.extendedTypeRef)
+            processList(extend.superTypeRefs)
+        }
+
+        onActive {
+            context.withContainer(extend) {
+                dumpContext(extend, ContextKind.BODY)
+                processChildren(extend)
+            }
+        }
+    }
+
+    override fun visitTypeAlias(typeAlias: CfirTypeAlias) = withProcessor(typeAlias) {
+        dumpContext(typeAlias, ContextKind.SELF)
+        processAnnotations(typeAlias)
+
+        context.withTypeParametersCompat(typeAlias) {
+            processList(typeAlias.typeParameters)
+            process(typeAlias.expandedTypeRef)
+        }
+
+        dumpContext(typeAlias, ContextKind.BODY)
     }
 
     override fun visitConstructor(constructor: CfirConstructor) = withProcessor(constructor) {
         dumpContext(constructor, ContextKind.SELF)
+        processAnnotations(constructor)
 
-        context.forConstructor(constructor) {
-            processRawAnnotations(constructor)
+        onActive {
+            constructor.performBodyAnalysis()
 
-            onActive {
-                constructor.performBodyAnalysis()
-
-                val holder = getSessionHolder(constructor)
-                val containingClass = context.containerIfAny as? CfirRegularClass
-
-                context.forConstructorParameters(constructor, containingClass, holder) {
-                    processList(constructor.valueParameters)
-                }
-
-                context.forConstructorBody(constructor, holder.session) {
-                    processList(constructor.valueParameters)
-
-                    dumpContext(constructor, ContextKind.BODY)
-                    processBody(constructor)
-                }
+            val holder = getSessionHolder(constructor)
+            context.withConstructorCompat(constructor, holder) {
+                processList(constructor.valueParameters)
 
                 onActive {
-                    context.forDelegatedConstructorCallChildren(constructor, owningClass = null, holder) {
-                        process(constructor.delegatedConstructor)
+                    context.forConstructorBodyCompat(constructor) {
+                        dumpContext(constructor, ContextKind.BODY)
+                        processDeclarationBody(constructor, constructor.body)
                     }
-
                 }
             }
         }
     }
 
-    override fun visitEnumEntry(enumEntry: CfirEnumEntry) = withProcessor(enumEntry) {
-        dumpContext(enumEntry, ContextKind.SELF)
+    override fun visitNamedFunction(namedFunction: CfirNamedFunction) {
+        visitFunctionLike(namedFunction)
+    }
+
+    override fun visitMainFunction(mainFunction: CfirMainFunction) {
+        visitFunctionLike(mainFunction)
+    }
+
+    override fun visitMacroDeclaration(macroDeclaration: CfirMacroDeclaration) {
+        visitFunctionLike(macroDeclaration)
+    }
+
+    override fun visitFinalizer(finalizer: CfirFinalizer) {
+        visitFunctionLike(finalizer)
+    }
+
+    override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor) = withProcessor(propertyAccessor) {
+        dumpContext(propertyAccessor, ContextKind.SELF)
+        processAnnotations(propertyAccessor)
 
         onActive {
-            // We have to wrap annotation processing into withEnumEntry as well as it provides the correct context
-            // Otherwise there will be the enum entry as an implicit receiver
-            context.withEnumEntry(enumEntry) {
-                processRawAnnotations(enumEntry)
-
-                onActive {
-                    enumEntry.performBodyAnalysis()
-                    dumpContext(enumEntry, ContextKind.BODY)
-
-                    processChildren(enumEntry)
-                }
+            val holder = getSessionHolder(propertyAccessor)
+            context.withPropertyAccessorCompat(propertyAccessor, holder) {
+                processList(propertyAccessor.valueParameters)
+                dumpContext(propertyAccessor, ContextKind.BODY)
+                processDeclarationBody(propertyAccessor, propertyAccessor.body)
             }
         }
     }
 
-    override fun visitDanglingModifierList(danglingModifierList: CfirDanglingModifierList) = withProcessor(danglingModifierList) {
-        dumpContext(danglingModifierList, ContextKind.SELF)
-
-        processAnnotations(danglingModifierList)
-
-        onActive {
-            danglingModifierList.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
-
-            context.withDanglingModifierList(danglingModifierList) {
-                dumpContext(danglingModifierList, ContextKind.BODY)
-                processChildren(danglingModifierList)
-            }
-        }
-    }
-
-    override fun visitNamedFunction(namedFunction: CfirNamedFunction) = withProcessor(namedFunction) {
-        dumpContext(namedFunction, ContextKind.SELF)
-
-        processAnnotations(namedFunction)
+    private fun visitFunctionLike(function: CfirFunction) = withProcessor(function) {
+        dumpContext(function, ContextKind.SELF)
+        processAnnotations(function)
 
         onActive {
-            namedFunction.performBodyAnalysis()
+            function.performBodyAnalysis()
 
-            val holder = getSessionHolder(namedFunction)
-
-            context.withNamedFunction(namedFunction, holder.session) {
-                processList(namedFunction.typeParameters)
-                process(namedFunction.receiverParameter)
+            val holder = getSessionHolder(function)
+            context.withFunctionDeclarationCompat(function) {
+                processList(function.typeParameters)
+                process(function.returnTypeRef)
+                processList(function.valueParameters)
 
                 onActive {
-                    context.forFunctionBody(namedFunction, holder) {
-                        dumpContext(namedFunction, ContextKind.BODY)
-
-                        processList(namedFunction.valueParameters)
-                        processBody(namedFunction)
+                    context.forFunctionBodyCompat(function) {
+                        dumpContext(function, ContextKind.BODY)
+                        processDeclarationBody(function, function.body)
                     }
-
-                    process(namedFunction.returnTypeRef)
                 }
             }
         }
-    }
-
-    override fun visitErrorProperty(errorProperty: CfirErrorProperty) {
-        visitProperty(errorProperty)
     }
 
     override fun visitProperty(property: CfirProperty) = withProcessor(property) {
         dumpContext(property, ContextKind.SELF)
-
         processAnnotations(property)
 
         onActive {
             property.performBodyAnalysis()
 
-            context.withProperty(property) {
+            context.withPropertyCompat(property) {
                 processList(property.typeParameters)
-                process(property.receiverParameter)
+                process(property.returnTypeRef)
 
-                onActive {
-                    dumpContext(property, ContextKind.BODY)
-
-                    context.forPropertyInitializerIfNonLocal(property) {
-                        process(property.initializer)
-                        process(property.delegate)
-                        process(property.backingField)
-                    }
-
-                    processChildren(property)
-                }
+                dumpContext(property, ContextKind.BODY)
+                process(property.getter)
+                process(property.setter)
             }
         }
-
-        if (property.symbol is CfirLocalPropertySymbol) {
-            context.storeVariable(property, property.moduleData.session)
-        }
     }
 
-    /**
-     * Executes [f] wrapped with [BodyResolveContext.forPropertyInitializer] if the [property] is not local.
-     * Note that [BodyResolveContext.forPropertyInitializer] performs the tower data cleanup in the [BodyResolveContext], unless
-     * the [skipCleanup] is set to `true`.
-     *
-     * Otherwise, just calls [f] with no the cleanup.
-     *
-     * We need to disable the context cleanup for local properties
-     * to preserve the implicit receivers introduced by the [addReceiversFromExtensions].
-     */
-    private fun BodyResolveContext.forPropertyInitializerIfNonLocal(property: CfirProperty, f: () -> Unit) {
-        if (property.symbol is CfirRegularPropertySymbol) {
-            forPropertyInitializer(skipCleanup = false, f)
-        } else {
-            f()
-        }
+    override fun visitFieldVariable(fieldVariable: CfirFieldVariable) {
+        visitVariableLike(fieldVariable, fieldVariable.symbol, fieldVariable.initializer)
     }
 
-    private fun CfirExpression.unwrap(): CfirExpression? {
-        return when (this) {
-            is CfirCheckNotNullCall -> argument.unwrap()
-            is CfirSafeCallExpression -> (selector as? CfirExpression)?.unwrap()
-            else -> this
-        }
+    override fun visitPatternVariable(patternVariable: CfirPatternVariable) {
+        visitVariableLike(patternVariable, patternVariable.symbol, patternVariable.initializer)
     }
 
-    /**
-     * We visit fields to properly handle supertypes delegation:
-     *
-     * ```kt
-     * class Foo : Bar by baz
-     * ```
-     *
-     * In the code above, `baz` expression is saved into a separate synthetic field.
-     * It's not accessible from the delegated constructor, it's just added to the
-     * `Foo` class body.
-     */
-    override fun visitField(field: CfirField) = withProcessor(field) {
-        dumpContext(field, ContextKind.SELF)
+    override fun visitPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable) {
+        visitVariableLike(patternBindingVariable, patternBindingVariable.symbol, patternBindingVariable.initializer)
+    }
 
-        processAnnotations(field)
+    private fun visitVariableLike(
+        variable: CfirDeclaration,
+        symbol: CfirCallableSymbol<*>,
+        initializer: CfirElement?,
+    ) = withProcessor(variable) {
+        dumpContext(variable, ContextKind.SELF)
+
+        if (variable is CfirFieldVariable) {
+            processAnnotations(variable)
+            process(variable.returnTypeRef)
+        }
 
         onActive {
-            field.performBodyAnalysis()
-
-            context.withField(field) {
-                dumpContext(field, ContextKind.BODY)
-                process(field.initializer)
+            context.withLocalVariableBodyCompat {
+                dumpContext(variable, ContextKind.BODY)
+                process(initializer)
             }
         }
-    }
 
-    override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor) = withProcessor(propertyAccessor) {
-        dumpContext(propertyAccessor, ContextKind.SELF)
-
-        processAnnotations(propertyAccessor)
-
-        onActive {
-            val holder = getSessionHolder(propertyAccessor)
-
-            context.withPropertyAccessor(propertyAccessor.propertySymbol.fir, propertyAccessor, holder) {
-                dumpContext(propertyAccessor, ContextKind.BODY)
-                processChildren(propertyAccessor)
-            }
-        }
+        context.storeVariable(symbol.name, symbol)
     }
 
     override fun visitValueParameter(valueParameter: CfirValueParameter) = withProcessor(valueParameter) {
         dumpContext(valueParameter, ContextKind.SELF)
-
         processAnnotations(valueParameter)
+        process(valueParameter.returnTypeRef)
 
         onActive {
-            context.withValueParameter(valueParameter, valueParameter.moduleData.session) {
+            context.withValueParameterCompat(valueParameter) {
                 dumpContext(valueParameter, ContextKind.BODY)
-                processChildren(valueParameter)
-            }
-        }
-    }
-
-    override fun visitAnonymousInitializer(anonymousInitializer: CfirAnonymousInitializer) = withProcessor(anonymousInitializer) {
-        dumpContext(anonymousInitializer, ContextKind.SELF)
-
-        processAnnotations(anonymousInitializer)
-
-        onActive {
-            context.withAnonymousInitializer(anonymousInitializer, anonymousInitializer.moduleData.session) {
-                dumpContext(anonymousInitializer, ContextKind.BODY)
-
-                onActive {
-                    anonymousInitializer.performBodyAnalysis()
-                    processBody(anonymousInitializer)
-                }
+                process(valueParameter.defaultValue)
             }
         }
     }
 
     override fun visitAnonymousFunction(anonymousFunction: CfirAnonymousFunction) = withProcessor(anonymousFunction) {
         dumpContext(anonymousFunction, ContextKind.SELF)
-
         processAnnotations(anonymousFunction)
 
         onActive {
-            @OptIn(PrivateForInline::class)
-            context.withTypeParametersOf(anonymousFunction) {
+            anonymousFunction.performBodyAnalysis()
+
+            context.withAnonymousFunctionCompat(anonymousFunction) {
                 processList(anonymousFunction.typeParameters)
-                process(anonymousFunction.receiverParameter)
+                process(anonymousFunction.returnTypeRef)
+                processList(anonymousFunction.valueParameters)
 
-                onActive {
-                    context.withAnonymousFunction(anonymousFunction, bodyHolder) {
-                        for (valueParameter in anonymousFunction.valueParameters) {
-                            context.storeValueParameterIfNeeded(valueParameter, bodyHolder.session)
-                        }
-
-                        dumpContext(anonymousFunction, ContextKind.BODY)
-
-                        processList(anonymousFunction.valueParameters)
-                        process(anonymousFunction.body)
-                    }
-
-                    processChildren(anonymousFunction)
-                }
+                dumpContext(anonymousFunction, ContextKind.BODY)
+                processDeclarationBody(anonymousFunction, anonymousFunction.body)
             }
         }
     }
 
-    override fun visitAnonymousObject(anonymousObject: CfirAnonymousObject) = withProcessor(anonymousObject) {
-        dumpContext(anonymousObject, ContextKind.SELF)
-
-        processAnnotations(anonymousObject)
-
-        onActive {
-            processAnonymousObjectHeader(anonymousObject)
-
-            context.withAnonymousObject(anonymousObject, bodyHolder) {
-                dumpContext(anonymousObject, ContextKind.BODY)
-                processChildren(anonymousObject)
-            }
-        }
-    }
-
-    override fun visitBlock(block: CfirBlock) {
+    override fun visitBlock(block: org.cangnova.cangjie.cfir.expressions.CfirBlock) {
         doVisitBlock(block)
     }
 
-    /**
-     * @param isolateBlock whether to wrap the block into a [BodyResolveContext.forBlock]
-     */
-    private fun doVisitBlock(block: CfirBlock, isolateBlock: Boolean = true) = withProcessor(block) {
+    private fun doVisitBlock(
+        block: org.cangnova.cangjie.cfir.expressions.CfirBlock,
+        isolateBlock: Boolean = true,
+    ) = withProcessor(block) {
         dumpContext(block, ContextKind.SELF)
 
         onActive {
             if (isolateBlock) {
-                context.forBlock(bodyHolder.session) {
+                context.withBlockScopeCompat {
                     processBlockBody(block)
                 }
             } else {
@@ -966,37 +517,66 @@ private class ContextCollectorVisitor(
         }
     }
 
-    private fun Processor.processBlockBody(block: CfirBlock) {
-        // Process all children so we can dump the body context
+    private fun Processor.processBlockBody(block: org.cangnova.cangjie.cfir.expressions.CfirBlock) {
         processChildren(block, checkIsActive = false)
         dumpContext(block, ContextKind.BODY)
     }
 
-    /**
-     * Iterates directly through annotations without any [context] adjustments.
-     *
-     * This function is needed in the case if special modification of [context] is required.
-     * In this case such adjustments have to be done before this function.
-     *
-     * [processAnnotations] should be used by default.
-     *
-     * @see processAnnotations
-     */
-    private fun Processor.processRawAnnotations(declaration: CfirDeclaration) {
-        for (annotation in declaration.annotations) {
-            process(annotation)
+    private fun dumpContext(element: CfirElement, kind: ContextKind, hasBodyContext: Boolean = true) {
+        ProgressManager.checkCanceled()
+
+        if (kind == ContextKind.BODY && !shouldCollectBodyContext) {
+            return
+        }
+
+        val psi = element.anchorPsi ?: return
+        val key = ContextKey(psi, kind)
+        if (key in result) {
+            return
+        }
+
+        val response = filter(psi)
+        if (response != FilterResponse.SKIP) {
+            result[key] = Context(context.towerDataContext.createSnapshot(keepMutable = true))
+        }
+
+        if (response == FilterResponse.STOP) {
+            if (kind == ContextKind.BODY || !(hasBodyContext && shouldCollectBodyContext)) {
+                isActive = false
+            }
         }
     }
 
-    /**
-     * Processes [CfirDeclaration.annotations] in the context of [declaration].
-     *
-     * @see org.cangnova.cangjie.cfir.resolve.transformers.plugin.CfirAnnotationArgumentsTransformer
-     */
+    private fun Processor.processDeclarationBody(
+        declaration: CfirDeclaration,
+        body: org.cangnova.cangjie.cfir.expressions.CfirBlock?,
+    ) {
+        if (!isActive) {
+            return
+        }
+
+        val snapshot = declaration.partialBodyAnalysisState?.analysisStateSnapshot
+        if (snapshot != null) {
+            context.withBlockScopeCompat {
+                for (statement in snapshot.result.statements) {
+                    statement.accept(this@ContextCollectorVisitor)
+                    if (!isActive) {
+                        break
+                    }
+                }
+            }
+            return
+        }
+
+        process(body)
+    }
+
     private fun Processor.processAnnotations(declaration: CfirDeclaration) {
         @OptIn(PrivateForInline::class)
         context.withContainer(declaration) {
-            processRawAnnotations(declaration)
+            for (annotation in declaration.annotations) {
+                process(annotation)
+            }
         }
     }
 
@@ -1016,20 +596,13 @@ private class ContextCollectorVisitor(
             }
         }
 
-        fun <T : CfirElement?> process(element: T?, customVisit: (T & Any) -> Unit) {
-            if (element != null) {
-                customVisit(element)
-                elementsToSkip += element
-            }
-        }
-
         fun processList(elements: Collection<CfirElement>) {
             for (element in elements) {
                 if (!isActive) {
                     break
                 }
+
                 process(element)
-                elementsToSkip += element
             }
         }
 
@@ -1037,15 +610,16 @@ private class ContextCollectorVisitor(
             if (checkIsActive && !isActive) {
                 return
             }
+
             val visitor = FilteringVisitor(delegate, elementsToSkip, checkIsActive)
             element.acceptChildren(visitor)
         }
     }
 
     private inner class FilteringVisitor(
-        val delegate: CfirVisitorVoid,
-        val elementsToSkip: Set<CfirElement>,
-        val checkIsActive: Boolean,
+        private val delegate: CfirVisitorVoid,
+        private val elementsToSkip: Set<CfirElement>,
+        private val checkIsActive: Boolean,
     ) : CfirVisitorVoid() {
         override fun visitElement(element: CfirElement) {
             if (checkIsActive && !isActive) {
@@ -1058,49 +632,14 @@ private class ContextCollectorVisitor(
         }
     }
 
-    /**
-     * Analyze the body of the given declaration, unless the caller asked to avoid it by setting [shouldTriggerBodyAnalysis], and
-     * we can verify that at least some part of the declaration's body is already analyzed.
-     */
     private fun CfirDeclaration.performBodyAnalysis() {
         if (!shouldTriggerBodyAnalysis && partialBodyAnalysisState != null) {
-            // The declaration body is partially resolved as the caller guaranteed. The check is optimistic.
             return
         }
 
         lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
     }
 
-    /**
-     * Visit the already resolved parts of the body.
-     */
-    private fun Processor.processBody(declaration: CfirDeclaration) {
-        if (!isActive) {
-            return
-        }
-
-        val snapshot = declaration.partialBodyAnalysisState?.analysisStateSnapshot
-        if (snapshot != null) {
-            context.forBlock(bodyHolder.session) {
-                for (statement in snapshot.result.statements) {
-                    statement.accept(this@ContextCollectorVisitor)
-                    if (!isActive) {
-                        break
-                    }
-                }
-            }
-
-            return
-        }
-
-        process(declaration.body)
-    }
-
-    /**
-     * Ensures that the visitor is going through the path specified by the initial [CfirDesignation].
-     *
-     * If the designation is over, then allows the [block] code to take control.
-     */
     private fun withInterceptor(block: () -> Unit) {
         val target = designationPathInterceptor?.invoke()
         if (target != null) {
@@ -1123,5 +662,175 @@ private class ContextCollectorVisitor(
         if (isActive) {
             block()
         }
+    }
+}
+
+/**
+ * 以下兼容层只服务 low-level context 收集。
+ *
+ * Kotlin `BodyResolveContext` 提供了大量针对脚本、CFG、receiver DSL 的 helper；
+ * 当前仓颉主干尚未补齐这些能力，因此这里只把 low-level 实际需要的上下文边界
+ * 收紧到已经存在的主干结构。
+ */
+private inline fun BodyResolveContext.withTypeParametersCompat(
+    declaration: CfirTypeParameterRefsOwner,
+    block: () -> Unit,
+) {
+    val typeParameters = declaration.typeParameters.filterIsInstance<CfirTypeParameter>()
+    if (typeParameters.isEmpty()) {
+        block()
+        return
+    }
+
+    withTowerDataCleanup {
+        addNonLocalScope(CfirTypeParameterScopeImpl(typeParameters))
+        block()
+    }
+}
+
+private inline fun BodyResolveContext.withClassLikeBodyCompat(
+    declaration: CfirClassLikeDeclaration,
+    holder: SessionAndScopeSessionHolder,
+    crossinline block: () -> Unit,
+) {
+    withScopesForClass(declaration, holder) {
+        withContainer(declaration) {
+            block()
+        }
+    }
+}
+
+private inline fun BodyResolveContext.withConstructorCompat(
+    constructor: CfirConstructor,
+    holder: SessionAndScopeSessionHolder,
+    block: () -> Unit,
+) {
+    withTowerDataMode(org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirTowerDataMode.CONSTRUCTOR_HEADER) {
+        withContainer(constructor) {
+            withTowerDataCleanup {
+                addLocalScope(CfirLocalScopeImpl())
+                for (valueParameter in constructor.valueParameters) {
+                    storeVariable(valueParameter.name, valueParameter.symbol)
+                }
+                block()
+            }
+        }
+    }
+}
+
+private inline fun BodyResolveContext.forConstructorBodyCompat(
+    constructor: CfirConstructor,
+    block: () -> Unit,
+) {
+    withTowerDataCleanup {
+        addLocalScope(CfirLocalScopeImpl())
+        for (valueParameter in constructor.valueParameters) {
+            storeVariable(valueParameter.name, valueParameter.symbol)
+        }
+        block()
+    }
+}
+
+private inline fun BodyResolveContext.withFunctionDeclarationCompat(
+    function: CfirFunction,
+    block: () -> Unit,
+) {
+    if (containerIfAny !is CfirClassLikeDeclaration && containerIfAny !is CfirExtend) {
+        val symbol = function.symbol as? CfirFunctionSymbol<*>
+        if (symbol != null) {
+            storeFunction(symbol.name, symbol)
+        }
+    }
+
+    withTypeParametersCompat(function) {
+        withContainer(function, block)
+    }
+}
+
+private inline fun BodyResolveContext.forFunctionBodyCompat(
+    function: CfirFunction,
+    block: () -> Unit,
+) {
+    withTowerDataCleanup {
+        addLocalScope(CfirLocalScopeImpl())
+        for (valueParameter in function.valueParameters) {
+            storeVariable(valueParameter.name, valueParameter.symbol)
+        }
+        block()
+    }
+}
+
+private inline fun BodyResolveContext.withPropertyCompat(
+    property: CfirProperty,
+    block: () -> Unit,
+) {
+    withTypeParametersCompat(property) {
+        withContainer(property, block)
+    }
+}
+
+private inline fun BodyResolveContext.withPropertyAccessorCompat(
+    propertyAccessor: CfirPropertyAccessor,
+    holder: SessionAndScopeSessionHolder,
+    block: () -> Unit,
+) {
+    withTowerDataCleanup {
+        addLocalScope(CfirLocalScopeImpl())
+        for (valueParameter in propertyAccessor.valueParameters) {
+            storeVariable(valueParameter.name, valueParameter.symbol)
+        }
+
+        withPublicApiInlineFunction(propertyAccessor) {
+            withContainer(propertyAccessor, block)
+        }
+    }
+}
+
+private inline fun BodyResolveContext.withValueParameterCompat(
+    valueParameter: CfirValueParameter,
+    block: () -> Unit,
+) {
+    storeVariable(valueParameter.name, valueParameter.symbol)
+    withContainer(valueParameter, block)
+}
+
+private inline fun BodyResolveContext.withAnonymousFunctionCompat(
+    anonymousFunction: org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction,
+    block: () -> Unit,
+) {
+    withTypeParametersCompat(anonymousFunction) {
+        withTowerDataCleanup {
+            addLocalScope(CfirLocalScopeImpl())
+            withContainer(anonymousFunction) {
+                block()
+            }
+        }
+    }
+}
+
+private inline fun BodyResolveContext.withBlockScopeCompat(block: () -> Unit) {
+    withTowerDataCleanup {
+        addLocalScope(CfirLocalScopeImpl())
+        block()
+    }
+}
+
+private inline fun BodyResolveContext.withLocalVariableBodyCompat(block: () -> Unit) {
+    withTowerDataCleanup(block)
+}
+
+private inline fun BodyResolveContext.withCodeFragmentCompat(
+    codeFragment: CfirCodeFragment,
+    holder: SessionAndScopeSessionHolder,
+    block: () -> Unit,
+) {
+    val codeFragmentContext = codeFragment.codeFragmentContext
+    if (codeFragmentContext == null) {
+        withContainer(codeFragment, block)
+        return
+    }
+
+    withTowerDataContext(codeFragmentContext.towerDataContext.createSnapshot(keepMutable = true)) {
+        withContainer(codeFragment, block)
     }
 }

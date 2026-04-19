@@ -10,27 +10,28 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.util.CachedValue
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
+import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaBuiltinsModuleImpl
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirBuiltinsSessionProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirBuiltinsSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories.LLLibrarySymbolProviderFactory
-import org.cangnova.cangjie.config.LanguageVersionSettingsImpl
-import org.cangnova.cangjie.cfir.BuiltinTypes
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.resolve.transformers.CfirDummyCompilerLazyDeclarationResolver
-import org.cangnova.cangjie.cfir.scopes.CfirKotlinScopeProvider
+import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
+import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 import org.cangnova.cangjie.cfir.session.*
+import org.cangnova.cangjie.cfir.symbols.CfirDummyCompilerLazyDeclarationResolver
 import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
 
-@OptIn(PrivateSessionConstructor::class, SessionConfiguration::class)
+@OptIn(PrivateSessionConstructor::class, SessionConfiguration::class, CaPlatformInterface::class)
 @LLCfirInternals
 class LLCfirBuiltinsSessionFactory(private val project: Project) {
-    private val builtInTypes = BuiltinTypes()
+    private val builtInTypes = CfirBuiltinTypes()
     private val builtinsModule: CaBuiltinsModule = CaBuiltinsModuleImpl(project)
     @Volatile
     private var builtinsSession: CachedValue<LLCfirBuiltinsSession>? = null
@@ -80,14 +81,14 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
         val moduleData = LLCfirModuleData(session)
 
         return session.apply {
-            val languageVersionSettings = LanguageVersionSettingsImpl.DEFAULT
+            val languageVersionSettings = LanguageVersionSettings.DEFAULT
             registerIdeComponents(project, languageVersionSettings, builtinsModule.contentScope)
             register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
-            registerCommonComponents(languageVersionSettings, isMetadataCompilation = false)
+            registerCommonComponents(languageVersionSettings)
             registerCommonComponentsAfterExtensionsAreConfigured()
             registerModuleData(moduleData)
-            val kotlinScopeProvider = CfirKotlinScopeProvider()
-            register(CfirKotlinScopeProvider::class, kotlinScopeProvider)
+            val cangjieScopeProvider = CfirCangJieScopeProvider()
+            register(CfirCangJieScopeProvider::class, cangjieScopeProvider)
 
             val symbolProvider = createCompositeSymbolProvider(this) {
                 addAll(

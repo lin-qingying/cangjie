@@ -66,7 +66,7 @@ CaModuleProvider.public fun getModuleByStableName(stableModuleName: String): CaM
 CaModuleProvider.public fun getModuleByDescription(moduleDescription: String): CaModule?
 CaModuleProvider.public companion object
 CaModuleProvider.Companion.public fun getInstance(project: Project): CaModuleProvider
-## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaProjectStructureProvider.kt
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CangJieProjectStructureProvider.kt
 package org.cangnova.cangjie.analysis.api.platform.projectStructure
 public data class CaProjectStructureSnapshot( val allModules: List<CaModule>, val allResolvableModules: List<CaModule>, val allSourceLikeModules: List<CaModule>, val allSourceFiles: List<PsiFileSystemItem>, )
 CaProjectStructureSnapshot.public fun getModuleByStableName(stableModuleName: String): CaModule?
@@ -83,6 +83,12 @@ CaProjectStructureProvider.public val allSourceFiles: List<PsiFileSystemItem>
 CaProjectStructureProvider.public companion object
 CaProjectStructureProvider.Companion.public fun getInstance(project: Project): CaProjectStructureProvider
 CaProjectStructureProvider.Companion.public fun getModule(project: Project, element: PsiElement, useSiteModule: CaModule? = null): CaModule
+## org/cangnova/cangjie/analysis/api/platform/resolution/CaResolutionActivityTracker.kt
+package org.cangnova.cangjie.analysis.api.platform.resolution
+public interface CaResolutionActivityTracker
+CaResolutionActivityTracker.public val isCangJieResolutionActive: Boolean
+CaResolutionActivityTracker.public companion object
+CaResolutionActivityTracker.Companion.public fun getInstance(): CaResolutionActivityTracker?
 ## org/cangnova/cangjie/analysis/api/platform/restrictedAnalysis/CaRestrictedAnalysisException.kt
 package org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis
 public abstract class CaRestrictedAnalysisException(cause: Throwable) : RuntimeException(cause)

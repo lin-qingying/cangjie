@@ -6,7 +6,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
 
 import com.intellij.openapi.progress.ProgressManager
-import org.cangnova.cangjie.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.cfir.PersistenceContextCollector
@@ -64,7 +64,7 @@ internal sealed class FileStructureElementDiagnosticRetriever(
         declaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
 
         val declarationContainer = when (declaration) {
-            is CfirFile, is CfirRegularClass -> declaration
+            is CfirFile, is CfirClass -> declaration
             else -> return
         }
 
@@ -90,16 +90,16 @@ private abstract class LLCfirContainerDiagnosticVisitor(
 }
 
 internal class ClassDiagnosticRetriever(
-    declaration: CfirRegularClass,
+    declaration: CfirClass,
     file: CfirFile,
     moduleComponents: LLCfirModuleResolveComponents,
 ) : FileStructureElementDiagnosticRetriever(declaration, file, moduleComponents) {
     override fun createVisitor(context: CheckerContextForProvider, components: DiagnosticCollectorComponents): LLCfirDiagnosticVisitor {
-        return Visitor(declaration as CfirRegularClass, context, components)
+        return Visitor(declaration as CfirClass, context, components)
     }
 
     private class Visitor(
-        regularClass: CfirRegularClass,
+        regularClass: CfirClass,
         context: CheckerContextForProvider,
         components: DiagnosticCollectorComponents,
     ) : LLCfirContainerDiagnosticVisitor(

@@ -13,6 +13,8 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.registerDiagnosticFactorie
 import org.cangnova.cangjie.cfir.analysis.diagnostics.registeredDiagnosticFactoriesStorageOrNull
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionService
+import org.cangnova.cangjie.cfir.extensions.PluginServicesInitialization
+import org.cangnova.cangjie.cfir.extensions.CfirRegisteredPluginAnnotations
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import kotlin.reflect.KClass
@@ -86,12 +88,14 @@ class CfirSessionConfigurator(
     }
 
     /** 将已收集的配置真正应用到会话。 */
+    @OptIn(PluginServicesInitialization::class)
     fun configure() {
         val merged = registeredExtensions.reduce(BunchOfRegisteredExtensions::plus)
 
         // 扩展服务不存在时自动创建，保证可重复调用。
         val extensionService = session.ensureExtensionService()
         extensionService.registerAll(merged.registrars)
+        session.registeredPluginAnnotationsOrNull?.initialize()
 
         // 仅源码会话记录诊断工厂容器，保持与 Kotlin 侧语义一致。
         if (session.kind == CfirSession.Kind.Source && merged.diagnosticsContainers.isNotEmpty()) {
@@ -141,6 +145,10 @@ private val CfirSession.extensionServiceOrNull: CfirExtensionService?
 
 /** checker 组件可空访问器。 */
 private val CfirSession.checkersComponentOrNull: CheckersComponent?
+    by CfirSession.nullableSessionComponentAccessor()
+
+/** 已注册插件注解组件可空访问器。 */
+private val CfirSession.registeredPluginAnnotationsOrNull: CfirRegisteredPluginAnnotations?
     by CfirSession.nullableSessionComponentAccessor()
 
 /** 确保会话中存在扩展服务。 */

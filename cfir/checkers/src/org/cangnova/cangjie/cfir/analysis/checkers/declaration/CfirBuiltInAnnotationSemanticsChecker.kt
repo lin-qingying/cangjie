@@ -301,6 +301,23 @@ private fun checkJavaInteropSemantics(declaration: CfirClassLikeDeclaration) {
     }
 
     if (hasJavaImpl) {
+        // @JavaImpl interface:不支持
+        if (declaration is org.cangnova.cangjie.cfir.declarations.CfirInterface) {
+            reporter.reportOn(
+                source = declaration.source,
+                factory = CfirErrors.JAVA_INTEROP_NOT_SUPPORTED,
+                a = "@JavaImpl interface",
+            )
+        }
+        // @JavaImpl abstract class:不支持
+        if (declaration is org.cangnova.cangjie.cfir.declarations.CfirClass
+            && declaration.status.isAbstract) {
+            reporter.reportOn(
+                source = declaration.source,
+                factory = CfirErrors.JAVA_INTEROP_NOT_SUPPORTED,
+                a = "@JavaImpl abstract",
+            )
+        }
         if (superDeclarations.any { it is org.cangnova.cangjie.cfir.declarations.CfirInterface }) {
             reporter.reportOn(
                 source = declaration.source,
@@ -543,6 +560,16 @@ private fun checkObjCInteropSemantics(declaration: CfirClassLikeDeclaration) {
             )
         }
         return
+    }
+
+    // ObjC abstract class 不支持(对齐 C++ CheckAbstractClass.cpp:22)
+    if (declaration is org.cangnova.cangjie.cfir.declarations.CfirClass
+        && declaration.status.isAbstract) {
+        reporter.reportOn(
+            source = declaration.source,
+            factory = CfirErrors.OBJC_INTEROP_NOT_SUPPORTED,
+            a = "abstract",
+        )
     }
 
     if (hasObjCMirror && superDeclarations.any { !it.hasAnnotation(OBJC_MIRROR) }) {

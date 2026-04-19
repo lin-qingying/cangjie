@@ -72,6 +72,10 @@ open class CfirDefaultTransformer<in D> : CfirTransformer<D>() {
         return transformDeclaration(file, data) as CfirFile
     }
 
+    override fun transformCodeFragment(codeFragment: CfirCodeFragment, data: D): CfirCodeFragment {
+        return transformDeclaration(codeFragment, data) as CfirCodeFragment
+    }
+
     override fun transformClass(klass: CfirClass, data: D): CfirClass {
         return transformClassLikeDeclaration(klass, data) as CfirClass
     }
@@ -114,6 +118,10 @@ open class CfirDefaultTransformer<in D> : CfirTransformer<D>() {
 
     override fun transformProperty(property: CfirProperty, data: D): CfirProperty {
         return transformCallableDeclaration(property, data) as CfirProperty
+    }
+
+    override fun transformPropertyAccessor(propertyAccessor: CfirPropertyAccessor, data: D): CfirPropertyAccessor {
+        return transformFunction(propertyAccessor, data) as CfirPropertyAccessor
     }
 
     override fun transformFieldVariable(variable: CfirFieldVariable, data: D): CfirFieldVariable {

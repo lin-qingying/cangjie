@@ -5,48 +5,33 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.compile
 
-import com.intellij.psi.PsiElement
-import com.intellij.psi.util.PsiTreeUtil
-import org.cangnova.cangjie.CjFakeSourceElementKind
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
+import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.compile.CaCodeFragmentCapturedValue
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
-import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.containingCjFileIfAny
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
-import org.cangnova.cangjie.analysis.low.level.api.cfir.util.parentsCodeFragmentAware
-import org.cangnova.cangjie.descriptors.ClassKind
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.declarations.utils.isInline
-import org.cangnova.cangjie.cfir.declarations.utils.isLocal
 import org.cangnova.cangjie.cfir.expressions.*
-import org.cangnova.cangjie.cfir.extensions.captureValueInAnalyze
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.references.CfirThisReference
-import org.cangnova.cangjie.cfir.references.toResolvedCallableSymbol
-import org.cangnova.cangjie.cfir.resolve.defaultType
-import org.cangnova.cangjie.cfir.resolve.toSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.*
-import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.resolve.toClassSymbol
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.forEachType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.resolvedType
-import org.cangnova.cangjie.cfir.types.toRegularClassSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
-import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.name.StandardClassIds
-import org.cangnova.cangjie.psi
-import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
-import org.cangnova.cangjie.psi.CjFunction
 import java.util.*
 
 @CaImplementationDetail
+@OptIn(CaExperimentalApi::class)
 class CodeFragmentCapturedSymbol(
     val value: CaCodeFragmentCapturedValue,
     val symbol: CfirBasedSymbol<*>,
@@ -60,6 +45,7 @@ data class CodeFragmentCapturedId(val symbol: CfirBasedSymbol<*>)
 class InlineLambdaArgument(val expr: CfirExpression, val stackRollbackDepth: Int)
 
 @CaImplementationDetail
+@OptIn(CaExperimentalApi::class)
 object CodeFragmentCapturedValueAnalyzer {
     fun analyze(
         resolutionFacade: LLResolutionFacade,
@@ -78,7 +64,8 @@ object CodeFragmentCapturedValueAnalyzer {
     }
 }
 
-@CaImplementationDetail
+
+@OptIn(CaExperimentalApi::class)
 class CodeFragmentCapturedValueData(
     val symbols: List<CodeFragmentCapturedSymbol>,
     val files: List<CjFile>,
@@ -100,6 +87,7 @@ private class CodeFragmentDeclarationCollector : CfirDefaultVisitorVoid() {
     }
 }
 
+@OptIn(CaExperimentalApi::class)
 private class CodeFragmentCapturedValueVisitor(
     private val resolutionFacade: LLResolutionFacade,
     private val selfSymbols: Set<CfirBasedSymbol<*>>,
@@ -122,8 +110,8 @@ private class CodeFragmentCapturedValueVisitor(
     private var depth = 0
 
     override fun visitElement(element: CfirElement) {
-        if (element is CfirPropertyAccessExpression) {
-            val symbol = element.toResolvedCallableSymbol() as? CfirValueParameterSymbol
+        if (element is CfirQualifiedAccessExpression) {
+            val symbol = element.resolvedCallableSymbolFromExpressionOrNull() as? CfirValueParameterSymbol
             val inlineLambdaArgument = inlineLambdaParametersMapping[symbol]
             if (inlineLambdaArgument != null) {
                 val oldDepth = depth
@@ -136,7 +124,7 @@ private class CodeFragmentCapturedValueVisitor(
 
         processElement(element)
 
-        val lhs = (element as? CfirVariableAssignment)?.lValue?.toResolvedCallableSymbol(session)
+        val lhs = (element as? CfirAssignment)?.lValue?.resolvedCallableSymbolFromExpressionOrNull()
         if (lhs != null) {
             assignmentLhs.add(lhs)
         }
@@ -150,17 +138,12 @@ private class CodeFragmentCapturedValueVisitor(
 
     private fun processElement(element: CfirElement) {
         if (element is CfirExpression) {
-            element.resolvedType.forEachType { type ->
-                val symbol = type.toSymbol(session)
-                if (symbol != null) {
-                    registerFileIfRequired(symbol)
-                }
-            }
+            element.resolvedType.toClassSymbol(session)?.let(::registerFileIfRequired)
         }
 
         when (element) {
             is CfirSuperReference -> {
-                val symbol = (element.superTypeRef as? CfirResolvedTypeRef)?.toRegularClassSymbol(session)
+                val symbol = (element.superTypeRef as? CfirResolvedTypeRef)?.coneType?.toClassSymbol(session)
                 if (symbol != null && symbol !in selfSymbols) {
                     val isCrossingInlineBounds = isCrossingInlineBounds(element, symbol)
                     val capturedValue = CaCodeFragmentCapturedValue.SuperClass(symbol.classId, isCrossingInlineBounds, depth)
@@ -170,7 +153,7 @@ private class CodeFragmentCapturedValueVisitor(
             is CfirThisReference -> {
                 val symbol = element.boundSymbol
                 if (symbol != null && (symbol as CfirBasedSymbol<*>?) !in selfSymbols) {
-                    fun registerClassSymbolIfNotObject(classSymbol: CfirClassSymbol<*>) {
+                    fun registerContainingClass(classSymbol: CfirClassLikeSymbol<*>) {
                         val isCrossingInlineBounds = isCrossingInlineBounds(element, classSymbol)
                         val capturedValue = CaCodeFragmentCapturedValue.ContainingClass(classSymbol.classId, isCrossingInlineBounds, depth)
                         val typeRef = buildResolvedTypeRef { coneType = classSymbol.defaultType() }
@@ -178,32 +161,22 @@ private class CodeFragmentCapturedValueVisitor(
                     }
 
                     when (symbol) {
-                        is CfirClassSymbol<*> -> {
-                            registerClassSymbolIfNotObject(symbol)
-                        }
-                        is CfirReceiverParameterSymbol -> {
-                            if (symbol.captureValueInAnalyze) {
-                                val receiverParameter = symbol.fir
-                                val labelName = element.labelName
-                                    ?: (receiverParameter.containingDeclarationSymbol as? CfirAnonymousFunctionSymbol)?.label?.name
-                                    ?: (receiverParameter.containingDeclarationSymbol as CfirCallableSymbol).name.asString()
-
-                                val typeRef = receiverParameter.typeRef
-                                val isCrossingInlineBounds = isCrossingInlineBounds(element, symbol)
-                                val capturedValue = CaCodeFragmentCapturedValue.ExtensionReceiver(labelName, isCrossingInlineBounds, depth)
-                                register(
-                                    CodeFragmentCapturedSymbol(capturedValue, receiverParameter.symbol, typeRef)
-                                )
-                            }
+                        is CfirClassLikeSymbol<*> -> registerContainingClass(symbol)
+                        is CfirExtendSymbol -> {
+                            // 仓颉没有 Kotlin 式 extension receiver captured value，
+                            // `extend` 中的 `this` 只能收口到其真实扩展目标类型。
+                            symbol.cfir.extendedTypeRef.coneTypeOrNull
+                                ?.toClassSymbol(session)
+                                ?.let(::registerContainingClass)
                         }
                         is CfirTypeAliasSymbol, is CfirTypeParameterSymbol -> errorWithCfirSpecificEntries(
-                            message = "Unexpected CfirThisOwnerSymbol ${symbol::class.simpleName}", fir = symbol.fir
+                            message = "Unexpected CfirThisOwnerSymbol ${symbol::class.simpleName}", fir = symbol.cfir
                         )
                     }
                 }
             }
             is CfirResolvable -> {
-                val symbol = element.calleeReference.toResolvedCallableSymbol()
+                val symbol = element.resolvedCallableSymbolOrNull()
                 if (symbol != null && symbol !in selfSymbols) {
                     processCall(element, symbol)
                 }
@@ -212,20 +185,14 @@ private class CodeFragmentCapturedValueVisitor(
     }
 
     private fun processCall(element: CfirElement, symbol: CfirCallableSymbol<*>) {
-        // Desugared inc/dec CFIR looks as follows:
-        // lval <unary>: R|kotlin/Int| = R|<local>/x|
-        // R|<local>/x| = R|<local>/<unary>|.R|kotlin/Int.inc|()
-        // We visit the x in the first line before we visit the assignment and need to check the source to determine that the variable
-        // is mutated.
-        // The x in the second line isn't visited because it's a CfirDesugaredAssignmentValueReferenceExpression.
-        val isMutated = assignmentLhs.lastOrNull() == symbol || element.source?.kind is CjFakeSourceElementKind.DesugaredIncrementOrDecrement
+        val isMutated = assignmentLhs.lastOrNull() == symbol
         when (symbol) {
             is CfirValueParameterSymbol -> {
                 val isCrossingInlineBounds = isCrossingInlineBounds(element, symbol)
                 val capturedValue = CaCodeFragmentCapturedValue.Local(symbol.name, isMutated, isCrossingInlineBounds, depth)
                 register(CodeFragmentCapturedSymbol(capturedValue, symbol, symbol.resolvedReturnTypeRef))
             }
-            is CfirLocalPropertySymbol -> {
+            is CfirPropertySymbol -> {
                 val isCrossingInlineBounds = isCrossingInlineBounds(element, symbol)
                 val capturedValue = when {
                     symbol.isForeignValue -> CaCodeFragmentCapturedValue.ForeignValue(symbol.name, isCrossingInlineBounds, depth)
@@ -233,26 +200,10 @@ private class CodeFragmentCapturedValueVisitor(
                 }
                 register(CodeFragmentCapturedSymbol(capturedValue, symbol, symbol.resolvedReturnTypeRef))
             }
-            is CfirRegularPropertySymbol -> {
-                // Property call generation depends on complete backing field resolution (Cfir2IrLazyProperty.backingField)
-                symbol.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
-                registerFileIfRequired(symbol)
-            }
-            is CfirBackingFieldSymbol -> {
-                val propertyName = symbol.propertySymbol.name
-                val isCrossingInlineBounds = isCrossingInlineBounds(element, symbol)
-                val capturedValue = CaCodeFragmentCapturedValue.BackingField(propertyName, isMutated, isCrossingInlineBounds, depth)
-                register(CodeFragmentCapturedSymbol(capturedValue, symbol, symbol.resolvedReturnTypeRef))
-            }
             is CfirNamedFunctionSymbol -> {
                 registerFileIfRequired(symbol)
             }
-        }
-
-        if (symbol.callableId == StandardClassIds.Callables.coroutineContext) {
-            val isCrossingInlineBounds = isCrossingInlineBounds(element, symbol)
-            val capturedValue = CaCodeFragmentCapturedValue.CoroutineContext(isCrossingInlineBounds, depth)
-            register(CodeFragmentCapturedSymbol(capturedValue, symbol, symbol.resolvedReturnTypeRef))
+            else -> Unit
         }
     }
 
@@ -276,29 +227,10 @@ private class CodeFragmentCapturedValueVisitor(
         registerFileIfRequired(mapping.symbol)
     }
 
-    private val CfirFunctionSymbol<*>.isAnnotatedWithNonLiteralJvmName: Boolean
-        get() {
-            val jvmNameAnnotation = annotations.getAnnotationByClassId(StandardClassIds.Annotations.jvmName, session) ?: return false
-
-            lazyResolveToPhase(CfirResolvePhase.ANNOTATION_ARGUMENTS)
-
-            val argument = jvmNameAnnotation.argumentMapping.mapping[Name.identifier("name")]
-            return argument != null && argument !is CfirLiteralExpression
-        }
-
-    private val CfirFunctionSymbol<*>.hasAnnotationArgumentShouldBeEvaluated: Boolean
-        get() {
-            return isAnnotatedWithNonLiteralJvmName
-        }
-
     private fun registerFileIfRequired(symbol: CfirBasedSymbol<*>) {
         val needsRegistration = when (symbol) {
-            is CfirRegularClassSymbol -> symbol.isLocal
-            is CfirAnonymousObjectSymbol -> true
-            is CfirNamedFunctionSymbol -> symbol.isLocal || symbol.hasAnnotationArgumentShouldBeEvaluated
-            is CfirPropertySymbol ->
-                symbol.getterSymbol?.hasAnnotationArgumentShouldBeEvaluated == true
-                        || symbol.setterSymbol?.hasAnnotationArgumentShouldBeEvaluated == true
+            is CfirNamedFunctionSymbol -> symbol.cfir.isLocal
+            is CfirPropertySymbol -> symbol.cfir.isLocal
             else -> false
         }
 
@@ -312,35 +244,18 @@ private class CodeFragmentCapturedValueVisitor(
         }
     }
 
-    private fun isCrossingInlineBounds(element: CfirElement, symbol: CfirBasedSymbol<*>): Boolean {
-        val callSite = element.source?.psi ?: return false
-        val declarationSite = symbol.cfir.source?.psi ?: return false
-        val commonParent = findCommonParentContextAware(callSite, declarationSite) ?: return false
-
-        for (elementInBetween in callSite.parentsCodeFragmentAware) {
-            if (elementInBetween === commonParent) {
-                break
-            }
-
-            if (elementInBetween is CjFunction) {
-                val symbolInBetween = elementInBetween.resolveToCfirSymbol(resolutionFacade)
-                if (symbolInBetween is CfirCallableSymbol<*> && !symbolInBetween.isInline) {
-                    return true
-                }
-            }
-        }
-
-        return false
-    }
-
-    private fun findCommonParentContextAware(callSite: PsiElement, declarationSite: PsiElement): PsiElement? {
-        val directParent = PsiTreeUtil.findCommonParent(callSite, declarationSite)
-        if (directParent != null) {
-            return directParent
-        }
-
-        val codeFragment = callSite.containingFile as? CjCodeFragment ?: return null
-        val codeFragmentContext = codeFragment.context ?: return null
-        return PsiTreeUtil.findCommonParent(codeFragmentContext, declarationSite)
-    }
+    /**
+     * 仓颉主干当前没有 Kotlin FIR 对位的 inline 边界语义，
+     * 因而代码片段捕获分析不会再伪造 crossing-inline-bounds 结果。
+     */
+    private fun isCrossingInlineBounds(element: CfirElement, symbol: CfirBasedSymbol<*>): Boolean = false
 }
+
+private fun CfirResolvable.resolvedCallableSymbolOrNull(): CfirCallableSymbol<*>? =
+    (calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol as? CfirCallableSymbol<*>
+
+private fun CfirExpression.resolvedCallableSymbolFromExpressionOrNull(): CfirCallableSymbol<*>? =
+    (this as? CfirResolvable)?.resolvedCallableSymbolOrNull()
+
+private fun CfirClassLikeSymbol<*>.defaultType() =
+    toLookupTag().constructClassType()

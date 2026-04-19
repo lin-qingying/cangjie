@@ -7,7 +7,7 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacadeService
 import org.cangnova.cangjie.analysis.api.impl.base.sessions.CaBaseSessionProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.psi.CjElement
 import java.util.concurrent.ConcurrentHashMap
@@ -32,7 +32,7 @@ class CaCfirSessionProvider(
     }
 
     private val projectStructureProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        CaProjectStructureProvider.getInstance(project)
+        CangJieProjectStructureProvider.getInstance(project)
     }
 
     override fun getAnalysisSession(useSiteElement: CjElement): CaSession {

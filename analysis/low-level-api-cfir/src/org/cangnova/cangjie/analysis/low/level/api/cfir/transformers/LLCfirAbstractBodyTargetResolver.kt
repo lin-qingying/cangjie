@@ -7,12 +7,12 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.transformers
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirResolveTarget
-import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.LLCfirReturnTypeCalculatorWithJump
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.CfirLazyBodiesCalculator
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
-import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirAbstractBodyResolveTransformerDispatcher
+import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformerDispatcher
+import org.cangnova.cangjie.cfir.resolve.body.ReturnTypeCalculatorWithJump
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 
 internal sealed class LLCfirAbstractBodyTargetResolver(
@@ -20,7 +20,8 @@ internal sealed class LLCfirAbstractBodyTargetResolver(
     resolvePhase: CfirResolvePhase,
     protected val llImplicitBodyResolveComputationSession: LLImplicitBodyResolveComputationSession = LLImplicitBodyResolveComputationSession(),
 ) : LLCfirTargetResolver(resolveTarget, resolvePhase) {
-    protected fun createReturnTypeCalculator(): LLCfirReturnTypeCalculatorWithJump = LLCfirReturnTypeCalculatorWithJump(
+    protected fun createReturnTypeCalculator(): ReturnTypeCalculatorWithJump = ReturnTypeCalculatorWithJump(
+        resolveTargetSession,
         resolveTargetScopeSession,
         llImplicitBodyResolveComputationSession,
     )
@@ -41,8 +42,8 @@ internal sealed class LLCfirAbstractBodyTargetResolver(
         }
     }
 
-    @Deprecated("Should never be called directly, only for override purposes, please use withRegularClass", level = DeprecationLevel.ERROR)
-    override fun withContainingRegularClass(firClass: CfirRegularClass, action: () -> Unit) {
+    @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
+    override fun withContainingClass(firClass: CfirClass, action: () -> Unit) {
         transformer.declarationsTransformer?.context?.withContainingClass(firClass) {
             transformer.declarationsTransformer?.forRegularClassBody(firClass) {
                 action()

@@ -14,7 +14,6 @@ import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariabl
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePlaceholderType
 import org.cangnova.cangjie.cfir.types.ConeSubstitutor
@@ -134,7 +133,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         val ownerClassId = ownerClassIdForCallable(session, candidate)
             ?: return emptyList()
         val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
-            ?: session.cfirProvider.getClassByClassId(ownerClassId)
+            ?: session.cfirProvider.getCfirClassifierByFqName(ownerClassId)
             ?: return emptyList()
 
         return when (ownerDeclaration) {
@@ -155,12 +154,6 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
     ): org.cangnova.cangjie.name.ClassId? {
         val callableSymbol = candidate.symbol as? org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*> ?: return null
 
-        return session.symbolProvider.getContainingClassId(callableSymbol)
-            ?: session.cfirProvider.getContainingClassId(callableSymbol)
-            ?: run {
-                val enumConstructorSymbol = callableSymbol as? CfirEnumConstructorSymbol ?: return@run null
-                session.symbolProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
-                    ?: session.cfirProvider.getEnumConstructorOwnerClassId(enumConstructorSymbol)
-            }
+        return session.cfirProvider.getContainingClass(callableSymbol)?.classId
     }
 }

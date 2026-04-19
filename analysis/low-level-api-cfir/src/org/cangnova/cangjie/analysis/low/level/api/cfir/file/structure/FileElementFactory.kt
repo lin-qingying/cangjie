@@ -20,7 +20,7 @@ internal object FileElementFactory {
         firFile: CfirFile,
         moduleComponents: LLCfirModuleResolveComponents,
     ): FileStructureElement = when (firDeclaration) {
-        is CfirRegularClass -> {
+        is CfirClass -> {
             firDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
 
             lazyResolveClassGeneratedMembers(firDeclaration)
@@ -42,7 +42,7 @@ internal object FileElementFactory {
         }
     }
 
-    private fun lazyResolveClassGeneratedMembers(firClass: CfirRegularClass) {
+    private fun lazyResolveClassGeneratedMembers(firClass: CfirClass) {
         val classMembersToResolve = firClass.declarations.filter(CfirDeclaration::isPartOfClassStructureElement)
 
         if (classMembersToResolve.isEmpty()) return

@@ -28,6 +28,7 @@ class CfirTypeAliasBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
+    lateinit var deprecationsProvider: DeprecationsProvider
     val declarations: MutableList<CfirDeclaration> = mutableListOf()
     val superTypeRefs: MutableList<CfirTypeRef> = mutableListOf()
     lateinit var symbol: CfirTypeAliasSymbol
@@ -45,6 +46,7 @@ class CfirTypeAliasBuilder {
             annotations.toMutableOrEmpty(),
             origin,
             attributes,
+            deprecationsProvider,
             declarations,
             superTypeRefs,
             symbol,
@@ -77,6 +79,7 @@ inline fun buildTypeAliasCopy(original: CfirTypeAlias, init: CfirTypeAliasBuilde
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
+    copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.declarations.addAll(original.declarations)
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)
     copyBuilder.status = original.status

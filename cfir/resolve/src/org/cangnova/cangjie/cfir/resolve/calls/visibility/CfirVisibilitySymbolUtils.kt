@@ -10,7 +10,7 @@ import org.cangnova.cangjie.name.ClassId
 
 fun CfirBasedSymbol<*>.getOwnerClassId(provider: CfirProvider): ClassId? = when (this) {
     is CfirClassLikeSymbol<*> -> null
-    is CfirCallableSymbol<*> -> provider.getContainingClassId(this) ?: callableId.classId
+    is CfirCallableSymbol<*> -> provider.getContainingClass(this)?.classId ?: callableId.classId
     else -> null
 }
 

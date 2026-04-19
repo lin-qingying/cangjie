@@ -31,6 +31,7 @@ class CfirPatternBindingVariableBuilder {
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
     var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    lateinit var deprecationsProvider: DeprecationsProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var status: CfirDeclarationStatus
     var initializer: CfirExpression? = null
@@ -50,6 +51,7 @@ class CfirPatternBindingVariableBuilder {
             origin,
             attributes,
             isLocal,
+            deprecationsProvider,
             dispatchReceiverType,
             status,
             initializer,
@@ -84,6 +86,7 @@ inline fun buildPatternBindingVariableCopy(original: CfirPatternBindingVariable,
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
     copyBuilder.isLocal = original.isLocal
+    copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.dispatchReceiverType = original.dispatchReceiverType
     copyBuilder.status = original.status
     copyBuilder.initializer = original.initializer

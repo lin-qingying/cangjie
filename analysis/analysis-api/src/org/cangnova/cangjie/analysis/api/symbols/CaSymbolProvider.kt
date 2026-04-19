@@ -20,7 +20,6 @@ import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjPropertyAccessor
-import org.cangnova.cangjie.psi.CjScript
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeParameter
 import org.cangnova.cangjie.psi.CjTypeStatement
@@ -46,10 +45,6 @@ interface CaSymbolProvider : CaLifetimeOwner {
      */
     val CjFile.symbol: CaFileSymbol
 
-    /**
-     * 从脚本 PSI 恢复脚本符号。
-     */
-    val CjScript.symbol: CaScriptSymbol
 
     /**
      * 从类型声明 PSI 恢复 class 符号。

@@ -5,15 +5,16 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.resolver
 
-import org.cangnova.cangjie.cfir.CfirSession
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueStorage
-import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.dfa.*
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirAbstractBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirBodyResolveTransformer
+import org.cangnova.cangjie.cfir.session.CfirSession
 
 internal fun createStubBodyResolveComponents(firSession: CfirSession): CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents {
     val scopeSession = ScopeSession()

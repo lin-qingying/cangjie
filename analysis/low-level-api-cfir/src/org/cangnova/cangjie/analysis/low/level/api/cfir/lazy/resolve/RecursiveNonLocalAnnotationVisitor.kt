@@ -6,8 +6,8 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.forEachDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.declarations.CfirRegularClass
 
 /**
  * In opposite to [NonLocalAnnotationVisitor] processes not only the target declaration,
@@ -22,9 +22,9 @@ internal abstract class RecursiveNonLocalAnnotationVisitor<T> : NonLocalAnnotati
         file.forEachDeclaration { it.accept(this, data) }
     }
 
-    override fun visitRegularClass(regularClass: CfirRegularClass, data: T) {
-        super.visitRegularClass(regularClass, data)
+    override fun visitClass(klass: CfirClass, data: T) {
+        super.visitClass(klass, data)
 
-        regularClass.forEachDeclaration { it.accept(this, data) }
+        klass.forEachDeclaration { it.accept(this, data) }
     }
 }

@@ -6,7 +6,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.JvmAndBuiltinsDeserializedContainerSourceProvider
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.caches.firCachesFactory
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol

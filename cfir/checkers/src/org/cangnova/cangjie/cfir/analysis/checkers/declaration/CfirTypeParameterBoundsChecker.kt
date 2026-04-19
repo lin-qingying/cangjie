@@ -75,7 +75,7 @@ private fun CfirResolvedTypeRef.hasConcreteUpperBound(context: CheckerContext): 
 
 private fun ConeCangJieType.toResolvedClassLikeDeclaration(context: CheckerContext) =
     when (this) {
-        is ConePrimitiveType -> context.session.cfirProvider.getClassByClassId(kind.classId)
+        is ConePrimitiveType -> context.session.cfirProvider.getCfirClassifierByFqName(kind.classId)
         is ConeClassLikeType -> context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
         is ConeStructType -> context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
         is ConeEnumType -> context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir

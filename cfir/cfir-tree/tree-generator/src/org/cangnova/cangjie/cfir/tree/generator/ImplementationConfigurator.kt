@@ -201,6 +201,7 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
 
         // -------- 声明节点 --------
         file,
+        codeFragment,
         classDeclaration,
         interfaceDeclaration,
         structDeclaration,
@@ -216,6 +217,7 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         // constructor 已单独配置为两个具名实现
         invalidDeclaration,
         property,
+        propertyAccessor,
         fieldVariable,
         patternVariable,
         patternBindingVariable,
@@ -251,6 +253,7 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         arrayLiteral,
         tupleLiteral,
         spawnExpression,
+        inoutArgumentExpression,
         synchronizedExpression,
         unsafeExpression,
         quoteExpression,

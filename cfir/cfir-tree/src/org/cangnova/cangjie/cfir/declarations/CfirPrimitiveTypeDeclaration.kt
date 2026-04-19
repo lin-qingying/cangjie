@@ -26,6 +26,7 @@ class CfirPrimitiveTypeDeclaration(
     override val attributes: CfirDeclarationAttributes = CfirDeclarationAttributes.EMPTY,
     override var typeParameters: MutableList<CfirTypeParameterRef> = mutableListOf(),
     override var status: CfirDeclarationStatus = org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl(),
+    override var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider,
     override var declarations: MutableList<CfirDeclaration> = mutableListOf(),
     override var superTypeRefs: MutableList<CfirTypeRef> = mutableListOf(),
 ) : CfirClassLikeDeclaration() {
@@ -50,6 +51,10 @@ class CfirPrimitiveTypeDeclaration(
 
     override fun replaceStatus(newStatus: CfirDeclarationStatus) {
         status = newStatus
+    }
+
+    override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider) {
+        deprecationsProvider = newDeprecationsProvider
     }
 
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirPrimitiveTypeDeclaration {

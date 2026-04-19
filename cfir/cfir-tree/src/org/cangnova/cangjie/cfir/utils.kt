@@ -31,6 +31,7 @@ import org.cangnova.cangjie.cfir.types.impl.CfirImplicitTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirTupleTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirUserTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirVArrayTypeRefImpl
+import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjRealPsiSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.util.wrapIntoFileAnalysisExceptionIfNeeded
@@ -48,6 +49,7 @@ inline fun <R> whileAnalysing(session: CfirSession, element: CfirElement, block:
 }
 fun CfirElement.render(): String =
    CfirRenderer().renderElementAsString(this)
+val CfirElement.psi: PsiElement? get() = (source as? CjPsiSourceElement)?.psi
 
 inline fun <R> withFileAnalysisExceptionWrapping(file: CfirFile, block: () -> R): R {
     return try {

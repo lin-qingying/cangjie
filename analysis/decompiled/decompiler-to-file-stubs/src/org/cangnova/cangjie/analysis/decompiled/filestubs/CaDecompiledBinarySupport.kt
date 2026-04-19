@@ -9,7 +9,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileSystemItem
 import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -58,7 +58,7 @@ class CaDecompiledBinarySupport(
 
     fun findOwningModule(binaryFile: VirtualFile): CaModule? {
         refreshIfNeeded()
-        val projectStructure = CaProjectStructureProvider.getInstance(project)
+        val projectStructure = CangJieProjectStructureProvider.getInstance(project)
         val builtinsModules = projectStructure.allModules.filterIsInstance<CaBuiltinsModule>()
         if (builtinsModules.isNotEmpty() && builtinsIndex().files.any { it.url == binaryFile.url }) {
             return builtinsModules.first()

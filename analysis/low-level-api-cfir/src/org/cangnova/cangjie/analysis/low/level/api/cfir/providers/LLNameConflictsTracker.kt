@@ -9,8 +9,8 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.getAllClassLikeSymbolsByClassIdOrSingle
 import org.cangnova.cangjie.cfir.CfirNameConflictsTracker
 import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.resolve.providers.firProvider
-import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
 
 internal class LLNameConflictsTracker(private val session: LLCfirSession) : CfirNameConflictsTracker() {
@@ -23,7 +23,7 @@ internal class LLNameConflictsTracker(private val session: LLCfirSession) : Cfir
     override fun getClassifierRedeclarations(classId: ClassId): Collection<ClassifierRedeclaration> {
         // As noted in the KDoc of `getClassifierRedeclarations`, Java redeclarations should not be returned by this component. As such,
         // we limit the scope to Kotlin symbols by taking the CFIR provider's symbol provider.
-        val symbolProvider = session.firProvider.symbolProvider
+        val symbolProvider = session.cfirProvider.symbolProvider
 
         // While redeclarations are rare, we don't know whether a given class is redeclared somewhere else in the whole module. So this
         // function will be called once for each top-level classifier. Still, we don't cache the result since checkers are only run on

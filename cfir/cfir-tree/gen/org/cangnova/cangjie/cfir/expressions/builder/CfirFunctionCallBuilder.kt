@@ -29,7 +29,7 @@ open class CfirFunctionCallBuilder : CfirAbstractFunctionCallBuilder {
     override val typeArguments: MutableList<CfirTypeRef> = mutableListOf()
     override var argumentList: CfirArgumentList = CfirEmptyArgumentList
     override var origin: CfirFunctionCallOrigin = CfirFunctionCallOrigin.Regular
-    override var hasTrailingLambda: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    override var hasTrailingLambda: Boolean = false
 
     @OptIn(CfirImplementationDetail::class)
     override fun build(): CfirFunctionCall {

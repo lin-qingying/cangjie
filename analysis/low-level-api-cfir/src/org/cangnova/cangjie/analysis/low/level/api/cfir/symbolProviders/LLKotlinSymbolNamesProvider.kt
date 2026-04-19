@@ -2,8 +2,8 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 
-import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinDeclarationProvider
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProvider
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCachedSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirDelegatingCachedSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
@@ -17,7 +17,7 @@ import org.cangnova.cangjie.utils.filterToSetOrEmpty
  * @param allowKotlinPackage Whether the associated symbol provider is allowed to provide symbols from the `kotlin` package.
  */
 internal open class LLCfirKotlinSymbolNamesProvider(
-    private val declarationProvider: KotlinDeclarationProvider,
+    private val declarationProvider: CangJieDeclarationProvider,
     private val allowKotlinPackage: Boolean? = null,
 ) : CfirSymbolNamesProvider() {
     override fun getPackageNames(): Set<String>? = declarationProvider.computePackageNames()?.excludeKotlinPackageNamesIfNecessary()
@@ -33,7 +33,7 @@ internal open class LLCfirKotlinSymbolNamesProvider(
     override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name> {
         if (allowKotlinPackage == false && packageFqName.isKotlinPackage()) return emptySet()
 
-        return declarationProvider.getTopLevelKotlinClassLikeDeclarationNamesInPackage(packageFqName)
+        return declarationProvider.getTopLevelCangJieClassLikeDeclarationNamesInPackage(packageFqName)
     }
 
     override val hasSpecificCallablePackageNamesComputation: Boolean
@@ -60,7 +60,7 @@ internal open class LLCfirKotlinSymbolNamesProvider(
     companion object {
         fun cached(
             session: CfirSession,
-            declarationProvider: KotlinDeclarationProvider,
+            declarationProvider: CangJieDeclarationProvider,
             allowKotlinPackage: Boolean? = null,
         ): CfirCachedSymbolNamesProvider =
             CfirDelegatingCachedSymbolNamesProvider(session, LLCfirKotlinSymbolNamesProvider(declarationProvider, allowKotlinPackage))

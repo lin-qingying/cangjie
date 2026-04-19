@@ -8,7 +8,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.ResolveStateAccess
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
+import org.cangnova.cangjie.cfir.expressions.withCfirEntry
 import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 
 internal fun CfirElementWithResolveState.checkPhase(requiredResolvePhase: CfirResolvePhase) {

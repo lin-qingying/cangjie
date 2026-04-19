@@ -20,6 +20,8 @@ description = "Platform abstraction layer for the Cangjie frontend analysis API.
 dependencies {
     compileOnly(intellijCore())
     api(project(":analysis:analysis-api"))
+    api(project(":compiler:config"))
+    compileOnly("org.checkerframework:checker-qual:3.42.0")
 }
 
 /**

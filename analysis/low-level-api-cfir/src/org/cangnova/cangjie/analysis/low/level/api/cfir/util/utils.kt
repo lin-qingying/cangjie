@@ -11,11 +11,9 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.psi
-import org.cangnova.cangjie.psi.CjClassOrObject
+import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjFile
-import org.cangnova.cangjie.psi.CjObjectLiteralExpression
-import org.cangnova.cangjie.psi.psiUtil.isObjectLiteral
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.Lock
 
@@ -47,7 +45,6 @@ internal val CfirDeclaration.ktDeclaration: CjDeclaration
             ?: errorWithCfirSpecificEntries("PSI element was not found", fir = this)
         return when (psi) {
             is CjDeclaration -> psi
-            is CjObjectLiteralExpression -> psi.objectDeclaration
             else -> errorWithCfirSpecificEntries(
                 "CfirDeclaration.psi (${this::class.simpleName}) should be CjDeclaration but was ${psi::class.simpleName}",
                 fir = this,
@@ -62,5 +59,4 @@ internal val CfirDeclaration.containingCjFileIfAny: CjFile?
 
 
 internal fun CjDeclaration.isNonAnonymousClassOrObject() =
-    this is CjClassOrObject
-            && !this.isObjectLiteral()
+    this is CjTypeStatement

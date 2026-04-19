@@ -35,6 +35,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitClassLikeDeclaration(classLikeDeclaration: CfirClassLikeDeclaration, data: D): R =
         visitMemberDeclaration(classLikeDeclaration, data)
 
+    override fun visitCodeFragment(codeFragment: CfirCodeFragment, data: D): R =
+        visitDeclaration(codeFragment, data)
+
     override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: D): R =
         visitCallableDeclaration(enumConstructor, data)
 
@@ -68,6 +71,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitProperty(property: CfirProperty, data: D): R =
         visitCallableDeclaration(property, data)
 
+    override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor, data: D): R =
+        visitFunction(propertyAccessor, data)
+
     override fun visitVariable(variable: CfirVariable, data: D): R =
         visitCallableDeclaration(variable, data)
 
@@ -100,6 +106,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase, data: D): R =
         visitNamedReference(namedReferenceWithCandidateBase, data)
+
+    override fun visitInoutArgumentExpression(inoutArgumentExpression: CfirInoutArgumentExpression, data: D): R =
+        visitWrappedExpression(inoutArgumentExpression, data)
 
     override fun visitCall(call: CfirCall, data: D): R =
         visitStatement(call, data)

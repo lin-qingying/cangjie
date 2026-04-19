@@ -157,13 +157,12 @@ internal class StubBasedCfirTypeDeserializer(
 
     private fun deserializeClassType(typeBean: KotlinClassTypeBean): ConeClassLikeType {
         val projections = typeBean.arguments.map { typeArgumentBean ->
-            val kind = typeArgumentBean.projectionKind
             val argBean = typeArgumentBean.type!!
             val lowerBound = type(argBean)
                 ?: errorWithAttachment("Broken type argument ${typeArgumentBean.type?.let { it::class }}") {
                     withEntry("type", typeArgumentBean.type) { it.toString() }
                 }
-            typeArgument(lowerBound, kind)
+            lowerBound.toTypeProjection(Variance.INVARIANT)
         }
 
         val abbreviatedTypeAttribute = typeBean.abbreviatedType?.let { AbbreviatedTypeAttribute(deserializeClassType(it)) }
@@ -220,7 +219,7 @@ internal class StubBasedCfirTypeDeserializer(
                 // The type for Outer<T>.Inner<S> needs to have type args <S, T>
                 var current: CjUserType? = typeElement
                 while (current != null) {
-                    current.typeArguments.forEach { add(typeArgument(it)) }
+                    current.typeArguments.forEach { add(type(it.typeReference!!).toTypeProjection(Variance.INVARIANT)) }
                     current = current.qualifier
                 }
             }.toTypedArray()
@@ -281,23 +280,6 @@ internal class StubBasedCfirTypeDeserializer(
     private fun getComposableFunctionClassId(arity: Int): ClassId {
         val name = Name.identifier("$composableFunctionPrefix$arity")
         return ClassId(internalComposePackageFqName, name)
-    }
-
-
-    private fun typeArgument(projection: CjTypeProjection): ConeTypeProjection =
-        typeArgument(type(projection.typeReference!!), projection.projectionKind)
-
-    private fun typeArgument(
-        type: ConeKotlinType,
-        projectionKind: CjProjectionKind
-    ): ConeTypeProjection {
-        val variance = when (projectionKind) {
-            CjProjectionKind.IN -> Variance.INVARIANT
-            CjProjectionKind.OUT -> Variance.INVARIANT
-            CjProjectionKind.NONE -> Variance.INVARIANT
-            CjProjectionKind.STAR -> Variance.INVARIANT
-        }
-        return type.toTypeProjection(variance)
     }
 
     companion object {

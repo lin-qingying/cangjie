@@ -11,9 +11,9 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirModuleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
-import org.cangnova.cangjie.analysis.low.level.api.cfir.util.unwrapCopy
-import org.cangnova.cangjie.cfir.CfirModuleData
 import org.cangnova.cangjie.cfir.CfirPrivateVisibleFromDifferentModuleExtension
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.unwrapCopy
+import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.psi.CjCodeFragment

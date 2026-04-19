@@ -98,7 +98,7 @@ internal class CaCfirEnumConstructorSymbolImpl(
         get() = backingSymbol.name
 
     override val containingEnumClassId: ClassId?
-        get() = analysisSession.cfirSession.symbolProvider.getEnumConstructorOwnerClassId(backingSymbol)
+        get() = analysisSession.cfirSession.cfirProvider.getContainingClass(backingSymbol)?.classId
 
     override val payloadTypes: List<CaType>
         get() = backingSymbol.cfir.payloadParameterTypesOrEmpty().map { it.asCaType(analysisSession) }

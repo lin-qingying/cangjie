@@ -557,8 +557,7 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
         // 检查 non-exhaustive common 是否匹配 exhaustive specific
         // 这需要跨模块信息，通过 symbolProvider 查找 specific 对应声明
         val classId = commonDecl.symbol.classId
-        val specificSymbols = context.session.symbolProvider
-            .getTopLevelClassifierSymbols(classId.packageFqName, classId.shortClassName)
+        val specificSymbols = listOfNotNull(context.session.symbolProvider.getClassLikeSymbolByClassId(classId))
         val specificDecls = specificSymbols.mapNotNull { (it.cfir as? CfirClass)?.takeIf { c -> c.status.isSpecific } }
         if (specificDecls.size > 1) {
             reporter.reportOn(

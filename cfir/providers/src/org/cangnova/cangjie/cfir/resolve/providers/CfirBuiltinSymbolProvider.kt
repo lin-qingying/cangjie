@@ -15,7 +15,6 @@ import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.initDefaultResolveState
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
@@ -52,30 +51,37 @@ class CfirBuiltinSymbolProvider(
         )
     }
 
-    private val containingClassIdsByCallable: Map<CfirCallableSymbol<*>, ClassId> by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        buildMap {
-            for ((classId, declaration) in primitiveDeclarationsByClassId) {
-                declaration.declarations.forEach { nested ->
-                    val callable = (nested as? CfirCallableDeclaration)?.symbol as? CfirCallableSymbol<*> ?: return@forEach
-                    put(callable, classId)
-                }
-            }
-        }
-    }
-
     override val symbolNamesProvider: CfirSymbolNamesProvider = BuiltinNamesProvider
 
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
         primitiveDeclarationsByClassId[classId]?.symbol
 
-    override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> =
-        emptyList()
+    @CfirSymbolProviderInternals
+    override fun getTopLevelCallableSymbolsTo(
+        destination: MutableList<org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>>,
+        packageFqName: FqName,
+        name: Name,
+    ) {
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelFunctionSymbolsTo(
+        destination: MutableList<CfirNamedFunctionSymbol>,
+        packageFqName: FqName,
+        name: Name,
+    ) {
+    }
+
+    @CfirSymbolProviderInternals
+    override fun getTopLevelPropertySymbolsTo(
+        destination: MutableList<org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol>,
+        packageFqName: FqName,
+        name: Name,
+    ) {
+    }
 
     override fun hasPackage(fqName: FqName): Boolean =
         fqName == StandardNames.BASIC_PACKAGE_FQ_NAME
-
-    override fun getContainingClassId(symbol: CfirCallableSymbol<*>): ClassId? =
-        containingClassIdsByCallable[symbol.unwrapCallableForDeclarationMetadataLookup()]
 
     private fun buildPrimitiveDeclaration(kind: PrimitiveTypeKind): CfirPrimitiveTypeDeclaration {
         val symbol = CfirPrimitiveTypeSymbol(kind.classId, kind)

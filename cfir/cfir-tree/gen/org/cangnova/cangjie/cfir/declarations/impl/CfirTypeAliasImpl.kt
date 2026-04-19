@@ -30,6 +30,7 @@ class CfirTypeAliasImpl @CfirImplementationDetail constructor(
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
+    override var deprecationsProvider: DeprecationsProvider,
     override val declarations: MutableList<CfirDeclaration>,
     override val superTypeRefs: MutableList<CfirTypeRef>,
     override val symbol: CfirTypeAliasSymbol,
@@ -94,6 +95,10 @@ class CfirTypeAliasImpl @CfirImplementationDetail constructor(
 
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
         annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider) {
+        deprecationsProvider = newDeprecationsProvider
     }
 
     override fun replaceStatus(newStatus: CfirDeclarationStatus) {

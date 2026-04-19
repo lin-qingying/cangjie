@@ -8,20 +8,20 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.withCfirDesignationEntry
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
-import org.cangnova.cangjie.cfir.declarations.CfirRegularClass
+import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 
-internal sealed class LLCfirRegularClassResolveTarget(designation: CfirDesignation) : LLCfirResolveTarget(designation) {
+internal sealed class LLCfirClassResolveTarget(designation: CfirDesignation) : LLCfirResolveTarget(designation) {
     init {
         requireWithAttachment(
-            target is CfirRegularClass,
-            { "Expected type of '${::target.name}' is ${CfirRegularClass::class.simpleName}, but ${target::class.simpleName} is found" },
+            target is CfirClass,
+            { "Expected type of '${::target.name}' is ${CfirClass::class.simpleName}, but ${target::class.simpleName} is found" },
         ) {
-            withCfirDesignationEntry("designation", this@LLCfirRegularClassResolveTarget.designation)
+            withCfirDesignationEntry("designation", this@LLCfirClassResolveTarget.designation)
         }
     }
 
-    abstract fun visitMembers(visitor: LLCfirResolveTargetVisitor, firRegularClass: CfirRegularClass)
+    abstract fun visitMembers(visitor: LLCfirResolveTargetVisitor, firClass: CfirClass)
 
     abstract val visitClass: Boolean
 
@@ -33,7 +33,7 @@ internal sealed class LLCfirRegularClassResolveTarget(designation: CfirDesignati
             visitor.performAction(element)
         }
 
-        visitor.withRegularClass(element as CfirRegularClass) {
+        visitor.withClass(element as CfirClass) {
             visitMembers(visitor, element)
         }
     }

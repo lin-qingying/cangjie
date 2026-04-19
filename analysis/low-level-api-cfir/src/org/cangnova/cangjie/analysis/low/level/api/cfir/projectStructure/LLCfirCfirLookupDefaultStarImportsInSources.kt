@@ -8,7 +8,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirLibraryOrLibrarySourceResolvableModuleSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
-import org.cangnova.cangjie.config.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.scopes.CfirLookupDefaultStarImportsInSourcesSettingHolder
 
 /**

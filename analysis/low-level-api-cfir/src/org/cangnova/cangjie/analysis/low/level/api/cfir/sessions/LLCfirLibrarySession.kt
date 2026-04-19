@@ -6,13 +6,13 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
 
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
-import org.cangnova.cangjie.cfir.BuiltinTypes
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
+import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 
 /**
  * [org.cangnova.cangjie.cfir.CfirSession] responsible for all libraries analysing module transitively depends on
  */
 internal class LLCfirLibrarySession @PrivateSessionConstructor constructor(
     ktModule: CaModule,
-    builtinTypes: BuiltinTypes,
+    builtinTypes: CfirBuiltinTypes,
 ) : LLCfirLibraryLikeSession(ktModule, builtinTypes)
