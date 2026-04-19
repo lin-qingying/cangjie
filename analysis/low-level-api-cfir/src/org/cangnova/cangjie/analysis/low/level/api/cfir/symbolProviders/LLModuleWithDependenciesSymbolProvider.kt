@@ -6,22 +6,18 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.jvmClassNameIfDeserialized
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
-import org.cangnova.cangjie.analysis.utils.collections.buildSmartList
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.deserialization.AbstractCfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.*
-import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjCallableDeclaration
-import org.cangnova.cangjie.resolve.jvm.JvmClassName
-import org.cangnova.cangjie.utils.SmartSet
 import org.cangnova.cangjie.utils.addIfNotNull
 
 /**
@@ -181,74 +177,24 @@ internal class LLDependenciesSymbolProvider(
 
     @CfirSymbolProviderInternals
     override fun getTopLevelCallableSymbolsTo(destination: MutableList<CfirCallableSymbol<*>>, packageFqName: FqName, name: Name) {
-        val facades = SmartSet.create<JvmClassName>()
         for (provider in providers) {
-            val newSymbols = buildSmartList {
-                provider.getTopLevelCallableSymbolsTo(this, packageFqName, name)
-            }
-            addNewSymbolsConsideringJvmFacades(destination, newSymbols, facades)
+            provider.getTopLevelCallableSymbolsTo(destination, packageFqName, name)
         }
     }
 
     @CfirSymbolProviderInternals
     override fun getTopLevelFunctionSymbolsTo(destination: MutableList<CfirNamedFunctionSymbol>, packageFqName: FqName, name: Name) {
-        val facades = SmartSet.create<JvmClassName>()
         for (provider in providers) {
-            val newSymbols = buildSmartList {
-                provider.getTopLevelFunctionSymbolsTo(this, packageFqName, name)
-            }
-            addNewSymbolsConsideringJvmFacades(destination, newSymbols, facades)
+            provider.getTopLevelFunctionSymbolsTo(destination, packageFqName, name)
         }
     }
 
     @CfirSymbolProviderInternals
     override fun getTopLevelPropertySymbolsTo(destination: MutableList<CfirPropertySymbol>, packageFqName: FqName, name: Name) {
-        val facades = SmartSet.create<JvmClassName>()
         for (provider in providers) {
-            val newSymbols = buildSmartList {
-                provider.getTopLevelPropertySymbolsTo(this, packageFqName, name)
-            }
-            addNewSymbolsConsideringJvmFacades(destination, newSymbols, facades)
+            provider.getTopLevelPropertySymbolsTo(destination, packageFqName, name)
         }
     }
 
     override fun hasPackage(fqName: FqName): Boolean = providers.any { it.hasPackage(fqName) }
-
-    /**
-     * Filters out any top-level [CfirCallableSymbol]s defined in a facade class which have already been added by a previous symbol provider
-     * for a facade class with the same name.
-     *
-     * We need this handling because we usually have two sources for builtins:
-     *
-     * 1. The builtins from the stdlib library symbol provider.
-     * 2. The fallback builtins from the symbol provider created in
-     *    [LLCfirBuiltinsSessionFactory][org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirBuiltinsSessionFactory].
-     *
-     * In contrast to class symbols where we return the first match, for callables we query all symbol providers and build a list of all
-     * candidates. Callables declared in the same facade class, but provided by two different symbol providers, are essentially duplicates.
-     * Hence, we filter them out.
-     *
-     * Regarding builtins, this logic filters out callables from fallback builtins if they have already been added from the stdlib, since
-     * the fallback builtins provider is ordered last.
-     */
-    private fun <S : CfirCallableSymbol<*>> addNewSymbolsConsideringJvmFacades(
-        destination: MutableList<S>,
-        newSymbols: List<S>,
-        facades: MutableSet<JvmClassName>,
-    ) {
-        if (newSymbols.isEmpty()) return
-        val newFacades = SmartSet.create<JvmClassName>()
-        for (symbol in newSymbols) {
-            val facade = symbol.jvmClassNameIfDeserialized()
-            if (facade != null) {
-                newFacades += facade
-                if (facade !in facades) {
-                    destination += symbol
-                }
-            } else {
-                destination += symbol
-            }
-        }
-        facades += newFacades
-    }
 }

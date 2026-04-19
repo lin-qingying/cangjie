@@ -11,7 +11,7 @@ import org.cangnova.cangjie.analysis.api.platform.CaCachedService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.util.withCaModuleEntry
-import org.cangnova.cangjie.analysis.api.utils.errors.withCaModuleEntry
+
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider

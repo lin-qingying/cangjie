@@ -8,19 +8,20 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.platform.CaCachedService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieModuleInformationProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.*
-import org.cangnova.cangjie.analysis.api.utils.errors.withCaModuleEntry
+import org.cangnova.cangjie.analysis.api.util.withCaModuleEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirBuiltinsSessionFactory
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkCanceled
-import org.cangnova.cangjie.cfir.CfirSourceModuleData
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
+import org.cangnova.cangjie.cfir.common.CfirPlatform
+import org.cangnova.cangjie.cfir.common.CfirSourceModuleData
 import org.cangnova.cangjie.cfir.session.registerModuleData
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.platform.jvm.JvmPlatforms
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 
 @LLCfirInternals
@@ -33,6 +34,7 @@ class LLCfirSessionCache(
         LLCfirSessionCacheStorage.createEmpty { LLCfirSessionCleaner(it.requestedDisposableOrNull) }
     )
 
+    @OptIn(CaPlatformInterface::class)
     @CaCachedService
     private val moduleInformationProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CangJieModuleInformationProvider.getInstance(project)
@@ -64,6 +66,7 @@ class LLCfirSessionCache(
      *
      * Dependency sessions are implicitly binary-preferred because sessions used as dependencies do not need to be resolvable.
      */
+    @OptIn(CaPlatformInterface::class)
     fun getDependencySession(module: CaModule): LLCfirSession? {
         if (moduleInformationProvider?.isEmpty(module) == true) return null
         return getSession(module, preferBinary = true)
@@ -176,7 +179,7 @@ fun createEmptySession(): CfirSession {
             dependencies = emptyList(),
             dependsOnDependencies = emptyList(),
             friendDependencies = emptyList(),
-            platform = JvmPlatforms.unspecifiedJvmPlatform,
+            platform = CfirPlatform.DEFAULT,
         )
         registerModuleData(moduleData)
         moduleData.bindSession(this)

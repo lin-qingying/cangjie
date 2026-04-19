@@ -138,7 +138,9 @@ object CjTestModuleStructureFactory {
             }
 
         if (primaryModule is CaDanglingFileModuleImpl) {
-            primaryModule.contextModule = resolvedRegularDependencies.firstOrNull()
+            primaryModule.contextModule = requireNotNull(resolvedRegularDependencies.firstOrNull()) {
+                "Code fragment 测试模块 `${cjTestModule.name}` 必须显式绑定 context module。"
+            }
         }
 
         if (primaryModule is CaNotUnderContentRootModuleImpl) {

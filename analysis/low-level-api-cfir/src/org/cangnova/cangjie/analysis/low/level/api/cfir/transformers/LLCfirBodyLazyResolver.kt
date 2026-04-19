@@ -9,8 +9,6 @@ import com.intellij.openapi.util.registry.Registry
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.descendantsOfType
 import kotlinx.collections.immutable.toPersistentList
-import org.cangnova.cangjie.source.CjPsiSourceElement
-import org.cangnova.cangjie.CjRealSourceElementKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getResolutionFacade
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.*
@@ -31,16 +29,16 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformerDispatcher
 import org.cangnova.cangjie.cfir.resolve.body.CfirDeclarationsResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirExpressionsResolveTransformer
+import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataElement
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.resolve.codeFragmentContext
-import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
 import org.cangnova.cangjie.cfir.resolve.dfa.SnapshotCfirMapper
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.*
 import org.cangnova.cangjie.cfir.resolve.dfa.controlFlowGraph
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.*
-import org.cangnova.cangjie.cfir.scopes.DelicateScopeAPI
-import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
-import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
+import org.cangnova.cangjie.cfir.scopes.CfirLocalScope
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.hasResolvedType
 import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
@@ -123,25 +121,6 @@ private class CfirPartialBodyDeclarationResolveTransformer(
         return super.transformConstructorContent(constructor, data)
     }
 
-    override fun transformAnonymousInitializerContent(
-        anonymousInitializer: CfirAnonymousInitializer,
-        data: ResolutionMode
-    ): CfirAnonymousInitializer {
-        if (anonymousInitializer.partialBodyAnalysisState != null) {
-            context.withAnonymousInitializer(anonymousInitializer, session) {
-                val result = transformDeclarationContent(
-                    anonymousInitializer,
-                    ResolutionMode.ContextIndependent
-                ) as CfirAnonymousInitializer
-
-                val graph = dataFlowAnalyzer.exitInitBlock(result)
-                result.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(graph))
-                return result
-            }
-        }
-
-        return super.transformAnonymousInitializerContent(anonymousInitializer, data)
-    }
 }
 
 private class CfirPartialBodyExpressionResolveTransformer(
@@ -384,7 +363,7 @@ private class CfirPartialBodyExpressionResolveTransformer(
                 val reference = owner.controlFlowGraphReference ?: return
                 val existingGraph = reference.controlFlowGraph ?: return
                 val newGraph = graphMapping[existingGraph] ?: return
-                owner.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(newGraph))
+                owner.replaceControlFlowGraphReference(LLCfirControlFlowGraphReference(newGraph))
             }
         }
 
@@ -555,37 +534,20 @@ private class CfirPartialBodyExpressionResolveTransformer(
 private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbstractBodyTargetResolver(target, CfirResolvePhase.BODY_RESOLVE) {
     override val transformer = BodyTransformerDispatcher()
 
-    inner class BodyTransformerDispatcher : CfirAbstractBodyResolveTransformerDispatcher(
-        resolveTargetSession,
-        phase = resolverPhase,
-        implicitTypeOnly = false,
-        scopeSession = resolveTargetScopeSession,
-        returnTypeCalculator = createReturnTypeCalculator(),
-        expandTypeAliases = true
-    ) {
+    inner class BodyTransformerDispatcher : CfirAbstractBodyResolveTransformerDispatcher(resolverPhase, false) {
+        override val context: BodyResolveContext = BodyResolveContext(
+            returnTypeCalculator = createReturnTypeCalculator(),
+            dataFlowAnalyzerContext = CfirDataFlowAnalyzerContext(),
+        )
+
+        override val components: BodyResolveTransformerComponents =
+            BodyResolveTransformerComponents(resolveTargetSession, resolveTargetScopeSession, this, context)
+
         override val expressionsTransformer: CfirExpressionsResolveTransformer =
             CfirPartialBodyExpressionResolveTransformer(this, resolveTarget)
 
         override val declarationsTransformer: CfirDeclarationsResolveTransformer =
             CfirPartialBodyDeclarationResolveTransformer(this)
-
-        override val preserveCFGForClasses: Boolean get() = false
-        override val buildCfgForScripts: Boolean get() = false
-        override val buildCfgForFiles: Boolean get() = false
-
-        /**
-         * It is safe to resolve foreign annotations on demand because the contract allows it
-         * ([annotation arguments][CfirResolvePhase.ANNOTATION_ARGUMENTS] phase is less than [body][CfirResolvePhase.BODY_RESOLVE] phase).
-         */
-        override fun transformForeignAnnotationCall(symbol: CfirBasedSymbol<*>, annotationCall: CfirAnnotationCall): CfirAnnotationCall {
-            // It is possible that some members of local classes will propagate annotations between each other,
-            // so we should just skip them, as they will be resolved anyway
-            if (symbol.cannotResolveAnnotationsOnDemand()) return annotationCall
-
-            symbol.lazyResolveToPhase(CfirResolvePhase.ANNOTATION_ARGUMENTS)
-            checkAnnotationCallIsResolved(symbol, annotationCall)
-            return annotationCall
-        }
     }
 
     /**
@@ -660,7 +622,7 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
                 withCfirEntry("firClass", target)
             }
 
-        target.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(controlFlowGraph))
+        target.replaceControlFlowGraphReference(LLCfirControlFlowGraphReference(controlFlowGraph))
     }
 
     private inline fun <T : CfirElementWithResolveState> resolveMembersForControlFlowGraph(
@@ -697,10 +659,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
                 withCfirEntry("firFile", target)
             }
 
-        target.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(controlFlowGraph))
+        target.replaceControlFlowGraphReference(LLCfirControlFlowGraphReference(controlFlowGraph))
     }
 
-    @OptIn(DelicateScopeAPI::class)
     private fun resolveCodeFragmentContext(firCodeFragment: CfirCodeFragment): LLCfirCodeFragmentContext {
         val ktCodeFragment = firCodeFragment.psi as? CjCodeFragment
             ?: errorWithAttachment("Code fragment source not found") {
@@ -714,7 +675,12 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
             return resolutionFacade.useSiteCfirSession.codeFragmentScopeProvider.getExtraScopes(ktCodeFragment)
                 .fold(this) { context, scope ->
                     val scopeWithProperSession = scope.withReplacedSessionOrNull(resolveTargetSession, resolveTargetScopeSession) ?: scope
-                    context.addLocalScope(scopeWithProperSession)
+                    val localScope = scopeWithProperSession as? CfirLocalScope
+                    if (localScope != null) {
+                        context.addLocalScope(localScope)
+                    } else {
+                        context.addNonLocalScope(scopeWithProperSession)
+                    }
                 }
         }
 
@@ -747,7 +713,6 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         }
     }
 
-    @DelicateScopeAPI
     private fun CfirTowerDataContext.withProperSession(session: CfirSession, scopeSession: ScopeSession): CfirTowerDataContext {
         return replaceTowerDataElements(
             towerDataElements.map { it.withProperSession(session, scopeSession) }.toPersistentList(),
@@ -755,14 +720,12 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         )
     }
 
-    @DelicateScopeAPI
     private fun CfirTowerDataElement.withProperSession(
         session: CfirSession,
         scopeSession: ScopeSession,
     ): CfirTowerDataElement = CfirTowerDataElement(
         scope?.withReplacedSessionOrNull(session, scopeSession) ?: scope,
         implicitReceiver?.withReplacedSessionOrNull(session, scopeSession),
-        contextParameterGroup,
         isLocal,
         staticScopeOwnerSymbol
     )
@@ -777,10 +740,8 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
             is CfirConstructor -> resolve(target, BodyStateKeepers.CONSTRUCTOR)
             is CfirFunction -> resolve(target, BodyStateKeepers.FUNCTION)
             is CfirProperty -> resolve(target, BodyStateKeepers.PROPERTY)
-            is CfirField -> resolve(target, BodyStateKeepers.FIELD)
+            is CfirFieldVariable -> resolve(target, BodyStateKeepers.FIELD)
             is CfirVariable -> resolve(target, BodyStateKeepers.VARIABLE)
-            is CfirAnonymousInitializer -> resolve(target, BodyStateKeepers.ANONYMOUS_INITIALIZER)
-            is CfirDanglingModifierList,
             is CfirTypeAlias,
                 -> {
                 // No bodies here
@@ -809,14 +770,6 @@ internal object BodyStateKeepers {
 
     val PARTIAL_BODY_RESOLVABLE: StateKeeper<CfirDeclaration, CfirDesignation> = stateKeeper { builder, declaration, context ->
         builder.add(CfirDeclaration::partialBodyAnalysisState::get, CfirDeclaration::partialBodyAnalysisState::set)
-    }
-
-    val ANONYMOUS_INITIALIZER: StateKeeper<CfirAnonymousInitializer, CfirDesignation> = stateKeeper { builder, initializer, designation ->
-        builder.add(PARTIAL_BODY_RESOLVABLE, designation)
-        preserveResolvedState(builder, initializer)
-
-        builder.add(CfirAnonymousInitializer::body, CfirAnonymousInitializer::replaceBody, ::blockGuard)
-        builder.add(CfirAnonymousInitializer::controlFlowGraphReference, CfirAnonymousInitializer::replaceControlFlowGraphReference)
     }
 
     val FUNCTION: StateKeeper<CfirFunction, CfirDesignation> = stateKeeper { builder, function, designation ->
@@ -867,17 +820,14 @@ internal object BodyStateKeepers {
         builder.add(CfirValueParameter::controlFlowGraphReference, CfirValueParameter::replaceControlFlowGraphReference)
     }
 
-    val FIELD: StateKeeper<CfirField, CfirDesignation> = stateKeeper { builder, _, designation ->
+    val FIELD: StateKeeper<CfirFieldVariable, CfirDesignation> = stateKeeper { builder, _, designation ->
         builder.add(VARIABLE, designation)
-        builder.add(CfirField::controlFlowGraphReference, CfirField::replaceControlFlowGraphReference)
     }
 
     val PROPERTY: StateKeeper<CfirProperty, CfirDesignation> = stateKeeper { builder, property, designation ->
         if (property.bodyResolveState >= CfirPropertyBodyResolveState.ALL_BODIES_RESOLVED) {
             return@stateKeeper
         }
-
-        builder.add(VARIABLE, designation)
 
         builder.add(CfirProperty::bodyResolveState, CfirProperty::replaceBodyResolveState)
         builder.add(CfirProperty::returnTypeRef, CfirProperty::replaceReturnTypeRef)
@@ -887,18 +837,6 @@ internal object BodyStateKeepers {
 
         builder.add(CfirProperty::controlFlowGraphReference, CfirProperty::replaceControlFlowGraphReference)
     }
-}
-
-private fun StateKeeperScope<CfirAnonymousInitializer, CfirDesignation>.preserveResolvedState(
-    builder: StateKeeperBuilder,
-    initializer: CfirAnonymousInitializer
-) {
-    preservePartialBodyResolveResult(
-        builder = builder,
-        declaration = initializer,
-        bodySupplier = CfirAnonymousInitializer::body,
-        parameterSupplier = { emptyList() },
-    )
 }
 
 private fun StateKeeperScope<CfirFunction, CfirDesignation>.preserveResolvedState(builder: StateKeeperBuilder, function: CfirFunction) {
@@ -955,7 +893,7 @@ private val CfirFunction.isCertainlyResolved: Boolean
     get() {
         if (this is CfirPropertyAccessor) {
             val requiredState = when {
-                isSetter -> CfirPropertyBodyResolveState.ALL_BODIES_RESOLVED
+                !isGetter -> CfirPropertyBodyResolveState.ALL_BODIES_RESOLVED
                 else -> CfirPropertyBodyResolveState.INITIALIZER_AND_GETTER_RESOLVED
             }
 
@@ -981,8 +919,20 @@ private class LLCfirCodeFragmentContext(
     override val towerDataContext: CfirTowerDataContext,
 ) : CfirCodeFragmentContext
 
+private class LLCfirControlFlowGraphReference(
+    private val graph: ControlFlowGraph,
+) : CfirControlFlowGraphReference() {
+    override val source = null
+
+    val controlFlowGraph: ControlFlowGraph
+        get() = graph
+}
+
+private val CfirControlFlowGraphReference.controlFlowGraph: ControlFlowGraph?
+    get() = (this as? LLCfirControlFlowGraphReference)?.controlFlowGraph
+
 private val CfirDeclaration.isUsedInFileControlFlowGraphBuilder: Boolean
-    get() = this is CfirControlFlowGraphOwner && isUsedInControlFlowGraphBuilderForFile
+    get() = this is CfirControlFlowGraphOwner
 
 private val CfirDeclaration.isUsedInClassControlFlowGraphBuilder: Boolean
-    get() = this is CfirControlFlowGraphOwner && isUsedInControlFlowGraphBuilderForClass
+    get() = this is CfirControlFlowGraphOwner

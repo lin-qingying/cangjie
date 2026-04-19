@@ -8,27 +8,24 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combine
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProvider
 import org.cangnova.cangjie.analysis.api.platform.declarations.mergeDeclarationProviders
-import org.cangnova.cangjie.analysis.api.platform.packages.KotlinPackageProvider
-import org.cangnova.cangjie.analysis.api.platform.packages.mergePackageProviders
 import org.cangnova.cangjie.analysis.api.platform.caches.NullableCaffeineCache
-import org.cangnova.cangjie.analysis.api.platform.caches.getOrPut
 import org.cangnova.cangjie.analysis.api.platform.caches.withStatsCounter
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLKotlinSymbolProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleSpecificSymbolProviderAccess
 import org.cangnova.cangjie.builtins.StandardNames
-import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -56,6 +53,8 @@ import java.time.Duration
  * @param packageProviderForKotlinPackages This package provider should be combined from all [providers] which allow `kotlin` packages (see
  *  [LLKotlinSymbolProvider.allowKotlinPackage]). It may be `null` if no such provider exists. See [hasPackage] for a use case.
  */
+@OptIn(CaPlatformInterface::class)
+
 internal class LLCombinedKotlinSymbolProvider private constructor(
     session: CfirSession,
     project: Project,

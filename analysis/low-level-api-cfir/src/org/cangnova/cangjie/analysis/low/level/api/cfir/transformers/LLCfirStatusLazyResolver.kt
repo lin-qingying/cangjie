@@ -7,7 +7,9 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.transformers
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirResolveTarget
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirSingleResolveTarget
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.asResolveTarget
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.session
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.tryCollectDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkDeclarationStatusIsResolved
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
@@ -21,12 +23,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
-import org.cangnova.cangjie.cfir.declarations.resolvePhase
-import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirStatusComputationSession
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirStatusResolveTransformer
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.coneType
+import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 
 internal object LLCfirStatusLazyResolver : LLCfirLazyResolver(CfirResolvePhase.STATUS) {
@@ -36,7 +39,11 @@ internal object LLCfirStatusLazyResolver : LLCfirLazyResolver(CfirResolvePhase.S
         return LLCfirStatusTargetResolver(
             target = target,
             resolveMode = resolveMode,
-            statusComputationSession = CfirStatusComputationSession(session, session.getScopeSession()),
+            statusComputationSession = LLStatusComputationSession(
+                session,
+                session.getScopeSession(),
+                resolveMode,
+            ),
         )
     }
 
@@ -66,49 +73,70 @@ private fun LLCfirResolveTarget.resolveMode(): StatusResolveMode = when (this) {
 
     else -> StatusResolveMode.AllCallables
 }
+
 private class LLStatusComputationSession(
     useSiteSession: LLCfirSession,
     useSiteScopeSession: ScopeSession,
-    val resolveMode:  StatusResolveMode,
-) : CfirStatusComputationSession(useSiteSession, useSiteScopeSession){
+    val resolveMode: StatusResolveMode,
+) : CfirStatusComputationSession(useSiteSession, useSiteScopeSession) {
+    private val useSiteSessions: MutableList<LLCfirSession> = mutableListOf(useSiteSession)
 
+    private inline fun withClassSession(regularClass: CfirClass, action: () -> Unit) {
+        val newSession = (regularClass.moduleData.session as? LLCfirSession)
+            ?.takeUnless { it == useSiteSessions.lastOrNull() }
+        try {
+            newSession?.let(useSiteSessions::add)
+            action()
+        } finally {
+            newSession?.let { useSiteSessions.removeLast() }
+        }
+    }
+
+    override fun forceResolveStatusesOfSupertypes(declaration: CfirDeclaration) {
+        if (declaration !is CfirClass) return
+        withClassSession(declaration) {
+            super.forceResolveStatusesOfSupertypes(declaration)
+        }
+    }
+
+    override fun superTypeToSymbols(typeRef: CfirTypeRef) = buildSet {
+        val classId = typeRef.coneType.classId ?: return@buildSet
+
+        for (useSiteSession in useSiteSessions.asReversed()) {
+            useSiteSession.symbolProvider.getClassLikeSymbolByClassId(classId)?.let(::add)
+        }
+    }
+
+    override fun resolveClassForSuperType(regularClass: CfirClass): Boolean {
+        val target = regularClass.tryCollectDesignation()?.asResolveTarget() ?: return false
+        val resolver = LLCfirStatusTargetResolver(
+            target,
+            resolveMode = resolveMode,
+            statusComputationSession = this,
+        )
+
+        resolver.resolveDesignation()
+        return true
+    }
 }
+
 /**
- * STATUS 阶段当前对齐仓颉主干 `CfirStatusResolveTransformer`。
- * 这里不再引用 Kotlin FIR 专有的 statusResolver/storeClass/internal hooks。
+ * STATUS 阶段当前保持 low-level 独立 `LLStatusComputationSession` 分层，
+ * 同时仍然以仓颉主干 `CfirStatusResolveTransformer` 为真实变换器。
  */
 private class LLCfirStatusTargetResolver(
     target: LLCfirResolveTarget,
     private val resolveMode: StatusResolveMode,
-    statusComputationSession: LLStatusComputationSession,
+    statusComputationSession: CfirStatusComputationSession,
 ) : LLCfirTargetResolver(target, CfirResolvePhase.STATUS) {
-    private val transformer = Transformer(statusComputationSession)
-
-    private class Transformer(statusComputationSession: LLStatusComputationSession) :
-        CfirStatusResolveTransformer(statusComputationSession) {
-        override fun CfirDeclaration.needResolveMembers(): Boolean = false
-        override fun CfirDeclaration.needResolveNestedClassifiers(): Boolean = false
-
-        override fun transformClass(klass: CfirClass, data: CfirResolvedDeclarationStatus?): CfirStatement {
-            return klass
-        }
-    }
-    @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
-    override fun withContainingClass(firClass: CfirClass, action: () -> Unit) {
-        doResolveWithoutLock(firClass)
-        transformer.storeClass(firClass) {
-            action()
-            firClass
-        }
-
-        transformer.statusComputationSession.endComputing(firClass)
-
-    }
+    private val statusComputationSession: CfirStatusComputationSession = statusComputationSession
+    private val transformer = CfirStatusResolveTransformer(statusComputationSession)
 
     override fun doResolveWithoutLock(target: CfirElementWithResolveState): Boolean = when (target) {
         is CfirClass -> {
             if (resolveMode.resolveSupertypes) {
                 target.lazyResolveToPhase(resolverPhase.previous)
+                statusComputationSession.forceResolveStatusesOfSupertypes(target)
             }
             false
         }
@@ -122,10 +150,7 @@ private class LLCfirStatusTargetResolver(
 
     override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {
         when (target) {
-            is CfirFile -> {
-                // file 自身没有 status 变换
-            }
-
+            is CfirFile -> Unit
             else -> target.transformSingle(transformer, data = null)
         }
     }

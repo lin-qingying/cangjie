@@ -43,7 +43,7 @@ import org.cangnova.cangjie.name.Name
  * - resolve declaration initializers and infer implicit types where needed
  * - register local declarations into local scopes
  */
-class CfirDeclarationsResolveTransformer(
+open class CfirDeclarationsResolveTransformer(
     transformer: CfirAbstractBodyResolveTransformerDispatcher,
 ) : CfirPartialBodyResolveTransformer(transformer) {
     private val specificTypeResolverTransformer = CfirSpecificTypeResolverTransformer(session)

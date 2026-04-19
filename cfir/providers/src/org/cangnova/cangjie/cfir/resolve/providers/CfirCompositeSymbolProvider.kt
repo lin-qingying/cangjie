@@ -16,7 +16,7 @@ class CfirCompositeSymbolProvider(
     session: CfirSession,
     val providers: List<CfirSymbolProvider>,
 ) : CfirSymbolProvider(session) {
-    override val symbolNamesProvider: CfirSymbolNamesProvider = object : CfirSymbolNamesProvider {
+    override val symbolNamesProvider: CfirSymbolNamesProvider = object : CfirSymbolNamesProvider() {
         override fun getPackageNames(): Set<FqName>? = mergeNameSets { it.getPackageNames() }
 
         override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? =

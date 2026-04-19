@@ -2,12 +2,12 @@
 
 import org.cangnova.cangjie.cfir.CfirNameConflictsTracker
 import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
 
 class CfirNameConflictsTrackerImpl : CfirNameConflictsTracker() {
     private data class ClassifierRedeclarationImpl(
-        override val classifierSymbol: CfirClassifierSymbol<*>,
+        override val classifierSymbol: CfirClassLikeSymbol<*>,
         override val containingFile: CfirFile?,
     ) : ClassifierRedeclaration()
 
@@ -18,9 +18,9 @@ class CfirNameConflictsTrackerImpl : CfirNameConflictsTracker() {
 
     override fun registerClassifierRedeclaration(
         classId: ClassId,
-        newSymbol: CfirClassifierSymbol<*>,
+        newSymbol: CfirClassLikeSymbol<*>,
         newSymbolFile: CfirFile,
-        prevSymbol: CfirClassifierSymbol<*>,
+        prevSymbol: CfirClassLikeSymbol<*>,
         prevSymbolFile: CfirFile?,
     ) {
         redeclaredClassifiers.merge(

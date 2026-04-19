@@ -12,7 +12,7 @@ import org.cangnova.cangjie.name.Name
  */
 class CfirDeserializedSymbolNamesProvider(
     private val cjoManager: CjoManager,
-) : CfirSymbolNamesProvider {
+) : CfirSymbolNamesProvider() {
 
     override fun getPackageNames(): Set<FqName>? = cjoManager.getAvailablePackageNames()
 

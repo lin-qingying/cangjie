@@ -72,7 +72,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * and a dedicated checker pass reports them after body resolve completes.
  */
 @OptIn(CfirImplementationDetail::class, ApplicabilityDetail::class)
-class CfirExpressionsResolveTransformer(
+open class CfirExpressionsResolveTransformer(
     transformer: CfirAbstractBodyResolveTransformerDispatcher,
 ) : CfirPartialBodyResolveTransformer(transformer) {
     private data class EffectHandlerContext(

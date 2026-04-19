@@ -39,6 +39,33 @@ class CfirDataFlowAnalyzerContext {
     val currentFunctionCallFrame: FunctionCallFrame?
         get() = functionCallFrames.lastOrNull()
 
+    /**
+     * 为 low-level partial body resolve 保存当前调用级数据流帧快照。
+     *
+     * 当前仓颉主干尚未接入 Kotlin FIR 那套 CFG / smart-cast 状态图，所以这里
+     * 只复制已经真实存在的调用栈状态，不伪造额外分析结果。
+     */
+    fun createSnapshot(): CfirDataFlowAnalyzerContext {
+        val snapshot = CfirDataFlowAnalyzerContext()
+        snapshot.callArgumentsFrames.addAll(callArgumentsFrames.map { it.copy() })
+        snapshot.functionCallFrames.addAll(functionCallFrames.map { it.copy() })
+        return snapshot
+    }
+
+    /**
+     * 用先前保存的调用级数据流帧恢复当前上下文。
+     *
+     * 这和 Kotlin FIR 中 snapshot restore 的职责对齐，但只覆盖仓颉主干当前
+     * 已经存在的 frame 结构。
+     */
+    fun resetFrom(snapshot: CfirDataFlowAnalyzerContext) {
+        callArgumentsFrames.clear()
+        callArgumentsFrames.addAll(snapshot.callArgumentsFrames.map { it.copy() })
+
+        functionCallFrames.clear()
+        functionCallFrames.addAll(snapshot.functionCallFrames.map { it.copy() })
+    }
+
     fun enterCallArguments(call: CfirCall, lambdaArguments: List<CfirAnonymousFunction>): CallArgumentsFrame {
         return CallArgumentsFrame(
             call = call,
@@ -70,8 +97,45 @@ class CfirDataFlowAnalyzerContext {
         return frame
     }
 
+    /**
+     * 对位 Kotlin FIR `DataFlowAnalyzerContext.createSnapshot/resetFrom` 的低配版本。
+     *
+     * 仓颉主干当前还没有 CFG / smart-cast 图结构，因此这里只复制已经真实存在的
+     * 调用参数栈与函数调用栈，供 low-level partial body resolve 在续跑时恢复分析边界。
+     */
+    fun createSnapshot(): CfirDataFlowAnalyzerContextSnapshot {
+        val snapshot = CfirDataFlowAnalyzerContext()
+        for (frame in callArgumentsFrames) {
+            snapshot.callArgumentsFrames.addLast(frame.copy())
+        }
+        for (frame in functionCallFrames) {
+            snapshot.functionCallFrames.addLast(frame.copy())
+        }
+        return CfirDataFlowAnalyzerContextSnapshot(snapshot)
+    }
+
+    /**
+     * 用已有快照直接替换当前 frame 状态。
+     *
+     * 与 Kotlin FIR 一样，这里不再做二次深拷贝；若调用方需要隔离后续修改，
+     * 应先通过 [createSnapshot] 生成独立快照。
+     */
+    fun resetFrom(source: CfirDataFlowAnalyzerContext) {
+        reset()
+        for (frame in source.callArgumentsFrames) {
+            callArgumentsFrames.addLast(frame.copy())
+        }
+        for (frame in source.functionCallFrames) {
+            functionCallFrames.addLast(frame.copy())
+        }
+    }
+
     fun reset() {
         callArgumentsFrames.clear()
         functionCallFrames.clear()
     }
 }
+
+class CfirDataFlowAnalyzerContextSnapshot(
+    val context: CfirDataFlowAnalyzerContext,
+)

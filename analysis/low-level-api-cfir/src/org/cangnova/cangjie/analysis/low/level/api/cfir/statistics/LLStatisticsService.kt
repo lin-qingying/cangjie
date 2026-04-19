@@ -9,8 +9,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import io.opentelemetry.api.OpenTelemetry
-import org.cangnova.cangjie.analysis.api.platform.statistics.CaStatisticsService
-import org.cangnova.cangjie.analysis.api.platform.statistics.KotlinOpenTelemetryProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLAnalysisSessionStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLStatisticsDomain
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLSymbolProviderStatistics

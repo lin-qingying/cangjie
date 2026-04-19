@@ -105,7 +105,7 @@ abstract class AbstractModuleStructureTest : AbstractAnalysisApiBasedTest() {
                 ?: error("仅 DanglingFileModule 场景允许声明 EXPECTED_CONTEXT_MODULE。")
             assertEquals(
                 expectedContextModuleName,
-                danglingFileModule.contextModule?.let(::presentableModuleName),
+                presentableModuleName(danglingFileModule.contextModule),
                 "dangling file 模块绑定的 context module 不正确。",
             )
         }
@@ -145,7 +145,7 @@ private fun CaModule.toExpectedShape(): ExpectedCaModuleShape = when (this) {
  * 测试数据只应依赖公开模块语义，而不应依赖具体实现类的 `toString()` 偶然值。
  */
 private fun presentableModuleName(module: CaModule): String = when (module) {
-    is CaDanglingFileModule -> module.name
+    is CaDanglingFileModule -> module.file.name
     is CaLibrarySourceModule -> module.libraryName
     is CaLibraryFallbackDependenciesModule -> "${module.dependencyOwnerName}.fallback"
     is CaBuiltinsModule -> module.builtinsName

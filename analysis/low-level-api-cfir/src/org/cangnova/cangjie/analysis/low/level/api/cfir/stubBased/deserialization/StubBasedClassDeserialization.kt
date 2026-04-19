@@ -8,9 +8,9 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserializati
 import com.intellij.extapi.psi.StubBasedPsiElementBase
 import com.intellij.psi.stubs.Stub
 import com.intellij.psi.stubs.StubElement
-import org.cangnova.cangjie.CjRealPsiSourceElement
 import org.cangnova.cangjie.descriptors.*
 import org.cangnova.cangjie.cfir.*
+import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.CfirRegularClassBuilder
 import org.cangnova.cangjie.cfir.declarations.builder.buildOuterClassTypeParameterRef
@@ -25,9 +25,7 @@ import org.cangnova.cangjie.cfir.deserialization.deserializationExtension
 import org.cangnova.cangjie.cfir.deserialization.toLazyEffectiveVisibility
 import org.cangnova.cangjie.cfir.resolve.transformers.setLazyPublishedVisibility
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
-import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirRegularClassSymbol
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeRigidType
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
