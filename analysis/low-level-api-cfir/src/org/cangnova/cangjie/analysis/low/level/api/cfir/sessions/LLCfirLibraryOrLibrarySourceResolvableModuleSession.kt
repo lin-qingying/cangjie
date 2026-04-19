@@ -10,12 +10,12 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
-import org.cangnova.cangjie.cfir.BuiltinTypes
+import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 
 internal class LLCfirLibraryOrLibrarySourceResolvableModuleSession(
     ktModule: CaModule,
     override val moduleComponents: LLCfirModuleResolveComponents,
-    builtinTypes: BuiltinTypes,
+    builtinTypes: CfirBuiltinTypes,
 ) : LLCfirResolvableModuleSession(ktModule, builtinTypes) {
     init {
         checkIsValidCjModule(ktModule)

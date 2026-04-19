@@ -11,8 +11,7 @@ import org.cangnova.cangjie.analysis.api.platform.CaCachedService
 import org.cangnova.cangjie.analysis.api.platform.declarations.*
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaDanglingFileModuleImpl
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinAnchorModuleProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieAnchorModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.utils.mergeInto
 import org.cangnova.cangjie.analysis.api.projectStructure.*
 import org.cangnova.cangjie.analysis.api.utils.errors.withCaModuleEntry
@@ -83,7 +82,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
     fun createNotUnderContentRootResolvableSession(module: CaNotUnderContentRootModule): LLCfirNotUnderContentRootResolvableModuleSession {
         val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession()
-        val languageVersionSettings = KotlinProjectStructureProvider.getInstance(project).globalLanguageVersionSettings
+        val languageVersionSettings = LanguageVersionSettings.DEFAULT
         val scopeProvider = CfirKotlinScopeProvider()
         val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
 
@@ -230,7 +229,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         }
 
         val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession()
-        val languageVersionSettings = KotlinProjectStructureProvider.getInstance(project).libraryLanguageVersionSettings
+        val languageVersionSettings = LanguageVersionSettings.DEFAULT
 
         val scopeProvider = CfirKotlinScopeProvider()
         val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
@@ -276,7 +275,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                     addMerged(session, computeDependencySymbolProviders(binaryModule))
 
                     if (binaryModule is CaLibraryModule) {
-                        KotlinAnchorModuleProvider.getInstance(project)?.getAnchorModule(binaryModule)?.let { anchorModule ->
+                        CangJieAnchorModuleProvider.getInstance(project)?.getAnchorModule(binaryModule)?.let { anchorModule ->
                             val anchorModuleSession = LLCfirSessionCache.getInstance(project).getSession(anchorModule)
                             val anchorModuleSymbolProvider =
                                 anchorModuleSession.symbolProvider as LLModuleWithDependenciesSymbolProvider
@@ -316,7 +315,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         val contentScope = module.contentScope
 
         return session.apply {
-            val languageVersionSettings = KotlinProjectStructureProvider.getInstance(project).libraryLanguageVersionSettings
+            val languageVersionSettings = LanguageVersionSettings.DEFAULT
             registerModuleData(moduleData)
             registerIdeComponents(project, languageVersionSettings, contentScope)
             register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
@@ -596,11 +595,11 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
     }
 
     /**
-     * Creates a [KotlinDeclarationProvider] for the provided files if they are in the search [scope].
+     * Creates a [CangJieDeclarationProvider] for the provided files if they are in the search [scope].
      *
      * Otherwise, returns `null`.
      */
-    private fun createScopedDeclarationProviderForFiles(scope: GlobalSearchScope, files: List<CjFile>): KotlinDeclarationProvider? {
+    private fun createScopedDeclarationProviderForFiles(scope: GlobalSearchScope, files: List<CjFile>): CangJieDeclarationProvider? {
         if (files.isEmpty()) {
             return null
         }
@@ -616,11 +615,11 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
                 // 'CjFile's without a backing 'VirtualFile' can't be covered by a shadow scope, and are thus assumed in-scope.
                 if (virtualFile == null || scope.contains(virtualFile)) {
-                    add(KotlinFileBasedDeclarationProvider(file))
+                    add(CangJieFileBasedDeclarationProvider(file))
                 }
             }
         }
 
-        return KotlinCompositeDeclarationProvider.create(fileProviders)
+        return CangJieCompositeDeclarationProvider.create(fileProviders)
     }
 }

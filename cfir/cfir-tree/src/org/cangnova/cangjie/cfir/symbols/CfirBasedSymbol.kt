@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.symbols
 
 import org.cangnova.cangjie.CjSourceFile
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolvedStatus
@@ -93,6 +94,27 @@ sealed class CfirClassLikeSymbol<D : CfirClassLikeDeclaration>(
     final override fun toLookupTag(): ConeClassLikeLookupTag = lookupTag
 
     override val debugName: String get() = classId.asString()
+
+    /**
+     * 对齐 Kotlin FIR：
+     * class-like symbol 只读取自身声明上的弃用信息，不沿展开链向外追溯。
+     */
+    fun getOwnDeprecation(languageVersionSettings: LanguageVersionSettings): DeprecationsPerUseSite? {
+        if (deprecationsAreDefinitelyEmpty()) {
+            return null
+        }
+
+        lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+        return cfir.deprecationsProvider.getDeprecationsInfo(languageVersionSettings)
+    }
+
+    private fun deprecationsAreDefinitelyEmpty(): Boolean {
+        if (cfir.annotations.isEmpty() && cfir.deprecationsProvider == EmptyDeprecationsProvider) {
+            return true
+        }
+
+        return false
+    }
 }
 
 //sealed class CfirClassLikeSymbol<D : CfirClassLikeDeclaration>(
@@ -265,6 +287,27 @@ sealed class CfirCallableSymbol<out D : CfirCallableDeclaration> : CfirBasedSymb
     override val debugName: String get() = name.asString()
 }
 
+/**
+ * 对齐 Kotlin FIR：
+ * callable symbol 通过 declaration 上的 `deprecationsProvider` 拉取按 use-site 组织的弃用信息。
+ */
+fun CfirCallableSymbol<*>.getDeprecation(languageVersionSettings: LanguageVersionSettings): DeprecationsPerUseSite? {
+    if (deprecationsAreDefinitelyEmpty()) {
+        return null
+    }
+
+    lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+    return cfir.deprecationsProvider.getDeprecationsInfo(languageVersionSettings)
+}
+
+private fun CfirCallableSymbol<*>.deprecationsAreDefinitelyEmpty(): Boolean {
+    if (cfir.annotations.isEmpty() && cfir.deprecationsProvider == EmptyDeprecationsProvider) {
+        return true
+    }
+
+    return false
+}
+
 sealed class CfirNamedValueSymbol<out D : CfirCallableDeclaration> (override val callableId: CallableId): CfirCallableSymbol<D>()
 {
 
@@ -338,8 +381,33 @@ class CfirPropertySymbol(
 ) : CfirNamedValueSymbol<CfirProperty>(callableId) {
     override val name: Name get() = callableId.callableName
 
+    /**
+     * 对齐 Kotlin FIR，property 自身负责暴露 accessor symbol。
+     *
+     * accessor 的声明真相仍然在 [CfirProperty] 上，symbol 层只做稳定投影。
+     */
+    open val getterSymbol: CfirPropertyAccessorSymbol?
+        get() = cfir.getter?.symbol
+
+    open val setterSymbol: CfirPropertyAccessorSymbol?
+        get() = cfir.setter?.symbol
+
     override fun toString(): String =
         if (isBound) "CfirPropertySymbol(${cfir.name})" else "CfirPropertySymbol(unbound)"
+}
+
+/** 属性访问器符号，对齐 K2 `FirPropertyAccessorSymbol`。 */
+open class CfirPropertyAccessorSymbol : CfirFunctionWithoutNameSymbol<CfirPropertyAccessor>(Name.identifier("accessor")) {
+    val isGetter: Boolean
+        get() = cfir.isGetter
+    val isSetter: Boolean
+        get() = !cfir.isGetter
+    open val propertySymbol: CfirPropertySymbol
+        get() = cfir.propertySymbol
+
+    override fun toString(): String =
+        if (isBound) "CfirPropertyAccessorSymbol(${if (cfir.isGetter) "getter" else "setter"})"
+        else "CfirPropertyAccessorSymbol(unbound)"
 }
 
 /** 成员字段变量符号，对应 class/struct 内的 `var`/`let` 字段声明。 */
@@ -416,6 +484,11 @@ class CfirFileSymbol : CfirBasedSymbol<CfirFile>(), EvaluatedConstTracker.Key {
 
     override fun toString(): String =
         if (isBound) "CfirFileSymbol(${cfir.name})" else "CfirFileSymbol(unbound)"
+}
+
+/** code fragment 符号，对齐 Kotlin FIR 的 `FirCodeFragmentSymbol`。 */
+class CfirCodeFragmentSymbol : CfirBasedSymbol<CfirCodeFragment>() {
+    override fun toString(): String = "CfirCodeFragmentSymbol"
 }
 
 /**

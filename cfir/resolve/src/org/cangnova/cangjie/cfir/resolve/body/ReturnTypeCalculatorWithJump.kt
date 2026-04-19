@@ -9,11 +9,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
 import org.cangnova.cangjie.cfir.scopes.deferredCallableCopyReturnType
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculatorForFullBodyResolve
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
@@ -139,7 +141,7 @@ class ReturnTypeCalculatorWithJump(
 
     /** 查找声明所在文件。 */
     private fun findContainingFile(declaration: CfirCallableDeclaration): CfirFile? {
-        return session.symbolProvider.getContainingFile(declaration.symbol)
+        return session.cfirProvider.getContainingFile(declaration.symbol)
     }
 
     private inner class CallableCopyTypeCalculatorWithJump : CallableCopyTypeCalculator.DeferredCallableCopyTypeCalculator() {

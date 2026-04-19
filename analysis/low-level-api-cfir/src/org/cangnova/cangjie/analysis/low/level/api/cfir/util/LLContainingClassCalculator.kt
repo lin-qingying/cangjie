@@ -6,120 +6,66 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.CjFakeSourceElementKind
-import org.cangnova.cangjie.CjFakeSourceElementKind.*
-import org.cangnova.cangjie.CjPsiSourceElement
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjFakeSourceElementKind.*
+import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getResolutionFacade
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbolOfType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.cfir.containingClassLookupTag
 import org.cangnova.cangjie.cfir.declarations.isLazyResolvable
-import org.cangnova.cangjie.cfir.getContainingClassLookupTag
+import org.cangnova.cangjie.cfir.resolve.toClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.*
+import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.psi.*
-import org.cangnova.cangjie.psi.psiUtil.containingClassOrObject
+import org.cangnova.cangjie.psi.psiUtil.containingTypeStatement
 
 internal object LLContainingClassCalculator {
     /**
      * Returns a containing class symbol for the given symbol, computing it solely from the source information
      * and information inside CFIR nodes.
      */
-    fun getContainingClassSymbol(symbol: CfirBasedSymbol<*>): CfirClassSymbol<*>? {
+    fun getContainingClassSymbol(symbol: CfirBasedSymbol<*>): CfirClassSymbol? {
         if (!symbol.origin.isLazyResolvable) {
             // Handle only source or source-based declarations for now as below we use the PSI tree
             return null
-        }
-
-        if (symbol is CfirAnonymousInitializerSymbol) {
-            // For anonymous initializers, the containing class symbol is right there, no need in PSI traversal
-            return symbol.containingDeclarationSymbol as? CfirClassSymbol<*>
         }
 
         if (!canHaveContainingClassSymbol(symbol)) {
             return null
         }
 
-        val containingClassLookupTag = when (symbol) {
-            is CfirCallableSymbol<*> -> symbol.containingClassLookupTag()
-            is CfirClassLikeSymbol<*> -> symbol.getContainingClassLookupTag()
-            is CfirDanglingModifierSymbol -> symbol.containingClassLookupTag()
-            else -> null
+        if (symbol is CfirCallableSymbol<*>) {
+            val containingClassLookupTag = symbol.containingClassLookupTag()
+            if (containingClassLookupTag != null) {
+                return containingClassLookupTag.toClassSymbol(symbol.cfir.moduleData.session) as? CfirClassSymbol
+            }
         }
 
-        // For members of local classes lookup tag should be used to avoid a phase
-        // contract violation
-        if (containingClassLookupTag is ConeClassLikeLookupTagWithFixedSymbol) {
-            return containingClassLookupTag.symbol as? CfirClassSymbol<*>
-        }
-
-        val source = symbol.source as? CjPsiSourceElement ?: return null
+        val source = symbol.cfir.source as? CjPsiSourceElement ?: return null
         when (val kind = source.kind) {
             is CjFakeSourceElementKind -> {
-                if (symbol is CfirBackingFieldSymbol) {
-                    if (kind == DefaultAccessor) {
-                        return computeContainingClass(symbol, (source.psi as? CjDeclaration)?.containingClassOrObject)
-                    }
-                }
-
                 if (symbol is CfirConstructorSymbol && kind == ImplicitConstructor) {
-                    return computeContainingClass(symbol, source.psi)
-                }
-
-                if (symbol is CfirPropertyAccessorSymbol) {
-                    if (kind == DefaultAccessor) {
-                        val containingProperty = source.psi
-                        return if (containingProperty is CjProperty || containingProperty is CjParameter) {
-                            computeContainingClass(symbol, (containingProperty as CjDeclaration).containingClassOrObject)
-                        } else {
-                            null
-                        }
-                    }
-
-                    if (kind == DelegatedPropertyAccessor) {
-                        val containingProperty = source.psi as? CjProperty
-                        return computeContainingClass(symbol, containingProperty?.containingClassOrObject)
-                    }
-
-                    if (kind == PropertyFromParameter) {
-                        val containingParameter = source.psi as? CjParameter
-                        return computeContainingClass(symbol, containingParameter?.containingClassOrObject)
-                    }
+                    return computeContainingClass(symbol, source.psi as? CjTypeStatement)
                 }
 
                 if (symbol is CfirPropertySymbol && kind == PropertyFromParameter) {
                     val containingParameter = source.psi as? CjParameter
-                    return computeContainingClass(symbol, containingParameter?.containingClassOrObject)
-                }
-
-                if (kind == EnumGeneratedDeclaration) {
-                    return computeContainingClass(symbol, source.psi)
-                }
-
-                if (symbol is CfirDanglingModifierSymbol && kind == DanglingModifierList) {
-                    val modifierList = source.psi as? CjModifierList
-                    val body = modifierList?.parent as? CjClassBody
-                    return computeContainingClass(symbol, body?.parent)
+                    return computeContainingClass(symbol, containingParameter?.containingTypeStatement)
                 }
             }
-            else -> {
-                if (symbol is CfirClassLikeSymbol<*>) {
-                    val selfClass = source.psi as? CjClassOrObject
-                    return computeContainingClass(symbol, selfClass?.containingClassOrObject)
-                }
-
-                if (symbol is CfirCallableSymbol<*>) {
-                    return when (val selfCallable = source.psi) {
-                        is CjCallableDeclaration, is CjEnumEntry -> {
-                            computeContainingClass(symbol, selfCallable.containingClassOrObject)
-                        }
-                        is CjPropertyAccessor -> {
-                            val containingProperty = selfCallable.property
-                            computeContainingClass(symbol, containingProperty.containingClassOrObject)
-                        }
-                        else -> null
-                    }
+            else -> if (symbol is CfirCallableSymbol<*>) {
+                return when (val selfCallable = source.psi) {
+                    is CjCallableDeclaration -> computeContainingClass(symbol, selfCallable.containingTypeStatement)
+                    is CjPropertyAccessor -> computeContainingClass(symbol, selfCallable.property.containingTypeStatement)
+                    else -> null
                 }
             }
         }
@@ -129,20 +75,19 @@ internal object LLContainingClassCalculator {
 
     private fun canHaveContainingClassSymbol(symbol: CfirBasedSymbol<*>): Boolean = when (symbol) {
         is CfirValueParameterSymbol, is CfirAnonymousFunctionSymbol -> false
-        is CfirRegularPropertySymbol -> true
+        is CfirPropertySymbol -> true
         is CfirNamedFunctionSymbol -> symbol.rawStatus.visibility != Visibilities.Local
-        is CfirClassLikeSymbol -> symbol.classId.isNestedClass
-        is CfirCallableSymbol, is CfirDanglingModifierSymbol -> true
+        is CfirCallableSymbol -> true
         else -> false
     }
 
-    private fun computeContainingClass(symbol: CfirBasedSymbol<*>, psi: PsiElement?): CfirClassSymbol<*>? {
-        if (psi !is CjClassOrObject) {
+    private fun computeContainingClass(symbol: CfirBasedSymbol<*>, psi: CjTypeStatement?): CfirClassSymbol? {
+        if (psi == null) {
             return null
         }
 
         val module = symbol.llCfirModuleData.ktModule
         val resolutionFacade = module.getResolutionFacade(module.project)
-        return psi.resolveToCfirSymbolOfType<CfirClassSymbol<*>>(resolutionFacade)
+        return psi.resolveToCfirSymbolOfType<CfirClassSymbol>(resolutionFacade)
     }
 }

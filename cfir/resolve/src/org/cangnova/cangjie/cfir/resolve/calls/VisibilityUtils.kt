@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.visibility.CfirVisibilityChecker
 import org.cangnova.cangjie.cfir.resolve.calls.visibility.getOwnerClassId
 import org.cangnova.cangjie.cfir.resolve.calls.visibility.moduleVisibilityChecker
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId

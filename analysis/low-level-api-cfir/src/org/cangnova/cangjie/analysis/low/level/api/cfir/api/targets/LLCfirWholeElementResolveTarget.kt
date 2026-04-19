@@ -10,9 +10,9 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecif
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.forEachDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isDeclarationContainer
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.declarations.CfirRegularClass
 
 /**
  * [LLCfirResolveTarget] representing all declarations in [target] recursively.
@@ -30,7 +30,7 @@ internal class LLCfirWholeElementResolveTarget(designation: CfirDesignation) : L
         when {
             element !is CfirDeclaration || !element.isDeclarationContainer -> {}
 
-            element is CfirRegularClass -> visitor.withRegularClass(element) {
+            element is CfirClass -> visitor.withClass(element) {
                 element.forEachDeclaration {
                     visitTargetElement(it, visitor)
                 }

@@ -28,6 +28,7 @@ class CfirLazyBlockImpl : CfirLazyBlock() {
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirLazyBlockImpl {
+        transformOtherChildren(transformer, data)
         return this
     }
 
@@ -36,6 +37,10 @@ class CfirLazyBlockImpl : CfirLazyBlock() {
     }
 
     override fun <D> transformStatements(transformer: CfirTransformer<D>, data: D): CfirLazyBlockImpl {
+        return this
+    }
+
+    override fun <D> transformOtherChildren(transformer: CfirTransformer<D>, data: D): CfirLazyBlockImpl {
         return this
     }
 

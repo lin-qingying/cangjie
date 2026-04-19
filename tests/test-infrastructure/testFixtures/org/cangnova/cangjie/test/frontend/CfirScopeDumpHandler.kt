@@ -15,11 +15,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.lazyDeclarationResolver
@@ -283,7 +285,7 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         symbol: CfirBasedSymbol<*>,
         cfirFile: CfirFile,
         outputPart: CfirOutputPartForDependsOnModule,
-    ): Boolean = outputPart.session.symbolProvider.getContainingFile(symbol) == cfirFile
+    ): Boolean = outputPart.session.cfirProvider.getContainingFile(symbol) == cfirFile
 
     private fun classLikeKind(declaration: CfirClassLikeDeclaration): String = when (declaration) {
         is CfirInterface -> "interface"

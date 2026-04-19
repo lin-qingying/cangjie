@@ -5,8 +5,9 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve
 
-import org.cangnova.cangjie.analysis.utils.printer.parentOfType
+
 import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.psi.psiUtil.parentOfType
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
@@ -18,55 +19,24 @@ internal fun elementCanBeLazilyResolved(element: CjElement?): Boolean = when (el
     is CjFunctionLiteral -> false
     is CjTypeParameter -> elementCanBeLazilyResolved(element.parentOfType<CjNamedDeclaration>(withSelf = false))
     is CjFile -> element !is CjCodeFragment
-    is CjParameter -> elementCanBeLazilyResolved(element.ownerDeclaration)
-    is CjCallableDeclaration, is CjEnumEntry -> {
+    is CjParameter -> elementCanBeLazilyResolved(element.ownerFunction)
+    // 仓颉 low-level 主干不承载 Kotlin FIR 的 enum entry / dangling modifier list 形态。
+    // 这里仅保留真实存在的可调用声明入口，避免把不存在的 declaration shape 带入 designation/file-structure 主流程。
+    is CjCallableDeclaration -> {
         val parentToCheck = when (val parent = element.parent) {
-            is CjClassOrObject, is CjFile -> parent
-            is CjClassBody -> parent.parent as? CjClassOrObject
+            is CjTypeStatement, is CjFile -> parent
+            is CjClassBody -> parent.parent as? CjTypeStatement
             else -> null
         }
 
-        elementCanBeLazilyResolved(parentToCheck.takeUnless { it is CjEnumEntry })
+        elementCanBeLazilyResolved(parentToCheck)
     }
 
     is CjPropertyAccessor -> elementCanBeLazilyResolved(element.property)
-    is CjClassOrObject -> element.isTopLevel() || element.getClassId() != null
-    is CjTypeAlias -> element.isTopLevel() || element.getClassId() != null
-    is CjModifierList -> element.isNonLocalDanglingModifierList()
+    is CjTypeStatement -> element.parent is CjFile
+    is CjTypeAlias -> element.parent is CjFile
     !is CjNamedDeclaration -> false
     else -> errorWithAttachment("Unexpected ${element::class}") {
         withPsiEntry("declaration", element)
     }
-}
-
-/**
- * Detects a common pattern of invalid code where a modifier list (e.g., annotation)
- * is dangling—unattached to a valid declaration—or left unclosed and followed by another declaration.
- *
- * ### Examples
- *
- * ```kotlin
- * class C1 {
- *     @Ann1 @Ann2
- * }
- *
- * class C2 {
- *     @Ann(
- *     fun foo() {}
- * }
- *
- * @Ann("argument"
- * fun foo() {}
- * ```
- * @see org.cangnova.cangjie.cfir.declarations.CfirDanglingModifierList
- * @see org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.Visitor.buildErrorNonLocalDeclarationForDanglingModifierList
- */
-private fun CjModifierList.isNonLocalDanglingModifierList(): Boolean {
-    val parentToCheck = when (val parent = parent) {
-        is CjFile -> parent
-        is CjClassBody -> (parent.parent as? CjClassOrObject).takeUnless { it is CjEnumEntry }
-        else -> null
-    }
-
-    return elementCanBeLazilyResolved(parentToCheck)
 }

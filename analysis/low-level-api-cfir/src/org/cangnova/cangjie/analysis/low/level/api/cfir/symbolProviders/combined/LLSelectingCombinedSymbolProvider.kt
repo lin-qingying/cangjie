@@ -8,11 +8,12 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combine
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.platform.CaCachedService
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.util.withCaModuleEntry
 import org.cangnova.cangjie.analysis.api.utils.errors.withCaModuleEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 
@@ -45,10 +46,10 @@ internal abstract class LLSelectingCombinedSymbolProvider<PROVIDER : CfirSymbolP
     }
 
     /**
-     * Cache [KotlinProjectStructureProvider] to avoid service access when getting [CaModule]s.
+     * Cache [CangJieProjectStructureProvider] to avoid service access when getting [CaModule]s.
      */
     @CaCachedService
-    private val projectStructureProvider: KotlinProjectStructureProvider = KotlinProjectStructureProvider.getInstance(project)
+    private val projectStructureProvider: CangJieProjectStructureProvider = CangJieProjectStructureProvider.getInstance(project)
 
     private val contextualModule = session.llCfirModuleData.ktModule
 

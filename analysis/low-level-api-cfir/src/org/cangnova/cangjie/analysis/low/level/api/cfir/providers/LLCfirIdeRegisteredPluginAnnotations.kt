@@ -5,10 +5,10 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.providers
 
-import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinAnnotationsResolver
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieAnnotationsResolver
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.caches.*
-import org.cangnova.cangjie.cfir.declarations.CfirRegularClass
+import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.extensions.AbstractCfirRegisteredPluginAnnotations
 import org.cangnova.cangjie.cfir.extensions.AnnotationFqn
 import org.cangnova.cangjie.name.ClassId
@@ -17,7 +17,7 @@ import org.cangnova.cangjie.psi.CjClass
 
 internal class LLCfirIdeRegisteredPluginAnnotations(
     session: CfirSession,
-    private val annotationsResolver: KotlinAnnotationsResolver
+    private val annotationsResolver: CangJieAnnotationsResolver
 ) : AbstractCfirRegisteredPluginAnnotations(session) {
 
     private val annotationsFromPlugins: MutableSet<AnnotationFqn> = mutableSetOf()
@@ -25,7 +25,7 @@ internal class LLCfirIdeRegisteredPluginAnnotations(
     override val annotations: Set<AnnotationFqn>
         get() = allAnnotationsCache.getValue()
 
-    private val allAnnotationsCache: CfirLazyValue<Set<AnnotationFqn>> = session.firCachesFactory.createLazyValue {
+    private val allAnnotationsCache: CfirLazyValue<Set<AnnotationFqn>> = session.cfirCachesFactory.createLazyValue {
         // at this point, both metaAnnotations and annotationsFromPlugins should be collected
         val result = metaAnnotations.flatMapTo(mutableSetOf()) { getAnnotationsWithMetaAnnotation(it) }
 
@@ -39,7 +39,7 @@ internal class LLCfirIdeRegisteredPluginAnnotations(
 
     // MetaAnnotation -> Annotations
     private val annotationsWithMetaAnnotationCache: CfirCache<AnnotationFqn, Set<AnnotationFqn>, Nothing?> =
-        session.firCachesFactory.createCache { metaAnnotation -> collectAnnotationsWithMetaAnnotation(metaAnnotation) }
+        session.cfirCachesFactory.createCache { metaAnnotation -> collectAnnotationsWithMetaAnnotation(metaAnnotation) }
 
     override fun getAnnotationsWithMetaAnnotation(metaAnnotation: AnnotationFqn): Collection<AnnotationFqn> {
         return annotationsWithMetaAnnotationCache.getValue(metaAnnotation)
@@ -60,7 +60,7 @@ internal class LLCfirIdeRegisteredPluginAnnotations(
         annotationsFromPlugins += annotations
     }
 
-    override fun registerUserDefinedAnnotation(metaAnnotation: AnnotationFqn, annotationClasses: Collection<CfirRegularClass>) {
+    override fun registerUserDefinedAnnotation(metaAnnotation: AnnotationFqn, annotationClasses: Collection<CfirClass>) {
         error("This method should never be called in IDE mode")
     }
 }

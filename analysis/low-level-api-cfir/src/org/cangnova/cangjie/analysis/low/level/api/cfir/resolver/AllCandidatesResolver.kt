@@ -11,7 +11,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.ContextCollector
 import org.cangnova.cangjie.analysis.utils.printer.parentsOfType
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.builder.buildAnonymousFunctionCopy
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
@@ -19,7 +19,7 @@ import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.*
 import org.cangnova.cangjie.cfir.expressions.impl.CfirResolvedArgumentList
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
-import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.resolve.calls.*
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.fullyProcessCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerResolver
@@ -93,32 +93,6 @@ class AllCandidatesResolver(private val firSession: CfirSession) {
         }
     }
 
-    fun getAllCandidatesForDelegatedConstructor(
-        resolutionFacade: LLResolutionFacade,
-        delegatedConstructorCall: CfirDelegatedConstructorCall,
-        derivedClassLookupTag: ConeClassLikeLookupTag,
-        element: CjElement
-    ): List<OverloadCandidate> {
-        initializeBodyResolveContext(resolutionFacade, element)
-
-        val constructedType = delegatedConstructorCall.constructedTypeRef.coneType as ConeClassLikeType
-        return run {
-            val callInfo = bodyResolveComponents.callResolver.callInfoForDelegatingConstructorCall(
-                delegatedConstructorCall,
-                constructedType,
-            )
-
-            with(bodyResolveComponents.towerResolver) {
-                reset()
-                runResolverForDelegatingConstructor(callInfo, constructedType, derivedClassLookupTag, resolutionContext)
-            }
-
-            bodyResolveComponents.collector.allCandidates
-                .map { OverloadCandidate(it, isInBestCandidates = it in bodyResolveComponents.collector.bestCandidates()) }
-                .apply { postProcessCandidates(delegatedConstructorCall) }
-        }
-    }
-
     @OptIn(PrivateForInline::class, SymbolInternals::class)
     private fun initializeBodyResolveContext(resolutionFacade: LLResolutionFacade, element: CjElement) {
         val firFile = element.containingCjFile.getOrBuildCfirFile(resolutionFacade)
@@ -127,7 +101,7 @@ class AllCandidatesResolver(private val firSession: CfirSession) {
         val towerContext = ContextCollector.process(resolutionFacade, firFile, element)?.towerDataContext
         towerContext?.let { bodyResolveComponents.context.replaceTowerDataContext(it) }
         val containingDeclarations =
-            element.parentsOfType<CjDeclaration>().map { it.resolveToCfirSymbol(resolutionFacade).fir }.toList().asReversed()
+            element.parentsOfType<CjDeclaration>().map { declaration: CjDeclaration -> declaration.resolveToCfirSymbol(resolutionFacade).cfir }.toList().asReversed()
         bodyResolveComponents.context.containers.addAll(containingDeclarations)
 
         // `towerContext` from above should already contain all the scopes for the file,
@@ -249,7 +223,6 @@ private fun copyArgument(argument: CfirExpression): CfirExpression = when (argum
         val newExpression = copyArgument(argument.expression)
         when (argument) {
             is CfirNamedArgumentExpression -> buildNamedArgumentExpressionCopy(argument) { expression = newExpression }
-            is CfirSpreadArgumentExpression -> buildSpreadArgumentExpressionCopy(argument) { expression = newExpression }
         }
     }
     is CfirAnonymousFunctionExpression -> {

@@ -30,6 +30,7 @@ class CfirConstructorBuilder {
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
     var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    lateinit var deprecationsProvider: DeprecationsProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
@@ -48,6 +49,7 @@ class CfirConstructorBuilder {
             origin,
             attributes,
             isLocal,
+            deprecationsProvider,
             dispatchReceiverType,
             status,
             typeParameters,
@@ -81,6 +83,7 @@ inline fun buildConstructorCopy(original: CfirConstructor, init: CfirConstructor
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
     copyBuilder.isLocal = original.isLocal
+    copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.dispatchReceiverType = original.dispatchReceiverType
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)

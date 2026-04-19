@@ -7,32 +7,29 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.api
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
-import org.cangnova.cangjie.analysis.api.utils.errors.withPsiEntry
+import org.cangnova.cangjie.analysis.api.util.withPsiEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.state.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.*
 import org.cangnova.cangjie.analysis.utils.errors.requireIsInstance
-import org.cangnova.cangjie.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
-import org.cangnova.cangjie.cfir.expressions.CfirAnonymousObjectExpression
-import org.cangnova.cangjie.cfir.resolve.ScopeSession
-import org.cangnova.cangjie.cfir.resolve.providers.firProvider
-import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
-import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
 /**
  * An entry point for a CFIR Low Level API resolution. Represents a project view from a use-site [CaModule].
@@ -150,7 +147,7 @@ class LLResolutionFacade internal constructor(
             val session = sessionProvider.getResolvableSession(targetModule)
             nonLocalContainer.findSourceNonLocalCfirDeclaration(
                 firFileBuilder = session.moduleComponents.firFileBuilder,
-                provider = session.firProvider,
+                provider = session.cfirProvider,
             )
         } else {
             findSourceCfirDeclarationViaResolve(targetDeclaration)
@@ -163,7 +160,6 @@ class LLResolutionFacade internal constructor(
         return when (val fir = getOrBuildCfirFor(ktDeclaration)) {
             is CfirDeclaration -> fir
             is CfirAnonymousFunctionExpression -> fir.anonymousFunction
-            is CfirAnonymousObjectExpression -> fir.anonymousObject
             else -> errorWithCfirSpecificEntries(
                 "CfirDeclaration was not found for ${ktDeclaration::class}, fir is ${fir?.let { it::class }}",
                 fir = fir,
@@ -189,5 +185,5 @@ class LLResolutionFacade internal constructor(
 }
 
 fun LLResolutionFacade.getModule(element: PsiElement): CaModule {
-    return KotlinProjectStructureProvider.getModule(project, element, useSiteModule)
+    return CangJieProjectStructureProvider.getModule(project, element, useSiteModule)
 }

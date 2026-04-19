@@ -29,6 +29,7 @@ abstract class CfirValueParameter : CfirVariable(), CfirControlFlowGraphOwner {
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
     abstract override val isLocal: Boolean
+    abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val initializer: CfirExpression?
     abstract override val isVar: Boolean
@@ -51,11 +52,17 @@ abstract class CfirValueParameter : CfirVariable(), CfirControlFlowGraphOwner {
 
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
+    abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
+
+    abstract override fun replaceInitializer(newInitializer: CfirExpression?)
+
     abstract override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 
     abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
 
     abstract override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
+
+    abstract fun replaceDefaultValue(newDefaultValue: CfirExpression?)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirValueParameter
 

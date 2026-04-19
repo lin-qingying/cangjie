@@ -16,19 +16,18 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvabl
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.body
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.parentsWithSelf
 import org.cangnova.cangjie.utils.exceptions.buildErrorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 import java.lang.Exception
 
@@ -56,7 +55,7 @@ internal class LLEagerElementMapper(declaration: CfirDeclaration) : LLElementMap
 
 /**
  * A provider for a partially analyzable [declaration].
- * The declaration must be full analyzed up to the [CfirResolvePhase.ANNOTATION_ARGUMENTS].
+ * The declaration must be fully analyzed up to the [CfirResolvePhase.IMPLICIT_TYPES].
  *
  * @param declaration The declaration to be resolved. Must be [isPartiallyAnalyzable].
  * @param psiDeclaration The PSI version of the [declaration].
@@ -74,8 +73,8 @@ internal class LLPartialBodyElementMapper(
     init {
         val phase = declaration.resolvePhase
         checkWithAttachment(
-            phase >= CfirResolvePhase.ANNOTATION_ARGUMENTS,
-            { "The declaration must be at least resolved up to ${CfirResolvePhase.ANNOTATION_ARGUMENTS.name}, but it is resolved to $phase" },
+            phase >= CfirResolvePhase.IMPLICIT_TYPES,
+            { "The declaration must be at least resolved up to ${CfirResolvePhase.IMPLICIT_TYPES.name}, but it is resolved to $phase" },
         )
     }
 
@@ -129,7 +128,9 @@ internal class LLPartialBodyElementMapper(
                                     withPsiEntry("declaration", psiDeclaration)
                                     withEntry("statements") {
                                         for ((index, psiStatement) in psiStatements.withIndex()) {
-                                            this@withEntry.println(index, ": ", psiStatement.text)
+                                            append(index)
+                                            append(": ")
+                                            appendLine(psiStatement.text)
                                         }
                                     }
                                 }
@@ -139,20 +140,13 @@ internal class LLPartialBodyElementMapper(
                         }
                     }
                     is CjParameter -> {
-                        val parentDeclaration = current.ownerDeclaration
-
-                        // There can be local declarations, lambda destructuring declarations, etc.
+                        val parentDeclaration = current.ownerFunction
                         if (parentDeclaration == psiDeclaration) {
                             return if (previous is CjExpression && current.defaultValue == previous) {
                                 ElementContainer.SignatureBody
                             } else {
                                 ElementContainer.Signature
                             }
-                        }
-                    }
-                    is CjConstructorDelegationCall -> {
-                        if (current.parent == psiDeclaration) {
-                            return ElementContainer.SignatureBody
                         }
                     }
                     psiDeclaration -> {
@@ -163,10 +157,14 @@ internal class LLPartialBodyElementMapper(
                 previous = current
             }
 
-            val error = buildErrorWithAttachment("Cannot find the element container") {
-                withPsiEntry("element", psiElement)
-                withPsiEntry("declaration", psiDeclaration)
-            }
+            val error = buildErrorWithAttachment(
+                message = "Cannot find the element container",
+                cause = null as Throwable?,
+                buildAttachment = {
+                    withPsiEntry("element", psiElement)
+                    withPsiEntry("declaration", psiDeclaration)
+                },
+            )
 
             LOG.error(error)
 
@@ -320,7 +318,6 @@ internal class LLPartialBodyElementMapper(
 
     private fun registerSignatureBodyParts(newState: LLPartialBodyAnalysisState?, consumer: MutableMap<CjElement, CfirElement>) {
         registerDefaultParameterValues(newState, consumer)
-        registerDelegatedConstructorCall(newState, consumer)
     }
 
     private fun registerDefaultParameterValues(newState: LLPartialBodyAnalysisState?, consumer: MutableMap<CjElement, CfirElement>) {
@@ -339,18 +336,6 @@ internal class LLPartialBodyElementMapper(
         }
     }
 
-    private fun registerDelegatedConstructorCall(newState: LLPartialBodyAnalysisState?, consumer: MutableMap<CjElement, CfirElement>) {
-        val snapshot = newState?.analysisStateSnapshot
-        if (snapshot != null) {
-            snapshot.result.delegatedConstructorCall?.accept(DeclarationStructureElement.Recorder, consumer)
-            return
-        }
-
-        if (declaration is CfirConstructor) {
-            declaration.delegatedConstructor?.accept(DeclarationStructureElement.Recorder, consumer)
-        }
-    }
-
     /**
      * Represents the location of a [PsiElement] for which the CFIR mapping was requested.
      */
@@ -363,7 +348,7 @@ internal class LLPartialBodyElementMapper(
 
         /**
          * The element is in parts of the signature that require [CfirResolvePhase.BODY_RESOLVE].
-         * Examples: default parameter values, delegate constructor call.
+         * Example: default parameter values.
          */
         data object SignatureBody : ElementContainer()
 
@@ -411,7 +396,6 @@ internal class LLPartialBodyElementMapper(
  */
 internal val CjDeclaration.bodyBlock: CjBlockExpression?
     get() = when (this) {
-        is CjAnonymousInitializer -> body as? CjBlockExpression
         is CjDeclarationWithBody -> bodyBlockExpression
         else -> null
     }

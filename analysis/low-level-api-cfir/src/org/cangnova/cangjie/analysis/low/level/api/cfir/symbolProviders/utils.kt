@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.java.CfirJavaFacade
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.impl.CfirRegularClassSymbol
 import org.cangnova.cangjie.load.java.structure.JavaClass

@@ -34,6 +34,7 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
     override val isLocal: Boolean,
+    override var deprecationsProvider: DeprecationsProvider,
     override val dispatchReceiverType: ConeSimpleCangJieType?,
     override val symbol: CfirValueParameterSymbol,
     override val containingDeclarationSymbol: CfirBasedSymbol<*>,
@@ -106,6 +107,12 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
         annotations = newAnnotations.toMutableOrEmpty()
     }
 
+    override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider) {
+        deprecationsProvider = newDeprecationsProvider
+    }
+
+    override fun replaceInitializer(newInitializer: CfirExpression?) {}
+
     override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?) {
         controlFlowGraphReference = newControlFlowGraphReference
     }
@@ -116,5 +123,9 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
 
     override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef) {
         returnTypeRef = newReturnTypeRef
+    }
+
+    override fun replaceDefaultValue(newDefaultValue: CfirExpression?) {
+        defaultValue = newDefaultValue
     }
 }

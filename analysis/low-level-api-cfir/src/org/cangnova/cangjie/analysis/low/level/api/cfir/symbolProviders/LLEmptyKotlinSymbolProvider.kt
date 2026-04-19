@@ -6,14 +6,18 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinDeclarationProvider
-import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinEmptyDeclarationProvider
+import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProvider
+import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieEmptyDeclarationProvider
 import org.cangnova.cangjie.analysis.api.platform.packages.KotlinEmptyPackageProvider
 import org.cangnova.cangjie.analysis.api.platform.packages.KotlinPackageProvider
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirEmptySymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.impl.CfirNamedFunctionSymbol
@@ -31,8 +35,8 @@ internal class LLEmptyKotlinSymbolProvider(session: CfirSession) : LLKotlinSymbo
     override val symbolNamesProvider: CfirSymbolNamesProvider
         get() = CfirEmptySymbolNamesProvider
 
-    override val declarationProvider: KotlinDeclarationProvider
-        get() = KotlinEmptyDeclarationProvider
+    override val declarationProvider: CangJieDeclarationProvider
+        get() = CangJieEmptyDeclarationProvider
 
     override val packageProvider: KotlinPackageProvider
         get() = KotlinEmptyPackageProvider

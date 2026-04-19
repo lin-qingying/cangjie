@@ -9,8 +9,8 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFil
 import org.cangnova.cangjie.cfir.analysis.collectors.CheckerRunningDiagnosticCollectorVisitor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.cfir.LLCfirStructureElementDiagnosticsCollector
-import org.cangnova.cangjie.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponents
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 
 internal fun collectForStructureElement(
     firDeclaration: CfirDeclaration,

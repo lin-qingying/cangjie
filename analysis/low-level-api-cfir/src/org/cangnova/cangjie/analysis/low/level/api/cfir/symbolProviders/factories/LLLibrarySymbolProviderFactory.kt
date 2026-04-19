@@ -7,14 +7,14 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factori
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
-import org.cangnova.cangjie.analysis.api.platform.KotlinDeserializedDeclarationsOrigin
-import org.cangnova.cangjie.analysis.api.platform.KotlinPlatformSettings
+import org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin
+import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.load.kotlin.PackagePartProvider
 
 /**
- * [LLLibrarySymbolProviderFactory] creates symbol providers in accordance with [KotlinPlatformSettings.deserializedDeclarationsOrigin].
+ * [LLLibrarySymbolProviderFactory] creates symbol providers in accordance with [CaPlatformSettings.deserializedDeclarationsOrigin].
  * Its implementations should be lightweight as the factory is neither a service nor cached.
  */
 internal interface LLLibrarySymbolProviderFactory {
@@ -40,10 +40,10 @@ internal interface LLLibrarySymbolProviderFactory {
 
     companion object {
         fun fromSettings(project: Project): LLLibrarySymbolProviderFactory {
-            val platformSettings = KotlinPlatformSettings.getInstance(project)
+            val platformSettings = CaPlatformSettings.getInstance(project)
             return when (platformSettings.deserializedDeclarationsOrigin) {
-                KotlinDeserializedDeclarationsOrigin.BINARIES -> LLBinaryOriginLibrarySymbolProviderFactory
-                KotlinDeserializedDeclarationsOrigin.STUBS -> LLStubOriginLibrarySymbolProviderFactory
+                CaDeserializedDeclarationsOrigin.BINARIES -> LLBinaryOriginLibrarySymbolProviderFactory
+                CaDeserializedDeclarationsOrigin.STUBS -> LLStubOriginLibrarySymbolProviderFactory
             }
         }
     }

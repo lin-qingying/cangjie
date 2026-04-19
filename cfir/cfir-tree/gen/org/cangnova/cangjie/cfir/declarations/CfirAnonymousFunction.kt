@@ -28,6 +28,7 @@ abstract class CfirAnonymousFunction : CfirFunction() {
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
     abstract override val isLocal: Boolean
+    abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
     abstract override val status: CfirDeclarationStatus
@@ -50,11 +51,17 @@ abstract class CfirAnonymousFunction : CfirFunction() {
 
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
+    abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
+
     abstract override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 
     abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
 
     abstract override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
+
+    abstract override fun replaceValueParameters(newValueParameters: List<CfirValueParameter>)
+
+    abstract override fun replaceBody(newBody: CfirBlock?)
 
     abstract fun replaceTypeRef(newTypeRef: CfirTypeRef)
 

@@ -26,9 +26,7 @@ internal fun expressionGuard(fir: CfirExpression): CfirExpression {
         return fir
     }
 
-    return buildLazyExpression {
-        source = fir.source
-    }
+    return buildLazyExpression()
 }
 
 private fun isLazyStatement(fir: CfirStatement): Boolean {

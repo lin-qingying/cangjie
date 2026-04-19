@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
@@ -72,7 +73,7 @@ internal fun CfirCallableSymbol<*>.ownerClassId(context: CheckerContext): ClassI
     ownerClassId(session = context.session)
 
 private fun CfirCallableSymbol<*>.ownerClassId(session: org.cangnova.cangjie.cfir.session.CfirSession): ClassId? {
-    return callableId.classId ?: session.symbolProvider.getContainingClassId(this)
+    return callableId.classId ?: session.cfirProvider.getContainingClass(this)?.classId
 }
 
 internal fun CfirTypeScope.collectDirectOverriddenFunctions(functionSymbol: CfirFunctionSymbol<*>): List<CfirFunctionSymbol<*>> {

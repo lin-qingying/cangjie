@@ -6,8 +6,8 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.parentsOfType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.FileStructure
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.CfirElementsRecorder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.CjToCfirMapping
@@ -15,15 +15,16 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.elementCanB
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.findSourceNonLocalCfirDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialBodyResolvable
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.requireTypeIntersectionWith
-import org.cangnova.cangjie.analysis.utils.printer.parentOfType
 import org.cangnova.cangjie.cfir.*
+import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.declarations.utils.correspondingValueParameterFromPrimaryConstructor
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
-import org.cangnova.cangjie.cfir.resolve.providers.firProvider
+import org.cangnova.cangjie.cfir.resolve.getContainingClass
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhaseRecursively
 import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.psi.psiUtil.parentOfType
 import org.cangnova.cangjie.psi.psiUtil.parentsWithSelf
 import org.cangnova.cangjie.utils.ThreadSafe
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
@@ -57,14 +58,13 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
                     unwrappedElement.getArgumentExpression()
                 }
                 is CjStringTemplateEntryWithExpression -> unwrappedElement.expression
-                is CjUserType if unwrappedElement.parent is CjNullableType -> unwrappedElement.parent as CjNullableType
+                is CjUserType if unwrappedElement.parent is CjOptionType -> unwrappedElement.parent as CjOptionType
                 else -> unwrappedElement
             }
         }
 
         private fun doCjElementHasCorrespondingCfirElement(ktElement: CjElement): Boolean = when (ktElement) {
             is CjImportList -> false
-            is CjFileAnnotationList -> false
             is CjAnnotation -> false
             else -> true
         }
@@ -137,13 +137,13 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
      * For instance, there is no need to avoid [CfirResolvePhase.BODY_RESOLVE] for dangling modifiers as they don't
      * have bodies, so effectively it is the same as [CfirResolvePhase.ANNOTATION_ARGUMENTS].
      *
-     * Declaration containers ([CjFile], [CjClassOrObject]) are resolved till [CfirResolvePhase.ANNOTATION_ARGUMENTS]
+     * Declaration containers ([CjFile], [CjTypeStatement]) are resolved till [CfirResolvePhase.ANNOTATION_ARGUMENTS]
      * by default in [FileStructure.getStructureElementFor],
      * so there is no need to use optimized search via [getCfirForElementInsideAnnotations]/[getCfirForElementInsideTypes]
      * as this is redundant work and effectively duplicate the logic of [CjToCfirMapping].
      *
-     * [CjClassOrObject] is not excluded yet as in some cases it might trigger additional resolution.
-     * For instance, currently it resolves generated members (fake constructor, data class members, enum members, etc.).
+     * [CjTypeStatement] is not excluded yet as in some cases it might trigger additional resolution.
+     * For instance, currently it resolves generated members (fake constructor, etc.).
      *
      * [CjEnumEntry] is not a declaration container as it is treated as callable in K2.
      *
@@ -177,7 +177,7 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
 
             nonLocalDeclaration.findSourceNonLocalCfirDeclaration(
                 firFileBuilder = moduleComponents.firFileBuilder,
-                provider = moduleComponents.session.firProvider,
+                provider = moduleComponents.session.cfirProvider,
             )
         }
 
@@ -197,7 +197,6 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         val modifierList = when (val parent = parent) {
             is CjModifierList -> parent
             is CjAnnotation -> return parent.annotationOwner()
-            is CjFileAnnotationList -> return parent.parent as? CjFile
             else -> null
         }
 
@@ -210,7 +209,7 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
     ): CfirElement? = getCfirForNonBodyElement(
         element = element,
         nonLocalDeclaration = nonLocalDeclaration,
-        anchorElementProvider = { it.parentsOfType<CjAnnotationEntry>(nonLocalDeclaration).firstOrNull() },
+        anchorElementProvider = { it.parentsOfType<CjAnnotation>(nonLocalDeclaration).firstOrNull() },
         elementOwnerProvider = { it.annotationOwner() },
         resolveAndFindCfirForAnchor = { declaration, anchor -> declaration.resolveAndFindAnnotation(anchor, goDeep = true) },
     )
@@ -231,14 +230,10 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         },
         resolveAndFindCfirForAnchor = { declaration, anchor -> declaration.resolveAndFindTypeRefAnchor(anchor) },
     )?.let { firElement ->
-        if (firElement is CfirReceiverParameter) {
-            firElement.typeRef
-        } else {
-            firElement
-        }
+        firElement
     }
 
-    private fun getCfirForElementInsideFileHeader(element: CjElement): CfirElement? = getCfirForNonBodyElement<CjElement, CjAnnotated>(
+    private fun getCfirForElementInsideFileHeader(element: CjElement): CfirElement? = getCfirForNonBodyElement<CjElement, PsiElement>(
         element = element,
         nonLocalDeclaration = null,
         anchorElementProvider = { it.fileHeaderAnchorElement() },
@@ -272,12 +267,11 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
     private fun CfirElementWithResolveState.resolveAndFindTypeRefAnchor(typeReference: CjTypeReference): CfirElement? {
         requireTypeIntersectionWith<CfirAnnotationContainer>()
 
-        lazyResolveToPhase(CfirResolvePhase.ANNOTATION_ARGUMENTS)
+        lazyResolveToPhase(CfirResolvePhase.TYPES)
 
         when (this) {
             is CfirCallableDeclaration -> {
                 returnTypeRef.takeIf { it.psi == typeReference }?.let { return it }
-                receiverParameter?.takeIf { it.typeRef.psi == typeReference }?.let { return it }
             }
 
             is CfirTypeParameter -> {
@@ -319,16 +313,15 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
     }
 
     private fun CfirElementWithResolveState.resolveAndFindAnnotation(
-        annotationEntry: CjAnnotationEntry,
+        annotationEntry: CjAnnotation,
         goDeep: Boolean = false,
     ): CfirAnnotation? {
         requireTypeIntersectionWith<CfirAnnotationContainer>()
 
-        lazyResolveToPhase(CfirResolvePhase.ANNOTATION_ARGUMENTS)
+        lazyResolveToPhase(CfirResolvePhase.TYPES)
         findAnnotation(annotationEntry)?.let { return it }
 
         if (this is CfirProperty) {
-            backingField?.findAnnotation(annotationEntry)?.let { return it }
             getter?.findAnnotation(annotationEntry)?.let { return it }
             setter?.findAnnotation(annotationEntry)?.let { return it }
             setter?.valueParameters?.first()?.findAnnotation(annotationEntry)?.let { return it }
@@ -336,14 +329,27 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
 
         return when {
             !goDeep -> null
-            this is CfirProperty -> correspondingValueParameterFromPrimaryConstructor?.fir?.resolveAndFindAnnotation(annotationEntry)
+            this is CfirProperty -> correspondingValueParameterFromPrimaryConstructor?.resolveAndFindAnnotation(annotationEntry)
             this is CfirValueParameter -> correspondingProperty?.resolveAndFindAnnotation(annotationEntry)
             else -> null
         }
     }
 
+    /**
+     * Kotlin FIR 这里直接暴露 `correspondingValueParameterFromPrimaryConstructor`。
+     * 仓颉主干当前只保留 `CfirValueParameter.correspondingProperty`，因此这里基于主构造参数反查。
+     */
+    private val CfirProperty.correspondingValueParameterFromPrimaryConstructor: CfirValueParameter?
+        get() {
+            val containingClass = getContainingClass() ?: return null
+            val primaryConstructor = containingClass.declarations
+                .firstOrNull { it is CfirConstructor && it.isPrimary } as? CfirConstructor
+                ?: return null
+            return primaryConstructor.valueParameters.firstOrNull { it.correspondingProperty === this }
+        }
+
     private fun CfirAnnotationContainer.findAnnotation(
-        annotationEntry: CjAnnotationEntry,
+        annotationEntry: CjAnnotation ,
     ): CfirAnnotation? = annotations.find { it.psi == annotationEntry }
 }
 
@@ -363,8 +369,7 @@ internal val CjElement.isAutonomousElement: Boolean
         else -> true
     }
 
-// TODO change predicate (KT-76271)
-@CaImplementationDetail
+
 fun PsiElement.getNonLocalContainingOrThisDeclaration(predicate: (CjDeclaration) -> Boolean = { true }): CjDeclaration? {
     return getNonLocalContainingOrThisElement { it is CjDeclaration && predicate(it) } as? CjDeclaration
 }

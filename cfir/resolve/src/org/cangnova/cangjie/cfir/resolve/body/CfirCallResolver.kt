@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
+import org.cangnova.cangjie.cfir.diagnostic.ConeCannotRefToPackageNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeEnumTypeCannotBeUsedAsConstructorError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionExpectedError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionCallExpectedError
@@ -529,6 +530,13 @@ class CfirCallResolver(
                         val receiverType = explicitReceiver?.coneTypeOrNull
                         when {
                             receiverType is ConeClassLikeType && receiverType.isInterface -> ConeNoConstructorError
+                            // 裸名若与已知包 FqName 重合,归类为"不能独立引用包名",
+                            // 对齐 C++ sema_cannot_ref_to_pkg_name。
+                            explicitReceiver == null && components.symbolProvider.hasPackage(
+                                org.cangnova.cangjie.name.FqName.topLevel(name)
+                            ) -> ConeCannotRefToPackageNameError(
+                                org.cangnova.cangjie.name.FqName.topLevel(name)
+                            )
                             else -> ConeUnresolvedNameError(name, operatorToken, receiverType, argumentTypes)
                         }
                     }

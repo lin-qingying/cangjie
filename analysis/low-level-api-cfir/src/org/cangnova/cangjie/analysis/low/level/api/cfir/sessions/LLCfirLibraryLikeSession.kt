@@ -7,12 +7,12 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLCfirScopeSessionProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
-import org.cangnova.cangjie.cfir.BuiltinTypes
-import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 
 abstract class LLCfirLibraryLikeSession(
     ktModule: CaModule,
-    builtinTypes: BuiltinTypes,
+    builtinTypes: CfirBuiltinTypes,
 ) : LLCfirSession(ktModule, builtinTypes, Kind.Library) {
     private val scopeSessionProvider = LLCfirScopeSessionProvider.create(project, invalidationTrackers = emptyList())
 

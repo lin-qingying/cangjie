@@ -4,18 +4,18 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.caches
 
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.util.withPsiEntry
 import org.cangnova.cangjie.analysis.api.platform.caches.getOrPutWithNullableValue
 import org.cangnova.cangjie.analysis.api.platform.caches.nullValueToNull
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.caches.CfirCache
 import org.cangnova.cangjie.cfir.caches.CfirCacheInternals
+import org.cangnova.cangjie.cfir.expressions.withCfirSymbolEntry
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirSymbolEntry
 import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
-import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 import org.cangnova.cangjie.utils.exceptions.logErrorWithAttachment
-import org.cangnova.cangjie.utils.exceptions.withPsiEntry
+import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 import java.util.concurrent.ConcurrentHashMap
 
 internal class CfirThreadSafeCache<K : Any, V, CONTEXT>(
@@ -41,7 +41,7 @@ internal class CfirThreadSafeCache<K : Any, V, CONTEXT>(
     ): V & Any {
         val newValue = createValue(key, context)
         checkWithAttachment(
-            newValue != null,
+            condition = newValue != null,
             message = { "A value for requested key & context must not be null due to the contract" },
         ) {
             buildAttachments(key, context, newValue)

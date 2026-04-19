@@ -3,14 +3,13 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.transformers
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isLocalForLazyResolutionPurposes
+import org.cangnova.cangjie.cfir.CfirDeclarationDataKey
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationDataKey
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationDataRegistry
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirReceiverParameterSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirValueParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 
 private object PostponedSymbolsForAnnotationResolutionKey : CfirDeclarationDataKey()
 
@@ -76,8 +75,7 @@ internal fun CfirDeclaration.forEachDeclarationWhichCanHavePostponedSymbols(acti
  * @see postponedSymbolsForAnnotationResolution
  */
 internal fun CfirBasedSymbol<*>.unwrapSymbolToPostpone(): CfirBasedSymbol<*> = when (this) {
-    is CfirValueParameterSymbol -> containingDeclarationSymbol
-    is CfirReceiverParameterSymbol -> containingDeclarationSymbol
+    is CfirValueParameterSymbol -> cfir.containingDeclarationSymbol
     else -> this
 }
 

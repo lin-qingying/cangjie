@@ -28,6 +28,7 @@ class CfirEnumBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
+    lateinit var deprecationsProvider: DeprecationsProvider
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var symbol: CfirEnumSymbol
@@ -45,6 +46,7 @@ class CfirEnumBuilder {
             annotations.toMutableOrEmpty(),
             origin,
             attributes,
+            deprecationsProvider,
             status,
             typeParameters,
             symbol,
@@ -77,6 +79,7 @@ inline fun buildEnumCopy(original: CfirEnum, init: CfirEnumBuilder.() -> Unit): 
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
+    copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)

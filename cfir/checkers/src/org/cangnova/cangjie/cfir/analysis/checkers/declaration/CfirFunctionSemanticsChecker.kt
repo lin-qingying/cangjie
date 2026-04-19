@@ -82,8 +82,8 @@ object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
 /**
  * 默认参数限制检查器
  *
- * 对齐 C++ DiagKind::sema_cannot_have_default_param:
- * operator / foreign 函数不能有默认参数。
+ * 对齐 C++ DiagKind::sema_cannot_have_default_param (Diags.cpp:414):
+ * operator / foreign / open / abstract 函数不能有默认参数。
  */
 object CfirDefaultParameterChecker : CfirSimpleFunctionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -92,8 +92,10 @@ object CfirDefaultParameterChecker : CfirSimpleFunctionChecker() {
         if (!hasDefaultParam) return
 
         val kind = when {
-            declaration.status.isOperator -> "operator"
+            declaration.status.isOperator -> "operator overloading"
             declaration.status.isForeign -> "foreign"
+            declaration.status.isOpen -> "'open'"
+            declaration.status.isAbstract -> "abstract"
             else -> return
         }
         reporter.reportOn(

@@ -72,9 +72,6 @@ open class CjVisitor<R, D> : PsiElementVisitor() {
         return visitCjElement(expression, data)
     }
 
-    open fun visitScript(script: CjScript, data: D): R? {
-        return visitDeclaration(script, data)
-    }
 
     /**
      * 访问通用仓颉文件

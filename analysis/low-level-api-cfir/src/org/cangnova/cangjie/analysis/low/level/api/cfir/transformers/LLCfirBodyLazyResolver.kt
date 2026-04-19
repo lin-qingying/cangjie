@@ -9,7 +9,7 @@ import com.intellij.openapi.util.registry.Registry
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.descendantsOfType
 import kotlinx.collections.immutable.toPersistentList
-import org.cangnova.cangjie.CjPsiSourceElement
+import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.CjRealSourceElementKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getResolutionFacade
@@ -23,15 +23,17 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.*
 import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.utils.evaluatedInitializer
-import org.cangnova.cangjie.cfir.declarations.utils.getExplicitBackingField
 import org.cangnova.cangjie.cfir.declarations.utils.isLocal
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.resolve.CfirCodeFragmentContext
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
-import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformerDispatcher
+import org.cangnova.cangjie.cfir.resolve.body.CfirDeclarationsResolveTransformer
+import org.cangnova.cangjie.cfir.resolve.body.CfirExpressionsResolveTransformer
+import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.resolve.codeFragmentContext
 import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
-import org.cangnova.cangjie.cfir.resolve.dfa.RealVariable
 import org.cangnova.cangjie.cfir.resolve.dfa.SnapshotCfirMapper
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.*
 import org.cangnova.cangjie.cfir.resolve.dfa.controlFlowGraph
@@ -39,12 +41,13 @@ import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.*
 import org.cangnova.cangjie.cfir.scopes.DelicateScopeAPI
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
-import org.cangnova.cangjie.cfir.types.ConeKotlinType
 import org.cangnova.cangjie.cfir.types.hasResolvedType
 import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.psi
 import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.source.CjRealSourceElementKind
+import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
@@ -359,7 +362,7 @@ private class CfirPartialBodyExpressionResolveTransformer(
 
         override fun <T : CfirBasedSymbol<*>> mapSymbol(symbol: T): T {
             @Suppress("UNCHECKED_CAST")
-            return mapElement(symbol.fir).symbol as T
+            return mapElement(symbol.cfir).symbol as T
         }
     }
 
@@ -542,7 +545,7 @@ private class CfirPartialBodyExpressionResolveTransformer(
  * Special rules:
  * - [CfirFile] – All members which [isUsedInControlFlowGraphBuilderForFile] have
  *   to be resolved before the file to build correct [CFG][ControlFlowGraph].
- * - [CfirRegularClass] – All members which [isUsedInControlFlowGraphBuilderForClass] have
+ * - [CfirClass] – All members which [isUsedInControlFlowGraphBuilderForClass] have
  *   to be resolved before the class to build correct [CFG][ControlFlowGraph].
  *
  * @see BodyStateKeepers
@@ -592,14 +595,14 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
 
     override fun doResolveWithoutLock(target: CfirElementWithResolveState): Boolean {
         when (target) {
-            is CfirRegularClass -> {
+            is CfirClass -> {
                 if (checkAnalysisReadiness(target, containingDeclarations, resolverPhase)) return true
 
                 // resolve class CFG graph here, to do this we need to have property & init blocks resoled
                 resolveMembersForControlFlowGraph(
                     declarationWithMembers = target,
-                    withDeclaration = this::withRegularClass,
-                    declarationsProvider = CfirRegularClass::declarations,
+                    withDeclaration = this::withClass,
+                    declarationsProvider = CfirClass::declarations,
                     isUsedInControlFlowBuilder = CfirDeclaration::isUsedInClassControlFlowGraphBuilder,
                 )
 
@@ -642,7 +645,7 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         return false
     }
 
-    private fun calculateControlFlowGraph(target: CfirRegularClass) {
+    private fun calculateControlFlowGraph(target: CfirClass) {
         checkWithAttachment(
             target.controlFlowGraphReference == null,
             { "'controlFlowGraphReference' should be 'null' if the class phase < $resolverPhase)" },
@@ -736,12 +739,11 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
 
             LLCfirCodeFragmentContext(
                 elementContext.towerDataContext.withProperSession(resolveTargetSession, resolveTargetScopeSession)
-                    .withExtraScopes(),
-                elementContext.smartCasts
+                    .withExtraScopes()
             )
         } else {
             val towerDataContext = CfirTowerDataContext().withExtraScopes()
-            LLCfirCodeFragmentContext(towerDataContext, emptyMap())
+            LLCfirCodeFragmentContext(towerDataContext)
         }
     }
 
@@ -771,7 +773,7 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         if (target is CfirCallableDeclaration && target.canHaveDeferredReturnTypeCalculation) return
 
         when (target) {
-            is CfirFile, is CfirRegularClass, is CfirCodeFragment -> error("Should have been resolved in ${::doResolveWithoutLock.name}")
+            is CfirFile, is CfirClass, is CfirCodeFragment -> error("Should have been resolved in ${::doResolveWithoutLock.name}")
             is CfirConstructor -> resolve(target, BodyStateKeepers.CONSTRUCTOR)
             is CfirFunction -> resolve(target, BodyStateKeepers.FUNCTION)
             is CfirProperty -> resolve(target, BodyStateKeepers.PROPERTY)
@@ -850,10 +852,6 @@ internal object BodyStateKeepers {
             variable.initializerGetterIfUnresolved?.let {
                 builder.add(it, CfirVariable::replaceInitializer, ::expressionGuard)
             }
-
-            variable.delegateGetterIfUnresolved?.let {
-                builder.add(it, CfirVariable::replaceDelegate, ::expressionGuard)
-            }
         }
     }
 
@@ -886,7 +884,6 @@ internal object BodyStateKeepers {
 
         builder.entity(property.getterIfUnresolved, FUNCTION, designation)
         builder.entity(property.setterIfUnresolved, FUNCTION, designation)
-        builder.entity(property.backingFieldIfUnresolved, VARIABLE, designation)
 
         builder.add(CfirProperty::controlFlowGraphReference, CfirProperty::replaceControlFlowGraphReference)
     }
@@ -974,12 +971,6 @@ private val CfirFunction.isCertainlyResolved: Boolean
 private val CfirVariable.initializerGetterIfUnresolved: KProperty1<CfirVariable, CfirExpression?>?
     get() = CfirVariable::initializer.takeUnless { this is CfirProperty && bodyResolveState >= CfirPropertyBodyResolveState.INITIALIZER_RESOLVED }
 
-private val CfirVariable.delegateGetterIfUnresolved: KProperty1<CfirVariable, CfirExpression?>?
-    get() = CfirVariable::delegate.takeUnless { this is CfirProperty && bodyResolveState >= CfirPropertyBodyResolveState.ALL_BODIES_RESOLVED }
-
-private val CfirProperty.backingFieldIfUnresolved: CfirBackingField?
-    get() = if (bodyResolveState < CfirPropertyBodyResolveState.INITIALIZER_RESOLVED) getExplicitBackingField() else null
-
 private val CfirProperty.getterIfUnresolved: CfirPropertyAccessor?
     get() = if (bodyResolveState < CfirPropertyBodyResolveState.INITIALIZER_AND_GETTER_RESOLVED) getter else null
 
@@ -988,7 +979,6 @@ private val CfirProperty.setterIfUnresolved: CfirPropertyAccessor?
 
 private class LLCfirCodeFragmentContext(
     override val towerDataContext: CfirTowerDataContext,
-    override val smartCasts: Map<RealVariable, Set<ConeKotlinType>>,
 ) : CfirCodeFragmentContext
 
 private val CfirDeclaration.isUsedInFileControlFlowGraphBuilder: Boolean

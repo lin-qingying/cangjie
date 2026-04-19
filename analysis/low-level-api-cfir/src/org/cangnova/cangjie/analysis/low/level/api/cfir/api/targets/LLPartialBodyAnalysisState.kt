@@ -5,13 +5,10 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
 
-import org.cangnova.cangjie.cfir.declarations.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
-import org.cangnova.cangjie.cfir.resolve.dfa.DataFlowAnalyzerContext
-import org.cangnova.cangjie.cfir.resolve.dfa.cfg.CFGNode
-import org.cangnova.cangjie.cfir.resolve.dfa.cfg.CfgInternals
-import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
+import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
+import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 
 /**
  * Represents the partial (incomplete) body resolve state.
@@ -79,18 +76,8 @@ internal data class LLPartialBodyAnalysisState(
 internal class LLPartialBodyAnalysisSnapshot(
     val result: LLPartialBodyAnalysisResult,
     val towerDataContext: CfirTowerDataContext,
-    val dataFlowAnalyzerContext: DataFlowAnalyzerContext
-) {
-    @OptIn(CfgInternals::class)
-    val controlFlowGraphNodes: List<CFGNode<*>> by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        /**
-         * Here we cannot use [ControlFlowGraph.nodes] directly, as the graph is incomplete.
-         * Still, partial body resolution only covers the topmost block statements, and there should be no jumps between them.
-         * So CFG for the analyzed part is complete and can be used for getting smartcast information.
-         * */
-        dataFlowAnalyzerContext.currentGraph.orderNodes(isComplete = false)
-    }
-}
+    val dataFlowAnalyzerContext: CfirDataFlowAnalyzerContext
+)
 
 /**
  * Contains already resolved parts of the declaration.

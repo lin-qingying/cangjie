@@ -3,7 +3,7 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbolImpl
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -57,7 +57,7 @@ internal fun CaCfirSession.findDecompiledContainingFile(
     preferredModule: CaModule? = useSiteModule,
 ): CjFile? {
     val psiProvider = project.getService(CaDecompiledPsiProvider::class.java) ?: return null
-    val projectStructure = CaProjectStructureProvider.getInstance(project)
+    val projectStructure = CangJieProjectStructureProvider.getInstance(project)
 
     fun findInModule(module: CaModule?): CjFile? = when (module) {
         is CaBuiltinsModule -> psiProvider.findDecompiledFile(module, packageFqName)

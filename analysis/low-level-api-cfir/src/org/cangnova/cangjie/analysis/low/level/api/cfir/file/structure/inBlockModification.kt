@@ -65,28 +65,27 @@ private fun CfirFunction.invalidateBody(body: CfirBlock): CfirResolvePhase? {
 /**
  * Drop body and all related stuff.
  * We should drop:
- * * initializer or delegate expression
- * * control flow graph reference, because it depends on the initializer or delegate
+ * * initializer expression
+ * * control flow graph reference, because it depends on the initializer
  * * body resolution state
  * * reduce phase if needed
  *
  * Depends on the body, but we shouldn't drop:
  * * implicit type, because the change mustn't change the resulting type
  *
- * Also, we shouldn't update the property accessors because they don't depend on the initializer or delegate.
+ * Also, we shouldn't update the property accessors because they don't depend on the initializer.
  * So it is fine to leave the phase of setter/getter/backing field as it is.
  *
  * @return **false** if it is an out-of-block change
  */
 private fun CfirProperty.inBodyInvalidation(): Boolean {
-    val initializerState = invalidateInitializer()
-    val delegateState = invalidateDelegate()
-    when {
-        // initializer and delegate are absent, so it is out of block modification
-        initializerState == PropertyExpressionState.ABSENT && delegateState == PropertyExpressionState.ABSENT -> return false
-
-        // the block is not invalidated, so there is nothing to reanalyze
-        initializerState == PropertyExpressionState.LAZY || delegateState == PropertyExpressionState.LAZY -> return true
+    val getterBody = getter?.body
+    val setterBody = setter?.body
+    if (getterBody == null && setterBody == null) {
+        return false
+    }
+    if (getterBody is CfirLazyBlock || setterBody is CfirLazyBlock) {
+        return true
     }
 
     decreasePhase(phaseWithoutBody)
@@ -113,7 +112,7 @@ private fun CfirPropertyAccessor.inBodyInvalidation(): Boolean {
     val body = body ?: return false
     val newPhase = invalidateBody(body) ?: return true
 
-    val property = propertySymbol.fir
+    val property = propertySymbol.cfir
     property.decreasePhase(newPhase)
 
     val newPropertyResolveState = if (isGetter) {
@@ -135,30 +134,6 @@ private fun CfirCodeFragment.inBodyInvalidation(): Boolean {
     replaceBlock(buildLazyBlock())
 
     return true
-}
-
-private fun CfirProperty.invalidateInitializer(): PropertyExpressionState =
-    replaceWithLazyExpressionIfNeeded(::initializer, ::replaceInitializer)
-
-private fun CfirProperty.invalidateDelegate(): PropertyExpressionState = replaceWithLazyExpressionIfNeeded(::delegate, ::replaceDelegate)
-
-private enum class PropertyExpressionState {
-    ABSENT,
-    LAZY,
-    CALCULATED,
-}
-
-private inline fun replaceWithLazyExpressionIfNeeded(
-    expressionGetter: () -> CfirExpression?,
-    replaceExpression: (CfirExpression) -> Unit,
-): PropertyExpressionState {
-    val expression = expressionGetter() ?: return PropertyExpressionState.ABSENT
-
-    // the expression is not yet resolved, so there is nothing to invalidate
-    if (expression is CfirLazyExpression) return PropertyExpressionState.LAZY
-
-    replaceExpression(buildLazyExpression { source = expression.source })
-    return PropertyExpressionState.CALCULATED
 }
 
 private val CfirDeclaration.phaseWithoutBody: CfirResolvePhase

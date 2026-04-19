@@ -27,6 +27,7 @@ abstract class CfirPatternVariable : CfirVariable() {
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
     abstract override val isLocal: Boolean
+    abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val status: CfirDeclarationStatus
     abstract override val initializer: CfirExpression?
@@ -45,7 +46,11 @@ abstract class CfirPatternVariable : CfirVariable() {
 
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
+    abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
+
     abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
+
+    abstract override fun replaceInitializer(newInitializer: CfirExpression?)
 
     abstract override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
 

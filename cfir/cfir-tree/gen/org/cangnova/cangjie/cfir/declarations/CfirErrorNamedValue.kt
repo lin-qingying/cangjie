@@ -31,6 +31,7 @@ abstract class CfirErrorNamedValue : CfirCallableDeclaration(), CfirDiagnosticHo
     abstract override val status: CfirDeclarationStatus
     abstract override val isLocal: Boolean
     abstract override val returnTypeRef: CfirTypeRef
+    abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val diagnostic: ConeDiagnostic
     abstract val name: Name
@@ -48,6 +49,8 @@ abstract class CfirErrorNamedValue : CfirCallableDeclaration(), CfirDiagnosticHo
     abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
 
     abstract override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
+
+    abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirErrorNamedValue
 

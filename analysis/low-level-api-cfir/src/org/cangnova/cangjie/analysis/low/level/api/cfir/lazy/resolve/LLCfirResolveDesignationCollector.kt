@@ -32,7 +32,7 @@ internal object LLCfirResolveDesignationCollector {
         return getDesignationToResolve(target, CfirDesignation::asResolveTarget)
     }
 
-    fun getDesignationToResolveWithCallableMembers(target: CfirRegularClass): LLCfirResolveTarget? {
+    fun getDesignationToResolveWithCallableMembers(target: CfirClass): LLCfirResolveTarget? {
         return getDesignationToResolve(target, ::LLCfirClassWithAllCallablesResolveTarget)
     }
 
@@ -61,11 +61,9 @@ internal object LLCfirResolveDesignationCollector {
         }
 
         return when (target) {
-            is CfirPropertyAccessor -> getCfirDesignationToResolve(target.propertySymbol.fir)
-            is CfirBackingField -> getCfirDesignationToResolve(target.propertySymbol.fir)
-            is CfirTypeParameter -> getCfirDesignationToResolve(target.containingDeclarationSymbol.fir)
-            is CfirValueParameter -> getCfirDesignationToResolve(target.containingDeclarationSymbol.fir)
-            is CfirReceiverParameter -> getCfirDesignationToResolve(target.containingDeclarationSymbol.fir)
+            is CfirPropertyAccessor -> getCfirDesignationToResolve(target.propertySymbol.cfir)
+            is CfirTypeParameter -> getCfirDesignationToResolve(target.containingDeclarationSymbol.cfir)
+            is CfirValueParameter -> getCfirDesignationToResolve(target.containingDeclarationSymbol.cfir)
             is CfirCallableDeclaration if target.canHaveDeferredReturnTypeCalculation -> CfirDesignation(target)
             else -> target.tryCollectDesignation()
         }

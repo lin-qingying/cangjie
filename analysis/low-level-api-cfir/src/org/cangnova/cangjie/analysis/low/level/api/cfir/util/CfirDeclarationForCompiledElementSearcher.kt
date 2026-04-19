@@ -5,10 +5,11 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 
-import org.cangnova.cangjie.analysis.api.platform.KotlinDeserializedDeclarationsOrigin
-import org.cangnova.cangjie.analysis.api.platform.KotlinPlatformSettings
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
-import org.cangnova.cangjie.analysis.api.utils.errors.withClassEntry
+import org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin
+import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.util.withClassEntry
+import org.cangnova.cangjie.analysis.api.util.withPsiEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.services.LLCfirElementByPsiElementChooser
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.containingDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
@@ -18,21 +19,17 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.getClassLikeSymbolByClassIdWithoutDependencies
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.getClassLikeSymbolByPsiWithoutDependencies
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
-import org.cangnova.cangjie.cfir.scopes.getFunctions
-import org.cangnova.cangjie.cfir.scopes.getProperties
-import org.cangnova.cangjie.cfir.scopes.impl.declaredMemberScope
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.*
-import org.cangnova.cangjie.psi.psiUtil.containingClassOrObject
+import org.cangnova.cangjie.psi.psiUtil.containingTypeStatement
 import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
-import org.cangnova.cangjie.utils.exceptions.withPsiEntry
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 /**
  * Allows to search for CFIR declarations by compiled [CjDeclaration]s.
@@ -41,7 +38,7 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
     private val project get() = session.project
 
     private val projectStructureProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        KotlinProjectStructureProvider.getInstance(project)
+        CangJieProjectStructureProvider.getInstance(project)
     }
 
     private val firElementByPsiElementChooser by lazy(LazyThreadSafetyMode.PUBLICATION) {
@@ -49,7 +46,6 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
     }
 
     fun findNonLocalDeclaration(ktDeclaration: CjDeclaration): CfirDeclaration = when (ktDeclaration) {
-        is CjEnumEntry -> findNonLocalEnumEntry(ktDeclaration)
         is CjClassLikeDeclaration -> findNonLocalClassLikeDeclaration(ktDeclaration)
         is CjConstructor<*> -> findConstructorOfNonLocalClass(ktDeclaration)
         is CjNamedFunction -> findNonLocalFunction(ktDeclaration)
@@ -62,10 +58,10 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
     }
 
     private fun findFunctionCandidates(function: CjNamedFunction): List<CfirFunctionSymbol<*>> =
-        findCallableCandidates(function, function.isTopLevel).filterIsInstance<CfirFunctionSymbol<*>>()
+        findCallableCandidates(function, function.parent is CjFile).filterIsInstance<CfirFunctionSymbol<*>>()
 
     private fun findPropertyCandidates(property: CjProperty): List<CfirPropertySymbol> =
-        findCallableCandidates(property, property.isTopLevel).filterIsInstance<CfirPropertySymbol>()
+        findCallableCandidates(property, property.parent is CjFile).filterIsInstance<CfirPropertySymbol>()
 
     private fun findCallableCandidates(
         declaration: CjCallableDeclaration,
@@ -84,13 +80,18 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
             }
         }
 
-        val containingClass = declaration.containingClassOrObject?.let(::findNonLocalClassLikeDeclaration)
+        val containingClass = declaration.containingTypeStatement?.let(::findNonLocalClassLikeDeclaration)
             ?: errorWithCfirSpecificEntries("No containing non-local declaration found for", psi = declaration)
 
-        val scope = session.declaredMemberScope(containingClass as CfirClass, memberRequiredPhase = null)
         return when (declaration) {
-            is CjProperty -> scope.getProperties(shortName)
-            is CjNamedFunction -> scope.getFunctions(shortName)
+            is CjProperty -> containingClass.declarations
+                .filterIsInstance<CfirProperty>()
+                .filter { it.name == shortName }
+                .mapTo(mutableListOf()) { it.symbol }
+            is CjNamedFunction -> containingClass.declarations
+                .filterIsInstance<CfirFunction>()
+                .filter { it.symbol.name == shortName }
+                .mapTo(mutableListOf()) { it.symbol }
             else -> errorWithCfirSpecificEntries("Unexpected callable ${declaration::class.simpleName}") {
                 withEntry("isTopLevel", isTopLevel.toString())
                 withPsiEntry("declaration", declaration)
@@ -108,12 +109,12 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         )
 
         return firTypeParameterRefOwner.typeParameters.find { typeParameterRef ->
-            firElementByPsiElementChooser.isMatchingTypeParameter(param, typeParameterRef.symbol.fir)
+            firElementByPsiElementChooser.isMatchingTypeParameter(param, typeParameterRef.symbol.cfir)
         } as CfirDeclaration
     }
 
     private fun findParameter(param: CjParameter): CfirDeclaration {
-        val ownerDeclaration = param.ownerDeclaration ?: errorWithCfirSpecificEntries("Unsupported compiled parameter", psi = param)
+        val ownerDeclaration = param.ownerFunction ?: errorWithCfirSpecificEntries("Unsupported compiled parameter", psi = param)
         val firDeclaration = findNonLocalDeclaration(ownerDeclaration)
         val firFunction = firDeclaration as? CfirFunction ?: errorWithCfirSpecificEntries(
             "${CfirFunction::class.simpleName} expected but ${firDeclaration::class.simpleName} found",
@@ -125,26 +126,18 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
             ?: errorWithCfirSpecificEntries("No fir value parameter found", psi = param, fir = firFunction)
     }
 
-    private fun findNonLocalEnumEntry(declaration: CjEnumEntry): CfirEnumEntry {
-        val classCandidate = declaration.containingClassOrObject?.let(::findNonLocalClassLikeDeclaration)
-            ?: errorWithCfirSpecificEntries("Enum entry must have containing class", psi = declaration)
-
-        return (classCandidate as CfirRegularClass).declarations.first {
-            it is CfirEnumEntry && firElementByPsiElementChooser.isMatchingEnumEntry(declaration, it)
-        } as CfirEnumEntry
-    }
-
     private fun findNonLocalClassLikeDeclaration(declaration: CjClassLikeDeclaration): CfirClassLikeDeclaration {
         val classId = declaration.getClassId() ?: errorWithCfirSpecificEntries("Non-local class should have classId", psi = declaration)
 
         // With the `BINARIES` origin, deserialized CFIR declarations don't have associated PSI elements. Hence, we cannot use `*ByPsi*
         // functions, as they check the candidate's associated PSI.
-        val classLikeSymbol = when (KotlinPlatformSettings.getInstance(project).deserializedDeclarationsOrigin) {
-            KotlinDeserializedDeclarationsOrigin.BINARIES -> findBinaryClassLikeSymbol(classId)
-            KotlinDeserializedDeclarationsOrigin.STUBS -> findStubClassLikeSymbol(classId, declaration)
+        val classLikeSymbol = when (CaPlatformSettings.getInstance(project).deserializedDeclarationsOrigin) {
+            CaDeserializedDeclarationsOrigin.BINARIES -> findBinaryClassLikeSymbol(classId)
+            CaDeserializedDeclarationsOrigin.STUBS -> findStubClassLikeSymbol(classId, declaration)
+            else -> null
         }
 
-        classLikeSymbol?.let { return it.fir }
+        classLikeSymbol?.let { return it.cfir }
 
         errorWithCfirSpecificEntries(
             "We should be able to find a symbol for class-like declaration",
@@ -171,39 +164,40 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         session.symbolProvider.getClassLikeSymbolByPsiWithoutDependencies(classId, declaration)
 
     private fun findConstructorOfNonLocalClass(declaration: CjConstructor<*>): CfirConstructor {
-        val containingClass = declaration.containingClassOrObject
+        val containingClass = declaration.containingTypeStatement
             ?: errorWithCfirSpecificEntries("Constructor must have outer class", psi = declaration)
 
-        val containingCfirClass = findNonLocalClassLikeDeclaration(containingClass) as CfirClass
-        val constructorCandidate = containingCfirClass.constructors(session)
-            .singleOrNull { firElementByPsiElementChooser.isMatchingCallableDeclaration(declaration, it.fir) }
+        val containingCfirClass = findNonLocalClassLikeDeclaration(containingClass)
+        val constructorCandidate = containingCfirClass.declarations
+            .filterIsInstance<CfirConstructor>()
+            .singleOrNull { firElementByPsiElementChooser.isMatchingCallableDeclaration(declaration, it) }
             ?: errorWithCfirSpecificEntries("We should be able to find a constructor", psi = declaration, fir = containingCfirClass)
 
-        return constructorCandidate.fir
+        return constructorCandidate
     }
 
     private fun findNonLocalFunction(declaration: CjNamedFunction): CfirFunction {
         require(!declaration.isLocal)
 
         val candidates = findFunctionCandidates(declaration)
-        val functionCandidate = candidates.firstOrNull { firElementByPsiElementChooser.isMatchingCallableDeclaration(declaration, it.fir) }
+        val functionCandidate = candidates.firstOrNull { firElementByPsiElementChooser.isMatchingCallableDeclaration(declaration, it.cfir) }
             ?: errorWithCfirSpecificEntries("We should be able to find a symbol for function", psi = declaration) {
                 withCandidates(candidates)
             }
 
-        return functionCandidate.fir
+        return functionCandidate.cfir
     }
 
     private fun findNonLocalProperty(declaration: CjProperty): CfirProperty {
         require(!declaration.isLocal)
 
         val candidates = findPropertyCandidates(declaration)
-        val propertyCandidate = candidates.firstOrNull { firElementByPsiElementChooser.isMatchingCallableDeclaration(declaration, it.fir) }
+        val propertyCandidate = candidates.firstOrNull { firElementByPsiElementChooser.isMatchingCallableDeclaration(declaration, it.cfir) }
             ?: errorWithCfirSpecificEntries("We should be able to find a symbol for property", psi = declaration) {
                 withCandidates(candidates)
             }
 
-        return propertyCandidate.fir
+        return propertyCandidate.cfir
     }
 
     private fun findNonLocalPropertyAccessor(declaration: CjPropertyAccessor): CfirPropertyAccessor {
@@ -222,7 +216,7 @@ private fun ExceptionAttachmentBuilder.withCandidates(candidates: List<CfirBased
             withClassEntry("candidateClass", candidate)
             withEntry("module", ktModule) { it.moduleDescription }
             withEntry("origin", candidate.origin.toString())
-            withCfirEntry("candidateCfir", candidate.fir)
+            withCfirEntry("candidateCfir", candidate.cfir)
 
         }
     }

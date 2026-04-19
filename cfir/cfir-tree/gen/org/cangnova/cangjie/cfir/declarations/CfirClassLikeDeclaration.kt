@@ -27,6 +27,7 @@ sealed class CfirClassLikeDeclaration : CfirMemberDeclaration() {
     abstract override val typeParameters: List<CfirTypeParameterRef>
     abstract override val status: CfirDeclarationStatus
     abstract override val symbol: CfirClassLikeSymbol<*>
+    abstract val deprecationsProvider: DeprecationsProvider
     abstract val declarations: List<CfirDeclaration>
     abstract val name: Name
     abstract val superTypeRefs: List<CfirTypeRef>
@@ -41,6 +42,8 @@ sealed class CfirClassLikeDeclaration : CfirMemberDeclaration() {
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
     abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
+
+    abstract fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirClassLikeDeclaration
 

@@ -1,3 +1,5 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 /*
  * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
@@ -19,7 +21,7 @@ import org.cangnova.cangjie.analysis.api.platform.analysisMessageBus
 import org.cangnova.cangjie.analysis.api.platform.modification.CaElementModificationType
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSourceModificationLocality
 import org.cangnova.cangjie.analysis.api.platform.modification.publishModuleOutOfBlockModificationEvent
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getResolutionFacade
@@ -37,10 +39,10 @@ import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.idea.KotlinLanguage
-import org.cangnova.cangjie.psi
+import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.psi.*
-import org.cangnova.cangjie.psi.psiUtil.isAncestor
+import org.cangnova.cangjie.psi.psiUtil.isAncestorOf
+import org.cangnova.cangjie.source.psi
 
 /**
  * This service is responsible for processing incoming [PsiElement] changes to reflect them on CFIR tree.
@@ -69,7 +71,7 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
 
         project.messageBus.connect(this).subscribe(
             CjCodeFragment.IMPORT_MODIFICATION,
-            KotlinCodeFragmentImportModificationListener { codeFragment -> handleOutOfBlockModification(codeFragment) }
+            CangJieCodeFragmentImportModificationListener { codeFragment -> handleOutOfBlockModification(codeFragment) }
         )
     }
 
@@ -151,7 +153,7 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
             return LLModificationLocality.Whitespace(affectedElement, project)
         }
 
-        if (element.language !is KotlinLanguage) {
+        if (element.language !is CangJieLanguage) {
             // TODO improve for Java KTIJ-21684
             return LLModificationLocality.OutOfBlock
         }
@@ -163,8 +165,10 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
             return LLModificationLocality.InBlock(inBlockModificationOwner, project)
         }
 
-        val isOutOfBlockChange = element.isNewDirectChildOf(inBlockModificationOwner, modificationType)
-                || modificationType.isBackingFieldAccessChange(inBlockModificationOwner)
+        val isOutOfBlockChange = inBlockModificationOwner is CjAnnotated && (
+            element.isNewDirectChildOf(inBlockModificationOwner, modificationType) ||
+                modificationType.isBackingFieldAccessChange(inBlockModificationOwner)
+            )
 
         return when {
             !isOutOfBlockChange -> LLModificationLocality.InBlock(inBlockModificationOwner, project)
@@ -233,11 +237,11 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
     /**
      * @see LLModificationLocality.InBlock
      */
-    private fun handleInBlockModification(declaration: CjAnnotated, module: CaModule) {
+    private fun handleInBlockModification(declaration: CjElement, module: CaModule) {
         val resolutionFacade = module.getResolutionFacade(project)
         val firDeclaration = when (declaration) {
             is CjCodeFragment -> declaration.getOrBuildCfirFile(resolutionFacade).codeFragment
-            is CjDeclaration -> declaration.resolveToCfirSymbol(resolutionFacade).fir
+            is CjDeclaration -> declaration.resolveToCfirSymbol(resolutionFacade).cfir
             else -> errorWithCfirSpecificEntries(
                 "Unexpected declaration kind: ${declaration::class.simpleName}",
                 psi = declaration,
@@ -272,7 +276,7 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
      * @see LLModificationLocality.OutOfBlock
      */
     private fun handleOutOfBlockModification(element: PsiElement) {
-        val module = KotlinProjectStructureProvider.getModule(project, element, useSiteModule = null)
+        val module = CangJieProjectStructureProvider.getModule(project, element, useSiteModule = null)
 
         // We should check outdated modifications before to avoid cache dropping (e.g., CaModule cache)
         dropOutdatedModifications(module)
@@ -306,7 +310,7 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
                     // in-block modifications only applicable to properties with an explicit type,
                     // but existed backing field can lead to the entire body resolution even on
                     // implicit body phase, so we will mark this phase as fully resolved too to be safe
-                    if (phase != CfirResolvePhase.BODY_RESOLVE && phase != CfirResolvePhase.IMPLICIT_TYPES_BODY_RESOLVE) return
+                    if (phase != CfirResolvePhase.BODY_RESOLVE && phase != CfirResolvePhase.IMPLICIT_TYPES) return
                 }
 
                 is CfirCodeFragment -> {
@@ -339,7 +343,7 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
     }
 }
 
-private fun nonLocalDeclarationForLocalChange(psi: PsiElement): CjAnnotated? {
+private fun nonLocalDeclarationForLocalChange(psi: PsiElement): CjElement? {
     return psi.getNonLocalReanalyzableContainingDeclaration() ?: psi.containingFile as? CjCodeFragment
 }
 
@@ -352,7 +356,7 @@ private sealed interface LLModificationLocality {
         abstract val project: Project
 
         val module: CaModule by lazy(LazyThreadSafetyMode.NONE) {
-            KotlinProjectStructureProvider.getModule(project, affectedElement, useSiteModule = null)
+            CangJieProjectStructureProvider.getModule(project, affectedElement, useSiteModule = null)
         }
 
         override fun equals(other: Any?): Boolean {
@@ -382,7 +386,7 @@ private sealed interface LLModificationLocality {
      * @see CaSourceModificationLocality.InBlock
      */
     class InBlock(
-        override val affectedElement: CjAnnotated,
+        override val affectedElement: CjElement,
         override val project: Project,
     ) : Deferrable(), CaSourceModificationLocality.InBlock
 
@@ -401,7 +405,7 @@ private sealed interface LLModificationLocality {
  *
  * [CjProperty] is used as an anchor for [CjPropertyAccessor]s to avoid extra memory consumption.
  */
-private var CjAnnotated.hasCfirBody: Boolean
+private var CjElement.hasCfirBody: Boolean
     get() = when (this) {
         is CjNamedFunction, is CjProperty, is CjCodeFragment -> getUserData(hasCfirBodyKey) == true
         is CjPropertyAccessor -> property.hasCfirBody
@@ -444,7 +448,7 @@ internal fun PsiElement.getNonLocalReanalyzableContainingDeclaration(): CjDeclar
         }
 
         is CjProperty -> declaration.takeIf { property ->
-            property.isReanalyzableContainer() && property.delegateExpressionOrInitializer?.isAncestor(this) == true
+            property.isReanalyzableContainer() && property.initializer?.isAncestorOf(this) == true
         }
 
         else -> null
@@ -500,9 +504,9 @@ internal fun PsiElement.getNonLocalReanalyzableContainingDeclaration(): CjDeclar
  */
 private fun PsiElement.potentiallyAffectsPropertyBackingFieldResolution(): Boolean {
     var hasFieldText = false
-    this.accept(object : PsiRecursiveElementWalkingVisitor() {
+            this.accept(object : PsiRecursiveElementWalkingVisitor() {
         override fun visitElement(element: PsiElement) {
-            if (element is LeafPsiElement && element.textMatches(StandardNames.BACKING_FIELD.asString())) {
+            if (element is LeafPsiElement && element.textMatches("field")) {
                 hasFieldText = true
                 stopWalking()
             } else {
@@ -517,7 +521,7 @@ private fun PsiElement.potentiallyAffectsPropertyBackingFieldResolution(): Boole
 private fun isElementInsideBody(declaration: CjDeclarationWithBody, child: PsiElement, canHaveBackingFieldAccess: Boolean): Boolean {
     val body = declaration.bodyExpression ?: return false
     return when {
-        !body.isAncestor(child) -> false
+        !body.isAncestorOf(child) -> false
         canHaveBackingFieldAccess && child.potentiallyAffectsPropertyBackingFieldResolution() -> false
         else -> true
     }

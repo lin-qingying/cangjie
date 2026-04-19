@@ -4,7 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
 
 /**
@@ -15,7 +15,7 @@ import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStru
  */
 class CaTestProjectStructureProvider(
     private val project: Project,
-) : CaProjectStructureProvider {
+) : CangJieProjectStructureProvider {
     private val moduleStructure
         get() = CaTestProjectStructureRegistry.get(project)
 

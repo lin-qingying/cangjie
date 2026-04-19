@@ -24,13 +24,13 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
  * Session invalidation events are not published for unstable
  * [CjDanglingFileModules][org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule].
  */
-@CaImplementationDetail
+
 object LLCfirSessionInvalidationTopics {
     val SESSION_INVALIDATION: Topic<LLCfirSessionInvalidationListener> =
         Topic(LLCfirSessionInvalidationListener::class.java, Topic.BroadcastDirection.TO_CHILDREN, true)
 }
 
-@CaImplementationDetail
+
 interface LLCfirSessionInvalidationListener {
     /**
      * [afterInvalidation] is published when sessions for the given [modules] have been invalidated. Because the sessions are already

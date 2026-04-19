@@ -32,6 +32,7 @@ class CfirValueParameterBuilder {
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
     var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    lateinit var deprecationsProvider: DeprecationsProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var symbol: CfirValueParameterSymbol
     lateinit var containingDeclarationSymbol: CfirBasedSymbol<*>
@@ -52,6 +53,7 @@ class CfirValueParameterBuilder {
             origin,
             attributes,
             isLocal,
+            deprecationsProvider,
             dispatchReceiverType,
             symbol,
             containingDeclarationSymbol,
@@ -87,6 +89,7 @@ inline fun buildValueParameterCopy(original: CfirValueParameter, init: CfirValue
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
     copyBuilder.isLocal = original.isLocal
+    copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.dispatchReceiverType = original.dispatchReceiverType
     copyBuilder.containingDeclarationSymbol = original.containingDeclarationSymbol
     copyBuilder.isNamed = original.isNamed

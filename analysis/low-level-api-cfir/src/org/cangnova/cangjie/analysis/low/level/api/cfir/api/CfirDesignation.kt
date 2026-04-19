@@ -17,23 +17,21 @@ import org.cangnova.cangjie.analysis.utils.errors.unexpectedElementError
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.declarations.synthetic.CfirSyntheticProperty
-import org.cangnova.cangjie.cfir.declarations.synthetic.CfirSyntheticPropertyAccessor
 import org.cangnova.cangjie.cfir.resolve.getContainingClassSymbol
+import org.cangnova.cangjie.cfir.resolve.toClassSymbol
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.resolve.providers.firProvider
-import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
-import org.cangnova.cangjie.cfir.symbols.impl.CfirRegularClassSymbol
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
+import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.ClassIdBasedLocality
-import org.cangnova.cangjie.psi.CjClassOrObject
+import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.utils.SmartList
 import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
-import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 /**
  * This class describes where locates [target] element and its essential [path].
@@ -66,7 +64,7 @@ class CfirDesignation(
                     withCfirDesignationEntry("designation", this@CfirDesignation)
                 }
 
-                is CfirRegularClass -> {}
+                is CfirClass -> {}
                 else -> errorWithAttachment("Unexpected declaration type: ${declaration::class.simpleName}") {
                     withCfirDesignationEntry("designation", this@CfirDesignation)
                 }
@@ -107,60 +105,37 @@ private fun tryCollectDesignation(providedFile: CfirFile?, target: CfirElementWi
     }
 
     return when (target) {
-        is CfirSyntheticProperty,
-        is CfirSyntheticPropertyAccessor,
-        is CfirReplSnippet,
         is CfirAnonymousFunction,
         is CfirErrorFunction,
-        is CfirAnonymousObject,
-        is CfirPropertyAccessor,
-        is CfirBackingField,
         is CfirTypeParameter,
         is CfirValueParameter,
-        is CfirReceiverParameter,
+        is CfirPatternVariable,
+        is CfirPatternBindingVariable,
             -> null
 
         is CfirNamedFunction,
+        is CfirMainFunction,
+        is CfirMacroDeclaration,
+        is CfirFinalizer,
         is CfirProperty,
-        is CfirField,
+        is CfirFieldVariable,
         is CfirConstructor,
-        is CfirEnumEntry,
+        is CfirEnumConstructor,
             -> {
-            // We shouldn't try to build a designation path for such fake declarations as they
-            // do not depend on outer classes during resolution
-            if (target.canHaveDeferredReturnTypeCalculation) return CfirDesignation(target)
-
             if (target.symbol.isLocalForLazyResolutionPurposes) {
                 return null
             }
 
-            val containingClassId = target.containingClassLookupTag()?.classId
+            val containingClassId = target.containingClassLookupTag()?.toClassSymbol(target.moduleData.session)?.classId
             collectDesignationPathWithContainingClass(providedFile, target, containingClassId)
         }
 
         is CfirClassLikeDeclaration -> {
-            if (target.isLocal) {
-                return null
-            }
-
-            val containingClassId = target.symbol.classId.outerClassId
-            collectDesignationPathWithContainingClass(providedFile, target, containingClassId)
-        }
-
-        is CfirDanglingModifierList -> {
-            val containingClassId = target.containingClass()?.classId
-            collectDesignationPathWithContainingClass(providedFile, target, containingClassId)
-        }
-
-        is CfirAnonymousInitializer -> {
-            val containingClassId = target.containingClassIdOrNull()
-            collectDesignationPathWithContainingClass(providedFile, target, containingClassId)
+            collectDesignationPathWithContainingClass(providedFile, target, containingClassId = null)
         }
 
         is CfirFile -> CfirDesignation(target)
-        is CfirCodeFragment -> {
-            collectDesignationPathWithContainingClass(providedFile, target, containingClassId = null)
-        }
+        else -> null
     }
 }
 
@@ -169,13 +144,8 @@ private fun collectDesignationPathWithContainingClass(
     target: CfirDeclaration,
     containingClassId: ClassId?,
 ): CfirDesignation? {
-    @OptIn(ClassIdBasedLocality::class)
-    if (containingClassId?.isLocal == true) {
-        return null
-    }
-
     val file = providedFile ?: target.getContainingFile()
-    if (file != null && (containingClassId == null || file.packageFqName == containingClassId.packageFqName)) {
+    if (file != null && (containingClassId == null || file.packageDirective.packageFqName == containingClassId.packageFqName)) {
         val designationPath = CfirElementFinder.collectDesignationPath(
             firFile = file,
             declarationContainerClassId = containingClassId,
@@ -219,43 +189,42 @@ private fun collectDesignationPathWithContainingClassFallback(
 ): List<CfirDeclaration> {
     val useSiteSession by lazy(LazyThreadSafetyMode.NONE) { getTargetSession(target) }
 
-    fun resolveChunk(classId: ClassId): CfirRegularClass {
+    fun resolveChunk(classId: ClassId): CfirClass {
         val declaration = if (useSiteSession.requiresDependenciesSearch) {
-            useSiteSession.symbolProvider.getClassLikeSymbolByClassId(classId)?.fir
+            useSiteSession.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
         } else {
-            useSiteSession.firProvider.getCfirClassifierByFqName(classId)
+            useSiteSession.cfirProvider.getCfirClassifierByFqName(classId)
                 ?: findKotlinStdlibClass(classId, target)
         }
 
         checkWithAttachment(
-            declaration is CfirRegularClass,
-            message = {
-                "'${CfirRegularClass::class.simpleName}' expected as a containing declaration, " +
+            declaration is CfirClass,
+            {
+                "'${CfirClass::class.simpleName}' expected as a containing declaration, " +
                         "got '${declaration?.javaClass?.simpleName}'. " +
                         "Module: ${useSiteSession.ktModule::class.simpleName}"
             },
-            buildAttachment = {
+        ) {
                 withEntry("chunk", "$classId in $containingClassId")
                 withCfirEntry("target", target)
                 if (declaration != null) {
                     withCfirEntry("foundDeclaration", declaration)
                 }
-            }
-        )
+        }
 
         return declaration
     }
 
-    val containingClassIds = generateSequence(containingClassId) { it.outerClassId }
-    val (_, containingClasses) = containingClassIds.fold(target to SmartList<CfirRegularClass>()) { (declaration, result), classId ->
+    val containingClassIds = sequenceOf(containingClassId)
+    val (_, containingClasses) = containingClassIds.fold(target to SmartList<CfirClass>()) { (declaration, result), classId ->
         // Psi-based calculator is called explicitly to avoid `LLCfirProvider#getContainingClassSymbol`
         // since we have a fallback logic with strict checking (no dependencies in the search scope)
-        val psiBasedContainingClass = LLContainingClassCalculator.getContainingClassSymbol(declaration.symbol)?.fir
+        val psiBasedContainingClass = LLContainingClassCalculator.getContainingClassSymbol(declaration.symbol)?.cfir
         checkWithAttachment(
-            psiBasedContainingClass == null || psiBasedContainingClass is CfirRegularClass,
-            message = {
-                "${LLContainingClassCalculator::class.simpleName} is supposed to return '${CfirRegularClass::class.simpleName}' " +
-                        "as a containing declaration since the class is not local (classId exists), got '${psiBasedContainingClass?.javaClass?.simpleName}'. " +
+            psiBasedContainingClass == null || psiBasedContainingClass is CfirClass,
+            {
+                "${LLContainingClassCalculator::class.simpleName} is supposed to return '${CfirClass::class.simpleName}' " +
+                        "as a containing declaration since the class is not local (classId exists), got '${psiBasedContainingClass?.let { it::class.java.simpleName }}'. " +
                         "Module: ${useSiteSession.ktModule::class.simpleName}"
             },
         ) {
@@ -295,13 +264,13 @@ private fun getTargetSession(target: CfirDeclaration): LLCfirSession {
     return target.llCfirSession
 }
 
-private fun findKotlinStdlibClass(classId: ClassId, target: CfirDeclaration): CfirRegularClass? {
+private fun findKotlinStdlibClass(classId: ClassId, target: CfirDeclaration): CfirClass? {
     if (!classId.packageFqName.startsWith(StandardNames.BUILT_INS_PACKAGE_NAME)) {
         return null
     }
 
     val firFile = target.getContainingFile() ?: return null
-    return CfirElementFinder.findClassifierWithClassId(firFile, classId) as? CfirRegularClass
+    return CfirElementFinder.findClassifierWithClassId(firFile, classId) as? CfirClass
 }
 
 /**
@@ -370,19 +339,19 @@ private fun patchDesignationPathForCopy(target: CfirElementWithResolveState, tar
     val targetModule = target.llCfirModuleData.ktModule
 
     if (targetModule is CaDanglingFileModule && targetModule.resolutionMode == CaDanglingFileResolutionMode.IGNORE_SELF) {
-        val targetPsiFile = targetModule.files.singleOrNull() ?: return targetPath
+        val targetPsiFile = targetModule.psiRoots.singleOrNull() as? CjFile ?: return targetPath
 
-        val contextModule = targetModule.contextModule
+        val contextModule = targetModule.contextModule ?: return targetPath
         val contextResolutionFacade = contextModule.getResolutionFacade(contextModule.project)
 
         return buildList {
             for (targetPathDeclaration in targetPath) {
                 val targetPathPsi = targetPathDeclaration.psi ?: return null
-                if (targetPathPsi !is CjClassOrObject && targetPathPsi !is CjFile) return null
+                if (targetPathPsi !is CjTypeStatement && targetPathPsi !is CjFile) return null
 
                 val originalPathPsi = targetPathPsi.unwrapCopy(targetPsiFile) ?: return null
                 val originalPathDeclaration = when (originalPathPsi) {
-                    is CjClassOrObject -> originalPathPsi.resolveToCfirSymbolOfTypeSafe<CfirRegularClassSymbol>(contextResolutionFacade)?.fir
+                    is CjTypeStatement -> originalPathPsi.resolveToCfirSymbolOfTypeSafe<CfirClassSymbol>(contextResolutionFacade)?.cfir
                     is CjFile -> originalPathPsi.getOrBuildCfirFile(contextResolutionFacade)
                     else -> null
                 } ?: return null

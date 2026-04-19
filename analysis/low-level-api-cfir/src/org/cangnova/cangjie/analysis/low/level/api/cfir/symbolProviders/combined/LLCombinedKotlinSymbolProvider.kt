@@ -8,7 +8,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combine
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.intellij.openapi.project.Project
-import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinDeclarationProvider
+import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProvider
 import org.cangnova.cangjie.analysis.api.platform.declarations.mergeDeclarationProviders
 import org.cangnova.cangjie.analysis.api.platform.packages.KotlinPackageProvider
 import org.cangnova.cangjie.analysis.api.platform.packages.mergePackageProviders
@@ -20,11 +20,11 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleSpecificSymbolProviderAccess
 import org.cangnova.cangjie.builtins.StandardNames
-import org.cangnova.cangjie.cfir.CfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.impl.CfirNamedFunctionSymbol
@@ -60,7 +60,7 @@ internal class LLCombinedKotlinSymbolProvider private constructor(
     session: CfirSession,
     project: Project,
     providers: List<LLKotlinSymbolProvider>,
-    private val declarationProvider: KotlinDeclarationProvider,
+    private val declarationProvider: CangJieDeclarationProvider,
     private val packageProvider: KotlinPackageProvider,
     private val packageProviderForKotlinPackages: KotlinPackageProvider?,
 ) : LLSelectingCombinedSymbolProvider<LLKotlinSymbolProvider>(session, project, providers) {
@@ -148,7 +148,7 @@ internal class LLCombinedKotlinSymbolProvider private constructor(
     /**
      * Retrieves all callables of type [S] from the given [cache] or loads them with [getCallables] and [provide].
      *
-     * We cannot use [KotlinDeclarationProvider.getTopLevelCallableFiles] like [LLKotlinSourceSymbolProvider][org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLKotlinSourceSymbolProvider]
+     * We cannot use [CangJieDeclarationProvider.getTopLevelCallableFiles] like [LLKotlinSourceSymbolProvider][org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLKotlinSourceSymbolProvider]
      * for optimization because this approach only works for sources. Stub-based library symbol providers shouldn't access callables from
      * [CjFile][org.cangnova.cangjie.psi.CjFile]s.
      */

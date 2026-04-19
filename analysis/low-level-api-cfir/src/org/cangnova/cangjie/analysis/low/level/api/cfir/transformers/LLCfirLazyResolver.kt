@@ -35,7 +35,7 @@ internal sealed class LLCfirLazyResolver(val resolverPhase: CfirResolvePhase) {
         resolver.resolveDesignation()
 
         if (target !is LLCfirPartialBodyResolveTarget) {
-            target.forEachTarget(::checkIsResolved)
+            target.forEachTarget { declaration -> checkIsResolved(declaration) }
         }
 
         checkCanceled()
@@ -66,21 +66,14 @@ internal sealed class LLCfirLazyResolver(val resolverPhase: CfirResolvePhase) {
     }
 
     private fun checkReceiversAreResolved(declaration: CfirDeclaration) {
-        when (declaration) {
-            is CfirCallableDeclaration -> {
-                declaration.receiverParameter?.let(::checkIsResolved)
-            }
-
-            else -> {}
-        }
+        return
     }
 
     private fun checkVariableSubDeclarationsAreResolved(declaration: CfirDeclaration) {
-        if (declaration !is CfirVariable) return
+        if (declaration !is CfirProperty) return
 
-        declaration.getter?.let(::checkIsResolved)
-        declaration.setter?.let(::checkIsResolved)
-        declaration.backingField?.let(::checkIsResolved)
+        declaration.getter?.let { checkIsResolved(it) }
+        declaration.setter?.let { checkIsResolved(it) }
     }
 
     private fun checkFunctionParametersAreResolved(declaration: CfirDeclaration) {

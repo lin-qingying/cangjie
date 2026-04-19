@@ -8,7 +8,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
 import com.intellij.psi.PsiElement
 import com.intellij.util.SmartList
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
-import org.cangnova.cangjie.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 
 internal class FileStructureElementDiagnostics(private val retriever: FileStructureElementDiagnosticRetriever) {
     private val diagnosticByDefaultCheckers: FileStructureElementDiagnosticList by lazy {

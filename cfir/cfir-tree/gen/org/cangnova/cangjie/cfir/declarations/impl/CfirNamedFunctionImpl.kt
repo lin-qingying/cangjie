@@ -33,6 +33,7 @@ class CfirNamedFunctionImpl @CfirImplementationDetail constructor(
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
     override val isLocal: Boolean,
+    override var deprecationsProvider: DeprecationsProvider,
     override val dispatchReceiverType: ConeSimpleCangJieType?,
     override var status: CfirDeclarationStatus,
     override val typeParameters: MutableList<CfirTypeParameter>,
@@ -104,6 +105,10 @@ class CfirNamedFunctionImpl @CfirImplementationDetail constructor(
         annotations = newAnnotations.toMutableOrEmpty()
     }
 
+    override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider) {
+        deprecationsProvider = newDeprecationsProvider
+    }
+
     override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?) {
         controlFlowGraphReference = newControlFlowGraphReference
     }
@@ -114,5 +119,15 @@ class CfirNamedFunctionImpl @CfirImplementationDetail constructor(
 
     override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef) {
         returnTypeRef = newReturnTypeRef
+    }
+
+    override fun replaceValueParameters(newValueParameters: List<CfirValueParameter>) {
+        if (valueParameters === newValueParameters) return
+        valueParameters.clear()
+        valueParameters.addAll(newValueParameters)
+    }
+
+    override fun replaceBody(newBody: CfirBlock?) {
+        body = newBody
     }
 }

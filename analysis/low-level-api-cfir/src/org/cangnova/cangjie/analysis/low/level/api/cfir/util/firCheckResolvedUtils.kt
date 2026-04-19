@@ -3,8 +3,6 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-@file:OptIn(UnresolvedExpressionTypeAccess::class)
-
 package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.NonLocalAnnotationVisitor
@@ -14,21 +12,21 @@ import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentList
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
-import org.cangnova.cangjie.cfir.expressions.UnresolvedExpressionTypeAccess
-import org.cangnova.cangjie.cfir.expressions.impl.CfirResolvedArgumentList
+import org.cangnova.cangjie.cfir.expressions.withCfirEntry
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirAbstractBodyResolveTransformerDispatcher
+import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformerDispatcher
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.*
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirSymbolEntry
+import org.cangnova.cangjie.cfir.expressions.withCfirSymbolEntry
 import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
-import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 
 internal inline fun checkTypeRefIsResolved(
     typeRef: CfirTypeRef,
@@ -38,8 +36,8 @@ internal inline fun checkTypeRefIsResolved(
     extraAttachment: ExceptionAttachmentBuilder.() -> Unit = {},
 ) {
     checkWithAttachment(
-        condition = typeRef is CfirResolvedTypeRef || acceptImplicitTypeRef && typeRef is CfirImplicitTypeRef,
-        message = {
+        typeRef is CfirResolvedTypeRef || acceptImplicitTypeRef && typeRef is CfirImplicitTypeRef,
+        {
             buildString {
                 append("Expected ${CfirResolvedTypeRef::class.simpleName}")
                 if (acceptImplicitTypeRef) {
@@ -56,14 +54,14 @@ internal inline fun checkTypeRefIsResolved(
 }
 
 internal inline fun checkExpressionTypeIsResolved(
-    type: ConeKotlinType?,
+    type: ConeCangJieType?,
     typeName: String,
     owner: CfirElement,
     extraAttachment: ExceptionAttachmentBuilder.() -> Unit = {},
 ) {
     checkWithAttachment(
-        condition = type != null,
-        message = {
+        type != null,
+        {
             buildString {
                 append("Expected resolved expression type")
                 append(" for $typeName of ${owner::class.simpleName}(${(owner as? CfirDeclaration)?.origin})")
@@ -77,16 +75,8 @@ internal inline fun checkExpressionTypeIsResolved(
 
 internal fun <T> checkAnnotationTypeIsResolved(annotationContainer: T) where T : CfirAnnotationContainer, T : CfirElementWithResolveState {
     annotationContainer.annotations.forEach { annotation ->
-        checkTypeRefIsResolved(annotation.annotationTypeRef, "annotation type", owner = annotationContainer) {
+        checkTypeRefIsResolved(annotation.typeRef, "annotation type", owner = annotationContainer) {
             withCfirEntry("firAnnotation", annotation)
-        }
-
-        annotation.typeArguments.forEach {
-            if (it is CfirTypeProjectionWithVariance) {
-                checkTypeRefIsResolved(it.typeRef, "annotation type argument", owner = annotationContainer) {
-                    withCfirEntry("typeProjection", it)
-                }
-            }
         }
     }
 }
@@ -98,22 +88,14 @@ internal fun checkBodyIsResolved(function: CfirFunction) {
     }
 }
 
-internal fun checkDelegatedConstructorIsResolved(constructor: CfirConstructor) {
-    val delegatedConstructorCall = constructor.delegatedConstructor ?: return
-    val calleeReference = delegatedConstructorCall.calleeReference
-    checkReferenceIsResolved(reference = calleeReference, owner = delegatedConstructorCall) {
-        withCfirEntry("constructor", constructor)
-    }
-}
-
 internal fun checkReferenceIsResolved(
     reference: CfirReference,
     owner: CfirResolvable,
     extraAttachment: ExceptionAttachmentBuilder.() -> Unit = {},
 ) {
     checkWithAttachment(
-        condition = reference is CfirResolvedNamedReference || reference is CfirErrorNamedReference,
-        message = {
+        reference is CfirResolvedNamedReference || reference is CfirErrorNamedReference,
+        {
             "Expected ${CfirNamedReference::class.simpleName} or " +
                     "${CfirErrorNamedReference::class.simpleName} " +
                     "but ${reference::class.simpleName} found"
@@ -140,8 +122,8 @@ internal fun checkDefaultValueIsResolved(parameter: CfirValueParameter) {
 
 internal fun checkDeprecationProviderIsResolved(declaration: CfirDeclaration, provider: DeprecationsProvider) {
     checkWithAttachment(
-        condition = provider !is UnresolvedDeprecationProvider,
-        message = { "Unresolved deprecation provider found for ${declaration::class.simpleName}" }
+        provider !is UnresolvedDeprecationProvider,
+        { "Unresolved deprecation provider found for ${declaration::class.simpleName}" }
     ) {
         withCfirEntry("declaration", declaration)
     }
@@ -154,8 +136,8 @@ internal fun checkReturnTypeRefIsResolved(declaration: CfirCallableDeclaration, 
 internal fun checkDeclarationStatusIsResolved(declaration: CfirMemberDeclaration) {
     val status = declaration.status
     checkWithAttachment(
-        condition = status is CfirResolvedDeclarationStatus,
-        message = { "Expected ${CfirResolvedDeclarationStatus::class.simpleName} but ${status::class.simpleName} found for ${declaration::class.simpleName}" }
+        status is CfirResolvedDeclarationStatus,
+        { "Expected ${CfirResolvedDeclarationStatus::class.simpleName} but ${status::class.simpleName} found for ${declaration::class.simpleName}" }
     ) {
         withCfirEntry("declaration", declaration)
     }
@@ -197,8 +179,8 @@ internal fun checkAnnotationsAreResolved(annotationContainer: CfirAnnotationCont
 internal fun checkAnnotationIsResolved(annotation: CfirAnnotation, annotationContainer: CfirAnnotationContainer) {
     if (annotation is CfirAnnotationCall) {
         checkWithAttachment(
-            condition = annotation.argumentList is CfirResolvedArgumentList,
-            message = {
+            annotation.argumentList is CfirResolvedArgumentList,
+            {
                 buildString {
                     append("Expected ${CfirResolvedArgumentList::class.simpleName}")
                     append(" for ${annotation::class.simpleName} of ${annotationContainer::class.simpleName}(${(annotationContainer as? CfirDeclaration)?.origin})")
@@ -211,7 +193,7 @@ internal fun checkAnnotationIsResolved(annotation: CfirAnnotation, annotationCon
         }
     }
 
-    for (argument in annotation.argumentMapping.mapping.values) {
+    for (argument in annotation.arguments.filterIsInstance<CfirExpression>()) {
         checkExpressionTypeIsResolved(argument.coneTypeOrNull, "annotation argument", annotationContainer) {
             withCfirEntry("firAnnotation", annotation)
             withCfirEntry("firArgument", argument)
@@ -263,15 +245,6 @@ private fun shouldRecordReadyPhaseEvent(requestedPhase: CfirResolvePhase): Boole
              */
             false
         }
-
-        CfirResolvePhase.SEALED_CLASS_INHERITORS -> {
-            /**
-             * The phase is no-op in LL CFIR.
-             * @see [org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLSealedInheritorsProvider]
-             */
-            false
-        }
-
         else -> true
     }
 }

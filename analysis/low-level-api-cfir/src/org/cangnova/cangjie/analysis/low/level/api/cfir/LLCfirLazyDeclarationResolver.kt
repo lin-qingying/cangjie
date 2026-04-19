@@ -10,9 +10,8 @@ import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.ThreadSafeMutableState
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirRegularClass
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.declarations.utils.superConeTypes
+import org.cangnova.cangjie.cfir.declarations.util.superConeTypes
 import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
 import org.cangnova.cangjie.cfir.resolve.toClassSymbol
 
@@ -32,7 +31,7 @@ internal class LLCfirLazyDeclarationResolver : CfirLazyDeclarationResolver() {
 
     override fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClass, toPhase: CfirResolvePhase) {
         assertLazyResolveAllowed()
-        val fir = clazz as? CfirRegularClass ?: return
+        val fir = clazz as? CfirClass ?: return
         val session = fir.llCfirResolvableSession ?: return
         session.moduleComponents.firModuleLazyDeclarationResolver.lazyResolveWithCallableMembers(
             target = fir,
@@ -42,7 +41,7 @@ internal class LLCfirLazyDeclarationResolver : CfirLazyDeclarationResolver() {
         if (toPhase == CfirResolvePhase.STATUS && fir.declarations.none { it is CfirCallableDeclaration }) {
             for (superType in fir.superConeTypes) {
                 val classSymbol = superType.toClassSymbol(session) ?: continue
-                lazyResolveToPhaseWithCallableMembers(classSymbol.fir, toPhase)
+                lazyResolveToPhaseWithCallableMembers(classSymbol.cfir, toPhase)
             }
         }
     }

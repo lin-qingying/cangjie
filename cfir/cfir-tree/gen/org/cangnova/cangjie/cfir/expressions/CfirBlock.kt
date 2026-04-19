@@ -34,4 +34,6 @@ abstract class CfirBlock : CfirExpression() {
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirBlock
 
     abstract fun <D> transformStatements(transformer: CfirTransformer<D>, data: D): CfirBlock
+
+    abstract fun <D> transformOtherChildren(transformer: CfirTransformer<D>, data: D): CfirBlock
 }

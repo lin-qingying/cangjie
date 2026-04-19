@@ -11,10 +11,7 @@ import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
-import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -29,15 +26,18 @@ class LLDanglingFileDependenciesSymbolProvider(private val delegate: CfirSymbolP
         return delegate.getClassLikeSymbolByClassId(classId)
     }
 
+
     @CfirSymbolProviderInternals
     override fun getTopLevelCallableSymbolsTo(destination: MutableList<CfirCallableSymbol<*>>, packageFqName: FqName, name: Name) {
         destination += delegate.getTopLevelCallableSymbols(packageFqName, name).let(::filterSymbols)
     }
 
+
     @CfirSymbolProviderInternals
     override fun getTopLevelFunctionSymbolsTo(destination: MutableList<CfirNamedFunctionSymbol>, packageFqName: FqName, name: Name) {
         destination += delegate.getTopLevelFunctionSymbols(packageFqName, name).let(::filterSymbols)
     }
+
 
     @CfirSymbolProviderInternals
     override fun getTopLevelPropertySymbolsTo(destination: MutableList<CfirPropertySymbol>, packageFqName: FqName, name: Name) {

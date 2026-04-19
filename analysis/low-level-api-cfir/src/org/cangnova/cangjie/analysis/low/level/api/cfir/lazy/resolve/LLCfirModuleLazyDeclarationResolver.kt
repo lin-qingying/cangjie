@@ -17,10 +17,11 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.getContainingFile
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkAnalysisReadiness
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.session.diagnosticReporter
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirImportResolveTransformer
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 /**
  * This is the entry point for lazy resolution.
@@ -54,7 +55,7 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
      *
      * Resolution is performed under the lock specific to each declaration that is going to be resolved.
      */
-    fun lazyResolveWithCallableMembers(target: CfirRegularClass, toPhase: CfirResolvePhase) {
+    fun lazyResolveWithCallableMembers(target: CfirClass, toPhase: CfirResolvePhase) {
         if (target.resolvePhase >= toPhase && target.declarations.all { it !is CfirCallableDeclaration || it.resolvePhase >= toPhase }) {
             LLFlightRecorder.readyPhase(target, toPhase)
             return
@@ -126,7 +127,13 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
         val lockProvider = moduleComponents.globalResolveComponents.lockProvider
         lockProvider.withGlobalLock {
             lockProvider.withWriteLock(firFile, CfirResolvePhase.IMPORTS) {
-                firFile.transformSingle(CfirImportResolveTransformer(firFile.moduleData.session), null)
+                firFile.transformSingle(
+                    CfirImportResolveTransformer(
+                        firFile.moduleData.session,
+                        firFile.moduleData.session.diagnosticReporter,
+                    ),
+                    null,
+                )
             }
         }
     }

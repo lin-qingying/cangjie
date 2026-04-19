@@ -6,12 +6,13 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.AbstractCjSourceElement
-import org.cangnova.cangjie.CjFakePsiSourceElement
-import org.cangnova.cangjie.CjFakeSourceElementKind
-import org.cangnova.cangjie.SuspiciousFakeSourceCheck
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.addValueFor
-import org.cangnova.cangjie.diagnostics.*
+import org.cangnova.cangjie.cfir.diagnostics.*
+import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjFakePsiSourceElement
+import org.cangnova.cangjie.source.SuspiciousFakeSourceCheck
 
 internal class LLCfirDiagnosticReporter : PendingDiagnosticReporter() {
     private val pendingDiagnostics = mutableMapOf<PsiElement, MutableList<CjPsiDiagnostic>>()

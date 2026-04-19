@@ -18,10 +18,10 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsOnlyApi
 import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.caches.LLPsiAwareClassLikeSymbolCache
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.caches.CfirCache
 import org.cangnova.cangjie.cfir.caches.CfirCacheInternals
-import org.cangnova.cangjie.cfir.caches.firCachesFactory
+import org.cangnova.cangjie.cfir.caches.cfirCachesFactory
 import org.cangnova.cangjie.cfir.caches.getValue
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
@@ -48,7 +48,7 @@ typealias DeserializedTypeAliasPostProcessor = (CfirTypeAliasSymbol) -> Unit
 
 /**
  * [LLKotlinStubBasedLibrarySymbolProvider] deserializes CFIR symbols from existing stubs, retrieving them by [ClassId]/[CallableId] from a
- * [KotlinDeclarationProvider][org.cangnova.cangjie.analysis.api.platform.declarations.KotlinDeclarationProvider].
+ * [CangJieDeclarationProvider][org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProvider].
  *
  * The symbol provider is currently only enabled in IDE mode. The Standalone mode uses [LLJvmClassFileBasedSymbolProvider] whose base class
  * [JvmClassFileBasedSymbolProvider][org.cangnova.cangjie.cfir.java.deserialization.JvmClassFileBasedSymbolProvider] is also used by the
@@ -187,7 +187,7 @@ internal open class LLKotlinStubBasedLibrarySymbolProvider(
         declaration: CjClassLikeDeclaration,
         parentContext: StubBasedCfirDeserializationContext?,
     ): CfirRegularClassSymbol? {
-        if (declaration !is CjClassOrObject) return null
+        if (declaration !is CjTypeStatement) return null
 
         checkDeclarationAndContextConsistency(declaration, parentContext)
 
@@ -273,7 +273,7 @@ internal open class LLKotlinStubBasedLibrarySymbolProvider(
 
         // We can assume that the outer class is in the scope since we're deserializing it with this symbol provider. Since the nested class or typealias
         // is in the same file as its outer class, it's definitely also in the scope of the symbol provider.
-        val cache = if (declaration is CjClassOrObject) {
+        val cache = if (declaration is CjTypeStatement) {
             classCache
         } else {
             require(declaration is CjTypeAlias)
@@ -376,7 +376,7 @@ internal open class LLKotlinStubBasedLibrarySymbolProvider(
 
     @LLModuleSpecificSymbolProviderAccess
     override fun getClassLikeSymbolByClassId(classId: ClassId, classLikeDeclaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? {
-        val cache = if (classLikeDeclaration is CjClassOrObject) classCache else typeAliasCache
+        val cache = if (classLikeDeclaration is CjTypeStatement) classCache else typeAliasCache
         cache.getCachedSymbolByClassId(classId)?.let { return it }
 
         classLikeDeclaration.runIfNested(classId) { topLevelDeclaration, topLevelClassId ->
@@ -395,7 +395,7 @@ internal open class LLKotlinStubBasedLibrarySymbolProvider(
     override fun getClassLikeSymbolByPsi(classId: ClassId, declaration: PsiElement): CfirClassLikeSymbol<*>? {
         if (declaration !is CjClassLikeDeclaration) return null
 
-        val cache = if (declaration is CjClassOrObject) classCache else typeAliasCache
+        val cache = if (declaration is CjTypeStatement) classCache else typeAliasCache
         cache.getCachedSymbolByPsi(classId, declaration)?.let { return it }
 
         declaration.runIfNested(classId) { topLevelDeclaration, topLevelClassId ->

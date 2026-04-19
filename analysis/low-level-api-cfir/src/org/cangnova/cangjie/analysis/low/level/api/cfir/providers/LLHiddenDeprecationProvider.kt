@@ -5,7 +5,7 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.providers
 
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.declarations.CfirHiddenDeprecationProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 

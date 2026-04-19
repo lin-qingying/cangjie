@@ -7,7 +7,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir
 
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.api.projectStructure.*
-import org.cangnova.cangjie.analysis.api.utils.errors.withCaModuleEntry
+import org.cangnova.cangjie.analysis.api.util.withCaModuleEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirLibraryOrLibrarySourceResolvableModuleSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
@@ -38,7 +38,9 @@ class LLResolutionFacadeService(project: Project) {
             is CaSourceModule -> LLSourceModuleResolutionStrategyProvider(module)
             is CaLibraryModule, is CaBuiltinsModule, is CaLibrarySourceModule -> LLBinaryModuleResolutionStrategyProvider(module)
             is CaDanglingFileModule -> {
-                val contextModule = module.contextModule
+                val contextModule = requireNotNull(module.contextModule) {
+                    "Dangling file module must have a context module"
+                }
                 val contextResolutionStrategyProvider = createResolutionStrategyProvider(contextModule, moduleProvider)
                 LLDanglingFileResolutionStrategyProvider(contextResolutionStrategyProvider)
             }

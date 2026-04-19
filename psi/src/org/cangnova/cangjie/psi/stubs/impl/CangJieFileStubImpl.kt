@@ -39,7 +39,7 @@ import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.stubs.CangJieFileStub
 import org.cangnova.cangjie.psi.stubs.CangJieFileStubKind
 import org.cangnova.cangjie.psi.stubs.elements.CjFileElementType
-import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
+import org.cangnova.cangjie.utils.checkWithAttachment
 
 /**
  * 仓颉文件 Stub 的实现类。

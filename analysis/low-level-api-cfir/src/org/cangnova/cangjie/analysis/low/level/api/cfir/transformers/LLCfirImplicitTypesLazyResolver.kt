@@ -13,12 +13,12 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkReturnTypeRefI
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.canHaveDeferredReturnTypeCalculation
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.declarations.utils.getExplicitBackingField
 import org.cangnova.cangjie.cfir.declarations.utils.isConst
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirImplicitAwareBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.ImplicitBodyResolveComputationSession
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.util.setMultimapOf
@@ -178,11 +178,6 @@ internal class LLCfirImplicitBodyTargetResolver(
             is CfirCallableDeclaration if target.canHaveDeferredReturnTypeCalculation -> {
                 val typeCalculator = transformer.returnTypeCalculator.callableCopyTypeCalculator
                 typeCalculator.computeReturnType(target)
-
-                val explicitBackingField = (target as? CfirProperty)?.getExplicitBackingField()
-                if (explicitBackingField != null) {
-                    typeCalculator.computeReturnType(explicitBackingField)
-                }
             }
 
             is CfirFunction -> {
@@ -203,7 +198,7 @@ internal class LLCfirImplicitBodyTargetResolver(
                 }
             }
 
-            is CfirRegularClass, is CfirTypeAlias, is CfirFile, is CfirCodeFragment, is CfirAnonymousInitializer, is CfirDanglingModifierList, is CfirEnumEntry -> {
+            is CfirClass, is CfirTypeAlias, is CfirFile, is CfirCodeFragment, is CfirAnonymousInitializer, is CfirDanglingModifierList, is CfirEnumEntry -> {
                 // No implicit bodies here
             }
 
@@ -230,4 +225,4 @@ internal class LLCfirImplicitBodyTargetResolver(
  * Whether the property has something to resolve on the [CfirResolvePhase.IMPLICIT_TYPES_BODY_RESOLVE] phase.
  */
 internal val CfirProperty.shouldBeResolvedOnImplicitTypePhase: Boolean
-    get() = isConst || returnTypeRef is CfirImplicitTypeRef || backingField?.returnTypeRef is CfirImplicitTypeRef
+    get() = isConst || returnTypeRef is CfirImplicitTypeRef

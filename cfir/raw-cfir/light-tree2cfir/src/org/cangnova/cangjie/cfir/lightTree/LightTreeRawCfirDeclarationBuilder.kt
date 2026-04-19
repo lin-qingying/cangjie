@@ -427,11 +427,13 @@ class LightTreeRawCfirDeclarationBuilder(
         val modifiers = LightTreeModifierList.from(tree, node)
         val typeRef = extractReturnTypeRef(node)
         val accessors = extractPropertyAccessorNodes(node)
+        val propertySymbol = CfirPropertySymbol(callableIdFor(name))
         val getter = accessors.firstOrNull(::isGetterAccessor)?.let { accessorNode ->
             convertPropertyAccessor(
                 node = accessorNode,
                 accessorName = Name.special("<get-${name.asString()}>"),
                 defaultReturnTypeRef = typeRef,
+                propertySymbol = propertySymbol,
             )
         }
         val setter = accessors.firstOrNull { accessorNode -> !isGetterAccessor(accessorNode) }?.let { accessorNode ->
@@ -439,10 +441,11 @@ class LightTreeRawCfirDeclarationBuilder(
                 node = accessorNode,
                 accessorName = Name.special("<set-${name.asString()}>"),
                 defaultReturnTypeRef = buildImplicitTypeRef(),
+                propertySymbol = propertySymbol,
             )
         }
 
-        return buildSourceDeclaration(CfirPropertySymbol(callableIdFor(name))) { symbol ->
+        return buildSourceDeclaration(propertySymbol) { symbol ->
             buildProperty {
                 resolvePhase = CfirResolvePhase.RAW_CFIR
                 source = node.toSource()
@@ -469,14 +472,15 @@ class LightTreeRawCfirDeclarationBuilder(
         node: LighterASTNode,
         accessorName: Name,
         defaultReturnTypeRef: CfirTypeRef,
-    ): CfirNamedFunction {
+        propertySymbol: CfirPropertySymbol,
+    ): CfirPropertyAccessor {
         val modifiers = LightTreeModifierList.from(tree, node)
         val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
         val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withFunctionTarget(functionTarget) { extractBody(node) }
         val explicitReturnTypeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)?.let(::convertTypeRef)
 
-        return buildSourceDeclaration(CfirNamedFunctionSymbol(callableIdFor(accessorName))) { symbol ->
-            buildNamedFunction {
+        return buildSourceDeclaration(CfirPropertyAccessorSymbol()) { symbol ->
+            buildPropertyAccessor {
                 resolvePhase = CfirResolvePhase.RAW_CFIR
                 source = node.toSource()
                 this.symbol = symbol
@@ -487,10 +491,10 @@ class LightTreeRawCfirDeclarationBuilder(
                 dispatchReceiverType = currentDispatchReceiverType()
                 status = modifiers.toDeclarationStatusForCurrentContext()
                 returnTypeRef = explicitReturnTypeRef ?: defaultReturnTypeRef
-                this.name = accessorName
+                this.propertySymbol = propertySymbol
+                this.isGetter = isGetterAccessor(node)
                 valueParameters.addAll(extractValueParameters(node))
                 this.body = body
-                isMut = false
             }
         }.also { bindFunctionTarget(functionTarget, it) }
     }

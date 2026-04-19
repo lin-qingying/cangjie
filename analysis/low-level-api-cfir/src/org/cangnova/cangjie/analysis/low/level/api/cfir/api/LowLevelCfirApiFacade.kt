@@ -8,7 +8,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.api
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLResolutionFacadeService
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
-import org.cangnova.cangjie.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase

@@ -6,7 +6,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
 
 import com.intellij.openapi.diagnostic.thisLogger
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getResolutionFacade
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkCanceled
@@ -20,7 +20,7 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjDeclaration
-import org.cangnova.cangjie.utils.exceptions.rethrowIntellijPlatformExceptionIfNeeded
+import org.cangnova.cangjie.utils.exceptions.shouldIjPlatformExceptionBeRethrown
 
 internal open class LLCfirDiagnosticVisitor(
     context: CheckerContextForProvider,
@@ -71,12 +71,12 @@ internal open class LLCfirDiagnosticVisitor(
             }
 
             val project = contextElement.project
-            val module = KotlinProjectStructureProvider.getModule(project, contextElement, useSiteModule = null)
+            val module = CangJieProjectStructureProvider.getModule(project, contextElement, useSiteModule = null)
             val resolutionFacade = module.getResolutionFacade(project)
 
             // Register containing declarations of a context element
             contextElement.parentsOfType<CjDeclaration>().toList().asReversed()
-                .map { it.resolveToCfirSymbol(resolutionFacade).fir }
+                .map { declaration: CjDeclaration -> declaration.resolveToCfirSymbol(resolutionFacade).cfir }
                 .run(::process)
 
             return
@@ -105,7 +105,7 @@ internal open class LLCfirDiagnosticVisitor(
      */
     private fun commitPendingDiagnosticsOnNestedDeclarations(element: CfirElement) {
         val declarationContainer = when (element) {
-            is CfirFile, is CfirRegularClass -> element
+            is CfirFile, is CfirClass -> element
             else -> return
         }
 
@@ -131,7 +131,9 @@ internal open class LLCfirDiagnosticVisitor(
         inline fun <T> suppressAndLogExceptions(block: () -> T): T? = try {
             block()
         } catch (e: Throwable) {
-            rethrowIntellijPlatformExceptionIfNeeded(e)
+            if (shouldIjPlatformExceptionBeRethrown(e)) {
+                throw e
+            }
 
             thisLogger().error("The diagnostic collector has been interrupted by an exception. The result may be incomplete", e)
             null

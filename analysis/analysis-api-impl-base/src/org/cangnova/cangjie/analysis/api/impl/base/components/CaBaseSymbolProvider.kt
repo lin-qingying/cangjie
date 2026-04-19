@@ -18,7 +18,6 @@ import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjPropertyAccessor
-import org.cangnova.cangjie.psi.CjScript
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeParameter
 import org.cangnova.cangjie.psi.CjTypeStatement
@@ -50,7 +49,6 @@ abstract class CaBaseSymbolProvider<T : CaSession> : CaBaseSessionComponent<T>()
                 is CjPatternVariable -> resolvePatternVariableSymbol(this)
                 is CjExtend -> resolveExtendSymbol(this)
                 is CjTypeStatement -> resolveClassSymbol(this)
-                is CjScript -> resolveScriptSymbol(this)
                 else -> error("Cannot build symbol for ${this::class}")
             }
         }
@@ -87,5 +85,4 @@ abstract class CaBaseSymbolProvider<T : CaSession> : CaBaseSessionComponent<T>()
 
     private fun resolveClassSymbol(typeStatement: CjTypeStatement): CaDeclarationSymbol = with(this) { typeStatement.classSymbol }
 
-    private fun resolveScriptSymbol(script: CjScript): CaDeclarationSymbol = with(this) { script.symbol }
 }

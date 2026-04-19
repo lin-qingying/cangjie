@@ -1,8 +1,10 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.scopes.impl.unwrapOriginalForSubstitutionOverride
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 
 /**
  * substitution override 只是 use-site 上为了替换类型实参而生成的声明外壳，
@@ -17,4 +19,16 @@ internal fun CfirBasedSymbol<*>.unwrapForDeclarationMetadataLookup(): CfirBasedS
 
 internal fun CfirCallableSymbol<*>.unwrapCallableForDeclarationMetadataLookup(): CfirCallableSymbol<*> {
     return unwrapOriginalForSubstitutionOverride()
+}
+
+/**
+ * 统一 provider 侧 container file 查询入口。
+ */
+fun CfirProvider.getContainingFile(symbol: CfirBasedSymbol<*>): CfirFile? {
+    val normalizedSymbol = symbol.unwrapForDeclarationMetadataLookup()
+    return when (normalizedSymbol) {
+        is CfirCallableSymbol<*> -> getCfirCallableContainerFile(normalizedSymbol)
+        is CfirClassLikeSymbol<*> -> getCfirClassifierContainerFileIfAny(normalizedSymbol)
+        else -> null
+    }
 }

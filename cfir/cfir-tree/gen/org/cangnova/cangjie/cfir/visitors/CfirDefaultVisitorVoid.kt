@@ -40,6 +40,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitMemberDeclaration(classLikeDeclaration)
     }
 
+    override fun visitCodeFragment(codeFragment: CfirCodeFragment) {
+        visitDeclaration(codeFragment)
+    }
+
     override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor) {
         visitCallableDeclaration(enumConstructor)
     }
@@ -84,6 +88,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitCallableDeclaration(property)
     }
 
+    override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor) {
+        visitFunction(propertyAccessor)
+    }
+
     override fun visitVariable(variable: CfirVariable) {
         visitCallableDeclaration(variable)
     }
@@ -126,6 +134,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
 
     override fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase) {
         visitNamedReference(namedReferenceWithCandidateBase)
+    }
+
+    override fun visitInoutArgumentExpression(inoutArgumentExpression: CfirInoutArgumentExpression) {
+        visitWrappedExpression(inoutArgumentExpression)
     }
 
     override fun visitCall(call: CfirCall) {

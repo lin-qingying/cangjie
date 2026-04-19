@@ -7,8 +7,8 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
-import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinCompositeDeclarationProvider
-import org.cangnova.cangjie.analysis.api.platform.declarations.KotlinDeclarationProvider
+import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieCompositeDeclarationProvider
+import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProvider
 import org.cangnova.cangjie.analysis.api.platform.packages.KotlinCompositePackageProvider
 import org.cangnova.cangjie.analysis.api.platform.packages.createPackageProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.analysisContextModule
@@ -52,19 +52,19 @@ internal class LLKotlinSourceSymbolProvider private constructor(
     session: LLCfirSession,
     private val moduleComponents: LLCfirModuleResolveComponents,
     canContainKotlinPackage: Boolean,
-    declarationProviderFactory: (GlobalSearchScope) -> KotlinDeclarationProvider?,
+    declarationProviderFactory: (GlobalSearchScope) -> CangJieDeclarationProvider?,
 ) : LLKotlinSymbolProvider(session), LLMultiClassLikeSymbolProvider {
     constructor(
         session: LLCfirSession,
         moduleComponents: LLCfirModuleResolveComponents,
         canContainKotlinPackage: Boolean,
-        declarationProviderFactory: (GlobalSearchScope) -> KotlinDeclarationProvider?,
+        declarationProviderFactory: (GlobalSearchScope) -> CangJieDeclarationProvider?,
     ) : this(session, moduleComponents, canContainKotlinPackage, declarationProviderFactory)
 
     private val searchScope: GlobalSearchScope
         get() = moduleComponents.module.contentScope
 
-    override val declarationProvider = KotlinCompositeDeclarationProvider.create(
+    override val declarationProvider = CangJieCompositeDeclarationProvider.create(
         listOfNotNull(
             declarationProviderFactory(searchScope),
         )

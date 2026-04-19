@@ -50,6 +50,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirSpawnSemanticsChecker,
             CfirExpressionTypeInferenceChecker,
             CfirEffectsBasicChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirQuoteImportChecker,
         )
 
     override val ifExpressionCheckers: Set<CfirIfExpressionChecker>
@@ -93,6 +94,9 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirImmutableFunctionCannotAccessMutableFunctionChecker,
             CfirMockApiChecker,
             CfirDeprecatedCallChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTrailingLambdaChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirVArrayConstructorArgChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirInoutArgumentChecker,
             CfirInoutSemanticsChecker,
         )
 

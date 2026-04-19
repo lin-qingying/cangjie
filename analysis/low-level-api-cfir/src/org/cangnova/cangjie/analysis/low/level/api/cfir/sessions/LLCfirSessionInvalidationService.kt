@@ -16,7 +16,7 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
  * [LLCfirSessionInvalidationService] listens to [modification events][org.cangnova.cangjie.analysis.api.platform.modification.KotlinModificationEvent]
  * and invalidates [LLCfirSession]s which depend on the modified [CaModule].
  */
-@CaImplementationDetail
+
 class LLCfirSessionInvalidationService(private val project: Project) {
     internal class LLKotlinModificationEventListener(val project: Project) : KotlinModificationEventListener {
         override fun onModification(event: KotlinModificationEvent) {

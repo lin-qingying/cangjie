@@ -5,20 +5,14 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined
 
-import org.cangnova.cangjie.cfir.CfirSession
-import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolNamesProvider
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
-import org.cangnova.cangjie.cfir.resolve.providers.impl.CfirCompositeSymbolProvider
-import org.cangnova.cangjie.cfir.symbols.impl.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.name.parentOrNull
 import org.cangnova.cangjie.utils.newHashMapWithExpectedSize
 
 /**

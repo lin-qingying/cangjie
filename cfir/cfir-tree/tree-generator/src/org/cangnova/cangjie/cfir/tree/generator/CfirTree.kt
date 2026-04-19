@@ -50,6 +50,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     val constructorSymbolType = type("symbols", "CfirConstructorSymbol")
     val macroDeclarationSymbolType = type("symbols", "CfirMacroDeclarationSymbol")
     val propertySymbolType = type("symbols", "CfirPropertySymbol")
+    val propertyAccessorSymbolType = type("symbols", "CfirPropertyAccessorSymbol")
     val variableSymbolType = type("symbols", "CfirVariableSymbol").withArgs(TreeTypeRef.Star)
     val valueParameterSymbolType = type("symbols", "CfirValueParameterSymbol")
     val fieldVariableSymbolType = type("symbols", "CfirFieldVariableSymbol")
@@ -61,6 +62,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     // ---- 其他符号类型 ----
     val fileSymbolType = type("symbols", "CfirFileSymbol")
     val extendSymbolType = type("symbols", "CfirExtendSymbol")
+    val codeFragmentSymbolType = type("symbols", "CfirCodeFragmentSymbol")
 
     private val coneTypeType = type("types", "ConeCangJieType")
     private val nameType = type("org.cangnova.cangjie.name", "Name", exactPackage = true, kind = TypeKind.Class)
@@ -222,6 +224,11 @@ object CfirTree : AbstractCfirTreeBuilder() {
             "returnTypeRef",
             typeRef, withReplace = true, withTransform = true
         )
+        +field("deprecationsProvider", deprecationsProviderType, withReplace = true) {
+            isMutable = true
+            defaultValueInBuilder = "UnresolvedDeprecationProvider"
+            arbitraryImportables += unresolvedDeprecationsProviderType
+        }
 
         +field("dispatchReceiverType", coneSimpleCangJieTypeType, nullable = true)
         +referencedSymbol(callableSymbolType.withArgs(callableDeclaration))
@@ -231,6 +238,11 @@ object CfirTree : AbstractCfirTreeBuilder() {
     val classLikeDeclaration: Element by sealedElement(Declaration, name = "ClassLikeDeclaration") {
         parent(memberDeclaration)
         +declaredSymbol(classLikeSymbolType)
+        +field("deprecationsProvider", deprecationsProviderType, withReplace = true) {
+            isMutable = true
+            defaultValueInBuilder = "UnresolvedDeprecationProvider"
+            arbitraryImportables += unresolvedDeprecationsProviderType
+        }
         +FieldSets.declarations
         +field("name", nameType)
 
@@ -249,6 +261,12 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("sourceFileLinesMapping", sourceFileLinesMappingType, nullable = true)
 
         +FieldSets.declarations
+    }
+
+    val codeFragment: Element by element(Declaration, name = "CodeFragment") {
+        parent(declaration)
+        +declaredSymbol(codeFragmentSymbolType)
+        +field("block", block, withReplace = true, withTransform = true)
     }
 
     /**
@@ -371,8 +389,8 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +FieldSets.typeParameters
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
-        +listField("valueParameters", valueParameter, withTransform = true)
-        +field("body", block, nullable = true, withTransform = true)
+        +listField("valueParameters", valueParameter, withReplace = true, withTransform = true)
+        +field("body", block, nullable = true, withReplace = true, withTransform = true)
     }
 
     val namedFunction: Element by element(Declaration, name = "NamedFunction") {
@@ -418,15 +436,28 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +FieldSets.typeParameters
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("name", nameType)
-        +field("getter", function, nullable = true, withTransform = true)
-        +field("setter", function, nullable = true, withTransform = true)
+        +field("getter", propertyAccessor, nullable = true, withReplace = true, withTransform = true)
+        +field("setter", propertyAccessor, nullable = true, withReplace = true, withTransform = true)
+        +field("bodyResolveState", propertyBodyResolveStateType, withReplace = true) {
+            defaultValueInBuilder = "CfirPropertyBodyResolveState.NOTHING_RESOLVED"
+        }
+    }
+
+    val propertyAccessor: Element by element(Declaration, name = "PropertyAccessor") {
+        parent(function)
+        customParentInVisitor = function
+        +declaredSymbol(propertyAccessorSymbolType)
+        +referencedSymbol("propertySymbol", propertySymbolType, withReplace = false) {
+            withBindThis = false
+        }
+        +field("isGetter", booleanType)
     }
 
     val variable: Element by sealedElement(Declaration, name = "Variable") {
         parent(callableDeclaration)
         +declaredSymbol(variableSymbolType)
         +field("status", declarationStatusType, withReplace = true, withTransform = true)
-        +field("initializer", expression, nullable = true, withTransform = true)
+        +field("initializer", expression, nullable = true, withReplace = true, withTransform = true)
         +field("isVar", booleanType)
     }
 
@@ -472,7 +503,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +FieldSets.typeParameters
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("name", nameType)
-        +field("defaultValue", expression, nullable = true, withTransform = true)
+        +field("defaultValue", expression, nullable = true, withReplace = true, withTransform = true)
     }
 
     val typeParameter: Element by element(Declaration, name = "TypeParameter") {
@@ -516,6 +547,8 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
 
     val block: Element by element(Expression, name = "Block") {
+        needTransformOtherChildren()
+
         parent(expression)
         +listField("statements", rootElement, withTransform = true)
     }
@@ -543,6 +576,10 @@ object CfirTree : AbstractCfirTreeBuilder() {
 
         +referencedSymbol("candidateSymbol", cfirSymbolType.withArgs(TreeTypeRef.Star))
     }
+    val errorPrimaryConstructor: Element by element(Declaration) {
+        parent(constructor)
+        parent(diagnosticHolder)
+    }
 
     /**
      * 函数调用表达式。
@@ -564,6 +601,16 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
     val argumentList: Element by element(Expression) {
         +listField("arguments", expression, withTransform = true)
+    }
+
+    /**
+     * CFunc 调用中 `inout expr` 语法产生的实参包装节点。
+     *
+     * 对齐 C++ `FuncArg.withInout`:只影响诊断判断,不改变 wrapped expression 的语义类型。
+     * raw-cfir 根据 PSI `CjValueArgument.isInout` 包装。
+     */
+    val inoutArgumentExpression: Element by element(Expression, name = "InoutArgumentExpression") {
+        parent(wrappedExpression)
     }
     val call: Element by sealedElement(Expression) {
         parent(statement)
@@ -899,6 +946,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("rawText", stringType)
         +listField("interpolations", expression, withTransform = true)
     }
+
 
     val macroExpression: Element by element(Expression, name = "MacroExpression") {
         parent(expression)

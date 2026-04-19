@@ -6,6 +6,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileResolutionMode
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryFallbackDependenciesModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
@@ -72,6 +73,7 @@ class CaStandaloneDanglingFileModule(
     override val name: String,
     override val languageVersionSettings: LanguageVersionSettings,
     override val contextModule: CaModule?,
+    override val resolutionMode: CaDanglingFileResolutionMode = CaDanglingFileResolutionMode.PREFER_SELF,
     project: Project,
     override val psiRoots: List<PsiFileSystemItem>,
 ) : CaStandaloneModule(project, psiRoots), CaDanglingFileModule

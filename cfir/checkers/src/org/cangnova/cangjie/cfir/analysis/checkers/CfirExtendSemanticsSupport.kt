@@ -79,7 +79,7 @@ internal object CfirExtendSemanticsSupport {
     }
 
     fun resolveDeclaration(context: CheckerContext, classId: ClassId): CfirClassLikeDeclaration? {
-        return context.session.cfirProvider.getClassByClassId(classId)
+        return context.session.cfirProvider.getCfirClassifierByFqName(classId)
             ?: context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
     }
 

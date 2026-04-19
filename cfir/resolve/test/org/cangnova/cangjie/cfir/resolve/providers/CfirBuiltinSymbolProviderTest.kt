@@ -51,6 +51,6 @@ class CfirBuiltinSymbolProviderTest {
         scope.processFunctionsByName(Name.identifier("plus"), functions::add)
 
         assertTrue(functions.isNotEmpty())
-        assertEquals(primitiveClassId, provider.getContainingClassId(functions.first()))
+        assertEquals(primitiveClassId, functions.first().callableId.classId)
     }
 }

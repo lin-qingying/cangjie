@@ -9,14 +9,14 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.api.platform.CaCachedService
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.KotlinModuleInformationProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieModuleInformationProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.*
 import org.cangnova.cangjie.analysis.api.utils.errors.withCaModuleEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirBuiltinsSessionFactory
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkCanceled
 import org.cangnova.cangjie.cfir.CfirSourceModuleData
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.session.registerModuleData
 import org.cangnova.cangjie.name.Name
@@ -35,7 +35,7 @@ class LLCfirSessionCache(
 
     @CaCachedService
     private val moduleInformationProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        KotlinModuleInformationProvider.getInstance(project)
+        CangJieModuleInformationProvider.getInstance(project)
     }
 
     /**

@@ -10,21 +10,26 @@ import org.cangnova.cangjie.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.DuplicatedCfirSourceElementsException
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isErrorElement
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.builder.toCfirOperationOrNull
+import org.cangnova.cangjie.cfir.builder.toCompoundAssignName
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
-import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.references.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorConventions
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.findDescendantOfType
-import org.cangnova.cangjie.types.ConstantValueKind
-import org.cangnova.cangjie.util.OperatorNameConventions
+import org.cangnova.cangjie.name.OperatorNameConventions
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjPsiSourceElement
+import org.cangnova.cangjie.source.CjRealSourceElementKind
+import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.psi
+import org.cangnova.cangjie.source.toCjPsiSourceElement
 
 internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElement, CfirElement>>() {
 
@@ -71,16 +76,18 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
 
     override fun visitTypeParameter(typeParameter: CfirTypeParameter, data: MutableMap<CjElement, CfirElement>) {
         for (bound in typeParameter.bounds) {
-            val constraintSubject = (bound.psi?.parent as? CjTypeConstraint)?.subjectTypeParameterName ?: continue
+            val boundPsi = (bound.source as? CjPsiSourceElement)?.psi
+            val constraintSubject = (boundPsi?.parent as? CjTypeConstraint)?.subjectTypeParameterName ?: continue
             cache(constraintSubject, typeParameter, data)
         }
         super.visitTypeParameter(typeParameter, data)
     }
 
-    override fun visitVariableAssignment(variableAssignment: CfirVariableAssignment, data: MutableMap<CjElement, CfirElement>) {
-        // For the LHS of the assignment, record the assignment itself
-        (variableAssignment.lValue.source?.psi as? CjElement)?.let { cache(it, variableAssignment, data) }
-        visitElement(variableAssignment, data)
+    override fun visitAssignment(assignment: CfirAssignment, data: MutableMap<CjElement, CfirElement>) {
+        // 对标 Kotlin 的 write-mapping 语义：赋值左侧命中赋值节点本身。
+        val lValuePsi = (assignment.lValue.source as? CjPsiSourceElement)?.psi as? CjElement
+        lValuePsi?.let { cache(it, assignment, data) }
+        visitElement(assignment, data)
     }
 
     override fun visitLiteralExpression(literalExpression: CfirLiteralExpression, data: MutableMap<CjElement, CfirElement>) {
@@ -100,8 +107,6 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
     override fun visitReference(reference: CfirReference, data: MutableMap<CjElement, CfirElement>) {}
     override fun visitControlFlowGraphReference(controlFlowGraphReference: CfirControlFlowGraphReference, data: MutableMap<CjElement, CfirElement>) {}
     override fun visitNamedReference(namedReference: CfirNamedReference, data: MutableMap<CjElement, CfirElement>) {}
-    override fun visitDelegateFieldReference(delegateFieldReference: CfirDelegateFieldReference, data: MutableMap<CjElement, CfirElement>) {}
-    override fun visitBackingFieldReference(backingFieldReference: CfirBackingFieldReference, data: MutableMap<CjElement, CfirElement>) {}
     override fun visitThisReference(thisReference: CfirThisReference, data: MutableMap<CjElement, CfirElement>) {}
     //@formatter:on
 
@@ -138,23 +143,28 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
             return firSourcePsi?.findDescendantOfType()
         }
 
-    private fun ConstantValueKind.reverseConverted(original: CfirLiteralExpression): CfirLiteralExpression? {
+    private fun CfirLiteralKind.reverseConverted(original: CfirLiteralExpression): CfirLiteralExpression? {
         val value = original.value as? Number ?: return null
         val convertedValue: Any = when (this) {
-            ConstantValueKind.Byte -> value.toByte().unaryMinus()
-            ConstantValueKind.Double -> value.toDouble().unaryMinus()
-            ConstantValueKind.Float -> value.toFloat().unaryMinus()
-            ConstantValueKind.Int -> value.toInt().unaryMinus()
-            ConstantValueKind.Long -> value.toLong().unaryMinus()
-            ConstantValueKind.Short -> value.toShort().unaryMinus()
+            CfirLiteralKind.INT -> when (value) {
+                is Byte -> value.toByte().unaryMinus()
+                is Short -> value.toShort().unaryMinus()
+                is Int -> value.toInt().unaryMinus()
+                is Long -> value.toLong().unaryMinus()
+                else -> return null
+            }
+            CfirLiteralKind.FLOAT -> when (value) {
+                is Float -> value.toFloat().unaryMinus()
+                is Double -> value.toDouble().unaryMinus()
+                else -> return null
+            }
             else -> null
         } ?: return null
-        return buildLiteralExpression(
-            original.ktConstantExpression?.toCjPsiSourceElement(),
-            this,
-            convertedValue,
-            setType = false
-        ).also {
+        return buildLiteralExpression {
+            source = original.ktConstantExpression?.toCjPsiSourceElement()
+            kind = this@reverseConverted
+            this.value = convertedValue
+        }.also {
             it.replaceConeTypeOrNull(original.resolvedType)
         }
     }
@@ -163,11 +173,8 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
         val userTypeRef = resolvedTypeRef.delegatedTypeRef as? CfirUserTypeRef ?: return
         val qualifiers = userTypeRef.qualifier
         if (qualifiers.size <= 1) return
-        qualifiers.forEachIndexed { index, qualifierPart ->
-            if (index == qualifiers.lastIndex) return@forEachIndexed
-            val source = qualifierPart.source?.psi as? CjElement ?: return@forEachIndexed
-            cache(source, resolvedTypeRef, data)
-        }
+        // 仓颉主干的 user-type qualifier 当前只保留 Name 列表，没有 Kotlin FIR 那种 qualifier-part source。
+        // 因而这里不能再伪造逐段 qualifier 映射，只保留整条 typeRef 的锚点映射。
     }
 
     companion object {
@@ -179,7 +186,7 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
          *
          * Not all fake CFIR elements might have an anhor PSI element to avoid conflict with the original source element.
          * For instance, the synthetic enum supertype would have the same psi as the class itself, so it shouldn't be used
-         * as an anchor to avoid ambiguity. Clients won't expect to see the supertype type reference value instead of the [CfirRegularClass][org.cangnova.cangjie.cfir.declarations.CfirRegularClass]
+         * as an anchor to avoid ambiguity. Clients won't expect to see the supertype type reference value instead of the [CfirClass][org.cangnova.cangjie.cfir.declarations.CfirClass]
          * by [CjClass] key.
          */
         val CfirElement.anchorPsi: PsiElement?
@@ -200,8 +207,7 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
                     else if (
                             source.isSourceForSmartCasts(this) ||
                                     source.isSourceForArrayAugmentedAssign(this) ||
-                                    source.isSourceForCompoundAccess(this) ||
-                                    source.isSourceForInvertedInOperator(this)
+                                    source.isSourceForCompoundAccess(this)
                             )
                         -> Unit
 
@@ -210,11 +216,6 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
 
                 return source.psi
             }
-
-
-        private fun CjSourceElement.isSourceForInvertedInOperator(fir: CfirElement) =
-            kind == CjFakeSourceElementKind.DesugaredInvertedContains
-                    && fir is CfirResolvedNamedReference && fir.name == OperatorNameConventions.CONTAINS
 
         /**
          * CFIR represents compound assignment and inc/dec operations as multiple smaller instructions. Here we choose the write operation as the
@@ -253,20 +254,20 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
         private fun CjSourceElement.isSourceForSmartCasts(fir: CfirElement) =
             (kind is CjFakeSourceElementKind.SmartCastExpression) && fir is CfirSmartCastExpression && !fir.originalExpression.isImplicitThisReceiver
 
-        private val CfirExpression.isImplicitThisReceiver get() = this is CfirThisReceiverExpression && this.isImplicit
+        private val CfirExpression.isImplicitThisReceiver get() = this is CfirThisReceiverExpression && this.calleeReference.isImplicit
 
         private fun CfirElement.isReadInCompoundCall(): Boolean {
-            if (this is CfirPropertyAccessExpression) return true
+            if (this is CfirNamedAccessExpression) return true
             if (this !is CfirFunctionCall) return false
             val name = (calleeReference as? CfirResolvedNamedReference)?.name ?: getFallbackCompoundCalleeName()
             return name == OperatorNameConventions.GET
         }
 
         private fun CfirElement.isWriteInCompoundCall(): Boolean {
-            if (this is CfirVariableAssignment) return true
+            if (this is CfirAssignment) return true
             if (this !is CfirFunctionCall) return false
             val name = (calleeReference as? CfirResolvedNamedReference)?.name ?: getFallbackCompoundCalleeName()
-            return name == OperatorNameConventions.SET || name in OperatorNameConventions.ASSIGNMENT_OPERATIONS
+            return name == OperatorNameConventions.SET || name in OperatorConventions.ASSIGNMENT_OPERATIONS.values
         }
 
         /**
@@ -277,12 +278,11 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
         private fun CfirElement.getFallbackCompoundCalleeName(): Name? {
             val psi = source.psi as? CjOperationExpression ?: return null
             val operationReference = psi.operationReference
-            return operationReference.getAssignmentOperationName() ?: operationReference.getReferencedNameAsName()
+            return operationReference.getAssignmentOperationName() ?: operationReference.referencedNameAsName
         }
 
         private fun CjSimpleNameExpression.getAssignmentOperationName(): Name? {
-            val firOperation = getReferencedNameElementType().toCfirOperationOrNull() ?: return null
-            return CfirOperationNameConventions.ASSIGNMENTS[firOperation]
+            return referencedNameElementType.toCompoundAssignName()
         }
     }
 }

@@ -135,14 +135,20 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
         }
     }
 
+    /**
+     * 对齐 C++ `IsDeprecatedStrict` (Utils.cpp:571):
+     * `@Deprecated(strict: true)` 为 ERROR 级别,否则为 WARNING。
+     */
     private fun isDeprecatedErrorLevel(declaration: CfirDeclaration): Boolean {
         val ann = declaration.annotations.firstOrNull { a ->
             val t = (a.typeRef as? CfirResolvedTypeRef)?.coneType
             t is ConeClassLikeType && t.classId.shortClassName == DEPRECATED
         } ?: return false
         for (arg in ann.arguments) {
-            val text = arg.source?.psi?.text ?: continue
-            if (text.contains("ERROR") || text.contains("error")) return true
+            val psi = arg.source?.psi as? org.cangnova.cangjie.psi.CjValueArgument ?: continue
+            if (psi.getArgumentName()?.asName?.asString() != "strict") continue
+            val exprText = psi.getArgumentExpression()?.text?.trim() ?: continue
+            if (exprText == "true") return true
         }
         return false
     }

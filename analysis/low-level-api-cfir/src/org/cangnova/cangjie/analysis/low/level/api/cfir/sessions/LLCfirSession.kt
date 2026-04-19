@@ -8,11 +8,11 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.ModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.lifetime.ModificationTrackerWithInvalidationReason
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
-import org.cangnova.cangjie.cfir.BuiltinTypes
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
-import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
@@ -46,9 +46,13 @@ import kotlin.uuid.Uuid
 @OptIn(PrivateSessionConstructor::class)
 abstract class LLCfirSession(
     val ktModule: CaModule,
-    override val builtinTypes: BuiltinTypes,
+    builtinTypes: CfirBuiltinTypes,
     kind: Kind
 ) : CfirSession(kind) {
+    init {
+        register(CfirBuiltinTypes::class, builtinTypes)
+    }
+
     abstract fun getScopeSession(): ScopeSession
 
     val project: Project
@@ -158,7 +162,7 @@ private class LLCfirSessionValidityModificationTracker(private val sessionRef: W
 
 abstract class LLCfirModuleSession(
     ktModule: CaModule,
-    builtinTypes: BuiltinTypes,
+    builtinTypes: CfirBuiltinTypes,
     kind: Kind
 ) : LLCfirSession(ktModule, builtinTypes, kind)
 

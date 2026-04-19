@@ -9,19 +9,18 @@ import com.intellij.util.containers.ContainerUtil
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.patchDesignationPathIfNeeded
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirSession
-import org.cangnova.cangjie.cfir.*
-import org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder
-import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.ClassIdBasedLocality
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.psi.*
-import org.cangnova.cangjie.psi.psiUtil.containingClassOrObject
+import org.cangnova.cangjie.psi.psiUtil.containingTypeStatement
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
-import org.cangnova.cangjie.utils.ifEmpty
 
 internal class CfirElementFinder : CfirSessionComponent {
     companion object {
@@ -30,7 +29,7 @@ internal class CfirElementFinder : CfirSessionComponent {
             classId: ClassId,
         ): CfirClassLikeDeclaration? = collectDesignationPath(
             firFile = firFile,
-            containerClassId = classId.outerClassId,
+            containerClassId = null,
             targetDeclarationName = classId.shortClassName,
             expectedDeclarationAcceptor = { it is CfirClassLikeDeclaration },
         )?.target?.let { it as CfirClassLikeDeclaration }
@@ -64,7 +63,7 @@ internal class CfirElementFinder : CfirSessionComponent {
             nonLocalDeclaration: CjDeclaration,
         ): CfirDesignation? = collectDesignationPath(
             firFile = firFile,
-            containerClassId = nonLocalDeclaration.containingClassOrObject?.getClassId(),
+            containerClassId = nonLocalDeclaration.containingTypeStatement?.getClassId(),
             targetDeclarationName = CfirFileStructureNode.mappingNameByPsi(nonLocalDeclaration),
             expectedDeclarationAcceptor = { it.psi == nonLocalDeclaration },
         )
@@ -106,16 +105,11 @@ internal class CfirElementFinder : CfirSessionComponent {
             expectedDeclarationAcceptor: (CfirDeclaration) -> Boolean,
         ): CfirDesignation? {
             if (containerClassId != null) {
-                @OptIn(ClassIdBasedLocality::class)
-                requireWithAttachment(!containerClassId.isLocal, { "ClassId should not be local" }) {
-                    withEntry("classId", containerClassId) { it.asString() }
-                }
-
                 requireWithAttachment(
-                    firFile.packageFqName == containerClassId.packageFqName,
-                    { "ClassId should not be local" }
+                    firFile.packageDirective.packageFqName == containerClassId.packageFqName,
+                    { "ClassId package must match the file package" }
                 ) {
-                    withEntry("CfirFile.packageName", firFile.packageFqName) { it.asString() }
+                    withEntry("CfirFile.packageName", firFile.packageDirective.packageFqName) { it.asString() }
                     withEntry("ClassId.packageName", containerClassId.packageFqName) { it.asString() }
                 }
             }
@@ -133,7 +127,7 @@ internal class CfirElementFinder : CfirSessionComponent {
             ) ?: return null
 
             return CfirDesignation(
-                path = patchDesignationPathIfNeeded(result, resultPath).ifEmpty { emptyList() },
+                path = patchDesignationPathIfNeeded(result, resultPath).takeUnless(List<*>::isEmpty) ?: emptyList(),
                 target = result,
             )
         }
@@ -194,7 +188,7 @@ private val CfirSession.firElementFinder: CfirElementFinder by CfirSession.sessi
 private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
     /**
      * Represents a [CfirDeclaration] which can have non-local nested declarations.
-     * Currently, it is [CfirFile] and [CfirRegularClass].
+     * Currently, it is [CfirFile] and [CfirClass].
      *
      * @param element a container declaration.
      * @param elements nested [CfirFileStructureNode] nodes based on the [element] directly nested declarations grouped by [mappingName].
@@ -223,7 +217,7 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
      * - `Nested`: `listOf(TopLevel)`
      *
      * @param pathSegments a path to a target declaration.
-     *   It must contain only [CfirRegularClass] classes.
+     *   It must contain only [CfirClass] classes.
      *   The target declaration and the [CfirFile] is not included.
      *
      * @param resultPath a list into which a path to a target declaration will be added.
@@ -248,7 +242,7 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
 
     /**
      * assigned index:           0              1                    [targetDeclarationName]/[expectedDeclarationAcceptor]
-     * result path: [CfirFile] -> [CfirRegularClass] -> [CfirRegularClass] -> [CfirDeclaration]
+     * result path: [CfirFile] -> [CfirClass] -> [CfirClass] -> [CfirDeclaration]
      * path index:  0            1              2                    3
      */
     private fun find(
@@ -304,7 +298,7 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
                 elements = convertDeclarations(element.declarations),
             )
 
-            is CfirRegularClass -> Container(
+            is CfirClassLikeDeclaration -> Container(
                 element = element,
                 elements = convertDeclarations(element.declarations),
             )
@@ -328,24 +322,27 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
          * @see mappingNameByPsi
          */
         fun mappingName(declaration: CfirDeclaration): Name = when (declaration) {
-            is CfirRegularClass -> declaration.name
+            is CfirClassLikeDeclaration -> declaration.symbol.name
             is CfirNamedFunction -> declaration.name
-            is CfirVariable -> declaration.name
+            is CfirMainFunction -> declaration.symbol.name
+            is CfirMacroDeclaration -> declaration.name
+            is CfirFinalizer -> declaration.symbol.name
+            is CfirProperty -> declaration.name
+            is CfirFieldVariable -> declaration.symbol.name
             is CfirConstructor -> SpecialNames.INIT
-            is CfirAnonymousInitializer -> SpecialNames.ANONYMOUS
+            is CfirEnumConstructor -> declaration.name
             is CfirTypeAlias -> declaration.name
-            is CfirCodeFragment, is CfirDanglingModifierList -> SpecialNames.NO_NAME_PROVIDED
 
             is CfirFile,
             is CfirAnonymousFunction,
             is CfirErrorFunction,
             is CfirPropertyAccessor,
-            is CfirAnonymousObject,
-            is CfirReceiverParameter,
-            is CfirReplSnippet,
             is CfirTypeParameter,
-            is CfirScript,
+            is CfirPatternVariable,
+            is CfirPatternBindingVariable,
                 -> errorWithCfirSpecificEntries("Unexpected declaration ${declaration::class.simpleName}", fir = declaration)
+
+            else -> errorWithCfirSpecificEntries("Unexpected declaration ${declaration::class.simpleName}", fir = declaration)
         }
 
         /**
@@ -357,10 +354,9 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
          */
         fun mappingNameByPsi(declaration: CjDeclaration): Name? = when (declaration) {
             is CjConstructor<*> -> SpecialNames.INIT
-
-            is CjClassInitializer -> SpecialNames.ANONYMOUS
             is CjCodeFragment -> SpecialNames.NO_NAME_PROVIDED
-            is CjClassOrObject, is CjTypeAlias, is CjNamedFunction, is CjProperty -> declaration.nameAsSafeName
+            is CjEnumConstructor -> declaration.name?.let(Name::identifier)
+            is CjTypeStatement, is CjTypeAlias, is CjNamedFunction, is CjProperty -> declaration.nameAsSafeName
             else -> null
         }
     }

@@ -28,6 +28,7 @@ sealed class CfirCallableDeclaration : CfirMemberDeclaration() {
     abstract override val status: CfirDeclarationStatus
     abstract val isLocal: Boolean
     abstract val returnTypeRef: CfirTypeRef
+    abstract val deprecationsProvider: DeprecationsProvider
     abstract val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val symbol: CfirCallableSymbol<*>
 
@@ -43,6 +44,8 @@ sealed class CfirCallableDeclaration : CfirMemberDeclaration() {
     abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
 
     abstract fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
+
+    abstract fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirCallableDeclaration
 

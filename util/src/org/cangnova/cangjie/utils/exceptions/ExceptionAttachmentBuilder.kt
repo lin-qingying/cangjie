@@ -28,6 +28,8 @@ package org.cangnova.cangjie.utils.exceptions
 import org.cangnova.cangjie.utils.getElementTextWithContext
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.psi.PsiElement
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 
 inline fun ICangJieExceptionWithAttachments.buildAttachment(
     name: String = "info.txt",
@@ -45,6 +47,22 @@ inline fun buildErrorWithAttachment(
     val exception = CangJieIllegalArgumentExceptionWithAttachments(message, cause)
     exception.buildAttachment(attachmentName) { buildAttachment() }
     return exception
+}
+
+@OptIn(ExperimentalContracts::class)
+inline fun checkWithAttachment(
+    condition: Boolean,
+    message: () -> String,
+    attachmentName: String = "info.txt",
+    buildAttachment: ExceptionAttachmentBuilder.() -> Unit = {},
+) {
+    contract { returns() implies (condition) }
+
+    if (!condition) {
+        val exception = CangJieIllegalStateExceptionWithAttachments(message())
+        exception.buildAttachment(attachmentName) { buildAttachment() }
+        throw exception
+    }
 }
 
 inline fun Logger.logErrorWithAttachment(
@@ -94,6 +112,8 @@ fun ExceptionAttachmentBuilder.withPsiEntry(name: String, psi: PsiElement?) {
         getElementTextWithContext(psiElement)
     }
 }
+
+
 
 inline fun errorWithAttachment(
     message: String,

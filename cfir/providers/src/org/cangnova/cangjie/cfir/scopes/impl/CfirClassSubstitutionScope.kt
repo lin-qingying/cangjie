@@ -1,25 +1,29 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
-import org.cangnova.cangjie.cfir.CfirDeclarationDataKey
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.originalForSubstitutionOverrideSymbolAttr
+import org.cangnova.cangjie.cfir.originalForSubstitutionOverride
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
+import org.cangnova.cangjie.cfir.originalForSubstitutionOverrideSymbolAttr
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationDataRegistry
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.builder.buildFieldVariableCopy
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunctionCopy
+import org.cangnova.cangjie.cfir.declarations.builder.buildPropertyAccessorCopy
 import org.cangnova.cangjie.cfir.declarations.builder.buildPropertyCopy
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameterCopy
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ProcessorAction
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
@@ -28,6 +32,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
@@ -168,7 +173,7 @@ class CfirClassSubstitutionScope(
         buildNamedFunctionCopy(declaration) {
             origin = substitutionOverrideOrigin(symbol)
             this.symbol = copiedSymbol
-            attributes.originalForSubstitutionOverride = symbol
+            attributes.originalForSubstitutionOverrideSymbolAttr = symbol
             dispatchReceiverType = substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor)
             returnTypeRef = substituteTypeRef(symbol.resolvedReturnTypeRef, substitutor)
             valueParameters.clear()
@@ -186,7 +191,7 @@ class CfirClassSubstitutionScope(
         buildPropertyCopy(declaration) {
             origin = substitutionOverrideOrigin(symbol)
             this.symbol = copiedSymbol
-            attributes.originalForSubstitutionOverride = symbol
+            attributes.originalForSubstitutionOverrideSymbolAttr = symbol
             dispatchReceiverType = substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor)
             returnTypeRef = substituteTypeRef(symbol.resolvedReturnTypeRef, substitutor)
             getter = substituteAccessorFunction(declaration.getter, substitutor)
@@ -204,25 +209,25 @@ class CfirClassSubstitutionScope(
         buildFieldVariableCopy(declaration) {
             origin = substitutionOverrideOrigin(symbol)
             this.symbol = copiedSymbol
-            attributes.originalForSubstitutionOverride = symbol
+            attributes.originalForSubstitutionOverrideSymbolAttr = symbol
             dispatchReceiverType = substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor)
             returnTypeRef = substituteTypeRef(symbol.resolvedReturnTypeRef, substitutor)
         }
         return copiedSymbol
     }
 
-    private fun substituteAccessorFunction(function: CfirFunction?, substitutor: ConeSubstitutor): CfirFunction? {
-        val namedFunction = function as? CfirNamedFunction ?: return function
-        val symbol = namedFunction.symbol
-        val copiedSymbol = CfirNamedFunctionSymbol(symbol.callableId)
-        return buildNamedFunctionCopy(namedFunction) {
+    private fun substituteAccessorFunction(function: CfirPropertyAccessor?, substitutor: ConeSubstitutor): CfirPropertyAccessor? {
+        function ?: return null
+        val symbol = function.symbol
+        val copiedSymbol = CfirPropertyAccessorSymbol()
+        return buildPropertyAccessorCopy(function) {
             origin = substitutionOverrideOrigin(symbol)
             this.symbol = copiedSymbol
-            attributes.originalForSubstitutionOverride = symbol
-            dispatchReceiverType = substituteDispatchReceiverType(namedFunction.dispatchReceiverType, substitutor)
+            attributes.originalForSubstitutionOverrideSymbolAttr = symbol
+            dispatchReceiverType = substituteDispatchReceiverType(function.dispatchReceiverType, substitutor)
             returnTypeRef = substituteTypeRef(symbol.resolvedReturnTypeRef, substitutor)
             valueParameters.clear()
-            valueParameters += substituteValueParameters(namedFunction.valueParameters, substitutor)
+            valueParameters += substituteValueParameters(function.valueParameters, substitutor)
         }
     }
 
@@ -256,7 +261,7 @@ class CfirClassSubstitutionScope(
     }
 
     private fun substitutionOverrideOrigin(symbol: CfirCallableSymbol<*>): CfirDeclarationOrigin {
-        val ownerClassId = session.symbolProvider.getContainingClassId(symbol)
+        val ownerClassId = session.cfirProvider.getContainingClass(symbol)?.classId
         return if (ownerClassId != null && ownerClassId == dispatchReceiverType.classIdOrPrimitiveClassId) {
             CfirDeclarationOrigin.SubstitutionOverride.CallSite
         } else {
@@ -265,7 +270,7 @@ class CfirClassSubstitutionScope(
     }
 
     private fun computeCallableSubstitutor(symbol: CfirCallableSymbol<*>): ConeSubstitutor? {
-        val ownerClassId = session.symbolProvider.getContainingClassId(symbol)
+        val ownerClassId = session.cfirProvider.getContainingClass(symbol)?.classId
         if (ownerClassId != null) {
             val concreteOwnerType = concreteTypeForOwner(ownerClassId) ?: return null
             val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir ?: return null
@@ -399,14 +404,6 @@ class CfirClassSubstitutionScope(
     }
 }
 
-private object OriginalForSubstitutionOverrideKey : CfirDeclarationDataKey()
-
-private var CfirDeclarationAttributes.originalForSubstitutionOverride: CfirCallableSymbol<*>?
-        by CfirDeclarationDataRegistry.attributesAccessor(OriginalForSubstitutionOverrideKey)
-
-private val CfirCallableSymbol<*>.originalForSubstitutionOverride: CfirCallableSymbol<*>?
-    get() = (cfir as? CfirCallableDeclaration)?.attributes?.originalForSubstitutionOverride
-
 /**
  * 对 substitution override 做统一“回到原始声明”的入口。
  *
@@ -414,6 +411,4 @@ private val CfirCallableSymbol<*>.originalForSubstitutionOverride: CfirCallableS
  * 必须回到原始声明上计算，否则同一成员会在不同前端路径下得到不同语义。
  */
 @Suppress("UNCHECKED_CAST")
-internal fun <S : CfirCallableSymbol<*>> S.unwrapOriginalForSubstitutionOverride(): S {
-    return originalForSubstitutionOverride as? S ?: this
-}
+internal inline fun <reified S : CfirCallableSymbol<*>> S.unwrapOriginalForSubstitutionOverride(): S = unwrapSubstitutionOverrides()

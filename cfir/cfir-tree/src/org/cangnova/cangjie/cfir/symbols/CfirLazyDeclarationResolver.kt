@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.symbols
 
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -34,7 +35,7 @@ fun CfirElementWithResolveState.lazyResolveToPhase(toPhase: CfirResolvePhase) {
     invokeLazyResolveToPhase(toPhase, CfirLazyDeclarationResolver::lazyResolveToPhase)
 }
 
-fun CfirClassLikeDeclaration.lazyResolveToPhaseWithCallableMembers(toPhase: CfirResolvePhase) {
+fun CfirClass.lazyResolveToPhaseWithCallableMembers(toPhase: CfirResolvePhase) {
     invokeLazyResolveToPhase(toPhase, CfirLazyDeclarationResolver::lazyResolveToPhaseWithCallableMembers)
 }
 
@@ -53,9 +54,9 @@ private fun CfirElementWithResolveState.invokeLazyResolveToPhase(
     }
 }
 
-private fun CfirClassLikeDeclaration.invokeLazyResolveToPhase(
+private fun CfirClass.invokeLazyResolveToPhase(
     toPhase: CfirResolvePhase,
-    resolver: CfirLazyDeclarationResolver.(CfirClassLikeDeclaration, CfirResolvePhase) -> Unit,
+    resolver: CfirLazyDeclarationResolver.(CfirClass, CfirResolvePhase) -> Unit,
 ) {
     lazyDeclarationResolver.resolver(this, toPhase)
 }
@@ -81,7 +82,7 @@ abstract class CfirLazyDeclarationResolver : CfirSessionComponent {
 
     abstract fun lazyResolveToPhase(element: CfirElementWithResolveState, toPhase: CfirResolvePhase)
 
-    open fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClassLikeDeclaration, toPhase: CfirResolvePhase) {
+    open fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClass, toPhase: CfirResolvePhase) {
         lazyResolveToPhase(clazz, toPhase)
     }
 
@@ -125,9 +126,8 @@ object CfirDummyCompilerLazyDeclarationResolver : CfirLazyDeclarationResolver() 
     override fun startResolvingPhase(phase: CfirResolvePhase) {}
     override fun finishResolvingPhase(phase: CfirResolvePhase) {}
     override fun lazyResolveToPhase(element: CfirElementWithResolveState, toPhase: CfirResolvePhase) {}
-    override fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClassLikeDeclaration, toPhase: CfirResolvePhase) {}
+    override fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClass, toPhase: CfirResolvePhase) {}
     override fun lazyResolveToPhaseRecursively(element: CfirElementWithResolveState, toPhase: CfirResolvePhase) {}
 }
-
 
 

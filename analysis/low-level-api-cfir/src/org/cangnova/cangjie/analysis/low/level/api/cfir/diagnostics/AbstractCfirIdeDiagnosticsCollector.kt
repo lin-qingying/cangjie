@@ -10,9 +10,6 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFil
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCheckersFactory.Provider.Companion.filterToCheckersMapUpdater
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
-import org.cangnova.cangjie.diagnostics.PendingDiagnosticReporter
-import org.cangnova.cangjie.cfir.CfirSession
-import org.cangnova.cangjie.cfir.CfirSessionComponent
 import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
 import org.cangnova.cangjie.cfir.analysis.checkers.*
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.ComposedDeclarationCheckers
@@ -181,7 +178,7 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
     private fun createDeclarationCheckers(declarationCheckers: List<DeclarationCheckers>): DeclarationCheckers {
         return when (declarationCheckers.size) {
             1 -> declarationCheckers.single()
-            else -> ComposedDeclarationCheckers { true }.apply {
+            else -> ComposedDeclarationCheckers().apply {
                 declarationCheckers.forEach(::register)
             }
         }
@@ -195,7 +192,7 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
     private fun createExpressionCheckers(expressionCheckers: List<ExpressionCheckers>): ExpressionCheckers {
         return when (expressionCheckers.size) {
             1 -> expressionCheckers.single()
-            else -> ComposedExpressionCheckers { true }.apply {
+            else -> ComposedExpressionCheckers().apply {
                 expressionCheckers.forEach(::register)
             }
         }
@@ -209,7 +206,7 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
     private fun createTypeCheckers(typeCheckers: List<TypeCheckers>): TypeCheckers {
         return when (typeCheckers.size) {
             1 -> typeCheckers.single()
-            else -> ComposedTypeCheckers { true }.apply {
+            else -> ComposedTypeCheckers().apply {
                 typeCheckers.forEach(::register)
             }
         }

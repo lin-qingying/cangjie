@@ -5,15 +5,13 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.resolver
 
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.calls.ImplicitReceiverValue
 import org.cangnova.cangjie.cfir.resolve.calls.ReceiverValue
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.*
-import org.cangnova.cangjie.cfir.types.coneType
-import org.cangnova.cangjie.cfir.types.receiverType
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
 
 /**
@@ -66,32 +64,18 @@ abstract class AbstractExtensionCandidateInfoProvider(
     firSession: CfirSession,
 ) : AbstractBaseCandidateInfoProvider(resolutionParameters, firFile, firSession) {
     override fun callKind(): CallKind = buildCallKindWithCustomResolutionSequence {
-        checkExtensionReceiver = true
+        checkExtensionReceiver = false
     }
 
-    override fun explicitReceiverKind(): ExplicitReceiverKind =
-        if (resolutionParameters.explicitReceiver == null)
-            ExplicitReceiverKind.NO_EXPLICIT_RECEIVER
-        else ExplicitReceiverKind.EXTENSION_RECEIVER
+    override fun explicitReceiverKind(): ExplicitReceiverKind = ExplicitReceiverKind.NO_EXPLICIT_RECEIVER
 
     // Right now it's impossible to reason about dispatch receiver when candidate comes from arbitrary scope with no other information.
     // So dispatch receiver is not passed from provider and later not checked during the resolution sequence.
     override fun dispatchReceiverValue(): ReceiverValue? = null
 
-    override fun implicitExtensionReceiverValue(): ImplicitReceiverValue<*>? = with(resolutionParameters) {
-        if (explicitReceiver == null) implicitReceiver else null
-    }
+    override fun implicitExtensionReceiverValue(): ImplicitReceiverValue<*>? = null
 
-    // Candidates with inconsistent extension receivers are skipped in tower resolver before resolution stages.
-    // Passing them through can lead to false positives.
-    override fun shouldFailBeforeResolve(): Boolean = with(resolutionParameters) {
-        val callHasExtensionReceiver = explicitReceiverKind() == ExplicitReceiverKind.EXTENSION_RECEIVER
-                || implicitExtensionReceiverValue() != null
-        val fir = callableSymbol.fir
-        val candidateHasExtensionReceiver = fir.receiverParameter != null
-                || fir is CfirVariable && fir.returnTypeRef.coneType.receiverType(firSession) != null
-        callHasExtensionReceiver != candidateHasExtensionReceiver
-    }
+    override fun shouldFailBeforeResolve(): Boolean = false
 }
 
 /**

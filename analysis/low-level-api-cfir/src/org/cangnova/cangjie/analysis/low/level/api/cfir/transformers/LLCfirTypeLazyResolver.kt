@@ -9,16 +9,17 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirResolv
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkAnnotationTypeIsResolved
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkReturnTypeRefIsResolved
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkTypeRefIsResolved
-import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirTypeResolveTransformer
-import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
-import org.cangnova.cangjie.cfir.visitors.transformSingle
-import org.cangnova.cangjie.util.PrivateForInline
+import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 internal object LLCfirTypeLazyResolver : LLCfirLazyResolver(CfirResolvePhase.TYPES) {
     override fun createTargetResolver(target: LLCfirResolveTarget): LLCfirTargetResolver = LLCfirTypeTargetResolver(target)
@@ -30,7 +31,6 @@ internal object LLCfirTypeLazyResolver : LLCfirLazyResolver(CfirResolvePhase.TYP
 
         when (target) {
             is CfirCallableDeclaration -> checkReturnTypeRefIsResolved(target, acceptImplicitTypeRef = true)
-            is CfirReceiverParameter -> checkTypeRefIsResolved(target.typeRef, "receiver type reference", target)
             is CfirTypeParameter -> {
                 for (bound in target.bounds) {
                     checkTypeRefIsResolved(bound, "type parameter bound", target)
@@ -53,26 +53,21 @@ internal object LLCfirTypeLazyResolver : LLCfirLazyResolver(CfirResolvePhase.TYP
  * @see CfirResolvePhase.TYPES
  */
 private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTargetResolver(target, CfirResolvePhase.TYPES) {
-    private val transformer = CfirTypeResolveTransformer(resolveTargetSession, resolveTargetScopeSession)
+    private val transformer = CfirTypeResolveTransformer(resolveTargetSession)
 
     @Deprecated("Should never be called directly, only for override purposes, please use withFile", level = DeprecationLevel.ERROR)
     override fun withContainingFile(firFile: CfirFile, action: () -> Unit) {
-        transformer.withFileScope(firFile, action)
+        action()
     }
 
-    @Deprecated("Should never be called directly, only for override purposes, please use withRegularClass", level = DeprecationLevel.ERROR)
-    override fun withContainingRegularClass(firClass: CfirRegularClass, action: () -> Unit) {
-        firClass.lazyResolveToPhase(resolverPhase.previous)
-        transformer.withClassDeclarationCleanup(firClass) {
+    @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
+    override fun withContainingClass(firClass: CfirClass, action: () -> Unit) {
+        if (firClass.resolvePhase < resolverPhase) {
             performCustomResolveUnderLock(firClass) {
-                resolveClassTypes(firClass)
+                rawResolve(firClass)
             }
-
-            transformer.withClassScopes(
-                firClass,
-                action = action,
-            )
         }
+        action()
     }
 
     override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {
@@ -80,11 +75,14 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
             is CfirFunction -> resolve(target, TypeStateKeepers.FUNCTION)
             is CfirProperty -> resolve(target, TypeStateKeepers.PROPERTY)
             is CfirCallableDeclaration,
-            is CfirDanglingModifierList,
             is CfirFile,
             is CfirTypeAlias,
-            is CfirRegularClass,
-            is CfirAnonymousInitializer,
+            is CfirClass,
+            is CfirInterface,
+            is CfirStruct,
+            is CfirEnum,
+            is CfirTypeParameter,
+            is CfirValueParameter,
                 -> rawResolve(target)
 
             is CfirCodeFragment -> {}
@@ -102,56 +100,37 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
 
     private fun rawResolve(target: CfirElementWithResolveState) {
         when (target) {
-            is CfirField if (target.origin == CfirDeclarationOrigin.Synthetic.DelegateField) -> {
-                // delegated field should be resolved in the same context as super types
-                resolveOutsideClassBody(target, transformer::transformDelegateField)
-            }
-
-            is CfirDanglingModifierList, is CfirCallableDeclaration, is CfirTypeAlias, is CfirAnonymousInitializer -> {
-                target.accept(transformer, null)
-            }
-
-            is CfirFile -> transformer.withFileScope(target) { target.transformAnnotations(transformer, null) }
-            is CfirRegularClass -> transformer.withClassDeclarationCleanup(target) { resolveClassTypes(target) }
+            is CfirFile -> transformer.transformFile(target, buildConfiguration(target))
+            is CfirClass -> transformer.transformClass(target, buildConfiguration(target))
+            is CfirInterface -> transformer.transformInterface(target, buildConfiguration(target))
+            is CfirStruct -> transformer.transformStruct(target, buildConfiguration(target))
+            is CfirEnum -> transformer.transformEnum(target, buildConfiguration(target))
+            is CfirTypeAlias,
+            is CfirCallableDeclaration,
+            is CfirTypeParameter,
+            is CfirValueParameter,
+                -> target.accept(transformer, buildConfiguration(target))
             else -> errorWithAttachment("Unknown declaration ${target::class.simpleName}") {
                 withCfirEntry("declaration", target)
             }
         }
     }
 
-    private inline fun <T : CfirElementWithResolveState> resolveOutsideClassBody(
-        target: T,
-        crossinline actionOutsideClassBody: (T) -> Unit,
-    ) {
-        val scopesBeforeContainingClass = transformer.scopesBefore
-            ?: errorWithCfirSpecificEntries("The containing class scope is not found", fir = target)
+    private fun buildConfiguration(topContainer: CfirDeclaration): CfirTypeResolutionConfiguration {
+        val containingFile = containingDeclarations.lastOrNull { it is CfirFile } as? CfirFile ?: resolveTarget.firFile
+        val containingClasses = containingDeclarations.filterIsInstance<CfirClass>()
 
-        val staticScopesBeforeContainingClass = transformer.staticScopesBefore
-            ?: errorWithCfirSpecificEntries("The containing class static scope is not found", fir = target)
-
-        @OptIn(PrivateForInline::class)
-        transformer.withScopeCleanup {
-            val clazz = transformer.classDeclarationsStack.last()
-            if (!transformer.removeOuterTypeParameterScope(clazz)) {
-                transformer.scopes = scopesBeforeContainingClass
-            } else {
-                transformer.scopes = staticScopesBeforeContainingClass
-                transformer.addTypeParametersScope(clazz)
+        var configuration = CfirTypeResolutionConfiguration.EMPTY.withTopContainer(topContainer)
+        if (containingFile != null) {
+            configuration = configuration.withUseSiteFile(containingFile)
+        }
+        if (containingClasses.isNotEmpty()) {
+            configuration = configuration.withContainingClassDeclarations(containingClasses)
+            for (containingClass in containingClasses) {
+                configuration = configuration.withAdditionalTypeParameters(containingClass.typeParameters)
             }
-
-            actionOutsideClassBody(target)
         }
-
-        target.accept(transformer, null)
-    }
-
-    private fun resolveClassTypes(firClass: CfirRegularClass) {
-        transformer.transformClassTypeParameters(firClass, null)
-        transformer.withScopeCleanup {
-            firClass.transformAnnotations(transformer, null)
-        }
-
-        transformer.withClassScopes(firClass) {}
+        return configuration
     }
 }
 
@@ -165,7 +144,6 @@ private object TypeStateKeepers {
         builder.add(CALLABLE_DECLARATION, context)
         builder.entity(property.getter, FUNCTION, context)
         builder.entity(property.setter, FUNCTION, context)
-        builder.entity(property.backingField, CALLABLE_DECLARATION, context)
     }
 
     private val CALLABLE_DECLARATION: StateKeeper<CfirCallableDeclaration, Unit> = stateKeeper { builder, _, _ ->

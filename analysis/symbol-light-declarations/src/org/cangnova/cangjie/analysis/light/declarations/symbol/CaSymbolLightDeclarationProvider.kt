@@ -15,7 +15,7 @@ import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationPro
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightExtendDeclaration
 import org.cangnova.cangjie.analysis.decompiled.light.declarations.CaDecompiledLightSupport
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
@@ -73,7 +73,7 @@ class CaSymbolLightDeclarationProvider(
 
     override fun getLightDeclarations(file: CjFile, useSiteModule: CaModule?): List<CaLightDeclaration> {
         refreshCacheIfNeeded()
-        val module = useSiteModule ?: CaProjectStructureProvider.getInstance(project).getModule(file, null)
+        val module = useSiteModule ?: CangJieProjectStructureProvider.getInstance(project).getModule(file, null)
         val stubFileProvider = project.getService(CaStubFileProvider::class.java)
 
         return analyze(module) {
@@ -155,7 +155,7 @@ class CaSymbolLightDeclarationProvider(
             else -> null
         }
         if (containingFile != null) {
-            return CaProjectStructureProvider.getInstance(project).getModule(containingFile, null)
+            return CangJieProjectStructureProvider.getInstance(project).getModule(containingFile, null)
         }
 
         /**

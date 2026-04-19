@@ -74,6 +74,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitFile(file: CfirFile, data: D): R =
         visitElement(file, data)
 
+    open fun visitCodeFragment(codeFragment: CfirCodeFragment, data: D): R =
+        visitElement(codeFragment, data)
+
     open fun visitClass(klass: CfirClass, data: D): R =
         visitElement(klass, data)
 
@@ -119,6 +122,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitProperty(property: CfirProperty, data: D): R =
         visitElement(property, data)
 
+    open fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor, data: D): R =
+        visitElement(propertyAccessor, data)
+
     open fun visitVariable(variable: CfirVariable, data: D): R =
         visitElement(variable, data)
 
@@ -161,6 +167,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase, data: D): R =
         visitElement(namedReferenceWithCandidateBase, data)
 
+    open fun visitErrorPrimaryConstructor(errorPrimaryConstructor: CfirErrorPrimaryConstructor, data: D): R =
+        visitElement(errorPrimaryConstructor, data)
+
     open fun visitFunctionCall(functionCall: CfirFunctionCall, data: D): R =
         visitElement(functionCall, data)
 
@@ -169,6 +178,9 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitArgumentList(argumentList: CfirArgumentList, data: D): R =
         visitElement(argumentList, data)
+
+    open fun visitInoutArgumentExpression(inoutArgumentExpression: CfirInoutArgumentExpression, data: D): R =
+        visitElement(inoutArgumentExpression, data)
 
     open fun visitCall(call: CfirCall, data: D): R =
         visitElement(call, data)

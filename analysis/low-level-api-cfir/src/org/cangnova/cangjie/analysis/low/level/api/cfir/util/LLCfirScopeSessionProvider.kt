@@ -7,7 +7,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.utils.caches.SoftCachedMap
-import org.cangnova.cangjie.cfir.resolve.ScopeSession
+import org.cangnova.cangjie.cfir.ScopeSession
 import java.util.concurrent.ConcurrentHashMap
 
 

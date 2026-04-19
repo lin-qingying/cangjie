@@ -7,7 +7,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration
 

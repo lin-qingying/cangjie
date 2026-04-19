@@ -145,6 +145,33 @@ fun <F : CfirClassLikeDeclaration> F.runSupertypeResolvePhaseForLocalClass(
     return this.transform<CfirClassLikeDeclaration, Any?>(applySupertypesTransformer, null) as F
 }
 
+/**
+ * low-level API 对非局部声明执行 SUPER_TYPES 阶段的主干入口。
+ *
+ * 它复用编译器主干的 visitor / loop breaking / apply transformer，
+ * 只是去掉 local-class 专用上下文，供 IDE 的 designated lazy resolve 直接调用。
+ */
+fun <F : CfirClassLikeDeclaration> F.runSupertypeResolvePhaseForNonLocalClassLikeDeclaration(
+    session: CfirSession,
+    scopeSession: ScopeSession,
+    useSiteFile: CfirFile?,
+    containingDeclarations: List<CfirDeclaration> = emptyList(),
+): F {
+    val supertypeComputationSession = SupertypeComputationSession()
+    val supertypeResolverVisitor = CfirSupertypeResolverVisitor(
+        session = session,
+        supertypeComputationSession = supertypeComputationSession,
+        scopeSession = scopeSession,
+        useSiteFile = useSiteFile,
+        containingDeclarations = containingDeclarations,
+    )
+    accept(supertypeResolverVisitor, null)
+    supertypeComputationSession.breakLoops(session, localClassesNavigationInfo = null)
+    val applySupertypesTransformer = CfirApplySupertypesTransformer(supertypeComputationSession, session, scopeSession)
+    @Suppress("UNCHECKED_CAST")
+    return this.transform<CfirClassLikeDeclaration, Any?>(applySupertypesTransformer, null) as F
+}
+
 sealed class SupertypeComputationStatus {
     data object NotComputed : SupertypeComputationStatus()
     data object Computing : SupertypeComputationStatus()
@@ -843,7 +870,7 @@ private fun ConeCangJieType.toReferencedDeclaration(session: CfirSession): CfirC
         is ConeTypeAliasType -> classId
         else -> null
     } ?: return null
-    return session.cfirProvider.getClassByClassId(classId)
+    return session.cfirProvider.getCfirClassifierByFqName(classId)
         ?: session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
 }
 

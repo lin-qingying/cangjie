@@ -26,6 +26,7 @@ abstract class CfirEnumConstructor : CfirCallableDeclaration() {
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
     abstract override val isLocal: Boolean
+    abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val symbol: CfirEnumConstructorSymbol
     abstract override val status: CfirDeclarationStatus
@@ -42,6 +43,8 @@ abstract class CfirEnumConstructor : CfirCallableDeclaration() {
         transformer.transformEnumConstructor(this, data) as E
 
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+
+    abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
     abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
 

@@ -9,7 +9,7 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.CjRealPsiSourceElement
 import org.cangnova.cangjie.constant.*
 import org.cangnova.cangjie.descriptors.annotations.AnnotationUseSiteTarget
-import org.cangnova.cangjie.cfir.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
