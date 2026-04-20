@@ -15,7 +15,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
@@ -29,7 +29,7 @@ class CfirTypeParameterBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
-    lateinit var containingDeclarationSymbol: CfirSymbol<*>
+    lateinit var containingDeclarationSymbol: CfirBasedSymbol<*>
     lateinit var symbol: CfirTypeParameterSymbol
     lateinit var name: Name
     val bounds: MutableList<CfirTypeRef> = mutableListOf()

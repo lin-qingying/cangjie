@@ -164,8 +164,6 @@ object CfirUnsafeFuncReferenceChecker : CfirQualifiedAccessChecker() {
 object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirSubscriptExpression) {
-        // subscript 不可赋值的情况由 CfirAssignmentLegalityChecker 处理
-        // 此处检查 subscript 表达式本身的类型推断
         val exprType = expression.coneTypeOrNull
         if (exprType is ConeErrorType) {
             val receiverType = expression.receiver.coneTypeOrNull ?: return
@@ -176,6 +174,17 @@ object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker() {
                 a = receiverType,
                 b = "subscript",
             )
+        }
+
+        // VArray subscript 下标数量检查
+        val receiverType = expression.receiver.coneTypeOrNull
+        if (receiverType is org.cangnova.cangjie.cfir.types.ConeVArrayType) {
+            if (expression.indices.size != 1) {
+                reporter.reportOn(
+                    source = expression.source,
+                    factory = CfirErrors.VARRAY_SUBSCRIPT_NUM,
+                )
+            }
         }
     }
 }

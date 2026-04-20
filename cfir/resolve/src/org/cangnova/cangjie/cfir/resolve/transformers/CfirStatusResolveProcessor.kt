@@ -17,7 +17,13 @@ import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
 import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.coneType
+import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.util.PrivateForInline
 
 internal class CfirStatusResolveProcessor(
     session: CfirSession,
@@ -33,7 +39,7 @@ internal class CfirStatusResolveProcessor(
     }
 }
 
-class CfirStatusComputationSession(
+open class CfirStatusComputationSession(
     val useSiteSession: CfirSession,
     val useSiteScopeSession: ScopeSession,
 ) {
@@ -66,13 +72,51 @@ class CfirStatusComputationSession(
     }
 
     open fun forceResolveStatusesOfSupertypes(declaration: CfirDeclaration) = Unit
+
+    /**
+     * 对齐 Kotlin FIR `StatusComputationSession.superTypeToSymbols`。
+     *
+     * 主干默认只按当前 use-site session 查询 class-like symbol；
+     * low-level 会在子类里扩展为多 session 搜索。
+     */
+    open fun superTypeToSymbols(typeRef: CfirTypeRef): Collection<CfirClassLikeSymbol<*>> {
+        val classId = typeRef.coneType.classId ?: return emptyList()
+        return listOfNotNull(useSiteSession.symbolProvider.getClassLikeSymbolByClassId(classId))
+    }
+
+    /**
+     * 对齐 Kotlin FIR `StatusComputationSession.resolveClassForSuperType`。
+     *
+     * 主干默认不接管 super type 对应 class 的定向 STATUS 推进，
+     * 由 low-level 子类按 designation 解析补齐。
+     */
+    open fun resolveClassForSuperType(regularClass: CfirClass): Boolean = false
+
+    /**
+     * 对齐 Kotlin FIR `StatusComputationSession.additionalSuperTypes`。
+     *
+     * 仓颉主干默认没有额外 platform-mapped super type。
+     */
+    open fun additionalSuperTypes(regularClass: CfirClass): List<CfirTypeRef> = emptyList()
 }
 
 open class AbstractCfirStatusResolveTransformer(
     val statusComputationSession: CfirStatusComputationSession,
 ) : CfirAbstractTreeTransformer<Nothing?>(CfirResolvePhase.STATUS) {
+    @PrivateForInline
+    val classes: MutableList<CfirClass> = mutableListOf()
     override val session: CfirSession
         get() = statusComputationSession.useSiteSession
+    @OptIn(PrivateForInline::class)
+    inline fun storeClass(
+        klass: CfirClass,
+        computeResult: () -> CfirDeclaration
+    ): CfirDeclaration {
+        classes += klass
+        val result = computeResult()
+        classes.removeAt(classes.lastIndex)
+        return result
+    }
 
     override fun <E : CfirElement> transformElement(element: E, data: Nothing?): E {
         if (element is CfirDeclaration) {

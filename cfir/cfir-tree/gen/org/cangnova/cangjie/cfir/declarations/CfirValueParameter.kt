@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
@@ -28,11 +29,13 @@ abstract class CfirValueParameter : CfirVariable(), CfirControlFlowGraphOwner {
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
     abstract override val isLocal: Boolean
+    abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val initializer: CfirExpression?
     abstract override val isVar: Boolean
     abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
     abstract override val symbol: CfirValueParameterSymbol
+    abstract val containingDeclarationSymbol: CfirBasedSymbol<*>
     abstract val isNamed: Boolean
     abstract override val status: CfirDeclarationStatus
     abstract override val typeParameters: List<CfirTypeParameter>
@@ -49,11 +52,17 @@ abstract class CfirValueParameter : CfirVariable(), CfirControlFlowGraphOwner {
 
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
+    abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
+
+    abstract override fun replaceInitializer(newInitializer: CfirExpression?)
+
     abstract override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 
     abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
 
     abstract override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
+
+    abstract fun replaceDefaultValue(newDefaultValue: CfirExpression?)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirValueParameter
 

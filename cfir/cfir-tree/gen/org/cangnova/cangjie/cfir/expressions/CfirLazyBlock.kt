@@ -34,4 +34,6 @@ abstract class CfirLazyBlock : CfirBlock() {
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirLazyBlock
 
     abstract override fun <D> transformStatements(transformer: CfirTransformer<D>, data: D): CfirLazyBlock
+
+    abstract override fun <D> transformOtherChildren(transformer: CfirTransformer<D>, data: D): CfirLazyBlock
 }

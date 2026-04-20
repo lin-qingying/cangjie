@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageHeader
 import org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeclDeserializer
@@ -17,9 +18,7 @@ import org.cangnova.cangjie.cfir.serialization.deserialize.CfirTypeDeserializer
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
@@ -44,14 +43,12 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     private val missingContexts = ConcurrentHashMap.newKeySet<String>()
 
     private val classCache = ConcurrentHashMap<ClassId, CfirClassLikeSymbol<*>>()
-    private val classIdBySymbolCache = ConcurrentHashMap<CfirClassLikeSymbol<*>, ClassId>()
     private val missingClasses = ConcurrentHashMap.newKeySet<ClassId>()
 
     private val callableCache = ConcurrentHashMap<CallableId, List<CfirCallableSymbol<*>>>()
-    private val functionCache = ConcurrentHashMap<CallableId, List<CfirFunctionSymbol<*>>>()
+    private val functionCache = ConcurrentHashMap<CallableId, List<CfirNamedFunctionSymbol>>()
     private val propertyCache = ConcurrentHashMap<CallableId, List<CfirPropertySymbol>>()
     private val extendCache = ConcurrentHashMap<FqName, List<CfirExtend>>()
-    private val enumCtorOwnerClassIdCache = ConcurrentHashMap<CfirEnumConstructorSymbol, ClassId>()
     private val promotedEnumCallableCache = ConcurrentHashMap<CallableId, List<CfirCallableSymbol<*>>>()
 
     private val scopeSession = ScopeSession()
@@ -77,13 +74,20 @@ abstract class AbstractCfirDeserializedSymbolProvider(
 
         missingClasses.remove(classId)
         classCache.putIfAbsent(classId, loaded)
-        classIdBySymbolCache.putIfAbsent(loaded, classId)
         return classCache[classId] ?: loaded
     }
 
-    override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> {
+    @CfirSymbolProviderInternals
+    override fun getTopLevelCallableSymbolsTo(
+        destination: MutableList<CfirCallableSymbol<*>>,
+        packageFqName: FqName,
+        name: Name,
+    ) {
         val callableId = CallableId(packageFqName, name)
-        callableCache[callableId]?.let { return it }
+        callableCache[callableId]?.let {
+            destination += it
+            return
+        }
 
         val deserializers = getOrCreateDeserializers(packageFqName.asString())
         val directLoaded = deserializers?.header?.topLevelNameToIndices
@@ -97,33 +101,41 @@ abstract class AbstractCfirDeserializedSymbolProvider(
         val loaded = (directLoaded + promotedEnumCtors).distinct()
 
         callableCache.putIfAbsent(callableId, loaded)
-        return callableCache[callableId] ?: loaded
+        destination += callableCache[callableId] ?: loaded
     }
 
-    override fun getTopLevelFunctionSymbols(packageFqName: FqName, name: Name): List<CfirFunctionSymbol<*>> {
+    @CfirSymbolProviderInternals
+    override fun getTopLevelFunctionSymbolsTo(
+        destination: MutableList<CfirNamedFunctionSymbol>,
+        packageFqName: FqName,
+        name: Name,
+    ) {
         val callableId = CallableId(packageFqName, name)
-        functionCache[callableId]?.let { return it }
+        functionCache[callableId]?.let {
+            destination += it
+            return
+        }
 
-        val loaded = getTopLevelCallableSymbols(packageFqName, name).filterIsInstance<CfirFunctionSymbol<*>>()
+        val loaded = getTopLevelCallableSymbols(packageFqName, name).filterIsInstance<CfirNamedFunctionSymbol>()
         functionCache.putIfAbsent(callableId, loaded)
-        return functionCache[callableId] ?: loaded
+        destination += functionCache[callableId] ?: loaded
     }
 
-    override fun getTopLevelPropertySymbols(packageFqName: FqName, name: Name): List<CfirPropertySymbol> {
+    @CfirSymbolProviderInternals
+    override fun getTopLevelPropertySymbolsTo(
+        destination: MutableList<CfirPropertySymbol>,
+        packageFqName: FqName,
+        name: Name,
+    ) {
         val callableId = CallableId(packageFqName, name)
-        propertyCache[callableId]?.let { return it }
+        propertyCache[callableId]?.let {
+            destination += it
+            return
+        }
 
         val loaded = getTopLevelCallableSymbols(packageFqName, name).filterIsInstance<CfirPropertySymbol>()
         propertyCache.putIfAbsent(callableId, loaded)
-        return propertyCache[callableId] ?: loaded
-    }
-
-    override fun getClassIdBySymbol(classSymbol: CfirClassSymbol): ClassId? {
-        return classIdBySymbolCache[classSymbol]
-    }
-
-    override fun getEnumConstructorOwnerClassId(symbol: CfirEnumConstructorSymbol): ClassId? {
-        return enumCtorOwnerClassIdCache[symbol]
+        destination += propertyCache[callableId] ?: loaded
     }
 
     fun getTopLevelExtendDeclarations(packageFqName: FqName): List<CfirExtend> {
@@ -180,21 +192,11 @@ abstract class AbstractCfirDeserializedSymbolProvider(
                 ) == shortName
             ) {
                 val symbol = decl.symbol
-                classIdBySymbolCache.putIfAbsent(symbol, classId)
-                registerEnumConstructorOwnersIfNeeded(classId, decl)
                 return symbol
             }
         }
 
         return null
-    }
-
-    private fun registerEnumConstructorOwnersIfNeeded(classId: ClassId, klass: CfirClassLikeDeclaration) {
-        if (klass !is CfirEnum) return
-        klass.declarations.asSequence()
-            .filterIsInstance<CfirEnumConstructor>()
-            .mapNotNull { it.symbol as? CfirEnumConstructorSymbol }
-            .forEach { enumCtorOwnerClassIdCache.putIfAbsent(it, classId) }
     }
 
     private fun getPromotedTopLevelEnumConstructors(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> {
@@ -210,15 +212,11 @@ abstract class AbstractCfirDeserializedSymbolProvider(
             if (!classSymbol.isBound) continue
             val klass = classSymbol.cfir
             if (klass !is CfirEnum) continue
-            registerEnumConstructorOwnersIfNeeded(classId, klass)
             klass.declarations.asSequence()
                 .filterIsInstance<CfirEnumConstructor>()
                 .mapNotNull { declaration ->
                     if (declaration.name != name) return@mapNotNull null
                     val symbol = declaration.symbol as? CfirCallableSymbol<*> ?: return@mapNotNull null
-                    (symbol as? CfirEnumConstructorSymbol)?.let {
-                        enumCtorOwnerClassIdCache.putIfAbsent(it, classId)
-                    }
                     symbol
                 }
                 .forEach(result::add)

@@ -3,7 +3,7 @@ package org.cangnova.cangjie.lsp.testkit
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
 import org.cangnova.cangjie.CangJieCoreEnvironmentMode
-import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.PluginStructureProvider
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
 import org.cangnova.cangjie.lsp.CangjieLspEnvironment
 
 /**

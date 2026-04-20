@@ -26,7 +26,7 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
@@ -133,7 +133,7 @@ private fun BodyResolveComponents.typeFromNamedValueCandidate(candidate: Candida
     return ConeFuncType(parameterTypes, substitutedReturnType)
 }
 
-private fun BodyResolveComponents.typeFromSymbol(symbol: CfirSymbol<*>): ConeCangJieType {
+private fun BodyResolveComponents.typeFromSymbol(symbol: CfirBasedSymbol<*>): ConeCangJieType {
     return when (symbol) {
         is CfirCallableSymbol<*> -> {
             val returnTypeRef = returnTypeCalculator.tryCalculateReturnType(symbol.cfir)

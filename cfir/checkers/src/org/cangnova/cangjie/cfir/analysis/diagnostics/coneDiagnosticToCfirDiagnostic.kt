@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferTypeParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
+import org.cangnova.cangjie.cfir.diagnostic.ConeCannotRefToPackageNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandIncompatibleTypeError
@@ -23,6 +24,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeEnumTypeCannotBeUsedAsConstructo
 import org.cangnova.cangjie.cfir.diagnostic.ConeEffectsFeatureDisabledError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionCallExpectedError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionExpectedError
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeImplicitResumeOutsideHandlerError
 import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingHandleBlockError
@@ -37,6 +39,22 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeVisibilityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
+import org.cangnova.cangjie.cfir.diagnostic.ConeGenericTypeInconsistentError
+import org.cangnova.cangjie.cfir.diagnostic.ConeGenericArgumentNoMatchError
+import org.cangnova.cangjie.cfir.diagnostic.ConeGenericConstraintNotLooserError
+import org.cangnova.cangjie.cfir.diagnostic.ConeGenericInstantiationCausesAmbiguousFunctionsError
+import org.cangnova.cangjie.cfir.diagnostic.ConeMeetConstraintIndirectlyError
+import org.cangnova.cangjie.cfir.diagnostic.ConeNotMemberOfError
+import org.cangnova.cangjie.cfir.diagnostic.ConeMemberNotImportedError
+import org.cangnova.cangjie.cfir.diagnostic.ConeInvalidUnaryExprError
+import org.cangnova.cangjie.cfir.diagnostic.ConeInvalidUnaryExprWithTargetError
+import org.cangnova.cangjie.cfir.diagnostic.ConeOptionalChainNonOptionalError
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnableToInferGenericFuncError
+import org.cangnova.cangjie.cfir.diagnostic.ConeInvalidNodeAfterCheckError
+import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchedTypesBecauseError
+import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchedTypesMultipleAssignError
+import org.cangnova.cangjie.cfir.diagnostic.ConeParamCountMismatchError
+import org.cangnova.cangjie.cfir.diagnostic.ConeCaptureBeforeInitializationError
 import org.cangnova.cangjie.cfir.diagnostic.MixingNamedAndPositionalArguments
 import org.cangnova.cangjie.cfir.diagnostic.NamedArgumentsNotAllowed
 import org.cangnova.cangjie.cfir.diagnostic.NamedParameterNotFound
@@ -69,8 +87,7 @@ import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
@@ -106,7 +123,6 @@ import org.cangnova.cangjie.resolve.calls.inference.model.NotEnoughInformationFo
 import org.cangnova.cangjie.resolve.calls.inference.model.OnlyInputTypesDiagnostic
 import org.cangnova.cangjie.resolve.checkers.EmptyIntersectionTypeKind
 import org.cangnova.cangjie.source.AbstractCjSourceElement
-import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjRealSourceElementKind
@@ -478,6 +494,31 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     val diagnosticSource = callOrAssignmentSource ?: source ?: return emptyList()
     val psi = diagnosticSource.psi
     val isCallLikeContext = psi is CjCallExpression || PsiTreeUtil.getParentOfType(psi, CjCallExpression::class.java, false) != null
+
+    // 检查是否为基本类型扩展歧义
+    if (isCallLikeContext) {
+        val extendOriginNames = candidateSymbols
+            .mapNotNull { symbol ->
+                val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return@mapNotNull null
+                val containingClassId = session.cfirProvider.getContainingClass(callableSymbol)?.classId
+                containingClassId?.shortClassName
+            }
+        if (extendOriginNames.size >= 2) {
+            // 如果候选来自不同的 extend 目标类型，报告 AMBIGUOUS_MATCH_PRIMITIVE_EXTEND
+            val distinctOrigins = extendOriginNames.distinct()
+            if (distinctOrigins.size >= 2) {
+                return listOfNotNull(
+                    CfirErrors.AMBIGUOUS_MATCH_PRIMITIVE_EXTEND.on(
+                        diagnosticSource,
+                        name,
+                        distinctOrigins.map { it },
+                        session,
+                    )
+                )
+            }
+        }
+    }
+
     val factory = if (isCallLikeContext) CfirErrors.AMBIGUOUS_FUNCTION_CALL else CfirErrors.AMBIGUOUS_USE
     return listOfNotNull(factory.on(diagnosticSource, name, session))
 }
@@ -509,6 +550,16 @@ private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
         return listOf(diagnostic)
     }
     mapSubscriptOperatorDiagnostic(source, callOrAssignmentSource, session)?.let { diagnostic ->
+        return listOf(diagnostic)
+    }
+
+    // 一元运算符解析失败：有 operator 和 receiverType 但无参数
+    mapInvalidUnaryExprDiagnostic(source, callOrAssignmentSource, session)?.let { diagnostic ->
+        return listOf(diagnostic)
+    }
+
+    // 当有明确接收者类型但成员未找到时，优先报告 NOT_MEMBER_OF
+    mapNotMemberOfDiagnostic(source, callOrAssignmentSource, session)?.let { diagnostic ->
         return listOf(diagnostic)
     }
 
@@ -585,6 +636,59 @@ private fun ConeUnresolvedNameError.mapGenericUpperBoundAccessDiagnostic(
     }
 }
 
+/**
+ * 当接收者类型存在且非类型参数时，将 unresolved name 映射为 NOT_MEMBER_OF。
+ *
+ * 对齐 C++ sema_not_member_of: 'xxx' is not a member of 'Yyy'。
+ */
+private fun ConeUnresolvedNameError.mapNotMemberOfDiagnostic(
+    source: CjSourceElement?,
+    callOrAssignmentSource: CjSourceElement?,
+    session: CfirSession,
+): CjDiagnostic? {
+    val receiver = receiverType ?: return null
+    // 类型参数接收者已由 mapGenericUpperBoundAccessDiagnostic 处理
+    if (receiver is ConeTypeParameterType) return null
+    // 二元运算符已由 buildInvalidBinaryOperatorDiagnostic 处理
+    if (operator != null) return null
+
+    val diagnosticSource = source ?: callOrAssignmentSource ?: return null
+    val typeName = receiver.classIdOrPrimitiveClassId?.shortClassName ?: return null
+    val kind = if (argumentTypes.isNotEmpty()) "method" else "member"
+
+    return CfirErrors.NOT_MEMBER_OF.on(
+        diagnosticSource,
+        name,
+        kind,
+        typeName,
+        session,
+    )
+}
+
+/**
+ * 一元运算符解析失败：有 operator 和 receiverType 但无参数。
+ *
+ * 对齐 C++ sema_invalid_unary_expr。
+ */
+private fun ConeUnresolvedNameError.mapInvalidUnaryExprDiagnostic(
+    source: CjSourceElement?,
+    callOrAssignmentSource: CjSourceElement?,
+    session: CfirSession,
+): CjDiagnostic? {
+    val operatorToken = operator ?: return null
+    val type = receiverType ?: return null
+    // 一元运算符：有 operator + receiverType 但无参数
+    if (argumentTypes.isNotEmpty()) return null
+
+    val diagnosticSource = source ?: callOrAssignmentSource ?: return null
+    return CfirErrors.INVALID_UNARY_EXPR.on(
+        diagnosticSource,
+        operatorToken,
+        type,
+        session,
+    )
+}
+
 private fun ConeUnresolvedNameError.mapExtendSuperDiagnostic(
     source: CjSourceElement?,
     callOrAssignmentSource: CjSourceElement?,
@@ -643,7 +747,7 @@ private fun ConeVisibilityError.mapConeVisibilityError(
         else -> "invisible"
     }
     val isMemberAccess = when (invisibleSymbol) {
-        is CfirCallableSymbol<*> -> session.symbolProvider.getContainingClassId(invisibleSymbol) != null
+        is CfirCallableSymbol<*> -> session.cfirProvider.getContainingClass(invisibleSymbol) != null
         else -> false
     }
 
@@ -780,6 +884,14 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             DiagnosticKind.ReturnNotAllowed ->
                 CfirErrors.INVALID_RETURN.on(diagnosticSource, session)
 
+            DiagnosticKind.ReturnInStaticInit ->
+                CfirErrors.INVALID_RETURN_IN_STATIC_INIT.on(diagnosticSource, session)
+
+            DiagnosticKind.CaptureBeforeInitialization ->
+                // CaptureBeforeInitialization 需要变量名，但 ConeSimpleDiagnostic 不携带。
+                // 使用 reason 字符串中提取的名称，或者使用结构化 Cone 诊断类。
+                null
+
             else -> null
         } ?: mapSimpleDiagnosticByReason(this, diagnosticSource, session)
 
@@ -802,6 +914,76 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             classId.asString(),
             null,
             session,
+        )
+
+        // ── resolve 管线补齐映射 ──
+
+        is ConeCannotRefToPackageNameError -> CfirErrors.CANNOT_REF_TO_PKG_NAME.on(
+            diagnosticSource, session,
+        )
+
+        is ConeGenericTypeInconsistentError -> CfirErrors.GENERIC_TYPE_INCONSISTENT.on(
+            diagnosticSource, typeParameterName, session,
+        )
+
+        is ConeGenericArgumentNoMatchError -> CfirErrors.GENERIC_ARGUMENT_NO_MATCH.on(
+            diagnosticSource, session,
+        )
+
+        is ConeGenericConstraintNotLooserError -> CfirErrors.GENERIC_CONSTRAINT_NOT_LOOSER.on(
+            diagnosticSource, session,
+        )
+
+        is ConeGenericInstantiationCausesAmbiguousFunctionsError -> CfirErrors.GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS.on(
+            diagnosticSource, instantiation, functionName, session,
+        )
+
+        is ConeMeetConstraintIndirectlyError -> CfirErrors.MEET_CONSTRAINT_INDIRECTLY.on(
+            diagnosticSource, session,
+        )
+
+        is ConeNotMemberOfError -> CfirErrors.NOT_MEMBER_OF.on(
+            diagnosticSource, memberName, kind, typeName, session,
+        )
+
+        is ConeMemberNotImportedError -> CfirErrors.MEMBER_NOT_IMPORTED.on(
+            diagnosticSource, memberName, session,
+        )
+
+        is ConeInvalidUnaryExprError -> CfirErrors.INVALID_UNARY_EXPR.on(
+            diagnosticSource, operator, type, session,
+        )
+
+        is ConeInvalidUnaryExprWithTargetError -> CfirErrors.INVALID_UNARY_EXPR_WITH_TARGET.on(
+            diagnosticSource, operator, type, returnType, session,
+        )
+
+        is ConeOptionalChainNonOptionalError -> CfirErrors.OPTIONAL_CHAIN_NON_OPTIONAL.on(
+            diagnosticSource, type, session,
+        )
+
+        is ConeUnableToInferGenericFuncError -> CfirErrors.UNABLE_TO_INFER_GENERIC_FUNC.on(
+            diagnosticSource, session,
+        )
+
+        is ConeInvalidNodeAfterCheckError -> CfirErrors.INVALID_NODE_AFTER_CHECK.on(
+            diagnosticSource, session,
+        )
+
+        is ConeMismatchedTypesBecauseError -> CfirErrors.MISMATCHED_TYPES_BECAUSE.on(
+            diagnosticSource, expectedType, actualType, because, session,
+        )
+
+        is ConeMismatchedTypesMultipleAssignError -> CfirErrors.MISMATCHED_TYPES_MULTIPLE_ASSIGN.on(
+            diagnosticSource, actualType, session,
+        )
+
+        is ConeParamCountMismatchError -> CfirErrors.PARAM_COUNT_MISMATCH.on(
+            diagnosticSource, expected, actual, session,
+        )
+
+        is ConeCaptureBeforeInitializationError -> CfirErrors.CAPTURE_BEFORE_INITIALIZATION.on(
+            diagnosticSource, variableName, session,
         )
 
         else -> null
@@ -1001,7 +1183,7 @@ private fun org.cangnova.cangjie.type.model.TypeVariableMarker.asDeclaredTypePar
     else -> null
 }
 
-private fun CfirSymbol<*>.memberDeclarationNameOrNull(): Name? = when (this) {
+private fun CfirBasedSymbol<*>.memberDeclarationNameOrNull(): Name? = when (this) {
     is CfirCallableSymbol<*> -> name
     is CfirClassLikeSymbol<*> -> classId.shortClassName
     else -> null

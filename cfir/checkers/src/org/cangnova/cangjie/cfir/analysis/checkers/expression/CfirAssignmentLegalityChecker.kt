@@ -14,7 +14,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.name.Name
 
@@ -78,7 +78,7 @@ object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
         }
     }
 
-    private fun CfirQualifiedAccessExpression.resolvedAssignableSymbolOrNull(): CfirSymbol<*>? {
+    private fun CfirQualifiedAccessExpression.resolvedAssignableSymbolOrNull(): CfirBasedSymbol<*>? {
         return when (val reference = calleeReference) {
             is CfirResolvedNamedReference -> reference.resolvedSymbol
             is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol

@@ -2,8 +2,8 @@ package org.cangnova.cangjie.analysis.test.services
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
-import org.cangnova.cangjie.analysis.api.CaModule
-import org.cangnova.cangjie.analysis.api.CaSourceModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner

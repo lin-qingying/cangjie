@@ -6,7 +6,7 @@ import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.CfirLoopTarget
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.common.moduleData
@@ -81,17 +81,17 @@ abstract class AbstractRawCfirBuilder<T : Any>(
     protected val inLocalContext: Boolean
         get() = context.inLocalContext
 
-    protected fun pushContainerSymbol(symbol: CfirSymbol<*>) = context.pushContainerSymbol(symbol)
+    protected fun pushContainerSymbol(symbol: CfirBasedSymbol<*>) = context.pushContainerSymbol(symbol)
 
-    protected fun popContainerSymbol(symbol: CfirSymbol<*>) = context.popContainerSymbol(symbol)
+    protected fun popContainerSymbol(symbol: CfirBasedSymbol<*>) = context.popContainerSymbol(symbol)
 
-    protected val containerSymbolIfAny: CfirSymbol<*>?
+    protected val containerSymbolIfAny: CfirBasedSymbol<*>?
         get() = context.containerSymbolIfAny
 
-    protected val containerSymbol: CfirSymbol<*>
+    protected val containerSymbol: CfirBasedSymbol<*>
         get() = context.containerSymbol
 
-    protected inline fun <R> withContainerSymbol(symbol: CfirSymbol<*>, block: () -> R): R {
+    protected inline fun <R> withContainerSymbol(symbol: CfirBasedSymbol<*>, block: () -> R): R {
         pushContainerSymbol(symbol)
         return try {
             block()

@@ -1,88 +1,374 @@
-# CFIR 全诊断覆盖台账（初稿）
+# 全量诊断覆盖台账
 
-## 说明
+基线文件: `cfir/checkers/checkers-component-generator/.../CfirDiagnosticsList.kt`
 
-本文件是 `cfir-complete-semantic-checkers` 的全量诊断覆盖台账初稿。
+## 覆盖率摘要
 
-当前版本先固化 5 个字段：
+| 指标 | 数值 |
+|------|------|
+| 诊断总数 | 354 |
+| 已覆盖（existing） | 207 |
+| 未覆盖（checker 待补齐） | 147 |
+| 覆盖率 | 58% |
 
-- 诊断组
-- 诊断名清单
-- 责任层
-- 对应任务号
-- 对应 spec
+> 注：resolve 管线诊断（CallResolution、Constraint、TypeCheck、Unresolved）
+> 已通过 `coneDiagnosticToCfirDiagnostic.kt` 映射链全部覆盖，计入 existing。
 
-后续仍需在 `0.2`、`0.3`、`0.4`、`12.4` 中继续回填：
+## 逐项台账
 
-- 当前状态
-- 实现入口
-- 测试入口
-- C++ 依据
-- 阻塞说明
-
-责任层说明：
-
-- `resolve`：必须由 resolve / inference / type checking 主流程负责
-- `checker`：必须由 declaration / expression / type checker 体系负责
-- `existing-checker`：当前已知主要由 checker 体系承载，但仍需复核实现入口与测试入口
-
-## 覆盖矩阵
-
-| 诊断组 | 诊断名清单 | 责任层 | 对应任务号 | 对应 spec |
-| --- | --- | --- | --- | --- |
-| `Resolve` | `NO_CONSTRUCTOR`, `ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR` | `resolve` | `2.4` | `specs/resolve-diagnostics/spec.md` |
-| `Redeclaration` | `CONFLICTING_OVERLOADS`, `REDECLARATION`, `CLASSIFIER_REDECLARATION` | `existing-checker` | `7.0`, `7.5` | `specs/redeclaration-diagnostics/spec.md` |
-| `Imports` | `UNRESOLVED_IMPORT`, `IMPORT_CONFLICT`, `IMPORT_ALIAS_CONFLICT` | `existing-checker` | `7.0`, `7.5` | `specs/imports-diagnostics/spec.md` |
-| `SuperTypes` | `SUPER_TYPES_SELF_REFERENCE`, `SUPER_TYPES_DUPLICATE`, `INTERFACE_CANNOT_INHERIT_CLASS`, `MULTIPLE_CLASS_SUPER_TYPES` | `existing-checker` | `7.0`, `7.5` | `specs/supertypes-diagnostics/spec.md` |
-| `Extend` | `ILLEGAL_EXTENDED_TYPE`, `EXTEND_DUPLICATE_INTERFACE`, `EXTEND_NOT_INTERFACE`, `EXTEND_ORPHAN_RULE`, `EXTEND_GENERIC_USAGE`, `EXTEND_SPECIALIZATION_CONFLICT`, `EXTEND_DEFAULT_IMPLEMENTATION_CONFLICT`, `EXTEND_IMMUTABLE_MUT_INTERFACE`, `EXTEND_IMMUTABLE_MUT_PROPERTY`, `EXTEND_IMMUTABLE_INDEX_ASSIGNMENT`, `EXTEND_INTERFACE_NOT_EXTENDABLE`, `EXTEND_C_TYPE_NOT_ALLOWED`, `EXTEND_SUPER_NOT_ALLOWED`, `STRUCT_SUPER_NOT_ALLOWED`, `ENUM_SUPER_NOT_ALLOWED`, `INTERFACE_SUPER_NOT_ALLOWED` | `existing-checker` | `7.0`, `7.5` | `specs/extend-extra-checker/spec.md` |
-| `DeclarationStatus` | `STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE`, `MUT_ONLY_ON_FUNCTION`, `NOTHING_TO_OVERRIDE`, `OVERRIDE_STATIC_ERROR`, `REDEF_INSTANCE_ERROR`, `INVALID_OPERATOR_PARAMETER_COUNT`, `REPEATED_MODIFIER`, `REDUNDANT_MODIFIER`, `INCOMPATIBLE_MODIFIERS`, `WRONG_MODIFIER_TARGET`, `WRONG_MODIFIER_CONTAINING_DECLARATION`, `REDUNDANT_MODIFIER_FOR_TARGET`, `DEPRECATED_MODIFIER_FOR_TARGET`, `DEPRECATED_MODIFIER_CONTAINING_DECLARATION`, `DEPRECATED_MODIFIER_PAIR`, `CANNOT_WEAKEN_ACCESS_PRIVILEGE`, `PARAM_NAMED_MISMATCHED` | `checker` | `7.4`, `7.5` | `specs/declaration-status-extra-checker/spec.md` |
-| `CallResolution` | `NO_VALUE_FOR_PARAMETER`, `TOO_MANY_ARGUMENTS`, `NAMED_PARAMETER_NOT_FOUND`, `ARGUMENT_PASSED_TWICE`, `NAMED_ARGUMENTS_NOT_ALLOWED`, `MIXING_NAMED_AND_POSITIONAL_ARGUMENTS`, `NEED_NAMED_ARGUMENT`, `AMBIGUOUS_CONSTRUCTOR_CALL`, `AMBIGUOUS_FUNCTION_CALL`, `RECURSIVE_CONSTRUCTOR_CALL`, `ILLEGAL_THIS_OR_SUPER_CALL`, `EXPLICIT_SUPER_CALL_REQUIRED`, `INVALID_LOOP_CONTROL` | `resolve` | `2.1`, `2.2`, `2.3` | `specs/call-resolution-diagnostics/spec.md` |
-| `Initialization` | `USED_BEFORE_INITIALIZATION`, `CLASS_UNINITIALIZED_FIELD` | `existing-checker` | `8.0`, `8.6` | `specs/initialization-diagnostics/spec.md` |
-| `GenericAccess` | `GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS`, `GENERIC_NO_METHOD_MATCH_IN_UPPER_BOUNDS` | `existing-checker` | `8.0`, `8.6` | `specs/generic-access-diagnostics/spec.md` |
-| `Mutability` | `CANNOT_MODIFY_VAR`, `IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION` | `existing-checker` | `8.0`, `8.6` | `specs/mutability-diagnostics/spec.md` |
-| `Annotation` | `ANNOTATION_NO_CONST_INIT` | `existing-checker` | `9.0`, `9.10` | `specs/annotation-semantics/spec.md` |
-| `Interop` | `INVALID_CFUNC_RETURN_TYPE` | `existing-checker` | `9.0`, `9.10` | `specs/interop-semantics/spec.md` |
-| `Effects` | `EFFECTS_FEATURE_DISABLED`, `COMMAND_INCOMPATIBLE_TYPE`, `COMMAND_HANDLE_TYPE_ERROR`, `IMPLICIT_RESUME_OUTSIDE_HANDLER`, `RESUME_NO_WITH`, `RESUME_THROWING_MISMATCH_TYPE`, `MISMATCHING_HANDLE_BLOCK` | `existing-checker` | `9.0`, `9.10` | `specs/effects-semantics/spec.md` |
-| `Match` | `NON_EXHAUSTIVE_MATCH`, `TUPLE_PATTERN_NOT_MATCH`, `PATTERN_NOT_MATCH`, `ENUM_PATTERN_PARAM_SIZE_ERROR`, `NOT_OVERLOAD_IN_MATCH`, `MATCH_CASE_HAS_NO_TYPE` | `existing-checker` | `9.0`, `9.10` | `specs/match-semantics/spec.md` |
-| `Constraint` | `NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER`, `ONLY_ONE_CLASS_BOUND_ALLOWED`, `REPEATED_BOUND`, `CONFLICTING_UPPER_BOUNDS`, `CANNOT_INFER_PARAMETER_TYPE`, `NEW_INFERENCE_ERROR`, `TYPE_INFERENCE_ONLY_INPUT_TYPES_ERROR`, `BUILDER_INFERENCE_MULTI_LAMBDA_RESTRICTION`, `INFERRED_TYPE_VARIABLE_INTO_EMPTY_INTERSECTION`, `INFERRED_TYPE_VARIABLE_INTO_POSSIBLE_EMPTY_INTERSECTION` | `resolve` | `3.1`, `3.2`, `3.3` | `specs/constraint-diagnostics/spec.md` |
-| `TypeCheck` | `TYPE_MISMATCH`, `PATTERN_INITIALIZER_TYPE_MISMATCH`, `RETURN_TYPE_MISMATCH`, `ARGUMENT_TYPE_MISMATCH`, `ASSIGNMENT_TYPE_MISMATCH`, `VARRAY_SIZE_MISMATCH`, `GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT`, `INVISIBLE_MEMBER`, `INVISIBLE_REFERENCE`, `OVERRIDING_RETURN_TYPE_MISMATCH`, `CANNOT_OVERRIDE_INVISIBLE_MEMBER`, `CLASS_NOT_OPEN_FOR_INHERITANCE`, `ABSTRACT_MEMBER_NOT_IMPLEMENTED` | `resolve` | `4.1`, `4.2`, `4.3` | `specs/type-check-diagnostics/spec.md` |
-| `ConstEval` | `LITERAL_NUMERIC_OVERFLOW`, `CONST_EVAL_DIVIDE_BY_ZERO`, `CONST_EVAL_ARITHMETIC_OVERFLOW`, `CONST_EVAL_NEGATIVE_SHIFT_COUNT`, `CONST_EVAL_SHIFT_COUNT_OVERFLOW` | `existing-checker` | `9.0`, `9.10` | `specs/const-eval-diagnostics/spec.md` |
-| `Unresolved` | `UNRESOLVED_REFERENCE`, `INVALID_BINARY_OPERATOR`, `NO_MATCHING_OPERATOR_INVOKE` | `resolve` | `5.1`, `5.2`, `5.3` | `specs/unresolved-diagnostics/spec.md` |
-| `General` | `INVALID_NODE_AFTER_CHECK`, `UNABLE_TO_INFER_DECL`, `MISMATCHED_TYPES_MULTIPLE_ASSIGN`, `MISMATCHED_TYPES_BECAUSE`, `AMBIGUOUS_USE`, `CONFLICT_WITH_SUB_PACKAGE`, `CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE`, `ACCESSIBILITY_WITH_MAIN_HINT`, `ACCESSIBILITY_ERROR`, `PARAM_COUNT_MISMATCH` | `checker` | `7.1`, `7.5` | `specs/general-semantics-checker/spec.md` |
-| `Function` | `UNABLE_TO_INFER_RETURN_TYPE`, `UNABLE_TO_INFER_GENERIC_FUNC`, `INVALID_CALLED_OBJECT`, `INVALID_RETURN`, `INVALID_RETURN_IN_STATIC_INIT`, `INVALID_SUBSCRIPT_ASSIGN_PARAMETER`, `INVALID_SUBSCRIPT_ASSIGN_PARAMETER_NUM`, `INVALID_SUBSCRIPT_ASSIGN_RETURN`, `STATIC_FUNCTION_OVERLOAD_CONFLICTS`, `USE_MUTABLE_FUNC_ALONE`, `UNSAFE_FUNC_CAN_ONLY_BE_CALLED`, `AMBIGUOUS_MATCH_PRIMITIVE_EXTEND`, `CANNOT_HAVE_DEFAULT_PARAM`, `TRAILING_LAMBDA_CANNOT_USED_FOR_NON_FUNCTION`, `LAMBDA_MUST_HAVE_TYPE_ANNOTATION`, `USE_FUNC_CAPTURE_VAR_ALONE` | `checker` | `7.2`, `7.5` | `specs/function-semantics-checker/spec.md` |
-| `Expression` | `UNABLE_TO_INFER_EXPR`, `EXCEED_FLOAT_LITERAL_RANGE`, `FLOAT_LITERAL_TOO_LARGE`, `FLOAT_LITERAL_TOO_SMALL`, `INVALID_UNARY_EXPR`, `INVALID_UNARY_EXPR_WITH_TARGET`, `INVALID_SUBSCRIPT_EXPR`, `CANNOT_ASSIGN_TO_SUBSCRIPT`, `NOT_MEMBER_OF`, `MEMBER_NOT_IMPORTED`, `CANNOT_ASSIGN_TO_IMMUTABLE`, `UNQUALIFIED_LEFT_VALUE_ASSIGNED`, `DIFFERENT_OR_PATTERN`, `VAR_IN_OR_PATTERN`, `VAR_IN_OR_CONDITION`, `UNREACHABLE_PATTERN`, `ENUM_CONSTRUCTOR_WITH_PARAM_MUST_HAVE_ARGS`, `OPTIONAL_CHAIN_NON_OPTIONAL`, `CAPTURE_BEFORE_INITIALIZATION`, `INTERPOLATION_IN_CONST_PATTERN`, `CANNOT_REF_TO_PKG_NAME`, `USE_EXPR_WITHOUT_IMPORT` | `checker` | `7.3`, `7.5` | `specs/expression-semantics-checker/spec.md` |
-| `GenericDeep` | `GENERIC_TYPE_INCONSISTENT`, `GENERIC_ARGUMENT_NO_MATCH`, `GENERIC_CONSTRAINT_NOT_LOOSER`, `GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS`, `GENERIC_PARAM_EXIST_IN_CLASS_IRRELEVANT_UPPERBOUND_RECURSIVELY`, `GENERIC_PARAM_DIRECTLY_RECURSIVE`, `UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE`, `GENERIC_STATIC_ACCESS`, `PRIMITIVE_TYPE_AS_GENERICS_ARG`, `MEET_CONSTRAINT_INDIRECTLY`, `GENERIC_UPPER_BOUNDS_MUST_BE_JAVA_IN_JAVA` | `mixed: resolve + checker` | `6.1`-`6.4`, `8.5`, `8.6` | `specs/generic-deep-checker/spec.md` |
-| `InheritanceDeep` | `INHERIT_MEMBER_KIND_INCONSISTENT`, `INHERIT_SUPER_MEMBER_KIND_INCONSISTENT`, `INHERIT_MEMBER_TYPE_INCONSISTENT`, `INHERIT_ABSTRACT_CLASS_STATIC_UNIMPLEMENT_FUNC`, `INVALID_MEMBER_VISIBILITY_IN_CLASS`, `CANNOT_INHERIT_SEALED`, `INHERIT_THREAD_CONTEXT_INVALID`, `INHERIT_THREAD_CONTEXT_NOT_OPEN`, `INHERIT_NOT_RETURN_THIS` | `checker` | `8.1`, `8.6` | `specs/inheritance-deep-checker/spec.md` |
-| `Spawn` | `SPAWN_ARG_INVALID`, `SPAWN_ARG_NO_EFFECT` | `checker` | `9.7`, `9.10` | `specs/spawn-semantics-checker/spec.md` |
-| `Interface` | `INTERFACE_CALL_WITH_UNIMPLEMENTED_CALL` | `checker` | `9.8`, `9.10` | `specs/interface-semantics-checker/spec.md` |
-| `ClassStructSemantics` | `TYPE_UNINITIALIZED_STATIC_FIELD`, `INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER`, `NON_ABSTRACT_CLASS_CANNOT_BE_SEALED`, `STATIC_VARIABLE_USE_GENERIC_PARAMETER`, `CSTRUCT_CANNOT_IMPL_INTERFACES`, `EXPORT_SAME_PRIVATE_DECL` | `checker` | `8.2`, `8.6` | `specs/class-struct-semantics-checker/spec.md` |
-| `ExtendExtra` | `EXTEND_FUNCTION_CANNOT_OVERRIDDEN`, `EXTEND_MEMBER_CANNOT_SHADOW`, `EXTEND_ILLEGAL_MEMBER`, `EXTEND_CHECK_SEQUENCE_CANNOT_DECIDE`, `EXPORT_EXTEND_DEPEND_NON_EXPORT_EXTEND`, `EXTEND_A_JAVA_TYPE`, `EXTEND_REF_TARGET_CANNOT_BE_JAVA_IMPL`, `TYPE_CANNOT_EXTEND_IMPORTED_INTERFACE` | `checker` | `9.6`, `9.10` | `specs/extend-extra-checker/spec.md` |
-| `Property` | `PROPERTY_MUST_HAVE_ACCESSORS`, `IMMUTABLE_PROPERTY_WITH_SETTER`, `PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_MUT`, `PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_IMMUT`, `PROPERTY_MUST_IMPLEMENT_BOTH` | `checker` | `8.3`, `8.6` | `specs/property-semantics-checker/spec.md` |
-| `ConstDeclaration` | `EXPECT_CONST`, `CANNOT_DEFINE_VAR_IN_CONST_FUNCTION`, `NO_CONST_INIT`, `CLASS_CONST_INIT_WITH_VAR` | `checker` | `8.4`, `8.6` | `specs/const-declaration-checker/spec.md` |
-| `AnnotationExtra` | `ANNOTATION_ARG_TARGET`, `ANNOTATION_ARG_TARGET_ARRAY_LIT`, `ANNOTATION_NON_PUBLIC`, `ANNOTATION_CUSTOM_PLACE`, `ANNOTATION_ERROR_ARG_NUM`, `ANNOTATION_ERROR_ARG_RANGE`, `ANNOTATION_ERROR_OBJECT`, `CANNOT_USE_ANNOTATION_JFFI`, `ANNOTATION_NOT_APPLICABLE_JFFI` | `checker` | `9.1`, `9.10` | `specs/annotation-extra-checker/spec.md` |
-| `Inout` | `INOUT_MODIFY_CSTRING_OR_ZEROSIZED`, `INOUT_MODIFY_NON_CTYPE`, `INOUT_MUST_BE_VAR_VARIABLE`, `INOUT_MODIFY_HEAP_VARIABLE`, `INOUT_CAN_ONLY_USED_IN_CFUNC_CALLING`, `INOUT_MISMATCH`, `INVALID_INOUT_ARGUMENT`, `DUPLICATE_INOUT_ARGUMENT` | `checker` | `9.2`, `9.10` | `specs/inout-semantics-checker/spec.md` |
-| `VArrayExtra` | `VARRAY_ARGS_NUMBER_MISMATCH`, `VARRAY_SUBSCRIPT_NUM`, `VARRAY_IN_CFUNC`, `VARRAY_ARG_TYPE_WITH_REFTYPE` | `checker` | `9.3`, `9.10` | `specs/varray-extra-checker/spec.md` |
-| `EffectsExtra` | `RESUMPTION_HANDLE_TYPE_ERROR`, `RESUMPTION_INCORRECT_RETURN_TYPE`, `COMMAND_RESUMPTION_MISMATCH`, `RESUME_WRONG_RESUMPTION_TYPE`, `RETURN_IN_TRY_HANDLE_BLOCK`, `USELESS_COMMAND_TYPE` | `checker` | `9.4`, `9.10` | `specs/effects-extra-checker/spec.md` |
-| `Deprecated` | `DEPRECATED_ERROR`, `DEPRECATED_WARNING`, `DEPRECATION_WEAKENING`, `DEPRECATION_OVERRIDE_ERROR`, `DEPRECATION_OVERRIDE_WARNING`, `DEPRECATION_REDEF_ERROR`, `DEPRECATION_REDEF_WARNING` | `checker` | `9.5`, `9.10` | `specs/deprecated-semantics-checker/spec.md` |
-| `CommonSpecific` | `COMMON_OPEN_CLASS_NO_INIT`, `MULTIPLE_COMMON_IMPLEMENTATIONS`, `COMMON_DIRECT_EXTENSION_HAS_DUPLICATE_PRIVATE_MEMBERS`, `COMMON_DIRECT_EXTENSION_HAS_COMMON_PRIVATE_MEMBERS`, `NOT_MATCHED`, `SPECIFIC_VAR_NOT_MATCH_LET`, `SPECIFIC_INIT_COMMON_PRIMARY_CONSTRUCTOR`, `SPECIFIC_HAS_DIFFERENT_KIND`, `SPECIFIC_PRIMARY_UNMATCHED_VAR_DECL`, `COMMON_NON_EXHAUSTIVE_PLATFORM_EXHAUSTIVE_MISMATCH`, `SPECIFIC_HAS_DIFFERENT_TYPE`, `SPECIFIC_MEMBER_MUST_HAVE_IMPLEMENTATION`, `SPECIFIC_HAS_DIFFERENT_MODIFIER`, `SPECIFIC_HAS_DIFFERENT_ANNOTATION`, `SPECIFIC_HAS_DEPRECATED_ANNOTATION`, `CJMP_PARAMETER_DEFAULT_VALUE_BOTH_SIDES`, `SPECIFIC_HAS_DIFFERENT_PARAMETER`, `SPECIFIC_HAS_DIFFERENT_SUPER_TYPE`, `SPECIFIC_HAS_DUPLICATE_EXTENSIONS`, `COMMON_PACKAGE_HAS_MAIN`, `COMMON_STATIC_LET_CANT_BE_INITIALIZED_IN_STATIC_INIT`, `COMMON_ASSIGN_TO_COMMON_IMMUTABLE_IN_CTOR`, `CJMP_ABSTRACT_CLASS_MEMBER_HAS_NO_EXPLICIT_MODIFIER`, `EXPLICITLY_ABSTRACT_CAN_NOT_HAVE_BODY`, `EXPLICITLY_ABSTRACT_ONLY_FOR_CJMP_ABSTRACT_CLASS`, `OPEN_ABSTRACT_SPECIFIC_CAN_NOT_REPLACE_OPEN_COMMON`, `CJMP_NON_SPECIFIC_ABSTRACT_MEMBER_IN_SPECIFIC_CLASS`, `COMMON_GENERIC_FROZEN_NOT_SUPPORTED`, `COMMON_GENERIC_RENAME_NOT_SUPPORTED`, `COMMON_SPECIFIC_ANNOTATION_NOT_ALLOWED` | `checker` | `11.1`, `11.3` | `specs/common-specific-checker/spec.md` |
-| `JavaInterop` | `JAVA_INCORRECT_USE_BETWEEN_TYPES`, `JAVA_NON_JTYPE`, `JAVA_INVALID_UNIT`, `JAVA_APP_INHERIT_EXT`, `JAVA_UNSUPPORTED_DECL`, `MISSING_JAVA_INTEROP_ANNOTATION`, `SHADOW_CANNOT_IN_TYPE_ARGS`, `UNSUPPORTED_TYPE_ARGUMENT_IN_JAVA_INTEROP`, `STATIC_MEMBER_IN_INTERFACE_MUST_HAS_BODY`, `DEFINE_JAVA_ANNOTATION`, `INVALID_USE_OF_JAVA_ANNOTATION`, `INVALID_USE_OF_ANNOTATION_JFFI`, `VARIABLE_OF_JAVA_TYPE`, `GENERIC_PARAMETER_OF_JAVA_TYPE`, `JAVA_INTEROP_NOT_SUPPORTED` | `checker` | `10.1`, `10.10` | `specs/java-interop-checker/spec.md` |
-| `JavaMirror` | `JAVA_MIRROR_CTOR_ARG_MUST_BE_JAVA_MIRROR`, `JAVA_MIRROR_METHOD_ARG_MUST_BE_JAVA_MIRROR`, `JAVA_MIRROR_METHOD_RET_UNSUPPORTED`, `JAVA_MIRROR_PROP_MUST_BE_JAVA_MIRROR`, `JAVA_MIRROR_SUBTYPE_MUST_BE_ANNOTATED`, `JAVA_MIRROR_CANNOT_INHERIT_PURE_CANGJIE_TYPE`, `JAVA_IMPL_CANNOT_INHERIT_PURE_CANGJIE_TYPE`, `JAVA_MIRROR_SUBTYPE_ANNO_MUST_INHERIT_MIRROR`, `JAVA_MIRROR_CANNOT_BE_EXTENDED_WITH_INTERFACE`, `JAVA_IMPL_CANNOT_BE_EXTENDED_WITH_INTERFACE`, `JAVA_IMPL_REDEFINITION`, `JAVA_MIRROR_INTEROPLIB_MUST_BE_IMPORTED`, `JAVA_HAS_DEFAULT_ANNOTATION_ARGS`, `JAVA_HAS_DEFAULT_ANNOTATION_IS_IN_WRONG_PLACE`, `JAVA_HAS_DEFAULT_CONFLICT_WITH_STATIC` | `checker` | `10.2`, `10.10` | `specs/java-mirror-checker/spec.md` |
-| `CJMapping` | `CJMAPPING_STRUCT_GENERIC_NOT_SUPPORTED`, `CJMAPPING_STRUCT_INHERITANCE_INTERFACE_NOT_SUPPORTED`, `CJMAPPING_DECL_NOT_SUPPORTED`, `CJMAPPING_METHOD_ARG_NOT_SUPPORTED`, `CJMAPPING_METHOD_RET_UNSUPPORTED`, `CJ_MAPPING_GENERIC_METHOD_NOT_GET_INSTANCE_CONFIG` | `checker` | `10.3`, `10.10` | `specs/cjmapping-checker/spec.md` |
-| `ObjCInterop` | `OBJC_INTEROP_CTOR_PARAM_MUST_BE_OBJC_COMPATIBLE`, `OBJC_INTEROP_METHOD_PARAM_MUST_BE_OBJC_COMPATIBLE`, `OBJC_INTEROP_METHOD_RET_MUST_BE_OBJC_COMPATIBLE`, `OBJC_INTEROP_PROP_MUST_BE_OBJC_COMPATIBLE`, `OBJC_INTEROP_FIELD_MUST_BE_OBJC_COMPATIBLE`, `OBJC_MIRROR_DECL_CANNOT_INHERIT`, `OBJC_MIRROR_SUBTYPE_CANNOT_MULTIPLE_INHERIT`, `OBJC_MIRROR_SUBTYPE_MUST_BE_ANNOTATED`, `OBJC_MIRROR_SUBTYPE_MUST_INHERIT_MIRROR`, `OBJC_MIRROR_MUST_INHERIT_MIRROR`, `OBJC_MIRROR_INTEROPLIB_MUST_BE_IMPORTED`, `OBJC_INTEROP_NOT_SUPPORTED`, `OBJC_POINTER_ARGUMENT_MUST_BE_OBJC_COMPATIBLE`, `OBJC_INTEROP_TOPLEVEL_PARAM_MUST_BE_OBJC_COMPATIBLE`, `OBJC_INTEROP_TOPLEVEL_RET_MUST_BE_OBJC_COMPATIBLE`, `OBJC_METHOD_MUST_HAVE_FOREIGN_NAME`, `OBJC_CTOR_MUST_HAVE_FOREIGN_NAME`, `OBJC_FUNC_ARGUMENT_MUST_BE_OBJC_COMPATIBLE`, `OBJC_FUNC_CALL_PROPERTY_CAN_ONLY_BE_CALLED`, `OBJC_IMPL_MUST_HAVE_OBJC_MIRROR_SUPER_CLASS`, `OBJC_SETTER_NAME_ON_IMMUTABLE_PROP` | `checker` | `10.4`, `10.10` | `specs/objc-interop-checker/spec.md` |
-| `ObjCCJMapping` | `OBJC_CJMAPPING_INHERITANCE_INTERFACE_NOT_SUPPORTED`, `OBJC_CJMAPPING_GENERIC_NOT_SUPPORTED` | `checker` | `10.5`, `10.10` | `specs/objc-cjmapping-checker/spec.md` |
-| `ForeignName` | `FOREIGN_NAME_APPEARED_IN_CHILD`, `FOREIGN_NAME_CONFLICTING_ANNOTATION`, `FOREIGN_NAME_CONFLICTING_DERIVED_ANNOTATION` | `checker` | `10.6`, `10.10` | `specs/foreign-name-checker/spec.md` |
-| `IfAvailable` | `IFAVAILABLE_ARG_NO_NAME`, `IFAVAILABLE_ARG_NOT_LITERAL`, `IFAVAILABLE_UNKNOWN_ARG_NAME`, `IFAVAILABLE_LEVEL_LIMIT` | `checker` | `10.7`, `10.10` | `specs/if-available-api-level-hide-checker/spec.md` |
-| `APILevel` | `APILEVEL_MULTI_ANNO`, `APILEVEL_MISSING_ARG`, `ONLY_LITERAL_SUPPORT`, `APILEVEL_REF_HIGHER`, `APILEVEL_SYSCAP_WARNING`, `APILEVEL_SYSCAP_ERROR`, `APILEVEL_MULTI_DIFF_SYSCAP` | `checker` | `10.8`, `10.10` | `specs/if-available-api-level-hide-checker/spec.md` |
-| `Hide` | `HIDE_MULTI_ANNOTATION`, `HIDE_AT_FUNC_PARAM`, `HIDE_MISSING_HIDE`, `HIDE_COMPILE_TIME_INVISIBLE`, `HIDE_DIFF_PARAM`, `HIDE_MUST_AT_END` | `checker` | `10.9`, `10.10` | `specs/if-available-api-level-hide-checker/spec.md` |
-| `Unused` | `UNUSED_IMPORT` | `checker` | `9.9`, `9.10` | `specs/unused-checker/spec.md` |
-| `Mock` | `MOCK_DISABLED`, `MOCK_NOT_IN_TEST_MODE`, `MOCK_UNSUPPORTED_TYPE`, `MOCK_WRONG_STATIC_DECL`, `MOCK_DOESNT_SUPPORT_MOCKING`, `MOCK_FROZEN_UNSUPPORTED`, `MOCK_FROZEN_REQUIRED` | `checker` | `11.2`, `11.3` | `specs/mock-semantics-checker/spec.md` |
-
-## 使用规则
-
-- 本台账中的责任层是当前提案的架构归属结论，后续实现不得跨层兜底。
-- 若后续发现某组诊断的主责任层判断需要调整，必须同步更新：
-  - `design.md`
-  - `tasks.md`
-  - 对应 `specs/*/spec.md`
-  - 本台账
-- 不允许只改代码、不改台账。
+| 诊断组 | 诊断名 | 级别 | 状态 | 责任层 |
+|--------|--------|------|------|--------|
+| APILevel | `APILEVEL_MULTI_ANNO` | error | existing | existing |
+| APILevel | `APILEVEL_MISSING_ARG` | warning | existing | existing |
+| APILevel | `ONLY_LITERAL_SUPPORT` | error | existing | existing |
+| APILevel | `APILEVEL_REF_HIGHER` | error | uncovered | checker |
+| APILevel | `APILEVEL_SYSCAP_WARNING` | warning | uncovered | checker |
+| APILevel | `APILEVEL_SYSCAP_ERROR` | error | uncovered | checker |
+| APILevel | `APILEVEL_MULTI_DIFF_SYSCAP` | error | existing | existing |
+| Annotation | `ANNOTATION_NO_CONST_INIT` | error | existing | existing |
+| AnnotationExtra | `ANNOTATION_ARG_TARGET` | error | existing | existing |
+| AnnotationExtra | `ANNOTATION_ARG_TARGET_ARRAY_LIT` | error | existing | existing |
+| AnnotationExtra | `ANNOTATION_NON_PUBLIC` | warning | existing | existing |
+| AnnotationExtra | `ANNOTATION_CUSTOM_PLACE` | error | uncovered | checker |
+| AnnotationExtra | `ANNOTATION_ERROR_ARG_NUM` | error | uncovered | checker |
+| AnnotationExtra | `ANNOTATION_ERROR_ARG_RANGE` | error | uncovered | checker |
+| AnnotationExtra | `ANNOTATION_ERROR_OBJECT` | error | uncovered | checker |
+| AnnotationExtra | `CANNOT_USE_ANNOTATION_JFFI` | error | uncovered | checker |
+| AnnotationExtra | `ANNOTATION_NOT_APPLICABLE_JFFI` | error | uncovered | checker |
+| CJMapping | `CJMAPPING_STRUCT_GENERIC_NOT_SUPPORTED` | error | existing | existing |
+| CJMapping | `CJMAPPING_STRUCT_INHERITANCE_INTERFACE_NOT_SUPPORTED` | error | existing | existing |
+| CJMapping | `CJMAPPING_DECL_NOT_SUPPORTED` | error | uncovered | checker |
+| CJMapping | `CJMAPPING_METHOD_ARG_NOT_SUPPORTED` | error | uncovered | checker |
+| CJMapping | `CJMAPPING_METHOD_RET_UNSUPPORTED` | error | uncovered | checker |
+| CJMapping | `CJ_MAPPING_GENERIC_METHOD_NOT_GET_INSTANCE_CONFIG` | error | uncovered | checker |
+| CallResolution | `NO_VALUE_FOR_PARAMETER` | error | existing | existing |
+| CallResolution | `TOO_MANY_ARGUMENTS` | error | existing | existing |
+| CallResolution | `NAMED_PARAMETER_NOT_FOUND` | error | existing | existing |
+| CallResolution | `ARGUMENT_PASSED_TWICE` | error | existing | existing |
+| CallResolution | `NAMED_ARGUMENTS_NOT_ALLOWED` | error | existing | existing |
+| CallResolution | `MIXING_NAMED_AND_POSITIONAL_ARGUMENTS` | error | existing | existing |
+| CallResolution | `NEED_NAMED_ARGUMENT` | error | existing | existing |
+| CallResolution | `AMBIGUOUS_CONSTRUCTOR_CALL` | error | existing | existing |
+| CallResolution | `AMBIGUOUS_FUNCTION_CALL` | error | existing | existing |
+| CallResolution | `RECURSIVE_CONSTRUCTOR_CALL` | error | existing | existing |
+| CallResolution | `ILLEGAL_THIS_OR_SUPER_CALL` | error | existing | existing |
+| CallResolution | `EXPLICIT_SUPER_CALL_REQUIRED` | error | existing | existing |
+| CallResolution | `INVALID_LOOP_CONTROL` | error | existing | existing |
+| ClassStructSemantics | `TYPE_UNINITIALIZED_STATIC_FIELD` | error | existing | existing |
+| ClassStructSemantics | `INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER` | error | uncovered | checker |
+| ClassStructSemantics | `NON_ABSTRACT_CLASS_CANNOT_BE_SEALED` | error | existing | existing |
+| ClassStructSemantics | `STATIC_VARIABLE_USE_GENERIC_PARAMETER` | error | existing | existing |
+| ClassStructSemantics | `CSTRUCT_CANNOT_IMPL_INTERFACES` | error | existing | existing |
+| ClassStructSemantics | `EXPORT_SAME_PRIVATE_DECL` | error | uncovered | checker |
+| CommonSpecific | `COMMON_OPEN_CLASS_NO_INIT` | error | uncovered | checker |
+| CommonSpecific | `MULTIPLE_COMMON_IMPLEMENTATIONS` | error | uncovered | checker |
+| CommonSpecific | `COMMON_DIRECT_EXTENSION_HAS_DUPLICATE_PRIVATE_MEMBERS` | error | uncovered | checker |
+| CommonSpecific | `COMMON_DIRECT_EXTENSION_HAS_COMMON_PRIVATE_MEMBERS` | error | uncovered | checker |
+| CommonSpecific | `NOT_MATCHED` | error | uncovered | checker |
+| CommonSpecific | `SPECIFIC_VAR_NOT_MATCH_LET` | error | uncovered | checker |
+| CommonSpecific | `SPECIFIC_INIT_COMMON_PRIMARY_CONSTRUCTOR` | error | uncovered | checker |
+| CommonSpecific | `SPECIFIC_HAS_DIFFERENT_KIND` | error | uncovered | checker |
+| CommonSpecific | `SPECIFIC_PRIMARY_UNMATCHED_VAR_DECL` | error | uncovered | checker |
+| CommonSpecific | `COMMON_NON_EXHAUSTIVE_PLATFORM_EXHAUSTIVE_MISMATCH` | error | uncovered | checker |
+| CommonSpecific | `SPECIFIC_HAS_DIFFERENT_TYPE` | error | uncovered | checker |
+| CommonSpecific | `SPECIFIC_MEMBER_MUST_HAVE_IMPLEMENTATION` | error | uncovered | checker |
+| CommonSpecific | `SPECIFIC_HAS_DIFFERENT_MODIFIER` | error | uncovered | checker |
+| CommonSpecific | `SPECIFIC_HAS_DIFFERENT_ANNOTATION` | error | uncovered | checker |
+| CommonSpecific | `SPECIFIC_HAS_DEPRECATED_ANNOTATION` | error | uncovered | checker |
+| CommonSpecific | `CJMP_PARAMETER_DEFAULT_VALUE_BOTH_SIDES` | error | uncovered | checker |
+| CommonSpecific | `SPECIFIC_HAS_DIFFERENT_PARAMETER` | error | uncovered | checker |
+| CommonSpecific | `SPECIFIC_HAS_DIFFERENT_SUPER_TYPE` | error | uncovered | checker |
+| CommonSpecific | `SPECIFIC_HAS_DUPLICATE_EXTENSIONS` | error | uncovered | checker |
+| CommonSpecific | `COMMON_PACKAGE_HAS_MAIN` | error | existing | existing |
+| CommonSpecific | `COMMON_STATIC_LET_CANT_BE_INITIALIZED_IN_STATIC_INIT` | error | uncovered | checker |
+| CommonSpecific | `COMMON_ASSIGN_TO_COMMON_IMMUTABLE_IN_CTOR` | error | uncovered | checker |
+| CommonSpecific | `CJMP_ABSTRACT_CLASS_MEMBER_HAS_NO_EXPLICIT_MODIFIER` | error | uncovered | checker |
+| CommonSpecific | `EXPLICITLY_ABSTRACT_CAN_NOT_HAVE_BODY` | error | uncovered | checker |
+| CommonSpecific | `EXPLICITLY_ABSTRACT_ONLY_FOR_CJMP_ABSTRACT_CLASS` | error | uncovered | checker |
+| CommonSpecific | `OPEN_ABSTRACT_SPECIFIC_CAN_NOT_REPLACE_OPEN_COMMON` | error | uncovered | checker |
+| CommonSpecific | `CJMP_NON_SPECIFIC_ABSTRACT_MEMBER_IN_SPECIFIC_CLASS` | error | uncovered | checker |
+| CommonSpecific | `COMMON_GENERIC_FROZEN_NOT_SUPPORTED` | error | uncovered | checker |
+| CommonSpecific | `COMMON_GENERIC_RENAME_NOT_SUPPORTED` | error | uncovered | checker |
+| CommonSpecific | `COMMON_SPECIFIC_ANNOTATION_NOT_ALLOWED` | error | uncovered | checker |
+| ConstDeclaration | `EXPECT_CONST` | error | uncovered | checker |
+| ConstDeclaration | `CANNOT_DEFINE_VAR_IN_CONST_FUNCTION` | error | existing | existing |
+| ConstDeclaration | `NO_CONST_INIT` | error | existing | existing |
+| ConstDeclaration | `CLASS_CONST_INIT_WITH_VAR` | error | existing | existing |
+| ConstEval | `LITERAL_NUMERIC_OVERFLOW` | error | existing | existing |
+| ConstEval | `CONST_EVAL_DIVIDE_BY_ZERO` | error | existing | existing |
+| ConstEval | `CONST_EVAL_ARITHMETIC_OVERFLOW` | error | existing | existing |
+| ConstEval | `CONST_EVAL_NEGATIVE_SHIFT_COUNT` | error | existing | existing |
+| ConstEval | `CONST_EVAL_SHIFT_COUNT_OVERFLOW` | error | existing | existing |
+| Constraint | `NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER` | error | existing | existing |
+| Constraint | `ONLY_ONE_CLASS_BOUND_ALLOWED` | error | existing | existing |
+| Constraint | `REPEATED_BOUND` | error | existing | existing |
+| Constraint | `CONFLICTING_UPPER_BOUNDS` | error | existing | existing |
+| Constraint | `CANNOT_INFER_PARAMETER_TYPE` | error | existing | existing |
+| Constraint | `NEW_INFERENCE_ERROR` | error | existing | existing |
+| Constraint | `TYPE_INFERENCE_ONLY_INPUT_TYPES_ERROR` | error | existing | existing |
+| Constraint | `BUILDER_INFERENCE_MULTI_LAMBDA_RESTRICTION` | error | existing | existing |
+| Constraint | `INFERRED_TYPE_VARIABLE_INTO_EMPTY_INTERSECTION` | error | existing | existing |
+| Constraint | `INFERRED_TYPE_VARIABLE_INTO_POSSIBLE_EMPTY_INTERSECTION` | warning | existing | existing |
+| DeclarationStatus | `STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE` | error | existing | existing |
+| DeclarationStatus | `MUT_ONLY_ON_FUNCTION` | error | existing | existing |
+| DeclarationStatus | `NOTHING_TO_OVERRIDE` | error | existing | existing |
+| DeclarationStatus | `OVERRIDE_STATIC_ERROR` | error | existing | existing |
+| DeclarationStatus | `REDEF_INSTANCE_ERROR` | error | existing | existing |
+| DeclarationStatus | `INVALID_OPERATOR_PARAMETER_COUNT` | error | existing | existing |
+| DeclarationStatus | `REPEATED_MODIFIER` | error | existing | existing |
+| DeclarationStatus | `REDUNDANT_MODIFIER` | warning | existing | existing |
+| DeclarationStatus | `INCOMPATIBLE_MODIFIERS` | error | existing | existing |
+| DeclarationStatus | `WRONG_MODIFIER_TARGET` | error | existing | existing |
+| DeclarationStatus | `WRONG_MODIFIER_CONTAINING_DECLARATION` | error | existing | existing |
+| DeclarationStatus | `REDUNDANT_MODIFIER_FOR_TARGET` | warning | existing | existing |
+| DeclarationStatus | `DEPRECATED_MODIFIER_FOR_TARGET` | warning | existing | existing |
+| DeclarationStatus | `DEPRECATED_MODIFIER_CONTAINING_DECLARATION` | warning | existing | existing |
+| DeclarationStatus | `DEPRECATED_MODIFIER_PAIR` | warning | existing | existing |
+| DeclarationStatus | `CANNOT_WEAKEN_ACCESS_PRIVILEGE` | error | existing | existing |
+| DeclarationStatus | `PARAM_NAMED_MISMATCHED` | error | existing | existing |
+| Deprecated | `DEPRECATED_ERROR` | error | uncovered | checker |
+| Deprecated | `DEPRECATED_WARNING` | warning | existing | existing |
+| Deprecated | `DEPRECATION_WEAKENING` | error | uncovered | checker |
+| Deprecated | `DEPRECATION_OVERRIDE_ERROR` | error | uncovered | checker |
+| Deprecated | `DEPRECATION_OVERRIDE_WARNING` | warning | uncovered | checker |
+| Deprecated | `DEPRECATION_REDEF_ERROR` | error | uncovered | checker |
+| Deprecated | `DEPRECATION_REDEF_WARNING` | warning | uncovered | checker |
+| Effects | `EFFECTS_FEATURE_DISABLED` | error | existing | existing |
+| Effects | `COMMAND_INCOMPATIBLE_TYPE` | error | existing | existing |
+| Effects | `COMMAND_HANDLE_TYPE_ERROR` | error | existing | existing |
+| Effects | `IMPLICIT_RESUME_OUTSIDE_HANDLER` | error | existing | existing |
+| Effects | `RESUME_NO_WITH` | error | existing | existing |
+| Effects | `RESUME_THROWING_MISMATCH_TYPE` | error | existing | existing |
+| Effects | `MISMATCHING_HANDLE_BLOCK` | error | existing | existing |
+| EffectsExtra | `RESUMPTION_HANDLE_TYPE_ERROR` | error | existing | existing |
+| EffectsExtra | `RESUMPTION_INCORRECT_RETURN_TYPE` | error | uncovered | checker |
+| EffectsExtra | `COMMAND_RESUMPTION_MISMATCH` | error | uncovered | checker |
+| EffectsExtra | `RESUME_WRONG_RESUMPTION_TYPE` | error | uncovered | checker |
+| EffectsExtra | `RETURN_IN_TRY_HANDLE_BLOCK` | error | uncovered | checker |
+| EffectsExtra | `USELESS_COMMAND_TYPE` | warning | uncovered | checker |
+| Expression | `UNABLE_TO_INFER_EXPR` | error | existing | existing |
+| Expression | `EXCEED_FLOAT_LITERAL_RANGE` | error | existing | existing |
+| Expression | `FLOAT_LITERAL_TOO_LARGE` | warning | existing | existing |
+| Expression | `FLOAT_LITERAL_TOO_SMALL` | warning | existing | existing |
+| Expression | `INVALID_UNARY_EXPR` | error | uncovered | checker |
+| Expression | `INVALID_UNARY_EXPR_WITH_TARGET` | error | uncovered | checker |
+| Expression | `INVALID_SUBSCRIPT_EXPR` | error | existing | existing |
+| Expression | `CANNOT_ASSIGN_TO_SUBSCRIPT` | error | existing | existing |
+| Expression | `NOT_MEMBER_OF` | error | uncovered | checker |
+| Expression | `MEMBER_NOT_IMPORTED` | error | uncovered | checker |
+| Expression | `CANNOT_ASSIGN_TO_IMMUTABLE` | error | existing | existing |
+| Expression | `UNQUALIFIED_LEFT_VALUE_ASSIGNED` | error | existing | existing |
+| Expression | `DIFFERENT_OR_PATTERN` | error | existing | existing |
+| Expression | `VAR_IN_OR_PATTERN` | error | existing | existing |
+| Expression | `VAR_IN_OR_CONDITION` | error | uncovered | checker |
+| Expression | `UNREACHABLE_PATTERN` | warning | uncovered | checker |
+| Expression | `ENUM_CONSTRUCTOR_WITH_PARAM_MUST_HAVE_ARGS` | error | existing | existing |
+| Expression | `OPTIONAL_CHAIN_NON_OPTIONAL` | error | uncovered | checker |
+| Expression | `CAPTURE_BEFORE_INITIALIZATION` | error | uncovered | checker |
+| Expression | `INTERPOLATION_IN_CONST_PATTERN` | error | existing | existing |
+| Expression | `CANNOT_REF_TO_PKG_NAME` | error | uncovered | checker |
+| Expression | `USE_EXPR_WITHOUT_IMPORT` | error | uncovered | checker |
+| Extend | `ILLEGAL_EXTENDED_TYPE` | error | existing | existing |
+| Extend | `EXTEND_DUPLICATE_INTERFACE` | error | existing | existing |
+| Extend | `EXTEND_NOT_INTERFACE` | error | existing | existing |
+| Extend | `EXTEND_ORPHAN_RULE` | error | existing | existing |
+| Extend | `EXTEND_GENERIC_USAGE` | error | existing | existing |
+| Extend | `EXTEND_SPECIALIZATION_CONFLICT` | error | existing | existing |
+| Extend | `EXTEND_DEFAULT_IMPLEMENTATION_CONFLICT` | error | existing | existing |
+| Extend | `EXTEND_IMMUTABLE_MUT_INTERFACE` | error | existing | existing |
+| Extend | `EXTEND_IMMUTABLE_MUT_PROPERTY` | error | existing | existing |
+| Extend | `EXTEND_IMMUTABLE_INDEX_ASSIGNMENT` | error | existing | existing |
+| Extend | `EXTEND_INTERFACE_NOT_EXTENDABLE` | error | existing | existing |
+| Extend | `EXTEND_C_TYPE_NOT_ALLOWED` | error | existing | existing |
+| Extend | `EXTEND_SUPER_NOT_ALLOWED` | error | existing | existing |
+| Extend | `STRUCT_SUPER_NOT_ALLOWED` | error | existing | existing |
+| Extend | `ENUM_SUPER_NOT_ALLOWED` | error | existing | existing |
+| Extend | `INTERFACE_SUPER_NOT_ALLOWED` | error | existing | existing |
+| ExtendExtra | `EXTEND_FUNCTION_CANNOT_OVERRIDDEN` | error | existing | existing |
+| ExtendExtra | `EXTEND_MEMBER_CANNOT_SHADOW` | error | uncovered | checker |
+| ExtendExtra | `EXTEND_ILLEGAL_MEMBER` | error | existing | existing |
+| ExtendExtra | `EXTEND_CHECK_SEQUENCE_CANNOT_DECIDE` | error | uncovered | checker |
+| ExtendExtra | `EXPORT_EXTEND_DEPEND_NON_EXPORT_EXTEND` | error | uncovered | checker |
+| ExtendExtra | `EXTEND_A_JAVA_TYPE` | error | existing | existing |
+| ExtendExtra | `EXTEND_REF_TARGET_CANNOT_BE_JAVA_IMPL` | error | existing | existing |
+| ExtendExtra | `TYPE_CANNOT_EXTEND_IMPORTED_INTERFACE` | error | uncovered | checker |
+| ForeignName | `FOREIGN_NAME_APPEARED_IN_CHILD` | error | uncovered | checker |
+| ForeignName | `FOREIGN_NAME_CONFLICTING_ANNOTATION` | error | uncovered | checker |
+| ForeignName | `FOREIGN_NAME_CONFLICTING_DERIVED_ANNOTATION` | error | uncovered | checker |
+| Function | `UNABLE_TO_INFER_RETURN_TYPE` | error | existing | existing |
+| Function | `UNABLE_TO_INFER_GENERIC_FUNC` | error | uncovered | checker |
+| Function | `INVALID_CALLED_OBJECT` | error | existing | existing |
+| Function | `INVALID_RETURN` | error | existing | existing |
+| Function | `INVALID_RETURN_IN_STATIC_INIT` | error | uncovered | checker |
+| Function | `INVALID_SUBSCRIPT_ASSIGN_PARAMETER` | error | existing | existing |
+| Function | `INVALID_SUBSCRIPT_ASSIGN_PARAMETER_NUM` | error | existing | existing |
+| Function | `INVALID_SUBSCRIPT_ASSIGN_RETURN` | error | existing | existing |
+| Function | `STATIC_FUNCTION_OVERLOAD_CONFLICTS` | error | existing | existing |
+| Function | `USE_MUTABLE_FUNC_ALONE` | error | existing | existing |
+| Function | `UNSAFE_FUNC_CAN_ONLY_BE_CALLED` | error | existing | existing |
+| Function | `AMBIGUOUS_MATCH_PRIMITIVE_EXTEND` | error | uncovered | checker |
+| Function | `CANNOT_HAVE_DEFAULT_PARAM` | error | uncovered | checker |
+| Function | `TRAILING_LAMBDA_CANNOT_USED_FOR_NON_FUNCTION` | error | uncovered | checker |
+| Function | `LAMBDA_MUST_HAVE_TYPE_ANNOTATION` | error | existing | existing |
+| Function | `USE_FUNC_CAPTURE_VAR_ALONE` | error | uncovered | checker |
+| General | `INVALID_NODE_AFTER_CHECK` | error | uncovered | checker |
+| General | `UNABLE_TO_INFER_DECL` | error | existing | existing |
+| General | `MISMATCHED_TYPES_MULTIPLE_ASSIGN` | error | uncovered | checker |
+| General | `MISMATCHED_TYPES_BECAUSE` | error | uncovered | checker |
+| General | `AMBIGUOUS_USE` | error | existing | existing |
+| General | `CONFLICT_WITH_SUB_PACKAGE` | error | uncovered | checker |
+| General | `CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE` | error | uncovered | checker |
+| General | `ACCESSIBILITY_WITH_MAIN_HINT` | error | uncovered | checker |
+| General | `ACCESSIBILITY_ERROR` | error | existing | existing |
+| General | `PARAM_COUNT_MISMATCH` | error | uncovered | checker |
+| GenericAccess | `GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS` | error | existing | existing |
+| GenericAccess | `GENERIC_NO_METHOD_MATCH_IN_UPPER_BOUNDS` | error | existing | existing |
+| GenericDeep | `GENERIC_TYPE_INCONSISTENT` | error | uncovered | checker |
+| GenericDeep | `GENERIC_ARGUMENT_NO_MATCH` | error | uncovered | checker |
+| GenericDeep | `GENERIC_CONSTRAINT_NOT_LOOSER` | error | uncovered | checker |
+| GenericDeep | `GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS` | error | uncovered | checker |
+| GenericDeep | `GENERIC_PARAM_EXIST_IN_CLASS_IRRELEVANT_UPPERBOUND_RECURSIVELY` | error | existing | existing |
+| GenericDeep | `GENERIC_PARAM_DIRECTLY_RECURSIVE` | error | existing | existing |
+| GenericDeep | `UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE` | error | uncovered | checker |
+| GenericDeep | `GENERIC_STATIC_ACCESS` | error | existing | existing |
+| GenericDeep | `PRIMITIVE_TYPE_AS_GENERICS_ARG` | error | existing | existing |
+| GenericDeep | `MEET_CONSTRAINT_INDIRECTLY` | error | uncovered | checker |
+| GenericDeep | `GENERIC_UPPER_BOUNDS_MUST_BE_JAVA_IN_JAVA` | error | existing | existing |
+| Hide | `HIDE_MULTI_ANNOTATION` | error | existing | existing |
+| Hide | `HIDE_AT_FUNC_PARAM` | error | existing | existing |
+| Hide | `HIDE_MISSING_HIDE` | error | uncovered | checker |
+| Hide | `HIDE_COMPILE_TIME_INVISIBLE` | error | uncovered | checker |
+| Hide | `HIDE_DIFF_PARAM` | error | existing | existing |
+| Hide | `HIDE_MUST_AT_END` | warning | existing | existing |
+| IfAvailable | `IFAVAILABLE_ARG_NO_NAME` | error | existing | existing |
+| IfAvailable | `IFAVAILABLE_ARG_NOT_LITERAL` | error | existing | existing |
+| IfAvailable | `IFAVAILABLE_UNKNOWN_ARG_NAME` | error | existing | existing |
+| IfAvailable | `IFAVAILABLE_LEVEL_LIMIT` | error | uncovered | checker |
+| Imports | `IMPORT_CONFLICT` | error | existing | existing |
+| Imports | `IMPORT_ALIAS_CONFLICT` | error | existing | existing |
+| InheritanceDeep | `INHERIT_MEMBER_KIND_INCONSISTENT` | error | uncovered | checker |
+| InheritanceDeep | `INHERIT_SUPER_MEMBER_KIND_INCONSISTENT` | error | uncovered | checker |
+| InheritanceDeep | `INHERIT_MEMBER_TYPE_INCONSISTENT` | error | uncovered | checker |
+| InheritanceDeep | `INHERIT_ABSTRACT_CLASS_STATIC_UNIMPLEMENT_FUNC` | error | existing | existing |
+| InheritanceDeep | `INVALID_MEMBER_VISIBILITY_IN_CLASS` | error | existing | existing |
+| InheritanceDeep | `CANNOT_INHERIT_SEALED` | error | existing | existing |
+| InheritanceDeep | `INHERIT_THREAD_CONTEXT_INVALID` | error | existing | existing |
+| InheritanceDeep | `INHERIT_THREAD_CONTEXT_NOT_OPEN` | error | existing | existing |
+| InheritanceDeep | `INHERIT_NOT_RETURN_THIS` | error | uncovered | checker |
+| Initialization | `USED_BEFORE_INITIALIZATION` | error | existing | existing |
+| Initialization | `CLASS_UNINITIALIZED_FIELD` | error | existing | existing |
+| Inout | `INOUT_MODIFY_CSTRING_OR_ZEROSIZED` | error | uncovered | checker |
+| Inout | `INOUT_MODIFY_NON_CTYPE` | error | uncovered | checker |
+| Inout | `INOUT_MUST_BE_VAR_VARIABLE` | error | existing | existing |
+| Inout | `INOUT_MODIFY_HEAP_VARIABLE` | error | uncovered | checker |
+| Inout | `INOUT_CAN_ONLY_USED_IN_CFUNC_CALLING` | error | existing | existing |
+| Inout | `INOUT_MISMATCH` | error | uncovered | checker |
+| Inout | `INVALID_INOUT_ARGUMENT` | error | existing | existing |
+| Inout | `DUPLICATE_INOUT_ARGUMENT` | error | existing | existing |
+| Interface | `INTERFACE_CALL_WITH_UNIMPLEMENTED_CALL` | error | existing | existing |
+| Interop | `INVALID_CFUNC_RETURN_TYPE` | error | existing | existing |
+| JavaInterop | `JAVA_INCORRECT_USE_BETWEEN_TYPES` | error | uncovered | checker |
+| JavaInterop | `JAVA_NON_JTYPE` | error | uncovered | checker |
+| JavaInterop | `JAVA_INVALID_UNIT` | error | uncovered | checker |
+| JavaInterop | `JAVA_APP_INHERIT_EXT` | error | uncovered | checker |
+| JavaInterop | `JAVA_UNSUPPORTED_DECL` | error | uncovered | checker |
+| JavaInterop | `MISSING_JAVA_INTEROP_ANNOTATION` | error | uncovered | checker |
+| JavaInterop | `SHADOW_CANNOT_IN_TYPE_ARGS` | error | uncovered | checker |
+| JavaInterop | `UNSUPPORTED_TYPE_ARGUMENT_IN_JAVA_INTEROP` | error | uncovered | checker |
+| JavaInterop | `STATIC_MEMBER_IN_INTERFACE_MUST_HAS_BODY` | error | uncovered | checker |
+| JavaInterop | `DEFINE_JAVA_ANNOTATION` | error | existing | existing |
+| JavaInterop | `INVALID_USE_OF_JAVA_ANNOTATION` | error | uncovered | checker |
+| JavaInterop | `INVALID_USE_OF_ANNOTATION_JFFI` | error | uncovered | checker |
+| JavaInterop | `VARIABLE_OF_JAVA_TYPE` | error | uncovered | checker |
+| JavaInterop | `GENERIC_PARAMETER_OF_JAVA_TYPE` | error | uncovered | checker |
+| JavaInterop | `JAVA_INTEROP_NOT_SUPPORTED` | error | uncovered | checker |
+| JavaMirror | `JAVA_MIRROR_CTOR_ARG_MUST_BE_JAVA_MIRROR` | error | existing | existing |
+| JavaMirror | `JAVA_MIRROR_METHOD_ARG_MUST_BE_JAVA_MIRROR` | error | existing | existing |
+| JavaMirror | `JAVA_MIRROR_METHOD_RET_UNSUPPORTED` | error | uncovered | checker |
+| JavaMirror | `JAVA_MIRROR_PROP_MUST_BE_JAVA_MIRROR` | error | existing | existing |
+| JavaMirror | `JAVA_MIRROR_SUBTYPE_MUST_BE_ANNOTATED` | error | existing | existing |
+| JavaMirror | `JAVA_MIRROR_CANNOT_INHERIT_PURE_CANGJIE_TYPE` | error | existing | existing |
+| JavaMirror | `JAVA_IMPL_CANNOT_INHERIT_PURE_CANGJIE_TYPE` | error | existing | existing |
+| JavaMirror | `JAVA_MIRROR_SUBTYPE_ANNO_MUST_INHERIT_MIRROR` | error | existing | existing |
+| JavaMirror | `JAVA_MIRROR_CANNOT_BE_EXTENDED_WITH_INTERFACE` | error | existing | existing |
+| JavaMirror | `JAVA_IMPL_CANNOT_BE_EXTENDED_WITH_INTERFACE` | error | existing | existing |
+| JavaMirror | `JAVA_IMPL_REDEFINITION` | error | uncovered | checker |
+| JavaMirror | `JAVA_MIRROR_INTEROPLIB_MUST_BE_IMPORTED` | error | uncovered | checker |
+| JavaMirror | `JAVA_HAS_DEFAULT_ANNOTATION_ARGS` | error | uncovered | checker |
+| JavaMirror | `JAVA_HAS_DEFAULT_ANNOTATION_IS_IN_WRONG_PLACE` | error | uncovered | checker |
+| JavaMirror | `JAVA_HAS_DEFAULT_CONFLICT_WITH_STATIC` | error | uncovered | checker |
+| Match | `NON_EXHAUSTIVE_MATCH` | error | existing | existing |
+| Match | `TUPLE_PATTERN_NOT_MATCH` | error | existing | existing |
+| Match | `PATTERN_NOT_MATCH` | error | existing | existing |
+| Match | `ENUM_PATTERN_PARAM_SIZE_ERROR` | error | existing | existing |
+| Match | `NOT_OVERLOAD_IN_MATCH` | error | existing | existing |
+| Match | `MATCH_CASE_HAS_NO_TYPE` | error | existing | existing |
+| Mock | `MOCK_DISABLED` | error | existing | existing |
+| Mock | `MOCK_NOT_IN_TEST_MODE` | error | existing | existing |
+| Mock | `MOCK_UNSUPPORTED_TYPE` | error | existing | existing |
+| Mock | `MOCK_WRONG_STATIC_DECL` | error | uncovered | checker |
+| Mock | `MOCK_DOESNT_SUPPORT_MOCKING` | error | existing | existing |
+| Mock | `MOCK_FROZEN_UNSUPPORTED` | error | existing | existing |
+| Mock | `MOCK_FROZEN_REQUIRED` | error | existing | existing |
+| Mutability | `CANNOT_MODIFY_VAR` | error | existing | existing |
+| Mutability | `IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION` | error | existing | existing |
+| ObjCCJMapping | `OBJC_CJMAPPING_INHERITANCE_INTERFACE_NOT_SUPPORTED` | error | existing | existing |
+| ObjCCJMapping | `OBJC_CJMAPPING_GENERIC_NOT_SUPPORTED` | error | existing | existing |
+| ObjCInterop | `OBJC_INTEROP_CTOR_PARAM_MUST_BE_OBJC_COMPATIBLE` | error | uncovered | checker |
+| ObjCInterop | `OBJC_INTEROP_METHOD_PARAM_MUST_BE_OBJC_COMPATIBLE` | error | uncovered | checker |
+| ObjCInterop | `OBJC_INTEROP_METHOD_RET_MUST_BE_OBJC_COMPATIBLE` | error | uncovered | checker |
+| ObjCInterop | `OBJC_INTEROP_PROP_MUST_BE_OBJC_COMPATIBLE` | error | uncovered | checker |
+| ObjCInterop | `OBJC_INTEROP_FIELD_MUST_BE_OBJC_COMPATIBLE` | error | uncovered | checker |
+| ObjCInterop | `OBJC_MIRROR_DECL_CANNOT_INHERIT` | error | uncovered | checker |
+| ObjCInterop | `OBJC_MIRROR_SUBTYPE_CANNOT_MULTIPLE_INHERIT` | error | uncovered | checker |
+| ObjCInterop | `OBJC_MIRROR_SUBTYPE_MUST_BE_ANNOTATED` | error | existing | existing |
+| ObjCInterop | `OBJC_MIRROR_SUBTYPE_MUST_INHERIT_MIRROR` | error | uncovered | checker |
+| ObjCInterop | `OBJC_MIRROR_MUST_INHERIT_MIRROR` | error | existing | existing |
+| ObjCInterop | `OBJC_MIRROR_INTEROPLIB_MUST_BE_IMPORTED` | error | uncovered | checker |
+| ObjCInterop | `OBJC_INTEROP_NOT_SUPPORTED` | error | uncovered | checker |
+| ObjCInterop | `OBJC_POINTER_ARGUMENT_MUST_BE_OBJC_COMPATIBLE` | error | uncovered | checker |
+| ObjCInterop | `OBJC_INTEROP_TOPLEVEL_PARAM_MUST_BE_OBJC_COMPATIBLE` | error | uncovered | checker |
+| ObjCInterop | `OBJC_INTEROP_TOPLEVEL_RET_MUST_BE_OBJC_COMPATIBLE` | error | uncovered | checker |
+| ObjCInterop | `OBJC_METHOD_MUST_HAVE_FOREIGN_NAME` | error | existing | existing |
+| ObjCInterop | `OBJC_CTOR_MUST_HAVE_FOREIGN_NAME` | error | existing | existing |
+| ObjCInterop | `OBJC_FUNC_ARGUMENT_MUST_BE_OBJC_COMPATIBLE` | error | uncovered | checker |
+| ObjCInterop | `OBJC_FUNC_CALL_PROPERTY_CAN_ONLY_BE_CALLED` | error | uncovered | checker |
+| ObjCInterop | `OBJC_IMPL_MUST_HAVE_OBJC_MIRROR_SUPER_CLASS` | error | existing | existing |
+| ObjCInterop | `OBJC_SETTER_NAME_ON_IMMUTABLE_PROP` | error | uncovered | checker |
+| Property | `PROPERTY_MUST_HAVE_ACCESSORS` | error | existing | existing |
+| Property | `IMMUTABLE_PROPERTY_WITH_SETTER` | error | existing | existing |
+| Property | `PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_MUT` | error | uncovered | checker |
+| Property | `PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_IMMUT` | error | uncovered | checker |
+| Property | `PROPERTY_MUST_IMPLEMENT_BOTH` | error | uncovered | checker |
+| Redeclaration | `CONFLICTING_OVERLOADS` | error | existing | existing |
+| Redeclaration | `REDECLARATION` | error | existing | existing |
+| Redeclaration | `CLASSIFIER_REDECLARATION` | error | existing | existing |
+| Resolve | `NO_CONSTRUCTOR` | error | existing | existing |
+| Resolve | `ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR` | error | existing | existing |
+| Spawn | `SPAWN_ARG_INVALID` | error | existing | existing |
+| Spawn | `SPAWN_ARG_NO_EFFECT` | warning | uncovered | checker |
+| SuperTypes | `SUPER_TYPES_SELF_REFERENCE` | error | existing | existing |
+| SuperTypes | `SUPER_TYPES_DUPLICATE` | error | existing | existing |
+| SuperTypes | `INTERFACE_CANNOT_INHERIT_CLASS` | error | existing | existing |
+| SuperTypes | `MULTIPLE_CLASS_SUPER_TYPES` | error | existing | existing |
+| TypeCheck | `TYPE_MISMATCH` | error | existing | existing |
+| TypeCheck | `PATTERN_INITIALIZER_TYPE_MISMATCH` | error | existing | existing |
+| TypeCheck | `RETURN_TYPE_MISMATCH` | error | existing | existing |
+| TypeCheck | `ARGUMENT_TYPE_MISMATCH` | error | existing | existing |
+| TypeCheck | `ASSIGNMENT_TYPE_MISMATCH` | error | existing | existing |
+| TypeCheck | `VARRAY_SIZE_MISMATCH` | error | existing | existing |
+| TypeCheck | `GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT` | error | existing | existing |
+| TypeCheck | `INVISIBLE_MEMBER` | error | existing | existing |
+| TypeCheck | `INVISIBLE_REFERENCE` | error | existing | existing |
+| TypeCheck | `OVERRIDING_RETURN_TYPE_MISMATCH` | error | existing | existing |
+| TypeCheck | `CANNOT_OVERRIDE_INVISIBLE_MEMBER` | error | existing | existing |
+| TypeCheck | `CLASS_NOT_OPEN_FOR_INHERITANCE` | error | existing | existing |
+| TypeCheck | `ABSTRACT_MEMBER_NOT_IMPLEMENTED` | error | existing | existing |
+| Unresolved | `UNRESOLVED_REFERENCE` | error | existing | existing |
+| Unresolved | `INVALID_BINARY_OPERATOR` | error | existing | existing |
+| Unresolved | `NO_MATCHING_OPERATOR_INVOKE` | error | existing | existing |
+| Unused | `UNUSED_IMPORT` | warning | existing | existing |
+| VArrayExtra | `VARRAY_ARGS_NUMBER_MISMATCH` | error | uncovered | checker |
+| VArrayExtra | `VARRAY_SUBSCRIPT_NUM` | error | uncovered | checker |
+| VArrayExtra | `VARRAY_IN_CFUNC` | error | existing | existing |
+| VArrayExtra | `VARRAY_ARG_TYPE_WITH_REFTYPE` | error | uncovered | checker |

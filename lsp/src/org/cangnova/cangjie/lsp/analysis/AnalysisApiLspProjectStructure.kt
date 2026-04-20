@@ -8,28 +8,33 @@ import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.PsiManager
+import com.intellij.psi.SmartPointerManager
+import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.lang.CangJieFileType
-import org.cangnova.cangjie.analysis.api.CaDanglingFileModule
-import org.cangnova.cangjie.analysis.api.CaModule
-import org.cangnova.cangjie.analysis.api.CaSourceModule
-import org.cangnova.cangjie.analysis.api.CaTargetPlatform
 import org.cangnova.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry
+import org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
 import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaTargetPlatform
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileResolutionMode
 import org.cangnova.cangjie.lsp.state.LspTextDocument
 import org.cangnova.cangjie.lsp.state.LspWorkspaceModuleDefinition
 import org.cangnova.cangjie.lsp.state.LspWorkspaceState
 import org.cangnova.cangjie.lsp.state.uriToPathOrNull
+import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
 import java.nio.file.Files
 import java.nio.file.Path
@@ -492,14 +497,29 @@ internal class CaLspDanglingFileModule(
     override val contextModule: CaModule?,
     private val contentVirtualFile: VirtualFile?,
 ) : CaDanglingFileModule {
+    private val filePointers: List<SmartPsiElementPointer<CjFile>> =
+        listOf(SmartPointerManager.getInstance(project).createSmartPsiElementPointer(psiFile))
+
     override val name: String
         get() = documentUri
 
     override val languageVersionSettings: LanguageVersionSettings
         get() = LanguageVersionSettings.DEFAULT
 
+    override val files: List<CjFile>
+        get() = validFilesOrNull ?: error("Dangling file module is invalid")
+
     override val psiRoots: List<PsiFileSystemItem>
-        get() = listOf(psiFile)
+        get() = files
+
+    override val resolutionMode: CaDanglingFileResolutionMode
+        get() = CaDanglingFileResolutionMode.PREFER_SELF
+
+    override val isCodeFragment: Boolean
+        get() = files.any { it is CjCodeFragment || it.isCodeFragment }
+
+    override val isValid: Boolean
+        get() = validFilesOrNull != null
 
     override val directRegularDependencies: MutableList<CaModule> = mutableListOf()
     override val directDependsOnDependencies: MutableList<CaModule> = mutableListOf()
@@ -509,13 +529,28 @@ internal class CaLspDanglingFileModule(
         get() = CaTargetPlatform.LSP
 
     override val baseContentScope: GlobalSearchScope
-        get() = GlobalSearchScope.filesWithoutLibrariesScope(project, listOfNotNull(contentVirtualFile ?: psiFile.virtualFile))
+        get() = GlobalSearchScope.filesWithoutLibrariesScope(
+            project,
+            files.map { it.viewProvider.virtualFile } + listOfNotNull(contentVirtualFile).filterNot { candidate ->
+                files.any { file -> file.viewProvider.virtualFile == candidate }
+            },
+        )
 
     override val stableModuleName: String
         get() = documentUri
 
     override val moduleDescription: String
         get() = "LSP dangling file $documentUri"
+
+    private val validFilesOrNull: List<CjFile>?
+        get() {
+            val result = ArrayList<CjFile>(filePointers.size)
+            for (filePointer in filePointers) {
+                val file = filePointer.element?.takeIf { it.isValid } ?: return null
+                result += file
+            }
+            return result
+        }
 }
 
 private fun buildSourceModuleContentScope(
@@ -542,7 +577,7 @@ private fun buildSourceModuleContentScope(
 
 internal class AnalysisApiLspProjectStructureProvider(
     private val project: Project,
-) : CaProjectStructureProvider {
+) : CangJieProjectStructureProvider {
     private val state: AnalysisApiLspProjectStructureState
         get() = AnalysisApiLspProjectStructureState.getInstance(project)
 
@@ -655,6 +690,9 @@ internal class AnalysisApiLspRestrictedAnalysisService : CaRestrictedAnalysisSer
  * LSP 平台设置。
  */
 internal class AnalysisApiLspPlatformSettings : CaPlatformSettings {
+    override val deserializedDeclarationsOrigin: CaDeserializedDeclarationsOrigin
+        get() = CaDeserializedDeclarationsOrigin.STUBS
+
     override val allowUseSiteLibraryModuleAnalysis: Boolean
         get() = false
 }

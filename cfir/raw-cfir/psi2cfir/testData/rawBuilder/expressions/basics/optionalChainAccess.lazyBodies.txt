@@ -1,0 +1,2 @@
+FILE: optionalChainAccess.cj
+    internal? func testOptionalChain(x: R|Option<R|Box|||): R|Unit|

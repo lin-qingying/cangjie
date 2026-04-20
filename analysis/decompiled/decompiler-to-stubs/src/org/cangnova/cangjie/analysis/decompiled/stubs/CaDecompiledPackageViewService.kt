@@ -5,12 +5,13 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.stubs.StubElement
 import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.builtins.StandardNames.MAIN
-import org.cangnova.cangjie.analysis.api.CaBuiltinsModule
-import org.cangnova.cangjie.analysis.api.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.decompiled.filestubs.CaDecompiledBinarySupport
 import org.cangnova.cangjie.analysis.decompiled.filestubs.CaLoadedCjoPackage
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
@@ -27,6 +28,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
@@ -252,9 +254,11 @@ class CaDecompiledPackageViewService(
             is CfirNamedFunction -> createFunctionStub(declaration, parent, packageFqName, owningClassFqName)
             is CfirMacroDeclaration -> createMacroStub(declaration, parent, packageFqName, owningClassFqName)
             is CfirProperty -> createPropertyStub(declaration, parent, packageFqName, owningClassFqName)
+            is CfirPropertyAccessor -> Unit
             is CfirFieldVariable -> createFieldStub(declaration, parent, packageFqName, owningClassFqName)
             is CfirPatternVariable -> createPatternVariableStub(declaration, parent)
             is CfirConstructor -> createConstructorStub(declaration, parent, owningClassSimpleName ?: declaration.symbol.callableId.callableName.asString())
+            is CfirCodeFragment,
             is CfirFile,
             is CfirInvalidDeclaration,
             is org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction,

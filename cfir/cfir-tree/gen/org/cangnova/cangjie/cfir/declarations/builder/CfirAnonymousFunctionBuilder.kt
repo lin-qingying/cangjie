@@ -31,6 +31,7 @@ class CfirAnonymousFunctionBuilder {
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
     var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
@@ -53,6 +54,7 @@ class CfirAnonymousFunctionBuilder {
             origin,
             attributes,
             isLocal,
+            deprecationsProvider,
             dispatchReceiverType,
             status,
             typeParameters,
@@ -90,6 +92,7 @@ inline fun buildAnonymousFunctionCopy(original: CfirAnonymousFunction, init: Cfi
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
     copyBuilder.isLocal = original.isLocal
+    copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.dispatchReceiverType = original.dispatchReceiverType
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)

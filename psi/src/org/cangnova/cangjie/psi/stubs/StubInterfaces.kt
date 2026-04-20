@@ -346,9 +346,7 @@ interface CangJieEnumConstructorStub : NamedStub<CjEnumConstructor> {
     fun getEnumFqName(): FqName?
 }
 
-interface CangJieScriptStub : CangJieStubWithFqName<CjScript> {
-    override fun getFqName(): FqName
-}
+
 
 interface CangJieExtendStub : CangJieTypeStatementStub<CjExtend> {
     val extendId: String;

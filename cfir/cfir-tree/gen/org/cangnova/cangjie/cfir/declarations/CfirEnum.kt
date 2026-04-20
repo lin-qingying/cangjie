@@ -25,6 +25,7 @@ abstract class CfirEnum : CfirClassLikeDeclaration(), CfirControlFlowGraphOwner 
     abstract override val annotations: List<CfirAnnotation>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
+    abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
     abstract override val status: CfirDeclarationStatus
     abstract override val typeParameters: List<CfirTypeParameter>
@@ -42,6 +43,8 @@ abstract class CfirEnum : CfirClassLikeDeclaration(), CfirControlFlowGraphOwner 
         transformer.transformEnum(this, data) as E
 
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+
+    abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
     abstract override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 

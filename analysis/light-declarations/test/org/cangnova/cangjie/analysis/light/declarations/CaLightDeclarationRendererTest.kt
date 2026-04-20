@@ -5,6 +5,7 @@ import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.signatures.CaSignature
 import org.cangnova.cangjie.analysis.api.signatures.CaValueParameterSignature
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -139,12 +140,16 @@ class CaLightDeclarationRendererTest {
     private class TestSignature(
         private val renderedText: String,
         override val token: CaLifetimeToken,
-    ) : CaSignature {
-        override val declarationName: Name? = null
+    ) : CaSignature<Nothing> {
+        override val symbol: Nothing
+            get() = error("渲染测试不依赖底层 symbol")
         override val typeParameters: List<Name> = emptyList()
         override val valueParameters: List<CaValueParameterSignature> = emptyList()
         override val returnType: CaType? = null
+        override val receiverType: CaType? = null
         override val annotations: List<CaAnnotation> = emptyList()
+
+        override fun substitute(substitutor: CaSubstitutor): CaSignature<Nothing> = this
 
         override fun toString(): String = renderedText
     }

@@ -26,6 +26,7 @@ abstract class CfirFunctionCall : CfirQualifiedAccessExpression(), CfirCall {
     abstract override val typeArguments: List<CfirTypeRef>
     abstract override val argumentList: CfirArgumentList
     abstract val origin: CfirFunctionCallOrigin
+    abstract val hasTrailingLambda: Boolean
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitFunctionCall(this, data)

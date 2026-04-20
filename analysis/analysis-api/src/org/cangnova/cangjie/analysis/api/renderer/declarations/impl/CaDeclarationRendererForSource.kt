@@ -1,42 +1,42 @@
 package org.cangnova.cangjie.analysis.api.renderer.declarations.impl
 
-import org.cangnova.cangjie.analysis.api.renderer.base.CaAnnotationRendererForSource
 import org.cangnova.cangjie.analysis.api.renderer.base.CaKeywordsRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaCallableParameterRendererForSource
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaCallableReceiverRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.base.annotations.CaAnnotationRendererForSource
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaCallableReturnTypeFilter
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaCallableReturnTypeRendererForSource
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaCallableSignatureRendererForSource
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaClassifierBodyRendererForSource
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaClassLikeSymbolRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaConstructorSymbolRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationModifiersRendererForSource
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationNameRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaEnumEntrySymbolRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaExtendSymbolRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaFieldSymbolRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaFunctionLikeBodyRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaFunctionLikeKeywordRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaLocalVariableSymbolRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaNamedFunctionSymbolRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaParameterDefaultValueRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaPropertySymbolRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaPropertyAccessorsRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaPropertyAccessorBodyRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaRecommendedRendererCodeStyle
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaRendererBodyMemberScopeProvider
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaRendererBodyMemberScopeSorter
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaScriptSymbolRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaSuperTypeListRendererForSource
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaSuperTypesFilter
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaSuperTypeRendererForSource
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaTypeAliasSymbolRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaTypeParametersFilter
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaTypeParameterSymbolRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaTypeParametersRendererForSource
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaVariableInitializerRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.CaValueParameterSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaClassifierBodyRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaFunctionLikeBodyRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaParameterDefaultValueRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaPropertyAccessorBodyRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaPropertyAccessorsRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaRendererBodyMemberScopeProvider
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaRendererBodyMemberScopeSorter
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaVariableInitializerRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.modifiers.CaDeclarationModifiersRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaCallableParameterRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaCallableReceiverRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaCallableReturnTypeRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaCallableSignatureRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaConstructorSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaEnumConstructorSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaFieldSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaFunctionLikeKeywordRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaLocalVariableSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaNamedFunctionSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaPropertySymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaScriptSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaValueParameterSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaClassLikeSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaExtendSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaTypeAliasSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaTypeParametersFilter
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaTypeParametersRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaTypeParameterSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.superTypes.CaSuperTypeListRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.declarations.superTypes.CaSuperTypeRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.declarations.superTypes.CaSuperTypesFilter
 import org.cangnova.cangjie.analysis.api.renderer.types.CaRendererTypeApproximator
 import org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForSource
 
@@ -53,13 +53,13 @@ object CaDeclarationRendererForSource {
         typeRenderer = CaTypeRendererForSource.WITH_QUALIFIED_NAMES
         annotationRenderer = CaAnnotationRendererForSource.WITH_QUALIFIED_NAMES
         modifiersRenderer = CaDeclarationModifiersRendererForSource.NO_IMPLICIT_MODIFIERS
-        declarationTypeApproximator = CaRendererTypeApproximator.TO_DENOTABLE
+        declarationTypeApproximator = CaRendererTypeApproximator.NO_APPROXIMATION
         classifierBodyRenderer = CaClassifierBodyRendererForSource.NO_BODY
         superTypeRenderer = CaSuperTypeRendererForSource.WITH_OUT_APPROXIMATION
         superTypeListRenderer = CaSuperTypeListRendererForSource.AS_LIST
         superTypesFilter = CaSuperTypesFilter.ALL
         bodyMemberScopeProvider = CaRendererBodyMemberScopeProvider.ALL_DECLARED
-        bodyMemberScopeSorter = CaRendererBodyMemberScopeSorter.ENUM_ENTRIES_AT_BEGINNING
+        bodyMemberScopeSorter = CaRendererBodyMemberScopeSorter.ENUM_CONSTRUCTORS_AT_BEGINNING
         functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.NO_BODY
         variableInitializerRenderer = CaVariableInitializerRenderer.NO_INITIALIZER
         parameterDefaultValueRenderer = CaParameterDefaultValueRenderer.NO_DEFAULT_VALUE
@@ -81,7 +81,7 @@ object CaDeclarationRendererForSource {
         propertyRenderer = CaPropertySymbolRenderer.AS_SOURCE
         fieldRenderer = CaFieldSymbolRenderer.AS_SOURCE
         localVariableRenderer = CaLocalVariableSymbolRenderer.AS_SOURCE
-        enumEntryRenderer = CaEnumEntrySymbolRenderer.AS_SOURCE
+        enumConstructorRenderer = CaEnumConstructorSymbolRenderer.AS_SOURCE
         valueParameterRenderer = CaValueParameterSymbolRenderer.AS_SOURCE
         typeParameterRenderer = CaTypeParameterSymbolRenderer.AS_SOURCE
         scriptRenderer = CaScriptSymbolRenderer.AS_SOURCE
@@ -96,46 +96,46 @@ object CaDeclarationRendererForSource {
     }
 
     val WITH_QUALIFIED_NAMES_WITH_BODY: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
-        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.AS_SOURCE
-        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.AS_RENDERED_ACCESSORS
-        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.AS_SOURCE
+        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.NO_BODY
+        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_ACCESSORS
+        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.NO_BODY
     }
 
     val WITH_QUALIFIED_NAMES_WITH_MEMBERS_AND_BODY: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
         classifierBodyRenderer = CaClassifierBodyRendererForSource.BODY_WITH_MEMBERS
-        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.AS_SOURCE
-        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.AS_RENDERED_ACCESSORS
-        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.AS_SOURCE
+        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.NO_BODY
+        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_ACCESSORS
+        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.NO_BODY
     }
 
     val WITH_QUALIFIED_NAMES_WITH_PLACEHOLDER_BODIES: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
-        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.WITH_PLACEHOLDER
-        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.AS_RENDERED_ACCESSORS
-        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.WITH_PLACEHOLDER
+        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.NO_BODY
+        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_ACCESSORS
+        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.NO_BODY
     }
 
     val WITH_QUALIFIED_NAMES_WITH_INITIALIZERS: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
-        variableInitializerRenderer = CaVariableInitializerRenderer.AS_SOURCE
+        variableInitializerRenderer = CaVariableInitializerRenderer.NO_INITIALIZER
     }
 
     val WITH_QUALIFIED_NAMES_WITH_DEFAULT_PARAMETER_VALUES: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
-        parameterDefaultValueRenderer = CaParameterDefaultValueRenderer.AS_SOURCE
+        parameterDefaultValueRenderer = CaParameterDefaultValueRenderer.THREE_DOTS
     }
 
     val WITH_QUALIFIED_NAMES_WITH_ALL_DETAILS: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
-        variableInitializerRenderer = CaVariableInitializerRenderer.AS_SOURCE
-        parameterDefaultValueRenderer = CaParameterDefaultValueRenderer.AS_SOURCE
-        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.AS_SOURCE
-        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.AS_RENDERED_ACCESSORS
-        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.AS_SOURCE
+        variableInitializerRenderer = CaVariableInitializerRenderer.NO_INITIALIZER
+        parameterDefaultValueRenderer = CaParameterDefaultValueRenderer.THREE_DOTS
+        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.NO_BODY
+        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_ACCESSORS
+        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.NO_BODY
     }
 
     val WITH_QUALIFIED_NAMES_WITH_PLACEHOLDER_DETAILS: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
-        variableInitializerRenderer = CaVariableInitializerRenderer.WITH_PLACEHOLDER
-        parameterDefaultValueRenderer = CaParameterDefaultValueRenderer.WITH_PLACEHOLDER
-        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.WITH_PLACEHOLDER
-        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.AS_RENDERED_ACCESSORS
-        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.WITH_PLACEHOLDER
+        variableInitializerRenderer = CaVariableInitializerRenderer.NO_INITIALIZER
+        parameterDefaultValueRenderer = CaParameterDefaultValueRenderer.THREE_DOTS
+        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.NO_BODY
+        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_ACCESSORS
+        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.NO_BODY
     }
 
     val WITH_QUALIFIED_NAMES_RAW_SIGNATURES: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {

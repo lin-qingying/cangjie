@@ -20,6 +20,12 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitWrappedExpression(wrappedExpression: CfirWrappedExpression, data: D): R =
         visitExpression(wrappedExpression, data)
 
+    override fun visitOptionalExpression(optionalExpression: CfirOptionalExpression, data: D): R =
+        visitWrappedExpression(optionalExpression, data)
+
+    override fun visitOptionalChainExpression(optionalChainExpression: CfirOptionalChainExpression, data: D): R =
+        visitWrappedExpression(optionalChainExpression, data)
+
     override fun visitResolvedImport(resolvedImport: CfirResolvedImport, data: D): R =
         visitImport(resolvedImport, data)
 
@@ -34,6 +40,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitClassLikeDeclaration(classLikeDeclaration: CfirClassLikeDeclaration, data: D): R =
         visitMemberDeclaration(classLikeDeclaration, data)
+
+    override fun visitCodeFragment(codeFragment: CfirCodeFragment, data: D): R =
+        visitDeclaration(codeFragment, data)
 
     override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: D): R =
         visitCallableDeclaration(enumConstructor, data)
@@ -68,6 +77,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitProperty(property: CfirProperty, data: D): R =
         visitCallableDeclaration(property, data)
 
+    override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor, data: D): R =
+        visitFunction(propertyAccessor, data)
+
     override fun visitVariable(variable: CfirVariable, data: D): R =
         visitCallableDeclaration(variable, data)
 
@@ -100,6 +112,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase, data: D): R =
         visitNamedReference(namedReferenceWithCandidateBase, data)
+
+    override fun visitInoutArgumentExpression(inoutArgumentExpression: CfirInoutArgumentExpression, data: D): R =
+        visitWrappedExpression(inoutArgumentExpression, data)
 
     override fun visitCall(call: CfirCall, data: D): R =
         visitStatement(call, data)
@@ -157,6 +172,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitThrowExpression(throwExpression: CfirThrowExpression, data: D): R =
         visitExpression(throwExpression, data)
+
+    override fun visitResolvedDeclarationStatus(resolvedDeclarationStatus: CfirResolvedDeclarationStatus, data: D): R =
+        visitDeclarationStatus(resolvedDeclarationStatus, data)
 
     override fun visitPerformExpression(performExpression: CfirPerformExpression, data: D): R =
         visitExpression(performExpression, data)
@@ -256,6 +274,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitFunctionTypeRef(functionTypeRef: CfirFunctionTypeRef, data: D): R =
         visitTypeRef(functionTypeRef, data)
+
+    override fun visitOptionTypeRef(optionTypeRef: CfirOptionTypeRef, data: D): R =
+        visitUnresolvedTypeRef(optionTypeRef, data)
 
     override fun visitTupleTypeRef(tupleTypeRef: CfirTupleTypeRef, data: D): R =
         visitTypeRef(tupleTypeRef, data)

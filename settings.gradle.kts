@@ -39,6 +39,18 @@ include(":prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-for-ide"
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-cfir-for-ide")
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-standalone-for-ide")
 
+
+
+include("prepare:ide-plugin-dependencies-module")
+include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-psi-for-ide-module")
+include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-common-for-ide-module")
+
+include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-cfir-for-ide-module")
+include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-for-ide-module")
+include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-cfir-for-ide-module")
+include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-standalone-for-ide-module")
+
+
 include(":util")
 include(":lsp")
 // PSI 模块
@@ -116,4 +128,5 @@ include("compiler:plugin")
 include("cfir:providers")
 include("resolution.common")
 
-include("intellij-ide")
+
+

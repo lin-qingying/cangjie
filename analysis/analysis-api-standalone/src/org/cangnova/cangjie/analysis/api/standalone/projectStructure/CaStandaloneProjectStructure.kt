@@ -1,3 +1,8 @@
+@file:OptIn(
+    org.cangnova.cangjie.analysis.api.CaImplementationDetail::class,
+    org.cangnova.cangjie.analysis.api.CaPlatformInterface::class,
+)
+
 package org.cangnova.cangjie.analysis.api.standalone.projectStructure
 
 import com.intellij.openapi.project.Project
@@ -5,16 +10,19 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.search.GlobalSearchScope
-import org.cangnova.cangjie.analysis.api.CaLibraryModule
-import org.cangnova.cangjie.analysis.api.CaLibrarySourceModule
-import org.cangnova.cangjie.analysis.api.CaModule
-import org.cangnova.cangjie.analysis.api.CaSourceModule
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScope
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider
+import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaBaseResolutionScopeProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
@@ -23,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong
  * Standalone 项目结构视图。
  *
  * 该对象同时承载：
- * 1. [CaProjectStructureProvider]
+ * 1. [CangJieProjectStructureProvider]
  * 2. [CaModuleProvider]
  * 3. [CaContentScopeRefiner]
  * 4. [CaModificationTracker]
@@ -34,7 +42,7 @@ import java.util.concurrent.atomic.AtomicLong
  */
 class CaStandaloneProjectStructure(
     override val allModules: List<CaModule>,
-) : CaProjectStructureProvider, CaModuleProvider, CaContentScopeRefiner, CaModificationTracker, CaSessionInvalidationService {
+) : CangJieProjectStructureProvider, CaModuleProvider, CaContentScopeRefiner, CaModificationTracker, CaSessionInvalidationService, CaResolutionScopeProvider {
     /**
      * Standalone 模块图必须显式绑定到唯一的 IntelliJ Project。
      */
@@ -52,6 +60,7 @@ class CaStandaloneProjectStructure(
 
     private val globalModificationCount = AtomicLong(0)
     private val moduleModificationCounts = ConcurrentHashMap<CaModule, AtomicLong>()
+    private val resolutionScopeProvider = CaBaseResolutionScopeProvider()
     private val rootEntries = buildList {
         allModules.forEach { module ->
             when (module) {
@@ -100,6 +109,10 @@ class CaStandaloneProjectStructure(
 
     override fun getRefinedContentScope(module: CaModule, baseContentScope: GlobalSearchScope): GlobalSearchScope {
         return baseContentScope
+    }
+
+    override fun getResolutionScope(module: CaModule): CaResolutionScope {
+        return resolutionScopeProvider.getResolutionScope(module)
     }
 
     override fun getModuleByStableName(stableModuleName: String): CaModule? {

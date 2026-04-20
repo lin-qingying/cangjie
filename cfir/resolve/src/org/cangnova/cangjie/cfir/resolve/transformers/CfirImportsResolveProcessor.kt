@@ -40,7 +40,7 @@ internal typealias CfirImportsResolveProcessor = CfirImportResolveProcessor
  * IMPORTS 阶段的树变换器。
  * 它只处理文件级 import 绑定，并在完成后推进 resolve phase。
  */
-internal class CfirImportResolveTransformer(
+class CfirImportResolveTransformer(
     override val session: CfirSession,
     @Suppress("unused")
     private val diagnosticReporter: CfirDiagnosticReporter,

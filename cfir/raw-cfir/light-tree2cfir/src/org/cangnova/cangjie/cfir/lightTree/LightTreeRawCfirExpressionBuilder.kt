@@ -20,11 +20,9 @@ import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
-import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.lexer.CjTokens
-import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
@@ -69,8 +67,9 @@ class LightTreeRawCfirExpressionBuilder(
         CjNodeTypes.POSTFIX_EXPRESSION -> convertPostfix(node)
 
         // 访问
+        CjNodeTypes.OPTIONAL_EXPRESSION -> convertOptionalExpression(node)
+        CjNodeTypes.OPTIONAL_CHAIN_EXPRESSION -> convertOptionalChainExpression(node)
         CjNodeTypes.DOT_QUALIFIED_EXPRESSION -> convertDotQualified(node)
-        CjNodeTypes.SAFE_ACCESS_EXPRESSION -> convertDotQualified(node)
         CjNodeTypes.REFERENCE_EXPRESSION -> convertNameReference(node)
 
         // 调用
@@ -379,6 +378,36 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /**
+     * optional 后缀包装节点。
+     *
+     * LightTree 这里只承接 parser 产出的 `OPTIONAL_EXPRESSION`，
+     * 不再把 `?.` / `?[` / `?(` 视为独立安全访问表达式。
+     */
+    private fun convertOptionalExpression(node: LighterASTNode): CfirExpression {
+        val baseExpression = findFirstExpression(node)
+            ?: return buildErrorExpression(node.toSourceElement(), "Malformed optional expression: missing base expression")
+        return buildOptionalExpression {
+            source = node.toSource()
+            expression = convertExpression(baseExpression)
+        }
+    }
+
+    /**
+     * optional chain 根节点。
+     *
+     * 链内部仍保留普通的 qualified access / call / subscript 结构，
+     * optional 语义由外层节点统一承接。
+     */
+    private fun convertOptionalChainExpression(node: LighterASTNode): CfirExpression {
+        val chainExpression = findFirstExpression(node)
+            ?: return buildErrorExpression(node.toSourceElement(), "Malformed optional chain expression: missing chain body")
+        return buildOptionalChainExpression {
+            source = node.toSource()
+            expression = convertExpression(chainExpression)
+        }
+    }
+
     // ===== Call & Access =====
 
       private fun convertCall(node: LighterASTNode): CfirExpression {
@@ -539,12 +568,21 @@ class LightTreeRawCfirExpressionBuilder(
                     }
                 }
                 val recv = receiverNode?.let { convertExpression(it) }
-                val refName = if (selectorNode?.tokenType == CjNodeTypes.REFERENCE_EXPRESSION) {
-                    selectorNode!!.asText()
-                } else {
-                    selectorNode?.asText() ?: "<error>"
+                val refNode = when (selectorNode?.tokenType) {
+                    CjNodeTypes.REFERENCE_EXPRESSION -> selectorNode
+                    CjNodeTypes.CALL_EXPRESSION -> {
+                        var callCalleeNode: LighterASTNode? = null
+                        tree.forEachChildren(selectorNode!!) { child ->
+                            if (callCalleeNode == null && isExpressionToken(child.tokenType)) {
+                                callCalleeNode = child
+                            }
+                        }
+                        callCalleeNode
+                    }
+                    else -> null
                 }
-                recv to buildNamedReference(referenceNameFromText(refName), selectorNode?.toSource() ?: calleeNode.toSource())
+                val refName = refNode?.asText() ?: "<error>"
+                recv to buildNamedReference(referenceNameFromText(refName), refNode?.toSource() ?: calleeNode.toSource())
             }
             else -> null to buildNamedReference(referenceNameFromText(calleeNode.asText()), calleeNode.toSource())
         }
@@ -579,7 +617,7 @@ class LightTreeRawCfirExpressionBuilder(
         tree.forEachChildren(node) { child ->
             val tt = child.tokenType
             when {
-                tt == CjTokens.DOT || tt == CjTokens.QUEST -> afterDot = true
+                tt == CjTokens.DOT -> afterDot = true
                 !afterDot && isSemanticToken(tt) -> receiverNode = child
                 afterDot && selectorNode == null && isSemanticToken(tt) -> selectorNode = child
             }
@@ -740,14 +778,13 @@ class LightTreeRawCfirExpressionBuilder(
         calleeNode ?: return emptyList()
         return when (calleeNode.tokenType) {
             CjNodeTypes.REFERENCE_EXPRESSION -> collectReferenceTypeArguments(calleeNode)
-            CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
-            CjNodeTypes.SAFE_ACCESS_EXPRESSION -> {
+            CjNodeTypes.DOT_QUALIFIED_EXPRESSION -> {
                 var selectorNode: LighterASTNode? = null
                 var afterDot = false
                 tree.forEachChildren(calleeNode) { child ->
                     val tt = child.tokenType
                     when {
-                        tt == CjTokens.DOT || tt == CjTokens.QUEST -> afterDot = true
+                        tt == CjTokens.DOT -> afterDot = true
                         afterDot && selectorNode == null && isSemanticToken(tt) -> selectorNode = child
                     }
                 }
@@ -1517,7 +1554,7 @@ class LightTreeRawCfirExpressionBuilder(
         return null
     }
 
-    private inline fun <D : CfirDeclaration, S : CfirSymbol<D>> buildSourceDeclaration(
+    private inline fun <D : CfirDeclaration, S : CfirBasedSymbol<D>> buildSourceDeclaration(
         symbol: S,
         builder: (S) -> D,
     ): D {
@@ -1544,7 +1581,8 @@ class LightTreeRawCfirExpressionBuilder(
             CjNodeTypes.UNIT_CONSTANT, CjNodeTypes.STRING_TEMPLATE,
             CjNodeTypes.BINARY_EXPRESSION, CjNodeTypes.RANGE_EXPRESSION,
             CjNodeTypes.PREFIX_EXPRESSION, CjNodeTypes.POSTFIX_EXPRESSION,
-            CjNodeTypes.DOT_QUALIFIED_EXPRESSION, CjNodeTypes.SAFE_ACCESS_EXPRESSION,
+            CjNodeTypes.OPTIONAL_EXPRESSION, CjNodeTypes.OPTIONAL_CHAIN_EXPRESSION,
+            CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
             CjNodeTypes.REFERENCE_EXPRESSION, CjNodeTypes.CALL_EXPRESSION,
             CjNodeTypes.SPAWN_EXPRESSION,
             CjNodeTypes.IF, CjNodeTypes.MATCH,

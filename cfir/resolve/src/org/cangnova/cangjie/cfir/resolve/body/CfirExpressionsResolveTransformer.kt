@@ -43,6 +43,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeImplicitResumeOutsideHandlerError
 import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingHandleBlockError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingInvokeOperatorError
+import org.cangnova.cangjie.cfir.diagnostic.ConeOptionalChainNonOptionalError
 import org.cangnova.cangjie.cfir.diagnostic.ConeResumeNoWithError
 import org.cangnova.cangjie.cfir.diagnostic.ConeResumeThrowingMismatchTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
@@ -72,7 +73,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * and a dedicated checker pass reports them after body resolve completes.
  */
 @OptIn(CfirImplementationDetail::class, ApplicabilityDetail::class)
-class CfirExpressionsResolveTransformer(
+open class CfirExpressionsResolveTransformer(
     transformer: CfirAbstractBodyResolveTransformerDispatcher,
 ) : CfirPartialBodyResolveTransformer(transformer) {
     private data class EffectHandlerContext(
@@ -114,6 +115,40 @@ class CfirExpressionsResolveTransformer(
         wrappedExpression.transformChildren(transformer, data)
         wrappedExpression.replaceConeTypeOrNull(wrappedExpression.expression.coneTypeOrNull)
         return wrappedExpression
+    }
+
+    override fun transformOptionalExpression(
+        optionalExpression: CfirOptionalExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        optionalExpression.transformChildren(transformer, data)
+        optionalExpression.replaceConeTypeOrNull(optionalExpression.expression.coneTypeOrNull)
+        return optionalExpression
+    }
+
+    override fun transformOptionalChainExpression(
+        optionalChainExpression: CfirOptionalChainExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        optionalChainExpression.transformChildren(transformer, data)
+
+        val chainRoot = optionalChainExpression.expression.optionalChainRootExpression()
+        val rootType = chainRoot?.coneTypeOrNull
+        if (rootType == null) {
+            optionalChainExpression.replaceConeTypeOrNull(
+                ConeErrorType(ConeSimpleDiagnostic("optional chain root type is unresolved", DiagnosticKind.InferenceError))
+            )
+            return optionalChainExpression
+        }
+
+        if (!rootType.isOption) {
+            optionalChainExpression.replaceConeTypeOrNull(ConeErrorType(ConeOptionalChainNonOptionalError(rootType)))
+            return optionalChainExpression
+        }
+
+        val liftedResultType = liftOptionalChainResultType(optionalChainExpression.expression.coneTypeOrNull)
+        optionalChainExpression.replaceConeTypeOrNull(liftedResultType)
+        return optionalChainExpression
     }
 
     private fun transformThisReceiverExpression(
@@ -1415,6 +1450,36 @@ class CfirExpressionsResolveTransformer(
         val symbol = components.symbolProvider.getClassLikeSymbolByClassId(classId)
         return if (symbol != null) constructClassLikeType(symbol, classId, typeArguments)
         else ConeClassLikeType(classId.toLookupTag(), typeArguments)
+    }
+
+    /**
+     * optional chain 的结果语义始终是 `Option<result>`。
+     *
+     * 本轮不做官方的完整 match/Some/None 解糖，只在 resolve 入口保证类型提升语义成立。
+     */
+    private fun liftOptionalChainResultType(resultType: ConeCangJieType?): ConeCangJieType {
+        val effectiveResultType = resultType ?: return ConeErrorType(
+            ConeSimpleDiagnostic("optional chain result type is unresolved", DiagnosticKind.InferenceError)
+        )
+        return constructNamedType(
+            classId = StdlibClassIds.Option,
+            typeArguments = listOf(ConeTypeProjection(effectiveResultType)),
+        )
+    }
+
+    /**
+     * 从整条 optional chain 内部链条中找到 quest 包装的链首表达式。
+     *
+     * 链内普通访问/调用/索引节点不参与 optional 语义判定，真正需要校验的是最外层
+     * `CfirOptionalExpression` 对应的 base expression 类型。
+     */
+    private fun CfirExpression.optionalChainRootExpression(): CfirExpression? = when (this) {
+        is CfirOptionalExpression -> expression
+        is CfirQualifiedAccessExpression -> explicitReceiver?.optionalChainRootExpression()
+            ?: dispatchReceiver?.optionalChainRootExpression()
+        is CfirFunctionCall -> explicitReceiver?.optionalChainRootExpression()
+        is CfirSubscriptExpression -> receiver.optionalChainRootExpression()
+        else -> null
     }
 
     private fun constructClassLikeType(

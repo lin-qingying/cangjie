@@ -4,7 +4,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
@@ -67,7 +67,7 @@ class NeedNamedArgument(
 ) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
 
 class VisibilityError(
-    val symbol: CfirSymbol<*>,
+    val symbol: CfirBasedSymbol<*>,
 ) : ResolutionDiagnostic(CandidateApplicability.RESOLVED_WITH_ERROR)
 
 class InferenceConstraintError(

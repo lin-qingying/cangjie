@@ -34,6 +34,7 @@ internal class CfirErrorNamedValueImpl(
     override val attributes: CfirDeclarationAttributes,
     override val typeParameters: MutableList<CfirTypeParameterRef>,
     override var status: CfirDeclarationStatus,
+    override var deprecationsProvider: DeprecationsProvider,
     override val dispatchReceiverType: ConeSimpleCangJieType?,
     override val diagnostic: ConeDiagnostic,
     override val name: Name,
@@ -95,5 +96,9 @@ internal class CfirErrorNamedValueImpl(
 
     override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef) {
         returnTypeRef = newReturnTypeRef
+    }
+
+    override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider) {
+        deprecationsProvider = newDeprecationsProvider
     }
 }

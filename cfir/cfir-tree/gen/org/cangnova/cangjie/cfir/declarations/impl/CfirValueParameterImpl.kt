@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
@@ -33,8 +34,10 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
     override val isLocal: Boolean,
+    override var deprecationsProvider: DeprecationsProvider,
     override val dispatchReceiverType: ConeSimpleCangJieType?,
     override val symbol: CfirValueParameterSymbol,
+    override val containingDeclarationSymbol: CfirBasedSymbol<*>,
     override val isNamed: Boolean,
     override var status: CfirDeclarationStatus,
     override val typeParameters: MutableList<CfirTypeParameter>,
@@ -104,6 +107,12 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
         annotations = newAnnotations.toMutableOrEmpty()
     }
 
+    override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider) {
+        deprecationsProvider = newDeprecationsProvider
+    }
+
+    override fun replaceInitializer(newInitializer: CfirExpression?) {}
+
     override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?) {
         controlFlowGraphReference = newControlFlowGraphReference
     }
@@ -114,5 +123,9 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
 
     override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef) {
         returnTypeRef = newReturnTypeRef
+    }
+
+    override fun replaceDefaultValue(newDefaultValue: CfirExpression?) {
+        defaultValue = newDefaultValue
     }
 }

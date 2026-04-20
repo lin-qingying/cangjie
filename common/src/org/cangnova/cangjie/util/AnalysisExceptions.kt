@@ -89,3 +89,11 @@ private fun CjSourceElement.isDefinitelyNotInsideFile(fileSource: CjSourceElemen
         else -> !lighterASTNode.isInside(fileSource.lighterASTNode, treeStructure)
     }
 }
+
+inline fun <R> withSourceCodeAnalysisExceptionUnwrapping(block: () -> R): R {
+    return try {
+        block()
+    } catch (throwable: Throwable) {
+        throw if (throwable is SourceCodeAnalysisException) throwable.cause else throwable
+    }
+}

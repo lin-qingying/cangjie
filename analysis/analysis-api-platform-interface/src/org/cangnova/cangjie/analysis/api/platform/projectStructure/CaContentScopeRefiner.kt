@@ -3,7 +3,7 @@ package org.cangnova.cangjie.analysis.api.platform.projectStructure
 import com.intellij.openapi.components.serviceOrNull
 import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 
 /**
  * 模块内容范围细化器。

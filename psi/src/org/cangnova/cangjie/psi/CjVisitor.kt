@@ -72,9 +72,6 @@ open class CjVisitor<R, D> : PsiElementVisitor() {
         return visitCjElement(expression, data)
     }
 
-    open fun visitScript(script: CjScript, data: D): R? {
-        return visitDeclaration(script, data)
-    }
 
     /**
      * 访问通用仓颉文件
@@ -101,6 +98,14 @@ open class CjVisitor<R, D> : PsiElementVisitor() {
 
     open fun visitSafeQualifiedExpression(expression: CjSafeQualifiedExpression, data: D): R? {
         return visitQualifiedExpression(expression, data)
+    }
+
+    open fun visitOptionalExpression(expression: CjOptionalExpression, data: D): R? {
+        return visitExpression(expression, data)
+    }
+
+    open fun visitOptionalChainExpression(expression: CjOptionalChainExpression, data: D): R? {
+        return visitExpression(expression, data)
     }
 
     open fun visitMacroExpression(expression: CjMacroExpression, data: D): R? {

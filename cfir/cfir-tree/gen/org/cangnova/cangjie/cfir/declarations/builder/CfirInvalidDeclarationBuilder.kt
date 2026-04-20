@@ -15,7 +15,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirInvalidDeclarationImpl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
@@ -24,7 +24,7 @@ class CfirInvalidDeclarationBuilder {
     lateinit var moduleData: CfirModuleData
     lateinit var resolvePhase: CfirResolvePhase
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    lateinit var symbol: CfirSymbol<*>
+    lateinit var symbol: CfirBasedSymbol<*>
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
     lateinit var reason: String

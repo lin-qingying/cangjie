@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSpawnExpression
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -24,16 +25,19 @@ class CfirSpawnExpressionImpl @CfirImplementationDetail constructor(
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
     override var body: CfirBlock,
+    override var threadContextArgument: CfirExpression?,
 ) : CfirSpawnExpression() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
         body.accept(visitor, data)
+        threadContextArgument?.accept(visitor, data)
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirSpawnExpressionImpl {
         transformAnnotations(transformer, data)
         transformBody(transformer, data)
+        transformThreadContextArgument(transformer, data)
         return this
     }
 
@@ -44,6 +48,11 @@ class CfirSpawnExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirSpawnExpressionImpl {
         body = body.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformThreadContextArgument(transformer: CfirTransformer<D>, data: D): CfirSpawnExpressionImpl {
+        threadContextArgument = threadContextArgument?.transform(transformer, data)
         return this
     }
 

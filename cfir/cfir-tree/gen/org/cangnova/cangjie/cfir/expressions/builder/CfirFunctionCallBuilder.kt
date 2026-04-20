@@ -29,6 +29,7 @@ open class CfirFunctionCallBuilder : CfirAbstractFunctionCallBuilder {
     override val typeArguments: MutableList<CfirTypeRef> = mutableListOf()
     override var argumentList: CfirArgumentList = CfirEmptyArgumentList
     override var origin: CfirFunctionCallOrigin = CfirFunctionCallOrigin.Regular
+    override var hasTrailingLambda: Boolean = false
 
     @OptIn(CfirImplementationDetail::class)
     override fun build(): CfirFunctionCall {
@@ -42,6 +43,7 @@ open class CfirFunctionCallBuilder : CfirAbstractFunctionCallBuilder {
             typeArguments.toMutableOrEmpty(),
             argumentList,
             origin,
+            hasTrailingLambda,
         )
     }
 
@@ -70,5 +72,6 @@ inline fun buildFunctionCallCopy(original: CfirFunctionCall, init: CfirFunctionC
     copyBuilder.typeArguments.addAll(original.typeArguments)
     copyBuilder.argumentList = original.argumentList
     copyBuilder.origin = original.origin
+    copyBuilder.hasTrailingLambda = original.hasTrailingLambda
     return copyBuilder.apply(init).build()
 }

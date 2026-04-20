@@ -14,7 +14,7 @@ dependencies {
 
     implementation(kotlin("reflect"))
 
-    implementation(intellijCore())
+    compileOnly(intellijCore())
     implementation(libs.guava)
 }
 

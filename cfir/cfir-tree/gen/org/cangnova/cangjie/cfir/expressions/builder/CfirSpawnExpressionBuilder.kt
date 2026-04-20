@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSpawnExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirSpawnExpressionImpl
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -24,6 +25,7 @@ class CfirSpawnExpressionBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
     lateinit var body: CfirBlock
+    var threadContextArgument: CfirExpression? = null
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirSpawnExpression {
@@ -32,6 +34,7 @@ class CfirSpawnExpressionBuilder {
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
             body,
+            threadContextArgument,
         )
     }
 
@@ -55,5 +58,6 @@ inline fun buildSpawnExpressionCopy(original: CfirSpawnExpression, init: CfirSpa
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.body = original.body
+    copyBuilder.threadContextArgument = original.threadContextArgument
     return copyBuilder.apply(init).build()
 }

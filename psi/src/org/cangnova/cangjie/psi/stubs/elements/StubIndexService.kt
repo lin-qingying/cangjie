@@ -40,8 +40,7 @@ open class StubIndexService protected constructor() {
 
     open fun indexEnumConstructor(stub: CangJieEnumConstructorStub, sink: IndexSink) {
     }
-    open fun indexScript(stub: CangJieScriptStub, sink: IndexSink) {
-    }
+
     open fun indexEnum(stub: CangJieEnumStub, sink: IndexSink) {
     }
 

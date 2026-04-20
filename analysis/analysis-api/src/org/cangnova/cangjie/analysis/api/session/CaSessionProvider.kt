@@ -2,8 +2,8 @@ package org.cangnova.cangjie.analysis.api.session
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
-import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.CaSession
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.psi.CjElement
 
 /**

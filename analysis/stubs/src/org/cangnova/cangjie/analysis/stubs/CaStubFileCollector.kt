@@ -6,11 +6,11 @@ import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.PsiManager
-import org.cangnova.cangjie.analysis.api.CaBuiltinsModule
-import org.cangnova.cangjie.analysis.api.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.lang.declarations.CangJieBuiltInFileType
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.utils.isCangJieFileType
@@ -36,7 +36,7 @@ internal class CaStubFileCollector(
     }
 
     private fun collectSourceFiles(destination: MutableSet<CjFile>) {
-        val projectStructureProvider = CaProjectStructureProvider.getInstance(project)
+        val projectStructureProvider = CangJieProjectStructureProvider.getInstance(project)
         projectStructureProvider.allSourceFiles.forEach { item ->
             collectCangJieFiles(item, destination)
         }
@@ -45,7 +45,7 @@ internal class CaStubFileCollector(
     private fun collectCompiledFiles(destination: MutableSet<CjFile>) {
         val decompiledBinaryIndex = project.getService(CaDecompiledBinaryIndex::class.java) ?: return
         val decompiledPsiProvider = project.getService(CaDecompiledPsiProvider::class.java) ?: return
-        val projectStructureProvider = CaProjectStructureProvider.getInstance(project)
+        val projectStructureProvider = CangJieProjectStructureProvider.getInstance(project)
 
         projectStructureProvider.allModules.forEach { module ->
             when (module) {

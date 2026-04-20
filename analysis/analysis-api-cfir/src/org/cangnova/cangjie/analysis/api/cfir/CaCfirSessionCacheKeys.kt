@@ -2,8 +2,8 @@ package org.cangnova.cangjie.analysis.api.cfir
 
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateDecision
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirCompletionSymbolKey
-import org.cangnova.cangjie.analysis.api.cfir.resolve.DiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCompletionSymbolKey
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.name.FqName

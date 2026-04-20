@@ -45,6 +45,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCommonPackage
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCommonSpecificChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirConstDeclarationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirConstFunctionVarChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirDefaultParameterChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirDeprecatedDeclarationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendExtraChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionOverloadChecker
@@ -82,6 +83,9 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
         get() = setOf(
             CfirVArrayExtraChecker,
             CfirDeprecatedDeclarationChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirJavaInteropTypePropagationChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCustomAnnotationPlaceChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirAnnotationArgNumberCallableChecker,
         )
 
     override val functionCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionChecker>
@@ -102,6 +106,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
         get() = setOf(
             CfirOperatorDeclarationChecker,
             CfirFunctionOverloadChecker,
+            CfirDefaultParameterChecker,
         )
 
     override val fileCheckers: Set<CfirFileChecker>
@@ -158,6 +163,8 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirInheritanceThreadContextChecker,
             CfirCJMappingChecker,
             CfirObjCCJMappingChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCommonCtorImmutableAssignChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirAnnotationArgNumberClassChecker,
         )
 
     override val propertyCheckers: Set<CfirPropertyChecker>

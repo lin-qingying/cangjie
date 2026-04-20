@@ -15,11 +15,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.lazyDeclarationResolver
@@ -28,7 +30,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -280,10 +282,10 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
     }
 
     private fun belongsToFile(
-        symbol: CfirSymbol<*>,
+        symbol: CfirBasedSymbol<*>,
         cfirFile: CfirFile,
         outputPart: CfirOutputPartForDependsOnModule,
-    ): Boolean = outputPart.session.symbolProvider.getContainingFile(symbol) == cfirFile
+    ): Boolean = outputPart.session.cfirProvider.getContainingFile(symbol) == cfirFile
 
     private fun classLikeKind(declaration: CfirClassLikeDeclaration): String = when (declaration) {
         is CfirInterface -> "interface"
@@ -362,10 +364,10 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
     }
 
     private class SymbolCounter {
-        private val map = mutableMapOf<CfirSymbol<*>, Int>()
+        private val map = mutableMapOf<CfirBasedSymbol<*>, Int>()
         private var counter = 0
 
-        fun getIndex(symbol: CfirSymbol<*>): Int = map.computeIfAbsent(symbol) { counter++ }
+        fun getIndex(symbol: CfirBasedSymbol<*>): Int = map.computeIfAbsent(symbol) { counter++ }
     }
 
     private fun SmartPrinter.processFunctions(name: Name, scope: CfirTypeScope) {

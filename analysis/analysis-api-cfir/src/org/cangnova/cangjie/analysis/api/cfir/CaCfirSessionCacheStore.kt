@@ -3,28 +3,29 @@ package org.cangnova.cangjie.analysis.api.cfir
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotation
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateDecision
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirCallableSymbolCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirCompletionSymbolKey
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirPublicSymbolCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirTypeSubstitutorCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirSubstitutedSignatureCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirCallInfoSnapshot
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirScopeSnapshot
-import org.cangnova.cangjie.analysis.api.cfir.resolve.DiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPublicSymbolCacheKey
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCallableSymbolCacheKey
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCompletionSymbolKey
+import org.cangnova.cangjie.analysis.api.cfir.signatures.CaCfirSubstitutedSignatureCacheKey
+import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirSubstitutorCacheKey
 import org.cangnova.cangjie.analysis.api.dataFlow.CaDataFlowInfo
 import org.cangnova.cangjie.analysis.api.imports.CaDefaultImports
 import org.cangnova.cangjie.analysis.api.imports.CaImportOptimizationPlan
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningPlan
 import org.cangnova.cangjie.analysis.api.interop.CaInteropInfo
+import org.cangnova.cangjie.analysis.api.resolution.CaCallInfo
 import org.cangnova.cangjie.analysis.api.signatures.CaSignature
-import org.cangnova.cangjie.analysis.api.substitution.CaSubstitutedSignature
-import org.cangnova.cangjie.analysis.api.substitution.CaTypeSubstitutor
+import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
+import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -70,23 +71,23 @@ internal class CaCfirSessionCacheStore(
 
     fun getOrCreateDeclarationSignature(
         declaration: CjCallableDeclaration,
-        create: () -> CaSignature,
-    ): CaSignature = derivedCacheStore.getOrCreateDeclarationSignature(declaration, create)
+        create: () -> CaSignature<CaCallableSymbol>?,
+    ): CaSignature<CaCallableSymbol>? = derivedCacheStore.getOrCreateDeclarationSignature(declaration, create)
 
     fun getOrCreateCallableSignature(
         key: CaCfirCallableSymbolCacheKey,
-        create: () -> CaSignature?,
-    ): CaSignature? = derivedCacheStore.getOrCreateCallableSignature(key, create)
+        create: () -> CaSignature<CaCallableSymbol>,
+    ): CaSignature<CaCallableSymbol> = derivedCacheStore.getOrCreateCallableSignature(key, create)
 
     fun getOrCreateSubstitutedSignature(
         key: CaCfirSubstitutedSignatureCacheKey,
-        create: () -> CaSubstitutedSignature,
-    ): CaSubstitutedSignature = derivedCacheStore.getOrCreateSubstitutedSignature(key, create)
+        create: () -> CaSignature<CaCallableSymbol>,
+    ): CaSignature<CaCallableSymbol> = derivedCacheStore.getOrCreateSubstitutedSignature(key, create)
 
-    fun getOrCreateTypeSubstitutor(
-        key: CaCfirTypeSubstitutorCacheKey,
-        create: () -> CaTypeSubstitutor,
-    ): CaTypeSubstitutor = derivedCacheStore.getOrCreateTypeSubstitutor(key, create)
+    fun getOrCreateSubstitutor(
+        key: CaCfirSubstitutorCacheKey,
+        create: () -> CaSubstitutor,
+    ): CaSubstitutor = derivedCacheStore.getOrCreateSubstitutor(key, create)
 
     fun getOrCreateDefaultImports(create: () -> CaDefaultImports): CaDefaultImports =
         derivedCacheStore.getOrCreateDefaultImports(create)
@@ -124,24 +125,24 @@ internal class CaCfirSessionCacheStore(
     ): CaInteropInfo? = derivedCacheStore.getOrCreateSymbolInteropInfo(key, create)
 
     fun getOrCreateSourcePsi(
-        symbol: CfirSymbol<*>,
+        symbol: CfirBasedSymbol<*>,
         create: () -> PsiElement?,
     ): PsiElement? = semanticCacheStore.getOrCreateSourcePsi(symbol, create)
 
     fun getOrCreateContainingFile(
-        symbol: CfirSymbol<*>,
+        symbol: CfirBasedSymbol<*>,
         create: () -> CjFile?,
     ): CjFile? = semanticCacheStore.getOrCreateContainingFile(symbol, create)
 
     fun getOrCreatePsiSymbols(
         psi: PsiElement,
-        create: () -> List<CfirSymbol<*>>,
-    ): List<CfirSymbol<*>> = semanticCacheStore.getOrCreatePsiSymbols(psi, create)
+        create: () -> List<CfirBasedSymbol<*>>,
+    ): List<CfirBasedSymbol<*>> = semanticCacheStore.getOrCreatePsiSymbols(psi, create)
 
     fun getOrCreateCallInfo(
         element: PsiElement,
-        create: () -> CaCfirCallInfoSnapshot?,
-    ): CaCfirCallInfoSnapshot? = semanticCacheStore.getOrCreateCallInfo(element, create)
+        create: () -> CaCallInfo?,
+    ): CaCallInfo? = semanticCacheStore.getOrCreateCallInfo(element, create)
 
     fun getOrCreateDiagnostics(
         element: PsiElement,
@@ -155,30 +156,30 @@ internal class CaCfirSessionCacheStore(
         create: () -> Collection<CjPsiDiagnostic>,
     ): Collection<CjPsiDiagnostic> = semanticCacheStore.getOrCreateFileDiagnostics(file, filter, create)
 
-    fun getOrCreateFileScope(
+    fun getOrCreateFileDeclaredScope(
         file: CjFile,
-        create: () -> CaCfirScopeSnapshot,
-    ): CaCfirScopeSnapshot = semanticCacheStore.getOrCreateFileScope(file, create)
+        create: () -> CfirContainingNamesAwareScope,
+    ): CfirContainingNamesAwareScope = semanticCacheStore.getOrCreateFileDeclaredScope(file, create)
 
     fun getOrCreatePackageScope(
         packageFqName: FqName,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = semanticCacheStore.getOrCreatePackageScope(packageFqName, create)
+        create: () -> CfirContainingNamesAwareScope?,
+    ): CfirContainingNamesAwareScope? = semanticCacheStore.getOrCreatePackageScope(packageFqName, create)
 
     fun getOrCreateDeclaredMemberScope(
         classId: ClassId,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = semanticCacheStore.getOrCreateDeclaredMemberScope(classId, create)
+        create: () -> CfirContainingNamesAwareScope?,
+    ): CfirContainingNamesAwareScope? = semanticCacheStore.getOrCreateDeclaredMemberScope(classId, create)
 
     fun getOrCreateMemberScope(
         classId: ClassId,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = semanticCacheStore.getOrCreateMemberScope(classId, create)
+        create: () -> CfirTypeScope?,
+    ): CfirTypeScope? = semanticCacheStore.getOrCreateMemberScope(classId, create)
 
     fun getOrCreateTypeScope(
         type: ConeCangJieType,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = semanticCacheStore.getOrCreateTypeScope(type, create)
+        create: () -> CfirTypeScope?,
+    ): CfirTypeScope? = semanticCacheStore.getOrCreateTypeScope(type, create)
 
     fun getOrCreatePackageVisibility(
         packageFqName: FqName,

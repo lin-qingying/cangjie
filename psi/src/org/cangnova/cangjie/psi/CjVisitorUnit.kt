@@ -66,6 +66,14 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
         super.visitOptionType(optionType, Unit)
     }
 
+    open fun visitOptionalExpression(expression: CjOptionalExpression) {
+        super.visitOptionalExpression(expression, Unit)
+    }
+
+    open fun visitOptionalChainExpression(expression: CjOptionalChainExpression) {
+        super.visitOptionalChainExpression(expression, Unit)
+    }
+
     open fun visitProperty(property: CjProperty) {
         super.visitProperty(property, Unit)
     }

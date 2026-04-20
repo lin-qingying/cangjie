@@ -39,6 +39,8 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         checkExtendJavaType(extend)
         checkExtendJavaImplTarget(extend)
         checkOverrideInExtend(extend)
+        checkMemberShadowing(extend)
+        checkExtendImportedInterface(extend)
     }
 
     /**
@@ -121,6 +123,72 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
                     factory = CfirErrors.EXTEND_FUNCTION_CANNOT_OVERRIDDEN,
                     a = "function",
                     b = member.name,
+                )
+            }
+        }
+    }
+
+    /**
+     * extend 成员不能遮蔽被扩展类型的已有成员。
+     *
+     * 对齐 C++ DiagKind::sema_extend_member_cannot_shadow
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkMemberShadowing(extend: CfirExtend) {
+        val targetTypeRef = extend.extendedTypeRef
+        val targetType = (targetTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: return
+        val targetDecl = context.session.symbolProvider
+            .getClassLikeSymbolByClassId(targetType.classId)?.cfir as? org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+            ?: return
+
+        val existingMemberNames = targetDecl.declarations.mapNotNull { member ->
+            when (member) {
+                is CfirNamedFunction -> member.name
+                is CfirProperty -> member.name
+                else -> null
+            }
+        }.toSet()
+
+        for (member in extend.declarations) {
+            val memberName = when (member) {
+                is CfirNamedFunction -> member.name
+                is CfirProperty -> member.name
+                else -> continue
+            }
+            if (memberName in existingMemberNames) {
+                val typeName = targetType.classId.shortClassName
+                reporter.reportOn(
+                    source = member.source ?: extend.source,
+                    factory = CfirErrors.EXTEND_MEMBER_CANNOT_SHADOW,
+                    a = memberName,
+                    b = typeName,
+                )
+            }
+        }
+    }
+
+    /**
+     * 不能 extend 导入的接口（只能在定义包中 extend）。
+     *
+     * 对齐 C++ DiagKind::sema_type_cannot_extend_imported_interface
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkExtendImportedInterface(extend: CfirExtend) {
+        for (superTypeRef in extend.superTypeRefs) {
+            val superType = (superTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: continue
+            val superDecl = context.session.symbolProvider
+                .getClassLikeSymbolByClassId(superType.classId)?.cfir
+                as? org.cangnova.cangjie.cfir.declarations.CfirInterface ?: continue
+
+            // 检查接口是否在当前模块中定义
+            val interfaceModuleData = superDecl.moduleData
+            val extendModuleData = extend.moduleData
+            if (interfaceModuleData != extendModuleData) {
+                reporter.reportOn(
+                    source = superTypeRef.source ?: extend.source,
+                    factory = CfirErrors.TYPE_CANNOT_EXTEND_IMPORTED_INTERFACE,
+                    a = "extend",
+                    b = superType.classId.shortClassName,
                 )
             }
         }

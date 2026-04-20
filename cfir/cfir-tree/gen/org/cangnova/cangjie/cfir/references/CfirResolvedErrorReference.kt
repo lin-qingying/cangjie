@@ -8,7 +8,7 @@ package org.cangnova.cangjie.cfir.references
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirPureAbstractElement
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -21,7 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 abstract class CfirResolvedErrorReference : CfirPureAbstractElement(), CfirResolvedNamedReference, CfirDiagnosticHolder {
     abstract override val source: CjSourceElement?
     abstract override val name: Name
-    abstract override val resolvedSymbol: CfirSymbol<*>
+    abstract override val resolvedSymbol: CfirBasedSymbol<*>
     abstract override val diagnostic: ConeDiagnostic
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =

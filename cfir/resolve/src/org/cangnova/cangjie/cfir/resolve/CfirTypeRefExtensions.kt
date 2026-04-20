@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.render.ConeTypeRendererForDebugInfo
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.CfirOptionTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
@@ -20,6 +21,7 @@ internal fun CfirTypeRef.renderStableKey(): String = when (this) {
             append('>')
         }
     }
+    is CfirOptionTypeRef -> "option:${componentTypeRef.renderStableKey()}"
     is CfirBasicTypeRef -> "basic:${name.asString()}"
     is CfirImplicitTypeRef -> "implicit"
     is CfirErrorTypeRef -> "error:${diagnostic.reason}"

@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.test.frontend
 
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.isItAllowedToCallLazyResolveTo
 import org.cangnova.cangjie.cfir.declarations.resolvePhase
@@ -19,7 +19,7 @@ class CfirCompilerLazyDeclarationResolverWithPhaseChecking : CfirLazyDeclaration
         checkIfCanLazyResolveToPhase(toPhase, element.resolvePhase)
     }
 
-    override fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClassLikeDeclaration, toPhase: CfirResolvePhase) {
+    override fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClass, toPhase: CfirResolvePhase) {
         checkIfCanLazyResolveToPhase(toPhase, clazz.resolvePhase)
     }
 

@@ -9,6 +9,8 @@ plugins {
     id("cangjie-publishing") apply false
     id("analysis-coverage-convention") apply false
     id("project-tests-convention") apply false
+
+ 
 }
 
 val cangjieVersion = providers.gradleProperty("cangjieVersion").get()
@@ -25,6 +27,7 @@ allprojects {
             freeCompilerArgs.add("-Xcontext-parameters")
         }
     }
+
     pluginManager.apply("common-configuration")
 }
 

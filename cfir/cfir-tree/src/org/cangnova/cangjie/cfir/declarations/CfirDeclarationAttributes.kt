@@ -2,7 +2,7 @@ package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirDeclarationDataKey
 import org.cangnova.cangjie.cfir.ConeTypeRegistry
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.util.ArrayMap
 import org.cangnova.cangjie.util.AttributeArrayOwner
 import org.cangnova.cangjie.util.NullableArrayMapAccessor
@@ -73,7 +73,7 @@ object CfirDeclarationDataRegistry : ConeTypeRegistry<CfirDeclarationDataKey, An
         private val dataAccessor: NullableArrayMapAccessor<CfirDeclarationDataKey, Any, *>,
         val key: KClass<out CfirDeclarationDataKey>,
     ) {
-        operator fun <V> getValue(thisRef: CfirSymbol<*>, property: KProperty<*>): V? {
+        operator fun <V> getValue(thisRef: CfirBasedSymbol<*>, property: KProperty<*>): V? {
             @Suppress("UNCHECKED_CAST")
             return dataAccessor.getValue(thisRef.cfir.attributes, property) as? V
         }

@@ -20,6 +20,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.session.cjMappingConfigProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -50,6 +51,204 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFile) {
         checkAccessibilityInFile(declaration)
+        checkConflictWithSubPackage(declaration)
+        checkCoreObjectAvailable(declaration)
+        checkMainFunctionAccessibility(declaration)
+        checkExportSamePrivateDecl(declaration)
+        checkJavaInteropImports(declaration)
+        checkJavaImplRedefinition(declaration)
+        checkCJMappingConfigValid(declaration)
+    }
+
+    /**
+     * 检查顶层声明名是否与子包名冲突。
+     *
+     * 对齐 C++ DiagKind::sema_conflict_with_sub_package。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkConflictWithSubPackage(file: CfirFile) {
+        val packageFqName = file.packageDirective.packageFqName
+        for (declaration in file.declarations) {
+            val declName = declaration.declarationName() ?: continue
+            val childPackageFqName = packageFqName.child(declName)
+            if (context.session.symbolProvider.hasPackage(childPackageFqName)) {
+                reporter.reportOn(
+                    source = declaration.source,
+                    factory = CfirErrors.CONFLICT_WITH_SUB_PACKAGE,
+                    a = declName,
+                    b = declName,
+                )
+            }
+        }
+    }
+
+    /**
+     * 检查 core.Object 是否可用。
+     *
+     * 对齐 C++ DiagKind::sema_core_object_not_found_when_no_prelude:
+     * 使用 --no-prelude 选项时，如果 std.core.Object 不存在则报错。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkCoreObjectAvailable(file: CfirFile) {
+        val stdCoreObjectId = org.cangnova.cangjie.name.ClassId(
+            org.cangnova.cangjie.name.FqName("std.core"),
+            Name.identifier("Object"),
+        )
+        val objectSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(stdCoreObjectId)
+        if (objectSymbol == null) {
+            // 只在 std.core 包本身不存在时报告（即 --no-prelude 场景）
+            val stdCoreFqName = org.cangnova.cangjie.name.FqName("std.core")
+            if (!context.session.symbolProvider.hasPackage(stdCoreFqName)) {
+                reporter.reportOn(
+                    source = file.source,
+                    factory = CfirErrors.CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE,
+                )
+            }
+        }
+    }
+
+    /**
+     * main 函数可访问性检查。
+     *
+     * 对齐 C++ DiagKind::sema_accessibility_with_main_hint:
+     * main 函数必须是 public 的，否则带有 main 提示的可访问性错误。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkMainFunctionAccessibility(file: CfirFile) {
+        for (declaration in file.declarations) {
+            if (declaration !is org.cangnova.cangjie.cfir.declarations.CfirMainFunction) continue
+            val visibility = declaration.status.visibility
+            if (visibility != Visibilities.Public) {
+                reporter.reportOn(
+                    source = declaration.source,
+                    factory = CfirErrors.ACCESSIBILITY_WITH_MAIN_HINT,
+                    a = "function",
+                    b = org.cangnova.cangjie.name.Name.identifier("main"),
+                    c = visibility,
+                )
+            }
+        }
+    }
+
+    /**
+     * 使用 Java 互操作注解时必须导入 interoplib.interop。
+     *
+     * 对齐 C++ sema_java_mirror_interoplib_must_be_imported
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkJavaInteropImports(file: CfirFile) {
+        val javaAnnNames = setOf(
+            Name.identifier("Java"),
+            Name.identifier("JavaMirror"),
+            Name.identifier("JavaImpl"),
+        )
+        val usesJavaInterop = file.declarations.any { decl ->
+            val owner = decl.source?.psi as? CjModifierListOwner ?: return@any false
+            owner.annotationEntries.any { it.shortName in javaAnnNames }
+        }
+        if (!usesJavaInterop) return
+        val interopFq = org.cangnova.cangjie.name.FqName("interoplib.interop")
+        val imported = file.imports.any { imp ->
+            val fq = imp.importedFqName ?: return@any false
+            fq == interopFq || fq.parent() == interopFq
+        }
+        if (!imported) {
+            reporter.reportOn(
+                source = file.source,
+                factory = CfirErrors.JAVA_MIRROR_INTEROPLIB_MUST_BE_IMPORTED,
+            )
+        }
+    }
+
+    /**
+     * @JavaImpl 不允许重复定义同一 Java 类。
+     *
+     * 对齐 C++ sema_java_impl_redefinition
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkJavaImplRedefinition(file: CfirFile) {
+        val javaImplName = Name.identifier("JavaImpl")
+        val byName = mutableMapOf<Name, Int>()
+        for (decl in file.declarations) {
+            val owner = decl.source?.psi as? CjModifierListOwner ?: continue
+            if (owner.annotationEntries.none { it.shortName == javaImplName }) continue
+            val declName = decl.declarationName() ?: continue
+            byName.merge(declName, 1) { a, b -> a + b }
+        }
+        for (decl in file.declarations) {
+            val owner = decl.source?.psi as? CjModifierListOwner ?: continue
+            if (owner.annotationEntries.none { it.shortName == javaImplName }) continue
+            val declName = decl.declarationName() ?: continue
+            if ((byName[declName] ?: 0) > 1) {
+                reporter.reportOn(
+                    source = decl.source,
+                    factory = CfirErrors.JAVA_IMPL_REDEFINITION,
+                    a = declName,
+                )
+            }
+        }
+    }
+
+    /**
+     * CJMapping 配置加载失败时,通过 [CfirCJMappingConfigProvider] 报告。
+     *
+     * 对齐 C++ CompileStrategy.cpp:51 `sema_cj_mapping_generic_method_not_get_instance_config`。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkCJMappingConfigValid(file: CfirFile) {
+        val provider = context.session.cjMappingConfigProvider
+        val path = provider.configPath ?: return
+        if (provider.isValid) return
+        reporter.reportOn(
+            source = file.source,
+            factory = CfirErrors.CJ_MAPPING_GENERIC_METHOD_NOT_GET_INSTANCE_CONFIG,
+            a = path,
+        )
+    }
+
+    /**
+     * 同包内不允许导出两个同名的 private 顶层声明。
+     *
+     * 对齐 C++ sema_export_same_private_decl
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkExportSamePrivateDecl(file: CfirFile) {
+        val byName = mutableMapOf<Name, Int>()
+        for (decl in file.declarations) {
+            val vis = when (decl) {
+                is CfirNamedFunction -> decl.status.visibility
+                is CfirProperty -> decl.status.visibility
+                is CfirFieldVariable -> decl.status.visibility
+                is CfirClass -> decl.status.visibility
+                is CfirInterface -> decl.status.visibility
+                is CfirStruct -> decl.status.visibility
+                is CfirEnum -> decl.status.visibility
+                else -> continue
+            }
+            if (vis != Visibilities.Private) continue
+            val name = decl.declarationName() ?: continue
+            byName.merge(name, 1) { a, b -> a + b }
+        }
+        for (decl in file.declarations) {
+            val vis = when (decl) {
+                is CfirNamedFunction -> decl.status.visibility
+                is CfirProperty -> decl.status.visibility
+                is CfirFieldVariable -> decl.status.visibility
+                is CfirClass -> decl.status.visibility
+                is CfirInterface -> decl.status.visibility
+                is CfirStruct -> decl.status.visibility
+                is CfirEnum -> decl.status.visibility
+                else -> continue
+            }
+            if (vis != Visibilities.Private) continue
+            val name = decl.declarationName() ?: continue
+            if ((byName[name] ?: 0) > 1) {
+                reporter.reportOn(
+                    source = decl.source,
+                    factory = CfirErrors.EXPORT_SAME_PRIVATE_DECL,
+                )
+            }
+        }
     }
 
     /**
@@ -133,6 +332,7 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
             checkSealedOnlyOnAbstract(declaration)
             checkStaticVariableGenericParameterDependency(declaration)
             checkUninitializedStaticFields(declaration)
+            checkFinalizerConstraints(declaration)
         }
         if (declaration is CfirStruct) {
             checkStaticVariableGenericParameterDependency(declaration)
@@ -195,6 +395,35 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
         }
     }
 
+    /**
+     * finalizer 中不能使用实例函数。
+     *
+     * 对齐 C++ DiagKind::sema_instance_func_cannot_be_used_in_finalizer
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkFinalizerConstraints(classDecl: CfirClass) {
+        for (member in classDecl.declarations) {
+            if (member !is org.cangnova.cangjie.cfir.declarations.CfirFinalizer) continue
+            val body = member.body ?: continue
+            body.acceptChildren(object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
+                override fun visitElement(element: org.cangnova.cangjie.cfir.CfirElement) {
+                    if (element is org.cangnova.cangjie.cfir.expressions.CfirFunctionCall) {
+                        val ref = element.calleeReference as? org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+                        val sym = ref?.resolvedSymbol as? org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+                        if (sym != null && !sym.cfir.status.isStatic) {
+                            reporter.reportOn(
+                                source = element.source,
+                                factory = CfirErrors.INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER,
+                                a = "function",
+                            )
+                        }
+                    }
+                    element.acceptChildren(this, null)
+                }
+            }, null)
+        }
+    }
+
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkStaticVariableGenericParameterDependency(classLike: CfirClassLikeDeclaration) {
         val typeParameterNames = when (classLike) {
@@ -237,6 +466,8 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
     override fun check(declaration: CfirProperty) {
         checkPropertyAccessors(declaration)
         checkImmutablePropertySetter(declaration)
+        checkPropertyInheritConsistency(declaration)
+        checkPropertyMustImplementBoth(declaration)
     }
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -256,6 +487,95 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
                 source = property.source,
                 factory = CfirErrors.IMMUTABLE_PROPERTY_WITH_SETTER,
             )
+        }
+    }
+
+    /**
+     * 实现接口属性时必须同时实现 getter 和 setter（如果接口声明了两者）。
+     *
+     * 对齐 C++ DiagKind::sema_property_must_implement_both
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkPropertyMustImplementBoth(property: CfirProperty) {
+        // override 的属性如果父声明同时有 getter 和 setter，子属性也必须同时实现
+        if (!property.status.isOverride) return
+
+        // 通过 symbolProvider 查找父类/接口对应属性
+        val ownerClassId = property.symbol.callableId.classId ?: return
+        val ownerSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId) ?: return
+        val ownerDecl = ownerSymbol.cfir as? CfirClassLikeDeclaration ?: return
+
+        val superDecls = ownerDecl.superTypeRefs.mapNotNull { ref ->
+            val type = (ref as? CfirResolvedTypeRef)?.coneType as? org.cangnova.cangjie.cfir.types.ConeClassLikeType
+            type?.let { context.session.symbolProvider.getClassLikeSymbolByClassId(it.classId)?.cfir as? CfirClassLikeDeclaration }
+        }
+
+        for (superDecl in superDecls) {
+            val superProp = superDecl.declarations.firstOrNull {
+                it is CfirProperty && it.name == property.name
+            } as? CfirProperty ?: continue
+
+            val superHasGetter = superProp.getter != null
+            val superHasSetter = superProp.setter != null
+            val subHasGetter = property.getter != null
+            val subHasSetter = property.setter != null
+
+            if (superHasGetter && superHasSetter && (!subHasGetter || !subHasSetter)) {
+                reporter.reportOn(
+                    source = property.source,
+                    factory = CfirErrors.PROPERTY_MUST_IMPLEMENT_BOTH,
+                    a = property.name,
+                )
+                return
+            }
+        }
+    }
+
+    /**
+     * 继承的属性 mut/immut 必须一致。
+     *
+     * 对齐 C++ sema_property_have_same_declaration_in_inherit_mut / _immut
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkPropertyInheritConsistency(property: CfirProperty) {
+        if (!property.status.isOverride) return
+
+        val ownerClassId = property.symbol.callableId.classId ?: return
+        val ownerSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId) ?: return
+        val ownerDecl = ownerSymbol.cfir as? CfirClassLikeDeclaration ?: return
+
+        val superDecls = ownerDecl.superTypeRefs.mapNotNull { ref ->
+            val type = (ref as? CfirResolvedTypeRef)?.coneType as? org.cangnova.cangjie.cfir.types.ConeClassLikeType
+            type?.let { context.session.symbolProvider.getClassLikeSymbolByClassId(it.classId)?.cfir as? CfirClassLikeDeclaration }
+        }
+
+        val subIsMutable = property.setter != null
+
+        for (superDecl in superDecls) {
+            val superProp = superDecl.declarations.firstOrNull {
+                it is CfirProperty && it.name == property.name
+            } as? CfirProperty ?: continue
+
+            val superIsMutable = superProp.setter != null
+
+            if (superIsMutable && !subIsMutable) {
+                // 父声明是可变（有 setter），子声明不是
+                reporter.reportOn(
+                    source = property.source,
+                    factory = CfirErrors.PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_MUT,
+                    a = property.name,
+                )
+                return
+            }
+            if (!superIsMutable && subIsMutable) {
+                // 父声明不可变，子声明是可变
+                reporter.reportOn(
+                    source = property.source,
+                    factory = CfirErrors.PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_IMMUT,
+                    a = property.name,
+                )
+                return
+            }
         }
     }
 }
