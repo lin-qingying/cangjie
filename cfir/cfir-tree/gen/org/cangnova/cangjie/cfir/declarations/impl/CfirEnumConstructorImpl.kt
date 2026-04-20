@@ -31,6 +31,7 @@ class CfirEnumConstructorImpl @CfirImplementationDetail constructor(
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
     override val isLocal: Boolean,
+    override var deprecationsProvider: DeprecationsProvider,
     override val dispatchReceiverType: ConeSimpleCangJieType?,
     override val symbol: CfirEnumConstructorSymbol,
     override var status: CfirDeclarationStatus,
@@ -88,6 +89,10 @@ class CfirEnumConstructorImpl @CfirImplementationDetail constructor(
 
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
         annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider) {
+        deprecationsProvider = newDeprecationsProvider
     }
 
     override fun replaceStatus(newStatus: CfirDeclarationStatus) {

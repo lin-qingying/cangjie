@@ -28,6 +28,7 @@ sealed class CfirVariable : CfirCallableDeclaration() {
     abstract override val typeParameters: List<CfirTypeParameterRef>
     abstract override val isLocal: Boolean
     abstract override val returnTypeRef: CfirTypeRef
+    abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val symbol: CfirVariableSymbol<*>
     abstract override val status: CfirDeclarationStatus
@@ -45,7 +46,11 @@ sealed class CfirVariable : CfirCallableDeclaration() {
 
     abstract override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
 
+    abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
+
     abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
+
+    abstract fun replaceInitializer(newInitializer: CfirExpression?)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirVariable
 

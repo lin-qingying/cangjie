@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.analysis.internal.projectStructure
 
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 
 /**
  * Analysis 模块依赖图工具。

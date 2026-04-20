@@ -11,7 +11,7 @@ import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -23,7 +23,7 @@ sealed class CfirDeclaration : CfirElementWithResolveState(), CfirAnnotationCont
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>
-    abstract val symbol: CfirSymbol<*>
+    abstract val symbol: CfirBasedSymbol<*>
     abstract val origin: CfirDeclarationOrigin
     abstract val attributes: CfirDeclarationAttributes
 

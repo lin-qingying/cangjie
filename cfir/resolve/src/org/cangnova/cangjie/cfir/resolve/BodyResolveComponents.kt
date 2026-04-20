@@ -1,10 +1,12 @@
 package org.cangnova.cangjie.cfir.resolve
 
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirLocalScopes
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.body.CfirCallResolver
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzer
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
@@ -15,6 +17,15 @@ import org.cangnova.cangjie.cfir.resolve.transformers.IntegerLiteralAndOperatorA
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+
+data class SessionHolderImpl(
+    override val session: CfirSession,
+    override val scopeSession: ScopeSession,
+) : SessionAndScopeSessionHolder {
+    companion object {
+        fun createWithEmptyScopeSession(session: CfirSession): SessionHolderImpl = SessionHolderImpl(session, ScopeSession())
+    }
+}
 
 abstract class BodyResolveComponents : SessionAndScopeSessionHolder {
     abstract val returnTypeCalculator: ReturnTypeCalculator

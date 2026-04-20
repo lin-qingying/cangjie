@@ -2,14 +2,14 @@ package org.cangnova.cangjie.lsp.analysis
 
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
-import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.PluginStructureProvider
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
 import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.lsp.CangjieLspEnvironment
 
@@ -48,7 +48,7 @@ internal object AnalysisApiLspServiceRegistrar {
             AnalysisApiLspPermissionChecker::class.java,
         )
         project.registerService(
-            CaProjectStructureProvider::class.java,
+            CangJieProjectStructureProvider::class.java,
             AnalysisApiLspProjectStructureProvider::class.java,
         )
         project.registerService(

@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":generators"))
+    compileOnly(project(":generators"))
     implementation(project(":compiler:arguments"))
 
 }

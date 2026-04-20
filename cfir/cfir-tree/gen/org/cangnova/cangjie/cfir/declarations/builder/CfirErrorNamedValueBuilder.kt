@@ -30,6 +30,7 @@ class CfirErrorNamedValueBuilder {
     lateinit var attributes: CfirDeclarationAttributes
     val typeParameters: MutableList<CfirTypeParameterRef> = mutableListOf()
     lateinit var status: CfirDeclarationStatus
+    var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var diagnostic: ConeDiagnostic
     lateinit var name: Name
@@ -45,6 +46,7 @@ class CfirErrorNamedValueBuilder {
             attributes,
             typeParameters,
             status,
+            deprecationsProvider,
             dispatchReceiverType,
             diagnostic,
             name,

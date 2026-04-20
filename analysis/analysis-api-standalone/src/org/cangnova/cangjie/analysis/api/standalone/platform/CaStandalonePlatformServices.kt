@@ -1,3 +1,5 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 package org.cangnova.cangjie.analysis.api.standalone.platform
 
 import com.intellij.mock.MockApplication
@@ -7,15 +9,18 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.search.GlobalSearchScope
-import org.cangnova.cangjie.analysis.api.CaModule
-import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.PluginStructureProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScope
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider
 import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.CaStandaloneProjectStructure
@@ -31,7 +36,7 @@ import java.util.concurrent.atomic.AtomicLong
  *
  * 因此这里不把 [CaStandaloneProjectStructure] 直接注册成固定 service，
  * 而是由状态服务统一托管“当前激活的 standalone 模块图”，并同时实现：
- * - [CaProjectStructureProvider]
+ * - [CangJieProjectStructureProvider]
  * - [CaModuleProvider]
  * - [CaContentScopeRefiner]
  * - [CaModificationTracker]
@@ -70,7 +75,7 @@ class CaStandalonePlatformState(
      *
      * 这里显式把“模块图切换”视为平台级失效事件：
      * - 旧模块图中的 session 缓存必须失效；
-     * - 新模块图必须立即成为 `CaProjectStructureProvider` 的可见视图；
+     * - 新模块图必须立即成为 `CangJieProjectStructureProvider` 的可见视图；
      * - modification 计数需要发生跳变，确保 session provider 不会复用旧快照。
      */
     fun install(projectStructure: CaStandaloneProjectStructure) {
@@ -104,6 +109,10 @@ class CaStandalonePlatformState(
         return snapshot.getModuleByStableName(stableModuleName)
     }
 
+    fun getResolutionScope(module: CaModule): CaResolutionScope {
+        return requireProjectStructure().getResolutionScope(module)
+    }
+
     fun invalidate(modules: Set<CaModule>) {
         val projectStructure = requireProjectStructure()
         projectStructure.invalidate(modules)
@@ -132,7 +141,7 @@ class CaStandalonePlatformState(
  */
 class CaStandaloneProjectStructureProvider(
     private val project: Project,
-) : CaProjectStructureProvider {
+) : CangJieProjectStructureProvider {
     private val state: CaStandalonePlatformState
         get() = CaStandalonePlatformState.getInstance(project)
 
@@ -207,6 +216,23 @@ class CaStandaloneSessionInvalidationService(
 }
 
 /**
+ * Standalone 平台的 resolution-scope 服务委托。
+ *
+ * standalone 的解析作用域必须绑定当前激活模块图，
+ * 因而统一经由 [CaStandalonePlatformState] 转发到当前 [CaStandaloneProjectStructure]。
+ */
+class CaStandaloneResolutionScopeProvider(
+    private val project: Project,
+) : CaResolutionScopeProvider {
+    private val state: CaStandalonePlatformState
+        get() = CaStandalonePlatformState.getInstance(project)
+
+    override fun getResolutionScope(module: CaModule): CaResolutionScope {
+        return state.getResolutionScope(module)
+    }
+}
+
+/**
  * Standalone 平台的受限分析服务。
  *
  * Standalone 宿主没有 IDE 的 dumb mode、索引窗口或交互式写动作限制，
@@ -232,8 +258,11 @@ class CaStandaloneRestrictedAnalysisService : CaRestrictedAnalysisService {
  * 允许直接以库模块作为 use-site 进入分析，以便宿主按自己的模块图组织调用。
  */
 class CaStandalonePlatformSettings : CaPlatformSettings {
+    override val deserializedDeclarationsOrigin: CaDeserializedDeclarationsOrigin
+        get() = CaDeserializedDeclarationsOrigin.BINARIES
+
     override val allowUseSiteLibraryModuleAnalysis: Boolean
-        get() = true
+        get() = false
 }
 
 /**

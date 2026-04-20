@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.analysis.light.declarations
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotation
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightCallableDeclaration
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightClassLikeDeclaration
@@ -94,7 +94,7 @@ class CaLightCallableDeclarationImpl(
     origin: CaLightDeclarationOrigin,
     token: CaLifetimeToken,
     override val callableId: CallableId?,
-    override val signature: CaSignature?,
+    override val signature: CaSignature<*>?,
 ) : CaLightDeclarationBase(
     kind = CaLightDeclarationKind.CALLABLE,
     name = name,

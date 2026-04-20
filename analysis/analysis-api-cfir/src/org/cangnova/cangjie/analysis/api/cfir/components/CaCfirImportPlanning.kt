@@ -1,9 +1,12 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
+import org.cangnova.cangjie.analysis.api.cfir.*
+
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.symbols.getPublicSymbol
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateDecision
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateStatus
 import org.cangnova.cangjie.analysis.api.imports.CaImportOptimizationPlan
@@ -241,8 +244,15 @@ private fun CaSymbol.canBeShortenedAsStandaloneReference(): Boolean = when (this
 
 private fun CaCfirSession.isDirectlyReachable(symbol: CaSymbol, file: CjFile): Boolean {
     val shortName = symbol.shortNameOrNull() ?: return false
-    return queryFileScope(file)
-        .getSymbols(shortName)
+    val fileDeclaredScope = scopeQueries.queryFileDeclaredScope(file)
+    val packageScope = scopeQueries.queryPackageScope(file.packageFqName)
+    val visibleSymbols = buildList {
+        fileDeclaredScope.processClassifiersByName(shortName) { add(it) }
+        fileDeclaredScope.processCallablesByName(shortName) { add(it) }
+        packageScope?.processClassifiersByName(shortName) { add(it) }
+        packageScope?.processCallablesByName(shortName) { add(it) }
+    }
+    return visibleSymbols
         .map(::getPublicSymbol)
         .any { visibleSymbol -> with(this) { visibleSymbol.isEquivalentTo(symbol) } }
 }

@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaratio
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -68,7 +69,6 @@ object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
     override fun check(declaration: org.cangnova.cangjie.cfir.declarations.CfirFunction) {
         val returnTypeRef = declaration.returnTypeRef
         if (returnTypeRef is CfirResolvedTypeRef && returnTypeRef.coneType is ConeErrorType) {
-            // 只在真正推断失败的场景报告，不对 CfirNamedFunction 以外的函数重复报告
             if (declaration is CfirNamedFunction && declaration.body != null) {
                 reporter.reportOn(
                     source = declaration.source,
@@ -76,5 +76,32 @@ object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
                 )
             }
         }
+    }
+}
+
+/**
+ * 默认参数限制检查器
+ *
+ * 对齐 C++ DiagKind::sema_cannot_have_default_param (Diags.cpp:414):
+ * operator / foreign / open / abstract 函数不能有默认参数。
+ */
+object CfirDefaultParameterChecker : CfirSimpleFunctionChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(declaration: CfirNamedFunction) {
+        val hasDefaultParam = declaration.valueParameters.any { it.defaultValue != null }
+        if (!hasDefaultParam) return
+
+        val kind = when {
+            declaration.status.isOperator -> "operator overloading"
+            declaration.status.isForeign -> "foreign"
+            declaration.status.isOpen -> "'open'"
+            declaration.status.isAbstract -> "abstract"
+            else -> return
+        }
+        reporter.reportOn(
+            source = declaration.source,
+            factory = CfirErrors.CANNOT_HAVE_DEFAULT_PARAM,
+            a = kind,
+        )
     }
 }

@@ -33,6 +33,7 @@ internal class CfirErrorFunctionImpl(
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
+    override var deprecationsProvider: DeprecationsProvider,
     override val dispatchReceiverType: ConeSimpleCangJieType?,
     override var status: CfirDeclarationStatus,
     override val typeParameters: MutableList<CfirTypeParameter>,
@@ -105,6 +106,10 @@ internal class CfirErrorFunctionImpl(
         annotations = newAnnotations.toMutableOrEmpty()
     }
 
+    override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider) {
+        deprecationsProvider = newDeprecationsProvider
+    }
+
     override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?) {
         controlFlowGraphReference = newControlFlowGraphReference
     }
@@ -115,5 +120,15 @@ internal class CfirErrorFunctionImpl(
 
     override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef) {
         returnTypeRef = newReturnTypeRef
+    }
+
+    override fun replaceValueParameters(newValueParameters: List<CfirValueParameter>) {
+        if (valueParameters === newValueParameters) return
+        valueParameters.clear()
+        valueParameters.addAll(newValueParameters)
+    }
+
+    override fun replaceBody(newBody: CfirBlock?) {
+        body = newBody
     }
 }

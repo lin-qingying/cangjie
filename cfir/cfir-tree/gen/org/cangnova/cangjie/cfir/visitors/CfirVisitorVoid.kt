@@ -59,6 +59,22 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(wrappedExpression)
     }
 
+    final override fun visitOptionalExpression(optionalExpression: CfirOptionalExpression, data: Nothing?) {
+        visitOptionalExpression(optionalExpression)
+    }
+
+    open fun visitOptionalExpression(optionalExpression: CfirOptionalExpression) {
+        visitElement(optionalExpression)
+    }
+
+    final override fun visitOptionalChainExpression(optionalChainExpression: CfirOptionalChainExpression, data: Nothing?) {
+        visitOptionalChainExpression(optionalChainExpression)
+    }
+
+    open fun visitOptionalChainExpression(optionalChainExpression: CfirOptionalChainExpression) {
+        visitElement(optionalChainExpression)
+    }
+
     final override fun visitResolvable(resolvable: CfirResolvable, data: Nothing?) {
         visitResolvable(resolvable)
     }
@@ -161,6 +177,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitFile(file: CfirFile) {
         visitElement(file)
+    }
+
+    final override fun visitCodeFragment(codeFragment: CfirCodeFragment, data: Nothing?) {
+        visitCodeFragment(codeFragment)
+    }
+
+    open fun visitCodeFragment(codeFragment: CfirCodeFragment) {
+        visitElement(codeFragment)
     }
 
     final override fun visitClass(klass: CfirClass, data: Nothing?) {
@@ -283,6 +307,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(property)
     }
 
+    final override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor, data: Nothing?) {
+        visitPropertyAccessor(propertyAccessor)
+    }
+
+    open fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor) {
+        visitElement(propertyAccessor)
+    }
+
     final override fun visitVariable(variable: CfirVariable, data: Nothing?) {
         visitVariable(variable)
     }
@@ -395,6 +427,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(namedReferenceWithCandidateBase)
     }
 
+    final override fun visitErrorPrimaryConstructor(errorPrimaryConstructor: CfirErrorPrimaryConstructor, data: Nothing?) {
+        visitErrorPrimaryConstructor(errorPrimaryConstructor)
+    }
+
+    open fun visitErrorPrimaryConstructor(errorPrimaryConstructor: CfirErrorPrimaryConstructor) {
+        visitElement(errorPrimaryConstructor)
+    }
+
     final override fun visitFunctionCall(functionCall: CfirFunctionCall, data: Nothing?) {
         visitFunctionCall(functionCall)
     }
@@ -417,6 +457,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitArgumentList(argumentList: CfirArgumentList) {
         visitElement(argumentList)
+    }
+
+    final override fun visitInoutArgumentExpression(inoutArgumentExpression: CfirInoutArgumentExpression, data: Nothing?) {
+        visitInoutArgumentExpression(inoutArgumentExpression)
+    }
+
+    open fun visitInoutArgumentExpression(inoutArgumentExpression: CfirInoutArgumentExpression) {
+        visitElement(inoutArgumentExpression)
     }
 
     final override fun visitCall(call: CfirCall, data: Nothing?) {
@@ -617,6 +665,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitThrowExpression(throwExpression: CfirThrowExpression) {
         visitElement(throwExpression)
+    }
+
+    final override fun visitResolvedDeclarationStatus(resolvedDeclarationStatus: CfirResolvedDeclarationStatus, data: Nothing?) {
+        visitResolvedDeclarationStatus(resolvedDeclarationStatus)
+    }
+
+    open fun visitResolvedDeclarationStatus(resolvedDeclarationStatus: CfirResolvedDeclarationStatus) {
+        visitElement(resolvedDeclarationStatus)
     }
 
     final override fun visitPerformExpression(performExpression: CfirPerformExpression, data: Nothing?) {
@@ -913,6 +969,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitFunctionTypeRef(functionTypeRef: CfirFunctionTypeRef) {
         visitElement(functionTypeRef)
+    }
+
+    final override fun visitOptionTypeRef(optionTypeRef: CfirOptionTypeRef, data: Nothing?) {
+        visitOptionTypeRef(optionTypeRef)
+    }
+
+    open fun visitOptionTypeRef(optionTypeRef: CfirOptionTypeRef) {
+        visitElement(optionTypeRef)
     }
 
     final override fun visitTupleTypeRef(tupleTypeRef: CfirTupleTypeRef, data: Nothing?) {

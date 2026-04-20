@@ -27,6 +27,7 @@ abstract class CfirProperty : CfirCallableDeclaration(), CfirControlFlowGraphOwn
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
     abstract override val isLocal: Boolean
+    abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
     abstract override val symbol: CfirPropertySymbol
@@ -34,8 +35,9 @@ abstract class CfirProperty : CfirCallableDeclaration(), CfirControlFlowGraphOwn
     abstract override val typeParameters: List<CfirTypeParameter>
     abstract override val returnTypeRef: CfirTypeRef
     abstract val name: Name
-    abstract val getter: CfirFunction?
-    abstract val setter: CfirFunction?
+    abstract val getter: CfirPropertyAccessor?
+    abstract val setter: CfirPropertyAccessor?
+    abstract val bodyResolveState: CfirPropertyBodyResolveState
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitProperty(this, data)
@@ -46,11 +48,19 @@ abstract class CfirProperty : CfirCallableDeclaration(), CfirControlFlowGraphOwn
 
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
+    abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
+
     abstract override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 
     abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
 
     abstract override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
+
+    abstract fun replaceGetter(newGetter: CfirPropertyAccessor?)
+
+    abstract fun replaceSetter(newSetter: CfirPropertyAccessor?)
+
+    abstract fun replaceBodyResolveState(newBodyResolveState: CfirPropertyBodyResolveState)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirProperty
 

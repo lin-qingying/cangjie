@@ -19,6 +19,7 @@ import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirFunctionTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.CfirOptionTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTupleTypeRef
@@ -35,6 +36,7 @@ import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
@@ -98,6 +100,7 @@ class CfirTypeResolverImpl(
             is CfirImplicitTypeRef -> ConeErrorType(ConeSimpleDiagnostic("Implicit type reference is not resolvable at this stage"))
             is CfirBasicTypeRef -> resolveBasicType(typeRef, configuration)
             is CfirUserTypeRef -> resolveUserType(typeRef, configuration)
+            is CfirOptionTypeRef -> resolveOptionType(typeRef, configuration, expandTypeAliases)
             is CfirFunctionTypeRef -> {
                 val parameterTypes = typeRef.parameterTypeRefs.map { resolveType(it, configuration, areBareTypesAllowed, isOperandOfIsOperator, resolveDeprecations, supertypeSupplier, expandTypeAliases).type }
                 val returnType = resolveType(typeRef.returnTypeRef, configuration, areBareTypesAllowed, isOperandOfIsOperator, resolveDeprecations, supertypeSupplier, expandTypeAliases).type
@@ -137,7 +140,7 @@ class CfirTypeResolverImpl(
     }
 
     override fun resolveClass(classId: ClassId): CfirClassLikeDeclaration? {
-        session.cfirProvider.getClassByClassId(classId)?.let { return it }
+        session.cfirProvider.getCfirClassifierByFqName(classId)?.let { return it }
         return session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
     }
 
@@ -243,6 +246,33 @@ class CfirTypeResolverImpl(
                 )
             }
         }
+    }
+
+    /**
+     * `?T` 在 resolve 阶段映射为 `Option<T>`。
+     *
+     * 这里保留 raw-cfir 中的 `CfirOptionTypeRef` 语法糖节点，
+     * 仅在类型求解结果上构造标准库 `Option` 名义类型。
+     */
+    private fun resolveOptionType(
+        typeRef: CfirOptionTypeRef,
+        configuration: TypeResolutionConfiguration,
+        expandTypeAliases: Boolean,
+    ): ConeCangJieType {
+        val componentType = resolveType(
+            typeRef.componentTypeRef,
+            configuration,
+            areBareTypesAllowed = false,
+            isOperandOfIsOperator = false,
+            resolveDeprecations = true,
+            supertypeSupplier = SupertypeSupplier.Default,
+            expandTypeAliases = expandTypeAliases,
+        ).type
+
+        return ConeClassLikeType(
+            lookupTag = ConeClassLikeLookupTagImpl(StdlibClassIds.Option),
+            typeArguments = listOf(ConeTypeProjection(componentType)),
+        )
     }
 
     private fun resolveSimpleClassId(

@@ -169,10 +169,6 @@ int COALESCING_Id = 110;
 
     int COMPOSITION_Id = 126;
 
-    int SAFE_ACCESS_Id = 127;
-    int SAFE_INDEXEX_Id = 128;
-    int SAFE_CALL_Id = 129;
-    int SAFE_LAMBDA_Id = 142;
 
     int FINALLY_KEYWORD_Id = 130;
     int REDEF_KEYWORD_Id = 131;
@@ -387,10 +383,6 @@ int COALESCING_Id = 110;
     CjSingleValueToken PIPELINE = new CjSingleValueToken("PIPELINE", "|>", PIPELINE_Id);
 
     //反向箭头composition
-    CjSingleValueToken SAFE_ACCESS = new CjSingleValueToken("SAFE_ACCESS", "?.", SAFE_ACCESS_Id);
-    CjSingleValueToken SAFE_INDEXEX = new CjSingleValueToken("SAFE_INDEXEX", "?[", SAFE_INDEXEX_Id);
-    CjSingleValueToken SAFE_CALL = new CjSingleValueToken("SAFE_CALL", "?(", SAFE_CALL_Id);
-    CjSingleValueToken SAFE_LAMBDA = new CjSingleValueToken("SAFE_LAMBDA", "?{", SAFE_LAMBDA_Id);
     CjSingleValueToken BACKSLASH = new CjSingleValueToken("BACKSLASH", "\\", BACKSLASH_Id);
     CjSingleValueToken LEFT_ARROW = new CjSingleValueToken("LEFT_ARROW", "<-", LEFT_ARROW_Id);
     CjSingleValueToken DOUBLE_ARROW = new CjSingleValueToken("DOUBLE_ARROW", "=>", DOUBLE_ARROW_Id);
@@ -712,7 +704,7 @@ int COALESCING_Id = 110;
             MINUS, EXCL, DIV, PERC, LT, GT, LTEQ, GTEQ, EQEQ, EXCLEQ, ANDAND, OROR, MULMULEQ,
 
             RANGE, RANGEEQ, EQ, MULTEQ, DIVEQ, PERCEQ, PLUSEQ, MINUSEQ,
-            COALESCING, SAFE_ACCESS,
+            COALESCING,
             AND, OR, XOR,
             ANDEQ, OREQ, XOREQ, ANDANDEQ,OROREQ,
             LTLT, GTGT, LTLTEQ, GTGTEQ,

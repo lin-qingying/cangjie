@@ -2,7 +2,7 @@ package org.cangnova.cangjie.analysis.api.impl.base.test.cases.restrictedAnalysi
 
 import com.intellij.mock.MockProject
 import com.intellij.openapi.project.Project
-import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.AnalysisApiServiceRegistrar
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
 import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiBasedTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule

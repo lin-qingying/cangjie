@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.analysis.test.framework.test.configurators
 
 import com.intellij.openapi.project.Project
-import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.AnalysisApiServiceRegistrar
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModuleStructure
 import org.cangnova.cangjie.test.directives.model.DirectivesContainer

@@ -11,7 +11,7 @@ import org.cangnova.cangjie.analysis.api.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.CaTargetPlatform
 import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
-import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.PluginStructureProvider
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
 import org.cangnova.cangjie.analysis.api.standalone.platform.CaStandalonePlatformState
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.CaStandaloneProjectStructure
 import org.cangnova.cangjie.lang.CangJieFileType

@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
+import org.cangnova.cangjie.cfir.diagnostic.ConeCannotRefToPackageNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeEnumTypeCannotBeUsedAsConstructorError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionExpectedError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionCallExpectedError
@@ -54,19 +55,16 @@ import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
-import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFuncType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
-import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
@@ -532,6 +530,13 @@ class CfirCallResolver(
                         val receiverType = explicitReceiver?.coneTypeOrNull
                         when {
                             receiverType is ConeClassLikeType && receiverType.isInterface -> ConeNoConstructorError
+                            // 裸名若与已知包 FqName 重合,归类为"不能独立引用包名",
+                            // 对齐 C++ sema_cannot_ref_to_pkg_name。
+                            explicitReceiver == null && components.symbolProvider.hasPackage(
+                                org.cangnova.cangjie.name.FqName.topLevel(name)
+                            ) -> ConeCannotRefToPackageNameError(
+                                org.cangnova.cangjie.name.FqName.topLevel(name)
+                            )
                             else -> ConeUnresolvedNameError(name, operatorToken, receiverType, argumentTypes)
                         }
                     }
@@ -887,7 +892,7 @@ class AllCandidatesCollector(
     components as CfirAbstractBodyResolveTransformer.BodyResolveTransformerComponents,
     resolutionStageRunner
 ) {
-    private val allCandidatesMap = mutableMapOf<CfirSymbol<*>, Candidate>()
+    private val allCandidatesMap = mutableMapOf<CfirBasedSymbol<*>, Candidate>()
 
     override fun consumeCandidate(
         group: CfirTowerGroup,

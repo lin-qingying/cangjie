@@ -94,7 +94,6 @@ public interface CjNodeTypes {
 
     IElementType FOREIGN_BODY = CjStubElementTypes.FOREIGN_BODY;
     IElementType FUNC = CjStubElementTypes.FUNCTION;
-    IElementType CJ_SCRIPT = CjStubElementTypes.CJ_SCRIPT;
 
     IFileElementType CJ_FILE = new IFileElementType(CangJieLanguage.INSTANCE);
     IElementType BLOCK = new BlockExpressionElementType();
@@ -114,6 +113,8 @@ public interface CjNodeTypes {
     IElementType PACKAGE_DIRECTIVE = CjStubElementTypes.PACKAGE_DIRECTIVE;
 
     IElementType SAFE_ACCESS_EXPRESSION = new CjNodeType("SAFE_ACCESS_EXPRESSION", CjSafeQualifiedExpression.class);
+    IElementType OPTIONAL_EXPRESSION = new CjNodeType("OPTIONAL_EXPRESSION", CjOptionalExpression.class);
+    IElementType OPTIONAL_CHAIN_EXPRESSION = new CjNodeType("OPTIONAL_CHAIN_EXPRESSION", CjOptionalChainExpression.class);
 
     IElementType SUPER_TYPE_ENTRY = CjStubElementTypes.SUPER_TYPE_ENTRY;
     IElementType MODIFIER_LIST = CjStubElementTypes.MODIFIER_LIST;

@@ -11,7 +11,7 @@ import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedErrorReferenceImpl
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
@@ -20,7 +20,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirResolvedErrorReferenceBuilder {
     var source: CjSourceElement? = null
     lateinit var name: Name
-    lateinit var resolvedSymbol: CfirSymbol<*>
+    lateinit var resolvedSymbol: CfirBasedSymbol<*>
     lateinit var diagnostic: ConeDiagnostic
 
     fun build(): CfirResolvedErrorReference {

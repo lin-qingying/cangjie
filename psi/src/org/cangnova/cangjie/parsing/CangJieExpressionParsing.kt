@@ -96,14 +96,12 @@ open class CangJieExpressionParsing(
          * 包含：
          * - `++` - 后缀自增
          * - `--` - 后缀自减
-         * - `.` - 成员访问
-         * - `?.` - 安全访问
+         * quest 链式后缀由专门的 optional chain 解析处理
          */
         POSTFIX(
             PLUSPLUS,
             MINUSMINUS,
             DOT,
-            SAFE_ACCESS,
         ),
 
         /**
@@ -546,15 +544,20 @@ open class CangJieExpressionParsing(
                 }
             }
 
+        var hasOptionalChain = false
+
         while (true) {
             if (interruptedWithNewLine()) {
                 break
-            } else if (at(LBRACKET) || at(SAFE_INDEXEX)) {
+            } else if (parseQuestChainSuffix(expression)) {
+                hasOptionalChain = true
+                expression.done(OPTIONAL_EXPRESSION)
+            } else if (at(LBRACKET)) {
                 parseArrayAccess()
                 expression.done(ARRAY_ACCESS_EXPRESSION)
             } else if (parseCallSuffix()) {
                 expression.done(CALL_EXPRESSION)
-            } else if (at(DOT) || at(SAFE_ACCESS)) {
+            } else if (at(DOT)) {
                 val expressionType: IElementType = DOT_QUALIFIED_EXPRESSION
                 advance()
                 if (!firstExpressionParsed) {
@@ -581,7 +584,11 @@ open class CangJieExpressionParsing(
             expression = expression.precede()
         }
 
-        expression.drop()
+        if (hasOptionalChain) {
+            expression.done(OPTIONAL_CHAIN_EXPRESSION)
+        } else {
+            expression.drop()
+        }
     }
 
     /**
@@ -967,7 +974,7 @@ open class CangJieExpressionParsing(
         canBeEmpty: Boolean,
         missingElementErrorMessage: String,
     ) {
-        assert(_at(LBRACKET) || _at(SAFE_INDEXEX))
+        assert(_at(LBRACKET))
         val innerExpressions = mark()
         builder.disableNewlines()
         advance()
@@ -2380,14 +2387,33 @@ open class CangJieExpressionParsing(
      */
     context(context: ParsingContext)
     private fun parseCallSuffix(): Boolean {
-        val tokenType = getSafeTokenType()
-
         if (parseCallWithClosure()) {
-        } else if (at(LPAR) || tokenType == SAFE_CALL) {
+        } else if (at(LPAR)) {
             parseValueArgumentList()
         } else {
             return false
         }
+        return true
+    }
+
+    /**
+     * `?.`、`?[`、`?(` 是 quest 后缀触发的 optional chain。
+     * 这里仅消费 `?` 并校验后继 token，OPTIONAL_EXPR / OPTIONAL_CHAIN_EXPR 由主循环统一收树。
+     */
+    context(context: ParsingContext)
+    private fun parseQuestChainSuffix(expression: PsiBuilder.Marker): Boolean {
+        if (!at(QUEST)) return false
+
+        val nextToken = lookahead(1)
+        if (nextToken === QUEST) {
+            return false
+        }
+        if (nextToken !== DOT && nextToken !== LBRACKET && nextToken !== LPAR && nextToken !== LBRACE) {
+            error("`?` 后需要 `.`、`(`、`[`、`{` 或 `?`")
+            return false
+        }
+
+        advance()
         return true
     }
 
@@ -2478,10 +2504,7 @@ open class CangJieExpressionParsing(
     context(context: ParsingContext)
     fun parseValueArgumentList(
         struct: Pair<TokenSet, CjToken> = Pair(
-            TokenSet.create(
-                LPAR,
-                SAFE_CALL
-            ), RPAR
+            TokenSet.create(LPAR), RPAR
         )
     ) {
         val list = mark()
@@ -3449,7 +3472,6 @@ open class CangJieExpressionParsing(
             ANDAND,
             OROR,
             COALESCING,
-            SAFE_ACCESS,
         )
 
         val QUOTE_TOKENS = TokenSet.orSet(
@@ -3657,7 +3679,7 @@ open class CangJieExpressionParsing(
             OPEN_QUOTE,
             PACKAGE_KEYWORD,
             AS_KEYWORD,
-            COALESCING, SAFE_ACCESS,
+            COALESCING,
             INTERFACE_KEYWORD,
             CLASS_KEYWORD,
             THIS_KEYWORD,

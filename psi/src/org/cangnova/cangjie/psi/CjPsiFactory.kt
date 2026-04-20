@@ -37,7 +37,7 @@ import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjModifierKeywordToken
 import org.cangnova.cangjie.name.FqName
-import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
+import org.cangnova.cangjie.utils.checkWithAttachment
 import org.jetbrains.annotations.NonNls
 
 /**

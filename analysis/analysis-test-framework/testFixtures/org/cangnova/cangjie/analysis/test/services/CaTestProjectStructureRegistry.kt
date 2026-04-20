@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * 测试侧项目结构注册表。
  *
- * `CaProjectStructureProvider` 是 IntelliJ project service，而测试模块结构来自 `TestServices`。
+ * `CangJieProjectStructureProvider` 是 IntelliJ project service，而测试模块结构来自 `TestServices`。
  * 两者的生命周期容器不同，因此需要一个受控桥接层把测试结构挂到 Project 上。
  */
 object CaTestProjectStructureRegistry {

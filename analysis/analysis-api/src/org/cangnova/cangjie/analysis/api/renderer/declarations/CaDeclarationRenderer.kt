@@ -1,10 +1,41 @@
 package org.cangnova.cangjie.analysis.api.renderer.declarations
 
 import org.cangnova.cangjie.analysis.api.CaSession
-import org.cangnova.cangjie.analysis.api.renderer.base.CaAnnotationRenderer
 import org.cangnova.cangjie.analysis.api.renderer.base.CaKeywordsRenderer
-import org.cangnova.cangjie.analysis.api.renderer.base.CaPrettyPrinter
+import org.cangnova.cangjie.analysis.api.renderer.base.PrettyPrinter
 import org.cangnova.cangjie.analysis.api.renderer.base.prettyPrint
+import org.cangnova.cangjie.analysis.api.renderer.base.annotations.CaAnnotationRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaClassifierBodyRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaFunctionLikeBodyRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaParameterDefaultValueRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaPropertyAccessorBodyRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaPropertyAccessorsRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaRendererBodyMemberScopeProvider
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaRendererBodyMemberScopeSorter
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaVariableInitializerRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.modifiers.CaDeclarationModifiersRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaCallableParameterRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaCallableReceiverRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaCallableReturnTypeRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaCallableSignatureRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaConstructorSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaEnumConstructorSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaFieldSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaFunctionLikeKeywordRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaLocalVariableSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaNamedFunctionSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaPropertySymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaScriptSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaValueParameterSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaClassLikeSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaExtendSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaTypeParametersFilter
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaTypeAliasSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaTypeParametersRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaTypeParameterSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.superTypes.CaSuperTypeListRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.superTypes.CaSuperTypeRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.superTypes.CaSuperTypesFilter
 import org.cangnova.cangjie.analysis.api.renderer.types.CaRendererTypeApproximator
 import org.cangnova.cangjie.analysis.api.renderer.types.CaTypeRenderer
 import org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol
@@ -12,7 +43,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaClassKind
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaEnumEntrySymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFinalizerSymbol
@@ -61,7 +92,7 @@ class CaDeclarationRenderer private constructor(
     val propertyRenderer: CaPropertySymbolRenderer,
     val fieldRenderer: CaFieldSymbolRenderer,
     val localVariableRenderer: CaLocalVariableSymbolRenderer,
-    val enumEntryRenderer: CaEnumEntrySymbolRenderer,
+    val enumConstructorRenderer: CaEnumConstructorSymbolRenderer,
     val valueParameterRenderer: CaValueParameterSymbolRenderer,
     val typeParameterRenderer: CaTypeParameterSymbolRenderer,
     val scriptRenderer: CaScriptSymbolRenderer,
@@ -76,7 +107,7 @@ class CaDeclarationRenderer private constructor(
     fun renderDeclaration(
         analysisSession: CaSession,
         symbol: CaDeclarationSymbol,
-        printer: CaPrettyPrinter,
+        printer: PrettyPrinter,
     ) {
         when (symbol) {
             is CaClassSymbol -> classLikeRenderer.renderSymbol(
@@ -93,7 +124,7 @@ class CaDeclarationRenderer private constructor(
             is CaConstructorSymbol -> constructorRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaFinalizerSymbol -> functionLikeKeywordRenderer.renderFunctionLike(analysisSession, symbol, "finalizer", this, printer)
             is CaAnonymousFunctionSymbol -> functionLikeKeywordRenderer.renderFunctionLike(analysisSession, symbol, "func", this, printer)
-            is CaEnumEntrySymbol -> enumEntryRenderer.renderSymbol(analysisSession, symbol, this, printer)
+            is CaEnumConstructorSymbol -> enumConstructorRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaPropertySymbol -> propertyRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaFieldSymbol -> fieldRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaValueParameterSymbol -> valueParameterRenderer.renderSymbol(analysisSession, symbol, this, printer)
@@ -102,8 +133,10 @@ class CaDeclarationRenderer private constructor(
             is CaScriptSymbol -> scriptRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaFunctionSymbol -> functionLikeKeywordRenderer.renderFunctionLike(analysisSession, symbol, "func", this, printer)
             else -> {
-                modifiersRenderer.renderModifiers(analysisSession, symbol, this, printer)
-                nameRenderer.renderName(symbol.name?.asString() ?: "<unnamed>", printer)
+                modifiersRenderer.renderDeclarationModifiers(analysisSession, symbol, printer)
+                symbol.name?.let { name ->
+                    nameRenderer.renderName(analysisSession, name, null, this, printer)
+                } ?: printer.append("<unnamed>")
             }
         }
     }
@@ -145,7 +178,7 @@ class CaDeclarationRenderer private constructor(
             propertyRenderer = current.propertyRenderer
             fieldRenderer = current.fieldRenderer
             localVariableRenderer = current.localVariableRenderer
-            enumEntryRenderer = current.enumEntryRenderer
+            enumConstructorRenderer = current.enumConstructorRenderer
             valueParameterRenderer = current.valueParameterRenderer
             typeParameterRenderer = current.typeParameterRenderer
             scriptRenderer = current.scriptRenderer
@@ -188,7 +221,7 @@ class CaDeclarationRenderer private constructor(
         lateinit var propertyRenderer: CaPropertySymbolRenderer
         lateinit var fieldRenderer: CaFieldSymbolRenderer
         lateinit var localVariableRenderer: CaLocalVariableSymbolRenderer
-        lateinit var enumEntryRenderer: CaEnumEntrySymbolRenderer
+        lateinit var enumConstructorRenderer: CaEnumConstructorSymbolRenderer
         lateinit var valueParameterRenderer: CaValueParameterSymbolRenderer
         lateinit var typeParameterRenderer: CaTypeParameterSymbolRenderer
         lateinit var scriptRenderer: CaScriptSymbolRenderer
@@ -228,7 +261,7 @@ class CaDeclarationRenderer private constructor(
             propertyRenderer = propertyRenderer,
             fieldRenderer = fieldRenderer,
             localVariableRenderer = localVariableRenderer,
-            enumEntryRenderer = enumEntryRenderer,
+            enumConstructorRenderer = enumConstructorRenderer,
             valueParameterRenderer = valueParameterRenderer,
             typeParameterRenderer = typeParameterRenderer,
             scriptRenderer = scriptRenderer,

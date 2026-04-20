@@ -3,7 +3,16 @@ package org.cangnova.cangjie.analysis.api.impl.base.sessions
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.util.PsiUtilCore
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryFallbackDependenciesModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaTargetPlatform
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.impl.base.lifetime.CaBaseLifetimeTracker
 import org.cangnova.cangjie.analysis.api.impl.base.permissions.CaBaseWriteActionStartedChecker
@@ -39,6 +48,7 @@ abstract class CaBaseSessionProvider(project: Project) : CaSessionProvider(proje
         CaRestrictedAnalysisService.getInstance(project)
     }
 
+    @OptIn(CaPlatformInterface::class)
     protected val tokenFactory by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CaLifetimeTokenFactory.getInstance(project)
     }

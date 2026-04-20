@@ -1,14 +1,15 @@
 package org.cangnova.cangjie.analysis.api.cfir
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirCallInfoSnapshot
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirScopeSnapshot
-import org.cangnova.cangjie.analysis.api.cfir.resolve.DiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.api.resolution.CaCallInfo
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -24,17 +25,17 @@ import org.cangnova.cangjie.psi.CjParameter
  * 包括诊断、作用域、符号回查、源码导航与类型查询快照。
  */
 internal class CaCfirSessionSemanticCacheStore {
-    private val sourcePsiCache = linkedMapOf<CfirSymbol<*>, PsiElement?>()
-    private val psiSymbolsCache = linkedMapOf<PsiElement, List<CfirSymbol<*>>>()
-    private val containingFileCache = linkedMapOf<CfirSymbol<*>, CjFile?>()
-    private val callInfoCache = linkedMapOf<PsiElement, CaCfirCallInfoSnapshot?>()
+    private val sourcePsiCache = linkedMapOf<CfirBasedSymbol<*>, PsiElement?>()
+    private val psiSymbolsCache = linkedMapOf<PsiElement, List<CfirBasedSymbol<*>>>()
+    private val containingFileCache = linkedMapOf<CfirBasedSymbol<*>, CjFile?>()
+    private val callInfoCache = linkedMapOf<PsiElement, CaCallInfo?>()
     private val diagnosticsCache = linkedMapOf<CaCfirDiagnosticsQueryKey, List<CjPsiDiagnostic>>()
     private val fileDiagnosticsCache = linkedMapOf<CaCfirFileDiagnosticsQueryKey, Collection<CjPsiDiagnostic>>()
-    private val fileScopeCache = linkedMapOf<CjFile, CaCfirScopeSnapshot>()
-    private val packageScopeCache = linkedMapOf<FqName, CaCfirScopeSnapshot?>()
-    private val declaredMemberScopeCache = linkedMapOf<ClassId, CaCfirScopeSnapshot?>()
-    private val memberScopeCache = linkedMapOf<ClassId, CaCfirScopeSnapshot?>()
-    private val typeScopeCache = linkedMapOf<ConeCangJieType, CaCfirScopeSnapshot?>()
+    private val fileDeclaredScopeCache = linkedMapOf<CjFile, CfirContainingNamesAwareScope>()
+    private val packageScopeCache = linkedMapOf<FqName, CfirContainingNamesAwareScope?>()
+    private val declaredMemberScopeCache = linkedMapOf<ClassId, CfirContainingNamesAwareScope?>()
+    private val memberScopeCache = linkedMapOf<ClassId, CfirTypeScope?>()
+    private val typeScopeCache = linkedMapOf<ConeCangJieType, CfirTypeScope?>()
     private val packageVisibilityCache = linkedMapOf<FqName, Boolean>()
     private val classLikeSymbolCache = linkedMapOf<ClassId, CfirClassLikeSymbol<*>?>()
     private val fileSymbolCache = linkedMapOf<CjFile, CfirFileSymbol?>()
@@ -47,24 +48,24 @@ internal class CaCfirSessionSemanticCacheStore {
     private val classLikeSuperTypesCache = linkedMapOf<CfirClassLikeSymbol<*>, List<ConeCangJieType>>()
 
     fun getOrCreateSourcePsi(
-        symbol: CfirSymbol<*>,
+        symbol: CfirBasedSymbol<*>,
         create: () -> PsiElement?,
     ): PsiElement? = getOrCreateCachedValue(sourcePsiCache, symbol, create)
 
     fun getOrCreateContainingFile(
-        symbol: CfirSymbol<*>,
+        symbol: CfirBasedSymbol<*>,
         create: () -> CjFile?,
     ): CjFile? = getOrCreateCachedValue(containingFileCache, symbol, create)
 
     fun getOrCreatePsiSymbols(
         psi: PsiElement,
-        create: () -> List<CfirSymbol<*>>,
-    ): List<CfirSymbol<*>> = getOrCreateCachedValue(psiSymbolsCache, psi, create)
+        create: () -> List<CfirBasedSymbol<*>>,
+    ): List<CfirBasedSymbol<*>> = getOrCreateCachedValue(psiSymbolsCache, psi, create)
 
     fun getOrCreateCallInfo(
         element: PsiElement,
-        create: () -> CaCfirCallInfoSnapshot?,
-    ): CaCfirCallInfoSnapshot? = getOrCreateCachedValue(callInfoCache, element, create)
+        create: () -> CaCallInfo?,
+    ): CaCallInfo? = getOrCreateCachedValue(callInfoCache, element, create)
 
     fun getOrCreateDiagnostics(
         element: PsiElement,
@@ -86,30 +87,30 @@ internal class CaCfirSessionSemanticCacheStore {
         create,
     )
 
-    fun getOrCreateFileScope(
+    fun getOrCreateFileDeclaredScope(
         file: CjFile,
-        create: () -> CaCfirScopeSnapshot,
-    ): CaCfirScopeSnapshot = getOrCreateCachedValue(fileScopeCache, file, create)
+        create: () -> CfirContainingNamesAwareScope,
+    ): CfirContainingNamesAwareScope = getOrCreateCachedValue(fileDeclaredScopeCache, file, create)
 
     fun getOrCreatePackageScope(
         packageFqName: FqName,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = getOrCreateCachedValue(packageScopeCache, packageFqName, create)
+        create: () -> CfirContainingNamesAwareScope?,
+    ): CfirContainingNamesAwareScope? = getOrCreateCachedValue(packageScopeCache, packageFqName, create)
 
     fun getOrCreateDeclaredMemberScope(
         classId: ClassId,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = getOrCreateCachedValue(declaredMemberScopeCache, classId, create)
+        create: () -> CfirContainingNamesAwareScope?,
+    ): CfirContainingNamesAwareScope? = getOrCreateCachedValue(declaredMemberScopeCache, classId, create)
 
     fun getOrCreateMemberScope(
         classId: ClassId,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = getOrCreateCachedValue(memberScopeCache, classId, create)
+        create: () -> CfirTypeScope?,
+    ): CfirTypeScope? = getOrCreateCachedValue(memberScopeCache, classId, create)
 
     fun getOrCreateTypeScope(
         type: ConeCangJieType,
-        create: () -> CaCfirScopeSnapshot?,
-    ): CaCfirScopeSnapshot? = getOrCreateCachedValue(typeScopeCache, type, create)
+        create: () -> CfirTypeScope?,
+    ): CfirTypeScope? = getOrCreateCachedValue(typeScopeCache, type, create)
 
     fun getOrCreatePackageVisibility(
         packageFqName: FqName,

@@ -9,41 +9,36 @@ import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.patterns.CfirPattern
-import org.cangnova.cangjie.cfir.patterns.bindingOccurrences
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirErrorCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirMainFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.renderForDebugging
@@ -125,14 +120,14 @@ private fun groupTopLevelByName(declarations: List<CfirDeclaration>): Map<Name, 
     return groups
 }
 
-internal class CfirDeclarationCollector<D : CfirSymbol<*>>(
+internal class CfirDeclarationCollector<D : CfirBasedSymbol<*>>(
     internal val context: CheckerContext,
 ) {
-    val declarationConflictingSymbols: HashMap<D, SmartSet<CfirSymbol<*>>> = hashMapOf()
+    val declarationConflictingSymbols: HashMap<D, SmartSet<CfirBasedSymbol<*>>> = hashMapOf()
 }
 
 context(context: CheckerContext)
-internal fun CfirDeclarationCollector<CfirSymbol<*>>.collectTopLevel(
+internal fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectTopLevel(
     file: CfirFile,
     packageMemberScope: CfirPackageScope,
 ) {
@@ -141,8 +136,8 @@ internal fun CfirDeclarationCollector<CfirSymbol<*>>.collectTopLevel(
         val groupHasSimpleFunctions = group.simpleFunctions.isNotEmpty()
 
         fun collect(
-            declarations: List<Pair<out CfirSymbol<*>, String>>,
-            conflictingSymbol: CfirSymbol<*>,
+            declarations: List<Pair<out CfirBasedSymbol<*>, String>>,
+            conflictingSymbol: CfirBasedSymbol<*>,
             conflictingPresentation: String? = null,
             conflictingFile: CfirFile? = null,
         ) {
@@ -218,9 +213,9 @@ internal fun CfirDeclarationCollector<CfirSymbol<*>>.collectTopLevel(
 }
 
 context(context: CheckerContext)
-internal fun CfirDeclarationCollector<CfirSymbol<*>>.collectClassMembers(classDeclaration: CfirClassLikeDeclaration) {
-    val otherDeclarations = mutableMapOf<String, MutableSet<CfirSymbol<*>>>()
-    val functionDeclarations = mutableMapOf<String, MutableSet<CfirSymbol<*>>>()
+internal fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectClassMembers(classDeclaration: CfirClassLikeDeclaration) {
+    val otherDeclarations = mutableMapOf<String, MutableSet<CfirBasedSymbol<*>>>()
+    val functionDeclarations = mutableMapOf<String, MutableSet<CfirBasedSymbol<*>>>()
     val useSiteScope = createUseSiteMemberScope(classDeclaration)
 
     fun processClassifier(symbol: CfirClassLikeSymbol<*>) {
@@ -338,8 +333,8 @@ private enum class ConflictState {
 }
 
 private fun CfirDeclarationCollector<*>.getConflictState(
-    declaration: CfirSymbol<*>,
-    conflicting: CfirSymbol<*>,
+    declaration: CfirBasedSymbol<*>,
+    conflicting: CfirBasedSymbol<*>,
 ): ConflictState {
     if (declaration is CfirCallableSymbol<*> && conflicting is CfirCallableSymbol<*>) {
         val declarationPresentation = CfirRedeclarationPresenter.represent(declaration)
@@ -351,7 +346,7 @@ private fun CfirDeclarationCollector<*>.getConflictState(
     return ConflictState.Conflict
 }
 
-private fun <D : CfirSymbol<*>, S : D> CfirDeclarationCollector<D>.collect(
+private fun <D : CfirBasedSymbol<*>, S : D> CfirDeclarationCollector<D>.collect(
     declaration: S,
     representation: String,
     map: MutableMap<String, MutableSet<S>>,
@@ -359,7 +354,7 @@ private fun <D : CfirSymbol<*>, S : D> CfirDeclarationCollector<D>.collect(
     map.getOrPut(representation, ::mutableSetOf).also { declarations ->
         if (!declarations.add(declaration)) return@also
 
-        val conflicts = SmartSet.create<CfirSymbol<*>>()
+        val conflicts = SmartSet.create<CfirBasedSymbol<*>>()
         for (otherDeclaration in declarations) {
             if (otherDeclaration != declaration && getConflictState(declaration, otherDeclaration) == ConflictState.Conflict) {
                 conflicts += otherDeclaration
@@ -371,11 +366,11 @@ private fun <D : CfirSymbol<*>, S : D> CfirDeclarationCollector<D>.collect(
     }
 }
 
-private fun CfirDeclarationCollector<CfirSymbol<*>>.collectTopLevelConflict(
-    declaration: CfirSymbol<*>,
+private fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectTopLevelConflict(
+    declaration: CfirBasedSymbol<*>,
     declarationPresentation: String,
     containingFile: CfirFile,
-    conflictingSymbol: CfirSymbol<*>,
+    conflictingSymbol: CfirBasedSymbol<*>,
     conflictingPresentation: String? = null,
     conflictingFile: CfirFile? = null,
 ) {
@@ -397,7 +392,7 @@ private fun CfirDeclarationCollector<CfirSymbol<*>>.collectTopLevelConflict(
         return
     }
 
-    val actualConflictingFile = conflictingFile ?: context.session.symbolProvider.getContainingFile(conflictingSymbol)
+    val actualConflictingFile = conflictingFile ?: context.session.cfirProvider.getContainingFile(conflictingSymbol)
     if (!conflictingSymbol.isCollectable()) {
         return
     }
@@ -420,8 +415,8 @@ private fun CfirDeclarationCollector<CfirSymbol<*>>.collectTopLevelConflict(
 }
 
 private fun shouldCheckForMultiplatformRedeclaration(
-    dependency: CfirSymbol<*>,
-    dependent: CfirSymbol<*>,
+    dependency: CfirBasedSymbol<*>,
+    dependent: CfirBasedSymbol<*>,
 ): Boolean {
     if (!dependency.isBound || !dependent.isBound) return true
 
@@ -436,9 +431,9 @@ private fun shouldCheckForMultiplatformRedeclaration(
 }
 
 private fun areCompatibleMainFunctions(
-    declaration1: CfirSymbol<*>,
+    declaration1: CfirBasedSymbol<*>,
     file1: CfirFile,
-    declaration2: CfirSymbol<*>,
+    declaration2: CfirBasedSymbol<*>,
     file2: CfirFile?,
 ): Boolean {
     if (file1 == file2) return false
@@ -471,7 +466,7 @@ context(context: CheckerContext, reporter: DiagnosticReporter)
 internal fun checkForLocalRedeclarations(elements: List<org.cangnova.cangjie.cfir.CfirElement>) {
     if (elements.size <= 1) return
 
-    val groupedByName = linkedMapOf<Name, MutableList<CfirSymbol<*>>>()
+    val groupedByName = linkedMapOf<Name, MutableList<CfirBasedSymbol<*>>>()
 
     for (element in elements) {
         val (symbol, name) = when (element) {
@@ -525,7 +520,7 @@ private fun CfirCallableSymbol<*>.isVisibleInClass(
     if (!isBound) return true
     if (cfir.status.visibility != Visibilities.Private) return true
 
-    val ownerClassId = context.session.symbolProvider.getContainingClassId(this) ?: return true
+    val ownerClassId = context.session.cfirProvider.getContainingClass(this)?.classId ?: return true
     val currentClassId = (classDeclaration.symbol as? CfirClassLikeSymbol<*>)?.classId ?: return true
     return ownerClassId == currentClassId
 }
@@ -554,7 +549,7 @@ private fun collectConstructorsForClassLike(classLikeSymbol: CfirClassLikeSymbol
     return constructors
 }
 
-private fun CfirSymbol<*>.isCollectable(): Boolean {
+private fun CfirBasedSymbol<*>.isCollectable(): Boolean {
     if (!isBound) return true
 
     if (this is CfirCallableSymbol<*>) {
@@ -582,11 +577,11 @@ private val CfirFunctionSymbol<*>.isCollectableAccordingToSource: Boolean
         cfir.source?.kind !is CjFakeSourceElementKind || cfir.source?.kind == CjFakeSourceElementKind.DataClassGeneratedMembers
     }
 
-private fun CfirSymbol<*>.boundSourceOrNull(): CjSourceElement? =
+private fun CfirBasedSymbol<*>.boundSourceOrNull(): CjSourceElement? =
     if (isBound) cfir.source else null
 
 internal object CfirRedeclarationPresenter {
-    fun represent(symbol: CfirSymbol<*>): String? = when (symbol) {
+    fun represent(symbol: CfirBasedSymbol<*>): String? = when (symbol) {
         is CfirClassLikeSymbol<*> -> represent(symbol)
         is CfirCallableSymbol<*> -> represent(symbol)
         else -> null
@@ -642,7 +637,7 @@ internal object CfirRedeclarationPresenter {
         return "${name.asString()}($parameterTypes)"
     }
 
-    fun diagnosticName(symbol: CfirSymbol<*>): String? = when (symbol) {
+    fun diagnosticName(symbol: CfirBasedSymbol<*>): String? = when (symbol) {
         is CfirClassLikeSymbol<*> -> symbol.classId.shortClassName.asString()
         is CfirCallableSymbol<*> -> symbol.name.asString()
         else -> symbol.debugName
@@ -654,5 +649,5 @@ private fun CfirTypeRef.toStableSignatureKey(): String = when (this) {
     else -> toString()
 }
 
-private fun Collection<CfirSymbol<*>>.renderNames(): List<String> =
+private fun Collection<CfirBasedSymbol<*>>.renderNames(): List<String> =
     asSequence().mapNotNull(CfirRedeclarationPresenter::diagnosticName).distinct().sorted().toList()

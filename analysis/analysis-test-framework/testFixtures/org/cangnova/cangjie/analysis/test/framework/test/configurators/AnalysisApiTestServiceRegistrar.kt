@@ -3,7 +3,7 @@ package org.cangnova.cangjie.analysis.test.framework.test.configurators
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
 import com.intellij.openapi.Disposable
-import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.AnalysisApiServiceRegistrar
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
 import org.cangnova.cangjie.test.services.TestServices
 
 /**

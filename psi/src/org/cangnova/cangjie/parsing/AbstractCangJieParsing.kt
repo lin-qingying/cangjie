@@ -1139,7 +1139,7 @@ abstract class AbstractCangJieParsing(
     protected fun advanceSafeToken(type: IElementType?) {
         mark().apply {
             when (type) {
-                CjTokens.COALESCING, CjTokens.SAFE_CALL -> {
+                CjTokens.COALESCING -> {
                     PsiBuilderUtil.advance(builder, 2)
                     collapse(type)
                 }
@@ -1198,8 +1198,6 @@ abstract class AbstractCangJieParsing(
         if (tokenType !== CjTokens.QUEST) return tokenType
         if (rawLookup(1) === CjTokens.QUEST) {
             tokenType = CjTokens.COALESCING
-        } else if (rawLookup(1) === CjTokens.LPAR) {
-            tokenType = CjTokens.SAFE_CALL
         }
         return tokenType
     }
@@ -1652,4 +1650,3 @@ abstract class AbstractCangJieParsing(
         return builder
     }
 }
-

@@ -2,11 +2,11 @@ package org.cangnova.cangjie.cfir.extensions
 
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -22,12 +22,18 @@ open class CfirSwitchableExtensionDeclarationsSymbolProvider protected construct
 
     protected open var disabled: Boolean = false
 
-    override val symbolNamesProvider: CfirSymbolNamesProvider = object : CfirSymbolNamesProvider {
-        override fun getPackageNames(): Set<FqName>? =
+    override val symbolNamesProvider: CfirSymbolNamesProvider = object : CfirSymbolNamesProvider() {
+        override fun getPackageNames(): Set<String>? =
             if (disabled) null else delegate.symbolNamesProvider.getPackageNames()
+
+        override val hasSpecificClassifierPackageNamesComputation: Boolean
+            get() = delegate.symbolNamesProvider.hasSpecificClassifierPackageNamesComputation
 
         override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? =
             if (disabled) null else delegate.symbolNamesProvider.getTopLevelClassifierNamesInPackage(packageFqName)
+
+        override val hasSpecificCallablePackageNamesComputation: Boolean
+            get() = delegate.symbolNamesProvider.hasSpecificCallablePackageNamesComputation
 
         override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>? =
             if (disabled) null else delegate.symbolNamesProvider.getTopLevelCallableNamesInPackage(packageFqName)
@@ -38,24 +44,34 @@ open class CfirSwitchableExtensionDeclarationsSymbolProvider protected construct
         return delegate.getClassLikeSymbolByClassId(classId)
     }
 
-    override fun getTopLevelClassifierSymbols(packageFqName: FqName, name: Name): List<CfirClassLikeSymbol<*>> {
-        if (disabled) return emptyList()
-        return delegate.getTopLevelClassifierSymbols(packageFqName, name)
+    @CfirSymbolProviderInternals
+    override fun getTopLevelCallableSymbolsTo(
+        destination: MutableList<CfirCallableSymbol<*>>,
+        packageFqName: FqName,
+        name: Name,
+    ) {
+        if (disabled) return
+        delegate.getTopLevelCallableSymbolsTo(destination, packageFqName, name)
     }
 
-    override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> {
-        if (disabled) return emptyList()
-        return delegate.getTopLevelCallableSymbols(packageFqName, name)
+    @CfirSymbolProviderInternals
+    override fun getTopLevelFunctionSymbolsTo(
+        destination: MutableList<CfirNamedFunctionSymbol>,
+        packageFqName: FqName,
+        name: Name,
+    ) {
+        if (disabled) return
+        delegate.getTopLevelFunctionSymbolsTo(destination, packageFqName, name)
     }
 
-    override fun getTopLevelFunctionSymbols(packageFqName: FqName, name: Name): List<CfirFunctionSymbol<*>> {
-        if (disabled) return emptyList()
-        return delegate.getTopLevelFunctionSymbols(packageFqName, name)
-    }
-
-    override fun getTopLevelPropertySymbols(packageFqName: FqName, name: Name): List<CfirPropertySymbol> {
-        if (disabled) return emptyList()
-        return delegate.getTopLevelPropertySymbols(packageFqName, name)
+    @CfirSymbolProviderInternals
+    override fun getTopLevelPropertySymbolsTo(
+        destination: MutableList<CfirPropertySymbol>,
+        packageFqName: FqName,
+        name: Name,
+    ) {
+        if (disabled) return
+        delegate.getTopLevelPropertySymbolsTo(destination, packageFqName, name)
     }
 
     override fun hasPackage(fqName: FqName): Boolean {

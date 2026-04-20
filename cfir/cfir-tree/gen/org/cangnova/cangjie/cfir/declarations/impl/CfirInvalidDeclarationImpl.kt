@@ -13,7 +13,7 @@ import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.cfir.visitors.transformInplace
@@ -25,7 +25,7 @@ class CfirInvalidDeclarationImpl @CfirImplementationDetail constructor(
     override val moduleData: CfirModuleData,
     resolvePhase: CfirResolvePhase,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
-    override val symbol: CfirSymbol<*>,
+    override val symbol: CfirBasedSymbol<*>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
     override val reason: String,

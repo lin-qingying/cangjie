@@ -3,22 +3,21 @@ package org.cangnova.cangjie.analysis.api.cfir
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotation
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateDecision
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirCallableSymbolCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirCompletionSymbolKey
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirPublicSymbolCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirSubstitutedSignatureCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirTypeSubstitutorCacheKey
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPublicSymbolCacheKey
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCallableSymbolCacheKey
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCompletionSymbolKey
+import org.cangnova.cangjie.analysis.api.cfir.signatures.CaCfirSubstitutedSignatureCacheKey
+import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirSubstitutorCacheKey
 import org.cangnova.cangjie.analysis.api.dataFlow.CaDataFlowInfo
 import org.cangnova.cangjie.analysis.api.imports.CaDefaultImports
 import org.cangnova.cangjie.analysis.api.imports.CaImportOptimizationPlan
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningPlan
 import org.cangnova.cangjie.analysis.api.interop.CaInteropInfo
 import org.cangnova.cangjie.analysis.api.signatures.CaSignature
-import org.cangnova.cangjie.analysis.api.substitution.CaSubstitutedSignature
-import org.cangnova.cangjie.analysis.api.substitution.CaTypeSubstitutor
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjCallableDeclaration
@@ -36,10 +35,10 @@ internal class CaCfirSessionDerivedCacheStore {
     private val topLevelSymbolQueryCache = linkedMapOf<CaCfirTopLevelPublicSymbolQueryKey, CaCfirTopLevelPublicSymbolQueryValue>()
     private val documentationCache = linkedMapOf<CaCfirPublicSymbolCacheKey, String?>()
     private val declarationAnnotationsCache = linkedMapOf<PsiElement, List<CaAnnotation>>()
-    private val declarationSignatureCache = linkedMapOf<CjCallableDeclaration, CaSignature>()
-    private val callableSignatureCache = linkedMapOf<CaCfirCallableSymbolCacheKey, CaSignature?>()
-    private val substitutedSignatureCache = linkedMapOf<CaCfirSubstitutedSignatureCacheKey, CaSubstitutedSignature>()
-    private val typeSubstitutorCache = linkedMapOf<CaCfirTypeSubstitutorCacheKey, CaTypeSubstitutor>()
+    private val declarationSignatureCache = linkedMapOf<CjCallableDeclaration, CaSignature<CaCallableSymbol>?>()
+    private val callableSignatureCache = linkedMapOf<CaCfirCallableSymbolCacheKey, CaSignature<CaCallableSymbol>>()
+    private val substitutedSignatureCache = linkedMapOf<CaCfirSubstitutedSignatureCacheKey, CaSignature<CaCallableSymbol>>()
+    private val substitutorCache = linkedMapOf<CaCfirSubstitutorCacheKey, CaSubstitutor>()
     private val dataFlowInfoCache = linkedMapOf<CjExpression, CaDataFlowInfo>()
     private val completionDecisionCache = linkedMapOf<CaCfirCompletionDecisionKey, CaCompletionCandidateDecision>()
     private val referenceShorteningPlanCache = linkedMapOf<CjFile, CaReferenceShorteningPlan>()
@@ -85,23 +84,23 @@ internal class CaCfirSessionDerivedCacheStore {
 
     fun getOrCreateDeclarationSignature(
         declaration: CjCallableDeclaration,
-        create: () -> CaSignature,
-    ): CaSignature = getOrCreateCachedValue(declarationSignatureCache, declaration, create)
+        create: () -> CaSignature<CaCallableSymbol>?,
+    ): CaSignature<CaCallableSymbol>? = getOrCreateCachedValue(declarationSignatureCache, declaration, create)
 
     fun getOrCreateCallableSignature(
         key: CaCfirCallableSymbolCacheKey,
-        create: () -> CaSignature?,
-    ): CaSignature? = getOrCreateCachedValue(callableSignatureCache, key, create)
+        create: () -> CaSignature<CaCallableSymbol>,
+    ): CaSignature<CaCallableSymbol> = getOrCreateCachedValue(callableSignatureCache, key, create)
 
     fun getOrCreateSubstitutedSignature(
         key: CaCfirSubstitutedSignatureCacheKey,
-        create: () -> CaSubstitutedSignature,
-    ): CaSubstitutedSignature = getOrCreateCachedValue(substitutedSignatureCache, key, create)
+        create: () -> CaSignature<CaCallableSymbol>,
+    ): CaSignature<CaCallableSymbol> = getOrCreateCachedValue(substitutedSignatureCache, key, create)
 
-    fun getOrCreateTypeSubstitutor(
-        key: CaCfirTypeSubstitutorCacheKey,
-        create: () -> CaTypeSubstitutor,
-    ): CaTypeSubstitutor = getOrCreateCachedValue(typeSubstitutorCache, key, create)
+    fun getOrCreateSubstitutor(
+        key: CaCfirSubstitutorCacheKey,
+        create: () -> CaSubstitutor,
+    ): CaSubstitutor = getOrCreateCachedValue(substitutorCache, key, create)
 
     fun getOrCreateDefaultImports(create: () -> CaDefaultImports): CaDefaultImports {
         synchronized(this) {

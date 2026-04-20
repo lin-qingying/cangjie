@@ -1,11 +1,10 @@
 package org.cangnova.cangjie.analysis.api.cfir
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacade
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirTopLevelSymbolQueryResult
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -19,10 +18,10 @@ import org.cangnova.cangjie.psi.CjReferenceExpression
  * 以及 `symbol -> source psi/file` 的稳定导航协议。
  */
 internal class CaCfirSessionSymbolQueryService(
-    private val resolutionFacade: CaCfirResolutionFacade,
+    private val resolutionFacade: LLResolutionFacade,
     private val cacheStore: CaCfirSessionCacheStore,
 ) {
-    fun resolveSymbols(reference: CjReferenceExpression): Collection<CfirSymbol<*>> =
+    fun resolveSymbols(reference: CjReferenceExpression): Collection<CfirBasedSymbol<*>> =
         resolutionFacade.resolveReference(reference)
 
     fun lookupClassLikeSymbol(classId: ClassId): CfirClassLikeSymbol<*>? =
@@ -33,7 +32,7 @@ internal class CaCfirSessionSymbolQueryService(
     fun queryTopLevelSymbols(
         packageFqName: FqName,
         name: Name,
-    ): CaCfirTopLevelSymbolQueryResult =
+    ): CaCfirTopLevelPublicSymbolQueryValue =
         resolutionFacade.getTopLevelSymbols(packageFqName, name)
 
     fun lookupFileSymbol(file: CjFile): CfirFileSymbol? =
@@ -41,17 +40,17 @@ internal class CaCfirSessionSymbolQueryService(
             resolutionFacade.getFileSymbol(file)
         }
 
-    fun lookupSourcePsi(symbol: CfirSymbol<*>): PsiElement? =
+    fun lookupSourcePsi(symbol: CfirBasedSymbol<*>): PsiElement? =
         cacheStore.getOrCreateSourcePsi(symbol) {
             resolutionFacade.findSourcePsi(symbol)
         }
 
-    fun lookupSymbolsByPsi(psi: PsiElement): List<CfirSymbol<*>> =
+    fun lookupSymbolsByPsi(psi: PsiElement): List<CfirBasedSymbol<*>> =
         cacheStore.getOrCreatePsiSymbols(psi) {
             resolutionFacade.getDeclarationSymbols(psi)
         }
 
-    fun lookupContainingFile(symbol: CfirSymbol<*>): CjFile? =
+    fun lookupContainingFile(symbol: CfirBasedSymbol<*>): CjFile? =
         cacheStore.getOrCreateContainingFile(symbol) {
             resolutionFacade.getContainingFile(symbol)
         }

@@ -5,11 +5,7 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
-import org.cangnova.cangjie.analysis.api.CaBuiltinsModule
-import org.cangnova.cangjie.analysis.api.CaLibraryModule
-import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.CaSession
-import org.cangnova.cangjie.analysis.api.CaSourceModule
 import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotation
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightCallableDeclaration
@@ -19,7 +15,12 @@ import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationPro
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightExtendDeclaration
 import org.cangnova.cangjie.analysis.decompiled.light.declarations.CaDecompiledLightSupport
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.api.stubs.CaStubFileProvider
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
@@ -72,7 +73,7 @@ class CaSymbolLightDeclarationProvider(
 
     override fun getLightDeclarations(file: CjFile, useSiteModule: CaModule?): List<CaLightDeclaration> {
         refreshCacheIfNeeded()
-        val module = useSiteModule ?: CaProjectStructureProvider.getInstance(project).getModule(file, null)
+        val module = useSiteModule ?: CangJieProjectStructureProvider.getInstance(project).getModule(file, null)
         val stubFileProvider = project.getService(CaStubFileProvider::class.java)
 
         return analyze(module) {
@@ -154,7 +155,7 @@ class CaSymbolLightDeclarationProvider(
             else -> null
         }
         if (containingFile != null) {
-            return CaProjectStructureProvider.getInstance(project).getModule(containingFile, null)
+            return CangJieProjectStructureProvider.getInstance(project).getModule(containingFile, null)
         }
 
         /**
@@ -170,7 +171,7 @@ class CaSymbolLightDeclarationProvider(
     private fun collectModuleFiles(module: CaModule): List<CjFile> {
         val psiManager = PsiManager.getInstance(project)
         val roots = when (module) {
-            is org.cangnova.cangjie.analysis.api.CaLibrarySourceModule -> module.sourceRoots
+            is CaLibrarySourceModule -> module.sourceRoots
             is CaSourceModule -> module.psiRoots
             else -> emptyList()
         }
@@ -286,7 +287,7 @@ class CaSymbolLightDeclarationProvider(
                 ),
                 token = symbol.token,
                 callableId = symbol.callableId,
-                signature = symbol.signature,
+                signature = symbol.asSignature(),
             )
         }
     }

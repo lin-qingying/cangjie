@@ -30,14 +30,16 @@ class CfirPropertyBuilder {
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
     var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var symbol: CfirPropertySymbol
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
     lateinit var name: Name
-    var getter: CfirFunction? = null
-    var setter: CfirFunction? = null
+    var getter: CfirPropertyAccessor? = null
+    var setter: CfirPropertyAccessor? = null
+    var bodyResolveState: CfirPropertyBodyResolveState = CfirPropertyBodyResolveState.NOTHING_RESOLVED
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirProperty {
@@ -49,6 +51,7 @@ class CfirPropertyBuilder {
             origin,
             attributes,
             isLocal,
+            deprecationsProvider,
             dispatchReceiverType,
             symbol,
             status,
@@ -57,6 +60,7 @@ class CfirPropertyBuilder {
             name,
             getter,
             setter,
+            bodyResolveState,
         )
     }
 
@@ -83,6 +87,7 @@ inline fun buildPropertyCopy(original: CfirProperty, init: CfirPropertyBuilder.(
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
     copyBuilder.isLocal = original.isLocal
+    copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.dispatchReceiverType = original.dispatchReceiverType
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
@@ -90,5 +95,6 @@ inline fun buildPropertyCopy(original: CfirProperty, init: CfirPropertyBuilder.(
     copyBuilder.name = original.name
     copyBuilder.getter = original.getter
     copyBuilder.setter = original.setter
+    copyBuilder.bodyResolveState = original.bodyResolveState
     return copyBuilder.apply(init).build()
 }

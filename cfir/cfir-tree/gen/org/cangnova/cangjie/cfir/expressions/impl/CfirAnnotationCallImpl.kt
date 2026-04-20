@@ -14,7 +14,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
 import org.cangnova.cangjie.cfir.references.CfirReference
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -30,7 +30,7 @@ internal class CfirAnnotationCallImpl(
     override val arguments: MutableList<CfirElement>,
     override var argumentList: CfirArgumentList,
     override var calleeReference: CfirReference,
-    override val containingDeclarationSymbol: CfirSymbol<*>,
+    override val containingDeclarationSymbol: CfirBasedSymbol<*>,
 ) : CfirAnnotationCall() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {

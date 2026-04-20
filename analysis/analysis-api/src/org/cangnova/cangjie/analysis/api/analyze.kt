@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.api
 
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import org.cangnova.cangjie.psi.CjElement
 import kotlin.jvm.JvmName

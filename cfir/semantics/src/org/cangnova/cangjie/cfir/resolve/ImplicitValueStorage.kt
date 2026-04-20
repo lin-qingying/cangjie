@@ -15,14 +15,14 @@ import org.cangnova.cangjie.cfir.calls.ImplicitValue
 import org.cangnova.cangjie.cfir.calls.producesInapplicableCandidate
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.name.Name
 
 class ImplicitValueStorage private constructor(
     private val implicitReceiverStack: PersistentList<ImplicitReceiverValue<*>>,
     private val implicitReceiversByLabel: PersistentMap<Name, PersistentSet<ImplicitReceiverValue<*>>>,
-    private val implicitValuesBySymbol: PersistentMap<CfirSymbol<*>, ImplicitValue<*>>,
+    private val implicitValuesBySymbol: PersistentMap<CfirBasedSymbol<*>, ImplicitValue<*>>,
 ) {
     constructor() : this(
         persistentListOf(),
@@ -72,7 +72,7 @@ class ImplicitValueStorage private constructor(
         }
     }
 
-    fun getBySymbol(symbol: CfirSymbol<*>): ImplicitValue<*>? = implicitValuesBySymbol[symbol]
+    fun getBySymbol(symbol: CfirBasedSymbol<*>): ImplicitValue<*>? = implicitValuesBySymbol[symbol]
 
     fun lastDispatchReceiver(): ImplicitDispatchReceiverValue? =
         implicitReceiverStack.filterIsInstance<ImplicitDispatchReceiverValue>().lastOrNull()
@@ -80,7 +80,7 @@ class ImplicitValueStorage private constructor(
     fun receiversAsReversed(): List<ImplicitReceiverValue<*>> = implicitReceiverStack.asReversed()
 
     @ImplicitValue.ImplicitValueInternals
-    fun replaceImplicitValueType(symbol: CfirSymbol<*>, type: ConeCangJieType) {
+    fun replaceImplicitValueType(symbol: CfirBasedSymbol<*>, type: ConeCangJieType) {
         implicitValuesBySymbol[symbol]?.updateTypeFromSmartcast(type)
     }
 
@@ -95,7 +95,7 @@ class ImplicitValueStorage private constructor(
 
 interface ImplicitValueMapper {
     operator fun <S, T> invoke(value: T): T
-        where S : CfirSymbol<*>, T : ImplicitValue<S>
+        where S : CfirBasedSymbol<*>, T : ImplicitValue<S>
 }
 
 fun Set<ImplicitReceiverValue<*>>.ambiguityDiagnosticFor(labelName: String?): ConeSimpleDiagnostic {

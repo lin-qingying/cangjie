@@ -2,12 +2,12 @@ package org.cangnova.cangjie.analysis.api.platform.projectStructure
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 
 /**
  * 平台模块图服务。
  *
- * 相比 [CaProjectStructureProvider]，这个接口更聚焦“模块图本身”：
+ * 相比 [CangJieProjectStructureProvider]，这个接口更聚焦“模块图本身”：
  * 1. 枚举当前平台可见模块；
  * 2. 按稳定身份查询模块；
  * 3. 让 session cache、失效传播和 low-level resolve 共用同一份结构快照。

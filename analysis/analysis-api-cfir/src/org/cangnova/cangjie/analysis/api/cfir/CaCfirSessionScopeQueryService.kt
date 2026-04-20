@@ -1,7 +1,8 @@
 package org.cangnova.cangjie.analysis.api.cfir
 
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacade
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirScopeSnapshot
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
+import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -14,28 +15,28 @@ import org.cangnova.cangjie.psi.CjFile
  * 以保持 `analysis-api-cfir` 对 low-level scope 入口的单一依赖。
  */
 internal class CaCfirSessionScopeQueryService(
-    private val resolutionFacade: CaCfirResolutionFacade,
+    private val resolutionFacade: LLResolutionFacade,
     private val cacheStore: CaCfirSessionCacheStore,
 ) {
-    fun queryFileScope(file: CjFile): CaCfirScopeSnapshot =
-        cacheStore.getOrCreateFileScope(file) { resolutionFacade.getFileScope(file) }
+    fun queryFileDeclaredScope(file: CjFile): CfirContainingNamesAwareScope =
+        cacheStore.getOrCreateFileDeclaredScope(file) { resolutionFacade.getFileDeclaredScope(file) }
 
-    fun queryPackageScope(packageFqName: FqName): CaCfirScopeSnapshot? =
+    fun queryPackageScope(packageFqName: FqName): CfirContainingNamesAwareScope? =
         cacheStore.getOrCreatePackageScope(packageFqName) {
             resolutionFacade.getPackageScope(packageFqName)
         }
 
-    fun queryDeclaredMemberScope(classId: ClassId): CaCfirScopeSnapshot? =
+    fun queryDeclaredMemberScope(classId: ClassId): CfirContainingNamesAwareScope? =
         cacheStore.getOrCreateDeclaredMemberScope(classId) {
             resolutionFacade.getDeclaredMemberScope(classId)
         }
 
-    fun queryMemberScope(classId: ClassId): CaCfirScopeSnapshot? =
+    fun queryMemberScope(classId: ClassId): CfirTypeScope? =
         cacheStore.getOrCreateMemberScope(classId) {
             resolutionFacade.getMemberScope(classId)
         }
 
-    fun queryTypeScope(type: ConeCangJieType): CaCfirScopeSnapshot? =
+    fun queryTypeScope(type: ConeCangJieType): CfirTypeScope? =
         cacheStore.getOrCreateTypeScope(type) {
             resolutionFacade.getTypeScope(type)
         }

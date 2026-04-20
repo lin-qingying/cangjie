@@ -3,11 +3,14 @@ plugins {
 }
 
 dependencies {
-    implementation(kotlin("stdlib"))
+    compileOnly(kotlin("stdlib"))
     implementation(kotlin("reflect"))
     implementation(project(":util"))
     implementation(project(":common"))
-    implementation(intellijCore())
+//    implementation(intellijCore())
+    api(intellijPlatformUtil()) {
+        exclude(module = "annotations")
+    }
 }
 
 sourceSets {

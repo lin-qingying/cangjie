@@ -1,12 +1,12 @@
 package org.cangnova.cangjie.analysis.decompiled.light.declarations
 
 import com.intellij.openapi.project.Project
-import org.cangnova.cangjie.analysis.api.CaBuiltinsModule
-import org.cangnova.cangjie.analysis.api.CaLibraryModule
-import org.cangnova.cangjie.analysis.api.CaModule
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjDecompiledFile
 
@@ -45,7 +45,7 @@ class CaDecompiledLightSupport(
     fun findContainingModule(packageFqName: FqName, preferredModule: CaModule? = null): CaModule? {
         findInModule(preferredModule, packageFqName)?.let { return preferredModule }
 
-        val projectStructure = CaProjectStructureProvider.getInstance(project)
+        val projectStructure = CangJieProjectStructureProvider.getInstance(project)
         projectStructure.allModules.filterIsInstance<CaBuiltinsModule>().forEach { module ->
             if (module === preferredModule) return@forEach
             findInModule(module, packageFqName)?.let { return module }

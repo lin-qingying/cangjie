@@ -2,11 +2,17 @@ package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirCall
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
+import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
+import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
@@ -27,6 +33,8 @@ class CfirDataFlowAnalyzer(
     private val sessionHolder: SessionHolder,
     private val context: BodyResolveContext,
 ) : SessionHolder by sessionHolder {
+    private val graphStack: ArrayDeque<ControlFlowGraph> = ArrayDeque()
+
     val currentCallArgumentsFrame: CfirDataFlowAnalyzerContext.CallArgumentsFrame?
         get() = context.dataFlowAnalyzerContext.currentCallArgumentsFrame
 
@@ -58,6 +66,51 @@ class CfirDataFlowAnalyzer(
     fun exitFunctionCall(functionCall: CfirFunctionCall, callCompleted: Boolean) {
         context.dataFlowAnalyzerContext.exitFunctionCall(functionCall, callCompleted)
     }
+
+    fun enterBlock(block: org.cangnova.cangjie.cfir.expressions.CfirBlock) {}
+
+    fun exitBlock(block: org.cangnova.cangjie.cfir.expressions.CfirBlock) {}
+
+    fun enterFile(file: CfirFile, buildGraph: Boolean) {
+        if (buildGraph) {
+            graphStack.addLast(ControlFlowGraph(file, "<file>", ControlFlowGraph.Kind.File))
+        }
+    }
+
+    fun exitFile(): ControlFlowGraph? {
+        return graphStack.removeLastOrNull()
+    }
+
+    fun enterClass(klass: CfirClass, buildGraph: Boolean) {
+        if (buildGraph) {
+            graphStack.addLast(ControlFlowGraph(klass, klass.name.asString(), ControlFlowGraph.Kind.Class))
+        }
+    }
+
+    fun exitClass(): ControlFlowGraph? {
+        return graphStack.removeLastOrNull()
+    }
+
+    fun enterFunction(function: CfirFunction) {
+        val kind = when (function) {
+            is org.cangnova.cangjie.cfir.declarations.CfirConstructor -> ControlFlowGraph.Kind.Constructor
+            is CfirAnonymousFunction -> ControlFlowGraph.Kind.AnonymousFunction
+            else -> ControlFlowGraph.Kind.Function
+        }
+        val graphName = when (function) {
+            is org.cangnova.cangjie.cfir.declarations.CfirNamedFunction -> function.name.asString()
+            is org.cangnova.cangjie.cfir.declarations.CfirConstructor -> "<init>"
+            else -> "<anonymous>"
+        }
+        graphStack.addLast(ControlFlowGraph(function, graphName, kind))
+    }
+
+    fun exitFunction(function: CfirFunction): CfirControlFlowGraphReference? {
+        val graph = graphStack.removeLastOrNull() ?: return null
+        return CfirControlFlowGraphReferenceImpl(graph)
+    }
+
+    fun resetSmartCastPosition() {}
 
     fun returnExpressionsOfAnonymousFunction(function: CfirAnonymousFunction): Collection<CfirAnonymousFunctionReturnExpressionInfo> {
         val body = function.body ?: return emptyList()

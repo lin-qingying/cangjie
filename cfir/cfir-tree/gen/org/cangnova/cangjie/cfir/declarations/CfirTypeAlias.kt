@@ -24,6 +24,7 @@ abstract class CfirTypeAlias : CfirClassLikeDeclaration() {
     abstract override val annotations: List<CfirAnnotation>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
+    abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val declarations: List<CfirDeclaration>
     abstract override val superTypeRefs: List<CfirTypeRef>
     abstract override val symbol: CfirTypeAliasSymbol
@@ -40,6 +41,8 @@ abstract class CfirTypeAlias : CfirClassLikeDeclaration() {
         transformer.transformTypeAlias(this, data) as E
 
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+
+    abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
     abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
 

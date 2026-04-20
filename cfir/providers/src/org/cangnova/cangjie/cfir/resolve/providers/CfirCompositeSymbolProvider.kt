@@ -1,102 +1,64 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 /**
- * 组合多个 [CfirSymbolProvider]，按注册顺序优先级查找。
- *
- * 对齐 Kotlin K2 的 FirCachingCompositeSymbolProvider。
- * 类查找返回首个命中结果；可调用查找合并所有 provider 的结果。
+ * 组合多个 [CfirSymbolProvider]，仅负责 symbol lookup 聚合。
  */
 class CfirCompositeSymbolProvider(
     session: CfirSession,
     val providers: List<CfirSymbolProvider>,
 ) : CfirSymbolProvider(session) {
-    override val symbolNamesProvider: CfirSymbolNamesProvider = object : CfirSymbolNamesProvider {
-        override fun getPackageNames(): Set<FqName>? = mergeNameSets { it.getPackageNames() }
+    override val symbolNamesProvider: CfirSymbolNamesProvider =
+        CfirCompositeSymbolNamesProvider.fromSymbolProviders(providers)
 
-        override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? =
-            mergeNameSets { it.getTopLevelClassifierNamesInPackage(packageFqName) }
-
-        override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>? =
-            mergeNameSets { it.getTopLevelCallableNamesInPackage(packageFqName) }
-
-        private fun <T> mergeNameSets(getter: (CfirSymbolNamesProvider) -> Set<T>?): Set<T>? {
-            val merged = LinkedHashSet<T>()
-            var hasKnownSet = false
-            for (provider in providers) {
-                val names = getter(provider.symbolNamesProvider) ?: continue
-                hasKnownSet = true
-                merged += names
-            }
-            return if (hasKnownSet) merged else null
-        }
-    }
-
-    override fun getClassLikeSymbolByClassId(classId: ClassId):  CfirClassLikeSymbol<*>? {
+    override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
         for (provider in providers) {
-            val symbol = provider.getClassLikeSymbolByClassId(classId)
-            if (symbol != null) return symbol
+            provider.getClassLikeSymbolByClassId(classId)?.let { return it }
         }
         return null
     }
 
-    override fun getTopLevelClassifierSymbols(packageFqName: FqName, name: Name): List<CfirClassLikeSymbol<*>> {
-        val merged = LinkedHashSet<CfirClassLikeSymbol<*>>()
+    @CfirSymbolProviderInternals
+    override fun getTopLevelCallableSymbolsTo(
+        destination: MutableList<CfirCallableSymbol<*>>,
+        packageFqName: FqName,
+        name: Name,
+    ) {
         for (provider in providers) {
-            merged += provider.getTopLevelClassifierSymbols(packageFqName, name)
+            provider.getTopLevelCallableSymbolsTo(destination, packageFqName, name)
         }
-        return merged.toList()
     }
 
-    override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> {
-        return providers.flatMap { it.getTopLevelCallableSymbols(packageFqName, name) }
-    }
-
-    override fun hasPackage(fqName: FqName): Boolean {
-        return providers.any { it.hasPackage(fqName) }
-    }
-
-    override fun getClassIdBySymbol(classSymbol: CfirClassSymbol): ClassId? {
+    @CfirSymbolProviderInternals
+    override fun getTopLevelFunctionSymbolsTo(
+        destination: MutableList<CfirNamedFunctionSymbol>,
+        packageFqName: FqName,
+        name: Name,
+    ) {
         for (provider in providers) {
-            val classId = provider.getClassIdBySymbol(classSymbol)
-            if (classId != null) return classId
+            provider.getTopLevelFunctionSymbolsTo(destination, packageFqName, name)
         }
-        return null
     }
 
-    override fun getEnumConstructorOwnerClassId(symbol: CfirEnumConstructorSymbol): ClassId? {
+    @CfirSymbolProviderInternals
+    override fun getTopLevelPropertySymbolsTo(
+        destination: MutableList<CfirPropertySymbol>,
+        packageFqName: FqName,
+        name: Name,
+    ) {
         for (provider in providers) {
-            val classId = provider.getEnumConstructorOwnerClassId(symbol)
-            if (classId != null) return classId
+            provider.getTopLevelPropertySymbolsTo(destination, packageFqName, name)
         }
-        return null
     }
 
-    override fun getContainingFile(symbol: CfirSymbol<*>): CfirFile? {
-        val normalizedSymbol = symbol.unwrapForDeclarationMetadataLookup()
-        for (provider in providers) {
-            val file = provider.getContainingFile(normalizedSymbol)
-            if (file != null) return file
-        }
-        return null
-    }
-
-    override fun getContainingClassId(symbol: CfirCallableSymbol<*>): ClassId? {
-        val normalizedSymbol = symbol.unwrapCallableForDeclarationMetadataLookup()
-        for (provider in providers) {
-            val classId = provider.getContainingClassId(normalizedSymbol)
-            if (classId != null) return classId
-        }
-        return null
-    }
+    override fun hasPackage(fqName: FqName): Boolean =
+        providers.any { it.hasPackage(fqName) }
 }

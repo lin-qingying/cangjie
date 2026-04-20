@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.types.builder.buildBasicTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildFunctionTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.builder.buildOptionTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildTupleTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildUserTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildVArrayTypeRef
@@ -24,31 +25,48 @@ import org.cangnova.cangjie.psi.*
 /**
  * 将 PSI 类型引用转换为未解析的 CFIR 类型引用。
  */
-internal fun CjTypeReference?.toFirOrImplicitTypeRef(
+internal fun CjTypeReference?.toCfirOrImplicitTypeRef(
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
 ): CfirTypeRef {
     if (this == null) return buildImplicitTypeRef()
     val typeElement = typeElement
         ?: return buildImplicitTypeRef()
-    return typeElement.toFirTypeRef(this, toSource)
+    return typeElement.toCfirTypeRef(this, toSource)
 }
 
-private fun CjTypeElement.toFirTypeRef(
+private fun CjTypeElement.toCfirTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
 ): CfirTypeRef = when (this) {
-    is CjBasicType -> toFirBasicTypeRef(ref, toSource)
-    is CjUserType -> toFirUserTypeRef(ref, toSource)
-    is CjFunctionType -> toFirFunctionTypeRef(ref, toSource)
-    is CjTupleType -> toFirTupleTypeRef(ref, toSource)
-    is CjVArrayType -> toFirVArrayTypeRef(ref, toSource)
+    is CjBasicType -> toCfirBasicTypeRef(ref, toSource)
+    is CjUserType -> toCfirUserTypeRef(ref, toSource)
+    is CjFunctionType -> toCfirFunctionTypeRef(ref, toSource)
+    is CjOptionType -> toCfirOptionTypeRef(ref, toSource)
+    is CjTupleType -> toCfirTupleTypeRef(ref, toSource)
+    is CjVArrayType -> toCfirVArrayTypeRef(ref, toSource)
     else -> buildErrorTypeRef {
         source = ref.toCjSourceElementOrNull(toSource)
         diagnostic =  ConeSimpleDiagnostic("Unsupported type element: ${javaClass.simpleName}")
     }
 }
 
-private fun CjBasicType.toFirBasicTypeRef(
+private fun CjOptionType.toCfirOptionTypeRef(
+    ref: CjTypeReference,
+    toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
+): CfirTypeRef {
+    val innerType = getInnerType()
+        ?: return buildErrorTypeRef {
+            source = ref.toCjSourceElementOrNull(toSource)
+            diagnostic = ConeSimpleDiagnostic("Malformed option type: missing component type")
+        }
+
+    return buildOptionTypeRef {
+        source = ref.toCjSourceElement(toSource)
+        componentTypeRef = innerType.toCfirTypeRef(ref, toSource)
+    }
+}
+
+private fun CjBasicType.toCfirBasicTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
 ): CfirBasicTypeRef {
@@ -58,12 +76,12 @@ private fun CjBasicType.toFirBasicTypeRef(
     }
 }
 
-private fun CjUserType.toFirUserTypeRef(
+private fun CjUserType.toCfirUserTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
 ): CfirUserTypeRef {
     val qualifier = buildQualifierFromUserType(this)
-    val typeArguments = typeArguments.map { it.typeReference.toFirOrImplicitTypeRef(toSource) }
+    val typeArguments = typeArguments.map { it.typeReference.toCfirOrImplicitTypeRef(toSource) }
     return buildUserTypeRef {
         source = ref.toCjSourceElement(toSource)
         this.qualifier += qualifier
@@ -84,12 +102,12 @@ private fun buildQualifierFromUserType(userType: CjUserType): List<Name> {
     return segments
 }
 
-private fun CjFunctionType.toFirFunctionTypeRef(
+private fun CjFunctionType.toCfirFunctionTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
 ): CfirFunctionTypeRef {
-    val parameterTypes = parameters.map { it.typeReference.toFirOrImplicitTypeRef(toSource) }
-    val returnType = returnTypeReference.toFirOrImplicitTypeRef(toSource)
+    val parameterTypes = parameters.map { it.typeReference.toCfirOrImplicitTypeRef(toSource) }
+    val returnType = returnTypeReference.toCfirOrImplicitTypeRef(toSource)
     return buildFunctionTypeRef {
         source = ref.toCjSourceElementOrNull(toSource)
         parameterTypeRefs += parameterTypes
@@ -97,18 +115,18 @@ private fun CjFunctionType.toFirFunctionTypeRef(
     }
 }
 
-private fun CjTupleType.toFirTupleTypeRef(
+private fun CjTupleType.toCfirTupleTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
 ): CfirTupleTypeRef {
-    val elementTypes = typeArgumentsAsTypes.map { it.toFirOrImplicitTypeRef(toSource) }
+    val elementTypes = typeArgumentsAsTypes.map { it.toCfirOrImplicitTypeRef(toSource) }
     return buildTupleTypeRef {
         source = ref.toCjSourceElementOrNull(toSource)
         elementTypeRefs += elementTypes
     }
 }
 
-private fun CjVArrayType.toFirVArrayTypeRef(
+private fun CjVArrayType.toCfirVArrayTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
 ): CfirTypeRef {
@@ -129,7 +147,7 @@ private fun CjVArrayType.toFirVArrayTypeRef(
         }
     return buildVArrayTypeRef {
         source = ref.toCjSourceElementOrNull(toSource)
-        elementTypeRef = elementTypeElement.toFirTypeRef(elementTypeReference, toSource)
+        elementTypeRef = elementTypeElement.toCfirTypeRef(elementTypeReference, toSource)
         this.sizeLiteral = sizeLiteral
     }
 }

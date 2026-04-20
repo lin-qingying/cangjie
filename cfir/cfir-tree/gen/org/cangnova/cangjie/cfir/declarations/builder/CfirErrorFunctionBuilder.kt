@@ -28,6 +28,7 @@ class CfirErrorFunctionBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
+    var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
@@ -44,6 +45,7 @@ class CfirErrorFunctionBuilder {
             annotations.toMutableOrEmpty(),
             origin,
             attributes,
+            deprecationsProvider,
             dispatchReceiverType,
             status,
             typeParameters,
