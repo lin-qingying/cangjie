@@ -7,9 +7,9 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProvider
-import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLEmptyKotlinSymbolProvider
-import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLKotlinSourceSymbolProvider
-import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLKotlinSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCangJieSourceSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCangJieSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLEmptyCangJieSymbolProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleSpecificSymbolProviderAccess
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLContainingClassCalculator
 import org.cangnova.cangjie.cfir.ThreadSafeMutableState
@@ -31,15 +31,14 @@ import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 internal class LLCfirProvider(
     val session: LLCfirSession,
     private val moduleComponents: LLCfirModuleResolveComponents,
-    canContainKotlinPackage: Boolean,
     disregardSelfDeclarations: Boolean = false,
     declarationProviderFactory: (GlobalSearchScope) -> CangJieDeclarationProvider?,
 ) : CfirProvider() {
-    override val symbolProvider: LLKotlinSymbolProvider =
+    override val symbolProvider: LLCangJieSymbolProvider =
         if (!disregardSelfDeclarations) {
-            LLKotlinSourceSymbolProvider(session, moduleComponents, canContainKotlinPackage, declarationProviderFactory)
+            LLCangJieSourceSymbolProvider(session, moduleComponents, declarationProviderFactory)
         } else {
-            LLEmptyKotlinSymbolProvider(session)
+            LLEmptyCangJieSymbolProvider(session)
         }
 
     override val isPhasedCfirAllowed: Boolean get() = true

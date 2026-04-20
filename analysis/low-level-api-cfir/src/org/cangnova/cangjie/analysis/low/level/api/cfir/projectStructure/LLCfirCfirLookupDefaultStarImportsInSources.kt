@@ -25,4 +25,4 @@ internal fun LLCfirSession.createLookupDefaultStarImportsInSourcesSettingHolder(
 }
 
 private fun LLCfirSession.isLibrarySourceAnalysisSession(): Boolean =
-    this is LLCfirLibraryOrLibrarySourceResolvableModuleSession && ktModule is CaLibrarySourceModule
+    this is LLCfirLibraryOrLibrarySourceResolvableModuleSession && caModule is CaLibrarySourceModule

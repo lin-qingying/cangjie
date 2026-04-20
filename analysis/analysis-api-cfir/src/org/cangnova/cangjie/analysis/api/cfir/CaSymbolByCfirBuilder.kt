@@ -10,7 +10,7 @@ import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFieldSymbolImpl
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFinalizerSymbolImpl
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirMacroSymbolImpl
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirMainFunctionSymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirNamedFunctionSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirNamedFunctionSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPatternBindingSymbolImpl
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPatternVariableSymbolImpl
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPropertyGetterSymbolImpl
@@ -151,7 +151,7 @@ internal class CaSymbolByCfirBuilder(
             is CfirMacroDeclarationSymbol -> CaCfirMacroSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
             is CfirFinalizerSymbol -> CaCfirFinalizerSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
             is CfirConstructorSymbol -> CaCfirConstructorSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
-            is CfirNamedFunctionSymbol -> CaCfirNamedFunctionSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
+            is CfirNamedFunctionSymbol -> CaCfirNamedFunctionSymbol(symbol, analysisSession)
             else -> error("Unsupported function public symbol mapping for `${symbol::class.simpleName}`")
         }
     }

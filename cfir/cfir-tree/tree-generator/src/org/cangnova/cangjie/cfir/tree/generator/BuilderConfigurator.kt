@@ -74,6 +74,14 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
         ) {
             additionalImports(resolvePhaseExtensionImport)
         }
+
+        // deprecationsProvider: source 构建路径统一默认 UnresolvedDeprecationProvider,
+        // 反序列化路径会覆写为具体 provider。对齐 Kotlin FIR 同机制。
+        configureFieldInAllLeafBuilders(
+            field = "deprecationsProvider",
+        ) {
+            default("deprecationsProvider", "UnresolvedDeprecationProvider")
+        }
     }
 
     private fun CfirTree.concreteElements(): List<Element> = listOf(

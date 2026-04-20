@@ -58,7 +58,7 @@ internal class LLCfirIdePredicateBasedProvider(
         get() = session.registeredPluginAnnotations
 
     private val declarationOwnersCache: CfirCache<CfirFile, CfirOwnersStorage, Nothing?> =
-        session.cfirCachesFactory.createCache { firFile -> CfirOwnersStorage.collectOwners(firFile) }
+        session.cfirCachesFactory.createCache { cfirFile -> CfirOwnersStorage.collectOwners(cfirFile) }
 
     override fun getSymbolsByPredicate(predicate: LookupPredicate): List<CfirBasedSymbol<*>> {
         val annotations = predicate.annotations
@@ -87,14 +87,14 @@ internal class LLCfirIdePredicateBasedProvider(
         // LookupPredicates should never match local declarations, so we filter them early
         if (CjPsiUtil.isLocal(this)) return null
 
-        val moduleForFile = projectStructureProvider.getModule(this, session.ktModule)
+        val moduleForFile = projectStructureProvider.getModule(this, session.caModule)
         val resolutionFacadeForFile = moduleForFile.getResolutionFacade(project)
         return this.resolveToCfirSymbol(resolutionFacadeForFile).cfir
     }
 
     override fun getOwnersOfDeclaration(declaration: CfirDeclaration): List<CfirBasedSymbol<*>>? {
-        val firFile = declaration.getContainingFile() ?: return null
-        val declarationOwners = declarationOwnersCache.getValue(firFile)
+        val cfirFile = declaration.getContainingFile() ?: return null
+        val declarationOwners = declarationOwnersCache.getValue(cfirFile)
 
         return declarationOwners.getOwners(declaration)
     }
@@ -183,14 +183,14 @@ internal class LLCfirIdePredicateBasedProvider(
     private fun annotationsOnDeclaration(declaration: CfirDeclaration): Set<AnnotationFqn> {
         if (declaration.annotations.isEmpty()) return emptySet()
 
-        val firResolvedAnnotations = declaration.annotations
+        val cfirResolvedAnnotations = declaration.annotations
             .asSequence()
             .mapNotNull { it.typeRef as? CfirResolvedTypeRef }
             .mapNotNull { it.coneType.classId }
             .map { it.asSingleFqName() }
             .toSet()
 
-        if (firResolvedAnnotations.isNotEmpty()) return firResolvedAnnotations
+        if (cfirResolvedAnnotations.isNotEmpty()) return cfirResolvedAnnotations
 
         val psiDeclaration = declaration.psi as? CjAnnotated ?: return emptySet()
         val psiAnnotations = annotationsResolver.annotationsOnDeclaration(psiDeclaration)

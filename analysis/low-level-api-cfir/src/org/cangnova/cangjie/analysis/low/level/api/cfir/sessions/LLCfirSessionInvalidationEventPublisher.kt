@@ -1,3 +1,5 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 /*
  * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
@@ -6,7 +8,6 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
 
 import com.intellij.openapi.project.Project
-import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.isStable
@@ -32,7 +33,6 @@ internal class LLCfirSessionInvalidationEventPublisher(private val project: Proj
      *
      * Must be called in a write action.
      */
-    @OptIn(CaPlatformInterface::class)
     inline fun collectSessionsAndPublishInvalidationEvent(action: () -> Unit) {
         require(invalidatedModules == null) {
             "The set of invalidated modules should be `null` when `collectSessionsAndPublishInvalidationEvent` has just been called."
@@ -61,12 +61,12 @@ internal class LLCfirSessionInvalidationEventPublisher(private val project: Proj
         // been modified, we need to check the module's validity before checking `isStable`, as otherwise an exception might occur in
         // `isStable`. Even if the module is invalid, we still want to publish a session invalidation event so that the downstream analysis
         // session can be invalidated.
-        val ktModule = session.ktModule
-        if (ktModule is CaDanglingFileModule && ktModule.isValid && !ktModule.isStable) {
+        val module = session.caModule
+        if (module is CaDanglingFileModule && module.isValid && !module.isStable) {
             return
         }
 
-        invalidatedModules.add(ktModule)
+        invalidatedModules.add(module)
     }
 
     companion object {

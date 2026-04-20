@@ -1041,6 +1041,7 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         @TestMetadata("super_func.cj")
         @Test
         fun testSuperFunc() {
+
             runTest("cfir/analysis-tests/testData/diagnostics/super/super_func.cj")
         }
     }

@@ -21,29 +21,34 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.*
 import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.utils.evaluatedInitializer
-import org.cangnova.cangjie.cfir.declarations.utils.isLocal
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.resolve.CfirCodeFragmentContext
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
+import org.cangnova.cangjie.cfir.resolve.dfa.controlFlowGraph
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.CfgInternals
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
 import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformerDispatcher
+import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirDeclarationsResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirExpressionsResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataElement
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
+import org.cangnova.cangjie.cfir.resolve.body.SnapshotCfirMapper
 import org.cangnova.cangjie.cfir.resolve.codeFragmentContext
-import org.cangnova.cangjie.cfir.resolve.dfa.SnapshotCfirMapper
-import org.cangnova.cangjie.cfir.resolve.dfa.cfg.*
-import org.cangnova.cangjie.cfir.resolve.dfa.controlFlowGraph
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.*
-import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.scopes.CfirLocalScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
+import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.hasResolvedType
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
-import org.cangnova.cangjie.psi
 import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjRealSourceElementKind
 import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
@@ -95,11 +100,10 @@ private class CfirPartialBodyDeclarationResolveTransformer(
     override fun transformFunctionContent(
         function: CfirFunction,
         resolutionModeForBody: ResolutionMode,
-        shouldResolveEverything: Boolean
+        shouldResolveEverything: Boolean,
     ): CfirFunction {
         if (function.partialBodyAnalysisState != null) {
             function.transformBody(this, resolutionModeForBody)
-            function.replaceControlFlowGraphReference(dataFlowAnalyzer.exitFunction(function))
             return function
         }
 
@@ -108,19 +112,12 @@ private class CfirPartialBodyDeclarationResolveTransformer(
 
     override fun transformConstructorContent(constructor: CfirConstructor, data: ResolutionMode): CfirConstructor {
         if (constructor.partialBodyAnalysisState != null) {
-            context.forConstructor(constructor) {
-                context.forConstructorBody(constructor, session) {
-                    constructor.transformBody(this, data)
-                }
-            }
-
-            constructor.replaceControlFlowGraphReference(dataFlowAnalyzer.exitFunction(constructor))
+            constructor.transformBody(this, data)
             return constructor
         }
 
         return super.transformConstructorContent(constructor, data)
     }
-
 }
 
 private class CfirPartialBodyExpressionResolveTransformer(
@@ -140,7 +137,7 @@ private class CfirPartialBodyExpressionResolveTransformer(
 
     private var isInsideAnalysis = false
 
-    override fun transformBlock(block: CfirBlock, data: ResolutionMode): CfirStatement {
+    override fun transformBlock(block: CfirBlock, data: ResolutionMode): CfirExpression {
         val declaration = context.containerIfAny
 
         if (isInsideAnalysis) {
@@ -189,13 +186,12 @@ private class CfirPartialBodyExpressionResolveTransformer(
         }
     }
 
-    @OptIn(CfgInternals::class)
     private fun transformPartially(
         request: LLPartialBodyResolveRequest,
         block: CfirBlock,
         data: ResolutionMode,
         state: LLPartialBodyAnalysisState?
-    ): CfirStatement {
+    ): CfirExpression {
         val declaration = target.target as CfirDeclaration
 
         if (state == null) {
@@ -235,25 +231,7 @@ private class CfirPartialBodyExpressionResolveTransformer(
 
         // Run analysis with the previous tower data context
         context.withTowerDataContext(resolveSnapshot.towerDataContext) {
-            // Not yet analyzed statements may still appear in the control flow graph, e.g., in 'CfirLocalVariableAssignmentAnalyzer'.
-            // As state keepers replace unresolved statements with freshly created ones ('preservePartialBodyResolveResult'),
-            // we need to adapt the snapshot so it reflects the new reality.
-            val firMapper = LLSnapshotCfirMapper(block.statements.subList(state.analyzedCfirStatementCount, block.statements.size))
-
-            // Restore the previous data flow analyzer state.
-            // Here we create a snapshot right before the analysis, so if an exception occurs during this partial analysis,
-            // we can still safely use the original 'dataFlowAnalyzerContext' from the 'analysisStateSnapshot' the next time.
-            val originalContext = resolveSnapshot.dataFlowAnalyzerContext
-            val contextSnapshot = originalContext.createSnapshot(firMapper)
-
-            if (declaration is CfirFunction) {
-                patchControlFlowGraphReferences(declaration.valueParameters, contextSnapshot.graphMapping)
-            }
-
-            patchControlFlowGraphReferences(block.statements.subList(0, state.analyzedCfirStatementCount), contextSnapshot.graphMapping)
-
-            context.dataFlowAnalyzerContext.resetFrom(contextSnapshot.context)
-            dataFlowAnalyzer.resetSmartCastPosition()
+            context.dataFlowAnalyzerContext.resetFrom(resolveSnapshot.dataFlowAnalyzerContext)
 
             /** No [BodyResolveContext.forBlock] as here we manually restore the tower data context from the snapshot. */
             val isAnalyzedEntirely = transformStatementsPartially(
@@ -275,8 +253,8 @@ private class CfirPartialBodyExpressionResolveTransformer(
         private fun shouldBeHandled(element: CfirElement): Boolean {
             /** Accepts elements handled by [org.cangnova.cangjie.cfir.resolve.dfa.CfirLocalVariableAssignmentAnalyzer] */
             val isElementKindHandled = when (element) {
-                is CfirDeclaration -> element.isLocal
-                is CfirLoop -> true
+                is CfirCallableDeclaration -> element.isLocal
+                is CfirLoopExpression -> true
                 else -> false
             }
 
@@ -363,7 +341,7 @@ private class CfirPartialBodyExpressionResolveTransformer(
                 val reference = owner.controlFlowGraphReference ?: return
                 val existingGraph = reference.controlFlowGraph ?: return
                 val newGraph = graphMapping[existingGraph] ?: return
-                owner.replaceControlFlowGraphReference(LLCfirControlFlowGraphReference(newGraph))
+                owner.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(newGraph))
             }
         }
 
@@ -382,7 +360,7 @@ private class CfirPartialBodyExpressionResolveTransformer(
         val declaration = request.target
 
         val stopElement = request.stopElement
-        val stopElements = stopElement?.descendantsOfType<CjElement>(childrenCfirst = false)?.toHashSet().orEmpty()
+        val stopElements = stopElement?.descendantsOfType<CjElement>(childrenFirst = false)?.toHashSet().orEmpty()
 
         var index = 0
         val iterator = (block.statements as MutableList<CfirStatement>).listIterator()
@@ -402,7 +380,7 @@ private class CfirPartialBodyExpressionResolveTransformer(
                         performedAnalysesCount = performedAnalysesCount,
                         analysisStateSnapshot = LLPartialBodyAnalysisSnapshot(
                             result = LLPartialBodyAnalysisResult(
-                                statements = block.statements.take(index),
+                                statements = block.statements.take(index).map { it as CfirStatement },
                                 defaultParameterValues = collectDefaultParameterValues(declaration)
                             ),
                             towerDataContext = context.towerDataContext.createSnapshot(keepMutable = true),
@@ -622,7 +600,7 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
                 withCfirEntry("firClass", target)
             }
 
-        target.replaceControlFlowGraphReference(LLCfirControlFlowGraphReference(controlFlowGraph))
+        target.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(controlFlowGraph))
     }
 
     private inline fun <T : CfirElementWithResolveState> resolveMembersForControlFlowGraph(
@@ -649,30 +627,30 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
             target.controlFlowGraphReference == null,
             { "'controlFlowGraphReference' should be 'null' if the file phase < $resolverPhase)" },
         ) {
-            withCfirEntry("firFile", target)
+            withCfirEntry("cfirFile", target)
         }
 
         val dataFlowAnalyzer = transformer.declarationsTransformer.dataFlowAnalyzer
         dataFlowAnalyzer.enterFile(target, buildGraph = true)
         val controlFlowGraph = dataFlowAnalyzer.exitFile()
             ?: errorWithAttachment("CFG should not be 'null' as 'buildGraph' is specified") {
-                withCfirEntry("firFile", target)
+                withCfirEntry("cfirFile", target)
             }
 
-        target.replaceControlFlowGraphReference(LLCfirControlFlowGraphReference(controlFlowGraph))
+        target.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(controlFlowGraph))
     }
 
-    private fun resolveCodeFragmentContext(firCodeFragment: CfirCodeFragment): LLCfirCodeFragmentContext {
-        val ktCodeFragment = firCodeFragment.psi as? CjCodeFragment
+    private fun resolveCodeFragmentContext(cfirCodeFragment: CfirCodeFragment): LLCfirCodeFragmentContext {
+        val cjCodeFragment = cfirCodeFragment.psi as? CjCodeFragment
             ?: errorWithAttachment("Code fragment source not found") {
-                withCfirEntry("firCodeFragment", firCodeFragment)
+                withCfirEntry("cfirCodeFragment", cfirCodeFragment)
             }
 
-        val module = firCodeFragment.llCfirModuleData.ktModule
-        val resolutionFacade = module.getResolutionFacade(ktCodeFragment.project)
+        val module = cfirCodeFragment.llCfirModuleData.caModule
+        val resolutionFacade = module.getResolutionFacade(cjCodeFragment.project)
 
         fun CfirTowerDataContext.withExtraScopes(): CfirTowerDataContext {
-            return resolutionFacade.useSiteCfirSession.codeFragmentScopeProvider.getExtraScopes(ktCodeFragment)
+            return resolutionFacade.useSiteCfirSession.codeFragmentScopeProvider.getExtraScopes(cjCodeFragment)
                 .fold(this) { context, scope ->
                     val scopeWithProperSession = scope.withReplacedSessionOrNull(resolveTargetSession, resolveTargetScopeSession) ?: scope
                     val localScope = scopeWithProperSession as? CfirLocalScope
@@ -684,7 +662,7 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
                 }
         }
 
-        val contextPsiElement = ktCodeFragment.context
+        val contextPsiElement = cjCodeFragment.context
         val contextCjFile = contextPsiElement?.containingFile as? CjFile
 
         return if (contextCjFile != null) {
@@ -872,7 +850,7 @@ private fun <T : CfirDeclaration> StateKeeperScope<T, CfirDesignation>.preserveP
 
             val newBodyStatements = newBody.statements as MutableList<CfirStatement>
             for (index in 0..<state.analyzedCfirStatementCount) {
-                newBodyStatements[index] = oldBody.statements[index]
+                newBodyStatements[index] = oldBody.statements[index] as CfirStatement
             }
         }
 
@@ -918,18 +896,6 @@ private val CfirProperty.setterIfUnresolved: CfirPropertyAccessor?
 private class LLCfirCodeFragmentContext(
     override val towerDataContext: CfirTowerDataContext,
 ) : CfirCodeFragmentContext
-
-private class LLCfirControlFlowGraphReference(
-    private val graph: ControlFlowGraph,
-) : CfirControlFlowGraphReference() {
-    override val source = null
-
-    val controlFlowGraph: ControlFlowGraph
-        get() = graph
-}
-
-private val CfirControlFlowGraphReference.controlFlowGraph: ControlFlowGraph?
-    get() = (this as? LLCfirControlFlowGraphReference)?.controlFlowGraph
 
 private val CfirDeclaration.isUsedInFileControlFlowGraphBuilder: Boolean
     get() = this is CfirControlFlowGraphOwner

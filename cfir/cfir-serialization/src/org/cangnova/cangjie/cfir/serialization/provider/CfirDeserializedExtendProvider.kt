@@ -41,7 +41,8 @@ class CfirDeserializedExtendProvider(
 
         for (provider in providers) {
             val packageNames = provider.symbolNamesProvider.getPackageNames().orEmpty()
-            for (packageFqName in packageNames) {
+            for (packageName in packageNames) {
+                val packageFqName = FqName(packageName)
                 val extends = provider.getTopLevelExtendDeclarations(packageFqName)
                 if (extends.isEmpty()) continue
 

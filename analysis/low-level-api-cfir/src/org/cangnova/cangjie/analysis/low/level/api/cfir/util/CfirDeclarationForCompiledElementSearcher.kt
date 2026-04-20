@@ -41,20 +41,20 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         CangJieProjectStructureProvider.getInstance(project)
     }
 
-    private val firElementByPsiElementChooser by lazy(LazyThreadSafetyMode.PUBLICATION) {
+    private val cfirElementByPsiElementChooser by lazy(LazyThreadSafetyMode.PUBLICATION) {
         LLCfirElementByPsiElementChooser.getInstance(project)
     }
 
-    fun findNonLocalDeclaration(ktDeclaration: CjDeclaration): CfirDeclaration = when (ktDeclaration) {
-        is CjClassLikeDeclaration -> findNonLocalClassLikeDeclaration(ktDeclaration)
-        is CjConstructor<*> -> findConstructorOfNonLocalClass(ktDeclaration)
-        is CjNamedFunction -> findNonLocalFunction(ktDeclaration)
-        is CjProperty -> findNonLocalProperty(ktDeclaration)
-        is CjParameter -> findParameter(ktDeclaration)
-        is CjPropertyAccessor -> findNonLocalPropertyAccessor(ktDeclaration)
-        is CjTypeParameter -> findNonLocalTypeParameter(ktDeclaration)
+    fun findNonLocalDeclaration(cjDeclaration: CjDeclaration): CfirDeclaration = when (cjDeclaration) {
+        is CjClassLikeDeclaration -> findNonLocalClassLikeDeclaration(cjDeclaration)
+        is CjConstructor<*> -> findConstructorOfNonLocalClass(cjDeclaration)
+        is CjNamedFunction -> findNonLocalFunction(cjDeclaration)
+        is CjProperty -> findNonLocalProperty(cjDeclaration)
+        is CjParameter -> findParameter(cjDeclaration)
+        is CjPropertyAccessor -> findNonLocalPropertyAccessor(cjDeclaration)
+        is CjTypeParameter -> findNonLocalTypeParameter(cjDeclaration)
 
-        else -> errorWithCfirSpecificEntries("Unsupported compiled declaration of type", psi = ktDeclaration)
+        else -> errorWithCfirSpecificEntries("Unsupported compiled declaration of type", psi = cjDeclaration)
     }
 
     private fun findFunctionCandidates(function: CjNamedFunction): List<CfirFunctionSymbol<*>> =
@@ -101,35 +101,35 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
 
     private fun findNonLocalTypeParameter(param: CjTypeParameter): CfirDeclaration {
         val owner = param.containingDeclaration ?: errorWithCfirSpecificEntries("Unsupported compiled type parameter", psi = param)
-        val firDeclaration = findNonLocalDeclaration(owner)
-        val firTypeParameterRefOwner = firDeclaration as? CfirTypeParameterRefsOwner ?: errorWithCfirSpecificEntries(
-            "No fir found by $owner",
+        val cfirDeclaration = findNonLocalDeclaration(owner)
+        val cfirTypeParameterRefOwner = cfirDeclaration as? CfirTypeParameterRefsOwner ?: errorWithCfirSpecificEntries(
+            "No cfir found by $owner",
             psi = owner,
-            fir = firDeclaration,
+            fir = cfirDeclaration,
         )
 
-        return firTypeParameterRefOwner.typeParameters.find { typeParameterRef ->
-            firElementByPsiElementChooser.isMatchingTypeParameter(param, typeParameterRef.symbol.cfir)
+        return cfirTypeParameterRefOwner.typeParameters.find { typeParameterRef ->
+            cfirElementByPsiElementChooser.isMatchingTypeParameter(param, typeParameterRef.symbol.cfir)
         } as CfirDeclaration
     }
 
     private fun findParameter(param: CjParameter): CfirDeclaration {
         val ownerDeclaration = param.ownerFunction ?: errorWithCfirSpecificEntries("Unsupported compiled parameter", psi = param)
-        val firDeclaration = findNonLocalDeclaration(ownerDeclaration)
-        val firFunction = firDeclaration as? CfirFunction ?: errorWithCfirSpecificEntries(
-            "${CfirFunction::class.simpleName} expected but ${firDeclaration::class.simpleName} found",
+        val cfirDeclaration = findNonLocalDeclaration(ownerDeclaration)
+        val cfirFunction = cfirDeclaration as? CfirFunction ?: errorWithCfirSpecificEntries(
+            "${CfirFunction::class.simpleName} expected but ${cfirDeclaration::class.simpleName} found",
             psi = ownerDeclaration,
-            fir = firDeclaration,
+            fir = cfirDeclaration,
         )
 
-        return firFunction.valueParameters.find { firElementByPsiElementChooser.isMatchingValueParameter(param, it) }
-            ?: errorWithCfirSpecificEntries("No fir value parameter found", psi = param, fir = firFunction)
+        return cfirFunction.valueParameters.find { cfirElementByPsiElementChooser.isMatchingValueParameter(param, it) }
+            ?: errorWithCfirSpecificEntries("No cfir value parameter found", psi = param, fir = cfirFunction)
     }
 
     private fun findNonLocalClassLikeDeclaration(declaration: CjClassLikeDeclaration): CfirClassLikeDeclaration {
         val classId = declaration.getClassId() ?: errorWithCfirSpecificEntries("Non-local class should have classId", psi = declaration)
 
-        // With the `BINARIES` origin, deserialized CFIR declarations don't have associated PSI elements. Hence, we cannot use `*ByPsi*
+        // With the `BINARIES` origin, deserialized CFIR declarations don't have associated PSI elements. Hence, we cannot use `*ByPsi*`
         // functions, as they check the candidate's associated PSI.
         val classLikeSymbol = when (CaPlatformSettings.getInstance(project).deserializedDeclarationsOrigin) {
             CaDeserializedDeclarationsOrigin.BINARIES -> findBinaryClassLikeSymbol(classId)
@@ -145,9 +145,9 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         ) {
             withEntry("classId", classId) { it.asString() }
 
-            val contextualModule = session.llCfirModuleData.ktModule
+            val contextualModule = session.llCfirModuleData.caModule
             val moduleForFile = projectStructureProvider.getModule(declaration, contextualModule)
-            withEntry("ktModule", moduleForFile) { it.moduleDescription }
+            withEntry("caModule", moduleForFile) { it.moduleDescription }
         }
     }
 
@@ -170,7 +170,7 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         val containingCfirClass = findNonLocalClassLikeDeclaration(containingClass)
         val constructorCandidate = containingCfirClass.declarations
             .filterIsInstance<CfirConstructor>()
-            .singleOrNull { firElementByPsiElementChooser.isMatchingCallableDeclaration(declaration, it) }
+            .singleOrNull { cfirElementByPsiElementChooser.isMatchingCallableDeclaration(declaration, it) }
             ?: errorWithCfirSpecificEntries("We should be able to find a constructor", psi = declaration, fir = containingCfirClass)
 
         return constructorCandidate
@@ -180,7 +180,7 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         require(!declaration.isLocal)
 
         val candidates = findFunctionCandidates(declaration)
-        val functionCandidate = candidates.firstOrNull { firElementByPsiElementChooser.isMatchingCallableDeclaration(declaration, it.cfir) }
+        val functionCandidate = candidates.firstOrNull { cfirElementByPsiElementChooser.isMatchingCallableDeclaration(declaration, it.cfir) }
             ?: errorWithCfirSpecificEntries("We should be able to find a symbol for function", psi = declaration) {
                 withCandidates(candidates)
             }
@@ -192,7 +192,7 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         require(!declaration.isLocal)
 
         val candidates = findPropertyCandidates(declaration)
-        val propertyCandidate = candidates.firstOrNull { firElementByPsiElementChooser.isMatchingCallableDeclaration(declaration, it.cfir) }
+        val propertyCandidate = candidates.firstOrNull { cfirElementByPsiElementChooser.isMatchingCallableDeclaration(declaration, it.cfir) }
             ?: errorWithCfirSpecificEntries("We should be able to find a symbol for property", psi = declaration) {
                 withCandidates(candidates)
             }
@@ -201,9 +201,9 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
     }
 
     private fun findNonLocalPropertyAccessor(declaration: CjPropertyAccessor): CfirPropertyAccessor {
-        val firProperty = findNonLocalProperty(declaration.property)
+        val cfirProperty = findNonLocalProperty(declaration.property)
 
-        return (if (declaration.isGetter) firProperty.getter else firProperty.setter)
+        return (if (declaration.isGetter) cfirProperty.getter else cfirProperty.setter)
             ?: errorWithCfirSpecificEntries("We should be able to find a symbol for property accessor", psi = declaration)
     }
 }
@@ -211,10 +211,10 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
 private fun ExceptionAttachmentBuilder.withCandidates(candidates: List<CfirBasedSymbol<*>>) {
     withEntry("Candidates count", candidates.size.toString())
     for ((index, candidate) in candidates.withIndex()) {
-        val ktModule = candidate.llCfirModuleData.ktModule
+        val caModule = candidate.llCfirModuleData.caModule
         withEntryGroup(index.toString()) {
             withClassEntry("candidateClass", candidate)
-            withEntry("module", ktModule) { it.moduleDescription }
+            withEntry("module", caModule) { it.moduleDescription }
             withEntry("origin", candidate.origin.toString())
             withCfirEntry("candidateCfir", candidate.cfir)
 

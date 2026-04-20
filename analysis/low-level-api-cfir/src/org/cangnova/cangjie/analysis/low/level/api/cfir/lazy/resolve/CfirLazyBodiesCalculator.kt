@@ -53,13 +53,13 @@ object CfirLazyBodiesCalculator {
     }
 
     @TestOnly
-    fun calculateAllLazyExpressionsInFile(firFile: CfirFile) {
-        firFile.accept(RecursiveLazyAnnotationCalculatorVisitor, firFile.moduleData.session)
-        firFile.transformSingle(CfirAllLazyBodiesCalculatorTransformer, persistentListOf())
+    fun calculateAllLazyExpressionsInFile(cfirFile: CfirFile) {
+        cfirFile.accept(RecursiveLazyAnnotationCalculatorVisitor, cfirFile.moduleData.session)
+        cfirFile.transformSingle(CfirAllLazyBodiesCalculatorTransformer, persistentListOf())
     }
 
-    fun calculateAnnotations(firElement: CfirElementWithResolveState) {
-        firElement.accept(LazyAnnotationCalculatorVisitor, firElement.moduleData.session)
+    fun calculateAnnotations(cfirElement: CfirElementWithResolveState) {
+        cfirElement.accept(LazyAnnotationCalculatorVisitor, cfirElement.moduleData.session)
     }
 
     fun calculateAnnotation(annotationCall: CfirAnnotationCall, session: CfirSession) {
@@ -90,8 +90,8 @@ object CfirLazyBodiesCalculator {
         return rebuiltAnnotation.argumentList
     }
 
-    fun needCalculatingAnnotationCall(firAnnotationCall: CfirAnnotationCall): Boolean =
-        firAnnotationCall.argumentList.arguments.any { it is CfirLazyExpression }
+    fun needCalculatingAnnotationCall(cfirAnnotationCall: CfirAnnotationCall): Boolean =
+        cfirAnnotationCall.argumentList.arguments.any { it is CfirLazyExpression }
 }
 
 private inline fun <reified T : CfirDeclaration> revive(

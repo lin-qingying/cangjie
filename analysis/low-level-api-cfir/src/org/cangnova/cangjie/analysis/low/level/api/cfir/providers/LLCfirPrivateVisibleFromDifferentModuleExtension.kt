@@ -27,7 +27,7 @@ internal class LLCfirPrivateVisibleFromDifferentModuleExtension(private val llCf
 
     override fun canSeePrivateDeclarationsOfModule(otherModuleData: CfirModuleData): Boolean {
         check(otherModuleData is LLCfirModuleData)
-        return otherModuleData.ktModule in llCfirSession.ktModule.allContextModulesWithSelf
+        return otherModuleData.caModule in llCfirSession.caModule.allContextModulesWithSelf
     }
 
     private val CaModule.allContextModulesWithSelf: Sequence<CaModule>
@@ -38,8 +38,8 @@ internal class LLCfirPrivateVisibleFromDifferentModuleExtension(private val llCf
     }
 
     private fun CfirFile.isDanglingFileWithContextFileEqualTo(targetFile: CfirFile): Boolean {
-        val thisDanglingModule = this.llCfirModuleData.ktModule as? CaDanglingFileModule ?: return false
-        if (targetFile.llCfirModuleData.ktModule is CaDanglingFileModule) return false
+        val thisDanglingModule = this.llCfirModuleData.caModule as? CaDanglingFileModule ?: return false
+        if (targetFile.llCfirModuleData.caModule is CaDanglingFileModule) return false
 
         return targetFile.psi in thisDanglingModule.allContextFiles
     }

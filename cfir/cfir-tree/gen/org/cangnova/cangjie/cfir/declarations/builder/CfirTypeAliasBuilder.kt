@@ -28,7 +28,7 @@ class CfirTypeAliasBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
-    lateinit var deprecationsProvider: DeprecationsProvider
+    var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     val declarations: MutableList<CfirDeclaration> = mutableListOf()
     val superTypeRefs: MutableList<CfirTypeRef> = mutableListOf()
     lateinit var symbol: CfirTypeAliasSymbol

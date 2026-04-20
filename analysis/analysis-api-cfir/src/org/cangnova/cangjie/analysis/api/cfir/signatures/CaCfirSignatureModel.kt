@@ -6,7 +6,7 @@ import org.cangnova.cangjie.analysis.api.annotations.CaAnnotation
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.symbols.getPublicSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.publicSymbolCacheKeyOrNull
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCallableSymbolBase
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCallableSymbolSupport
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCallableSymbolCacheKey
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.signatures.CaFunctionSignature
@@ -104,7 +104,7 @@ internal class CaCfirVariableSignatureImpl<out S : CaVariableSymbol>(
  * 在同一 use-site session 中只暴露一份稳定签名对象。
  */
 internal fun <S : CaCallableSymbol> CaCfirSession.renderSignature(symbol: S): CaSignature<S> {
-    val cfirSymbol = symbol as? CaCfirCallableSymbolBase<*>
+    val cfirSymbol = symbol as? CaCfirCallableSymbolSupport<*>
         ?: error("CFIR 签名构造仅支持 CFIR public symbol：${symbol::class.simpleName}")
     val cacheKey = cfirSymbol.publicSymbolCacheKeyOrNull() as? CaCfirCallableSymbolCacheKey
         ?: error("缺少稳定 callable-signature cache key：${symbol::class.simpleName}")

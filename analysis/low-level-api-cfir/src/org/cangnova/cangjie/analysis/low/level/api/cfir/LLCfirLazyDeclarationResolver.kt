@@ -23,7 +23,7 @@ internal class LLCfirLazyDeclarationResolver : CfirLazyDeclarationResolver() {
     override fun lazyResolveToPhase(element: CfirElementWithResolveState, toPhase: CfirResolvePhase) {
         assertLazyResolveAllowed()
         val session = element.llCfirResolvableSession ?: return
-        session.moduleComponents.firModuleLazyDeclarationResolver.lazyResolve(
+        session.moduleComponents.cfirModuleLazyDeclarationResolver.lazyResolve(
             target = element,
             toPhase = toPhase,
         )
@@ -31,15 +31,15 @@ internal class LLCfirLazyDeclarationResolver : CfirLazyDeclarationResolver() {
 
     override fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClass, toPhase: CfirResolvePhase) {
         assertLazyResolveAllowed()
-        val fir = clazz as? CfirClass ?: return
-        val session = fir.llCfirResolvableSession ?: return
-        session.moduleComponents.firModuleLazyDeclarationResolver.lazyResolveWithCallableMembers(
-            target = fir,
+        val cfirClass = clazz as? CfirClass ?: return
+        val session = cfirClass.llCfirResolvableSession ?: return
+        session.moduleComponents.cfirModuleLazyDeclarationResolver.lazyResolveWithCallableMembers(
+            target = cfirClass,
             toPhase = toPhase,
         )
 
-        if (toPhase == CfirResolvePhase.STATUS && fir.declarations.none { it is CfirCallableDeclaration }) {
-            for (superType in fir.superConeTypes) {
+        if (toPhase == CfirResolvePhase.STATUS && cfirClass.declarations.none { it is CfirCallableDeclaration }) {
+            for (superType in cfirClass.superConeTypes) {
                 val classSymbol = superType.toClassSymbol(session) ?: continue
                 lazyResolveToPhaseWithCallableMembers(classSymbol.cfir, toPhase)
             }
@@ -49,7 +49,7 @@ internal class LLCfirLazyDeclarationResolver : CfirLazyDeclarationResolver() {
     override fun lazyResolveToPhaseRecursively(element: CfirElementWithResolveState, toPhase: CfirResolvePhase) {
         assertLazyResolveAllowed()
         val session = element.llCfirResolvableSession ?: return
-        session.moduleComponents.firModuleLazyDeclarationResolver.lazyResolveRecursively(
+        session.moduleComponents.cfirModuleLazyDeclarationResolver.lazyResolveRecursively(
             target = element,
             toPhase = toPhase,
         )

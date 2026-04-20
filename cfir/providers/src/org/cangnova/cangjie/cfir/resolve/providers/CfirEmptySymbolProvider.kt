@@ -14,7 +14,7 @@ import org.cangnova.cangjie.name.Name
  */
 class CfirEmptySymbolProvider(session: CfirSession) : CfirSymbolProvider(session) {
     override val symbolNamesProvider: CfirSymbolNamesProvider
-        get() = CfirSymbolNamesProvider.NO_FILTERING
+        get() = CfirEmptySymbolNamesProvider
 
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? = null
 

@@ -182,8 +182,71 @@ class CfirRenderer(
         print("|")
     }
 
-    // Convenience overloads so call-sites don't need to unwrap ConeTypeOrNull manually.
-    private fun renderType(typeRef: CfirTypeRef?) = renderType(typeRef?.coneTypeOrNull)
+    /**
+     * Raw CFIR 阶段的类型引用大多还没有 coneType，
+     * 因此这里必须优先按 CfirTypeRef 结构直接渲染，不能只看 coneTypeOrNull。
+     */
+    private fun renderType(typeRef: CfirTypeRef?) {
+        when (typeRef) {
+            null -> return
+            is CfirImplicitTypeRef -> return
+            is CfirResolvedTypeRef -> renderType(typeRef.coneType)
+            is CfirBasicTypeRef -> {
+                print("R|")
+                print(typeRef.name.asString())
+                print("|")
+            }
+            is CfirUserTypeRef -> {
+                print("R|")
+                print(typeRef.qualifier.joinToString(".") { it.asString() })
+                if (typeRef.typeArguments.isNotEmpty()) {
+                    print("<")
+                    typeRef.typeArguments.forEachIndexed { index, argument ->
+                        if (index > 0) print(", ")
+                        renderType(argument)
+                    }
+                    print(">")
+                }
+                print("|")
+            }
+            is CfirFunctionTypeRef -> {
+                print("R|(")
+                typeRef.parameterTypeRefs.forEachIndexed { index, parameterTypeRef ->
+                    if (index > 0) print(", ")
+                    renderType(parameterTypeRef)
+                }
+                print(") -> ")
+                renderType(typeRef.returnTypeRef)
+                print("|")
+            }
+            is CfirOptionTypeRef -> {
+                print("R|Option<")
+                renderType(typeRef.componentTypeRef)
+                print(">|")
+            }
+            is CfirTupleTypeRef -> {
+                print("R|(")
+                typeRef.elementTypeRefs.forEachIndexed { index, elementTypeRef ->
+                    if (index > 0) print(", ")
+                    renderType(elementTypeRef)
+                }
+                print(")|")
+            }
+            is CfirVArrayTypeRef -> {
+                print("R|VArray<")
+                renderType(typeRef.elementTypeRef)
+                print(", ")
+                print(typeRef.sizeLiteral)
+                print(">|")
+            }
+            is CfirErrorTypeRef -> {
+                print("R|<ERROR:")
+                print(typeRef.diagnostic.reason)
+                print(">|")
+            }
+            else -> renderType(typeRef.coneTypeOrNull)
+        }
+    }
 
     private fun renderReference(reference: CfirReference): String =
         referenceRenderer.render(reference)
@@ -597,6 +660,22 @@ class CfirRenderer(
             }
         }
 
+        override fun visitOptionalExpression(optionalExpression: CfirOptionalExpression) {
+            println("OPTIONAL_EXPRESSION {")
+            printer.pushIndent()
+            optionalExpression.expression.accept(this)
+            printer.popIndent()
+            println("}")
+        }
+
+        override fun visitOptionalChainExpression(optionalChainExpression: CfirOptionalChainExpression) {
+            println("OPTIONAL_CHAIN_EXPRESSION {")
+            printer.pushIndent()
+            optionalChainExpression.expression.accept(this)
+            printer.popIndent()
+            println("}")
+        }
+
         override fun visitSuperReceiverExpression(superReceiverExpression: CfirSuperReceiverExpression) {
             visitQualifiedAccessExpression(superReceiverExpression)
         }
@@ -884,6 +963,14 @@ class CfirRenderer(
             printer.pushIndent()
             subscript.indices.forEach { it.accept(this) }
             printer.popIndent()
+            printer.popIndent()
+            println("}")
+        }
+
+        override fun visitOptionTypeRef(optionTypeRef: CfirOptionTypeRef) {
+            println("OPTION_TYPE {")
+            printer.pushIndent()
+            optionTypeRef.componentTypeRef.accept(this)
             printer.popIndent()
             println("}")
         }

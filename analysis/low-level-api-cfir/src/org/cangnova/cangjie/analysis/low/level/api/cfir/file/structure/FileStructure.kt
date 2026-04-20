@@ -46,17 +46,17 @@ import java.util.concurrent.ConcurrentHashMap
  * @see LLCfirDeclarationModificationService
  */
 internal class FileStructure private constructor(
-    private val ktFile: CjFile,
-    private val firFile: CfirFile,
+    private val cjFile: CjFile,
+    private val cfirFile: CfirFile,
     private val moduleComponents: LLCfirModuleResolveComponents,
 ) {
     companion object {
         fun build(
-            ktFile: CjFile,
+            cjFile: CjFile,
             moduleComponents: LLCfirModuleResolveComponents,
         ): FileStructure {
-            val firFile = moduleComponents.firFileBuilder.buildRawCfirFileWithCaching(ktFile)
-            return FileStructure(ktFile, firFile, moduleComponents)
+            val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
+            return FileStructure(cjFile, cfirFile, moduleComponents)
         }
 
         /**
@@ -70,7 +70,7 @@ internal class FileStructure private constructor(
         }
     }
 
-    private val cfirProvider = firFile.moduleData.session.cfirProvider
+    private val cfirProvider = cfirFile.moduleData.session.cfirProvider
 
     private val structureElements = ConcurrentHashMap<CjElement, FileStructureElement>()
 
@@ -164,9 +164,9 @@ internal class FileStructure private constructor(
 
     fun getAllStructureElements(): Collection<FileStructureElement> {
         val structureElements = mutableSetOf<FileStructureElement>()
-        addStructureElementForTo(ktFile, structureElements)
+        addStructureElementForTo(cjFile, structureElements)
 
-        ktFile.accept(object : CjVisitorUnit() {
+        cjFile.accept(object : CjVisitorUnit() {
             override fun visitCjElement(element: CjElement) {
                 element.acceptChildren(this)
             }
@@ -187,22 +187,22 @@ internal class FileStructure private constructor(
     }
 
     private fun createRootStructure(): RootStructureElement {
-        val firFile = moduleComponents.firFileBuilder.buildRawCfirFileWithCaching(ktFile)
-        firFile.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
-        return RootStructureElement(firFile, moduleComponents)
+        val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
+        cfirFile.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
+        return RootStructureElement(cfirFile, moduleComponents)
     }
 
     private fun createCodeFragmentStructure(): DeclarationStructureElement {
-        val firCodeFragment = firFile.codeFragment
-        firCodeFragment.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
-        return DeclarationStructureElement(firFile, firCodeFragment, moduleComponents)
+        val cfirCodeFragment = cfirFile.codeFragment
+        cfirCodeFragment.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+        return DeclarationStructureElement(cfirFile, cfirCodeFragment, moduleComponents)
     }
 
     private fun createDeclarationStructure(declaration: CjDeclaration): FileStructureElement {
-        val firDeclaration = declaration.findSourceNonLocalCfirDeclaration(firFile, cfirProvider)
+        val cfirDeclaration = declaration.findSourceNonLocalCfirDeclaration(cfirFile, cfirProvider)
         return FileElementFactory.createFileStructureElement(
-            firDeclaration = firDeclaration,
-            firFile = firFile,
+            cfirDeclaration = cfirDeclaration,
+            cfirFile = cfirFile,
             moduleComponents = moduleComponents
         )
     }

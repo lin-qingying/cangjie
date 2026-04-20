@@ -20,6 +20,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.session.cjMappingConfigProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -56,6 +57,7 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
         checkExportSamePrivateDecl(declaration)
         checkJavaInteropImports(declaration)
         checkJavaImplRedefinition(declaration)
+        checkCJMappingConfigValid(declaration)
     }
 
     /**
@@ -185,6 +187,23 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
                 )
             }
         }
+    }
+
+    /**
+     * CJMapping 配置加载失败时,通过 [CfirCJMappingConfigProvider] 报告。
+     *
+     * 对齐 C++ CompileStrategy.cpp:51 `sema_cj_mapping_generic_method_not_get_instance_config`。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkCJMappingConfigValid(file: CfirFile) {
+        val provider = context.session.cjMappingConfigProvider
+        val path = provider.configPath ?: return
+        if (provider.isValid) return
+        reporter.reportOn(
+            source = file.source,
+            factory = CfirErrors.CJ_MAPPING_GENERIC_METHOD_NOT_GET_INSTANCE_CONFIG,
+            a = path,
+        )
     }
 
     /**

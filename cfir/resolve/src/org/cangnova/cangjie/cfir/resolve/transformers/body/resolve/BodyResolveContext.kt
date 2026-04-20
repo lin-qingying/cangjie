@@ -18,6 +18,7 @@ import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataElement
 import org.cangnova.cangjie.cfir.resolve.body.collectTowerDataElementsForClass
 import org.cangnova.cangjie.cfir.resolve.body.typeParametersForTower
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
@@ -160,6 +161,13 @@ class BodyResolveContext(
             l()
         } finally {
             replaceTowerDataContext(initialContext)
+        }
+    }
+
+    inline fun <T> forBlock(session: CfirSession, f: () -> T): T {
+        return withTowerDataCleanup {
+            addLocalScope(CfirLocalScopeImpl())
+            f()
         }
     }
 

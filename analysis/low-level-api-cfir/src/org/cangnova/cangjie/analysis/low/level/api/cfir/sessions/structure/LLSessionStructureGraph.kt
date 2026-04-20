@@ -52,7 +52,7 @@ internal class LLSessionStructureGraphNode(
     var analysisRootDistance: Int? = null
 
     val label: String
-        get() = when (val module = session.ktModule) {
+        get() = when (val module = session.caModule) {
             is CaSourceModule -> "[SRC] ${module.name}"
             is CaLibraryModule -> "[LIB] ${module.libraryName}"
             else -> module.moduleDescription

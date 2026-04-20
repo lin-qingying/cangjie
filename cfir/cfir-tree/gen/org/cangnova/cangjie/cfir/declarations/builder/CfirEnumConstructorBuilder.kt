@@ -30,7 +30,7 @@ class CfirEnumConstructorBuilder {
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
     var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
-    lateinit var deprecationsProvider: DeprecationsProvider
+    var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var symbol: CfirEnumConstructorSymbol
     lateinit var status: CfirDeclarationStatus

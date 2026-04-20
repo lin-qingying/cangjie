@@ -9,7 +9,6 @@ import com.github.benmanes.caffeine.cache.RemovalCause
 import com.github.benmanes.caffeine.cache.stats.CacheStats
 import com.github.benmanes.caffeine.cache.stats.StatsCounter
 import io.opentelemetry.api.metrics.Meter
-import org.checkerframework.checker.index.qual.NonNegative
 
 /**
  * A Caffeine [StatsCounter] which delegates to OpenTelemetry counters.
@@ -21,26 +20,21 @@ internal class LLCaffeineStatsCounter(meter: Meter, scope: LLCaffeineStatisticsS
 
     private val evictionCounter = meter.counterBuilder(scope.evictions.name).build()
 
-    override fun recordHits(count: @NonNegative Int) {
+    override fun recordHits(count: Int) {
         hitCounter.add(count.toLong())
     }
 
-    override fun recordMisses(count: @NonNegative Int) {
+    override fun recordMisses(count: Int) {
         missCounter.add(count.toLong())
     }
 
-    override fun recordLoadSuccess(loadTime: @NonNegative Long) {
+    override fun recordLoadSuccess(loadTime: Long) {
     }
 
-    override fun recordLoadFailure(loadTime: @NonNegative Long) {
+    override fun recordLoadFailure(loadTime: Long) {
     }
 
-    @Deprecated("Deprecated in Caffeine")
-    override fun recordEviction() {
-        evictionCounter.add(1)
-    }
-
-    override fun recordEviction(weight: @NonNegative Int, cause: RemovalCause?) {
+    override fun recordEviction(weight: Int, cause: RemovalCause) {
         evictionCounter.add(1)
     }
 

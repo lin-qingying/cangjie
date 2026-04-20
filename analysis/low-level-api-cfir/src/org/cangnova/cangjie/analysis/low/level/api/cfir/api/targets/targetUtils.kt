@@ -24,7 +24,7 @@ internal fun LLCfirResolveTarget.resolve(phase: CfirResolvePhase) {
             withEntry("firSession", target.llCfirSession) { it.toString() }
         }
 
-    val lazyDeclarationResolver = session.moduleComponents.firModuleLazyDeclarationResolver
+    val lazyDeclarationResolver = session.moduleComponents.cfirModuleLazyDeclarationResolver
     lazyDeclarationResolver.lazyResolveTarget(this, phase)
 }
 

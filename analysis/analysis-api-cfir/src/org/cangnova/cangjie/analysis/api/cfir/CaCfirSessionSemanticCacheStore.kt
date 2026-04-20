@@ -1,8 +1,8 @@
 package org.cangnova.cangjie.analysis.api.cfir
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirCallInfoSnapshot
-import org.cangnova.cangjie.analysis.api.cfir.resolve.DiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.api.resolution.CaCallInfo
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
@@ -28,7 +28,7 @@ internal class CaCfirSessionSemanticCacheStore {
     private val sourcePsiCache = linkedMapOf<CfirBasedSymbol<*>, PsiElement?>()
     private val psiSymbolsCache = linkedMapOf<PsiElement, List<CfirBasedSymbol<*>>>()
     private val containingFileCache = linkedMapOf<CfirBasedSymbol<*>, CjFile?>()
-    private val callInfoCache = linkedMapOf<PsiElement, CaCfirCallInfoSnapshot?>()
+    private val callInfoCache = linkedMapOf<PsiElement, CaCallInfo?>()
     private val diagnosticsCache = linkedMapOf<CaCfirDiagnosticsQueryKey, List<CjPsiDiagnostic>>()
     private val fileDiagnosticsCache = linkedMapOf<CaCfirFileDiagnosticsQueryKey, Collection<CjPsiDiagnostic>>()
     private val fileDeclaredScopeCache = linkedMapOf<CjFile, CfirContainingNamesAwareScope>()
@@ -64,8 +64,8 @@ internal class CaCfirSessionSemanticCacheStore {
 
     fun getOrCreateCallInfo(
         element: PsiElement,
-        create: () -> CaCfirCallInfoSnapshot?,
-    ): CaCfirCallInfoSnapshot? = getOrCreateCachedValue(callInfoCache, element, create)
+        create: () -> CaCallInfo?,
+    ): CaCallInfo? = getOrCreateCachedValue(callInfoCache, element, create)
 
     fun getOrCreateDiagnostics(
         element: PsiElement,

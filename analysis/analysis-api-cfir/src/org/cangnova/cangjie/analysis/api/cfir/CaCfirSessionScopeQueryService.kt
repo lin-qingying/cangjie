@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.analysis.api.cfir
 
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacade
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -15,7 +15,7 @@ import org.cangnova.cangjie.psi.CjFile
  * 以保持 `analysis-api-cfir` 对 low-level scope 入口的单一依赖。
  */
 internal class CaCfirSessionScopeQueryService(
-    private val resolutionFacade: CaCfirResolutionFacade,
+    private val resolutionFacade: LLResolutionFacade,
     private val cacheStore: CaCfirSessionCacheStore,
 ) {
     fun queryFileDeclaredScope(file: CjFile): CfirContainingNamesAwareScope =

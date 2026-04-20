@@ -20,28 +20,28 @@ import kotlin.reflect.KClass
 
 class InvalidCfirElementTypeException(
     actualCfirElement: Any?,
-    ktElement: CjElement?,
+    cjElement: CjElement?,
     expectedCfirClasses: List<KClass<*>>,
 ) : CangJieIllegalArgumentExceptionWithAttachments("") {
     init {
         buildAttachment {
             when (actualCfirElement) {
-                is CfirElement -> withCfirEntry("firElement", actualCfirElement)
-                is CfirBasedSymbol<*> -> withCfirSymbolEntry("firSymbol", actualCfirElement)
+                is CfirElement -> withCfirEntry("cfirElement", actualCfirElement)
+                is CfirBasedSymbol<*> -> withCfirSymbolEntry("cfirSymbol", actualCfirElement)
                 is ConeCangJieType -> withConeTypeEntry("coneType", actualCfirElement)
                 null -> {}
                 else -> withEntry("element", actualCfirElement) { it.toString() }
             }
 
-            ktElement?.let {
-                withPsiEntry("ktElement", ktElement)
+            cjElement?.let {
+                withPsiEntry("cjElement", cjElement)
             }
         }
     }
 
     override val message: String = buildString {
-        ktElement?.let {
-            "For ${ktElement::class.simpleName}, "
+        cjElement?.let {
+            "For ${cjElement::class.simpleName}, "
         }
 
         val message = when (expectedCfirClasses.size) {
@@ -50,7 +50,7 @@ class InvalidCfirElementTypeException(
             else -> "One of [${expectedCfirClasses.joinToString()}] element types expected, but"
         }
 
-        append(if (ktElement == null) message else message.replaceFirstChar { it.lowercase(Locale.getDefault()) })
+        append(if (cjElement == null) message else message.replaceFirstChar { it.lowercase(Locale.getDefault()) })
         if (actualCfirElement != null) {
             append(" ${actualCfirElement::class.simpleName} found")
         } else {
@@ -61,9 +61,9 @@ class InvalidCfirElementTypeException(
 
 
 fun throwUnexpectedCfirElementError(
-    firElement: Any?,
-    ktElement: CjElement? = null,
+    cfirElement: Any?,
+    cjElement: CjElement? = null,
     vararg expectedCfirClasses: KClass<*>
 ): Nothing {
-    throw InvalidCfirElementTypeException(firElement, ktElement, expectedCfirClasses.toList())
+    throw InvalidCfirElementTypeException(cfirElement, cjElement, expectedCfirClasses.toList())
 }

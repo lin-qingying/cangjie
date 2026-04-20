@@ -25,8 +25,8 @@ internal class LLCfirModuleResolveComponents(
     val scopeProvider: CfirScopeProvider
 ) {
     val cache: ModuleFileCache = ModuleFileCacheImpl(this)
-    val firFileBuilder: LLCfirFileBuilder = LLCfirFileBuilder(this)
-    val firModuleLazyDeclarationResolver = LLCfirModuleLazyDeclarationResolver(this)
+    val cfirFileBuilder: LLCfirFileBuilder = LLCfirFileBuilder(this)
+    val cfirModuleLazyDeclarationResolver = LLCfirModuleLazyDeclarationResolver(this)
 
     val scopeSessionProvider: LLCfirScopeSessionProvider = LLCfirScopeSessionProvider.create(
         globalResolveComponents.project,

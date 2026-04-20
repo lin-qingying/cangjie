@@ -5,9 +5,12 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined
 
+import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolNamesProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
@@ -19,7 +22,7 @@ import org.cangnova.cangjie.utils.newHashMapWithExpectedSize
  * [LLCombinedPackageDelegationSymbolProvider] combines multiple [CfirSymbolProvider]s by delegating to the appropriate individual providers
  * based on package names.
  *
- * Unlike [LLCombinedKotlinSymbolProvider], which delegates based on the modules of index-provided candidates, this provider builds a map
+ * Unlike [LLCombinedCangJieSymbolProvider], which delegates based on the modules of index-provided candidates, this provider builds a map
  * from package [FqName]s to lists of symbol providers that can provide symbols for that package. Then, for each symbol request, it queries
  * only the relevant providers for the given package.
  *
@@ -38,21 +41,21 @@ import org.cangnova.cangjie.utils.newHashMapWithExpectedSize
  * ### Usage Notes
  *
  * [LLCombinedPackageDelegationSymbolProvider] is a better choice for combining library symbol providers than
- * [LLCombinedKotlinSymbolProvider]. This is because of the different lifetimes of library symbol providers and combined symbol providers:
+ * [LLCombinedCangJieSymbolProvider]. This is because of the different lifetimes of library symbol providers and combined symbol providers:
  *
  * - Individual library symbol providers are invalidated infrequently, as library sessions outlast source sessions, so they generally have
  *   symbols already cached.
  * - Combined symbol providers are part of use-site source sessions, so they are invalidated more frequently.
  *
- * [LLCombinedKotlinSymbolProvider] accesses the index before calling into individual symbol providers. Using this symbol provider to
- * combine library symbol providers led to the following situation: As source sessions were invalidated, [LLCombinedKotlinSymbolProvider]
+ * [LLCombinedCangJieSymbolProvider] accesses the index before calling into individual symbol providers. Using this symbol provider to
+ * combine library symbol providers led to the following situation: As source sessions were invalidated, [LLCombinedCangJieSymbolProvider]
  * had to redo index accesses which would not have been performed by individual library symbol providers. This led to an overall performance
  * degradation in some cases.
  *
- * On the flipside, [LLCombinedPackageDelegationSymbolProvider] is not automatically better than [LLCombinedKotlinSymbolProvider]. Cfirst,
+ * On the flipside, [LLCombinedPackageDelegationSymbolProvider] is not automatically better than [LLCombinedCangJieSymbolProvider]. Cfirst,
  * package delegation requires that all individual symbol providers can compute package sets, which currently isn't the case for source
- * symbol providers. But [LLCombinedKotlinSymbolProvider] might also be better in cases where multiple index accesses would be performed in
- * individual symbol providers, whereas [LLCombinedKotlinSymbolProvider] can perform a single index access.
+ * symbol providers. But [LLCombinedCangJieSymbolProvider] might also be better in cases where multiple index accesses would be performed in
+ * individual symbol providers, whereas [LLCombinedCangJieSymbolProvider] can perform a single index access.
  *
  * @param providersByPackage For the implementation of [hasPackage], [providersByPackage] must contain a transitive closure of all parent
  *  packages. For example, if the map contains 'foo.bar.baz', it must also contain 'foo.bar' and 'foo'. The entry for 'foo.bar' must contain
@@ -65,7 +68,8 @@ internal class LLCombinedPackageDelegationSymbolProvider private constructor(
     override val providers: List<CfirSymbolProvider>,
     private val providersByPackage: Map<String, Array<CfirSymbolProvider>>
 ) : LLCombinedSymbolProvider<CfirSymbolProvider>(session) {
-    override val symbolNamesProvider: CfirSymbolNamesProvider = CfirCompositeCachedSymbolNamesProvider.fromSymbolProviders(session, providers)
+    override val symbolNamesProvider: CfirSymbolNamesProvider =
+        CfirCompositeCachedSymbolNamesProvider.fromSymbolProviders(session, providers)
 
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
         val relevantProviders = providersByPackage[classId.packageFqName.asString()] ?: return null
@@ -151,7 +155,7 @@ internal class LLCombinedPackageDelegationSymbolProvider private constructor(
             var current: FqName? = this
             while (current != null) {
                 f(current)
-                current = current.parentOrNull()
+                current = if (current.isRoot) null else current.parent()
             }
         }
     }

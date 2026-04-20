@@ -157,14 +157,6 @@ internal abstract class CaCfirClassLikeSymbolBase<T : CfirClassLikeSymbol<*>>(
         get() = analysisSession.locationForDeclaration(this)
 }
 
-internal typealias CaCfirCallableSymbolBase<T> = CaCfirCallableSymbolSupport<T>
-
-internal typealias CaCfirFunctionSymbolBase<T> = CaCfirFunctionSymbolSupport<T>
-
-internal typealias CaCfirVariableSymbolBase<T> = CaCfirVariableSymbolSupport<T>
-
-internal typealias CaCfirLocalVariableSymbolBase<T> = CaCfirLocalVariableSymbolSupport<T>
-
 /**
  * callable 公共语义在 CFIR 侧的复用 support。
  *
@@ -326,5 +318,3 @@ internal interface CaCfirPropertyAccessorSymbolSupport<T : CfirCallableSymbol<*>
     val isDefaultImpl: Boolean
         get() = (psi as? org.cangnova.cangjie.psi.CjPropertyAccessor)?.hasBody() == false
 }
-
-internal typealias CaCfirPropertyAccessorSymbolBase = CaCfirPropertyAccessorSymbolSupport<CfirCallableSymbol<*>>

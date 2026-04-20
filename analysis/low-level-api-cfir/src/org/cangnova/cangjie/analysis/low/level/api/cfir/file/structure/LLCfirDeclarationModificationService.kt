@@ -89,9 +89,9 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
      * We can avoid processing of deferred modifications with the same [CaModule] because the OOBM will invalidate the associated caches
      * anyway.
      */
-    private fun dropOutdatedModifications(ktModuleWithOutOfBlockModification: CaModule) {
+    private fun dropOutdatedModifications(caModuleWithOutOfBlockModification: CaModule) {
         processQueue { value, iterator ->
-            if (value.module == ktModuleWithOutOfBlockModification) iterator.remove()
+            if (value.module == caModuleWithOutOfBlockModification) iterator.remove()
         }
     }
 
@@ -110,8 +110,8 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
         val iterator = queue.iterator()
         while (iterator.hasNext()) {
             val element = iterator.next()
-            val ktElement = element.affectedElement
-            if (!ktElement.isValid || (ktElement.containingFile as? CjCodeFragment)?.context?.isValid == false) {
+            val affectedElement = element.affectedElement
+            if (!affectedElement.isValid || (affectedElement.containingFile as? CjCodeFragment)?.context?.isValid == false) {
                 iterator.remove()
                 continue
             }
@@ -147,7 +147,7 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
             // `PsiWhiteSpace` is not a `CjElement`, so we cannot invalidate it directly. This also ensures that we get a somewhat stable
             // element instead of the (possibly deleted) whitespace.
             //
-            // If there is no `CjElement` ancestor, we have a non-Kotlin file. Whitespace changes in such files are invisible to Kotlin.
+            // If there is no `CjElement` ancestor, we have a non-CangJie file. Whitespace changes in such files are invisible to CangJie.
             val affectedElement = element.parentOfType<CjElement>() ?: return LLModificationLocality.Invisible
 
             return LLModificationLocality.Whitespace(affectedElement, project)
@@ -239,7 +239,7 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
      */
     private fun handleInBlockModification(declaration: CjElement, module: CaModule) {
         val resolutionFacade = module.getResolutionFacade(project)
-        val firDeclaration = when (declaration) {
+        val cfirDeclaration = when (declaration) {
             is CjCodeFragment -> declaration.getOrBuildCfirFile(resolutionFacade).codeFragment
             is CjDeclaration -> declaration.resolveToCfirSymbol(resolutionFacade).cfir
             else -> errorWithCfirSpecificEntries(
@@ -249,12 +249,12 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
         }
 
         // 1. Invalidate CFIR
-        invalidateAfterInBlockModification(firDeclaration)
+        invalidateAfterInBlockModification(cfirDeclaration)
         declaration.hasCfirBody = false
 
-        val moduleSession = firDeclaration.llCfirResolvableSession ?: errorWithCfirSpecificEntries(
+        val moduleSession = cfirDeclaration.llCfirResolvableSession ?: errorWithCfirSpecificEntries(
             "${LLCfirResolvableModuleSession::class.simpleName} is not found",
-            fir = firDeclaration,
+            fir = cfirDeclaration,
             psi = declaration,
         ) {
             withEntry("session", resolutionFacade) { it.toString() }

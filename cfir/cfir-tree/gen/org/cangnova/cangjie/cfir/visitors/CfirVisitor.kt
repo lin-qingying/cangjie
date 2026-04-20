@@ -35,6 +35,12 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitWrappedExpression(wrappedExpression: CfirWrappedExpression, data: D): R =
         visitElement(wrappedExpression, data)
 
+    open fun visitOptionalExpression(optionalExpression: CfirOptionalExpression, data: D): R =
+        visitElement(optionalExpression, data)
+
+    open fun visitOptionalChainExpression(optionalChainExpression: CfirOptionalChainExpression, data: D): R =
+        visitElement(optionalChainExpression, data)
+
     open fun visitResolvable(resolvable: CfirResolvable, data: D): R =
         visitElement(resolvable, data)
 
@@ -370,6 +376,9 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitFunctionTypeRef(functionTypeRef: CfirFunctionTypeRef, data: D): R =
         visitElement(functionTypeRef, data)
+
+    open fun visitOptionTypeRef(optionTypeRef: CfirOptionTypeRef, data: D): R =
+        visitElement(optionTypeRef, data)
 
     open fun visitTupleTypeRef(tupleTypeRef: CfirTupleTypeRef, data: D): R =
         visitElement(tupleTypeRef, data)

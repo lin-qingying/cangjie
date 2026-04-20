@@ -14,7 +14,6 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.*
 import org.cangnova.cangjie.analysis.utils.errors.unexpectedElementError
-import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.getContainingClassSymbol
@@ -23,6 +22,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.types.toPrimitiveTypeKindOrNull
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.psi.CjFile
@@ -147,7 +147,7 @@ private fun collectDesignationPathWithContainingClass(
     val file = providedFile ?: target.getContainingFile()
     if (file != null && (containingClassId == null || file.packageDirective.packageFqName == containingClassId.packageFqName)) {
         val designationPath = CfirElementFinder.collectDesignationPath(
-            firFile = file,
+            cfirFile = file,
             declarationContainerClassId = containingClassId,
             targetMemberDeclaration = target,
         )
@@ -174,7 +174,7 @@ private val LLCfirSession.requiresDependenciesSearch: Boolean
     get() = when (this) {
         is LLCfirLibraryOrLibrarySourceResolvableModuleSession -> true
         is LLCfirDanglingFileSession -> {
-            val module = ktModule as CaDanglingFileModule
+            val module = caModule as CaDanglingFileModule
             // Dangling files in the ignore self mode have the empty declaration provider,
             // so they cannot find any declarations inside themselves. Search in the context is required
             module.resolutionMode == CaDanglingFileResolutionMode.IGNORE_SELF
@@ -194,7 +194,7 @@ private fun collectDesignationPathWithContainingClassFallback(
             useSiteSession.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
         } else {
             useSiteSession.cfirProvider.getCfirClassifierByFqName(classId)
-                ?: findKotlinStdlibClass(classId, target)
+                ?: findInContainingFileIfApplicable(classId, target)
         }
 
         checkWithAttachment(
@@ -202,7 +202,7 @@ private fun collectDesignationPathWithContainingClassFallback(
             {
                 "'${CfirClass::class.simpleName}' expected as a containing declaration, " +
                         "got '${declaration?.javaClass?.simpleName}'. " +
-                        "Module: ${useSiteSession.ktModule::class.simpleName}"
+                        "Module: ${useSiteSession.caModule::class.simpleName}"
             },
         ) {
                 withEntry("chunk", "$classId in $containingClassId")
@@ -225,7 +225,7 @@ private fun collectDesignationPathWithContainingClassFallback(
             {
                 "${LLContainingClassCalculator::class.simpleName} is supposed to return '${CfirClass::class.simpleName}' " +
                         "as a containing declaration since the class is not local (classId exists), got '${psiBasedContainingClass?.let { it::class.java.simpleName }}'. " +
-                        "Module: ${useSiteSession.ktModule::class.simpleName}"
+                        "Module: ${useSiteSession.caModule::class.simpleName}"
             },
         ) {
             withEntry("classId", classId.toString())
@@ -236,7 +236,7 @@ private fun collectDesignationPathWithContainingClassFallback(
         if (psiBasedContainingClass == null && classId.shortClassName.isSpecial) {
             errorWithAttachment(
                 "Special classes are supposed to be covered via ${LLContainingClassCalculator::class.simpleName}. " +
-                        "Module: ${useSiteSession.ktModule::class.simpleName}"
+                        "Module: ${useSiteSession.caModule::class.simpleName}"
             ) {
                 withEntry("classId", classId.toString())
                 withEntry("containingClassId", containingClassId.toString())
@@ -264,13 +264,13 @@ private fun getTargetSession(target: CfirDeclaration): LLCfirSession {
     return target.llCfirSession
 }
 
-private fun findKotlinStdlibClass(classId: ClassId, target: CfirDeclaration): CfirClass? {
-    if (!classId.packageFqName.startsWith(StandardNames.BUILT_INS_PACKAGE_NAME)) {
+internal fun findInContainingFileIfApplicable(classId: ClassId, target: CfirDeclaration?): CfirClass? {
+    if (classId.toPrimitiveTypeKindOrNull() != null) {
         return null
     }
 
-    val firFile = target.getContainingFile() ?: return null
-    return CfirElementFinder.findClassifierWithClassId(firFile, classId) as? CfirClass
+    val cfirFile = target?.getContainingFile() ?: return null
+    return CfirElementFinder.findClassifierWithClassId(cfirFile, classId) as? CfirClass
 }
 
 /**
@@ -288,7 +288,7 @@ private fun findKotlinStdlibClass(classId: ClassId, target: CfirDeclaration): Cf
  */
 fun CfirElementWithResolveState.collectDesignationWithOptionalFile(providedFile: CfirFile? = null): CfirDesignation =
     tryCollectDesignationWithOptionalFile(providedFile) ?: errorWithAttachment("No designation of local declaration") {
-        providedFile?.let { withCfirEntry("firFile", it) }
+        providedFile?.let { withCfirEntry("cfirFile", it) }
     }
 
 /**
@@ -336,7 +336,7 @@ internal fun patchDesignationPathIfNeeded(target: CfirElementWithResolveState, t
 }
 
 private fun patchDesignationPathForCopy(target: CfirElementWithResolveState, targetPath: List<CfirDeclaration>): List<CfirDeclaration>? {
-    val targetModule = target.llCfirModuleData.ktModule
+    val targetModule = target.llCfirModuleData.caModule
 
     if (targetModule is CaDanglingFileModule && targetModule.resolutionMode == CaDanglingFileResolutionMode.IGNORE_SELF) {
         val targetPsiFile = targetModule.files.singleOrNull() ?: return targetPath

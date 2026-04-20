@@ -5,41 +5,31 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization
 
-import org.cangnova.cangjie.CjRealPsiSourceElement
 import org.cangnova.cangjie.builtins.StandardNames
-import org.cangnova.cangjie.cfir.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirModuleData
-import org.cangnova.cangjie.cfir.computeTypeAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.declarations.builder.CfirTypeParameterBuilder
-import org.cangnova.cangjie.cfir.declarations.utils.addDefaultBoundIfNecessary
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
-import org.cangnova.cangjie.cfir.expressions.builder.buildAnnotation
-import org.cangnova.cangjie.cfir.expressions.builder.buildAnnotationArgumentMapping
-import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
+import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
-import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
-import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.impl.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.withConeTypeEntry
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.impl.ConeClassLikeTypeImpl
-import org.cangnova.cangjie.cfir.types.impl.ConeTypeParameterTypeImpl
-import org.cangnova.cangjie.cfir.utils.exceptions.withConeTypeEntry
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
-import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.*
-import org.cangnova.cangjie.psi.stubs.impl.*
-import org.cangnova.cangjie.types.ConstantValueKind
-import org.cangnova.cangjie.types.Variance
-import org.cangnova.cangjie.utils.addToStdlib.runIf
+import org.cangnova.cangjie.psi.stubs.impl.CangJieNameReferenceExpressionStubImpl
+import org.cangnova.cangjie.source.CjRealPsiSourceElement
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
@@ -51,6 +41,7 @@ internal class StubBasedCfirTypeDeserializer(
     owner: CjTypeParameterListOwner?,
     initialOrigin: CfirDeclarationOrigin
 ) {
+    private val psiFactory: CjPsiFactory? = owner?.project?.let { CjPsiFactory(it) }
     private val typeParametersByName: Map<String, CfirTypeParameterSymbol>
 
     val ownTypeParameters: List<CfirTypeParameterSymbol>
@@ -79,7 +70,8 @@ internal class StubBasedCfirTypeDeserializer(
                         withPsiEntry("parameter", typeParameter)
                     }
                     annotations += annotationDeserializer.loadAnnotations(
-                        ktAnnotated = typeParameter,
+                        annotated = typeParameter,
+                        containingDeclarationSymbol = this.containingDeclarationSymbol,
                         useSiteTargetFilter = StubBasedAnnotationDeserializer.TYPE_ANNOTATIONS_FILTER,
                     )
                 }
@@ -90,7 +82,7 @@ internal class StubBasedCfirTypeDeserializer(
                 builder.apply {
                     typeParameter.extendsBound?.let { bounds.add(typeRef(it)) }
                     owner.typeConstraints
-                        .filter { it.subjectTypeParameterName?.getReferencedNameAsName() == typeParameter.nameAsName }
+                        .filter { it.subjectTypeParameterName?.referencedNameAsName == typeParameter.nameAsName }
                         .forEach { typeConstraint -> typeConstraint.boundTypeReference?.let { bounds += typeRef(it) } }
                     addDefaultBoundIfNecessary()
                 }.build()
@@ -103,145 +95,108 @@ internal class StubBasedCfirTypeDeserializer(
     fun typeRef(typeReference: CjTypeReference): CfirTypeRef = buildResolvedTypeRef {
         source = CjRealPsiSourceElement(typeReference)
         annotations += annotationDeserializer.loadAnnotations(
-            ktAnnotated = typeReference,
+            annotated = typeReference,
+            containingDeclarationSymbol = containingSymbol,
             useSiteTargetFilter = StubBasedAnnotationDeserializer.TYPE_ANNOTATIONS_FILTER,
         )
 
-        coneType = type(typeReference, annotations.computeTypeAttributes(moduleData.session, shouldExpandTypeAliases = false))
+        coneType = type(typeReference, ConeAttributes.Empty)
     }
 
-    fun type(typeReference: CjTypeReference): ConeKotlinType {
+    fun type(typeReference: CjTypeReference): ConeCangJieType {
         val annotations = annotationDeserializer.loadAnnotations(
-            typeReference,
-            StubBasedAnnotationDeserializer.TYPE_ANNOTATIONS_FILTER,
-        ).toMutableList()
-
-        val parentStub = typeReference.compiledStub.parentStub
-        if (parentStub is KotlinParameterStubImpl) {
-            parentStub.functionTypeParameterName?.let { paramName ->
-                annotations += buildAnnotation {
-                    annotationTypeRef = buildResolvedTypeRef {
-                        coneType = StandardNames.FqNames.parameterNameClassId.toLookupTag()
-                            .constructClassType()
-                    }
-                    this.argumentMapping = buildAnnotationArgumentMapping {
-                        mapping[StandardNames.NAME] =
-                            buildLiteralExpression(null, ConstantValueKind.String, paramName, setType = true)
-                    }
-                }
-            }
-        }
-        return type(typeReference, annotations.computeTypeAttributes(moduleData.session, shouldExpandTypeAliases = false))
+            annotated = typeReference,
+            containingDeclarationSymbol = containingSymbol,
+            useSiteTargetFilter = StubBasedAnnotationDeserializer.TYPE_ANNOTATIONS_FILTER,
+        )
+        return type(typeReference, if (annotations.isEmpty()) ConeAttributes.Empty else ConeAttributes.Empty)
     }
 
-    fun type(type: KotlinTypeBean): ConeKotlinType? {
-        when (type) {
-            is KotlinTypeParameterTypeBean -> {
-                val lookupTag =
-                    typeParametersByName[type.typeParameterName]?.toLookupTag() ?: parent?.typeParameterSymbol(type.typeParameterName)
-                    ?: return null
-                return ConeTypeParameterTypeImpl(lookupTag, isMarkedNullable = false)
-            }
-            is KotlinClassTypeBean -> {
-                return deserializeClassType(type)
-            }
-            is KotlinFlexibleTypeBean -> {
-                return type(type.lowerBound)
-            }
-        }
-    }
-
-    private val ConeKotlinType?.asRigidType: ConeRigidType
+    private val ConeCangJieType?.asRigidType: ConeRigidType
         get() = when (this) {
             is ConeRigidType -> this
-            null, is ConeFlexibleType -> errorWithAttachment("Unexpected cone type ${this?.let { it::class.simpleName }}") {
+            null -> errorWithAttachment("Unexpected cone type ${this?.let { it::class.simpleName }}") {
                 withConeTypeEntry("bound", this@asRigidType)
             }
         }
 
-    private fun deserializeClassType(typeBean: KotlinClassTypeBean): ConeClassLikeType {
-        val projections = typeBean.arguments.map { typeArgumentBean ->
-            val argBean = typeArgumentBean.type!!
-            val lowerBound = type(argBean)
-                ?: errorWithAttachment("Broken type argument ${typeArgumentBean.type?.let { it::class }}") {
-                    withEntry("type", typeArgumentBean.type) { it.toString() }
-                }
-            lowerBound.toTypeProjection(Variance.INVARIANT)
-        }
-
-        val abbreviatedTypeAttribute = typeBean.abbreviatedType?.let { AbbreviatedTypeAttribute(deserializeClassType(it)) }
-        val attributes = ConeAttributes.create(listOfNotNull(abbreviatedTypeAttribute))
-
-        return ConeClassLikeTypeImpl(
-            typeBean.classId.toLookupTag(),
-            projections.toTypedArray(),
-            isMarkedNullable = false,
-            attributes,
-        )
-    }
-
-    private fun type(typeReference: CjTypeReference, attributes: ConeAttributes): ConeKotlinType {
+    private fun type(typeReference: CjTypeReference, attributes: ConeAttributes): ConeCangJieType {
         val typeElement = typeReference.typeElement
         return when (typeElement) {
             is CjFunctionType -> deserializeFunctionType(typeReference, typeElement, attributes)
+            is CjOptionType -> deserializeOptionType(typeReference, typeElement, attributes)
             is CjUserType -> deserializeUserType(typeReference, typeElement, attributes)
             else -> simpleTypeOrError(typeReference, attributes)
         }
     }
 
-    private fun deserializeFunctionType(typeReference: CjTypeReference, type: CjFunctionType, attributes: ConeAttributes): ConeKotlinType {
-        val functionTypeStub: KotlinFunctionTypeStubImpl = type.compiledStub
-        return simpleTypeOrError(typeReference, attributes.withAbbreviation(functionTypeStub.abbreviatedType))
+    private fun deserializeFunctionType(typeReference: CjTypeReference, type: CjFunctionType, attributes: ConeAttributes): ConeCangJieType {
+        return simpleTypeOrError(typeReference, attributes)
     }
 
-    private fun deserializeUserType(typeReference: CjTypeReference, type: CjUserType, attributes: ConeAttributes): ConeKotlinType {
-        val userTypeStub: KotlinUserTypeStubImpl = type.compiledStub
-        return simpleTypeOrError(typeReference, attributes.withAbbreviation(userTypeStub.abbreviatedType))
+    private fun deserializeUserType(typeReference: CjTypeReference, type: CjUserType, attributes: ConeAttributes): ConeCangJieType {
+        return simpleTypeOrError(typeReference, attributes)
     }
 
-    private fun ConeAttributes.withAbbreviation(abbreviatedType: KotlinClassTypeBean?): ConeAttributes {
-        if (abbreviatedType == null) return this
-        return add(AbbreviatedTypeAttribute(deserializeClassType(abbreviatedType)))
+    private fun deserializeOptionType(
+        typeReference: CjTypeReference,
+        type: CjOptionType,
+        attributes: ConeAttributes,
+    ): ConeCangJieType {
+        val innerTypeElement = type.getInnerType()
+            ?: return ConeErrorType(ConeSimpleDiagnostic("Malformed option type", DiagnosticKind.DeserializationError))
+        val innerTypeReference = psiFactory?.createTypeIfPossible(innerTypeElement.text)
+            ?: return ConeErrorType(ConeSimpleDiagnostic("Malformed option type", DiagnosticKind.DeserializationError))
+        val componentType = type(innerTypeReference, attributes)
+        return ConeClassLikeType(
+            StdlibClassIds.Option.toLookupTag(),
+            typeArguments = listOf(ConeTypeProjection(componentType)),
+            attributes = attributes,
+        )
     }
 
     private fun typeParameterSymbol(typeParameterName: String): ConeTypeParameterLookupTag? =
         typeParametersByName[typeParameterName]?.toLookupTag() ?: parent?.typeParameterSymbol(typeParameterName)
 
     fun CfirClassLikeSymbol<*>.typeParameters(): List<CfirTypeParameterSymbol> =
-        (fir as? CfirTypeParameterRefsOwner)?.typeParameters?.map { it.symbol }.orEmpty()
+        (cfir as? CfirTypeParameterRefsOwner)?.typeParameters?.map { it.symbol }.orEmpty()
 
     private fun simpleType(typeReference: CjTypeReference, attributes: ConeAttributes): ConeRigidType? {
         val constructor = typeSymbol(typeReference) ?: return null
         if (constructor is ConeTypeParameterLookupTag) {
-            return ConeTypeParameterTypeImpl(constructor, isMarkedNullable = false, attributes)
+            return ConeTypeParameterTypeImpl(constructor, attributes)
         }
         if (constructor !is ConeClassLikeLookupTag) return null
 
         val typeElement = typeReference.typeElement
-        val arguments = when (typeElement) {
-            is CjUserType -> buildList {
-                // The type for Outer<T>.Inner<S> needs to have type args <S, T>
+        val arguments: List<ConeTypeProjection> = when (typeElement) {
+            is CjUserType -> buildList<ConeTypeProjection> {
                 var current: CjUserType? = typeElement
                 while (current != null) {
-                    current.typeArguments.forEach { add(type(it.typeReference!!).toTypeProjection(Variance.INVARIANT)) }
+                    current.typeArguments.forEach { projection ->
+                        projection.typeReference?.let { add(ConeTypeProjection(type(it))) }
+                    }
                     current = current.qualifier
                 }
-            }.toTypedArray()
-            is CjFunctionType -> buildList {
-                typeElement.parameters.mapTo(this) { type(it.typeReference!!).toTypeProjection(Variance.INVARIANT) }
-                add(type(typeElement.returnTypeReference!!).toTypeProjection(Variance.INVARIANT))
-            }.toTypedArray()
+            }
+            is CjFunctionType -> buildList<ConeTypeProjection> {
+                typeElement.parameters.mapTo(this) { parameter ->
+                    ConeTypeProjection(type(parameter.typeReference ?: errorWithAttachment("Function type parameter lacks type reference") {
+                        withPsiEntry("parameter", parameter)
+                    }))
+                }
+                val returnTypeReference = typeElement.returnTypeReference
+                    ?: errorWithAttachment("Function type lacks return type reference") {
+                        withPsiEntry("typeReference", typeReference)
+                    }
+                add(ConeTypeProjection(type(returnTypeReference)))
+            }
             else -> errorWithAttachment("not supported ${typeElement?.let { it::class }}") {
                 withPsiEntry("typeElement", typeElement)
             }
         }
 
-        return ConeClassLikeTypeImpl(
-            constructor,
-            arguments,
-            isMarkedNullable = false,
-            attributes,
-        )
+        return ConeClassLikeType(constructor, arguments, attributes)
     }
 
     private fun simpleTypeOrError(typeReference: CjTypeReference, attributes: ConeAttributes): ConeRigidType =
@@ -250,56 +205,34 @@ internal class StubBasedCfirTypeDeserializer(
     private fun typeSymbol(typeReference: CjTypeReference): ConeClassifierLookupTag? {
         val typeElement = typeReference.typeElement
         if (typeElement is CjFunctionType) {
-            val arity = typeElement.totalParameterCount
-            val functionClassId = when {
-                /*
-                 * Since 2.1 any `@Composable FunctionN` type is serialized to metadata as `ComposableFunctionN`, which is consistent with
-                 * how composable functions are treated in sources (with compose plugin enabled). But there are old libraries compiled
-                 * with 2.0 or less, which still have `@Composable FunctionN` types. To handle such libraries in the CLI compiler plugins
-                 * are passed to the library session so they could be applied to deserialized classes.
-                 * But it's impossible to do the same in the IDE, because there libraries don't know anything about source modules they
-                 * will be used in. So to work around this issue this conversion for Composable functions is hardcoded
-                 */
-                typeReference.annotationEntries.any {
-                    StubBasedAnnotationDeserializer.getAnnotationClassId(it) == composableClassId
-                } -> getComposableFunctionClassId(arity)
-
-                else -> StandardNames.getFunctionClassId(arity)
-            }
+            val arity = typeElement.parameters.size
+            val functionClassId = StandardNames.getFunctionClassId(arity)
             return functionClassId.toLookupTag()
         }
-        if (typeElement is CjIntersectionType) {
-            val leftTypeRef = typeElement.getLeftTypeRef() ?: return null
-            //T&Any
-            return typeSymbol(leftTypeRef)
+        val type = typeElement as? CjUserType ?: return null
+        val referencedName = type.referencedName ?: return null
+        if (type.qualifier == null) {
+            typeParameterSymbol(referencedName)?.let { return it }
         }
-        val type = typeElement as CjUserType
-        val referencedName = type.referencedName
-        return runIf(type.qualifier == null) {
-            // Things like Foo.T can never be resolved to type parameter T
-            typeParameterSymbol(referencedName!!)
-        } ?: type.classId().toLookupTag()
+        return type.classId().toLookupTag()
     }
+}
 
-    private fun getComposableFunctionClassId(arity: Int): ClassId {
-        val name = Name.identifier("$composableFunctionPrefix$arity")
-        return ClassId(internalComposePackageFqName, name)
-    }
+/**
+ * 对齐 Kotlin `FirTypeParameterBuilder.addDefaultBoundIfNecessary` 的职责：
+ * 当反序列化出的类型参数没有显式上界时，为其补上仓颉主干的默认顶层约束 `std.core.Any`。
+ */
+private fun CfirTypeParameterBuilder.addDefaultBoundIfNecessary() {
+    if (bounds.isNotEmpty()) return
 
-    companion object {
-        private val internalComposePackageFqName = FqName("androidx.compose.runtime.internal")
-        private val composableClassId = ClassId(
-            FqName("androidx.compose.runtime"),
-            Name.identifier("Composable"),
-        )
-        private val composableFunctionPrefix = "ComposableFunction"
-    }
+    val defaultBound = ConeClassLikeType(StdlibClassIds.Any.toLookupTag(), isInterface = true)
+    bounds += defaultBound.toCfirResolvedTypeRef()
 }
 
 /**
  * Retrieves classId from [CjUserType] for compiled code only.
  *
- * It relies on [org.cangnova.cangjie.psi.stubs.impl.KotlinNameReferenceExpressionStubImpl.isClassRef],
+ * It relies on [org.cangnova.cangjie.psi.stubs.impl.CangJieNameReferenceExpressionStubImpl.isClassRef],
  * which is set during cls analysis only.
  */
 internal fun CjUserType.classId(): ClassId {
@@ -311,8 +244,8 @@ internal fun CjUserType.classId(): ClassId {
 
         val referenceExpression = type.referenceExpression as? CjNameReferenceExpression
         if (referenceExpression != null) {
-            val referencedName = referenceExpression.getReferencedName()
-            val referenceExpressionStub: KotlinNameReferenceExpressionStubImpl = referenceExpression.compiledStub
+            val referencedName = referenceExpression.referencedName
+            val referenceExpressionStub: CangJieNameReferenceExpressionStubImpl = referenceExpression.compiledStub
             if (referenceExpressionStub.isClassRef) {
                 classFragments.add(referencedName)
             } else {
@@ -324,6 +257,5 @@ internal fun CjUserType.classId(): ClassId {
     return ClassId(
         FqName.fromSegments(packageFragments),
         FqName.fromSegments(classFragments),
-        isLocal = false
     )
 }

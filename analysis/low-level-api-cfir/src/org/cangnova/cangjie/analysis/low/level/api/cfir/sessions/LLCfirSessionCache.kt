@@ -118,7 +118,7 @@ class LLCfirSessionCache(
 
     private fun checkSessionValidity(session: LLCfirSession) {
         requireWithAttachment(session.isValid, { "A session acquired via `getSession` should always be valid." }) {
-            withCaModuleEntry("module", session.ktModule)
+            withCaModuleEntry("module", session.caModule)
             withEntry("invalidationInformation", session.invalidationInformation)
         }
     }
@@ -177,8 +177,7 @@ fun createEmptySession(): CfirSession {
         val moduleData = CfirSourceModuleData(
             Name.identifier("<stub module>"),
             dependencies = emptyList(),
-            dependsOnDependencies = emptyList(),
-            friendDependencies = emptyList(),
+            refinementDependencies = emptyList(),
             platform = CfirPlatform.DEFAULT,
         )
         registerModuleData(moduleData)

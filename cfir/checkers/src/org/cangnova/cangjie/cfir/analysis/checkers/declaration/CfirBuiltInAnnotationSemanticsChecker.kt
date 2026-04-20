@@ -206,6 +206,22 @@ private fun checkPlatformAnnotationSyntax(
             factory = CfirErrors.HIDE_MULTI_ANNOTATION,
         )
     }
+    // HIDE_COMPILE_TIME_INVISIBLE: @!Hide 注解本身若无法在编译时解析,报错。
+    // 对齐 C++ PluginCustomAnnoChecker.cpp:498 `!anno->isCompileTimeVisible`。
+    if (hideEntries.isNotEmpty()) {
+        val resolvedHide = declaration.annotations.firstOrNull { ann ->
+            val t = (ann.typeRef as? CfirResolvedTypeRef)?.coneType
+            t is ConeClassLikeType && t.classId.shortClassName == HIDE
+        }
+        val isInvisible = resolvedHide == null
+            || (resolvedHide.typeRef as? CfirResolvedTypeRef)?.coneType is org.cangnova.cangjie.cfir.types.ConeErrorType
+        if (isInvisible) {
+            reporter.reportOn(
+                source = hideEntries.first().toSourceOrDeclarationSource(declaration),
+                factory = CfirErrors.HIDE_COMPILE_TIME_INVISIBLE,
+            )
+        }
+    }
     if (declaration.source?.psi is CjParameter && hideEntries.isNotEmpty()) {
         reporter.reportOn(
             source = hideEntries.first().toSourceOrDeclarationSource(declaration),

@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.CfirOptionTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
@@ -173,5 +174,9 @@ class CfirSpecificTypeResolverTransformer(
 
     override fun transformImplicitTypeRef(implicitTypeRef: CfirImplicitTypeRef, data: TypeResolutionConfiguration): CfirTypeRef {
         return implicitTypeRef
+    }
+
+    override fun transformOptionTypeRef(optionTypeRef: CfirOptionTypeRef, data: TypeResolutionConfiguration): CfirTypeRef {
+        return transformTypeRef(optionTypeRef, data)
     }
 }

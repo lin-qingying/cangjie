@@ -9,6 +9,9 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import io.opentelemetry.api.OpenTelemetry
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
+import org.cangnova.cangjie.analysis.api.platform.statistics.CaStatisticsService
+import org.cangnova.cangjie.analysis.api.platform.statistics.CangJieOpenTelemetryProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLAnalysisSessionStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLStatisticsDomain
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLSymbolProviderStatistics
@@ -18,7 +21,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLSym
  * individual [LLStatisticsDomain]s.
  *
  * The Analysis API uses [OpenTelemetry](https://opentelemetry.io) as a telemetry backend to report metrics to the Analysis API platform,
- * such as IntelliJ and its performance tests. See [KotlinOpenTelemetryProvider].
+ * such as IntelliJ and its performance tests. See [CangJieOpenTelemetryProvider].
  *
  * This class is the only IntelliJ project service registered for low-level API statistics collection. The single entry point simplifies
  * handling of whether statistics are enabled (see [CaStatisticsService.areStatisticsEnabled]).
@@ -32,8 +35,9 @@ class LLStatisticsService(internal val project: Project) : Disposable {
 
     internal val domains: List<LLStatisticsDomain> = listOf(analysisSessions, symbolProviders)
 
+    @OptIn(CaPlatformInterface::class)
     internal val openTelemetry: OpenTelemetry
-        get() = KotlinOpenTelemetryProvider.getInstance(project)?.openTelemetry
+        get() = CangJieOpenTelemetryProvider.getInstance(project)?.openTelemetry
             ?: error("${LLStatisticsService::class.simpleName} should not be used when OpenTelemetry is not available.")
 
     private var hasStarted: Boolean = false
@@ -66,8 +70,9 @@ class LLStatisticsService(internal val project: Project) : Disposable {
     companion object {
         /**
          * Returns an instance of [LLStatisticsService] *if* statistics are [enabled][CaStatisticsService.areStatisticsEnabled] and an
-         * [OpenTelemetry] instance is available via [KotlinOpenTelemetryProvider].
+         * [OpenTelemetry] instance is available via [CangJieOpenTelemetryProvider].
          */
+        @OptIn(CaPlatformInterface::class)
         fun getInstance(project: Project): LLStatisticsService? {
             if (!CaStatisticsService.areStatisticsEnabled) {
                 return null
@@ -75,7 +80,7 @@ class LLStatisticsService(internal val project: Project) : Disposable {
 
             // To avoid a nullable OpenTelemetry instance throughout the statistics code, we require OpenTelemetry to be available for
             // `LLStatisticsService`.
-            if (KotlinOpenTelemetryProvider.getInstance(project)?.openTelemetry == null) {
+            if (CangJieOpenTelemetryProvider.getInstance(project)?.openTelemetry == null) {
                 return null
             }
 

@@ -10,9 +10,9 @@ import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 
 abstract class LLCfirResolvableModuleSession(
-    ktModule: CaModule,
+    caModule: CaModule,
     builtinTypes: CfirBuiltinTypes
-) : LLCfirModuleSession(ktModule, builtinTypes, Kind.Source) {
+) : LLCfirModuleSession(caModule, builtinTypes, Kind.Source) {
     internal abstract val moduleComponents: LLCfirModuleResolveComponents
 
     final override fun getScopeSession(): ScopeSession {

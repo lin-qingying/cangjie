@@ -18,12 +18,12 @@ import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 internal class LLCfirFileBuilder(val moduleComponents: LLCfirModuleResolveComponents) {
     private val projectStructureProvider by lazy { CangJieProjectStructureProvider.getInstance(moduleComponents.session.project) }
 
-    fun buildRawCfirFileWithCaching(ktFile: CjFile): CfirFile = moduleComponents.cache.fileCached(ktFile) {
+    fun buildRawCfirFileWithCaching(cjFile: CjFile): CfirFile = moduleComponents.cache.fileCached(cjFile) {
         val contextualModule = moduleComponents.module
-        val actualFileModule = projectStructureProvider.getModule(ktFile, contextualModule)
+        val actualFileModule = projectStructureProvider.getModule(cjFile, contextualModule)
 
         checkWithAttachment(actualFileModule == contextualModule, { "Modules are inconsistent" }) {
-            withEntry("file", ktFile.name)
+            withEntry("file", cjFile.name)
             withEntry("file module", actualFileModule) {
                 it.toString()
             }
@@ -36,6 +36,6 @@ internal class LLCfirFileBuilder(val moduleComponents: LLCfirModuleResolveCompon
             moduleComponents.session,
             moduleComponents.scopeProvider,
             bodyBuildingMode = BodyBuildingMode.LAZY_BODIES
-        ).buildCfirFile(ktFile)
+        ).buildCfirFile(cjFile)
     }
 }

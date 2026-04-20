@@ -49,12 +49,12 @@ class CompilationPeerCollector private constructor() {
     private fun process(file: CfirFile) {
         ProgressManager.checkCanceled()
 
-        val ktFile = file.containingCjFileIfAny
-        if (ktFile == null || ktFile.isCompiled) {
+        val cjFile = file.containingCjFileIfAny
+        if (cjFile == null || cjFile.isCompiled) {
             return
         }
 
-        val module = file.llCfirModuleData.ktModule
+        val module = file.llCfirModuleData.caModule
         if (module in moduleStack && module != moduleStack.last()) {
             // We cannot compile two or more modules together
             errorWithAttachment("Cyclic dependency between modules") {
@@ -74,7 +74,7 @@ class CompilationPeerCollector private constructor() {
         }
 
         // Avoid deep stacks by gathering callee files first
-        val visitor = CompilationPeerCollectingVisitor(ktFile.project)
+        val visitor = CompilationPeerCollectingVisitor(cjFile.project)
         file.accept(visitor)
 
         inlinedClasses.addAll(visitor.inlinedClasses)
@@ -83,7 +83,7 @@ class CompilationPeerCollector private constructor() {
             visitor.files.forEach(::process)
         }
 
-        peers.getOrPut(module, ::ArrayList).add(ktFile)
+        peers.getOrPut(module, ::ArrayList).add(cjFile)
     }
 
     private inline fun withModule(module: CaModule, block: () -> Unit) {

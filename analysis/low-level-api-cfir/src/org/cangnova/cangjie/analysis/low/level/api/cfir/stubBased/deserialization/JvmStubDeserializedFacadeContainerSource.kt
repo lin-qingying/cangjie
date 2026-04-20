@@ -1,19 +1,34 @@
-
-
 package org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization
 
-import org.cangnova.cangjie.descriptors.SourceFile
-import org.cangnova.cangjie.load.kotlin.FacadeClassSource
-import org.cangnova.cangjie.resolve.jvm.JvmClassName
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.serialization.deserialization.IncompatibleVersionErrorData
 import org.cangnova.cangjie.serialization.deserialization.descriptors.DeserializedContainerAbiStability
+import org.cangnova.cangjie.serialization.deserialization.descriptors.DeserializedContainerSource
 import org.cangnova.cangjie.serialization.deserialization.descriptors.PreReleaseInfo
 
-internal class JvmStubDeserializedFacadeContainerSource(
-    override val className: JvmClassName,
-    override val jvmClassName: JvmClassName?,
-    override val facadeClassName: JvmClassName?
-) : DeserializedContainerSourceWithJvmClassName, FacadeClassSource {
+/**
+ * package 顶层 callable 的反序列化容器来源。
+ *
+ * 语义以仓颉 package facade / multifile facade 为准，
+ * 不再暴露 JVM internal name。
+ */
+internal class PackageFacadeDeserializedContainerSource(
+    val packageFqName: FqName,
+    val facadeFqName: FqName,
+    val partSimpleName: String?,
+    val partSimpleNames: List<String>,
+    val isMultifile: Boolean,
+    binaryFilePath: String?,
+) : DeserializedContainerSource(
+    presentableString = if (isMultifile) {
+        "package multifile facade ${facadeFqName.asString()} [parts: ${partSimpleNames.joinToString()}]"
+    } else {
+        "package facade ${facadeFqName.asString()}"
+    },
+    binaryFilePath = binaryFilePath,
+    stableIdentity = listOf(packageFqName, facadeFqName, partSimpleName, partSimpleNames, isMultifile, binaryFilePath),
+) {
+
     override val incompatibility: IncompatibleVersionErrorData<*>?
         get() = null
 
@@ -24,7 +39,9 @@ internal class JvmStubDeserializedFacadeContainerSource(
         get() = DeserializedContainerAbiStability.STABLE
 
     override val presentableString: String
-        get() = className.internalName
-
-    override fun getContainingFile(): SourceFile = SourceFile.NO_SOURCE_FILE
+        get() = if (isMultifile) {
+            "package multifile facade ${facadeFqName.asString()} [parts: ${partSimpleNames.joinToString()}]"
+        } else {
+            "package facade ${facadeFqName.asString()}"
+        }
 }

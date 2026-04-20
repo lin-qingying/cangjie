@@ -21,7 +21,7 @@ internal sealed class LLCfirClassResolveTarget(designation: CfirDesignation) : L
         }
     }
 
-    abstract fun visitMembers(visitor: LLCfirResolveTargetVisitor, firClass: CfirClass)
+    abstract fun visitMembers(visitor: LLCfirResolveTargetVisitor, cfirClass: CfirClass)
 
     abstract val visitClass: Boolean
 

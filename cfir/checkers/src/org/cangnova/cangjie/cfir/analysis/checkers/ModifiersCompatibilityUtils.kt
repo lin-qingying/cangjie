@@ -129,6 +129,7 @@ internal fun CjSourceElement.realSourceModifiers(): List<SourceModifier>? {
                 ?.takeIf { it.isNotEmpty() }
         }
         is CjLightSourceElement -> realSourceModifiersForNode(lighterASTNode)
+        else -> null
     }
 }
 
@@ -148,6 +149,7 @@ internal fun CjSourceElement.enclosingTypeProjectionSource(): CjSourceElement? {
                 treeStructure.getEndOffset(parent),
             )
         }
+        else -> null
     }
 }
 
@@ -156,6 +158,7 @@ internal fun CjSourceElement.isConstructorSource(): Boolean {
         is CjPsiSourceElement -> psi is org.cangnova.cangjie.psi.CjConstructor<*>
         is CjLightSourceElement -> lighterASTNode.tokenType == CjNodeTypes.PRIMARY_CONSTRUCTOR ||
                 lighterASTNode.tokenType == CjNodeTypes.SECONDARY_CONSTRUCTOR
+        else -> false
     }
 }
 

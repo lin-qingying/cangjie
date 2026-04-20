@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirFunctionTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.CfirOptionTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTupleTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -28,6 +29,7 @@ import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRefCopy
 import org.cangnova.cangjie.cfir.types.impl.CfirBasicTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirFunctionTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirImplicitTypeRefImpl
+import org.cangnova.cangjie.cfir.types.impl.CfirOptionTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirTupleTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirUserTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirVArrayTypeRefImpl
@@ -104,6 +106,12 @@ fun <R : CfirTypeRef> R.copyWithNewSource(newSource: CjSourceElement): R {
             annotations = typeRef.annotations.toMutableOrEmpty(),
             parameterTypeRefs = typeRef.parameterTypeRefs.toMutableList(),
             returnTypeRef = typeRef.returnTypeRef,
+        )
+
+        is CfirOptionTypeRef -> CfirOptionTypeRefImpl(
+            source = newSource,
+            annotations = typeRef.annotations.toMutableOrEmpty(),
+            componentTypeRef = typeRef.componentTypeRef,
         )
 
         is CfirTupleTypeRef -> CfirTupleTypeRefImpl(

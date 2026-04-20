@@ -63,7 +63,7 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
             }
         }
 
-        private fun doCjElementHasCorrespondingCfirElement(ktElement: CjElement): Boolean = when (ktElement) {
+        private fun doCjElementHasCorrespondingCfirElement(cjElement: CjElement): Boolean = when (cjElement) {
             is CjImportList -> false
             is CjAnnotation -> false
             else -> true
@@ -94,10 +94,10 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         }
     }
 
-    private fun getOrBuildCfirForCjFile(ktFile: CjFile): CfirFile {
-        val firFile = moduleComponents.firFileBuilder.buildRawCfirFileWithCaching(ktFile)
-        firFile.lazyResolveToPhaseRecursively(CfirResolvePhase.BODY_RESOLVE)
-        return firFile
+    private fun getOrBuildCfirForCjFile(cjFile: CjFile): CfirFile {
+        val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
+        cfirFile.lazyResolveToPhaseRecursively(CfirResolvePhase.BODY_RESOLVE)
+        return cfirFile
     }
 
     private fun getCfirForNonCjFileElement(element: CjElement): CfirElement? {
@@ -111,23 +111,23 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         tryGetCfirWithoutBodyResolve(nonLocalContainer, element)?.let { return it }
 
         val psi = getPsiAsCfirElementSource(element) ?: return null
-        val ktFile = element.containingCjFile
-        val fileStructure = moduleComponents.fileStructureCache.getFileStructure(ktFile)
+        val cjFile = element.containingCjFile
+        val fileStructure = moduleComponents.fileStructureCache.getFileStructure(cjFile)
 
         val structureElement = fileStructure.getStructureElementFor(element, nonLocalContainer)
         val mappings = structureElement.mappings
 
-        val firElement = mappings.get(psi)
+        val cfirElement = mappings.get(psi)
 
-        if (firElement is CfirElementWithResolveState) {
+        if (cfirElement is CfirElementWithResolveState) {
             // Partially resolvable declarations might have unresolved bodies in the mapping.
             // Here we forcibly resolve them to obey to the 'getOrBuildCfirFor()' contract.
-            if (firElement.isPartialBodyResolvable && firElement.resolvePhase < CfirResolvePhase.BODY_RESOLVE) {
-                firElement.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+            if (cfirElement.isPartialBodyResolvable && cfirElement.resolvePhase < CfirResolvePhase.BODY_RESOLVE) {
+                cfirElement.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
             }
         }
 
-        return firElement
+        return cfirElement
     }
 
     /**
@@ -170,27 +170,27 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         val anchorElement = anchorElementProvider(element) ?: return null
         val elementOwner = elementOwnerProvider(anchorElement) ?: return null
 
-        val firElementContainer = if (elementOwner is CjFile) {
-            moduleComponents.firFileBuilder.buildRawCfirFileWithCaching(elementOwner)
+        val cfirElementContainer = if (elementOwner is CjFile) {
+            moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(elementOwner)
         } else {
             if (elementOwner != nonLocalDeclaration) return null
 
             nonLocalDeclaration.findSourceNonLocalCfirDeclaration(
-                firFileBuilder = moduleComponents.firFileBuilder,
+                cfirFileBuilder = moduleComponents.cfirFileBuilder,
                 provider = moduleComponents.session.cfirProvider,
             )
         }
 
         // There is no need for a custom traverse as the resolved element has a cached map
-        if (firElementContainer.resolvePhase == CfirResolvePhase.BODY_RESOLVE) {
+        if (cfirElementContainer.resolvePhase == CfirResolvePhase.BODY_RESOLVE) {
             return null
         }
 
-        val anchorCfir = resolveAndFindCfirForAnchor(firElementContainer, anchorElement) ?: return null
+        val anchorCfir = resolveAndFindCfirForAnchor(cfirElementContainer, anchorElement) ?: return null
         // We use identity comparison here intentionally to check that it is exactly the object we want to find
         if (element === anchorElement) return anchorCfir
 
-        return findElementInside(firElement = anchorCfir, element = element)
+        return findElementInside(cfirElement = anchorCfir, element = element)
     }
 
     private fun PsiElement.annotationOwner(): CjAnnotated? {
@@ -229,8 +229,8 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
             }
         },
         resolveAndFindCfirForAnchor = { declaration, anchor -> declaration.resolveAndFindTypeRefAnchor(anchor) },
-    )?.let { firElement ->
-        firElement
+    )?.let { cfirElement ->
+        cfirElement
     }
 
     private fun getCfirForElementInsideFileHeader(element: CjElement): CfirElement? = getCfirForNonBodyElement<CjElement, PsiElement>(
@@ -258,9 +258,9 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         return parentsWithSelf.find { it is CjPackageDirective || it is CjImportDirective } as? CjElement
     }
 
-    private fun findElementInside(firElement: CfirElement, element: CjElement): CfirElement? {
+    private fun findElementInside(cfirElement: CfirElement, element: CjElement): CfirElement? {
         val elementToSearch = getPsiAsCfirElementSource(element) ?: return null
-        val mapping = CfirElementsRecorder.recordElementsFrom(firElement, CfirElementsRecorder())
+        val mapping = CfirElementsRecorder.recordElementsFrom(cfirElement, CfirElementsRecorder())
         return CjToCfirMapping.getCfir(elementToSearch, moduleComponents.session, mapping)
     }
 

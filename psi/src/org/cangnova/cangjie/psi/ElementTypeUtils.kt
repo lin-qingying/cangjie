@@ -26,6 +26,8 @@ package org.cangnova.cangjie.psi
 
 import org.cangnova.cangjie.psi.CjNodeTypes.DOT_QUALIFIED_EXPRESSION
 import org.cangnova.cangjie.psi.CjNodeTypes.FUNC
+import org.cangnova.cangjie.psi.CjNodeTypes.OPTIONAL_CHAIN_EXPRESSION
+import org.cangnova.cangjie.psi.CjNodeTypes.OPTIONAL_EXPRESSION
 import org.cangnova.cangjie.psi.CjNodeTypes.REFERENCE_EXPRESSION
 import org.cangnova.cangjie.lexer.CangJieLexer
 import org.cangnova.cangjie.lexer.CjSingleValueToken
@@ -70,6 +72,8 @@ object ElementTypeUtils {
     private val expressionSet = listOf(
         REFERENCE_EXPRESSION,
         DOT_QUALIFIED_EXPRESSION,
+        OPTIONAL_EXPRESSION,
+        OPTIONAL_CHAIN_EXPRESSION,
 
         FUNC,
     )

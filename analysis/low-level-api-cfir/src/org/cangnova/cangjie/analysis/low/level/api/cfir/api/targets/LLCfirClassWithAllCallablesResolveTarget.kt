@@ -15,8 +15,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirClass
  */
 internal class LLCfirClassWithAllCallablesResolveTarget(designation: CfirDesignation) : LLCfirClassResolveTarget(designation) {
     override val visitClass: Boolean get() = true
-    override fun visitMembers(visitor: LLCfirResolveTargetVisitor, firClass: CfirClass) {
-        firClass.forEachDeclaration {
+    override fun visitMembers(visitor: LLCfirResolveTargetVisitor, cfirClass: CfirClass) {
+        cfirClass.forEachDeclaration {
             if (it is CfirCallableDeclaration) {
                 visitor.performAction(it)
             }

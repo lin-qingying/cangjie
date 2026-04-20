@@ -30,24 +30,24 @@ internal abstract class ModuleFileCache {
 
     abstract fun getContainerCfirFile(declaration: CfirDeclaration): CfirFile?
 
-    abstract fun getCachedCfirFile(ktFile: CjFile): CfirFile?
+    abstract fun getCachedCfirFile(cjFile: CjFile): CfirFile?
 
     @LLStatisticsOnlyApi
     abstract fun getAllCachedCfirFiles(): Collection<CfirFile>
 }
 
 internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleResolveComponents) : ModuleFileCache() {
-    private val ktFileToCfirFile: ConcurrentMap<CjFile, CfirFile> = MapMaker().weakKeys().makeMap()
+    private val cjFileToCfirFile: ConcurrentMap<CjFile, CfirFile> = MapMaker().weakKeys().makeMap()
     override fun fileCached(file: CjFile, createValue: () -> CfirFile): CfirFile =
-        ktFileToCfirFile.computeIfAbsent(file) { createValue() }
+        cjFileToCfirFile.computeIfAbsent(file) { createValue() }
 
-    override fun getCachedCfirFile(ktFile: CjFile): CfirFile? = ktFileToCfirFile[ktFile]
+    override fun getCachedCfirFile(cjFile: CjFile): CfirFile? = cjFileToCfirFile[cjFile]
 
     override fun getContainerCfirFile(declaration: CfirDeclaration): CfirFile? {
-        val ktFile = declaration.psi?.containingFile as? CjFile ?: return null
-        return getCachedCfirFile(ktFile)
+        val cjFile = declaration.psi?.containingFile as? CjFile ?: return null
+        return getCachedCfirFile(cjFile)
     }
 
     @LLStatisticsOnlyApi
-    override fun getAllCachedCfirFiles(): Collection<CfirFile> = ktFileToCfirFile.values
+    override fun getAllCachedCfirFiles(): Collection<CfirFile> = cjFileToCfirFile.values
 }

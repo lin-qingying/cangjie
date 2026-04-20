@@ -1,12 +1,15 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.components.asCaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.components.renderAnnotations
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.location
+import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirMemberFunctionSymbolPointer
+import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.createOwnerPointer
 import org.cangnova.cangjie.analysis.api.impl.base.util.callableId
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
@@ -18,8 +21,10 @@ import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
+import org.cangnova.cangjie.analysis.api.symbols.markers.CaDeclarationContainerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.CfirCallableSignature
 import org.cangnova.cangjie.cfir.containingClassLookupTag
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.util.isOperator
@@ -37,7 +42,7 @@ import kotlin.toString
 /**
  * 命名函数族叶子实现。
  *
- * 对齐 Kotlin FIR 中 `CaCfirNamedFunctionSymbol`、入口函数及类似特殊命名函数的分文件落位，
+ * 对齐 Kotlin FIR 中 `KaFirNamedFunctionSymbol`、入口函数及类似特殊命名函数的分文件落位，
  * 保持仓颉函数公开语义不变，只收敛 CFIR 后端组织方式。
  */
 internal class CaCfirNamedFunctionSymbol private constructor(
@@ -105,7 +110,9 @@ internal class CaCfirNamedFunctionSymbol private constructor(
 
 
     override fun createPointer(): CaSymbolPointer<CaNamedFunctionSymbol> = withValidityAssertion {
-        psiBasedSymbolPointerOfTypeIfSource<CaNamedFunctionSymbol>()?.let { return it }
+        psiBasedSymbolPointerOfTypeIfSource<CaNamedFunctionSymbol> { psi ->
+            getPublicSymbolByPsi(psi)
+        }?.let { return it }
 
         when (val kind = location) {
             CaSymbolLocation.TOP_LEVEL -> CaCfirTopLevelFunctionSymbolPointer(
@@ -158,6 +165,15 @@ internal class CaCfirNamedFunctionSymbol private constructor(
         }
     }
 
+}
+
+@OptIn(CaImplementationDetail::class)
+private fun CaCfirNamedFunctionSymbol.createMemberFunctionPointer(): CaSymbolPointer<CaNamedFunctionSymbol> {
+    return CaCfirMemberFunctionSymbolPointer(
+        ownerPointer = analysisSession.createOwnerPointer<CaDeclarationContainerSymbol>(this),
+        name = name,
+        signature = CfirCallableSignature.createSignature(cfirSymbol),
+    )
 }
 
 internal class CaCfirMainFunctionSymbolImpl(
@@ -279,7 +295,7 @@ internal class CaCfirMacroSymbolImpl(
 /**
  * 命名函数 PSI 到 CFIR 函数符号的懒恢复入口。
  *
- * 这里保持和 Kotlin `lazyCfirSymbol(declaration, session)` 同一职责：
+ * 这里保持和 Kotlin `lazyFirSymbol(declaration, session)` 同一职责：
  * 只负责把 declaration 懒绑定到同类后端符号，不在这里再发明额外恢复协议。
  */
 private fun lazyNamedFunctionSymbol(

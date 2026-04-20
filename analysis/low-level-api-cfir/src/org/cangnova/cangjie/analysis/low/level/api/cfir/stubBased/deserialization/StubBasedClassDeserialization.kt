@@ -8,39 +8,45 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserializati
 import com.intellij.extapi.psi.StubBasedPsiElementBase
 import com.intellij.psi.stubs.Stub
 import com.intellij.psi.stubs.StubElement
-import org.cangnova.cangjie.descriptors.*
-import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.common.CfirModuleData
-import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.declarations.builder.CfirRegularClassBuilder
-import org.cangnova.cangjie.cfir.declarations.builder.buildOuterClassTypeParameterRef
-import org.cangnova.cangjie.cfir.declarations.builder.buildRegularClass
-import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
-import org.cangnova.cangjie.cfir.declarations.comparators.CfirMemberDeclarationComparator
-import org.cangnova.cangjie.cfir.declarations.impl.CfirResolvedDeclarationStatusImpl
-import org.cangnova.cangjie.cfir.declarations.impl.CfirResolvedDeclarationStatusWithLazyEffectiveVisibility
-import org.cangnova.cangjie.cfir.declarations.utils.*
-import org.cangnova.cangjie.cfir.deserialization.addCloneForArrayIfNeeded
-import org.cangnova.cangjie.cfir.deserialization.deserializationExtension
-import org.cangnova.cangjie.cfir.deserialization.toLazyEffectiveVisibility
-import org.cangnova.cangjie.cfir.resolve.transformers.setLazyPublishedVisibility
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
+import org.cangnova.cangjie.cfir.declarations.builder.buildClass
+import org.cangnova.cangjie.cfir.declarations.builder.buildEnum
+import org.cangnova.cangjie.cfir.declarations.builder.buildInterface
+import org.cangnova.cangjie.cfir.declarations.builder.buildStruct
+import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeRigidType
-import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.coneType
-import org.cangnova.cangjie.cfir.types.impl.ConeClassLikeTypeImpl
-import org.cangnova.cangjie.cfir.types.toLookupTag
-import org.cangnova.cangjie.cfir.utils.exceptions.withConeTypeEntry
-import org.cangnova.cangjie.cfir.utils.exceptions.withCfirEntry
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
+import org.cangnova.cangjie.descriptors.Modality
+import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.name.StandardClassIds
-import org.cangnova.cangjie.psi.*
-import org.cangnova.cangjie.psi.stubs.impl.KotlinClassStubImpl
+import org.cangnova.cangjie.psi.CjClass
+import org.cangnova.cangjie.psi.CjConstructor
+import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjModifierListOwner
+import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjProperty
+import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.serialization.deserialization.descriptors.DeserializedContainerSource
+import org.cangnova.cangjie.source.CjRealPsiSourceElement
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
@@ -64,233 +70,192 @@ internal val CjDeclaration.modality: Modality
         else -> Modality.FINAL
     }
 
-/**
- * Gets or calculates stub for [this] element and casts it to [S].
- *
- * [S] has to be a real stub implementation class. For instance, for [CjNamedFunction] it has to be [org.cangnova.cangjie.psi.stubs.impl.KotlinFunctionStubImpl].
- *
- * @return compiled stub
- */
-internal inline val <T, reified S> T.compiledStub: S where T : StubBasedPsiElementBase<in S>, T : CjElement, S : StubElement<*>
+internal inline val <T, reified S> T.compiledStub: S
+        where T : StubBasedPsiElementBase<in S>, T : CjElement, S : StubElement<*>
     get() = (this.greenStub ?: calculateStub()) as S
 
-private fun <S, T> T.calculateStub(): Stub where T : StubBasedPsiElementBase<in S>, T : CjElement, S : StubElement<*> {
-    val ktFile = containingCjFile
-    requireWithAttachment(ktFile.isCompiled, { "Expected compiled file" }) {
-        withPsiEntry("ktFile", ktFile)
+private fun <S, T> T.calculateStub(): Stub
+        where T : StubBasedPsiElementBase<in S>, T : CjElement, S : StubElement<*> {
+    val cjFile = containingCjFile
+    requireWithAttachment(cjFile.isCompiled, { "Expected compiled file" }) {
+        withPsiEntry("cjFile", cjFile)
     }
 
-    // `let` is used to hold the stub tree reference on the stack
-    return ktFile.calcStubTree().let {
+    return cjFile.calcStubTree().let {
         val stub = greenStub
         requireWithAttachment(stub != null, { "Stub should be not null" }) {
             withPsiEntry("file", containingFile)
             withPsiEntry("element", this@calculateStub)
         }
-
         stub
     }
 }
 
+/**
+ * 对齐 Kotlin `deserializeClassToSymbol` 的职责边界：
+ * 负责把 compiled PSI/stub 中的 class-like 声明装配成已分析依赖阶段的 declaration。
+ *
+ * 仓颉边界在这里明确收紧：
+ * 1. 不承载 local/nested class-like。
+ * 2. 不承载 enum entry、published api、effective visibility、clone/synthetic members。
+ * 3. 不额外引入 deserialization extension 或 comparator 子系统。
+ */
+@Suppress("UNUSED_PARAMETER")
 internal fun deserializeClassToSymbol(
     classId: ClassId,
     classOrObject: CjTypeStatement,
-    symbol: CfirRegularClassSymbol,
+    symbol: CfirClassLikeSymbol<*>,
     session: CfirSession,
     moduleData: CfirModuleData,
     defaultAnnotationDeserializer: StubBasedAnnotationDeserializer?,
     scopeProvider: CfirScopeProvider,
     parentContext: StubBasedCfirDeserializationContext? = null,
     containerSource: DeserializedContainerSource? = null,
-    deserializeNestedClassLikeDeclaration: (ClassId, CjClassLikeDeclaration, StubBasedCfirDeserializationContext) -> CfirClassLikeSymbol<*>?,
     initialOrigin: CfirDeclarationOrigin,
 ) {
-    val kind = when (classOrObject) {
-        is CjObjectDeclaration -> ClassKind.CLASS
-        is CjClass -> when {
-            classOrObject.isInterface() -> ClassKind.INTERFACE
-            classOrObject.isEnum() -> ClassKind.ENUM_CLASS
-            else -> ClassKind.CLASS
+    val annotationDeserializer = defaultAnnotationDeserializer ?: StubBasedAnnotationDeserializer(session)
+    val context = parentContext?.childContext(
+        classOrObject,
+        classId.relativeClassName,
+        containerSource,
+        symbol,
+        annotationDeserializer,
+        capturesTypeParameters = false,
+    ) ?: StubBasedCfirDeserializationContext.createForClass(
+        classId,
+        classOrObject,
+        moduleData,
+        annotationDeserializer,
+        containerSource,
+        symbol,
+        initialOrigin,
+    )
+
+    val status = buildResolvedStatus(classOrObject.visibility, classOrObject.modality)
+    val typeParameters = context.typeDeserializer.ownTypeParameters.map { it.cfir }
+    val superTypeRefs = mutableListOf<CfirTypeRef>()
+    val declarations = mutableListOf<CfirDeclaration>()
+
+    val superTypeList = classOrObject.getSuperTypeList()
+    if (superTypeList != null) {
+        superTypeRefs += superTypeList.entries.map { superTypeReference ->
+            context.typeDeserializer.typeRef(
+                superTypeReference.typeReference
+                    ?: errorWithAttachment("Super entry doesn't have type reference") {
+                        withPsiEntry("superTypeReference", superTypeReference)
+                    }
+            )
         }
-        else -> errorWithAttachment("Unexpected class or object: ${classOrObject::class}") {
-            withPsiEntry("class", classOrObject)
+    } else if (classId != StdlibClassIds.Any) {
+        superTypeRefs += ConeClassLikeType(StdlibClassIds.Any.toLookupTag(), isInterface = true).toCfirResolvedTypeRef()
+    }
+
+    classOrObject.primaryConstructor?.let { constructor ->
+        declarations += context.memberDeserializer.loadConstructor(constructor, classOrObject, symbol, typeParameters)
+    }
+
+    classOrObject.body?.declarations?.forEach { declaration ->
+        when (declaration) {
+            is CjConstructor<*> -> declarations += context.memberDeserializer.loadConstructor(declaration, classOrObject, symbol, typeParameters)
+            is CjNamedFunction -> declarations += context.memberDeserializer.loadFunction(declaration, symbol, session)
+            is CjProperty -> declarations += context.memberDeserializer.loadProperty(declaration, symbol)
         }
     }
-    val modality = classOrObject.modality
-    val visibility = classOrObject.visibility
-    val status = CfirResolvedDeclarationStatusWithLazyEffectiveVisibility(
-        visibility,
-        modality,
-        visibility.toLazyEffectiveVisibility(parentContext?.outerClassSymbol, session, forClass = true)
+
+    val sortedDeclarations = declarations.sortedWith(
+        compareBy<CfirDeclaration>(
+            { declarationOrderKey(it) },
+            { (it as? CfirMemberDeclaration)?.symbol?.debugName ?: "" },
+        )
     )
-    val annotationDeserializer = defaultAnnotationDeserializer ?: StubBasedAnnotationDeserializer(session)
-    val context =
-        parentContext?.childContext(
-            classOrObject,
-            classId.relativeClassName,
-            containerSource,
-            symbol,
-            annotationDeserializer,
-            false
-        ) ?: StubBasedCfirDeserializationContext.createForClass(
-            classId,
-            classOrObject,
-            moduleData,
-            annotationDeserializer,
-            containerSource,
-            symbol,
-            initialOrigin
-        )
-    buildRegularClass {
-        source = CjRealPsiSourceElement(classOrObject)
-        this.moduleData = moduleData
-        this.origin = initialOrigin
-        name = classId.shortClassName
-        this.status = status
-        classKind = kind
-        this.scopeProvider = scopeProvider
-        this.symbol = symbol
 
-        resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
-
-        typeParameters += context.typeDeserializer.ownTypeParameters.map { it.fir }
-
-        val typeDeserializer = context.typeDeserializer
-        val memberDeserializer = context.memberDeserializer
-
-        val superTypeList = classOrObject.getSuperTypeList()
-        if (superTypeList != null) {
-            superTypeRefs.addAll(superTypeList.entries.map { superTypeReference ->
-                typeDeserializer.typeRef(
-                    superTypeReference.typeReference
-                        ?: errorWithAttachment("Super entry doesn't have type reference") {
-                            withPsiEntry("superTypeReference", superTypeReference)
-                        }
-                )
-            })
-        } else if (StandardClassIds.Any != classId && StandardClassIds.Nothing != classId) {
-            superTypeRefs.add(session.builtinTypes.anyType)
+    when (symbol) {
+        is CfirClassSymbol -> buildClass {
+            source = CjRealPsiSourceElement(classOrObject)
+            this.moduleData = moduleData
+            resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
+            origin = initialOrigin
+            attributes = CfirDeclarationAttributes.EMPTY
+            deprecationsProvider = EmptyDeprecationsProvider
+            name = classId.shortClassName
+            this.status = status
+            this.symbol = symbol
+            this.typeParameters += typeParameters
+            this.superTypeRefs += superTypeRefs
+            this.declarations += sortedDeclarations
+            annotations += context.annotationDeserializer.loadAnnotations(classOrObject, symbol)
         }
 
-        classOrObject.primaryConstructor?.let { constructor ->
-            addDeclaration(memberDeserializer.loadConstructor(constructor, classOrObject, this))
+        is CfirInterfaceSymbol -> buildInterface {
+            source = CjRealPsiSourceElement(classOrObject)
+            this.moduleData = moduleData
+            resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
+            origin = initialOrigin
+            attributes = CfirDeclarationAttributes.EMPTY
+            deprecationsProvider = EmptyDeprecationsProvider
+            name = classId.shortClassName
+            this.status = status
+            this.symbol = symbol
+            this.typeParameters += typeParameters
+            this.superTypeRefs += superTypeRefs
+            this.declarations += sortedDeclarations
+            annotations += context.annotationDeserializer.loadAnnotations(classOrObject, symbol)
         }
 
-        classOrObject.body?.declarations?.forEach { declaration ->
-            when (declaration) {
-                is CjConstructor<*> -> addDeclaration(memberDeserializer.loadConstructor(declaration, classOrObject, this))
-                is CjNamedFunction -> addDeclaration(memberDeserializer.loadFunction(declaration, symbol, session))
-                is CjProperty -> addDeclaration(
-                    memberDeserializer.loadProperty(
-                        property = declaration,
-                        classSymbol = symbol,
-                    )
-                )
-                is CjEnumEntry -> addDeclaration(memberDeserializer.loadEnumEntry(declaration, symbol, classId))
-                is CjTypeStatement,
-                is CjTypeAlias
-                    -> {
-                    val name = declaration.name
-                        ?: errorWithAttachment("${if (declaration is CjTypeStatement) "Class" else "Typealias"} doesn't have name") {
-                            withPsiEntry(if (declaration is CjTypeStatement) "Class" else "Typealias", declaration)
-                        }
-
-                    val nestedClassId = classId.createNestedClassId(Name.identifier(name))
-                    // Add declaration to the context to avoid redundant provider access to the class/typealias map
-                    deserializeNestedClassLikeDeclaration(
-                        nestedClassId,
-                        declaration,
-                        context.withClassLikeDeclaration(declaration),
-                    )?.fir?.let(this::addDeclaration)
-                }
-            }
+        is CfirStructSymbol -> buildStruct {
+            source = CjRealPsiSourceElement(classOrObject)
+            this.moduleData = moduleData
+            resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
+            origin = initialOrigin
+            attributes = CfirDeclarationAttributes.EMPTY
+            deprecationsProvider = EmptyDeprecationsProvider
+            name = classId.shortClassName
+            this.status = status
+            this.symbol = symbol
+            this.typeParameters += typeParameters
+            this.superTypeRefs += superTypeRefs
+            this.declarations += sortedDeclarations
+            annotations += context.annotationDeserializer.loadAnnotations(classOrObject, symbol)
         }
 
-        if (classKind == ClassKind.ENUM_CLASS) {
-            generateValuesFunction(
-                moduleData,
-                classId.packageFqName,
-                classId.relativeClassName,
-                origin = initialOrigin
-            )
-            generateValueOfFunction(moduleData, classId.packageFqName, classId.relativeClassName, origin = initialOrigin)
-            generateEntriesGetter(moduleData, classId.packageFqName, classId.relativeClassName, origin = initialOrigin)
+        is CfirEnumSymbol -> buildEnum {
+            source = CjRealPsiSourceElement(classOrObject)
+            this.moduleData = moduleData
+            resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
+            origin = initialOrigin
+            attributes = CfirDeclarationAttributes.EMPTY
+            deprecationsProvider = EmptyDeprecationsProvider
+            name = classId.shortClassName
+            this.status = status
+            this.symbol = symbol
+            this.typeParameters += typeParameters
+            this.superTypeRefs += superTypeRefs
+            this.declarations += sortedDeclarations
+            this.isRefEnum = symbol.isRefEnum
+            annotations += context.annotationDeserializer.loadAnnotations(classOrObject, symbol)
         }
 
-        addCloneForArrayIfNeeded(classId, context.dispatchReceiver, session)
-
-        if (classId == StandardClassIds.Enum) {
-            addCloneForEnumIfNeeded(classOrObject, context.dispatchReceiver)
+        else -> errorWithAttachment("Unexpected class-like symbol: ${symbol::class}") {
+            withPsiEntry("classOrObject", classOrObject)
         }
-
-        session.deserializationExtension?.run {
-            configureDeserializedClass(classId)
-        }
-
-        declarations.sortWith(object : Comparator<CfirDeclaration> {
-            override fun compare(a: CfirDeclaration, b: CfirDeclaration): Int {
-                // Reorder members based on their type and name only.
-                // See FE 1.0's [DeserializedMemberScope#addMembers].
-                if (a is CfirMemberDeclaration && b is CfirMemberDeclaration) {
-                    return CfirMemberDeclarationComparator.TypeAndNameComparator.compare(a, b)
-                }
-                return 0
-            }
-        })
-    }.apply {
-        if (classOrObject is CjClass) {
-            val classStub: KotlinClassStubImpl = classOrObject.compiledStub
-            val clsStubCompiledToJvmDefaultImplementation = classStub.isClsStubCompiledToJvmDefaultImplementation
-            if (clsStubCompiledToJvmDefaultImplementation) {
-                symbol.cfir.isNewPlaceForBodyGeneration = true
-            }
-        }
-
-        replaceAnnotations(context.annotationDeserializer.loadAnnotations(classOrObject))
-
-        sourceElement = containerSource
-
-        replaceDeprecationsProvider(getDeprecationsProvider(session))
-
-        setLazyPublishedVisibility(
-            hasPublishedApi = classOrObject.annotationEntries.any { StubBasedAnnotationDeserializer.getAnnotationClassId(it) == StandardClassIds.Annotations.PublishedApi },
-            parentProperty = null,
-            session
-        )
     }
 }
 
-private fun CfirRegularClassBuilder.addCloneForEnumIfNeeded(classOrObject: CjTypeStatement, dispatchReceiver: ConeClassLikeType?) {
-    val hasCloneFunction = classOrObject.declarations
-        .any { it is CjNamedFunction && it.name == "clone" && it.valueParameters.isEmpty() }
-
-    if (hasCloneFunction) {
-        return
+private fun buildResolvedStatus(visibility: Visibility, modality: Modality): CfirDeclarationStatusImpl {
+    return CfirDeclarationStatusImpl(visibility, modality).apply {
+        isVisibilityExplicit = visibility != Visibilities.Public
+        isModalityExplicit = modality != Modality.FINAL
+        isAbstract = modality == Modality.ABSTRACT
+        isOpen = modality == Modality.OPEN
+        isSealed = modality == Modality.SEALED
     }
+}
 
-    val anyLookupId = StandardClassIds.Any.toLookupTag()
-    val cloneCallableId = StandardClassIds.Callables.clone
-
-    declarations += buildNamedFunction {
-        moduleData = this@addCloneForEnumIfNeeded.moduleData
-        origin = this@addCloneForEnumIfNeeded.origin
-        source = this@addCloneForEnumIfNeeded.source
-
-        resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
-
-        returnTypeRef = buildResolvedTypeRef {
-            coneType = ConeClassLikeTypeImpl(anyLookupId, typeArguments = emptyArray(), isMarkedNullable = false)
-        }
-
-        status = CfirResolvedDeclarationStatusImpl(
-            Visibilities.Protected,
-            Modality.FINAL,
-            EffectiveVisibility.Protected(anyLookupId)
-        )
-        isLocal = false
-
-        name = cloneCallableId.callableName
-        symbol = CfirNamedFunctionSymbol(cloneCallableId)
-        dispatchReceiverType = dispatchReceiver!!
+private fun declarationOrderKey(declaration: CfirDeclaration): Int {
+    return when (declaration) {
+        is org.cangnova.cangjie.cfir.declarations.CfirConstructor -> 0
+        is org.cangnova.cangjie.cfir.declarations.CfirProperty -> 1
+        is org.cangnova.cangjie.cfir.declarations.CfirNamedFunction -> 2
+        else -> 3
     }
 }

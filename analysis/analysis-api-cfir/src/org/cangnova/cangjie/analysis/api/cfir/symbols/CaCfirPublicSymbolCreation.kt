@@ -3,7 +3,6 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols
 import org.cangnova.cangjie.analysis.api.cfir.*
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirScriptSymbolImpl
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
@@ -11,7 +10,6 @@ import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaScriptSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
@@ -27,7 +25,6 @@ import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjFile
-import org.cangnova.cangjie.psi.CjScript
 import org.cangnova.cangjie.source.psi
 
 /**
@@ -137,17 +134,12 @@ internal fun CaCfirSession.createPropertyAccessorSymbol(
     }
 }
 
-internal fun CaCfirSession.createScriptSymbol(script: CjScript): CaCfirScriptSymbolImpl =
-    getOrCreatePublicSymbol(CaCfirPsiSymbolCacheKey(script, CaCfirPsiSymbolKind.SCRIPT)) {
-        constructScriptSymbol(script)
-    }
-
 /**
  * 这些 `construct*` helper 只负责“按既定语义构造 public symbol 实例”，
  * 不负责 cache key 选择，也不负责 restore/query。
  *
  * 这样 `CaSymbolByCfirBuilder` 可以专注在 classifier/callable/type 的叶子构造，
- * package/file/script/extend 这类更靠近 session symbol 子系统入口的构造，
+ * package/file/extend 这类更靠近 session symbol 子系统入口的构造，
  * 就落回 `cfir.symbols`，避免 builder 继续向“中心化工厂”膨胀。
  */
 internal fun CaCfirSession.constructPackageSymbol(fqName: FqName): CaPackageSymbol =
@@ -164,15 +156,6 @@ internal fun CaCfirSession.constructFileSymbol(file: CjFile): CaFileSymbol {
         ?: error("Cannot build low-level file symbol for `${file.name}`")
     return CaCfirFileSymbolImpl(fileSymbol, file, useSiteModule, token)
 }
-
-internal fun CaCfirSession.constructScriptSymbol(script: CjScript): CaCfirScriptSymbolImpl =
-    CaCfirScriptSymbolImpl(
-        scriptPsi = script,
-        scriptFileSymbol = script.containingCjFile?.let(::constructFileSymbol),
-        analysisSession = this,
-        containingModule = useSiteModule,
-        token = token,
-    )
 
 internal fun CaCfirSession.constructExtendSymbol(symbol: CfirExtendSymbol): CaExtendSymbol {
     val identity = resolveExtendIdentity(symbol)

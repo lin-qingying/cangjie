@@ -335,6 +335,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/opAndIfExpressions.cj")
             }
 
+            @TestMetadata("optionalChainAccess.cj")
+            fun testOptionalChainAccess() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/optionalChainAccess.cj")
+            }
+
             @TestMetadata("rangeExpression.cj")
             fun testRangeExpression() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/rangeExpression.cj")
@@ -433,6 +438,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
             @TestMetadata("nestedFunctionAndTupleTypes.cj")
             fun testNestedFunctionAndTupleTypes() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/types/type-references/nestedFunctionAndTupleTypes.cj")
+            }
+
+            @TestMetadata("optionalTypeRefs.cj")
+            fun testOptionalTypeRefs() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/types/type-references/optionalTypeRefs.cj")
             }
 
             @TestMetadata("typeAliasRefsOfficial.cj")

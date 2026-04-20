@@ -37,9 +37,6 @@ object StandardNames {
     val DEFAULT_VALUE_PARAMETER = Name.identifier("value")
 
     @JvmField
-    val BUILT_INS_PACKAGE_NAME = Name.identifier("cangjie")
-
-    @JvmField
     val NAME = Name.identifier("name")
 
     val rangeOfName = Name.identifier("rangeOf")
@@ -438,6 +435,7 @@ object StandardNames {
         @JvmField
         val sync: FqName = FqName.topLevel(STD_PACKAGE_NAME).child(SYNC_PACKAGE_NAME)
 
+        /** 标准库类型 `std.core.Any` 的 FqName。 */
         @JvmField
         val anyFqName: FqName = core.child(ANY)
 
@@ -462,12 +460,14 @@ object StandardNames {
         @JvmField
         val resumptionFqName: FqName = effect.child(RESUMPTION)
 
+        /** 标准库类型 `std.core.Object` 的 FqName。 */
         @JvmField
         val objectFqName: FqName = core.child(OBJECT)
 
         @JvmField
         val objectUFqName: FqNameUnsafe = objectFqName.toUnsafe()
 
+        /** 标准库类型 `std.core.Option` 的 FqName。 */
         @JvmField
         val optionFqName: FqName = core.child(OPTION)
 
@@ -495,21 +495,25 @@ object StandardNames {
         @JvmField
         val futureFqName: FqName = core.child(FUTURE)
 
+        /** 标准库类型 `std.core.Range` 的 FqName。 */
         @JvmField
         val rangeFqName: FqName = core.child(RANGE)
 
+        /** 标准库类型 `std.core.String` 的 FqName。 */
         @JvmField
         val stringFqName: FqName = core.child(STRING)
 
         @JvmField
         val stringUFqName: FqNameUnsafe = stringFqName.toUnsafe()
 
+        /** 标准库类型 `std.core.Array` 的 FqName。 */
         @JvmField
         val arrayFqName: FqName = core.child(ARRAY)
 
         @JvmField
         val arrayUFqName: FqNameUnsafe = arrayFqName.toUnsafe()
 
+        /** 基本类型 `Nothing` 的 FqName，位于空包。 */
         @JvmField
         val nothingFqName: FqName = fqName(NOTHING)
 
@@ -522,12 +526,14 @@ object StandardNames {
         @JvmField
         val toStringUFqName: FqNameUnsafe = nothingFqName.toUnsafe()
 
+        /** 基本类型 `Rune` 的 FqName，位于空包。 */
         @JvmField
         val runeFqName: FqName = fqName(RUNE)
 
         @JvmField
         val runeUFqName: FqNameUnsafe = runeFqName.toUnsafe()
 
+        /** 基本类型 `Unit` 的 FqName，位于空包。 */
         @JvmField
         val unitFqName = fqName(UNIT)
 
@@ -535,30 +541,35 @@ object StandardNames {
         val unitUFqName = unitFqName.toUnsafe()
 
         /***************************Int***************************/
+        /** 基本类型 `Int8` 的 FqName，位于空包。 */
         @JvmField
         val int8FqName: FqName = fqName(INT8)
 
         @JvmField
         val int8UFqName: FqNameUnsafe = int8FqName.toUnsafe()
 
+        /** 基本类型 `Int16` 的 FqName，位于空包。 */
         @JvmField
         val int16FqName: FqName = fqName(INT16)
 
         @JvmField
         val int16UFqName: FqNameUnsafe = int16FqName.toUnsafe()
 
+        /** 基本类型 `Int32` 的 FqName，位于空包。 */
         @JvmField
         val int32FqName: FqName = fqName(INT32)
 
         @JvmField
         val int32UFqName: FqNameUnsafe = int32FqName.toUnsafe()
 
+        /** 基本类型 `Int64` 的 FqName，位于空包。 */
         @JvmField
         val int64FqName: FqName = fqName(INT64)
 
         @JvmField
         val int64UFqName: FqNameUnsafe = int64FqName.toUnsafe()
 
+        /** 基本类型 `IntNative` 的 FqName，位于空包。 */
         @JvmField
         val int_nativeFqName: FqName = fqName(INT_NATIVE)
 
@@ -566,30 +577,35 @@ object StandardNames {
         val int_nativeUFqName: FqNameUnsafe = int_nativeFqName.toUnsafe()
 
         /***************************UInt***************************/
+        /** 基本类型 `UInt8` 的 FqName，位于空包。 */
         @JvmField
         val uint8FqName: FqName = fqName(UINT8)
 
         @JvmField
         val uint8UFqName: FqNameUnsafe = uint8FqName.toUnsafe()
 
+        /** 基本类型 `UInt16` 的 FqName，位于空包。 */
         @JvmField
         val uint16FqName: FqName = fqName(UINT16)
 
         @JvmField
         val uint16UFqName: FqNameUnsafe = uint16FqName.toUnsafe()
 
+        /** 基本类型 `UInt32` 的 FqName，位于空包。 */
         @JvmField
         val uint32FqName: FqName = fqName(UINT32)
 
         @JvmField
         val uint32UFqName: FqNameUnsafe = uint32FqName.toUnsafe()
 
+        /** 基本类型 `UInt64` 的 FqName，位于空包。 */
         @JvmField
         val uint64FqName: FqName = fqName(UINT64)
 
         @JvmField
         val uint64UFqName: FqNameUnsafe = uint64FqName.toUnsafe()
 
+        /** 基本类型 `UIntNative` 的 FqName，位于空包。 */
         @JvmField
         val uint_nativeFqName: FqName = fqName(UINT_NATIVE)
 
@@ -597,6 +613,7 @@ object StandardNames {
         val uint_nativeUFqName: FqNameUnsafe = uint_nativeFqName.toUnsafe()
 
         /***************************Bool***************************/
+        /** 基本类型 `Bool` 的 FqName，位于空包。 */
         @JvmField
         val boolFqName: FqName = fqName(BOOL)
 
@@ -605,18 +622,21 @@ object StandardNames {
 
         /***************************Float***************************/
 
+        /** 基本类型 `Float16` 的 FqName，位于空包。 */
         @JvmField
         val float16FqName: FqName = fqName(FLOAT16)
 
         @JvmField
         val float16UFqName: FqNameUnsafe = float16FqName.toUnsafe()
 
+        /** 基本类型 `Float32` 的 FqName，位于空包。 */
         @JvmField
         val float32FqName: FqName = fqName(FLOAT32)
 
         @JvmField
         val float32UFqName: FqNameUnsafe = float32FqName.toUnsafe()
 
+        /** 基本类型 `Float64` 的 FqName，位于空包。 */
         @JvmField
         val float64FqName: FqName = fqName(FLOAT64)
 

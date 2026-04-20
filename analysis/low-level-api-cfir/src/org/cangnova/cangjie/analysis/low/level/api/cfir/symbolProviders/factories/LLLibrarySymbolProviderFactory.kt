@@ -11,7 +11,8 @@ import org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrig
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.load.kotlin.PackagePartProvider
+
+internal typealias LLPackagePartProvider = Any
 
 /**
  * [LLLibrarySymbolProviderFactory] creates symbol providers in accordance with [CaPlatformSettings.deserializedDeclarationsOrigin].
@@ -20,13 +21,13 @@ import org.cangnova.cangjie.load.kotlin.PackagePartProvider
 internal interface LLLibrarySymbolProviderFactory {
     fun createJvmLibrarySymbolProvider(
         session: LLCfirSession,
-        packagePartProvider: PackagePartProvider,
+        packagePartProvider: LLPackagePartProvider,
         scope: GlobalSearchScope,
     ): List<CfirSymbolProvider>
 
     fun createCommonLibrarySymbolProvider(
         session: LLCfirSession,
-        packagePartProvider: PackagePartProvider,
+        packagePartProvider: LLPackagePartProvider,
         scope: GlobalSearchScope,
     ): List<CfirSymbolProvider>
 

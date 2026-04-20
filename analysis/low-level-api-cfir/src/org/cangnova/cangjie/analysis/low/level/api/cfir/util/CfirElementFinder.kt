@@ -25,44 +25,44 @@ import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 internal class CfirElementFinder : CfirSessionComponent {
     companion object {
         fun findClassifierWithClassId(
-            firFile: CfirFile,
+            cfirFile: CfirFile,
             classId: ClassId,
         ): CfirClassLikeDeclaration? = collectDesignationPath(
-            firFile = firFile,
+            cfirFile = cfirFile,
             containerClassId = null,
             targetDeclarationName = classId.shortClassName,
             expectedDeclarationAcceptor = { it is CfirClassLikeDeclaration },
         )?.target?.let { it as CfirClassLikeDeclaration }
 
         fun collectDesignationPath(
-            firFile: CfirFile,
+            cfirFile: CfirFile,
             declarationContainerClassId: ClassId?,
             targetMemberDeclaration: CfirDeclaration,
         ): CfirDesignation? = collectDesignationPath(
-            firFile = firFile,
+            cfirFile = cfirFile,
             containerClassId = declarationContainerClassId,
             targetDeclarationName = CfirFileStructureNode.mappingName(targetMemberDeclaration),
             expectedDeclarationAcceptor = { it == targetMemberDeclaration },
         )
 
-        fun findDeclaration(firFile: CfirFile, nonLocalDeclaration: CjDeclaration): CfirDeclaration? = collectDesignationPath(
-            firFile = firFile,
+        fun findDeclaration(cfirFile: CfirFile, nonLocalDeclaration: CjDeclaration): CfirDeclaration? = collectDesignationPath(
+            cfirFile = cfirFile,
             nonLocalDeclaration = nonLocalDeclaration,
         )?.declarationTarget
 
         fun findPathToDeclarationWithTarget(
-            firFile: CfirFile,
+            cfirFile: CfirFile,
             nonLocalDeclaration: CjDeclaration,
         ): List<CfirDeclaration>? = collectDesignationPath(
-            firFile = firFile,
+            cfirFile = cfirFile,
             nonLocalDeclaration = nonLocalDeclaration,
         )?.let { it.path + it.declarationTarget }
 
         fun collectDesignationPath(
-            firFile: CfirFile,
+            cfirFile: CfirFile,
             nonLocalDeclaration: CjDeclaration,
         ): CfirDesignation? = collectDesignationPath(
-            firFile = firFile,
+            cfirFile = cfirFile,
             containerClassId = nonLocalDeclaration.containingTypeStatement?.getClassId(),
             targetDeclarationName = CfirFileStructureNode.mappingNameByPsi(nonLocalDeclaration),
             expectedDeclarationAcceptor = { it.psi == nonLocalDeclaration },
@@ -99,26 +99,26 @@ internal class CfirElementFinder : CfirSessionComponent {
          * @see declarationTarget
          */
         private fun collectDesignationPath(
-            firFile: CfirFile,
+            cfirFile: CfirFile,
             containerClassId: ClassId?,
             targetDeclarationName: Name?,
             expectedDeclarationAcceptor: (CfirDeclaration) -> Boolean,
         ): CfirDesignation? {
             if (containerClassId != null) {
                 requireWithAttachment(
-                    firFile.packageDirective.packageFqName == containerClassId.packageFqName,
+                    cfirFile.packageDirective.packageFqName == containerClassId.packageFqName,
                     { "ClassId package must match the file package" }
                 ) {
-                    withEntry("CfirFile.packageName", firFile.packageDirective.packageFqName) { it.asString() }
+                    withEntry("CfirFile.packageName", cfirFile.packageDirective.packageFqName) { it.asString() }
                     withEntry("ClassId.packageName", containerClassId.packageFqName) { it.asString() }
                 }
             }
 
             val pathSegments = containerClassId?.relativeClassName?.pathSegments().orEmpty()
             val resultPath = ArrayList<CfirDeclaration>(pathSegments.size + 1)
-            resultPath += firFile
+            resultPath += cfirFile
 
-            val structure = firFile.llCfirSession.firElementFinder.buildRootFileStructureNode(firFile)
+            val structure = cfirFile.llCfirSession.cfirElementFinder.buildRootFileStructureNode(cfirFile)
             val result = structure.find(
                 pathSegments = pathSegments,
                 resultPath = resultPath,
@@ -135,12 +135,12 @@ internal class CfirElementFinder : CfirSessionComponent {
 
     private val cache = ContainerUtil.createConcurrentWeakKeySoftValueMap<CfirFile, CfirFileStructureNode>()
 
-    private fun buildRootFileStructureNode(firFile: CfirFile): CfirFileStructureNode = cache.getOrPut(firFile) {
-        CfirFileStructureNode.build(firFile)
+    private fun buildRootFileStructureNode(cfirFile: CfirFile): CfirFileStructureNode = cache.getOrPut(cfirFile) {
+        CfirFileStructureNode.build(cfirFile)
     }
 }
 
-private val CfirSession.firElementFinder: CfirElementFinder by CfirSession.sessionComponentAccessor()
+private val CfirSession.cfirElementFinder: CfirElementFinder by CfirSession.sessionComponentAccessor()
 
 /**
  * This class represents non-local declarations from a [CfirFile] in a tree-like structure.

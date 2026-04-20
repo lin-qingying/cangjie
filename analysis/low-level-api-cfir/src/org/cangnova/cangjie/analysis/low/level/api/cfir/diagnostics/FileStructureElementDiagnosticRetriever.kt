@@ -109,7 +109,7 @@ internal class ClassDiagnosticRetriever(
     )
 
     companion object {
-        fun shouldDiagnosticsAlwaysBeCheckedOn(firElement: CfirElement) = when (firElement.source?.kind) {
+        fun shouldDiagnosticsAlwaysBeCheckedOn(cfirElement: CfirElement) = when (cfirElement.source?.kind) {
             CjFakeSourceElementKind.PropertyFromParameter -> true
             CjFakeSourceElementKind.ImplicitConstructor -> true
             else -> false

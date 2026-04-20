@@ -10,6 +10,6 @@ import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 
 class LLCfirBuiltinsSession @PrivateSessionConstructor constructor(
-    ktModule: CaModule,
+    caModule: CaModule,
     builtinTypes: CfirBuiltinTypes,
-) : LLCfirLibraryLikeSession(ktModule, builtinTypes)
+) : LLCfirLibraryLikeSession(caModule, builtinTypes)

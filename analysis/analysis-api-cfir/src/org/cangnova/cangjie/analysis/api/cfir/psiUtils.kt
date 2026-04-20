@@ -22,7 +22,7 @@ internal val CjDeclaration.location: CaSymbolLocation
         }
 
         return when (parent) {
-            null, is CjScript -> CaSymbolLocation.TOP_LEVEL
+            null -> CaSymbolLocation.TOP_LEVEL
 
             is CjTypeStatement -> CaSymbolLocation.CLASS
 
@@ -45,7 +45,7 @@ internal fun CaCfirSymbol<*>.findPsi(): PsiElement? {
 fun CfirBasedSymbol<*>.findPsi(scope: GlobalSearchScope): PsiElement? {
     return if (
         this is CfirCallableSymbol<*> &&
-        !this.isTypeAliasedConstructor // typealiased constructors should not be unwrapped
+        !this.isTypeAliasedConstructor // type-aliased constructors should not be unwrapped
     ) {
         cfir.unwrapFakeOverridesOrDelegated().findPsi()
     } else {

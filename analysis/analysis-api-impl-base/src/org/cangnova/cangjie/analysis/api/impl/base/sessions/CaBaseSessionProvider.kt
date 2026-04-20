@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.api.impl.base.sessions
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.util.PsiUtilCore
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryFallbackDependenciesModule
@@ -47,6 +48,7 @@ abstract class CaBaseSessionProvider(project: Project) : CaSessionProvider(proje
         CaRestrictedAnalysisService.getInstance(project)
     }
 
+    @OptIn(CaPlatformInterface::class)
     protected val tokenFactory by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CaLifetimeTokenFactory.getInstance(project)
     }

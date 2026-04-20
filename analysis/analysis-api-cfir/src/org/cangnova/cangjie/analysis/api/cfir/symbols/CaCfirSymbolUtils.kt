@@ -20,7 +20,6 @@ import org.cangnova.cangjie.analysis.api.symbols.CaPropertyAccessorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertyGetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaScriptSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
@@ -40,7 +39,6 @@ import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjPropertyAccessor
-import org.cangnova.cangjie.psi.CjScript
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.psi.CjExtend
@@ -106,7 +104,6 @@ internal fun CaCfirSession.findContainingDeclarationSymbol(psi: PsiElement?): Ca
             is CjConstructor<*> -> getPublicSymbolByPsi<CaConstructorSymbol>(current)
             is CjFinalizer -> getPublicSymbolByPsi<CaFinalizerSymbol>(current)
             is CjMacroDeclaration -> getPublicSymbolByPsi<CaMacroSymbol>(current)
-            is CjScript -> createScriptSymbol(current)
             is CjFile -> createFileSymbol(current)
             else -> null
         }

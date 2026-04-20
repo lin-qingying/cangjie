@@ -5,7 +5,7 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 
-import org.cangnova.cangjie.cfir.symbols.impl.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
 
 /**

@@ -153,7 +153,7 @@ internal fun CaSymbol.publicSymbolCacheKeyOrNull(): CaCfirPublicSymbolCacheKey? 
         CaCfirTypeParameterSymbolCacheKey(ownerKey, name, parameterIndex)
     }
 
-    is CaCfirCallableSymbolBase<*> -> backingSymbol.publicSymbolCacheKeyOrNull(analysisSession)
+    is CaCfirCallableSymbolSupport<*> -> backingSymbol.publicSymbolCacheKeyOrNull(analysisSession)
     else -> null
 }
 

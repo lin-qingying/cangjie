@@ -20,6 +20,12 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitWrappedExpression(wrappedExpression: CfirWrappedExpression, data: D): R =
         visitExpression(wrappedExpression, data)
 
+    override fun visitOptionalExpression(optionalExpression: CfirOptionalExpression, data: D): R =
+        visitWrappedExpression(optionalExpression, data)
+
+    override fun visitOptionalChainExpression(optionalChainExpression: CfirOptionalChainExpression, data: D): R =
+        visitWrappedExpression(optionalChainExpression, data)
+
     override fun visitResolvedImport(resolvedImport: CfirResolvedImport, data: D): R =
         visitImport(resolvedImport, data)
 
@@ -268,6 +274,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitFunctionTypeRef(functionTypeRef: CfirFunctionTypeRef, data: D): R =
         visitTypeRef(functionTypeRef, data)
+
+    override fun visitOptionTypeRef(optionTypeRef: CfirOptionTypeRef, data: D): R =
+        visitUnresolvedTypeRef(optionTypeRef, data)
 
     override fun visitTupleTypeRef(tupleTypeRef: CfirTupleTypeRef, data: D): R =
         visitTypeRef(tupleTypeRef, data)
