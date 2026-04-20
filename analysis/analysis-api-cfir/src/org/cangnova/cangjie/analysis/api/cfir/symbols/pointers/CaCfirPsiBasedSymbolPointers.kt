@@ -2,15 +2,12 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols.pointers
 
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartPsiElementPointer
-import org.cangnova.cangjie.analysis.api.cfir.symbols.createScriptSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.getPublicSymbolByPsi
 import org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPatternVariableSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaScriptSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
-import org.cangnova.cangjie.psi.CjScript
 
 /**
  * source-only / local 符号的 PSI-based pointer。
@@ -18,18 +15,6 @@ import org.cangnova.cangjie.psi.CjScript
  * 这类符号本身没有稳定的全局声明键，Kotlin FIR 侧同样会落到 PSI-based pointer。
  * 因此这里为每种 source-only 公开符号提供专用 pointer，而不是用统一 kind 分发。
  */
-internal class CaCfirScriptSymbolPointer(
-    scriptPsi: CjScript,
-) : CaCfirSymbolPointerBase<CaScriptSymbol>() {
-    private val pointer: SmartPsiElementPointer<com.intellij.psi.PsiElement> = scriptPsi.createSmartPointer()
-
-    override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): CaScriptSymbol? {
-        val cfirSession = restoreSession(session) ?: return null
-        val scriptPsi = pointer.element as? CjScript ?: return null
-        return cfirSession.createScriptSymbol(scriptPsi)
-    }
-}
-
 internal class CaCfirAnonymousFunctionSymbolPointer(
     psi: com.intellij.psi.PsiElement,
 ) : CaCfirSymbolPointerBase<CaAnonymousFunctionSymbol>() {

@@ -59,6 +59,22 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformWrappedExpression(wrappedExpression, data)
     }
 
+    open fun transformOptionalExpression(optionalExpression: CfirOptionalExpression, data: D): CfirExpression {
+        return transformElement(optionalExpression, data)
+    }
+
+    final override fun visitOptionalExpression(optionalExpression: CfirOptionalExpression, data: D): CfirExpression {
+        return transformOptionalExpression(optionalExpression, data)
+    }
+
+    open fun transformOptionalChainExpression(optionalChainExpression: CfirOptionalChainExpression, data: D): CfirExpression {
+        return transformElement(optionalChainExpression, data)
+    }
+
+    final override fun visitOptionalChainExpression(optionalChainExpression: CfirOptionalChainExpression, data: D): CfirExpression {
+        return transformOptionalChainExpression(optionalChainExpression, data)
+    }
+
     open fun transformResolvable(resolvable: CfirResolvable, data: D): CfirResolvable {
         return transformElement(resolvable, data)
     }
@@ -953,6 +969,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitFunctionTypeRef(functionTypeRef: CfirFunctionTypeRef, data: D): CfirTypeRef {
         return transformFunctionTypeRef(functionTypeRef, data)
+    }
+
+    open fun transformOptionTypeRef(optionTypeRef: CfirOptionTypeRef, data: D): CfirTypeRef {
+        return transformElement(optionTypeRef, data)
+    }
+
+    final override fun visitOptionTypeRef(optionTypeRef: CfirOptionTypeRef, data: D): CfirTypeRef {
+        return transformOptionTypeRef(optionTypeRef, data)
     }
 
     open fun transformTupleTypeRef(tupleTypeRef: CfirTupleTypeRef, data: D): CfirTypeRef {

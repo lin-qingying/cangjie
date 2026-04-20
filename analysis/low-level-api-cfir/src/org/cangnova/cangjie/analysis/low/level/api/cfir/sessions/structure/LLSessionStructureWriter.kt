@@ -62,7 +62,7 @@ object LLSessionStructureWriter {
             appendLine("""  <key id="label" for="node" attr.name="label" attr.type="string"/>""")
             appendLine("""  <key id="uuid" for="node" attr.name="uuid" attr.type="string"/>""")
             appendLine("""  <key id="weight" for="node" attr.name="weight" attr.type="long"/>""")
-            appendLine("""  <key id="kotlinWeight" for="node" attr.name="kotlinWeight" attr.type="long"/>""")
+            appendLine("""  <key id="cangjieWeight" for="node" attr.name="cangjieWeight" attr.type="long"/>""")
             appendLine("""  <key id="javaWeight" for="node" attr.name="javaWeight" attr.type="long"/>""")
             appendLine("""  <key id="lifetime" for="node" attr.name="lifetime" attr.type="double"/>""")
             appendLine("""  <key id="analysisRootDistance" for="node" attr.name="analysisRootDistance" attr.type="int"/>""")
@@ -76,7 +76,7 @@ object LLSessionStructureWriter {
                 appendLine("""      <data key="label">${escapeXml(node.label)}</data>""")
                 appendLine("""      <data key="uuid">${escapeXml(node.session.uuid.toHexDashString())}</data>""")
                 appendLine("""      <data key="weight">${node.statistics.weight}</data>""")
-                appendLine("""      <data key="kotlinWeight">${node.statistics.kotlinWeight}</data>""")
+                appendLine("""      <data key="cangjieWeight">${node.statistics.cangjieWeight}</data>""")
                 appendLine("""      <data key="javaWeight">${node.statistics.javaWeight}</data>""")
                 appendLine("""      <data key="lifetime">${node.statistics.lifetime}</data>""")
                 node.analysisRootDistance?.let { distance ->

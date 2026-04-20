@@ -14,19 +14,19 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure
  * number meant to be read as "memory consumption of the session," but rather a measure of the relative weight between sessions, or the same
  * session over time (comparing multiple session structure snapshots).
  *
- * @property kotlinWeight The weight of all *Kotlin* CFIR elements in the session.
+ * @property cangjieWeight The weight of all仓颉 CFIR elements in the session.
  * @property javaWeight The weight of all *Java* CFIR elements in the session.
  * @property lifetime The time in seconds since the creation of the session.
  */
 internal class LLSessionStatistics(
-    val kotlinWeight: Long,
+    val cangjieWeight: Long,
     val javaWeight: Long,
     val lifetime: Double,
 ) {
     /**
-     * The total weight of the session, combining both [kotlinWeight] and [javaWeight].
+     * The total weight of the session, combining both [cangjieWeight] and [javaWeight].
      */
-    val weight: Long get() = kotlinWeight + javaWeight
+    val weight: Long get() = cangjieWeight + javaWeight
 
     companion object {
         val ZERO = LLSessionStatistics(0, 0, 0.0)

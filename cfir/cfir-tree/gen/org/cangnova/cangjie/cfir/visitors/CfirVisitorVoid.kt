@@ -59,6 +59,22 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(wrappedExpression)
     }
 
+    final override fun visitOptionalExpression(optionalExpression: CfirOptionalExpression, data: Nothing?) {
+        visitOptionalExpression(optionalExpression)
+    }
+
+    open fun visitOptionalExpression(optionalExpression: CfirOptionalExpression) {
+        visitElement(optionalExpression)
+    }
+
+    final override fun visitOptionalChainExpression(optionalChainExpression: CfirOptionalChainExpression, data: Nothing?) {
+        visitOptionalChainExpression(optionalChainExpression)
+    }
+
+    open fun visitOptionalChainExpression(optionalChainExpression: CfirOptionalChainExpression) {
+        visitElement(optionalChainExpression)
+    }
+
     final override fun visitResolvable(resolvable: CfirResolvable, data: Nothing?) {
         visitResolvable(resolvable)
     }
@@ -953,6 +969,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitFunctionTypeRef(functionTypeRef: CfirFunctionTypeRef) {
         visitElement(functionTypeRef)
+    }
+
+    final override fun visitOptionTypeRef(optionTypeRef: CfirOptionTypeRef, data: Nothing?) {
+        visitOptionTypeRef(optionTypeRef)
+    }
+
+    open fun visitOptionTypeRef(optionTypeRef: CfirOptionTypeRef) {
+        visitElement(optionTypeRef)
     }
 
     final override fun visitTupleTypeRef(tupleTypeRef: CfirTupleTypeRef, data: Nothing?) {

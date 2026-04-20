@@ -30,7 +30,7 @@ internal sealed class LLCfirResolveTarget(val designation: CfirDesignation) {
      * E.g., fake overrides.
      * @see org.cangnova.cangjie.cfir.scopes.impl.CfirFakeOverrideGenerator
      */
-    val firFile: CfirFile? get() = designation.fileOrNull
+    val cfirFile: CfirFile? get() = designation.fileOrNull
 
     /**
      * The list of [CfirFile] and [CfirClass] which are
@@ -120,11 +120,11 @@ internal sealed class LLCfirResolveTarget(val designation: CfirDesignation) {
 
     protected open fun toStringAdditionalSuffix(): String? = null
 
-    private fun toStringForTarget(): String = when (val fir = target) {
+    private fun toStringForTarget(): String = when (val cfir = target) {
         is CfirConstructor -> "constructor"
-        is CfirClassLikeDeclaration -> fir.symbol.name.asString()
-        is CfirCallableDeclaration -> fir.symbol.name.asString()
-        is CfirFile -> fir.name
+        is CfirClassLikeDeclaration -> cfir.symbol.name.asString()
+        is CfirCallableDeclaration -> cfir.symbol.name.asString()
+        is CfirFile -> cfir.name
         else -> "???"
     }
 }

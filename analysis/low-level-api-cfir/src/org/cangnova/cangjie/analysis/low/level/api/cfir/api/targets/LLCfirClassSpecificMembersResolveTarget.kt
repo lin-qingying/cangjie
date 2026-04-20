@@ -17,7 +17,7 @@ internal class LLCfirClassSpecificMembersResolveTarget(
     val members: List<CfirDeclaration>,
 ) : LLCfirClassResolveTarget(designation) {
     override val visitClass: Boolean get() = false
-    override fun visitMembers(visitor: LLCfirResolveTargetVisitor, firClass: CfirClass) {
+    override fun visitMembers(visitor: LLCfirResolveTargetVisitor, cfirClass: CfirClass) {
         members.forEach(visitor::performAction)
     }
 

@@ -853,6 +853,7 @@ fun CjSourceElement.fakeElement(
 ): CjSourceElement {
     if (kind == newKind) return this
     return when (this) {
+        is CjBinarySourceElement -> this
         is CjLightSourceElement -> {
             val (startOffset, endOffset) = if (offsetStrategy is CjSourceElementOffsetStrategy.Custom) {
                 offsetStrategy.startOffset to offsetStrategy.endOffset
@@ -870,6 +871,7 @@ fun CjSourceElement.fakeElement(
 }
 
 fun CjSourceElement.realElement(): CjSourceElement = when (this) {
+    is CjBinarySourceElement -> this
     is CjRealPsiSourceElement -> this
     is CjLightSourceElement -> CjLightSourceElement(lighterASTNode, startOffset, endOffset, treeStructure, CjRealSourceElementKind)
     is CjPsiSourceElement -> CjRealPsiSourceElement(psi)
@@ -920,6 +922,7 @@ val AbstractCjSourceElement?.psi: PsiElement?
 
 val CjSourceElement?.text: CharSequence?
     get() = when (this) {
+        is CjBinarySourceElement -> getElementTextInContextForDebug()
         is CjPsiSourceElement -> psi.text
         is CjLightSourceElement -> treeStructure.toString(lighterASTNode)
         else -> null

@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.analysis.api.cfir
 
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacade
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -15,7 +15,7 @@ import org.cangnova.cangjie.psi.CjParameter
  * 超类型与类型关系统一由这一层向 low-level 发起查询并缓存。
  */
 internal class CaCfirSessionTypeQueryService(
-    private val resolutionFacade: CaCfirResolutionFacade,
+    private val resolutionFacade: LLResolutionFacade,
     private val cacheStore: CaCfirSessionCacheStore,
 ) {
     fun queryExpressionType(expression: CjExpression): ConeCangJieType? =

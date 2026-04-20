@@ -6,8 +6,10 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.ModificationTracker
+import org.cangnova.cangjie.analysis.api.platform.lifetime.ModificationTrackerWithInvalidationReason
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
@@ -44,7 +46,7 @@ import kotlin.uuid.Uuid
  */
 @OptIn(PrivateSessionConstructor::class)
 abstract class LLCfirSession(
-    val ktModule: CaModule,
+    val caModule: CaModule,
     builtinTypes: CfirBuiltinTypes,
     kind: Kind
 ) : CfirSession(kind) {
@@ -55,7 +57,7 @@ abstract class LLCfirSession(
     abstract fun getScopeSession(): ScopeSession
 
     val project: Project
-        get() = ktModule.project
+        get() = caModule.project
 
     /**
      * The session's UUID to identify it for diagnostic purposes.
@@ -120,7 +122,7 @@ abstract class LLCfirSession(
         get() = if (lazyDisposable.isInitialized()) lazyDisposable.value else null
 
     override fun toString(): String {
-        return "${this::class.simpleName} for ${ktModule.moduleDescription}"
+        return "${this::class.simpleName} for ${caModule.moduleDescription}"
     }
 }
 
@@ -149,7 +151,7 @@ private class LLCfirSessionValidityModificationTracker(private val sessionRef: W
         val session = sessionRef.get()
             ?: return "`${LLCfirSession::class.simpleName}` is garbage collected"
         if (!session.isValid) {
-            return "`${session::class.simpleName}` for `${session.ktModule::class.simpleName}` is invalid"
+            return "`${session::class.simpleName}` for `${session.caModule::class.simpleName}` is invalid"
         }
         return null
     }
@@ -160,13 +162,13 @@ private class LLCfirSessionValidityModificationTracker(private val sessionRef: W
 }
 
 abstract class LLCfirModuleSession(
-    ktModule: CaModule,
+    caModule: CaModule,
     builtinTypes: CfirBuiltinTypes,
     kind: Kind
-) : LLCfirSession(ktModule, builtinTypes, kind)
+) : LLCfirSession(caModule, builtinTypes, kind)
 
 val CfirElementWithResolveState.llCfirSession: LLCfirSession
     get() = moduleData.session as LLCfirSession
 
 val CfirBasedSymbol<*>.llCfirSession: LLCfirSession
-    get() = moduleData.session as LLCfirSession
+    get() = cfir.moduleData.session as LLCfirSession

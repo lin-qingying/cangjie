@@ -44,7 +44,7 @@ internal class LLEagerElementMapper(declaration: CfirDeclaration) : LLElementMap
     private val session = declaration.moduleData.session
 
     private val mapping = CfirElementsRecorder.recordElementsFrom(
-        firElement = declaration,
+        cfirElement = declaration,
         recorder = FileStructureElement.recorderFor(declaration),
     )
 

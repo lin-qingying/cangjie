@@ -84,6 +84,12 @@ fun CjFile.collectDiagnosticsForFile(
     resolutionFacade.collectDiagnosticsForFile(this, filter)
 
 /**
+ * 返回当前元素的 low-level 调用解析结果。
+ */
+fun CjElement.getCallInfo(resolutionFacade: LLResolutionFacade): LLCallInfo? =
+    resolutionFacade.getCallInfo(this)
+
+/**
  * Build [CfirElement] node in its final resolved state for a requested element.
  *
  * Note: that it isn't always [BODY_RESOLVE][CfirResolvePhase.BODY_RESOLVE]

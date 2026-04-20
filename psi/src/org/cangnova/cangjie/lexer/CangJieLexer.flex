@@ -886,9 +886,6 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 "|>"         { return CjTokens.PIPELINE; }
 ".."         { return CjTokens.RANGE; }
 "..="        { return CjTokens.RANGEEQ; }
-"?."         { return CjTokens.SAFE_ACCESS; }
-"?["         { return CjTokens.SAFE_INDEXEX; }
-"?{"         { return CjTokens.SAFE_LAMBDA; }
 "?"          { return CjTokens.QUEST; }
 "..."        { return CjTokens.ELLIPSIS; }
 // 分隔符
@@ -939,4 +936,3 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 //    throw new CangJieLexerException(errorMessage, getTokenStart());
     return TokenType.BAD_CHARACTER;
 }
-

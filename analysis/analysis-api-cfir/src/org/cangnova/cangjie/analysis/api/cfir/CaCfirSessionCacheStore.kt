@@ -7,19 +7,19 @@ import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPublicSymbolCacheKey
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCallableSymbolCacheKey
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCompletionSymbolKey
 import org.cangnova.cangjie.analysis.api.cfir.signatures.CaCfirSubstitutedSignatureCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirCallInfoSnapshot
-import org.cangnova.cangjie.analysis.api.cfir.resolve.DiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirSubstitutorCacheKey
 import org.cangnova.cangjie.analysis.api.dataFlow.CaDataFlowInfo
 import org.cangnova.cangjie.analysis.api.imports.CaDefaultImports
 import org.cangnova.cangjie.analysis.api.imports.CaImportOptimizationPlan
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningPlan
 import org.cangnova.cangjie.analysis.api.interop.CaInteropInfo
+import org.cangnova.cangjie.analysis.api.resolution.CaCallInfo
 import org.cangnova.cangjie.analysis.api.signatures.CaSignature
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -141,8 +141,8 @@ internal class CaCfirSessionCacheStore(
 
     fun getOrCreateCallInfo(
         element: PsiElement,
-        create: () -> CaCfirCallInfoSnapshot?,
-    ): CaCfirCallInfoSnapshot? = semanticCacheStore.getOrCreateCallInfo(element, create)
+        create: () -> CaCallInfo?,
+    ): CaCallInfo? = semanticCacheStore.getOrCreateCallInfo(element, create)
 
     fun getOrCreateDiagnostics(
         element: PsiElement,

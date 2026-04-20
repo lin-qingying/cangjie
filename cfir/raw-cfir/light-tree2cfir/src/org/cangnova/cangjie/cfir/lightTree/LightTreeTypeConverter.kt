@@ -56,6 +56,7 @@ private fun convertTypeElement(
     CjNodeTypes.BASIC_TYPE -> convertBasicType(typeElement, typeRefNode, source, toSource)
     CjNodeTypes.USER_TYPE -> convertUserType(typeElement, typeRefNode, tree, source, toSource)
     CjNodeTypes.FUNCTION_TYPE -> convertFunctionType(typeElement, typeRefNode, tree, source, toSource)
+    CjNodeTypes.OPTIONAL_TYPE -> convertOptionalType(typeElement, typeRefNode, tree, source, toSource)
     CjNodeTypes.TUPLE_TYPE -> convertTupleType(typeElement, typeRefNode, tree, source, toSource)
     CjNodeTypes.VARRAY_TYPE -> convertVArrayType(typeElement, typeRefNode, tree, source, toSource)
     CjNodeTypes.PARENTHESIZED_TYPE -> {
@@ -66,6 +67,31 @@ private fun convertTypeElement(
     else -> buildErrorTypeRef {
         this.source = toSource(typeRefNode) as? CjSourceElement
         diagnostic = ConeSimpleDiagnostic("Unsupported type element: ${typeElement.tokenType}")
+    }
+}
+
+/**
+ * OPTIONAL_TYPE → CfirOptionTypeRef
+ *
+ * `?T` 在 raw-cfir 中保留为专门的语法糖类型节点，
+ * resolve 阶段再映射为 `Option<T>`。
+ */
+private fun convertOptionalType(
+    typeElement: LighterASTNode,
+    typeRefNode: LighterASTNode,
+    tree: FlyweightCapableTreeStructure<LighterASTNode>,
+    source: CharSequence,
+    toSource: (LighterASTNode) -> AbstractCjSourceElement,
+): CfirTypeRef {
+    val innerTypeRef = tree.findChildByType(typeElement, CjNodeTypes.TYPE_REFERENCE)
+        ?: return buildErrorTypeRef {
+            this.source = toSource(typeRefNode) as? CjSourceElement
+            diagnostic = ConeSimpleDiagnostic("Malformed option type: missing component type")
+        }
+
+    return buildOptionTypeRef {
+        this.source = typeRefNode.toCjSourceElement(toSource)
+        componentTypeRef = convertTypeReference(innerTypeRef, tree, source, toSource)
     }
 }
 

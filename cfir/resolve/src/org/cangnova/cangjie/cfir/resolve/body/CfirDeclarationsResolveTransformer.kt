@@ -48,6 +48,17 @@ open class CfirDeclarationsResolveTransformer(
 ) : CfirPartialBodyResolveTransformer(transformer) {
     private val specificTypeResolverTransformer = CfirSpecificTypeResolverTransformer(session)
 
+    /**
+     * 对齐 Kotlin FIR 的 declaration-content 入口。
+     * low-level body resolver 需要覆写这一层，而不是把局部逻辑硬塞回 transformFunction/transformConstructor。
+     */
+    protected fun transformDeclarationContent(
+        declaration: CfirDeclaration,
+        data: ResolutionMode,
+    ): CfirDeclaration {
+        return transformer.transformDeclarationContent(declaration, data)
+    }
+
     override fun transformFile(file: CfirFile, data: ResolutionMode): CfirFile {
         val savedContext = context.towerDataContext
         context.withFile(file) {
@@ -122,10 +133,11 @@ open class CfirDeclarationsResolveTransformer(
             }
             context.addLocalScope(paramScope)
 
-            val body = function.body
-            if (body != null) {
-                function.transformBody(transformer, ResolutionMode.ContextIndependent)
-            }
+            transformFunctionContent(
+                function = function,
+                resolutionModeForBody = ResolutionMode.ContextIndependent,
+                shouldResolveEverything = true,
+            )
 
             if (function.returnTypeRef is CfirImplicitTypeRef) {
                 val bodyType = function.body?.coneTypeOrNull ?: session.builtinTypes.unitType
@@ -138,6 +150,18 @@ open class CfirDeclarationsResolveTransformer(
 
         context.replaceTowerDataContext(savedContext)
         bumpPhase(function)
+        return function
+    }
+
+    protected open fun transformFunctionContent(
+        function: CfirFunction,
+        resolutionModeForBody: ResolutionMode,
+        shouldResolveEverything: Boolean,
+    ): CfirFunction {
+        val body = function.body
+        if (body != null) {
+            function.transformBody(transformer, resolutionModeForBody)
+        }
         return function
     }
 
@@ -172,14 +196,22 @@ open class CfirDeclarationsResolveTransformer(
             }
             context.addLocalScope(paramScope)
 
-            val body = constructor.body
-            if (body != null) {
-                constructor.transformBody(transformer, ResolutionMode.ContextIndependent)
-            }
+            transformConstructorContent(constructor, ResolutionMode.ContextIndependent)
         }
 
         context.replaceTowerDataContext(savedContext)
         bumpPhase(constructor)
+        return constructor
+    }
+
+    protected open fun transformConstructorContent(
+        constructor: CfirConstructor,
+        data: ResolutionMode,
+    ): CfirConstructor {
+        val body = constructor.body
+        if (body != null) {
+            constructor.transformBody(transformer, data)
+        }
         return constructor
     }
 

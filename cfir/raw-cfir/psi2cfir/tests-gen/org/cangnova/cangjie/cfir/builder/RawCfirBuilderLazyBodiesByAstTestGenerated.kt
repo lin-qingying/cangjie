@@ -368,6 +368,11 @@ class RawCfirBuilderLazyBodiesByAstTestGenerated : AbstractRawCfirBuilderLazyBod
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/opAndIfExpressions.cj")
             }
 
+            @TestMetadata("optionalChainAccess.cj")
+            fun testOptionalChainAccess() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/optionalChainAccess.cj")
+            }
+
             @TestMetadata("rangeExpression.cj")
             fun testRangeExpression() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/rangeExpression.cj")
@@ -476,6 +481,11 @@ class RawCfirBuilderLazyBodiesByAstTestGenerated : AbstractRawCfirBuilderLazyBod
             @TestMetadata("nestedFunctionAndTupleTypes.cj")
             fun testNestedFunctionAndTupleTypes() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/types/type-references/nestedFunctionAndTupleTypes.cj")
+            }
+
+            @TestMetadata("optionalTypeRefs.cj")
+            fun testOptionalTypeRefs() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/types/type-references/optionalTypeRefs.cj")
             }
 
             @TestMetadata("typeAliasRefsOfficial.cj")

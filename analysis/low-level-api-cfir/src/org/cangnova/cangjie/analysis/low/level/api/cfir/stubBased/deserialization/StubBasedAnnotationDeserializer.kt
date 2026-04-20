@@ -5,211 +5,187 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization
 
-import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.CjRealPsiSourceElement
-import org.cangnova.cangjie.constant.*
-import org.cangnova.cangjie.descriptors.annotations.AnnotationUseSiteTarget
-import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.builder.buildAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
-import org.cangnova.cangjie.cfir.expressions.builder.*
-import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
+import org.cangnova.cangjie.cfir.expressions.builder.buildArrayLiteral
+import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
+import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
+import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.constructClassType
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import org.cangnova.cangjie.descriptors.annotations.AnnotationUseSiteTarget
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.*
-import org.cangnova.cangjie.psi.stubs.impl.KotlinAnnotationEntryStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.KotlinPropertyStubImpl
-import org.cangnova.cangjie.types.ConstantValueKind
+import org.cangnova.cangjie.psi.CjAnnotated
+import org.cangnova.cangjie.psi.CjAnnotation
+import org.cangnova.cangjie.psi.CjCollectionLiteralExpression
+import org.cangnova.cangjie.psi.CjConstantExpression
+import org.cangnova.cangjie.psi.CjExpression
+import org.cangnova.cangjie.psi.CjProperty
+import org.cangnova.cangjie.psi.CjStringTemplateExpression
+import org.cangnova.cangjie.psi.CjTypeElement
+import org.cangnova.cangjie.psi.CjUserType
+import org.cangnova.cangjie.source.CjRealPsiSourceElement
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
 internal class StubBasedAnnotationDeserializer(private val session: CfirSession) {
     companion object {
-        fun getAnnotationClassId(ktAnnotation: CjAnnotationEntry): ClassId {
-            val userType = ktAnnotation.calleeExpression?.typeReference?.typeElement
+        fun getAnnotationClassId(annotation: CjAnnotation): ClassId {
+            val userType = annotation.typeReference?.typeElement
             requireWithAttachment(
                 userType is CjUserType,
                 { "${CjTypeElement::class.simpleName} should be ${CjUserType::class.simpleName}" },
             ) {
-                withPsiEntry("annotationEntry", ktAnnotation)
+                withPsiEntry("annotationEntry", annotation)
             }
 
             return userType.classId()
         }
 
-        val TYPE_ANNOTATIONS_FILTER: (AnnotationUseSiteTarget?) -> Boolean = {
-            it == null
+        val TYPE_ANNOTATIONS_FILTER: (AnnotationUseSiteTarget?) -> Boolean = { target ->
+            target == null
         }
     }
 
+    /**
+     * 仓颉主干目前只承载“无 use-site target”的注解声明。
+     * low-level 反序列化这里直接复用 PSI 上真实存在的 `CjAnnotation` 形态，不再维持 Kotlin 的 annotation-stub 常量映射模型。
+     */
     fun loadAnnotations(
-        ktAnnotated: CjAnnotated,
+        annotated: CjAnnotated,
+        containingDeclarationSymbol: CfirBasedSymbol<*>? = null,
         useSiteTargetFilter: ((AnnotationUseSiteTarget?) -> Boolean)? = null,
     ): List<CfirAnnotation> {
-        val annotations = ktAnnotated.annotationEntries
-        if (annotations.isEmpty()) {
-            return emptyList()
+        if (useSiteTargetFilter?.invoke(null) == false) return emptyList()
+
+        val annotations = annotated.annotationEntries
+        if (annotations.isEmpty()) return emptyList()
+
+        val owner = containingDeclarationSymbol ?: errorWithAttachment(
+            "Stub-based annotation deserialization requires containing declaration symbol",
+        ) {
+            withPsiEntry("annotated", annotated)
         }
 
-        return annotations.mapNotNull { deserializeAnnotation(it, useSiteTargetFilter = useSiteTargetFilter) }
+        return annotations.map { deserializeAnnotation(it, owner) }
     }
 
+    /**
+     * 本地主干 `CjPropertyStub` 当前不保存常量初始化器，compiled PSI 也没有可复用的 initializer 入口。
+     * 在补齐真正的 property-const stub 基础设施前，这里只能返回 `null`，避免继续依赖 Kotlin 的 `constantInitializer` 漂移接口。
+     */
     fun loadConstant(property: CjProperty, isUnsigned: Boolean): CfirExpression? {
         if (!property.hasModifier(CjTokens.CONST_KEYWORD)) return null
-        val propertyStub: KotlinPropertyStubImpl = property.compiledStub
-        val constantValue = propertyStub.constantInitializer ?: return null
-        val resultValue = when {
-            !isUnsigned -> constantValue
-            constantValue is ByteValue -> UByteValue(constantValue.value)
-            constantValue is ShortValue -> UShortValue(constantValue.value)
-            constantValue is IntValue -> UIntValue(constantValue.value)
-            constantValue is LongValue -> ULongValue(constantValue.value)
-            else -> constantValue
-        }
-
-        return resolveValue(property, resultValue)
+        return property.initializer?.let(::deserializeExpression)
     }
 
-    private fun deserializeAnnotation(
-        ktAnnotation: CjAnnotationEntry,
-        useSiteTargetFilter: ((AnnotationUseSiteTarget?) -> Boolean)? = null,
-    ): CfirAnnotation? {
-        val useSiteTarget = ktAnnotation.useSiteTarget?.getAnnotationUseSiteTarget()
-        if (useSiteTargetFilter?.invoke(useSiteTarget) == false) {
-            return null
+    private fun deserializeAnnotation(annotation: CjAnnotation, owner: CfirBasedSymbol<*>): CfirAnnotation {
+        val source = CjRealPsiSourceElement(annotation)
+        val classId = getAnnotationClassId(annotation)
+        val typeRef = buildResolvedTypeRef {
+            this.source = source
+            coneType = classId.toLookupTag().constructClassType()
         }
+        val arguments = annotation.valueArguments.mapNotNull { argument ->
+            argument.getArgumentExpression()?.let(::deserializeExpression)
+        }
+        val classSymbol = session.symbolProvider.getClassLikeSymbolByClassId(classId)
 
-        val annotationStub: KotlinAnnotationEntryStubImpl = ktAnnotation.compiledStub
-        val valueArguments = annotationStub.valueArguments
-
-        return deserializeAnnotation(
-            ktAnnotation,
-            getAnnotationClassId(ktAnnotation),
-            valueArguments,
-            useSiteTarget,
-        )
-    }
-
-    private fun deserializeAnnotation(
-        ktAnnotation: PsiElement,
-        classId: ClassId,
-        valueArguments: Map<Name, ConstantValue<*>>?,
-        useSiteTarget: AnnotationUseSiteTarget? = null
-    ): CfirAnnotation {
-        return buildAnnotation {
-            source = CjRealPsiSourceElement(ktAnnotation)
-            annotationTypeRef = buildResolvedTypeRef {
-                coneType = classId.toLookupTag().constructClassType()
+        return buildAnnotationCall {
+            this.source = source
+            this.typeRef = typeRef
+            coneTypeOrNull = typeRef.coneType
+            this.arguments += arguments
+            argumentList = buildArgumentList {
+                this.source = source
+                this.arguments += arguments
             }
-            this.argumentMapping = buildAnnotationArgumentMapping {
-                valueArguments?.forEach { (name, constantValue) ->
-                    mapping[name] = resolveValue(ktAnnotation, constantValue)
+            calleeReference = if (classSymbol != null) {
+                buildResolvedNamedReference {
+                    this.source = source
+                    name = classId.shortClassName
+                    resolvedSymbol = classSymbol
+                }
+            } else {
+                buildErrorNamedReference {
+                    this.source = source
+                    name = classId.shortClassName
+                    diagnostic = ConeSimpleDiagnostic(
+                        "Unresolved annotation class: ${classId.asString()}",
+                        DiagnosticKind.DeserializationError,
+                    )
                 }
             }
-            useSiteTarget?.let {
-                this.useSiteTarget = it
-            }
+            containingDeclarationSymbol = owner
         }
     }
 
-    private fun resolveValue(
-        sourceElement: PsiElement,
-        value: ConstantValue<*>
-    ): CfirExpression {
-        return when (value) {
-            is EnumValue -> sourceElement.toEnumEntryReferenceExpression(value.enumClassId, value.enumEntryName)
-            is ArrayValue -> {
-                buildCollectionLiteral {
-                    source = CjRealPsiSourceElement(sourceElement)
-                    // Not quite precise, yet doesn't require annotation resolution
-                    coneTypeOrNull = (inferArrayValueType(value.value) ?: session.builtinTypes.anyType.coneType).createArrayType()
-
-                    argumentList = buildArgumentList {
-                        value.value.mapTo(arguments) { resolveValue(sourceElement, it) }
-                    }
-                }
+    private fun deserializeExpression(expression: CjExpression): CfirExpression {
+        return when (expression) {
+            is CjConstantExpression -> deserializeConstantExpression(expression)
+            is CjStringTemplateExpression -> deserializeStringTemplate(expression)
+            is CjCollectionLiteralExpression -> buildArrayLiteral {
+                source = CjRealPsiSourceElement(expression)
+                elements += expression.innerExpressions.map(::deserializeExpression)
             }
-            is AnnotationValue -> {
-                deserializeAnnotation(
-                    sourceElement,
-                    value.value.classId,
-                    value.value.argumentsMapping
-                )
-            }
-            is BooleanValue -> const(ConstantValueKind.Boolean, value.value, session.builtinTypes.booleanType, sourceElement)
-            is ByteValue -> const(ConstantValueKind.Byte, value.value, session.builtinTypes.byteType, sourceElement)
-            is CharValue -> const(ConstantValueKind.Char, value.value, session.builtinTypes.charType, sourceElement)
-            is ShortValue -> const(ConstantValueKind.Short, value.value, session.builtinTypes.shortType, sourceElement)
-            is LongValue -> const(ConstantValueKind.Long, value.value, session.builtinTypes.longType, sourceElement)
-            is FloatValue -> const(ConstantValueKind.Float, value.value, session.builtinTypes.floatType, sourceElement)
-            is DoubleValue -> const(ConstantValueKind.Double, value.value, session.builtinTypes.doubleType, sourceElement)
-            is UByteValue -> const(ConstantValueKind.UnsignedByte, value.value, session.builtinTypes.uByteType, sourceElement)
-            is UShortValue -> const(ConstantValueKind.UnsignedShort, value.value, session.builtinTypes.uShortType, sourceElement)
-            is UIntValue -> const(ConstantValueKind.UnsignedInt, value.value, session.builtinTypes.uIntType, sourceElement)
-            is ULongValue -> const(ConstantValueKind.UnsignedLong, value.value, session.builtinTypes.uLongType, sourceElement)
-            is IntValue -> const(ConstantValueKind.Int, value.value, session.builtinTypes.intType, sourceElement)
-            is StringValue -> const(ConstantValueKind.String, value.value, session.builtinTypes.stringType, sourceElement)
-            else -> errorWithAttachment("Unexpected value ${value::class}") {
-                withEntry("value", value.toString())
-            }
+            else -> buildUnsupportedExpression(expression)
         }
     }
 
-    private fun inferArrayValueType(values: List<ConstantValue<*>>): ConeClassLikeType? {
-        if (values.isNotEmpty()) {
-            val firstValue = values.first()
-
-            for ((index, value) in values.withIndex()) {
-                if (index > 0 && value.javaClass != firstValue.javaClass) {
-                    return null
-                }
-            }
-
-            return when (firstValue) {
-                is BooleanValue -> session.builtinTypes.booleanType.coneType
-                is ByteValue -> session.builtinTypes.byteType.coneType
-                is CharValue -> session.builtinTypes.charType.coneType
-                is ShortValue -> session.builtinTypes.shortType.coneType
-                is IntValue -> session.builtinTypes.intType.coneType
-                is LongValue -> session.builtinTypes.longType.coneType
-                is UByteValue -> session.builtinTypes.byteType.coneType
-                is UShortValue -> session.builtinTypes.shortType.coneType
-                is UIntValue -> session.builtinTypes.intType.coneType
-                is ULongValue -> session.builtinTypes.longType.coneType
-                is DoubleValue -> session.builtinTypes.doubleType.coneType
-                is FloatValue -> session.builtinTypes.floatType.coneType
-                is AnnotationValue -> session.builtinTypes.annotationType.coneType
-                is StringValue -> session.builtinTypes.stringType.coneType
-                is EnumValue -> firstValue.enumClassId.constructClassLikeType(ConeTypeProjection.EMPTY_ARRAY, isMarkedNullable = false)
-                is ArrayValue -> values.firstNotNullOfOrNull { inferArrayValueType((it as ArrayValue).value) }?.createArrayType()
-                else -> null
-            }
+    private fun deserializeConstantExpression(expression: CjConstantExpression): CfirExpression {
+        val literalKind = when (expression.node.elementType) {
+            org.cangnova.cangjie.psi.CjNodeTypes.INTEGER_CONSTANT -> CfirLiteralKind.INT
+            org.cangnova.cangjie.psi.CjNodeTypes.FLOAT_CONSTANT -> CfirLiteralKind.FLOAT
+            org.cangnova.cangjie.psi.CjNodeTypes.RUNE_CONSTANT -> CfirLiteralKind.RUNE
+            org.cangnova.cangjie.psi.CjNodeTypes.BOOLEAN_CONSTANT -> CfirLiteralKind.BOOLEAN
+            org.cangnova.cangjie.psi.CjNodeTypes.UNIT_CONSTANT -> CfirLiteralKind.UNIT
+            else -> CfirLiteralKind.STRING
         }
 
-        return null
-    }
-
-    private fun const(
-        kind: ConstantValueKind,
-        value: Any?,
-        typeRef: CfirResolvedTypeRef,
-        sourceElement: PsiElement
-    ): CfirLiteralExpression {
-        return buildLiteralExpression(
-            CjRealPsiSourceElement(sourceElement),
-            kind,
-            value,
-            setType = true
-        ).apply { this.replaceConeTypeOrNull(typeRef.coneType) }
-    }
-
-    private fun PsiElement.toEnumEntryReferenceExpression(classId: ClassId, entryName: Name): CfirExpression =
-        buildEnumEntryDeserializedAccessExpression {
-            enumClassId = classId
-            enumEntryName = entryName
+        val literalValue = when (literalKind) {
+            CfirLiteralKind.BOOLEAN -> expression.text == "true"
+            CfirLiteralKind.UNIT -> null
+            else -> expression.text
         }
+
+        return buildLiteralExpression {
+            source = CjRealPsiSourceElement(expression)
+            kind = literalKind
+            value = literalValue
+        }
+    }
+
+    private fun deserializeStringTemplate(expression: CjStringTemplateExpression): CfirExpression {
+        if (expression.hasInterpolation()) {
+            return buildUnsupportedExpression(expression)
+        }
+
+        return buildLiteralExpression {
+            source = CjRealPsiSourceElement(expression)
+            kind = CfirLiteralKind.STRING
+            value = expression.stringContent
+        }
+    }
+
+    private fun buildUnsupportedExpression(expression: CjExpression): CfirExpression {
+        return buildErrorExpression {
+            source = CjRealPsiSourceElement(expression)
+            diagnostic = ConeSimpleDiagnostic(
+                "Unsupported annotation argument expression: ${expression::class.simpleName}",
+                DiagnosticKind.Other,
+            )
+        }
+    }
 }

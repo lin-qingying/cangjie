@@ -66,7 +66,7 @@ private class ContextCollectingDiagnosticCollectorVisitor private constructor(
 internal object PersistenceContextCollector {
     fun collectContext(
         sessionHolder: SessionAndScopeSessionHolder,
-        firFile: CfirFile,
+        cfirFile: CfirFile,
         declaration: CfirDeclaration,
     ): CheckerContextForProvider {
         val isLocal = when (declaration) {
@@ -85,7 +85,7 @@ internal object PersistenceContextCollector {
             withCfirEntry("declaration", declaration)
         }
 
-        val designation = declaration.collectDesignation(firFile)
+        val designation = declaration.collectDesignation(cfirFile)
         designation.path.asReversed().forEach {
             it.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
         }

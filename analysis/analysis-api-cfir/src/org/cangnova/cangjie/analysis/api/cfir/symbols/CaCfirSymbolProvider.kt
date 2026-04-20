@@ -13,7 +13,6 @@ import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaScriptSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
@@ -40,7 +39,6 @@ import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjProperty
-import org.cangnova.cangjie.psi.CjScript
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeParameter
 import org.cangnova.cangjie.psi.CjTypeStatement
@@ -64,10 +62,7 @@ internal class CaCfirSymbolProvider(
             analysisSession.createFileSymbol(this@symbol)
         }
 
-    override val CjScript.symbol: CaScriptSymbol
-        get() = withValidityAssertion {
-            analysisSession.createScriptSymbol(this@symbol)
-        }
+
 
     override val CjTypeStatement.classSymbol: CaClassSymbol
         get() = withValidityAssertion {
@@ -89,7 +84,7 @@ internal class CaCfirSymbolProvider(
 
     override val CjNamedFunction.symbol: CaNamedFunctionSymbol
         get() = withValidityAssertion {
-            CaCfirNamedFunctionSymbolImpl(this@symbol, analysisSession)
+            CaCfirNamedFunctionSymbol(this@symbol, analysisSession)
         }
 
     override val org.cangnova.cangjie.psi.CjFunctionLiteral.symbol: org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol

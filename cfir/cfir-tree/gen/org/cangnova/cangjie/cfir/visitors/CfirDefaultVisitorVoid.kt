@@ -20,6 +20,14 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitExpression(wrappedExpression)
     }
 
+    override fun visitOptionalExpression(optionalExpression: CfirOptionalExpression) {
+        visitWrappedExpression(optionalExpression)
+    }
+
+    override fun visitOptionalChainExpression(optionalChainExpression: CfirOptionalChainExpression) {
+        visitWrappedExpression(optionalChainExpression)
+    }
+
     override fun visitResolvedImport(resolvedImport: CfirResolvedImport) {
         visitImport(resolvedImport)
     }
@@ -350,6 +358,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
 
     override fun visitFunctionTypeRef(functionTypeRef: CfirFunctionTypeRef) {
         visitTypeRef(functionTypeRef)
+    }
+
+    override fun visitOptionTypeRef(optionTypeRef: CfirOptionTypeRef) {
+        visitUnresolvedTypeRef(optionTypeRef)
     }
 
     override fun visitTupleTypeRef(tupleTypeRef: CfirTupleTypeRef) {

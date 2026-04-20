@@ -4644,16 +4644,6 @@ class CangJieParsing private constructor(
 
         val optionTypeMarker = mark()
 
-        // 注释掉的 SAFE_CALL 处理部分暂时不处理，如果需要我可以帮你恢复
-        /*
-        if (at(SAFE_CALL)) {
-            builder.remapCurrentToken(LPAR)
-            parseTupleOrFunctionType()
-            optionTypeMarker.done(OPTIONAL_TYPE)
-            return
-        }
-        */
-
         advance()
 
         parseTypeRefContents()
@@ -4724,7 +4714,7 @@ class CangJieParsing private constructor(
             parseBasicType() -> return
             at(IDENTIFIER) -> parseUserType()
             at(LPAR) -> parseTupleOrFunctionType()
-            at(QUEST) || at(SAFE_CALL) -> parseOptionType()
+            at(QUEST) -> parseOptionType()
             else -> error(
                 CangJieParsingBundle.message(
                     "parsing.error.expecting.found", "type name", "${builder.tokenText}"

@@ -148,11 +148,17 @@ class CfirBuiltinSymbolProvider(
             .filter(PrimitiveTypeKind::isExposedBuiltinClassifier)
             .mapTo(linkedSetOf()) { Name.identifier(it.typeName) }
 
-        override fun getPackageNames(): Set<FqName> =
-            setOf(StandardNames.BASIC_PACKAGE_FQ_NAME)
+        override fun getPackageNames(): Set<String> =
+            setOf(StandardNames.BASIC_PACKAGE_FQ_NAME.asString())
+
+        override val hasSpecificClassifierPackageNamesComputation: Boolean
+            get() = false
 
         override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? =
             if (packageFqName == StandardNames.BASIC_PACKAGE_FQ_NAME) builtinClassifierNames else emptySet()
+
+        override val hasSpecificCallablePackageNamesComputation: Boolean
+            get() = false
 
         override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>? = emptySet()
     }

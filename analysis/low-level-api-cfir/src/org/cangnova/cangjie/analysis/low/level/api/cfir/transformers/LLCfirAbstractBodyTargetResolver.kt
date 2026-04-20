@@ -35,26 +35,26 @@ internal sealed class LLCfirAbstractBodyTargetResolver(
     }
 
     @Deprecated("Should never be called directly, only for override purposes, please use withFile", level = DeprecationLevel.ERROR)
-    override fun withContainingFile(firFile: CfirFile, action: () -> Unit) {
-        transformer.declarationsTransformer.context.withFile(firFile) {
+    override fun withContainingFile(cfirFile: CfirFile, action: () -> Unit) {
+        transformer.declarationsTransformer.context.withFile(cfirFile) {
             action()
         }
     }
 
     @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
-    override fun withContainingClass(firClass: CfirClass, action: () -> Unit) {
+    override fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
         val declarationsTransformer = transformer.declarationsTransformer
         val context = declarationsTransformer.context
-        context.withContainingClass(firClass) {
-            context.withScopesForClass(firClass, declarationsTransformer.components) {
+        context.withContainingClass(cfirClass) {
+            context.withScopesForClass(cfirClass, declarationsTransformer.components) {
                 action()
             }
         }
     }
 
     protected fun <T : CfirElementWithResolveState> resolve(target: T, keeper: StateKeeper<T, CfirDesignation>) {
-        val firDesignation = CfirDesignation(containingDeclarations, target)
-        resolveWithKeeper(target, firDesignation, keeper, { CfirLazyBodiesCalculator.calculateBodies(firDesignation) }) {
+        val cfirDesignation = CfirDesignation(containingDeclarations, target)
+        resolveWithKeeper(target, cfirDesignation, keeper, { CfirLazyBodiesCalculator.calculateBodies(cfirDesignation) }) {
             rawResolve(target)
         }
     }

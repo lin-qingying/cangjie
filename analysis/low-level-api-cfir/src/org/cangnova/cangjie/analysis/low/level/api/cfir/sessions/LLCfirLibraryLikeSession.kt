@@ -11,9 +11,9 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 
 abstract class LLCfirLibraryLikeSession(
-    ktModule: CaModule,
+    caModule: CaModule,
     builtinTypes: CfirBuiltinTypes,
-) : LLCfirSession(ktModule, builtinTypes, Kind.Library) {
+) : LLCfirSession(caModule, builtinTypes, Kind.Library) {
     private val scopeSessionProvider = LLCfirScopeSessionProvider.create(project, invalidationTrackers = emptyList())
 
     override fun getScopeSession(): ScopeSession {

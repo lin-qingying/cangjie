@@ -35,7 +35,7 @@ internal abstract class LLSelectingCombinedSymbolProvider<PROVIDER : CfirSymbolP
      */
     private val moduleToIndex: Map<CaModule, Int> = buildMap {
         providers.forEachIndexed { index, provider ->
-            val module = provider.session.llCfirModuleData.ktModule
+            val module = provider.session.llCfirModuleData.caModule
             if (module in this) {
                 errorWithAttachment("`${module::class.simpleName}` must not be associated with multiple symbol providers.") {
                     withCaModuleEntry("module", module)
@@ -51,7 +51,7 @@ internal abstract class LLSelectingCombinedSymbolProvider<PROVIDER : CfirSymbolP
     @CaCachedService
     private val projectStructureProvider: CangJieProjectStructureProvider = CangJieProjectStructureProvider.getInstance(project)
 
-    private val contextualModule = session.llCfirModuleData.ktModule
+    private val contextualModule = session.llCfirModuleData.caModule
 
     protected fun getModule(element: PsiElement): CaModule {
         return projectStructureProvider.getModule(element, contextualModule)

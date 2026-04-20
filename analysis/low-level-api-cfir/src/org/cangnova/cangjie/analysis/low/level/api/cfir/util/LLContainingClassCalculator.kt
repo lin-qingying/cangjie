@@ -86,7 +86,7 @@ internal object LLContainingClassCalculator {
             return null
         }
 
-        val module = symbol.llCfirModuleData.ktModule
+        val module = symbol.llCfirModuleData.caModule
         val resolutionFacade = module.getResolutionFacade(module.project)
         return psi.resolveToCfirSymbolOfType<CfirClassSymbol>(resolutionFacade)
     }

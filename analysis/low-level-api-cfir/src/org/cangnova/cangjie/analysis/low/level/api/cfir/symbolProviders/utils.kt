@@ -6,21 +6,12 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.FqName
-
-private const val KOTLIN_PACKAGE_PREFIX = "kotlin."
-
-internal fun ClassId.isKotlinPackage(): Boolean = startsWith(StandardNames.BUILT_INS_PACKAGE_NAME)
-
-internal fun FqName.isKotlinPackage(): Boolean = startsWith(StandardNames.BUILT_INS_PACKAGE_NAME)
-
-internal fun String.isKotlinPackage(): Boolean = startsWith(KOTLIN_PACKAGE_PREFIX)
 
 /**
  * Checks if this [CfirBasedSymbol] has the given PSI element as a source.
@@ -70,3 +61,7 @@ internal fun CfirSymbolProvider.getAllClassLikeSymbolsByClassIdOrSingle(classId:
         else -> listOfNotNull(getClassLikeSymbolByClassId(classId))
     }
 
+internal fun CfirSymbolNamesProvider.mayHaveTopLevelClassifier(classId: ClassId): Boolean {
+    val names = getTopLevelClassifierNamesInPackage(classId.packageFqName) ?: return true
+    return classId.shortClassName in names
+}

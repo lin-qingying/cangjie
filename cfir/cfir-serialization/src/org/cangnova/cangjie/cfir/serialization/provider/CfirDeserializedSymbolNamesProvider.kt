@@ -14,12 +14,19 @@ class CfirDeserializedSymbolNamesProvider(
     private val cjoManager: CjoManager,
 ) : CfirSymbolNamesProvider() {
 
-    override fun getPackageNames(): Set<FqName>? = cjoManager.getAvailablePackageNames()
+    override fun getPackageNames(): Set<String>? =
+        cjoManager.getAvailablePackageNames().mapTo(linkedSetOf()) { it.asString() }
+
+    override val hasSpecificClassifierPackageNamesComputation: Boolean
+        get() = false
 
     override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? {
         val header = cjoManager.loadPackageHeader(packageFqName.asString()) ?: return emptySet()
         return header.topLevelClassNames
     }
+
+    override val hasSpecificCallablePackageNamesComputation: Boolean
+        get() = false
 
     override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>? {
         val header = cjoManager.loadPackageHeader(packageFqName.asString()) ?: return emptySet()

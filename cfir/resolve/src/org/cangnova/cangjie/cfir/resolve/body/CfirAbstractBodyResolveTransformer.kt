@@ -44,6 +44,9 @@ abstract class CfirAbstractBodyResolveTransformer(
 
     abstract val components: BodyResolveTransformerComponents
 
+    inline val dataFlowAnalyzer: CfirDataFlowAnalyzer
+        get() = components.dataFlowAnalyzer
+
     final override val session: CfirSession get() = components.session
 
     /**

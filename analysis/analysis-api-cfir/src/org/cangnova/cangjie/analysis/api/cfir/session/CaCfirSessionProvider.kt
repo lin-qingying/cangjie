@@ -2,13 +2,15 @@ package org.cangnova.cangjie.analysis.api.cfir.session
 
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacadeService
 import org.cangnova.cangjie.analysis.api.impl.base.sessions.CaBaseSessionProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLResolutionFacadeService
 import org.cangnova.cangjie.psi.CjElement
 import java.util.concurrent.ConcurrentHashMap
 
@@ -27,8 +29,9 @@ class CaCfirSessionProvider(
 ) : CaBaseSessionProvider(project), CaSessionInvalidationService {
     private val cache = ConcurrentHashMap<CaModule, CaCfirSession>()
 
+    @OptIn(LLCfirInternals::class)
     private val resolutionFacadeService by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        CaCfirResolutionFacadeService.getInstance(project)
+        LLResolutionFacadeService.getInstance(project)
     }
 
     private val projectStructureProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
@@ -53,7 +56,6 @@ class CaCfirSessionProvider(
 
     override fun invalidate(modules: Set<CaModule>) {
         modules.forEach(cache::remove)
-        resolutionFacadeService.invalidate(modules)
     }
 
     /**
@@ -97,9 +99,10 @@ class CaCfirSessionProvider(
         clearCaches()
     }
 
+    @OptIn(CaPlatformInterface::class, LLCfirInternals::class)
     private fun createAnalysisSession(useSiteModule: CaModule): CaCfirSession {
         val resolutionFacade = resolutionFacadeService.getResolutionFacade(useSiteModule)
-        val token = tokenFactory.create(project)
+        val token = tokenFactory.create(project, resolutionFacade.useSiteCfirSession.createValidityTracker())
         return CaCfirSession.create(
             project = project,
             resolutionFacade = resolutionFacade,

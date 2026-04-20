@@ -39,7 +39,7 @@ internal inline fun checkCanceled() {
 internal val CfirElement.isErrorElement
     get() = this is CfirDiagnosticHolder
 
-internal val CfirDeclaration.ktDeclaration: CjDeclaration
+internal val CfirDeclaration.cjDeclaration: CjDeclaration
     get() {
         val psi = psi
             ?: errorWithCfirSpecificEntries("PSI element was not found", fir = this)

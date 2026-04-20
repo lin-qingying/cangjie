@@ -21,6 +21,7 @@ dependencies {
     compileOnly(intellijCore())
     api(project(":analysis:analysis-api"))
     api(project(":compiler:config"))
+    compileOnly("io.opentelemetry:opentelemetry-api:1.39.0")
     compileOnly("org.checkerframework:checker-qual:3.42.0")
 }
 

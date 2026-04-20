@@ -65,6 +65,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirMatchPatternLegalityChecker,
             CfirMatchExhaustivenessChecker,
             CfirOrPatternVariableChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirMatchUnreachablePatternChecker,
         )
 
     override val assignmentCheckers: Set<CfirAssignmentChecker>
@@ -97,6 +98,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTrailingLambdaChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirVArrayConstructorArgChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirInoutArgumentChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirApiLevelRefHigherChecker,
             CfirInoutSemanticsChecker,
         )
 

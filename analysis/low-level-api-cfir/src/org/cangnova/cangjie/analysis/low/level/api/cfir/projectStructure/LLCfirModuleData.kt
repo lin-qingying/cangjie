@@ -33,47 +33,47 @@ val CfirBasedSymbol<*>.llCfirModuleData: LLCfirModuleData
 /**
  * The [CfirModuleData] for CFIR elements managed by the Analysis API. In Analysis API mode, all CFIR elements must have [LLCfirModuleData].
  */
-open class LLCfirModuleData internal constructor(val ktModule: CaModule) : CfirModuleData() {
-    constructor(session: LLCfirSession) : this(session.ktModule) {
+open class LLCfirModuleData internal constructor(val caModule: CaModule) : CfirModuleData() {
+    constructor(session: LLCfirSession) : this(session.caModule) {
         bindSession(session)
     }
 
-    override val name: Name get() = Name.special("<${ktModule.moduleDescription}>")
+    override val name: Name get() = Name.special("<${caModule.moduleDescription}>")
 
     override val dependencies: List<CfirModuleData> by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        ktModule.directRegularDependencies.map(::LLCfirModuleData)
+        caModule.directRegularDependencies.map(::LLCfirModuleData)
     }
 
     override val refinementDependencies: List<CfirModuleData> by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        ktModule.directDependsOnDependencies.map(::LLCfirModuleData)
+        caModule.directDependsOnDependencies.map(::LLCfirModuleData)
     }
 
     override val allRefinementDependencies: List<CfirModuleData> by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        ktModule.transitiveDependsOnDependencies.map(::LLCfirModuleData)
+        caModule.transitiveDependsOnDependencies.map(::LLCfirModuleData)
     }
 
     override val platform: CfirPlatform
-        get() = ktModule.targetPlatform.toCfirPlatform()
+        get() = caModule.targetPlatform.toCfirPlatform()
 
     override val isCommon: Boolean
         get() = platform == CfirPlatform.DEFAULT
 
     override val session: LLCfirSession
         get() = boundSession?.let { it as LLCfirSession }
-            ?: LLCfirSessionCache.getInstance(ktModule.project).getSession(ktModule, preferBinary = true)
+            ?: LLCfirSessionCache.getInstance(caModule.project).getSession(caModule, preferBinary = true)
 
     override val stableModuleName: String?
-        get() = ktModule.stableModuleName
+        get() = caModule.stableModuleName
 
     /**
      * Library sources have [CfirSession.Kind.Source] kind, but should be treated as a binary dependency since we don't expect
      * redeclararions there.
      */
     override val areRedeclarationsEquivalent: Boolean
-        get() = super.areRedeclarationsEquivalent || ktModule is CaLibrarySourceModule
+        get() = super.areRedeclarationsEquivalent || caModule is CaLibrarySourceModule
 
-    override fun equals(other: Any?): Boolean = this === other || other is LLCfirModuleData && ktModule == other.ktModule
-    override fun hashCode(): Int = ktModule.hashCode()
+    override fun equals(other: Any?): Boolean = this === other || other is LLCfirModuleData && caModule == other.caModule
+    override fun hashCode(): Int = caModule.hashCode()
 }
 
 private fun CaTargetPlatform.toCfirPlatform(): CfirPlatform {

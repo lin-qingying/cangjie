@@ -3,11 +3,11 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 import org.cangnova.cangjie.analysis.api.cfir.*
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.resolve.DiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticProvider
 import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
 

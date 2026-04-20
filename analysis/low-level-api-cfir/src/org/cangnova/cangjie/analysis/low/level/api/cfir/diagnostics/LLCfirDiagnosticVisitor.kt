@@ -56,9 +56,9 @@ internal open class LLCfirDiagnosticVisitor(
     }
 
     override fun visitCodeFragment(codeFragment: CfirCodeFragment, data: Nothing?) {
-        val ktCodeFragment = codeFragment.psi as CjCodeFragment
+        val cjCodeFragment = codeFragment.psi as CjCodeFragment
 
-        val contextElement = ktCodeFragment.context
+        val contextElement = cjCodeFragment.context
         if (contextElement != null) {
             fun process(containingSymbols: List<CfirDeclaration>) {
                 if (containingSymbols.isEmpty()) {

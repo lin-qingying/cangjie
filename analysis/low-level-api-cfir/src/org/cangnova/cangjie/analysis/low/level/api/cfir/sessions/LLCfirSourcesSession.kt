@@ -11,11 +11,11 @@ import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 
 internal class LLCfirSourcesSession @PrivateSessionConstructor constructor(
-    ktModule: CaSourceModule,
+    caModule: CaSourceModule,
     override val moduleComponents: LLCfirModuleResolveComponents,
     builtinTypes: CfirBuiltinTypes,
     computeDependencies: () -> List<LLCfirSession>,
-) : LLCfirResolvableModuleSession(ktModule, builtinTypes) {
+) : LLCfirResolvableModuleSession(caModule, builtinTypes) {
     /**
      * Dependencies are lazy to support cyclic dependencies between modules.
      */

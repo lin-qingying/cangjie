@@ -16,26 +16,8 @@ class CfirCompositeSymbolProvider(
     session: CfirSession,
     val providers: List<CfirSymbolProvider>,
 ) : CfirSymbolProvider(session) {
-    override val symbolNamesProvider: CfirSymbolNamesProvider = object : CfirSymbolNamesProvider() {
-        override fun getPackageNames(): Set<FqName>? = mergeNameSets { it.getPackageNames() }
-
-        override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? =
-            mergeNameSets { it.getTopLevelClassifierNamesInPackage(packageFqName) }
-
-        override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>? =
-            mergeNameSets { it.getTopLevelCallableNamesInPackage(packageFqName) }
-
-        private fun <T> mergeNameSets(getter: (CfirSymbolNamesProvider) -> Set<T>?): Set<T>? {
-            val merged = LinkedHashSet<T>()
-            var hasKnownSet = false
-            for (provider in providers) {
-                val names = getter(provider.symbolNamesProvider) ?: continue
-                hasKnownSet = true
-                merged += names
-            }
-            return if (hasKnownSet) merged else null
-        }
-    }
+    override val symbolNamesProvider: CfirSymbolNamesProvider =
+        CfirCompositeSymbolNamesProvider.fromSymbolProviders(providers)
 
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
         for (provider in providers) {

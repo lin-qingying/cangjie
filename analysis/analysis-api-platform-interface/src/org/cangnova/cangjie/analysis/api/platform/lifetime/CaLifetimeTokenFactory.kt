@@ -2,18 +2,26 @@ package org.cangnova.cangjie.analysis.api.platform.lifetime
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.ModificationTracker
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
+import kotlin.reflect.KClass
 
 /**
  * Analysis API 生命周期令牌工厂。
  *
- * 平台通过它决定具体令牌的形态与有效性约束，例如：
- * - IDE 下绑定到项目级 tracker。
- * - Standalone 下绑定到一次构建好的分析上下文。
- * - LSP 下绑定到文档快照或工作区版本。
+ * 对齐 Kotlin `KotlinLifetimeTokenFactory`：
+ * 平台必须基于给定的 `ModificationTracker` 创建 token，
+ * 这样 analysis session 的有效性才能直接绑定到底层会话或宿主快照。
  */
+@CaPlatformInterface
 interface CaLifetimeTokenFactory {
-    fun create(project: Project): CaLifetimeToken
+    val identifier: KClass<out CaLifetimeToken>
+
+    /**
+     * 基于具体分析会话对应的有效性跟踪器创建 token。
+     */
+    fun create(project: Project, modificationTracker: ModificationTracker): CaLifetimeToken
 
     companion object {
         fun getInstance(project: Project): CaLifetimeTokenFactory = project.service()

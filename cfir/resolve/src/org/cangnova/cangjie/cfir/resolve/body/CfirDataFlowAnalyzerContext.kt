@@ -1,8 +1,11 @@
 package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
+import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.expressions.CfirCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 
 /**
  * 数据流分析上下文。
@@ -39,32 +42,6 @@ class CfirDataFlowAnalyzerContext {
     val currentFunctionCallFrame: FunctionCallFrame?
         get() = functionCallFrames.lastOrNull()
 
-    /**
-     * 为 low-level partial body resolve 保存当前调用级数据流帧快照。
-     *
-     * 当前仓颉主干尚未接入 Kotlin FIR 那套 CFG / smart-cast 状态图，所以这里
-     * 只复制已经真实存在的调用栈状态，不伪造额外分析结果。
-     */
-    fun createSnapshot(): CfirDataFlowAnalyzerContext {
-        val snapshot = CfirDataFlowAnalyzerContext()
-        snapshot.callArgumentsFrames.addAll(callArgumentsFrames.map { it.copy() })
-        snapshot.functionCallFrames.addAll(functionCallFrames.map { it.copy() })
-        return snapshot
-    }
-
-    /**
-     * 用先前保存的调用级数据流帧恢复当前上下文。
-     *
-     * 这和 Kotlin FIR 中 snapshot restore 的职责对齐，但只覆盖仓颉主干当前
-     * 已经存在的 frame 结构。
-     */
-    fun resetFrom(snapshot: CfirDataFlowAnalyzerContext) {
-        callArgumentsFrames.clear()
-        callArgumentsFrames.addAll(snapshot.callArgumentsFrames.map { it.copy() })
-
-        functionCallFrames.clear()
-        functionCallFrames.addAll(snapshot.functionCallFrames.map { it.copy() })
-    }
 
     fun enterCallArguments(call: CfirCall, lambdaArguments: List<CfirAnonymousFunction>): CallArgumentsFrame {
         return CallArgumentsFrame(
@@ -103,7 +80,7 @@ class CfirDataFlowAnalyzerContext {
      * 仓颉主干当前还没有 CFG / smart-cast 图结构，因此这里只复制已经真实存在的
      * 调用参数栈与函数调用栈，供 low-level partial body resolve 在续跑时恢复分析边界。
      */
-    fun createSnapshot(): CfirDataFlowAnalyzerContextSnapshot {
+    fun createSnapshot(firMapper: SnapshotCfirMapper): CfirDataFlowAnalyzerContextSnapshot {
         val snapshot = CfirDataFlowAnalyzerContext()
         for (frame in callArgumentsFrames) {
             snapshot.callArgumentsFrames.addLast(frame.copy())
@@ -111,7 +88,10 @@ class CfirDataFlowAnalyzerContext {
         for (frame in functionCallFrames) {
             snapshot.functionCallFrames.addLast(frame.copy())
         }
-        return CfirDataFlowAnalyzerContextSnapshot(snapshot)
+        return CfirDataFlowAnalyzerContextSnapshot(
+            context = snapshot,
+            graphMapping = emptyMap(),
+        )
     }
 
     /**
@@ -138,4 +118,13 @@ class CfirDataFlowAnalyzerContext {
 
 class CfirDataFlowAnalyzerContextSnapshot(
     val context: CfirDataFlowAnalyzerContext,
+    val graphMapping: Map<ControlFlowGraph, ControlFlowGraph>,
 )
+
+/**
+ * 对位 Kotlin `SnapshotFirMapper`。
+ */
+interface SnapshotCfirMapper {
+    fun <T : CfirBasedSymbol<*>> mapSymbol(symbol: T): T
+    fun <T : CfirElement> mapElement(element: T): T
+}

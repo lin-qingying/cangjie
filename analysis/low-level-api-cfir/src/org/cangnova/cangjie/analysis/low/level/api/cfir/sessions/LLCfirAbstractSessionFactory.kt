@@ -28,17 +28,16 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirLibraryS
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLNameConflictsTracker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.*
-import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedKotlinSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedCangJieSymbolProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedPackageDelegationSymbolProvider
 import org.cangnova.cangjie.cfir.ScopeSession
-import org.cangnova.cangjie.diagnostics.CjRegisteredDiagnosticFactoriesStorage
+
 import org.cangnova.cangjie.cfir.CfirNameConflictsTracker
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.diagnostics.CjRegisteredDiagnosticFactoriesStorage
 import org.cangnova.cangjie.cfir.extensions.*
 import org.cangnova.cangjie.cfir.resolve.providers.*
-import org.cangnova.cangjie.cfir.resolve.providers.impl.CfirCompositeSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.cfir.symbols.CfirDummyCompilerLazyDeclarationResolver
@@ -100,14 +99,11 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             registerCommonComponentsAfterExtensionsAreConfigured()
 
 
-            val ktFile = module.file as? CjFile
-
             val provider = LLCfirProvider(
                 this,
                 components,
-                canContainKotlinPackage = true,
             ) { scope ->
-                createScopedDeclarationProviderForFiles(scope, listOfNotNull(ktFile))
+                project.createDeclarationProvider(scope, module)
             }
 
             register(CfirProvider::class, provider)
@@ -141,7 +137,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
     protected class SourceSessionCreationContext(
         val contentScope: GlobalSearchScope,
-        val firProvider: LLCfirProvider,
+        val cfirProvider: LLCfirProvider,
         val dependencyProvider: LLDependenciesSymbolProvider,
     )
 
@@ -171,16 +167,14 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             registerAllCommonComponents(languageVersionSettings, module, resolutionScope)
             registerSourceLikeComponents()
 
-            val firProvider = LLCfirProvider(
+            val cfirProvider = LLCfirProvider(
                 this,
                 components,
-                /* Source modules can contain `kotlin` package only if `-Xallow-kotlin-package` is specified, this is handled in LLCfirProvider */
-                canContainKotlinPackage = false,
             ) { scope ->
                 project.createDeclarationProvider(scope, module)
             }
 
-            register(CfirProvider::class, firProvider)
+            register(CfirProvider::class, cfirProvider)
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
 
             registerCompilerPluginServices(project, resolutionScope)
@@ -200,7 +194,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
             val context = SourceSessionCreationContext(
                 module.contentScope,
-                firProvider,
+                cfirProvider,
                 dependencyProvider,
             )
 
@@ -210,7 +204,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
     protected class LibrarySessionCreationContext(
         val contentScope: GlobalSearchScope,
-        val firProvider: LLCfirProvider,
+        val cfirProvider: LLCfirProvider,
         val dependencyProvider: LLDependenciesSymbolProvider,
     )
 
@@ -245,15 +239,14 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             registerAllCommonComponents(languageVersionSettings, module, binaryContentScope)
             registerCommonComponentsAfterExtensionsAreConfigured()
 
-            val firProvider = LLCfirProvider(
+            val cfirProvider = LLCfirProvider(
                 this,
                 components,
-                canContainKotlinPackage = true,
             ) { scope ->
                 project.createDeclarationProvider(scope, module)
             }
 
-            register(CfirProvider::class, firProvider)
+            register(CfirProvider::class, cfirProvider)
 
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
 
@@ -287,7 +280,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
             register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, dependencyProvider)
 
-            val context = LibrarySessionCreationContext(binaryContentScope, firProvider, dependencyProvider)
+            val context = LibrarySessionCreationContext(binaryContentScope, cfirProvider, dependencyProvider)
             additionalSessionConfiguration(context)
 
             LLCfirSessionConfigurator.configure(this)
@@ -369,15 +362,14 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             registerAllCommonComponents(languageVersionSettings, module, resolutionScope)
             registerSourceLikeComponents()
 
-            val firProvider = LLCfirProvider(
+            val cfirProvider = LLCfirProvider(
                 this,
                 components,
-                canContainKotlinPackage = true,
                 disregardSelfDeclarations = module.resolutionMode == CaDanglingFileResolutionMode.IGNORE_SELF,
                 declarationProviderFactory = { scope -> createScopedDeclarationProviderForFiles(scope, module.files) }
             )
 
-            register(CfirProvider::class, firProvider)
+            register(CfirProvider::class, cfirProvider)
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
 
             register(CfirRegisteredPluginAnnotations::class, CfirRegisteredPluginAnnotationsImpl(session))
@@ -420,7 +412,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                         addMerged(session, computeDependencySymbolProviders(listOf(contextSession)))
                     }
 
-                    when (contextSession.ktModule) {
+                    when (contextSession.caModule) {
                         is CaLibraryModule, is CaLibrarySourceModule -> {
                             // Wrap library dependencies into a single classpath-filtering provider
                             // Also see 'LLDanglingFileDependenciesSymbolProvider.filterSymbols()'
@@ -567,11 +559,11 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         destination: MutableList<CfirSymbolProvider>,
     ) {
         mergeInto(destination) {
-            merge<LLKotlinSourceSymbolProvider> { LLCombinedKotlinSymbolProvider.merge(session, project, it) }
+            merge<LLCangJieSourceSymbolProvider> { LLCombinedCangJieSymbolProvider.merge(session, project, it) }
 
-            // We place the combined Kotlin library symbol provider before the combined Java symbol provider because the former is generally
+            // We place the combined CangJie library symbol provider before the combined Java symbol provider because the former is generally
             // faster due to package and name set checks.
-            merge<LLKotlinStubBasedLibrarySymbolProvider> { LLCombinedPackageDelegationSymbolProvider.merge(session, it) }
+            merge<LLCangJieStubBasedLibrarySymbolProvider> { LLCombinedPackageDelegationSymbolProvider.merge(session, it) }
         }
     }
 

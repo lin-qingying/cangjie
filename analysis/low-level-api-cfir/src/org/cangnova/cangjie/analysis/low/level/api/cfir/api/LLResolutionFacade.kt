@@ -40,6 +40,9 @@ class LLResolutionFacade internal constructor(
     val sessionProvider: LLSessionProvider,
     val diagnosticProvider: LLDiagnosticProvider,
 ) {
+    private val callResolver: LLCallResolver by lazy(LazyThreadSafetyMode.NONE) {
+        LLCallResolver(useSiteCfirSession)
+    }
     val useSiteModule: CaModule
         get() = moduleProvider.useSiteModule
 
@@ -59,9 +62,9 @@ class LLResolutionFacade internal constructor(
     fun getDependencySessionFor(module: CaModule): LLCfirSession? =
         sessionProvider.getDependencySession(module)
 
-    fun getScopeSessionFor(firSession: CfirSession): ScopeSession {
-        requireIsInstance<LLCfirSession>(firSession)
-        return LLDefaultScopeSessionProvider.getScopeSession(firSession)
+    fun getScopeSessionFor(cfirSession: CfirSession): ScopeSession {
+        requireIsInstance<LLCfirSession>(cfirSession)
+        return LLDefaultScopeSessionProvider.getScopeSession(cfirSession)
     }
 
     /**
@@ -89,9 +92,9 @@ class LLResolutionFacade internal constructor(
     /**
      * Get or build or get cached [CfirFile] for the requested file in undefined phase
      */
-    internal fun getOrBuildCfirFile(ktFile: CjFile): CfirFile {
-        val moduleComponents = getModuleComponentsForElement(ktFile)
-        return moduleComponents.firFileBuilder.buildRawCfirFileWithCaching(ktFile)
+    internal fun getOrBuildCfirFile(cjFile: CjFile): CfirFile {
+        val moduleComponents = getModuleComponentsForElement(cjFile)
+        return moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
     }
 
     private fun getModuleComponentsForElement(element: CjElement): LLCfirModuleResolveComponents {
@@ -109,17 +112,21 @@ class LLResolutionFacade internal constructor(
     /**
      * @see LLDiagnosticProvider.collectDiagnostics
      */
-    internal fun collectDiagnosticsForFile(ktFile: CjFile, filter: DiagnosticCheckerFilter): Collection<CjPsiDiagnostic> {
-        return diagnosticProvider.collectDiagnostics(ktFile, filter)
+    internal fun collectDiagnosticsForFile(cjFile: CjFile, filter: DiagnosticCheckerFilter): Collection<CjPsiDiagnostic> {
+        return diagnosticProvider.collectDiagnostics(cjFile, filter)
     }
 
-    internal fun resolveToCfirSymbol(ktDeclaration: CjDeclaration, phase: CfirResolvePhase): CfirBasedSymbol<*> {
-        val containingCjFile = ktDeclaration.containingCjFile
+    internal fun getCallInfo(element: CjElement): LLCallInfo? {
+        return callResolver.resolveCallInfo(this, element)
+    }
+
+    internal fun resolveToCfirSymbol(cjDeclaration: CjDeclaration, phase: CfirResolvePhase): CfirBasedSymbol<*> {
+        val containingCjFile = cjDeclaration.containingCjFile
         val module = getModule(containingCjFile)
 
         return when (getModuleResolutionStrategy(module)) {
-            LLModuleResolutionStrategy.LAZY -> findSourceCfirSymbol(ktDeclaration).also { it.cfir.lazyResolveToPhase(phase) }
-            LLModuleResolutionStrategy.STATIC -> findCompiledCfirSymbol(ktDeclaration, module)
+            LLModuleResolutionStrategy.LAZY -> findSourceCfirSymbol(cjDeclaration).also { it.cfir.lazyResolveToPhase(phase) }
+            LLModuleResolutionStrategy.STATIC -> findCompiledCfirSymbol(cjDeclaration, module)
         }
     }
 
@@ -127,8 +134,8 @@ class LLResolutionFacade internal constructor(
         return resolutionStrategyProvider.getKind(module)
     }
 
-    private fun findSourceCfirSymbol(ktDeclaration: CjDeclaration): CfirBasedSymbol<*> {
-        val targetDeclaration = ktDeclaration.originalDeclaration ?: ktDeclaration
+    private fun findSourceCfirSymbol(cjDeclaration: CjDeclaration): CfirBasedSymbol<*> {
+        val targetDeclaration = cjDeclaration.originalDeclaration ?: cjDeclaration
         val targetModule = getModule(targetDeclaration)
 
         require(getModuleResolutionStrategy(targetModule) == LLModuleResolutionStrategy.LAZY) {
@@ -139,47 +146,47 @@ class LLResolutionFacade internal constructor(
         val nonLocalContainer = targetDeclaration.containingCjFile as? CjCodeFragment
             ?: targetDeclaration.getNonLocalContainingOrThisElement()
             ?: errorWithAttachment("Declaration should have non-local container") {
-                withPsiEntry("ktDeclaration", targetDeclaration, ::getModule)
+                withPsiEntry("cjDeclaration", targetDeclaration, ::getModule)
                 withEntry("module", targetModule) { it.moduleDescription }
             }
 
-        val firDeclaration = if ((nonLocalContainer as? CjDeclaration) == targetDeclaration) {
+        val cfirDeclaration = if ((nonLocalContainer as? CjDeclaration) == targetDeclaration) {
             val session = sessionProvider.getResolvableSession(targetModule)
             nonLocalContainer.findSourceNonLocalCfirDeclaration(
-                firFileBuilder = session.moduleComponents.firFileBuilder,
+                cfirFileBuilder = session.moduleComponents.cfirFileBuilder,
                 provider = session.cfirProvider,
             )
         } else {
             findSourceCfirDeclarationViaResolve(targetDeclaration)
         }
 
-        return firDeclaration.symbol
+        return cfirDeclaration.symbol
     }
 
-    private fun findSourceCfirDeclarationViaResolve(ktDeclaration: CjExpression): CfirDeclaration {
-        return when (val fir = getOrBuildCfirFor(ktDeclaration)) {
-            is CfirDeclaration -> fir
-            is CfirAnonymousFunctionExpression -> fir.anonymousFunction
+    private fun findSourceCfirDeclarationViaResolve(cjDeclaration: CjExpression): CfirDeclaration {
+        return when (val cfir = getOrBuildCfirFor(cjDeclaration)) {
+            is CfirDeclaration -> cfir
+            is CfirAnonymousFunctionExpression -> cfir.anonymousFunction
             else -> errorWithCfirSpecificEntries(
-                "CfirDeclaration was not found for ${ktDeclaration::class}, fir is ${fir?.let { it::class }}",
-                fir = fir,
-                psi = ktDeclaration,
+                "CfirDeclaration was not found for ${cjDeclaration::class}, cfir is ${cfir?.let { it::class }}",
+                fir = cfir,
+                psi = cjDeclaration,
             )
         }
     }
 
-    private fun findCompiledCfirSymbol(ktDeclaration: CjDeclaration, module: CaModule): CfirBasedSymbol<*> {
+    private fun findCompiledCfirSymbol(cjDeclaration: CjDeclaration, module: CaModule): CfirBasedSymbol<*> {
         requireWithAttachment(
-            ktDeclaration.containingCjFile.isCompiled,
+            cjDeclaration.containingCjFile.isCompiled,
             { "`findCfirCompiledSymbol` only works on compiled declarations, but the given declaration is not compiled." },
         ) {
-            withPsiEntry("declaration", ktDeclaration, module)
+            withPsiEntry("declaration", cjDeclaration, module)
         }
 
         val session = getSessionFor(module)
         val searcher = CfirDeclarationForCompiledElementSearcher(session)
-        val firDeclaration = searcher.findNonLocalDeclaration(ktDeclaration)
-        return firDeclaration.symbol
+        val cfirDeclaration = searcher.findNonLocalDeclaration(cjDeclaration)
+        return cfirDeclaration.symbol
     }
 
 }

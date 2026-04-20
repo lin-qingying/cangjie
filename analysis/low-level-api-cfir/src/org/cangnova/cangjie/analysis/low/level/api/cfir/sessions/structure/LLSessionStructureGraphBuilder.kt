@@ -64,7 +64,7 @@ internal object LLSessionStructureGraphBuilder {
         }
 
         while (queue.isNotEmpty()) {
-            val currentNode = queue.removeCfirst()
+            val currentNode = queue.removeFirst()
             val currentDistance = currentNode.analysisRootDistance ?: 0
             val newDistance = currentDistance + 1
 

@@ -8,7 +8,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.deserialization.AbstractCfirDeserializedSymbolProvider
+import org.cangnova.cangjie.cfir.serialization.provider.AbstractCfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.*
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -91,7 +91,7 @@ internal class LLModuleWithDependenciesSymbolProvider(
     }
 
     private val multifileClassPartCallableSymbolProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        LLKotlinStubBasedLibraryMultifileClassPartCallableSymbolProvider(session)
+        LLCangJieStubBasedLibraryMultifileClassPartCallableSymbolProvider(session)
     }
 
     @OptIn(CfirSymbolProviderInternals::class)
@@ -102,7 +102,7 @@ internal class LLModuleWithDependenciesSymbolProvider(
     ): List<CfirCallableSymbol<*>> = buildList {
         providers.forEach { provider ->
             when (provider) {
-                is LLKotlinStubBasedLibrarySymbolProvider ->
+                is LLCangJieStubBasedLibrarySymbolProvider ->
                     addIfNotNull(provider.getTopLevelCallableSymbol(packageFqName, shortName, callableDeclaration))
 
                 is AbstractCfirDeserializedSymbolProvider ->
@@ -113,7 +113,7 @@ internal class LLModuleWithDependenciesSymbolProvider(
         }
 
         // Must be called after the original search as this is only a fallback solution
-        if (isEmpty() && providers.any { it is LLKotlinStubBasedLibrarySymbolProvider }) {
+        if (isEmpty() && providers.any { it is LLCangJieStubBasedLibrarySymbolProvider }) {
             multifileClassPartCallableSymbolProvider.addCallableIfNeeded(this, packageFqName, shortName, callableDeclaration)
         }
     }

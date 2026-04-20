@@ -28,7 +28,7 @@ class CfirStructBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
-    lateinit var deprecationsProvider: DeprecationsProvider
+    var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var symbol: CfirStructSymbol

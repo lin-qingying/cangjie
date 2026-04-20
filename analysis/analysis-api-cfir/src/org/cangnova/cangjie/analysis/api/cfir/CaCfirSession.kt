@@ -30,10 +30,10 @@ import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirTypeProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirTypeRelationChecker
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirVisibilityChecker
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbolProvider
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacade
 import org.cangnova.cangjie.analysis.api.impl.base.CaBaseSession
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
 import org.cangnova.cangjie.cfir.session.CfirSession
 
 /**
@@ -49,7 +49,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
  */
 internal class CaCfirSession private constructor(
     val project: Project,
-    val resolutionFacade: CaCfirResolutionFacade,
+    val resolutionFacade: LLResolutionFacade,
     token: CaLifetimeToken,
     analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSession(
@@ -113,6 +113,7 @@ internal class CaCfirSession private constructor(
      * 组件层直接依赖这些稳定服务对象，而不是把 `CaCfirSession` 当成总线式查询入口。
      */
     internal val diagnosticQueries = CaCfirSessionDiagnosticQueryService(
+        analysisSession = this,
         resolutionFacade = resolutionFacade,
         cacheStore = cacheStorage,
     )
@@ -132,7 +133,7 @@ internal class CaCfirSession private constructor(
     companion object {
         fun create(
             project: Project,
-            resolutionFacade: CaCfirResolutionFacade,
+            resolutionFacade: LLResolutionFacade,
             token: CaLifetimeToken,
         ): CaCfirSession {
             lateinit var session: CaCfirSession

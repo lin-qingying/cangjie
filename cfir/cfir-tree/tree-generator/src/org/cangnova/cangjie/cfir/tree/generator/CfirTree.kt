@@ -144,6 +144,26 @@ object CfirTree : AbstractCfirTreeBuilder() {
     }
 
     /**
+     * optional 后缀包装节点。
+     *
+     * 对齐官方 `OptionalExpr`：它只记录一次 `?` 后缀引入的包装语义，
+     * 不把 `?.` / `?[` / `?(` 退化为独立安全访问节点。
+     */
+    val optionalExpression: Element by element(Expression, name = "OptionalExpression") {
+        parent(wrappedExpression)
+    }
+
+    /**
+     * optional chain 根节点。
+     *
+     * 对齐官方 `OptionalChainExpr`：整条 quest 后缀链在 CFIR 中由单独节点承接，
+     * 链内的访问/调用/索引仍保持普通 expression 结构。
+     */
+    val optionalChainExpression: Element by element(Expression, name = "OptionalChainExpression") {
+        parent(wrappedExpression)
+    }
+
+    /**
      * 可解析节点接口。
      *
      * 所有持有 calleeReference 的节点都应实现此接口，以便：
@@ -1057,6 +1077,17 @@ object CfirTree : AbstractCfirTreeBuilder() {
         parent(typeRef)
         +listField("parameterTypeRefs", typeRef, withTransform = true)
         +field("returnTypeRef", typeRef, withTransform = true)
+    }
+
+    /**
+     * `?T` 的语法糖类型引用。
+     *
+     * 这里显式保留 optional type 的语法来源，后续 resolve 再映射到 `Option<T>`，
+     * 避免 raw CFIR 阶段过早退化成普通 user type。
+     */
+    val optionTypeRef: Element by element(TypeRef, name = "OptionTypeRef") {
+        parent(unresolvedTypeRef)
+        +field("componentTypeRef", typeRef, withTransform = true)
     }
 
     val tupleTypeRef: Element by element(TypeRef, name = "TupleTypeRef") {

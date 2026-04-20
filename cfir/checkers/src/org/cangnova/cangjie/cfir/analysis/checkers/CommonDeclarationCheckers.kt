@@ -84,6 +84,8 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirVArrayExtraChecker,
             CfirDeprecatedDeclarationChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirJavaInteropTypePropagationChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCustomAnnotationPlaceChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirAnnotationArgNumberCallableChecker,
         )
 
     override val functionCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionChecker>
@@ -161,6 +163,8 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirInheritanceThreadContextChecker,
             CfirCJMappingChecker,
             CfirObjCCJMappingChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCommonCtorImmutableAssignChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirAnnotationArgNumberClassChecker,
         )
 
     override val propertyCheckers: Set<CfirPropertyChecker>

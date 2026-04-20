@@ -5,8 +5,8 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.asCaDiagnostic
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirType
 import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
-import org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacade
 import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponent
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -25,7 +25,7 @@ internal interface CaCfirSessionComponent : CaSessionComponent {
     val analysisSession: CaCfirSession
 
     val project: Project get() = analysisSession.project
-    val resolutionFacade: CaCfirResolutionFacade get() = analysisSession.resolutionFacade
+    val resolutionFacade: LLResolutionFacade get() = analysisSession.resolutionFacade
 
     /**
      * 将 low-level Cone 类型绑定到当前组件的生命周期 token，

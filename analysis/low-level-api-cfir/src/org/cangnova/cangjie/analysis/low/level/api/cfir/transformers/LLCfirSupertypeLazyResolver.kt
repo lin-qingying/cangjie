@@ -42,9 +42,9 @@ private class LLCfirSuperTypeTargetResolver(
     target: LLCfirResolveTarget,
 ) : LLCfirTargetResolver(target, CfirResolvePhase.SUPER_TYPES) {
     @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
-    override fun withContainingClass(firClass: CfirClass, action: () -> Unit) {
-        if (firClass.resolvePhase < resolverPhase) {
-            performResolve(firClass)
+    override fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
+        if (cfirClass.resolvePhase < resolverPhase) {
+            performResolve(cfirClass)
         }
         action()
     }
@@ -67,6 +67,6 @@ private class LLCfirSuperTypeTargetResolver(
     }
 
     private fun containingFile(): CfirFile? {
-        return containingDeclarations.lastOrNull { it is CfirFile } as? CfirFile ?: resolveTarget.firFile
+        return containingDeclarations.lastOrNull { it is CfirFile } as? CfirFile ?: resolveTarget.cfirFile
     }
 }

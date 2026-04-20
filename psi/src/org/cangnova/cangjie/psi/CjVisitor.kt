@@ -100,6 +100,14 @@ open class CjVisitor<R, D> : PsiElementVisitor() {
         return visitQualifiedExpression(expression, data)
     }
 
+    open fun visitOptionalExpression(expression: CjOptionalExpression, data: D): R? {
+        return visitExpression(expression, data)
+    }
+
+    open fun visitOptionalChainExpression(expression: CjOptionalChainExpression, data: D): R? {
+        return visitExpression(expression, data)
+    }
+
     open fun visitMacroExpression(expression: CjMacroExpression, data: D): R? {
         return visitCjElement(expression, data)
     }

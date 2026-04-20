@@ -13,18 +13,18 @@ import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponen
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 
 internal fun collectForStructureElement(
-    firDeclaration: CfirDeclaration,
+    cfirDeclaration: CfirDeclaration,
     filter: DiagnosticCheckerFilter,
     createVisitor: (components: DiagnosticCollectorComponents) -> CheckerRunningDiagnosticCollectorVisitor,
 ): FileStructureElementDiagnosticList {
     val reporter = LLCfirDiagnosticReporter()
     val collector = LLCfirStructureElementDiagnosticsCollector(
-        firDeclaration.moduleData.session,
+        cfirDeclaration.moduleData.session,
         createVisitor,
         filter,
     )
-    collector.collectDiagnostics(firDeclaration, reporter)
-    val source = firDeclaration.source
+    collector.collectDiagnostics(cfirDeclaration, reporter)
+    val source = cfirDeclaration.source
     if (source != null) {
         reporter.checkAndCommitReportsOn(source, context = DiagnosticContext.Default, commitEverything = true)
     }

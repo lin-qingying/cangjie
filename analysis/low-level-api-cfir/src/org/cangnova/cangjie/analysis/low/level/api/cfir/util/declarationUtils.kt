@@ -38,17 +38,17 @@ import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 
 internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(
-    firFileBuilder: LLCfirFileBuilder,
+    cfirFileBuilder: LLCfirFileBuilder,
     provider: CfirProvider,
 ): CfirDeclaration = findSourceNonLocalCfirDeclaration(
-    firFileBuilder.buildRawCfirFileWithCaching(containingCjFile),
+    cfirFileBuilder.buildRawCfirFileWithCaching(containingCjFile),
     provider,
 )
 
 /**
  * 'Non-local' stands for not local classes/functions/etc.
  */
-internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(firFile: CfirFile, provider: CfirProvider): CfirDeclaration {
+internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(cfirFile: CfirFile, provider: CfirProvider): CfirDeclaration {
     // TODO test what way faster
     if (isPhysical) {
         // do not request providers with non-physical psi in order not to leak them there and
@@ -63,7 +63,7 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(firFile: CfirFile, 
                         val containerClassLikeCfir = containingTypeStatement.findCfir(provider) as? CfirClassLikeDeclaration
                         containerClassLikeCfir?.declarations
                     } else {
-                        firFile.declarations
+                        cfirFile.declarations
                     }
 
                     // It is possible that we will not be able to find the needed declaration here when the code is invalid
@@ -77,14 +77,14 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(firFile: CfirFile, 
 
     findSourceNonLocalCfirDeclarationByProvider(
         firDeclarationProvider = { declaration ->
-            CfirElementFinder.findDeclaration(firFile, declaration)
+            CfirElementFinder.findDeclaration(cfirFile, declaration)
         },
     )?.let { return it }
 
     errorWithCfirSpecificEntries(
-        "No fir element was found for ${this::class.simpleName}",
+        "No cfir element was found for ${this::class.simpleName}",
         psi = this,
-        fir = firFile,
+        fir = cfirFile,
         additionalInfos = { withEntry("isPhysical", isPhysical.toString()) }
     )
 }
@@ -93,22 +93,22 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(firFile: CfirFile, 
 fun collectUseSiteContainers(element: PsiElement, resolutionFacade: LLResolutionFacade): List<CfirDeclaration>? {
     val containingDeclaration = element.getNonLocalContainingOrThisDeclaration { it.isAutonomousElement } ?: return null
     val containingFile = containingDeclaration.containingCjFile
-    val firFile = resolutionFacade.getOrBuildCfirFile(containingFile)
-    return CfirElementFinder.findPathToDeclarationWithTarget(firFile, containingDeclaration)
+    val cfirFile = resolutionFacade.getOrBuildCfirFile(containingFile)
+    return CfirElementFinder.findPathToDeclarationWithTarget(cfirFile, containingDeclaration)
 }
 
 internal fun CjElement.findSourceByTraversingWholeTree(
-    firFileBuilder: LLCfirFileBuilder,
+    cfirFileBuilder: LLCfirFileBuilder,
     containerCfirFile: CfirFile?,
 ): CfirDeclaration? {
-    val firFile = containerCfirFile ?: firFileBuilder.buildRawCfirFileWithCaching(containingCjFile)
+    val cfirFile = containerCfirFile ?: cfirFileBuilder.buildRawCfirFileWithCaching(containingCjFile)
     val originalDeclaration = (this as? CjDeclaration)?.originalDeclaration
     val isDeclaration = this is CjDeclaration
     return CfirElementFinder.findElementIn(
-        firFile,
+        cfirFile,
         canGoInside = { it is CfirClassLikeDeclaration || it is CfirFunction || it is CfirProperty },
-        predicate = { firDeclaration ->
-            firDeclaration.psi == this || isDeclaration && firDeclaration.psi == originalDeclaration
+        predicate = { cfirDeclaration ->
+            cfirDeclaration.psi == this || isDeclaration && cfirDeclaration.psi == originalDeclaration
         }
     )
 }
@@ -125,14 +125,14 @@ private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
             -> firDeclarationProvider(this)
 
         is CjPropertyAccessor -> {
-            val firPropertyDeclaration = property.findSourceNonLocalCfirDeclarationByProvider(
+            val cfirPropertyDeclaration = property.findSourceNonLocalCfirDeclarationByProvider(
                 firDeclarationProvider,
             ) as? CfirProperty ?: return null
 
             if (isGetter) {
-                firPropertyDeclaration.getter
+                cfirPropertyDeclaration.getter
             } else {
-                firPropertyDeclaration.setter
+                cfirPropertyDeclaration.setter
             }
         }
 
@@ -142,11 +142,11 @@ private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
                 psi = this,
             )
 
-            val firDeclaration = ownerDeclaration.findSourceNonLocalCfirDeclarationByProvider(
+            val cfirDeclaration = ownerDeclaration.findSourceNonLocalCfirDeclarationByProvider(
                 firDeclarationProvider,
             ) ?: return null
 
-            val parameters = (firDeclaration as? CfirFunction)?.valueParameters
+            val parameters = (cfirDeclaration as? CfirFunction)?.valueParameters
 
             parameters?.firstOrNull { it.psi == this }
         }
@@ -157,11 +157,11 @@ private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
                 psi = this,
             )
 
-            val firTypeParameterOwner = declaration.findSourceNonLocalCfirDeclarationByProvider(
+            val cfirTypeParameterOwner = declaration.findSourceNonLocalCfirDeclarationByProvider(
                 firDeclarationProvider,
             ) as? CfirTypeParameterRefsOwner ?: return null
 
-            firTypeParameterOwner.typeParameters.firstOrNull { it.psi == this } as CfirDeclaration
+            cfirTypeParameterOwner.typeParameters.firstOrNull { it.psi == this } as CfirDeclaration
         }
 
         else -> errorWithCfirSpecificEntries("Invalid container", psi = this)
@@ -173,8 +173,8 @@ private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
 val ORIGINAL_DECLARATION_KEY = com.intellij.openapi.util.Key<CjDeclaration>("ORIGINAL_DECLARATION_KEY")
 var CjDeclaration.originalDeclaration by UserDataProperty(ORIGINAL_DECLARATION_KEY)
 
-private val ORIGINAL_KT_FILE_KEY = com.intellij.openapi.util.Key<CjFile>("ORIGINAL_KT_FILE_KEY")
-var CjFile.originalCjFile by UserDataProperty(ORIGINAL_KT_FILE_KEY)
+private val ORIGINAL_CJ_FILE_KEY = com.intellij.openapi.util.Key<CjFile>("ORIGINAL_CJ_FILE_KEY")
+var CjFile.originalCjFile by UserDataProperty(ORIGINAL_CJ_FILE_KEY)
 
 
 private fun CjClassLikeDeclaration.findCfir(provider: CfirProvider): CfirClassLikeDeclaration? {

@@ -12,7 +12,7 @@ import org.cangnova.cangjie.analysis.api.cfir.symbols.publicSymbolCacheKeyOrNull
 import org.cangnova.cangjie.analysis.api.cfir.symbols.restoreCallablePublicSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.restoreExtendMemberCallablePublicSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.restoreExtendPublicSymbol
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCallableSymbolBase
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCallableSymbolSupport
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassLikeSymbolBase
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbolImpl
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFileSymbolImpl
@@ -54,7 +54,7 @@ internal class CaCfirVisibilityChecker(
 
             is CaCallableSymbol -> {
                 val restoredSymbol = when (this@isVisible) {
-                    is CaCfirCallableSymbolBase<*> -> when (val cacheKey = publicSymbolCacheKeyOrNull()) {
+                    is CaCfirCallableSymbolSupport<*> -> when (val cacheKey = publicSymbolCacheKeyOrNull()) {
                         is CaCfirCallableSymbolCacheKey -> analysisSession.restoreCallablePublicSymbol(cacheKey.callableId, cacheKey.kind)
                         is CaCfirExtendMemberCallableSymbolCacheKey -> {
                             analysisSession.restoreExtendMemberCallablePublicSymbol(

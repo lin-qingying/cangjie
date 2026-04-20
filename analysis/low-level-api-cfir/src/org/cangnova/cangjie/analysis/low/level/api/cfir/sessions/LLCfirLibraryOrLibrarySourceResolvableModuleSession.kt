@@ -13,12 +13,12 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 
 internal class LLCfirLibraryOrLibrarySourceResolvableModuleSession(
-    ktModule: CaModule,
+    caModule: CaModule,
     override val moduleComponents: LLCfirModuleResolveComponents,
     builtinTypes: CfirBuiltinTypes,
-) : LLCfirResolvableModuleSession(ktModule, builtinTypes) {
+) : LLCfirResolvableModuleSession(caModule, builtinTypes) {
     init {
-        checkIsValidCjModule(ktModule)
+        checkIsValidCjModule(caModule)
     }
 
     companion object {

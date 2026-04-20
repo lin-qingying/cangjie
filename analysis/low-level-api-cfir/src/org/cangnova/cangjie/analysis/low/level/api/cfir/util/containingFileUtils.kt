@@ -22,11 +22,11 @@ fun CfirElementWithResolveState.getContainingFile(): CfirFile? {
         is CfirCallableDeclaration -> provider.getCfirCallableContainerFile(symbol)
         is CfirClassLikeDeclaration -> provider.getCfirClassifierContainerFileIfAny(symbol)
         is CfirCodeFragment -> {
-            val ktFile = psi?.containingFile as? CjFile
+            val cjFile = psi?.containingFile as? CjFile
                 ?: error("File for code fragment cannot be null")
             val moduleComponents = llCfirResolvableSession?.moduleComponents
                 ?: error("LLCfirResolvableModuleSession for code fragment cannot be null")
-            moduleComponents.cache.getCachedCfirFile(ktFile)
+            moduleComponents.cache.getCachedCfirFile(cjFile)
                 ?: error("Cfir file for code fragment cannot be null")
         }
         else -> errorWithCfirSpecificEntries("Unsupported declaration ${this::class}", fir = this)

@@ -105,7 +105,7 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
         toPhase: CfirResolvePhase,
     ) {
         try {
-            target.firFile?.let(::resolveFileToImportsWithLock)
+            target.cfirFile?.let(::resolveFileToImportsWithLock)
             if (toPhase == CfirResolvePhase.IMPORTS) return
 
             lazyResolveTargets(target, toPhase)
@@ -119,18 +119,18 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
     private fun resolveContainingFileToImports(target: CfirElementWithResolveState) {
         if (checkAnalysisReadiness(target, containingDeclarations = null, CfirResolvePhase.IMPORTS)) return
 
-        val firFile = target.getContainingFile() ?: return
-        resolveFileToImportsWithLock(firFile)
+        val containingCfirFile = target.getContainingFile() ?: return
+        resolveFileToImportsWithLock(containingCfirFile)
     }
 
-    private fun resolveFileToImportsWithLock(firFile: CfirFile) {
+    private fun resolveFileToImportsWithLock(cfirFile: CfirFile) {
         val lockProvider = moduleComponents.globalResolveComponents.lockProvider
         lockProvider.withGlobalLock {
-            lockProvider.withWriteLock(firFile, CfirResolvePhase.IMPORTS) {
-                firFile.transformSingle(
+            lockProvider.withWriteLock(cfirFile, CfirResolvePhase.IMPORTS) {
+                cfirFile.transformSingle(
                     CfirImportResolveTransformer(
-                        firFile.moduleData.session,
-                        firFile.moduleData.session.diagnosticReporter,
+                        cfirFile.moduleData.session,
+                        cfirFile.moduleData.session.diagnosticReporter,
                     ),
                     null,
                 )
@@ -172,20 +172,20 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
 
 private fun handleExceptionFromResolve(
     exception: Exception,
-    firDeclarationToResolve: CfirElementWithResolveState,
+    cfirDeclarationToResolve: CfirElementWithResolveState,
     fromPhase: CfirResolvePhase,
     toPhase: CfirResolvePhase,
 ): Nothing {
-    val session = firDeclarationToResolve.llCfirSession
-    val moduleData = firDeclarationToResolve.llCfirModuleData
-    val module = moduleData.ktModule
+    val session = cfirDeclarationToResolve.llCfirSession
+    val moduleData = cfirDeclarationToResolve.llCfirModuleData
+    val module = moduleData.caModule
 
     rethrowExceptionWithDetails(
         buildString {
-            appendLine("Error while resolving ${firDeclarationToResolve::class.java.name} ")
+            appendLine("Error while resolving ${cfirDeclarationToResolve::class.java.name} ")
             appendLine("from $fromPhase to $toPhase")
-            appendLine("current declaration phase ${firDeclarationToResolve.resolvePhase}")
-            appendLine("origin: ${(firDeclarationToResolve as? CfirDeclaration)?.origin}")
+            appendLine("current declaration phase ${cfirDeclarationToResolve.resolvePhase}")
+            appendLine("origin: ${(cfirDeclarationToResolve as? CfirDeclaration)?.origin}")
             appendLine("session: ${session::class}")
             appendLine("module data: ${moduleData::class}")
             appendLine("CaModule: ${module::class}")
@@ -195,8 +195,8 @@ private fun handleExceptionFromResolve(
     ) {
         withEntry("CaModule", module) { it.moduleDescription }
         withEntry("session", session) { it.toString() }
-        withEntry("moduleData", firDeclarationToResolve.moduleData) { it.toString() }
-        withCfirEntry("firDeclarationToResolve", firDeclarationToResolve)
+        withEntry("moduleData", cfirDeclarationToResolve.moduleData) { it.toString() }
+        withCfirEntry("cfirDeclarationToResolve", cfirDeclarationToResolve)
     }
 }
 
@@ -207,7 +207,7 @@ private fun handleExceptionFromResolve(
 ): Nothing {
     val session = designation.target.llCfirSession
     val moduleData = session.llCfirModuleData
-    val module = moduleData.ktModule
+    val module = moduleData.caModule
 
     rethrowExceptionWithDetails(
         buildString {
@@ -222,6 +222,6 @@ private fun handleExceptionFromResolve(
         withEntry("CaModule", module) { it.moduleDescription }
         withEntry("session", session) { it.toString() }
         withEntry("moduleData", moduleData) { it.toString() }
-        withEntry("firDesignationToResolve", designation) { it.toString() }
+        withEntry("cfirDesignationToResolve", designation) { it.toString() }
     }
 }

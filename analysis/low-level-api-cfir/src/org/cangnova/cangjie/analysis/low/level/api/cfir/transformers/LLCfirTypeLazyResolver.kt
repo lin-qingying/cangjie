@@ -56,15 +56,15 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
     private val transformer = CfirTypeResolveTransformer(resolveTargetSession)
 
     @Deprecated("Should never be called directly, only for override purposes, please use withFile", level = DeprecationLevel.ERROR)
-    override fun withContainingFile(firFile: CfirFile, action: () -> Unit) {
+    override fun withContainingFile(cfirFile: CfirFile, action: () -> Unit) {
         action()
     }
 
     @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
-    override fun withContainingClass(firClass: CfirClass, action: () -> Unit) {
-        if (firClass.resolvePhase < resolverPhase) {
-            performCustomResolveUnderLock(firClass) {
-                rawResolve(firClass)
+    override fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
+        if (cfirClass.resolvePhase < resolverPhase) {
+            performCustomResolveUnderLock(cfirClass) {
+                rawResolve(cfirClass)
             }
         }
         action()
@@ -117,7 +117,7 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
     }
 
     private fun buildConfiguration(topContainer: CfirDeclaration): CfirTypeResolutionConfiguration {
-        val containingFile = containingDeclarations.lastOrNull { it is CfirFile } as? CfirFile ?: resolveTarget.firFile
+        val containingFile = containingDeclarations.lastOrNull { it is CfirFile } as? CfirFile ?: resolveTarget.cfirFile
         val containingClasses = containingDeclarations.filterIsInstance<CfirClass>()
 
         var configuration = CfirTypeResolutionConfiguration.EMPTY.withTopContainer(topContainer)

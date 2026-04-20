@@ -22,9 +22,9 @@ internal class FileStructureCache(private val moduleResolveComponents: LLCfirMod
      */
     private val cache: ConcurrentMap<CjFile, FileStructure> = ContainerUtil.createConcurrentSoftKeySoftValueMap()
 
-    fun getFileStructure(ktFile: CjFile): FileStructure = cache.computeIfAbsent(ktFile) {
-        FileStructure.build(ktFile, moduleResolveComponents)
+    fun getFileStructure(cjFile: CjFile): FileStructure = cache.computeIfAbsent(cjFile) {
+        FileStructure.build(cjFile, moduleResolveComponents)
     }
 
-    fun getCachedFileStructure(ktFile: CjFile): FileStructure? = cache[ktFile]
+    fun getCachedFileStructure(cjFile: CjFile): FileStructure? = cache[cjFile]
 }

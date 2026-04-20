@@ -23,11 +23,17 @@ open class CfirSwitchableExtensionDeclarationsSymbolProvider protected construct
     protected open var disabled: Boolean = false
 
     override val symbolNamesProvider: CfirSymbolNamesProvider = object : CfirSymbolNamesProvider() {
-        override fun getPackageNames(): Set<FqName>? =
+        override fun getPackageNames(): Set<String>? =
             if (disabled) null else delegate.symbolNamesProvider.getPackageNames()
+
+        override val hasSpecificClassifierPackageNamesComputation: Boolean
+            get() = delegate.symbolNamesProvider.hasSpecificClassifierPackageNamesComputation
 
         override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? =
             if (disabled) null else delegate.symbolNamesProvider.getTopLevelClassifierNamesInPackage(packageFqName)
+
+        override val hasSpecificCallablePackageNamesComputation: Boolean
+            get() = delegate.symbolNamesProvider.hasSpecificCallablePackageNamesComputation
 
         override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>? =
             if (disabled) null else delegate.symbolNamesProvider.getTopLevelCallableNamesInPackage(packageFqName)

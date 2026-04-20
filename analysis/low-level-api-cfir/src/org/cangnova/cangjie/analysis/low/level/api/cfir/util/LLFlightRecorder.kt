@@ -38,13 +38,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.util.classId
 import org.cangnova.cangjie.utils.exceptions.shouldIjPlatformExceptionBeRethrown
 
-private const val KOTLIN_CODE_ANALYSIS_EVENT_CATEGORY = "Kotlin Code Analysis"
+private const val CANGJIE_CODE_ANALYSIS_EVENT_CATEGORY = "CangJie Code Analysis"
 
 
 object LLFlightRecorder {
     private val includePhaseTraces: Boolean by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        System.getProperty("kotlin.analysis.jfr.includePhaseTraces") == "true"
-                || System.getenv("KOTLIN_ANALYSIS_JFR_INCLUDE_PHASE_TRACES") == "true"
+        System.getProperty("cangjie.analysis.jfr.includePhaseTraces") == "true"
+                || System.getenv("CANGJIE_ANALYSIS_JFR_INCLUDE_PHASE_TRACES") == "true"
     }
 
     private val phaseEventType = EventType.getEventType(LLPhaseEvent::class.java)
@@ -251,7 +251,7 @@ object LLFlightRecorder {
 
 private fun computeModuleKind(target: CfirElementWithResolveState): Byte {
     val moduleData = target.moduleData as LLCfirModuleData
-    return when (moduleData.ktModule) {
+    return when (moduleData.caModule) {
         is CaSourceModule -> 0
         is CaDanglingFileModule -> 1
         is CaNotUnderContentRootModule -> 2
@@ -292,9 +292,9 @@ internal interface LLPhaseEventCompleter {
 
 @Suppress("unused")
 @Name("org.cangnova.cangjie.LLPhase")
-@Category(KOTLIN_CODE_ANALYSIS_EVENT_CATEGORY)
-@Label("Kotlin Declaration Phase Execution")
-@Description("A Kotlin declaration is analyzed to the specified CFIR resolution phase (either successfully or with an error)")
+@Category(CANGJIE_CODE_ANALYSIS_EVENT_CATEGORY)
+@Label("CangJie Declaration Phase Execution")
+@Description("A CangJie declaration is analyzed to the specified CFIR resolution phase (either successfully or with an error)")
 @StackTrace(false)
 private class LLPhaseEvent(
     @Label("Designation Path")
@@ -316,9 +316,9 @@ private class LLPhaseEvent(
 
 @Suppress("unused")
 @Name("org.cangnova.cangjie.LLPhaseWithTrace")
-@Category(KOTLIN_CODE_ANALYSIS_EVENT_CATEGORY)
-@Label("Kotlin Declaration Phase Execution")
-@Description("A Kotlin declaration is analyzed to the specified CFIR resolution phase (either successfully or with an error)")
+@Category(CANGJIE_CODE_ANALYSIS_EVENT_CATEGORY)
+@Label("CangJie Declaration Phase Execution")
+@Description("A CangJie declaration is analyzed to the specified CFIR resolution phase (either successfully or with an error)")
 @StackTrace(true)
 private class LLPhaseWithTraceEvent(
     @Label("Designation Path")
@@ -360,9 +360,9 @@ private abstract class LLAbstractPhaseEvent : Event(), LLPhaseEventCompleter {
 
 @Suppress("unused")
 @Name("org.cangnova.cangjie.LLPartialBodyAnalysis")
-@Category(KOTLIN_CODE_ANALYSIS_EVENT_CATEGORY)
-@Label("Kotlin Declaration Partial Body Analysis")
-@Description("A Kotlin declaration's body is analyzed up to the specified PSI statement number (inclusive)")
+@Category(CANGJIE_CODE_ANALYSIS_EVENT_CATEGORY)
+@Label("CangJie Declaration Partial Body Analysis")
+@Description("A CangJie declaration's body is analyzed up to the specified PSI statement number (inclusive)")
 @StackTrace(false)
 private class LLPartialBodyAnalysisEvent(
     @Label("Declaration Hash")
@@ -378,9 +378,9 @@ private class LLPartialBodyAnalysisEvent(
 @Suppress("unused")
 @Enabled(false) // The event is disabled by default due to the huge number of events
 @Name("org.cangnova.cangjie.LLReadyPhase")
-@Category(KOTLIN_CODE_ANALYSIS_EVENT_CATEGORY)
-@Label("Ready Kotlin Declaration Analysis")
-@Description("A Kotlin declaration is requested to be analyzed, yet the analysis have been already done")
+@Category(CANGJIE_CODE_ANALYSIS_EVENT_CATEGORY)
+@Label("Ready CangJie Declaration Analysis")
+@Description("A CangJie declaration is requested to be analyzed, yet the analysis have been already done")
 @StackTrace(false)
 private class LLReadyPhaseEvent(
     @Label("Designation path")
@@ -402,9 +402,9 @@ internal interface LLPhaseSuspensionEventCompleter {
 
 @Suppress("unused")
 @Name("org.cangnova.cangjie.LLPhaseSuspension")
-@Category(KOTLIN_CODE_ANALYSIS_EVENT_CATEGORY)
-@Label("Suspended Kotlin Declaration Analysis")
-@Description("A Kotlin declaration analysis was suspended, as the other thread was already progressing with the same analysis")
+@Category(CANGJIE_CODE_ANALYSIS_EVENT_CATEGORY)
+@Label("Suspended CangJie Declaration Analysis")
+@Description("A CangJie declaration analysis was suspended, as the other thread was already progressing with the same analysis")
 @StackTrace(false)
 private class LLPhaseSuspensionEvent(
     @Label("Declaration Hash")
@@ -421,7 +421,7 @@ private class LLPhaseSuspensionEvent(
 
 @Suppress("unused")
 @Name("org.cangnova.cangjie.LLStopWorldInvalidation")
-@Category(KOTLIN_CODE_ANALYSIS_EVENT_CATEGORY)
+@Category(CANGJIE_CODE_ANALYSIS_EVENT_CATEGORY)
 @Label("Stop-the-world Session Invalidation")
 @Description("Stop-the-world session invalidation either has been requested, or it has just completed")
 @StackTrace(false)

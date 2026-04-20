@@ -11,7 +11,7 @@ import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 
 internal class LLCfirNotUnderContentRootResolvableModuleSession @PrivateSessionConstructor constructor(
-    ktModule: CaNotUnderContentRootModule,
+    caModule: CaNotUnderContentRootModule,
     override val moduleComponents: LLCfirModuleResolveComponents,
     builtinTypes: CfirBuiltinTypes,
-) : LLCfirResolvableModuleSession(ktModule, builtinTypes)
+) : LLCfirResolvableModuleSession(caModule, builtinTypes)

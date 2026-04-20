@@ -8,16 +8,16 @@ import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 
 internal class LLCfirDanglingFileSession @PrivateSessionConstructor constructor(
-    ktModule: CaDanglingFileModule,
+    caModule: CaDanglingFileModule,
     override val moduleComponents: LLCfirModuleResolveComponents,
     builtinTypes: CfirBuiltinTypes
-) : LLCfirResolvableModuleSession(ktModule, builtinTypes) {
-    private val cachedModificationStamp: Long = ktModule.modificationStamp
+) : LLCfirResolvableModuleSession(caModule, builtinTypes) {
+    private val cachedModificationStamp: Long = caModule.modificationStamp
 
     val hasFileModifications: Boolean
         get() {
-            val ktModule = this.ktModule as CaDanglingFileModule
-            return cachedModificationStamp != ktModule.modificationStamp
+            val danglingFileModule = this.caModule as CaDanglingFileModule
+            return cachedModificationStamp != danglingFileModule.modificationStamp
         }
 }
 

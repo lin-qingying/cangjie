@@ -126,6 +126,10 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
         userTypeRef.acceptChildren(this, data)
     }
 
+    override fun visitOptionTypeRef(optionTypeRef: CfirOptionTypeRef, data: MutableMap<CjElement, CfirElement>) {
+        optionTypeRef.acceptChildren(this, data)
+    }
+
     protected fun cacheElement(element: CfirElement, cache: MutableMap<CjElement, CfirElement>) {
         val psi = element.anchorPsi as? CjElement ?: return
         cache(psi, element, cache)
@@ -133,14 +137,14 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
 
     private val CfirLiteralExpression.isConverted: Boolean
         get() {
-            val firSourcePsi = this.source?.psi ?: return false
-            return firSourcePsi is CjPrefixExpression && firSourcePsi.operationToken == CjTokens.MINUS
+            val cfirSourcePsi = this.source?.psi ?: return false
+            return cfirSourcePsi is CjPrefixExpression && cfirSourcePsi.operationToken == CjTokens.MINUS
         }
 
-    private val CfirLiteralExpression.ktConstantExpression: CjConstantExpression?
+    private val CfirLiteralExpression.constantExpression: CjConstantExpression?
         get() {
-            val firSourcePsi = this.source?.psi
-            return firSourcePsi?.findDescendantOfType()
+            val cfirSourcePsi = this.source?.psi
+            return cfirSourcePsi?.findDescendantOfType()
         }
 
     private fun CfirLiteralKind.reverseConverted(original: CfirLiteralExpression): CfirLiteralExpression? {
@@ -161,7 +165,7 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
             else -> null
         } ?: return null
         return buildLiteralExpression {
-            source = original.ktConstantExpression?.toCjPsiSourceElement()
+            source = original.constantExpression?.toCjPsiSourceElement()
             kind = this@reverseConverted
             this.value = convertedValue
         }.also {
@@ -178,8 +182,8 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
     }
 
     companion object {
-        fun recordElementsFrom(firElement: CfirElement, recorder: CfirElementsRecorder): Map<CjElement, CfirElement> =
-            buildMap { firElement.accept(recorder, this) }
+        fun recordElementsFrom(cfirElement: CfirElement, recorder: CfirElementsRecorder): Map<CjElement, CfirElement> =
+            buildMap { cfirElement.accept(recorder, this) }
 
         /**
          * The PSI element which can be used as an anchor point for CFIR <–> PSI mapping.

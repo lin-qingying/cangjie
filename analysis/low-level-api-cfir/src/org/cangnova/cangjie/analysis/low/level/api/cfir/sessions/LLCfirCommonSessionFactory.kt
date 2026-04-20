@@ -10,15 +10,12 @@ import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
-import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories.LLLibrarySymbolProviderFactory
-import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.moduleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleWithDependenciesSymbolProvider
 import org.cangnova.cangjie.cfir.SessionConfiguration
-import org.cangnova.cangjie.cfir.deserialization.SingleModuleDataProvider
+import org.cangnova.cangjie.cfir.resolve.CfirDefaultImportsProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirDefaultImportsProviderHolder
 import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.utils.addIfNotNull
 
 @OptIn(SessionConfiguration::class)
 internal class LLCfirCommonSessionFactory(project: Project) : LLCfirAbstractSessionFactory(project) {
@@ -29,7 +26,7 @@ internal class LLCfirCommonSessionFactory(project: Project) : LLCfirAbstractSess
                 LLModuleWithDependenciesSymbolProvider(
                     this,
                     providers = listOfNotNull(
-                        context.firProvider.symbolProvider,
+                        context.cfirProvider.symbolProvider,
                     ),
                     context.dependencyProvider,
                 )
@@ -46,7 +43,7 @@ internal class LLCfirCommonSessionFactory(project: Project) : LLCfirAbstractSess
                 LLModuleWithDependenciesSymbolProvider(
                     this,
                     providers = listOf(
-                        context.firProvider.symbolProvider,
+                        context.cfirProvider.symbolProvider,
                     ),
                     context.dependencyProvider,
                 )
@@ -83,30 +80,10 @@ internal class LLCfirCommonSessionFactory(project: Project) : LLCfirAbstractSess
         session: LLCfirSession,
         scope: GlobalSearchScope,
     ): List<CfirSymbolProvider> {
-        val moduleData = session.moduleData
-        val moduleDataProvider = SingleModuleDataProvider(moduleData)
-        val packagePartProvider = project.createPackagePartProvider(scope)
-        return buildList {
-            addAll(
-                LLLibrarySymbolProviderFactory.fromSettings(project).createCommonLibrarySymbolProvider(
-                    session,
-                    packagePartProvider,
-                    scope,
-                )
-            )
-
-            addIfNotNull(
-                OptionalAnnotationClassesProvider.createIfNeeded(
-                    session,
-                    moduleDataProvider,
-                    session.kotlinScopeProvider,
-                    packagePartProvider
-                )
-            )
-        }
+        return emptyList()
     }
 
     private fun LLCfirSession.registerCommonComponents() {
-        register(CfirDefaultImportsProviderHolder.of(CommonDefaultImportsProvider))
+        register(CfirDefaultImportsProviderHolder::class, CfirDefaultImportsProviderHolder.of(CfirDefaultImportsProvider))
     }
 }

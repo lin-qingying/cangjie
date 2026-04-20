@@ -150,27 +150,27 @@ internal sealed class LLCfirTargetResolver(
         }
     }
 
-    final override fun withFile(firFile: CfirFile, action: () -> Unit) {
-        withContainingDeclaration(firFile) {
+    final override fun withFile(cfirFile: CfirFile, action: () -> Unit) {
+        withContainingDeclaration(cfirFile) {
             @Suppress("DEPRECATION_ERROR")
-            withContainingFile(firFile, action)
+            withContainingFile(cfirFile, action)
         }
     }
 
     @Deprecated("Should never be called directly, only for override purposes, please use withFile", level = DeprecationLevel.ERROR)
-    protected open fun withContainingFile(firFile: CfirFile, action: () -> Unit) {
+    protected open fun withContainingFile(cfirFile: CfirFile, action: () -> Unit) {
         action()
     }
 
     @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
-    protected open fun withContainingClass(firClass: CfirClass, action: () -> Unit) {
+    protected open fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
         action()
     }
 
-    final override fun withClass(firClass: CfirClass, action: () -> Unit) {
-        withContainingDeclaration(firClass) {
+    final override fun withClass(cfirClass: CfirClass, action: () -> Unit) {
+        withContainingDeclaration(cfirClass) {
             @Suppress("DEPRECATION_ERROR")
-            withContainingClass(firClass, action)
+            withContainingClass(cfirClass, action)
         }
     }
 

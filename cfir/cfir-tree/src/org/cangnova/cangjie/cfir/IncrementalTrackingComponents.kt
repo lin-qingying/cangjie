@@ -4,6 +4,7 @@ import com.intellij.lang.LighterASTNode
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
+import org.cangnova.cangjie.source.CjBinarySourceElement
 import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
@@ -126,12 +127,14 @@ class IncrementalPassThroughImportTrackerComponent(
 
 private val CjSourceElement.psiPath: String?
     get() = when (this) {
+        is CjBinarySourceElement -> binaryFilePath
         is CjPsiSourceElement -> psi.containingFile?.virtualFile?.path
         is CjLightSourceElement -> unwrapToCjPsiSourceElement()?.psi?.containingFile?.virtualFile?.path
     }
 
 private fun CjSourceElement.toPosition(): Position {
     val fileText = when (this) {
+        is CjBinarySourceElement -> null
         is CjPsiSourceElement -> psi.containingFile?.text
         is CjLightSourceElement -> unwrapToCjPsiSourceElement()?.psi?.containingFile?.text
     } ?: return Position.NO_POSITION
@@ -149,4 +152,3 @@ private fun CjSourceElement.toPosition(): Position {
     }
     return Position(line, column)
 }
-

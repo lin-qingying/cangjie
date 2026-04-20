@@ -16,39 +16,39 @@ import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 
 internal object FileElementFactory {
     fun createFileStructureElement(
-        firDeclaration: CfirDeclaration,
-        firFile: CfirFile,
+        cfirDeclaration: CfirDeclaration,
+        cfirFile: CfirFile,
         moduleComponents: LLCfirModuleResolveComponents,
-    ): FileStructureElement = when (firDeclaration) {
+    ): FileStructureElement = when (cfirDeclaration) {
         is CfirClass -> {
-            firDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
+            cfirDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
 
-            lazyResolveClassGeneratedMembers(firDeclaration)
-            ClassDeclarationStructureElement(firFile, firDeclaration, moduleComponents)
+            lazyResolveClassGeneratedMembers(cfirDeclaration)
+            ClassDeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents)
         }
 
         else -> {
-            if (firDeclaration is CfirPrimaryConstructor) {
-                firDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
-                firDeclaration.valueParameters.forEach { parameter ->
+            if (cfirDeclaration is CfirPrimaryConstructor) {
+                cfirDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+                cfirDeclaration.valueParameters.forEach { parameter ->
                     parameter.correspondingProperty?.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
                 }
             } else {
                 /** Reserve the [CfirResolvePhase.BODY_RESOLVE] for partial body analysis. */
-                firDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
+                cfirDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
             }
 
-            DeclarationStructureElement(firFile, firDeclaration, moduleComponents)
+            DeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents)
         }
     }
 
-    private fun lazyResolveClassGeneratedMembers(firClass: CfirClass) {
-        val classMembersToResolve = firClass.declarations.filter(CfirDeclaration::isPartOfClassStructureElement)
+    private fun lazyResolveClassGeneratedMembers(cfirClass: CfirClass) {
+        val classMembersToResolve = cfirClass.declarations.filter(CfirDeclaration::isPartOfClassStructureElement)
 
         if (classMembersToResolve.isEmpty()) return
-        val firClassDesignation = firClass.collectDesignation()
+        val cfirClassDesignation = cfirClass.collectDesignation()
         val designationWithMembers = LLCfirClassSpecificMembersResolveTarget(
-            firClassDesignation,
+            cfirClassDesignation,
             classMembersToResolve,
         )
 
