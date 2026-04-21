@@ -1,0 +1,28 @@
+{
+  "name": "Cangjie Empty Ability",
+  "version": "1.0.0",
+  "publishAs": "TEMPLATE",
+  "description": "This Feature Ability template implements a demo project that calls pure Cangjie code.",
+  "author": {
+    "name": "OFFICIAL",
+    "email": "",
+    "url": ""
+  },
+  "keywords": [
+    "Phone",
+	"Cangjie"
+  ],
+  "language": [
+    "Cangjie"
+  ],
+  "apiVersion": 8,
+  "deviceType": [
+    "Phone"
+  ],
+  "metaVersion": "5.0.0",
+  "source": "OFFICIAL",
+  "categoryId":"9Gh5TfR4E6qW2yU8L7kN1j",
+  "releaseTime": "2024-01-27 00:00:00",
+  "runtimeOS": "OpenHarmony",
+  "projectType": "Application,Atomic Service"
+}

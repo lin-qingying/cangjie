@@ -49,6 +49,10 @@ import org.cangnova.cangjie.type.model.safeSubstitute
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
+fun BodyResolveComponents.initialTypeOfCandidate(candidate: Candidate): ConeCangJieType {
+    val type = typeFromSymbol(candidate.symbol)
+    return type.initialTypeOfCandidate(candidate)
+}
 
 fun <T : CfirResolvable> BodyResolveComponents.typeFromCallee(access: T): ConeCangJieType {
     return typeFromCallee(access.calleeReference)

@@ -1,0 +1,20 @@
+<idea-plugin>
+    <id>org.cangnova.cangjie.deveco</id>
+    <name>Cangjie DevEco</name>
+    <vendor url="https://github.com/lin-qingying">Lin_Qing_Ying</vendor>
+    <description><![CDATA[
+        基于仓颉前端源码产物的 DevEco Studio 增强插件骨架。<br>
+        当前版本先固化模块边界、同步模型与工具窗口入口，后续能力在此基础上持续扩展。
+    ]]></description>
+
+    <depends>com.intellij.modules.compose</depends>
+    <resource-bundle>messages.DevEcoMessageBundle</resource-bundle>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow
+            id="CangjieDevEco"
+            factoryClass="org.cangnova.cangjie.deveco.ui.CangjieDevEcoToolWindowFactory"
+            icon="AllIcons.Toolwindows.ToolWindowPalette"
+        />
+    </extensions>
+</idea-plugin>

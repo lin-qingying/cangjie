@@ -1,0 +1,631 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>关系型数据库错误码 - API 参考</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../assets/style.css">
+        <link rel="stylesheet" href="../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item "><a href="../../cover0.html"><strong aria-hidden="true">1.</strong> API参考（封面）</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.</strong> 仓颉API</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">2.1.</strong> Ability框架</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability.html"><strong aria-hidden="true">2.1.1.</strong> Ability</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityStage.html"><strong aria-hidden="true">2.1.2.</strong> AbilityStage</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-context.html"><strong aria-hidden="true">2.1.3.</strong> AbilityContext</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-want.html"><strong aria-hidden="true">2.1.4.</strong> Want</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-wantConstant.html"><strong aria-hidden="true">2.1.5.</strong> wantConstant</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-errorManager.html"><strong aria-hidden="true">2.1.6.</strong> errorManager</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry.html"><strong aria-hidden="true">2.1.7.</strong> AbilityDelegatorRegistry</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-abilityDelegator.html"><strong aria-hidden="true">2.1.8.</strong> AbilityDelegator</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-shellCmdResult.html"><strong aria-hidden="true">2.1.9.</strong> shellCmdResult</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/support-definitions.html"><strong aria-hidden="true">2.2.1.</strong> 系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-common-event-manager.html"><strong aria-hidden="true">2.2.2.</strong> ohos.common_event_manager（公共事件模块）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-emitter.html"><strong aria-hidden="true">2.2.3.</strong> ohos.emitter（事件处理调度）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-manager.html"><strong aria-hidden="true">2.2.4.</strong> ohos.notification_manager（通知管理模块）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.5.</strong> application</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-application-eventHub.html"><strong aria-hidden="true">2.2.5.1.</strong> EventHub</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.6.</strong> commonEvent</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventData.html"><strong aria-hidden="true">2.2.6.1.</strong> CommonEventData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventPublishData.html"><strong aria-hidden="true">2.2.6.2.</strong> CommonEventPublishData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscriber.html"><strong aria-hidden="true">2.2.6.3.</strong> CommonEventSubscriber</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscribeInfo.html"><strong aria-hidden="true">2.2.6.4.</strong> CommonEventSubscribeInfo</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.7.</strong> notification</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationRequest.html"><strong aria-hidden="true">2.2.7.1.</strong> NotificationRequest</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationContent.html"><strong aria-hidden="true">2.2.7.2.</strong> NotificationContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.8.</strong> 公共事件定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ability.html"><strong aria-hidden="true">2.2.8.1.</strong> 元能力子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-account.html"><strong aria-hidden="true">2.2.8.2.</strong> 账号子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ans.html"><strong aria-hidden="true">2.2.8.3.</strong> 通知服务公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-bundleManager.html"><strong aria-hidden="true">2.2.8.4.</strong> 包管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-filemanagement.html"><strong aria-hidden="true">2.2.8.5.</strong> 文件管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-locale.html"><strong aria-hidden="true">2.2.8.6.</strong> 语言子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-mms.html"><strong aria-hidden="true">2.2.8.7.</strong> 短信应用公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-netmanager.html"><strong aria-hidden="true">2.2.8.8.</strong> 网络管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-nfc.html"><strong aria-hidden="true">2.2.8.9.</strong> NFC子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-powermgr.html"><strong aria-hidden="true">2.2.8.10.</strong> 电源管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-resourceschedule.html"><strong aria-hidden="true">2.2.8.11.</strong> 资源调度子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-screenlock.html"><strong aria-hidden="true">2.2.8.12.</strong> 主题框架子系统-锁屏管理公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-telephony.html"><strong aria-hidden="true">2.2.8.13.</strong> 电话服务子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-time.html"><strong aria-hidden="true">2.2.8.14.</strong> 时间时区子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-usb.html"><strong aria-hidden="true">2.2.8.15.</strong> USB子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-wifi.html"><strong aria-hidden="true">2.2.8.16.</strong> Wifi子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-window.html"><strong aria-hidden="true">2.2.8.17.</strong> 窗口管理子系统公共事件定义</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager.html"><strong aria-hidden="true">2.3.1.</strong> ohos.bundle_manager（bundleManager管理）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.2.</strong> bundle_manager</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-abilityInfo.html"><strong aria-hidden="true">2.3.2.1.</strong> AbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-applicationInfo.html"><strong aria-hidden="true">2.3.2.2.</strong> ApplicationInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-bundleInfo.html"><strong aria-hidden="true">2.3.2.3.</strong> BundleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-extensionAbilityInfo.html"><strong aria-hidden="true">2.3.2.4.</strong> ExtensionAbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-hapModuleInfo.html"><strong aria-hidden="true">2.3.2.5.</strong> HapModuleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-metadata.html"><strong aria-hidden="true">2.3.2.6.</strong> Metadata</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-animator.html"><strong aria-hidden="true">2.4.1.</strong> ohos.animator（动画）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-font.html"><strong aria-hidden="true">2.4.2.</strong> ohos.font（自定义字体）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-measure.html"><strong aria-hidden="true">2.4.3.</strong> ohos.measure（文本计算）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-prompt.html"><strong aria-hidden="true">2.4.4.</strong> ohos.prompt_action（弹窗）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-router.html"><strong aria-hidden="true">2.4.5.</strong> ohos.router（页面路由）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-display.html"><strong aria-hidden="true">2.5.1.</strong> ohos.display（屏幕属性）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-colorManager.html"><strong aria-hidden="true">2.5.2.</strong> ohos.colorManager（色彩管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-window.html"><strong aria-hidden="true">2.5.3.</strong> ohos.window（窗口）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-image.html"><strong aria-hidden="true">2.6.1.</strong> ohos.multimedia.image（图片处理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-i18n.html"><strong aria-hidden="true">2.7.1.</strong> ohos.i18n（国际化-I18n）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resource-manager.html"><strong aria-hidden="true">2.7.2.</strong> ohos.resource_manager（资源管理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-backgroundTaskManager.html"><strong aria-hidden="true">2.8.1.</strong> ohos.resourceschedule.backgroundTaskManager（后台任务管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-workScheduler.html"><strong aria-hidden="true">2.8.2.</strong> ohos.resourceschedule.workScheduler（延迟任务调度）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-access-ctrl.html"><strong aria-hidden="true">2.9.1.</strong> ohos.abilityAccessCtrl（程序访问控制管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-crypto.html"><strong aria-hidden="true">2.9.2.</strong> ohos.security.crypto（加解密算法库框架）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-huks.html"><strong aria-hidden="true">2.9.3.</strong> ohos.security.huks（通用密钥库系统）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-user-auth.html"><strong aria-hidden="true">2.9.4.</strong> ohos.userIAM.userAuth（用户认证）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-asset.html"><strong aria-hidden="true">2.9.5.</strong> ohos.asset_store（关键资产存储服务）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.6.</strong> 访问控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/security/AccessToken/cj-permissions-for-all.html"><strong aria-hidden="true">2.9.6.1.</strong> 应用权限列表</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-distributedKVStore.html"><strong aria-hidden="true">2.10.1.</strong> ohos.data.distributed（分布式键值数据库）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-preferences.html"><strong aria-hidden="true">2.10.2.</strong> ohos.data.preferences（用户首选项）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-relationalStore.html"><strong aria-hidden="true">2.10.3.</strong> ohos.data.relationalStore（关系型数据库）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fileuri.html"><strong aria-hidden="true">2.11.1.</strong> ohos.file.fileuri（文件URI）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fs.html"><strong aria-hidden="true">2.11.2.</strong> ohos.file.fs（文件管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-picker.html"><strong aria-hidden="true">2.11.3.</strong> ohos.file.picker（选择器）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-telephony-data.html"><strong aria-hidden="true">2.12.1.</strong> ohos.telephony.call（拨打电话）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-vibrator.html"><strong aria-hidden="true">2.13.1.</strong> ohos.vibrator（振动）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-connection.html"><strong aria-hidden="true">2.14.1.</strong> ohos.net.connection（网络连接管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-http.html"><strong aria-hidden="true">2.14.2.</strong> ohos.net.http（数据请求）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-request.html"><strong aria-hidden="true">2.14.3.</strong> ohos.request（上传下载）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hiappevent.html"><strong aria-hidden="true">2.15.1.</strong> ohos.hiAppEvent（应用事件打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracechain.html"><strong aria-hidden="true">2.15.2.</strong> ohos.hiTraceChain（分布式跟踪）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracemeter.html"><strong aria-hidden="true">2.15.3.</strong> ohos.hiTraceMeter（性能打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hilog.html"><strong aria-hidden="true">2.15.4.</strong> ohos.hilog (HiLog日志打印)</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-pasteboard.html"><strong aria-hidden="true">2.15.5.</strong> ohos.pasteboard（剪切板）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-date-time.html"><strong aria-hidden="true">2.15.6.</strong> ohos.systemDateTime（系统时间、时区）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-webview.html"><strong aria-hidden="true">2.15.7.</strong> ohos.web.webview（Webview）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-device-info.html"><strong aria-hidden="true">2.16.1.</strong> ohos.deviceInfo（设备信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.17.</strong> 系统参数</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-parameterEnhance-sys.html"><strong aria-hidden="true">2.17.1.</strong> ohos.systemParameterEnhance（系统参数）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.18.</strong> 其他</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-base.html"><strong aria-hidden="true">2.18.1.</strong> ohos.base（公共回调信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.19.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-uitest.html"><strong aria-hidden="true">2.19.1.</strong> ohos.ui_test（UI测试）</a></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.20.</strong> 错误码参考</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-universal.html"><strong aria-hidden="true">2.20.1.</strong> 通用错误码</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.2.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-bundle.html"><strong aria-hidden="true">2.20.2.1.</strong> 包管理子系统通用错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.3.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-CommonEventService.html"><strong aria-hidden="true">2.20.3.1.</strong> 事件错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-notification.html"><strong aria-hidden="true">2.20.3.2.</strong> 通知错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-animator.html"><strong aria-hidden="true">2.20.4.1.</strong> 动画错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-colorspace-manager.html"><strong aria-hidden="true">2.20.5.1.</strong> 色彩管理错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-display.html"><strong aria-hidden="true">2.20.5.2.</strong> 屏幕错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-window.html"><strong aria-hidden="true">2.20.5.3.</strong> 窗口错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-image.html"><strong aria-hidden="true">2.20.6.1.</strong> Image错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-i18n.html"><strong aria-hidden="true">2.20.7.1.</strong> I18n错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-resource-manager.html"><strong aria-hidden="true">2.20.7.2.</strong> 资源管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-backgroundTaskMgr.html"><strong aria-hidden="true">2.20.8.1.</strong> backgroundTaskManager错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-workScheduler.html"><strong aria-hidden="true">2.20.8.2.</strong> workScheduler错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-access-token.html"><strong aria-hidden="true">2.20.9.1.</strong> 访问控制错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-huks.html"><strong aria-hidden="true">2.20.9.2.</strong> huks错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-crypto.html"><strong aria-hidden="true">2.20.9.3.</strong> crypto错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-asset.html"><strong aria-hidden="true">2.20.9.4.</strong> 关键资产存储服务错误码</a></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.20.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../source_zh_cn/errorcodes/cj-errorcode-data-rdb.html" class="active"><strong aria-hidden="true">2.20.10.1.</strong> 关系型数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-distributedKVStore.html"><strong aria-hidden="true">2.20.10.2.</strong> 分布式键值数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-preferences.html"><strong aria-hidden="true">2.20.10.3.</strong> 用户首选项错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-filemanagement.html"><strong aria-hidden="true">2.20.11.1.</strong> 文件管理子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-telephony.html"><strong aria-hidden="true">2.20.12.1.</strong> 电话子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-vibrator.html"><strong aria-hidden="true">2.20.13.1.</strong> vibrator错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-request.html"><strong aria-hidden="true">2.20.14.1.</strong> 上传下载错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-http.html"><strong aria-hidden="true">2.20.14.2.</strong> HTTP错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-connection.html"><strong aria-hidden="true">2.20.14.3.</strong> 网络连接管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-hiappevent.html"><strong aria-hidden="true">2.20.15.1.</strong> 应用事件打点错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-pasteboard.html"><strong aria-hidden="true">2.20.15.2.</strong> 剪贴板错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-errorManager.html"><strong aria-hidden="true">2.20.15.3.</strong> 错误观察器错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-time.html"><strong aria-hidden="true">2.20.15.4.</strong> 时间时区错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-webview.html"><strong aria-hidden="true">2.20.15.5.</strong> Web错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-system-parameter.html"><strong aria-hidden="true">2.20.16.1.</strong> 系统参数错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.17.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-uitest.html"><strong aria-hidden="true">2.20.17.1.</strong> uitest错误码</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.</strong> 仓颉组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.</strong> 组件通用信息</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.1.</strong> 通用事件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-click.html"><strong aria-hidden="true">3.1.1.1.</strong> 点击事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-touch.html"><strong aria-hidden="true">3.1.1.2.</strong> 触摸事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-appear.html"><strong aria-hidden="true">3.1.1.3.</strong> 挂载卸载事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-drag.html"><strong aria-hidden="true">3.1.1.4.</strong> 拖拽事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-key.html"><strong aria-hidden="true">3.1.1.5.</strong> 按键事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-focus.html"><strong aria-hidden="true">3.1.1.6.</strong> 焦点事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-mouse.html"><strong aria-hidden="true">3.1.1.7.</strong> 鼠标事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-component-area-change-event.html"><strong aria-hidden="true">3.1.1.8.</strong> 组件区域变化事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-keyboardshortcut.html"><strong aria-hidden="true">3.1.1.9.</strong> 组件快捷键事件</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.</strong> 通用属性</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-size.html"><strong aria-hidden="true">3.1.2.1.</strong> 尺寸设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-location.html"><strong aria-hidden="true">3.1.2.2.</strong> 位置设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-layout-constraints.html"><strong aria-hidden="true">3.1.2.3.</strong> 布局约束</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-flex-layout.html"><strong aria-hidden="true">3.1.2.4.</strong> Flex布局</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-border.html"><strong aria-hidden="true">3.1.2.5.</strong> 边框设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-background.html"><strong aria-hidden="true">3.1.2.6.</strong> 背景设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-opacity.html"><strong aria-hidden="true">3.1.2.7.</strong> 透明度设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-visibility.html"><strong aria-hidden="true">3.1.2.8.</strong> 显隐控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-enable.html"><strong aria-hidden="true">3.1.2.9.</strong> 禁用控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-overlay.html"><strong aria-hidden="true">3.1.2.10.</strong> 浮层</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-z-order.html"><strong aria-hidden="true">3.1.2.11.</strong> Z序控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transform.html"><strong aria-hidden="true">3.1.2.12.</strong> 图形变换</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-image-effect.html"><strong aria-hidden="true">3.1.2.13.</strong> 图像效果</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-shap-clip.html"><strong aria-hidden="true">3.1.2.14.</strong> 形状裁剪</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-gradient-color.html"><strong aria-hidden="true">3.1.2.15.</strong> 颜色渐变</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-popup.html"><strong aria-hidden="true">3.1.2.16.</strong> Popup控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-menu.html"><strong aria-hidden="true">3.1.2.17.</strong> 菜单控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-focus.html"><strong aria-hidden="true">3.1.2.18.</strong> 焦点控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-component-id.html"><strong aria-hidden="true">3.1.2.19.</strong> 组件标识</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-color.html"><strong aria-hidden="true">3.1.2.20.</strong> 前景色设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-blur-style.html"><strong aria-hidden="true">3.1.2.21.</strong> 组件内容模糊</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-touch-target.html"><strong aria-hidden="true">3.1.2.22.</strong> 触摸热区设置</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.23.</strong> 模态转场设置</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-bindcontentcover.html"><strong aria-hidden="true">3.1.2.23.1.</strong> 全屏模态转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sheet-transition.html"><strong aria-hidden="true">3.1.2.23.2.</strong> 半模态转场</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-text-style.html"><strong aria-hidden="true">3.1.2.24.</strong> 文本通用</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-expand-safe-area.html"><strong aria-hidden="true">3.1.2.25.</strong> 安全区域</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-renderfit.html"><strong aria-hidden="true">3.1.2.26.</strong> 组件内容填充方式</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.2.</strong> 基础组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-alphabet-indexer.html"><strong aria-hidden="true">3.2.1.</strong> AlphabetIndexer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-blank.html"><strong aria-hidden="true">3.2.2.</strong> Blank</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-button.html"><strong aria-hidden="true">3.2.3.</strong> Button</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkbox.html"><strong aria-hidden="true">3.2.4.</strong> Checkbox</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkboxgroup.html"><strong aria-hidden="true">3.2.5.</strong> CheckboxGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-datapanel.html"><strong aria-hidden="true">3.2.6.</strong> DataPanel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-datepicker.html"><strong aria-hidden="true">3.2.7.</strong> Datepicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-divider.html"><strong aria-hidden="true">3.2.8.</strong> Divider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-gauge.html"><strong aria-hidden="true">3.2.9.</strong> Gauge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-image.html"><strong aria-hidden="true">3.2.10.</strong> Image</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-imageSpan.html"><strong aria-hidden="true">3.2.11.</strong> ImageSpan</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-loadingprogress.html"><strong aria-hidden="true">3.2.12.</strong> LoadingProgress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menu.html"><strong aria-hidden="true">3.2.13.</strong> Menu</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitem.html"><strong aria-hidden="true">3.2.14.</strong> MenuItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitemgroup.html"><strong aria-hidden="true">3.2.15.</strong> MenuItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-progress.html"><strong aria-hidden="true">3.2.16.</strong> Progress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-qrcode.html"><strong aria-hidden="true">3.2.17.</strong> QRCode</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-radio.html"><strong aria-hidden="true">3.2.18.</strong> Radio</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rating.html"><strong aria-hidden="true">3.2.19.</strong> Rating</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richeditor.html"><strong aria-hidden="true">3.2.20.</strong> RichEditor</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richtext.html"><strong aria-hidden="true">3.2.21.</strong> RichText</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-scrollbar.html"><strong aria-hidden="true">3.2.22.</strong> ScrollBar</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-search.html"><strong aria-hidden="true">3.2.23.</strong> Search</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-select.html"><strong aria-hidden="true">3.2.24.</strong> Select</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-slider.html"><strong aria-hidden="true">3.2.25.</strong> Slider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-span.html"><strong aria-hidden="true">3.2.26.</strong> Span</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepper.html"><strong aria-hidden="true">3.2.27.</strong> Stepper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepperitem.html"><strong aria-hidden="true">3.2.28.</strong> Stepperitem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-text.html"><strong aria-hidden="true">3.2.29.</strong> Text</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textarea.html"><strong aria-hidden="true">3.2.30.</strong> TextArea</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textclock.html"><strong aria-hidden="true">3.2.31.</strong> TextClock</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textinput.html"><strong aria-hidden="true">3.2.32.</strong> TextInput</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textpicker.html"><strong aria-hidden="true">3.2.33.</strong> TextPicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-texttimer.html"><strong aria-hidden="true">3.2.34.</strong> TextTimer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-toggle.html"><strong aria-hidden="true">3.2.35.</strong> Toggle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-web.html"><strong aria-hidden="true">3.2.36.</strong> Web</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.3.</strong> 容器组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-badge.html"><strong aria-hidden="true">3.3.1.</strong> Badge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-column.html"><strong aria-hidden="true">3.3.2.</strong> Column</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-columnsplit.html"><strong aria-hidden="true">3.3.3.</strong> ColumnSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-flex.html"><strong aria-hidden="true">3.3.4.</strong> Flex</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-col.html"><strong aria-hidden="true">3.3.5.</strong> GridCol</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-row.html"><strong aria-hidden="true">3.3.6.</strong> GridRow</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid.html"><strong aria-hidden="true">3.3.7.</strong> Grid</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-item.html"><strong aria-hidden="true">3.3.8.</strong> GridItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list.html"><strong aria-hidden="true">3.3.9.</strong> List</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-listitem.html"><strong aria-hidden="true">3.3.10.</strong> ListItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list-group.html"><strong aria-hidden="true">3.3.11.</strong> ListItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-panel.html"><strong aria-hidden="true">3.3.12.</strong> Panel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-refresh.html"><strong aria-hidden="true">3.3.13.</strong> Refresh</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-relativecontainer.html"><strong aria-hidden="true">3.3.14.</strong> RelativeContainer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-row.html"><strong aria-hidden="true">3.3.15.</strong> Row</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rowsplit.html"><strong aria-hidden="true">3.3.16.</strong> RowSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-scroll.html"><strong aria-hidden="true">3.3.17.</strong> Scroll</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-stack.html"><strong aria-hidden="true">3.3.18.</strong> Stack</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-swiper.html"><strong aria-hidden="true">3.3.19.</strong> Swiper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabs.html"><strong aria-hidden="true">3.3.20.</strong> Tabs</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabcontent.html"><strong aria-hidden="true">3.3.21.</strong> TabContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.4.</strong> 绘制组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-circle.html"><strong aria-hidden="true">3.4.1.</strong> Circle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-line.html"><strong aria-hidden="true">3.4.2.</strong> Line</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-rect.html"><strong aria-hidden="true">3.4.3.</strong> Rect</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-shape.html"><strong aria-hidden="true">3.4.4.</strong> Shape</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.5.</strong> 画布组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas.html"><strong aria-hidden="true">3.5.1.</strong> Canvas</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-gradient.html"><strong aria-hidden="true">3.5.2.</strong> CanvasGradient</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-rendering-context-2d.html"><strong aria-hidden="true">3.5.3.</strong> CanvasRenderingContext2D</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-imagebitmap.html"><strong aria-hidden="true">3.5.4.</strong> ImageBitmap</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.6.</strong> 渲染控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-ifelse.html"><strong aria-hidden="true">3.6.1.</strong> if/else</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-foreach.html"><strong aria-hidden="true">3.6.2.</strong> ForEach</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-lazyforeach.html"><strong aria-hidden="true">3.6.3.</strong> LazyForEach</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.</strong> 动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-animation.html"><strong aria-hidden="true">3.7.1.</strong> 属性动画</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-methods-animateTo.html"><strong aria-hidden="true">3.7.2.</strong> 显式动画</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.3.</strong> 转场动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-page-transition.html"><strong aria-hidden="true">3.7.3.1.</strong> 页面间转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transition.html"><strong aria-hidden="true">3.7.3.2.</strong> 组件内转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sharedTransition.html"><strong aria-hidden="true">3.7.3.3.</strong> 共享元素转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-geometryTransition.html"><strong aria-hidden="true">3.7.3.4.</strong> 组件内隐式共享元素转场</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.8.</strong> 全局UI方法</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.8.1.</strong> 弹窗</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-alert-dialog-box.html"><strong aria-hidden="true">3.8.1.1.</strong> 警告弹窗</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-customdialog.html"><strong aria-hidden="true">3.8.1.2.</strong> 自定义弹窗</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-menu.html"><strong aria-hidden="true">3.8.2.</strong> 菜单</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.9.</strong> 自定义组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-custom-component-lifecycle.html"><strong aria-hidden="true">3.9.1.</strong> 自定义组件的生命周期</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.10.</strong> 类型定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-enums.html"><strong aria-hidden="true">3.10.1.</strong> 基础类型定义</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-pixel-units.html"><strong aria-hidden="true">3.11.</strong> 像素单位</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-state-management-manual.html"><strong aria-hidden="true">3.12.</strong> 状态管理</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-config.html"><strong aria-hidden="true">3.13.</strong> 应用配置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-thread.html"><strong aria-hidden="true">3.14.</strong> 线程控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid.html"><strong aria-hidden="true">3.15.</strong> 混合开发V1</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid-v2.html"><strong aria-hidden="true">3.16.</strong> 混合开发V2</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.17.</strong> 管理应用拥有的状态</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-app-storage.html"><strong aria-hidden="true">3.17.1.</strong> AppStorage（应用全局的UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-local-storage.html"><strong aria-hidden="true">3.17.2.</strong> LocalStorage（页面级UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-persistent-storage.html"><strong aria-hidden="true">3.17.3.</strong> PersistentStorage（持久化存储UI状态）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-environment.html"><strong aria-hidden="true">3.17.4.</strong> Environment（设备环境查询）</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_ui_framework.html"><strong aria-hidden="true">3.18.</strong> 框架接口</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkinterop/cj-ark-interop-apis.html"><strong aria-hidden="true">4.</strong> 仓颉与ArkTS互操作库</a></li><li class="chapter-item "><a href="../../source_zh_cn/cj-libs-api.html"><strong aria-hidden="true">5.</strong> 仓颉编程语言库API</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">API 参考</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="关系型数据库错误码"><a class="header" href="#关系型数据库错误码">关系型数据库错误码</a></h1>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>以下仅介绍本模块特有错误码，通用错误码请参考<a href="cj-errorcode-universal.html">通用错误码说明文档</a>。</p>
+</blockquote>
+<h2 id="14800000-内部错误"><a class="header" href="#14800000-内部错误">14800000 内部错误</a></h2>
+<p><strong>错误信息</strong></p>
+<p>Inner error.</p>
+<p><strong>错误描述</strong></p>
+<p>内部错误。</p>
+<p><strong>可能原因</strong></p>
+<p>优先查看错误日志，通过日志可以详细了解错误原因，主要有以下几种：</p>
+<ol>
+<li>sql执行异常。</li>
+<li>内部状态异常。</li>
+<li>错误地使用接口。</li>
+<li>系统错误，如空指针、内存不足、数据服务异常重启、I/O错误、IPC异常、JS引擎异常等。</li>
+</ol>
+<p><strong>处理步骤</strong></p>
+<ol>
+<li>开发者排查sql语句和谓词是否正确使用。</li>
+<li>开发者排查是否存在对象关闭后再使用。</li>
+<li>开发者排查是否按接口文档正确使用接口。</li>
+<li>尝试重试，如果依然无法解决，可以提示用户重启应用、升级应用或升级设备版本。</li>
+</ol>
+<h2 id="14800010-数据库路径不合法"><a class="header" href="#14800010-数据库路径不合法">14800010 数据库路径不合法</a></h2>
+<p><strong>错误信息</strong></p>
+<p>Invalid database path.</p>
+<p><strong>错误描述</strong></p>
+<p>数据库路径不合法。</p>
+<p><strong>可能原因</strong></p>
+<p>无效的数据库路径。</p>
+<p><strong>处理步骤</strong></p>
+<p>检查传入数据库路径。</p>
+<h2 id="14800011-数据库文件损坏"><a class="header" href="#14800011-数据库文件损坏">14800011 数据库文件损坏</a></h2>
+<p><strong>错误信息</strong></p>
+<p>Database corrupted.</p>
+<p><strong>错误描述</strong></p>
+<p>该错误码表示在调用数据库增、删、查、数据同步等接口时，数据库已损坏。</p>
+<p><strong>可能原因</strong></p>
+<p>调用数据库增、删、查、数据同步等接口操作数据库时，数据库文件已损坏。</p>
+<p><strong>处理步骤</strong></p>
+<ol>
+<li>如果之前备份过数据库，可尝试使用已备份的数据库文件恢复数据库。</li>
+<li>如果之前没有备份过数据库，可尝试删除数据库后重新创建。</li>
+</ol>
+<h2 id="14800012-结果集为空或指定位置不合法"><a class="header" href="#14800012-结果集为空或指定位置不合法">14800012 结果集为空或指定位置不合法</a></h2>
+<p><strong>错误信息</strong></p>
+<p>Row out of bounds.</p>
+<p><strong>错误描述</strong></p>
+<p>结果集为空或指定位置不合法。</p>
+<p><strong>可能原因</strong></p>
+<p>结果集为空或结果集指定行号超出位置范围[0, m - 1]，m = resultsetV9.rowCount。</p>
+<p><strong>处理步骤</strong></p>
+<p>检查当前操作得到的结果集是否为空或指定的位置是否合法。</p>
+<h2 id="14800013-列值为空或列类型与当前调用接口不兼容"><a class="header" href="#14800013-列值为空或列类型与当前调用接口不兼容">14800013 列值为空或列类型与当前调用接口不兼容</a></h2>
+<p><strong>错误信息</strong></p>
+<p>Column out of bounds.</p>
+<p><strong>错误描述</strong></p>
+<p>列值为空或列类型与当前调用接口不兼容。</p>
+<p><strong>可能原因</strong></p>
+<ol>
+<li>结果集为空。</li>
+<li>结果集当前行号超出范围[0, m - 1]，m = resultsetV9.rowCount。</li>
+<li>当前列号超出范围[0, n - 1]，n = resultsetV9.columnCount。</li>
+<li>当前列数据类型接口不支持。</li>
+</ol>
+<p><strong>处理步骤</strong></p>
+<ol>
+<li>检查结果集是否为空。</li>
+<li>检查结果集当前行号、列号是否超出范围。</li>
+<li>检查当前列数据类型是否支持。</li>
+</ol>
+<h2 id="14800014-数据库或结果集关闭"><a class="header" href="#14800014-数据库或结果集关闭">14800014 数据库或结果集关闭</a></h2>
+<p><strong>错误信息</strong></p>
+<p>Already closed.</p>
+<p><strong>错误描述</strong></p>
+<p>数据库或结果集关闭。</p>
+<p><strong>可能原因</strong></p>
+<p>RdbStore或者ResultSet等带有close接口的对象，已调用过close或者没有打开成功。</p>
+<p><strong>处理步骤</strong></p>
+<p>重新打开RdbStore或者重新查询获取得到ResultSet。</p>
+<h2 id="14800015-数据库没有响应"><a class="header" href="#14800015-数据库没有响应">14800015 数据库没有响应</a></h2>
+<p><strong>错误信息</strong></p>
+<p>The database does not respond.</p>
+<p><strong>错误描述</strong></p>
+<p>数据库没有响应。</p>
+<p><strong>可能原因</strong></p>
+<p>有读、写、attach、detach等操作正在执行，无法在指定的时间（默认2s）内执行当前操作。</p>
+<p><strong>处理步骤</strong></p>
+<p>重新尝试</p>
+<h2 id="14800016-数据库别名已被使用"><a class="header" href="#14800016-数据库别名已被使用">14800016 数据库别名已被使用</a></h2>
+<p><strong>错误信息</strong></p>
+<p>The database is already attached.</p>
+<p><strong>错误描述</strong></p>
+<p>附加后的数据库别名已被使用。</p>
+<p><strong>可能原因</strong></p>
+<p>附加后的数据库的别名已被使用。</p>
+<p><strong>处理步骤</strong></p>
+<p>不进行附加数据库操作或者修改附加后数据库的别名。</p>
+<h2 id="14800017-关键配置已被更改"><a class="header" href="#14800017-关键配置已被更改">14800017 关键配置已被更改</a></h2>
+<p><strong>错误信息</strong></p>
+<p>Config changed.</p>
+<p><strong>错误描述</strong></p>
+<p>数据库关键配置已被更改。</p>
+<p><strong>可能原因</strong></p>
+<p>数据库的area（区域）, isEncrypt（加密）, securityLevel（安全级别）等关键配置发生变化。</p>
+<p><strong>处理步骤</strong></p>
+<p>保持原配置不变或者用原配置导出数据，删除旧库，用新配置创建新库，数据存入新库。</p>
+<h2 id="14800018-查询结果没有数据符合条件"><a class="header" href="#14800018-查询结果没有数据符合条件">14800018 查询结果没有数据符合条件</a></h2>
+<p><strong>错误信息</strong></p>
+<p>No data meets the condition.</p>
+<p><strong>错误描述</strong></p>
+<p>SQL语句有误，未查询到符合条件的数据。</p>
+<p><strong>可能原因</strong></p>
+<p>没有编写查询正确结果集的SQL语句。</p>
+<p><strong>处理步骤</strong></p>
+<p>编写正确的查询语句或者添加数据库数据之后再做查询。</p>
+<h2 id="14800019-sql必须是查询语句"><a class="header" href="#14800019-sql必须是查询语句">14800019 SQL必须是查询语句</a></h2>
+<p><strong>错误信息</strong></p>
+<p>The SQL must be a query statement.</p>
+<p><strong>错误描述</strong></p>
+<p>SQL必须是查询语句。</p>
+<p><strong>可能原因</strong></p>
+<p>SQL语句不符合规定，导致查询失败。</p>
+<p><strong>处理步骤</strong></p>
+<p>SQL语句不符合规定导致执行失败时，编写满足规约的SQL语句。</p>
+<h2 id="14800021-sqlite通用错误"><a class="header" href="#14800021-sqlite通用错误">14800021 SQLite:通用错误</a></h2>
+<p><strong>错误信息</strong></p>
+<p>SQLite: Generic error.</p>
+<p><strong>错误描述</strong></p>
+<p>SQLite：通用错误。</p>
+<p><strong>可能原因</strong></p>
+<p>执行sql语句过程中出现错误，如：</p>
+<ol>
+<li>插入或更新未创建的表。</li>
+<li>插入或更新未曾有的列。 </li>
+<li>调用未定义的函数等，参见SQLITE_ERROR的相关错误场景。</li>
+</ol>
+<p><strong>处理步骤</strong></p>
+<p>开发者分析错误的SQL语句，找出错误点。</p>
+<h2 id="14800022-sqlite异步回调请求被中止"><a class="header" href="#14800022-sqlite异步回调请求被中止">14800022 SQLite:异步回调请求被中止</a></h2>
+<p><strong>错误信息</strong></p>
+<p>SQLite: Callback routine requested an abort.</p>
+<p><strong>错误描述</strong></p>
+<p>SQLite:异步回调请求被中止。</p>
+<p><strong>可能原因</strong></p>
+<ol>
+<li>通常发生在使用SQLite的自定义函数机制时，回调被中止执行。</li>
+<li>参见SQLITE_ABORT的相关错误场景。</li>
+</ol>
+<p><strong>处理步骤</strong></p>
+<p>检查SQLite的钩子函数（callback）的实现，确保其正确性。</p>
+<h2 id="14800023-sqlite访问权限被拒绝"><a class="header" href="#14800023-sqlite访问权限被拒绝">14800023 SQLite:访问权限被拒绝</a></h2>
+<p><strong>错误信息</strong></p>
+<p>SQLite: Access permission denied.</p>
+<p><strong>错误描述</strong></p>
+<p>SQLite访问权限被拒绝。</p>
+<p><strong>可能原因</strong></p>
+<ol>
+<li>操作系统级别的权限问题，意味着SQLite试图访问或修改一个文件，但是没有足够的权限去执行这个操作。</li>
+<li>参见SQLITE_PERM的相关错误场景。</li>
+</ol>
+<p><strong>处理步骤</strong></p>
+<ol>
+<li>确认文件没有只读属性，如果有，去掉只读属性。</li>
+<li>检查文件和文件夹的权限，确保当前用户有足够的权限来读写文件。</li>
+<li>检查文件系统是否为只读，如果是，改为可写状态。</li>
+<li>确认没有其他进程锁定数据库文件，如果有，关闭占用文件的进程。 </li>
+<li>在处理权限问题时，确保有足够的权限去更改相关的文件或文件夹权限。</li>
+</ol>
+<h2 id="14800024-sqlite数据库文件已锁定"><a class="header" href="#14800024-sqlite数据库文件已锁定">14800024 SQLite:数据库文件已锁定</a></h2>
+<p><strong>错误信息</strong></p>
+<p>SQLite: The database file is locked.</p>
+<p><strong>错误描述</strong></p>
+<p>SQLite数据库文件已锁定。</p>
+<p><strong>可能原因</strong></p>
+<ol>
+<li>同一应用两个进程，例如UIability和datashareability同时打开了同一个数据库，进行增删改操作，或者不同应用的同一个group组内的进程通过group组打开同一个数据库，进行增删改操作。</li>
+<li>参见SQLITE_BUSY的相关错误场景。</li>
+</ol>
+<p><strong>处理步骤</strong></p>
+<ol>
+<li>避免进程并发操作数据库。</li>
+<li>等待一段时间重试。</li>
+</ol>
+<h2 id="14800025-sqlite数据库中的表被锁定"><a class="header" href="#14800025-sqlite数据库中的表被锁定">14800025 SQLite:数据库中的表被锁定</a></h2>
+<p><strong>错误信息</strong></p>
+<p>SQLite: A table in the database is locked.</p>
+<p><strong>错误描述</strong></p>
+<p>SQLite：数据库中的表被锁定。</p>
+<p><strong>可能原因</strong></p>
+<ol>
+<li>在尝试写入SQLite数据库时，但数据库文件已被另一个进程锁定。这可能是因为数据库处于事务中，或者有其他的锁机制在阻止写入。</li>
+<li>参见SQLITE_LOCKED的相关错误场景。</li>
+</ol>
+<p><strong>处理步骤</strong></p>
+<ol>
+<li>确保没有其他进程或线程正在对数据库文件进行写操作。</li>
+<li>如果使用了事务，请确保在开始事务后及提交事务前不要进行任何写操作。</li>
+<li>检查是否有其他锁机制（如文件锁）可能阻止了写入。</li>
+<li>如果数据库连接对象没有正确关闭，确保在完成数据库操作后关闭连接。</li>
+<li>如果在多线程环境中，确保对数据库操作加锁，防止竞争条件。</li>
+</ol>
+<h2 id="14800026-sqlite数据库内存不足"><a class="header" href="#14800026-sqlite数据库内存不足">14800026 SQLite:数据库内存不足</a></h2>
+<p><strong>错误信息</strong></p>
+<p>SQLite: The database is out of memory.</p>
+<p><strong>错误描述</strong></p>
+<p>SQLite:数据库内存不足。</p>
+<p><strong>可能原因</strong></p>
+<p>数据库内存不足，可能是由于数据量过大或内存分配不足导致的。</p>
+<p><strong>处理步骤</strong></p>
+<p>减小数据量或增加内存分配。</p>
+<h2 id="14800027-sqlite尝试写入只读数据库"><a class="header" href="#14800027-sqlite尝试写入只读数据库">14800027 SQLite:尝试写入只读数据库</a></h2>
+<p><strong>错误信息</strong></p>
+<p>SQLite: Attempt to write a readonly database.</p>
+<p><strong>错误描述</strong></p>
+<p>SQLite：尝试写入只读数据库。</p>
+<p><strong>可能原因</strong></p>
+<ol>
+<li>尝试写入一个以只读模式打开的SQLite数据库文件时。这可能是因为文件权限问题，文件处于只读文件系统中或者数据库被标记为只读。</li>
+<li>参见SQLITE_READONLY的相关错误场景。</li>
+</ol>
+<p><strong>处理步骤</strong></p>
+<ol>
+<li>确保有足够的权限去写入数据库文件。</li>
+<li>如果文件系统是只读的，需要将其改为读写模式。</li>
+<li>确认在打开数据库时没有使用只读模式参数。</li>
+</ol>
+<h2 id="14800028-sqlite发生了某种磁盘io错误"><a class="header" href="#14800028-sqlite发生了某种磁盘io错误">14800028 SQLite:发生了某种磁盘I/O错误</a></h2>
+<p><strong>错误信息</strong></p>
+<p>SQLite: Some kind of disk I/O error occurred.</p>
+<p><strong>错误描述</strong></p>
+<p>SQLite发生了某种磁盘I/O错误。</p>
+<p><strong>可能原因</strong></p>
+<p>可能是由于多种原因造成的，包括但不限于：</p>
+<ol>
+<li>文件不存在。</li>
+<li>文件是只读的。</li>
+<li>磁盘空间不足。 </li>
+<li>文件损坏。 </li>
+<li>参见SQLITE_IOERR的相关错误场景。</li>
+</ol>
+<p><strong>处理步骤</strong></p>
+<ol>
+<li>检查文件路径是否正确，文件是否存在。 </li>
+<li>确保文件没有设置为只读。 </li>
+<li>检查磁盘空间是否足够，并清理不必要的文件释放空间。 </li>
+<li>检查文件的权限，确保应用程序有足够的权限去读写文件。</li>
+</ol>
+<h2 id="14800029-sqlite数据库已满"><a class="header" href="#14800029-sqlite数据库已满">14800029 SQLite:数据库已满</a></h2>
+<p><strong>错误信息</strong></p>
+<p>SQLite: The database is full.</p>
+<p><strong>错误描述</strong></p>
+<p>SQLite数据库已满。</p>
+<p><strong>可能原因</strong></p>
+<p>数据库已满，可能是由于数据量过大或磁盘空间不足导致的。</p>
+<p><strong>处理步骤</strong></p>
+<p>减小数据量或增加磁盘空间。</p>
+<h2 id="14800030-sqlite无法打开数据库文件"><a class="header" href="#14800030-sqlite无法打开数据库文件">14800030 SQLite:无法打开数据库文件</a></h2>
+<p><strong>错误信息</strong></p>
+<p>SQLite: Unable to open the database file.</p>
+<p><strong>错误描述</strong></p>
+<p>SQLite:无法打开数据库文件。</p>
+<p><strong>可能原因</strong></p>
+<ol>
+<li>文件不存在，并且创建新数据库失败。</li>
+<li>文件存在，但是数据库文件损坏。</li>
+<li>文件权限问题，SQLite无法读写文件。 </li>
+<li>磁盘空间不足。</li>
+<li>参见SQLITE_CANTOPEN的相关错误场景。</li>
+</ol>
+<p><strong>处理步骤</strong></p>
+<ol>
+<li>确认数据库文件路径是否正确，检查文件权限，确保应用程序有足够的权限去读写文件。</li>
+<li>确认磁盘空间足够。</li>
+</ol>
+<h2 id="14800031-sqlitetext或blob超出大小限制"><a class="header" href="#14800031-sqlitetext或blob超出大小限制">14800031 SQLite：TEXT或BLOB超出大小限制</a></h2>
+<p><strong>错误信息</strong></p>
+<p>SQLite: TEXT or BLOB exceeds size limit.</p>
+<p><strong>错误描述</strong></p>
+<p>SQLite：TEXT或BLOB超出大小限制。</p>
+<p><strong>可能原因</strong></p>
+<ol>
+<li>查询的结果集超过了SQLite所能处理的大小限制。 </li>
+<li>参见SQLITE_TOOBIG的相关错误场景。</li>
+</ol>
+<p><strong>处理步骤</strong></p>
+<p>将大查询分解为多个小查询，每次处理一部分数据。</p>
+<h2 id="14800032-sqlite由于违反约束而中止"><a class="header" href="#14800032-sqlite由于违反约束而中止">14800032 SQLite:由于违反约束而中止</a></h2>
+<p><strong>错误信息</strong></p>
+<p>SQLite: Abort due to constraint violation.</p>
+<p><strong>错误描述</strong></p>
+<p>SQLite:由于违反约束而中止。</p>
+<p><strong>可能原因</strong></p>
+<ol>
+<li>尝试写入SQLite数据库时违反了数据库的完整性约束条件。</li>
+<li>参见SQLITE_CONSTRAINT的相关错误场景。</li>
+</ol>
+<p><strong>处理步骤</strong></p>
+<p>检查试图插入或更新的数据是否违反了上述约束。</p>
+<h2 id="14800033-sqlite数据类型不匹配"><a class="header" href="#14800033-sqlite数据类型不匹配">14800033 SQLite:数据类型不匹配</a></h2>
+<p><strong>错误信息</strong></p>
+<p>SQLite: Data type mismatch.</p>
+<p><strong>错误描述</strong></p>
+<p>SQLite:数据类型不匹配。</p>
+<p><strong>可能原因</strong></p>
+<ol>
+<li>执行一个SQL语句时，其中涉及的数据类型与数据库中存储的数据类型不匹配。</li>
+<li>参见SQLITE_MISMATCH的相关错误场景。</li>
+</ol>
+<p><strong>处理步骤</strong></p>
+<p>检查SQL语句中涉及的列的数据类型，确保插入、更新或查询的数据类型与列的数据类型相匹配。</p>
+<h2 id="14800034-sqlite库使用不正确"><a class="header" href="#14800034-sqlite库使用不正确">14800034 SQLite:库使用不正确</a></h2>
+<p><strong>错误信息</strong></p>
+<p>SQLite: Library used incorrectly.</p>
+<p><strong>错误描述</strong></p>
+<p>SQLite:库使用不正确。</p>
+<p><strong>可能原因</strong></p>
+<ol>
+<li>表示数据库操作或者使用上下文不正确。这个错误通常发生在以下几种情况： 
+<ul>
+<li>数据库还没有完成操作就进行下一个操作。 </li>
+<li>在一个数据库连接已经关闭后，继续对该连接进行操作。</li>
+<li>使用了已经释放或无效的数据库对象。</li>
+</ul>
+</li>
+<li>参见SQLITE_MISUSE的相关错误场景。</li>
+</ol>
+<p><strong>处理步骤</strong></p>
+<ol>
+<li>确保数据库操作之间有适当的同步，比如使用锁或其他同步机制。 </li>
+<li>确保数据库连接在使用前是打开的，在结束操作后是关闭的。 </li>
+<li>确保所有数据库对象在使用完毕后都已正确释放。</li>
+</ol>
+<h2 id="14800047-wal文件大小超过默认上限"><a class="header" href="#14800047-wal文件大小超过默认上限">14800047 WAL文件大小超过默认上限</a></h2>
+<p><strong>错误信息</strong></p>
+<p>The WAL file size exceeds the default limit.</p>
+<p><strong>错误描述</strong></p>
+<p>WAL文件大小超过默认上限（200M）。</p>
+<p><strong>可能原因</strong></p>
+<p>在开启读事务或者结果集未关闭的情况下，不断执行增删改操作，导致WAL文件大小超过默认上限。</p>
+<p><strong>处理步骤</strong></p>
+<p>检查结果集或者事务是否未关闭。</p>
+<p>关闭所有的结果集或者事务。</p>
+<h2 id="14800050-获取订阅服务失败"><a class="header" href="#14800050-获取订阅服务失败">14800050 获取订阅服务失败</a></h2>
+<p><strong>错误信息</strong></p>
+<p>Failed to obtain subscription service.</p>
+<p><strong>错误描述</strong></p>
+<p>获取订阅服务失败。</p>
+<p><strong>可能原因</strong></p>
+<p>当前平台不支持订阅服务。</p>
+<p><strong>处理步骤</strong></p>
+<p>需要在当前平台部署订阅服务。</p>
+<h2 id="14801001-上下文环境非stage模型"><a class="header" href="#14801001-上下文环境非stage模型">14801001 上下文环境非Stage模型</a></h2>
+<p><strong>错误信息</strong></p>
+<p>Only supported in stage mode.</p>
+<p><strong>错误描述</strong></p>
+<p>该操作仅支持Stage模型。</p>
+<p><strong>可能原因</strong></p>
+<p>当前上下文环境非Stage模型。</p>
+<p><strong>处理步骤</strong></p>
+<p>切换当前上下文环境，使用Stage模型。</p>
+<h2 id="14801002-storeconfig中传入的datagroupid参数非法"><a class="header" href="#14801002-storeconfig中传入的datagroupid参数非法">14801002 storeConfig中传入的dataGroupId参数非法</a></h2>
+<p><strong>错误信息</strong></p>
+<p>The data group id is not valid.</p>
+<p><strong>错误描述</strong></p>
+<p>使用非法dataGroupId参数。</p>
+<p><strong>可能原因</strong></p>
+<p>使用的dataGroupId不是从应用市场正常申请的。</p>
+<p><strong>处理步骤</strong></p>
+<p>从应用市场申请dataGroupId，并正确传入该参数。</p>
+<h2 id="14800051-分布式表类型不匹配"><a class="header" href="#14800051-分布式表类型不匹配">14800051 分布式表类型不匹配</a></h2>
+<p><strong>错误信息</strong></p>
+<p>The type of the distributed table does not match.</p>
+<p><strong>错误描述</strong></p>
+<p>对同一数据库表设置的分布式表类型前后不一致。</p>
+<p><strong>可能原因</strong></p>
+<p>对同一数据库表设置的分布式表类型前后不一致，分布式表类型可见<a href="../apis/cj-apis-data-relationalStore.html#distributedtype10">DistributedType</a>。</p>
+<p><strong>处理步骤</strong></p>
+<p>对同一数据库表设置的分布式表类型保持一致，属于端端同步的分布式表不可再设置为用于端云的同步表。</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../source_zh_cn/errorcodes/cj-errorcode-asset.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../source_zh_cn/errorcodes/cj-errorcode-distributedKVStore.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../source_zh_cn/errorcodes/cj-errorcode-asset.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../source_zh_cn/errorcodes/cj-errorcode-distributedKVStore.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../highlight.js"></script>
+        <script src="../../assets/elasticlunr.js"></script>
+        <script src="../../assets/fzf.umd.js"></script>
+        <script src="../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

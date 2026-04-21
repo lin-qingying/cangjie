@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="a" data-name="图层 1" xmlns="http://www.w3.org/2000/svg" width="172" height="172" viewBox="0 0 172 172">
+  <g id="b" data-name="card02">
+    <rect id="c" data-name="Rectangle" width="172" height="172" rx="4" ry="4" style="fill: none; stroke-width: 0px;"/>
+    <rect id="d" data-name="Rectangle" x="25" width="122" height="172" rx="4" ry="4" style="fill: #fff; stroke-width: 0px;"/>
+    <path id="e" data-name="Rectangle" d="m29,0h114c2.209,0,4,1.791,4,4v16H25V4c0-2.209,1.791-4,4-4Z" style="fill: #5291ff; stroke-width: 0px;"/>
+    <rect id="f" data-name="Rectangle" x="34" y="7" width="32" height="6" style="fill: #fff; stroke-width: 0px;"/>
+  </g>
+  <path id="g" data-name="Rectangle" d="m125,132h0c9.941,0,18,8.059,18,18h0c0,9.941-8.059,18-18,18h0c-9.941,0-18-8.059-18-18h0c0-9.941,8.059-18,18-18Z" style="isolation: isolate; opacity: .4; stroke-width: 0px;"/>
+  <path id="h" data-name="ShapeBonding" d="m128.539,141c1.358,0,2.377.955,2.456,2.349l.005.177v8.474h-1v-8.624c0-.576-.705-1.287-1.293-1.368l-.109-.008h-2.099v.422c0,.31-.309.63-.617.681l-.084.007h-1.599c-.308,0-.64-.296-.693-.604l-.007-.084v-.422h-2.099c-.573,0-1.309.679-1.393,1.267l-.008.109v15.248c0,.576.705,1.287,1.293,1.368l.109.008h7.198c.573,0,1.309-.679,1.393-1.267l.008-.109v-7.624h1v7.474c0,1.43-.965,2.442-2.293,2.521l-.168.005h-7.077c-1.358,0-2.377-.955-2.456-2.349l-.005-.177v-14.948c0-1.43.965-2.442,2.293-2.521l.168-.005h7.077Z" style="fill: #fff; stroke-width: 0px;"/>
+</svg>

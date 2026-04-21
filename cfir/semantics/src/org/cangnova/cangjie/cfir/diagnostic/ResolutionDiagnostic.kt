@@ -47,6 +47,13 @@ class NamedParameterNotFound(
     val name: Name,
 ) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
 
+/**
+ * 对齐 Kotlin FIR：当候选自身没有更细粒度的结构化错误类型时，
+ * 仍然需要一个统一的“不可适用候选”诊断挂到 Candidate 上，
+ * 以便 overload 收集、IDE all-candidates 查询、错误引用回写使用同一语义锚点。
+ */
+object InapplicableCandidate : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+
 class ArgumentPassedTwice(
     val argument: CfirExpression,
     val parameter: CfirValueParameter,

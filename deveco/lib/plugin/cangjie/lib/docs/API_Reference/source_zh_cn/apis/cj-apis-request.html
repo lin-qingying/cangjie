@@ -1,0 +1,1186 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>ohos.request（上传下载） - API 参考</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../assets/style.css">
+        <link rel="stylesheet" href="../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item "><a href="../../cover0.html"><strong aria-hidden="true">1.</strong> API参考（封面）</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.</strong> 仓颉API</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">2.1.</strong> Ability框架</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability.html"><strong aria-hidden="true">2.1.1.</strong> Ability</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityStage.html"><strong aria-hidden="true">2.1.2.</strong> AbilityStage</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-context.html"><strong aria-hidden="true">2.1.3.</strong> AbilityContext</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-want.html"><strong aria-hidden="true">2.1.4.</strong> Want</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-wantConstant.html"><strong aria-hidden="true">2.1.5.</strong> wantConstant</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-errorManager.html"><strong aria-hidden="true">2.1.6.</strong> errorManager</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry.html"><strong aria-hidden="true">2.1.7.</strong> AbilityDelegatorRegistry</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-abilityDelegator.html"><strong aria-hidden="true">2.1.8.</strong> AbilityDelegator</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-shellCmdResult.html"><strong aria-hidden="true">2.1.9.</strong> shellCmdResult</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/support-definitions.html"><strong aria-hidden="true">2.2.1.</strong> 系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-common-event-manager.html"><strong aria-hidden="true">2.2.2.</strong> ohos.common_event_manager（公共事件模块）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-emitter.html"><strong aria-hidden="true">2.2.3.</strong> ohos.emitter（事件处理调度）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-manager.html"><strong aria-hidden="true">2.2.4.</strong> ohos.notification_manager（通知管理模块）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.5.</strong> application</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-application-eventHub.html"><strong aria-hidden="true">2.2.5.1.</strong> EventHub</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.6.</strong> commonEvent</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventData.html"><strong aria-hidden="true">2.2.6.1.</strong> CommonEventData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventPublishData.html"><strong aria-hidden="true">2.2.6.2.</strong> CommonEventPublishData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscriber.html"><strong aria-hidden="true">2.2.6.3.</strong> CommonEventSubscriber</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscribeInfo.html"><strong aria-hidden="true">2.2.6.4.</strong> CommonEventSubscribeInfo</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.7.</strong> notification</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationRequest.html"><strong aria-hidden="true">2.2.7.1.</strong> NotificationRequest</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationContent.html"><strong aria-hidden="true">2.2.7.2.</strong> NotificationContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.8.</strong> 公共事件定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ability.html"><strong aria-hidden="true">2.2.8.1.</strong> 元能力子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-account.html"><strong aria-hidden="true">2.2.8.2.</strong> 账号子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ans.html"><strong aria-hidden="true">2.2.8.3.</strong> 通知服务公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-bundleManager.html"><strong aria-hidden="true">2.2.8.4.</strong> 包管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-filemanagement.html"><strong aria-hidden="true">2.2.8.5.</strong> 文件管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-locale.html"><strong aria-hidden="true">2.2.8.6.</strong> 语言子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-mms.html"><strong aria-hidden="true">2.2.8.7.</strong> 短信应用公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-netmanager.html"><strong aria-hidden="true">2.2.8.8.</strong> 网络管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-nfc.html"><strong aria-hidden="true">2.2.8.9.</strong> NFC子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-powermgr.html"><strong aria-hidden="true">2.2.8.10.</strong> 电源管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-resourceschedule.html"><strong aria-hidden="true">2.2.8.11.</strong> 资源调度子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-screenlock.html"><strong aria-hidden="true">2.2.8.12.</strong> 主题框架子系统-锁屏管理公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-telephony.html"><strong aria-hidden="true">2.2.8.13.</strong> 电话服务子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-time.html"><strong aria-hidden="true">2.2.8.14.</strong> 时间时区子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-usb.html"><strong aria-hidden="true">2.2.8.15.</strong> USB子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-wifi.html"><strong aria-hidden="true">2.2.8.16.</strong> Wifi子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-window.html"><strong aria-hidden="true">2.2.8.17.</strong> 窗口管理子系统公共事件定义</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager.html"><strong aria-hidden="true">2.3.1.</strong> ohos.bundle_manager（bundleManager管理）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.2.</strong> bundle_manager</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-abilityInfo.html"><strong aria-hidden="true">2.3.2.1.</strong> AbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-applicationInfo.html"><strong aria-hidden="true">2.3.2.2.</strong> ApplicationInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-bundleInfo.html"><strong aria-hidden="true">2.3.2.3.</strong> BundleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-extensionAbilityInfo.html"><strong aria-hidden="true">2.3.2.4.</strong> ExtensionAbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-hapModuleInfo.html"><strong aria-hidden="true">2.3.2.5.</strong> HapModuleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-metadata.html"><strong aria-hidden="true">2.3.2.6.</strong> Metadata</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-animator.html"><strong aria-hidden="true">2.4.1.</strong> ohos.animator（动画）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-font.html"><strong aria-hidden="true">2.4.2.</strong> ohos.font（自定义字体）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-measure.html"><strong aria-hidden="true">2.4.3.</strong> ohos.measure（文本计算）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-prompt.html"><strong aria-hidden="true">2.4.4.</strong> ohos.prompt_action（弹窗）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-router.html"><strong aria-hidden="true">2.4.5.</strong> ohos.router（页面路由）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-display.html"><strong aria-hidden="true">2.5.1.</strong> ohos.display（屏幕属性）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-colorManager.html"><strong aria-hidden="true">2.5.2.</strong> ohos.colorManager（色彩管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-window.html"><strong aria-hidden="true">2.5.3.</strong> ohos.window（窗口）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-image.html"><strong aria-hidden="true">2.6.1.</strong> ohos.multimedia.image（图片处理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-i18n.html"><strong aria-hidden="true">2.7.1.</strong> ohos.i18n（国际化-I18n）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resource-manager.html"><strong aria-hidden="true">2.7.2.</strong> ohos.resource_manager（资源管理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-backgroundTaskManager.html"><strong aria-hidden="true">2.8.1.</strong> ohos.resourceschedule.backgroundTaskManager（后台任务管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-workScheduler.html"><strong aria-hidden="true">2.8.2.</strong> ohos.resourceschedule.workScheduler（延迟任务调度）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-access-ctrl.html"><strong aria-hidden="true">2.9.1.</strong> ohos.abilityAccessCtrl（程序访问控制管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-crypto.html"><strong aria-hidden="true">2.9.2.</strong> ohos.security.crypto（加解密算法库框架）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-huks.html"><strong aria-hidden="true">2.9.3.</strong> ohos.security.huks（通用密钥库系统）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-user-auth.html"><strong aria-hidden="true">2.9.4.</strong> ohos.userIAM.userAuth（用户认证）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-asset.html"><strong aria-hidden="true">2.9.5.</strong> ohos.asset_store（关键资产存储服务）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.6.</strong> 访问控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/security/AccessToken/cj-permissions-for-all.html"><strong aria-hidden="true">2.9.6.1.</strong> 应用权限列表</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-distributedKVStore.html"><strong aria-hidden="true">2.10.1.</strong> ohos.data.distributed（分布式键值数据库）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-preferences.html"><strong aria-hidden="true">2.10.2.</strong> ohos.data.preferences（用户首选项）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-relationalStore.html"><strong aria-hidden="true">2.10.3.</strong> ohos.data.relationalStore（关系型数据库）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fileuri.html"><strong aria-hidden="true">2.11.1.</strong> ohos.file.fileuri（文件URI）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fs.html"><strong aria-hidden="true">2.11.2.</strong> ohos.file.fs（文件管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-picker.html"><strong aria-hidden="true">2.11.3.</strong> ohos.file.picker（选择器）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-telephony-data.html"><strong aria-hidden="true">2.12.1.</strong> ohos.telephony.call（拨打电话）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-vibrator.html"><strong aria-hidden="true">2.13.1.</strong> ohos.vibrator（振动）</a></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-connection.html"><strong aria-hidden="true">2.14.1.</strong> ohos.net.connection（网络连接管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-http.html"><strong aria-hidden="true">2.14.2.</strong> ohos.net.http（数据请求）</a></li><li class="chapter-item expanded "><a href="../../source_zh_cn/apis/cj-apis-request.html" class="active"><strong aria-hidden="true">2.14.3.</strong> ohos.request（上传下载）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hiappevent.html"><strong aria-hidden="true">2.15.1.</strong> ohos.hiAppEvent（应用事件打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracechain.html"><strong aria-hidden="true">2.15.2.</strong> ohos.hiTraceChain（分布式跟踪）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracemeter.html"><strong aria-hidden="true">2.15.3.</strong> ohos.hiTraceMeter（性能打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hilog.html"><strong aria-hidden="true">2.15.4.</strong> ohos.hilog (HiLog日志打印)</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-pasteboard.html"><strong aria-hidden="true">2.15.5.</strong> ohos.pasteboard（剪切板）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-date-time.html"><strong aria-hidden="true">2.15.6.</strong> ohos.systemDateTime（系统时间、时区）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-webview.html"><strong aria-hidden="true">2.15.7.</strong> ohos.web.webview（Webview）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-device-info.html"><strong aria-hidden="true">2.16.1.</strong> ohos.deviceInfo（设备信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.17.</strong> 系统参数</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-parameterEnhance-sys.html"><strong aria-hidden="true">2.17.1.</strong> ohos.systemParameterEnhance（系统参数）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.18.</strong> 其他</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-base.html"><strong aria-hidden="true">2.18.1.</strong> ohos.base（公共回调信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.19.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-uitest.html"><strong aria-hidden="true">2.19.1.</strong> ohos.ui_test（UI测试）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.</strong> 错误码参考</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-universal.html"><strong aria-hidden="true">2.20.1.</strong> 通用错误码</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.2.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-bundle.html"><strong aria-hidden="true">2.20.2.1.</strong> 包管理子系统通用错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.3.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-CommonEventService.html"><strong aria-hidden="true">2.20.3.1.</strong> 事件错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-notification.html"><strong aria-hidden="true">2.20.3.2.</strong> 通知错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-animator.html"><strong aria-hidden="true">2.20.4.1.</strong> 动画错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-colorspace-manager.html"><strong aria-hidden="true">2.20.5.1.</strong> 色彩管理错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-display.html"><strong aria-hidden="true">2.20.5.2.</strong> 屏幕错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-window.html"><strong aria-hidden="true">2.20.5.3.</strong> 窗口错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-image.html"><strong aria-hidden="true">2.20.6.1.</strong> Image错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-i18n.html"><strong aria-hidden="true">2.20.7.1.</strong> I18n错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-resource-manager.html"><strong aria-hidden="true">2.20.7.2.</strong> 资源管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-backgroundTaskMgr.html"><strong aria-hidden="true">2.20.8.1.</strong> backgroundTaskManager错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-workScheduler.html"><strong aria-hidden="true">2.20.8.2.</strong> workScheduler错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-access-token.html"><strong aria-hidden="true">2.20.9.1.</strong> 访问控制错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-huks.html"><strong aria-hidden="true">2.20.9.2.</strong> huks错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-crypto.html"><strong aria-hidden="true">2.20.9.3.</strong> crypto错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-asset.html"><strong aria-hidden="true">2.20.9.4.</strong> 关键资产存储服务错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-data-rdb.html"><strong aria-hidden="true">2.20.10.1.</strong> 关系型数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-distributedKVStore.html"><strong aria-hidden="true">2.20.10.2.</strong> 分布式键值数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-preferences.html"><strong aria-hidden="true">2.20.10.3.</strong> 用户首选项错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-filemanagement.html"><strong aria-hidden="true">2.20.11.1.</strong> 文件管理子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-telephony.html"><strong aria-hidden="true">2.20.12.1.</strong> 电话子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-vibrator.html"><strong aria-hidden="true">2.20.13.1.</strong> vibrator错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-request.html"><strong aria-hidden="true">2.20.14.1.</strong> 上传下载错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-http.html"><strong aria-hidden="true">2.20.14.2.</strong> HTTP错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-connection.html"><strong aria-hidden="true">2.20.14.3.</strong> 网络连接管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-hiappevent.html"><strong aria-hidden="true">2.20.15.1.</strong> 应用事件打点错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-pasteboard.html"><strong aria-hidden="true">2.20.15.2.</strong> 剪贴板错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-errorManager.html"><strong aria-hidden="true">2.20.15.3.</strong> 错误观察器错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-time.html"><strong aria-hidden="true">2.20.15.4.</strong> 时间时区错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-webview.html"><strong aria-hidden="true">2.20.15.5.</strong> Web错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-system-parameter.html"><strong aria-hidden="true">2.20.16.1.</strong> 系统参数错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.17.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-uitest.html"><strong aria-hidden="true">2.20.17.1.</strong> uitest错误码</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.</strong> 仓颉组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.</strong> 组件通用信息</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.1.</strong> 通用事件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-click.html"><strong aria-hidden="true">3.1.1.1.</strong> 点击事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-touch.html"><strong aria-hidden="true">3.1.1.2.</strong> 触摸事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-appear.html"><strong aria-hidden="true">3.1.1.3.</strong> 挂载卸载事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-drag.html"><strong aria-hidden="true">3.1.1.4.</strong> 拖拽事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-key.html"><strong aria-hidden="true">3.1.1.5.</strong> 按键事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-focus.html"><strong aria-hidden="true">3.1.1.6.</strong> 焦点事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-mouse.html"><strong aria-hidden="true">3.1.1.7.</strong> 鼠标事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-component-area-change-event.html"><strong aria-hidden="true">3.1.1.8.</strong> 组件区域变化事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-keyboardshortcut.html"><strong aria-hidden="true">3.1.1.9.</strong> 组件快捷键事件</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.</strong> 通用属性</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-size.html"><strong aria-hidden="true">3.1.2.1.</strong> 尺寸设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-location.html"><strong aria-hidden="true">3.1.2.2.</strong> 位置设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-layout-constraints.html"><strong aria-hidden="true">3.1.2.3.</strong> 布局约束</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-flex-layout.html"><strong aria-hidden="true">3.1.2.4.</strong> Flex布局</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-border.html"><strong aria-hidden="true">3.1.2.5.</strong> 边框设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-background.html"><strong aria-hidden="true">3.1.2.6.</strong> 背景设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-opacity.html"><strong aria-hidden="true">3.1.2.7.</strong> 透明度设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-visibility.html"><strong aria-hidden="true">3.1.2.8.</strong> 显隐控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-enable.html"><strong aria-hidden="true">3.1.2.9.</strong> 禁用控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-overlay.html"><strong aria-hidden="true">3.1.2.10.</strong> 浮层</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-z-order.html"><strong aria-hidden="true">3.1.2.11.</strong> Z序控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transform.html"><strong aria-hidden="true">3.1.2.12.</strong> 图形变换</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-image-effect.html"><strong aria-hidden="true">3.1.2.13.</strong> 图像效果</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-shap-clip.html"><strong aria-hidden="true">3.1.2.14.</strong> 形状裁剪</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-gradient-color.html"><strong aria-hidden="true">3.1.2.15.</strong> 颜色渐变</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-popup.html"><strong aria-hidden="true">3.1.2.16.</strong> Popup控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-menu.html"><strong aria-hidden="true">3.1.2.17.</strong> 菜单控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-focus.html"><strong aria-hidden="true">3.1.2.18.</strong> 焦点控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-component-id.html"><strong aria-hidden="true">3.1.2.19.</strong> 组件标识</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-color.html"><strong aria-hidden="true">3.1.2.20.</strong> 前景色设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-blur-style.html"><strong aria-hidden="true">3.1.2.21.</strong> 组件内容模糊</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-touch-target.html"><strong aria-hidden="true">3.1.2.22.</strong> 触摸热区设置</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.23.</strong> 模态转场设置</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-bindcontentcover.html"><strong aria-hidden="true">3.1.2.23.1.</strong> 全屏模态转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sheet-transition.html"><strong aria-hidden="true">3.1.2.23.2.</strong> 半模态转场</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-text-style.html"><strong aria-hidden="true">3.1.2.24.</strong> 文本通用</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-expand-safe-area.html"><strong aria-hidden="true">3.1.2.25.</strong> 安全区域</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-renderfit.html"><strong aria-hidden="true">3.1.2.26.</strong> 组件内容填充方式</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.2.</strong> 基础组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-alphabet-indexer.html"><strong aria-hidden="true">3.2.1.</strong> AlphabetIndexer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-blank.html"><strong aria-hidden="true">3.2.2.</strong> Blank</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-button.html"><strong aria-hidden="true">3.2.3.</strong> Button</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkbox.html"><strong aria-hidden="true">3.2.4.</strong> Checkbox</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkboxgroup.html"><strong aria-hidden="true">3.2.5.</strong> CheckboxGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-datapanel.html"><strong aria-hidden="true">3.2.6.</strong> DataPanel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-datepicker.html"><strong aria-hidden="true">3.2.7.</strong> Datepicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-divider.html"><strong aria-hidden="true">3.2.8.</strong> Divider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-gauge.html"><strong aria-hidden="true">3.2.9.</strong> Gauge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-image.html"><strong aria-hidden="true">3.2.10.</strong> Image</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-imageSpan.html"><strong aria-hidden="true">3.2.11.</strong> ImageSpan</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-loadingprogress.html"><strong aria-hidden="true">3.2.12.</strong> LoadingProgress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menu.html"><strong aria-hidden="true">3.2.13.</strong> Menu</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitem.html"><strong aria-hidden="true">3.2.14.</strong> MenuItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitemgroup.html"><strong aria-hidden="true">3.2.15.</strong> MenuItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-progress.html"><strong aria-hidden="true">3.2.16.</strong> Progress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-qrcode.html"><strong aria-hidden="true">3.2.17.</strong> QRCode</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-radio.html"><strong aria-hidden="true">3.2.18.</strong> Radio</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rating.html"><strong aria-hidden="true">3.2.19.</strong> Rating</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richeditor.html"><strong aria-hidden="true">3.2.20.</strong> RichEditor</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richtext.html"><strong aria-hidden="true">3.2.21.</strong> RichText</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-scrollbar.html"><strong aria-hidden="true">3.2.22.</strong> ScrollBar</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-search.html"><strong aria-hidden="true">3.2.23.</strong> Search</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-select.html"><strong aria-hidden="true">3.2.24.</strong> Select</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-slider.html"><strong aria-hidden="true">3.2.25.</strong> Slider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-span.html"><strong aria-hidden="true">3.2.26.</strong> Span</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepper.html"><strong aria-hidden="true">3.2.27.</strong> Stepper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepperitem.html"><strong aria-hidden="true">3.2.28.</strong> Stepperitem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-text.html"><strong aria-hidden="true">3.2.29.</strong> Text</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textarea.html"><strong aria-hidden="true">3.2.30.</strong> TextArea</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textclock.html"><strong aria-hidden="true">3.2.31.</strong> TextClock</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textinput.html"><strong aria-hidden="true">3.2.32.</strong> TextInput</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textpicker.html"><strong aria-hidden="true">3.2.33.</strong> TextPicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-texttimer.html"><strong aria-hidden="true">3.2.34.</strong> TextTimer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-toggle.html"><strong aria-hidden="true">3.2.35.</strong> Toggle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-web.html"><strong aria-hidden="true">3.2.36.</strong> Web</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.3.</strong> 容器组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-badge.html"><strong aria-hidden="true">3.3.1.</strong> Badge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-column.html"><strong aria-hidden="true">3.3.2.</strong> Column</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-columnsplit.html"><strong aria-hidden="true">3.3.3.</strong> ColumnSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-flex.html"><strong aria-hidden="true">3.3.4.</strong> Flex</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-col.html"><strong aria-hidden="true">3.3.5.</strong> GridCol</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-row.html"><strong aria-hidden="true">3.3.6.</strong> GridRow</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid.html"><strong aria-hidden="true">3.3.7.</strong> Grid</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-item.html"><strong aria-hidden="true">3.3.8.</strong> GridItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list.html"><strong aria-hidden="true">3.3.9.</strong> List</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-listitem.html"><strong aria-hidden="true">3.3.10.</strong> ListItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list-group.html"><strong aria-hidden="true">3.3.11.</strong> ListItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-panel.html"><strong aria-hidden="true">3.3.12.</strong> Panel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-refresh.html"><strong aria-hidden="true">3.3.13.</strong> Refresh</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-relativecontainer.html"><strong aria-hidden="true">3.3.14.</strong> RelativeContainer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-row.html"><strong aria-hidden="true">3.3.15.</strong> Row</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rowsplit.html"><strong aria-hidden="true">3.3.16.</strong> RowSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-scroll.html"><strong aria-hidden="true">3.3.17.</strong> Scroll</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-stack.html"><strong aria-hidden="true">3.3.18.</strong> Stack</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-swiper.html"><strong aria-hidden="true">3.3.19.</strong> Swiper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabs.html"><strong aria-hidden="true">3.3.20.</strong> Tabs</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabcontent.html"><strong aria-hidden="true">3.3.21.</strong> TabContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.4.</strong> 绘制组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-circle.html"><strong aria-hidden="true">3.4.1.</strong> Circle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-line.html"><strong aria-hidden="true">3.4.2.</strong> Line</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-rect.html"><strong aria-hidden="true">3.4.3.</strong> Rect</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-shape.html"><strong aria-hidden="true">3.4.4.</strong> Shape</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.5.</strong> 画布组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas.html"><strong aria-hidden="true">3.5.1.</strong> Canvas</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-gradient.html"><strong aria-hidden="true">3.5.2.</strong> CanvasGradient</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-rendering-context-2d.html"><strong aria-hidden="true">3.5.3.</strong> CanvasRenderingContext2D</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-imagebitmap.html"><strong aria-hidden="true">3.5.4.</strong> ImageBitmap</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.6.</strong> 渲染控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-ifelse.html"><strong aria-hidden="true">3.6.1.</strong> if/else</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-foreach.html"><strong aria-hidden="true">3.6.2.</strong> ForEach</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-lazyforeach.html"><strong aria-hidden="true">3.6.3.</strong> LazyForEach</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.</strong> 动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-animation.html"><strong aria-hidden="true">3.7.1.</strong> 属性动画</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-methods-animateTo.html"><strong aria-hidden="true">3.7.2.</strong> 显式动画</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.3.</strong> 转场动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-page-transition.html"><strong aria-hidden="true">3.7.3.1.</strong> 页面间转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transition.html"><strong aria-hidden="true">3.7.3.2.</strong> 组件内转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sharedTransition.html"><strong aria-hidden="true">3.7.3.3.</strong> 共享元素转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-geometryTransition.html"><strong aria-hidden="true">3.7.3.4.</strong> 组件内隐式共享元素转场</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.8.</strong> 全局UI方法</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.8.1.</strong> 弹窗</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-alert-dialog-box.html"><strong aria-hidden="true">3.8.1.1.</strong> 警告弹窗</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-customdialog.html"><strong aria-hidden="true">3.8.1.2.</strong> 自定义弹窗</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-menu.html"><strong aria-hidden="true">3.8.2.</strong> 菜单</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.9.</strong> 自定义组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-custom-component-lifecycle.html"><strong aria-hidden="true">3.9.1.</strong> 自定义组件的生命周期</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.10.</strong> 类型定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-enums.html"><strong aria-hidden="true">3.10.1.</strong> 基础类型定义</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-pixel-units.html"><strong aria-hidden="true">3.11.</strong> 像素单位</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-state-management-manual.html"><strong aria-hidden="true">3.12.</strong> 状态管理</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-config.html"><strong aria-hidden="true">3.13.</strong> 应用配置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-thread.html"><strong aria-hidden="true">3.14.</strong> 线程控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid.html"><strong aria-hidden="true">3.15.</strong> 混合开发V1</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid-v2.html"><strong aria-hidden="true">3.16.</strong> 混合开发V2</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.17.</strong> 管理应用拥有的状态</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-app-storage.html"><strong aria-hidden="true">3.17.1.</strong> AppStorage（应用全局的UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-local-storage.html"><strong aria-hidden="true">3.17.2.</strong> LocalStorage（页面级UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-persistent-storage.html"><strong aria-hidden="true">3.17.3.</strong> PersistentStorage（持久化存储UI状态）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-environment.html"><strong aria-hidden="true">3.17.4.</strong> Environment（设备环境查询）</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_ui_framework.html"><strong aria-hidden="true">3.18.</strong> 框架接口</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkinterop/cj-ark-interop-apis.html"><strong aria-hidden="true">4.</strong> 仓颉与ArkTS互操作库</a></li><li class="chapter-item "><a href="../../source_zh_cn/cj-libs-api.html"><strong aria-hidden="true">5.</strong> 仓颉编程语言库API</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">API 参考</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="ohosrequest上传下载"><a class="header" href="#ohosrequest上传下载">ohos.request（上传下载）</a></h1>
+<p>request部件主要给应用提供上传下载文件、后台传输代理的基础能力。</p>
+<h2 id="导入模块"><a class="header" href="#导入模块">导入模块</a></h2>
+<pre><code class="language-cangjie">import ohos.request.agent.*
+</code></pre>
+<h2 id="enum-action"><a class="header" href="#enum-action">enum Action</a></h2>
+<pre><code class="language-cangjie">public enum Action {
+    | DOWNLOAD
+    | UPLOAD
+}
+</code></pre>
+<p>定义操作选项。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">DOWNLOAD</td><td style="text-align: left">表示下载任务。</td></tr>
+<tr><td style="text-align: left">UPLOAD</td><td style="text-align: left">表示上传任务。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-mode"><a class="header" href="#enum-mode">enum Mode</a></h2>
+<pre><code class="language-cangjie">public enum Mode {
+    | BACKGROUND
+    | FOREGROUND
+}
+</code></pre>
+<p>定义模式选项。<br>
+前端任务在应用切换到后台一段时间后失败/暂停；后台任务不受影响。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">BACKGROUND</td><td style="text-align: left">表示后台任务。</td></tr>
+<tr><td style="text-align: left">FOREGROUND</td><td style="text-align: left">表示前端任务。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-network"><a class="header" href="#enum-network">enum Network</a></h2>
+<pre><code class="language-cangjie">public enum Network {
+    | ANY
+    | WIFI
+    | CELLULAR
+}
+</code></pre>
+<p>定义网络选项。<br>
+网络不满足设置条件时，未执行的任务等待执行，执行中的任务失败/暂停。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">ANY</td><td style="text-align: left">表示不限网络类型。</td></tr>
+<tr><td style="text-align: left">WIFI</td><td style="text-align: left">表示无线网络。</td></tr>
+<tr><td style="text-align: left">CELLULAR</td><td style="text-align: left">表示蜂窝数据网络。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-broadcastevent"><a class="header" href="#enum-broadcastevent">enum BroadcastEvent</a></h2>
+<pre><code class="language-cangjie">public enum BroadcastEvent {
+    | COMPLETE
+}
+</code></pre>
+<p>定义自定义系统事件。用户可以使用公共事件接口获取该事件。
+上传下载 SA 具有 'ohos.permission.SEND_TASK_COMPLETE_EVENT' 该权限，用户可以配置事件的 metadata 指向的二级配置文件来拦截其他事件发送者。</p>
+<p>使用 CommonEventData 类型传输公共事件相关数据。成员的内容填写和 <a href="cj-apis-inner-commonEvent-commonEventData.html">CommonEventData介绍</a> 介绍的有所区别，其中 CommonEventData.code 表示任务的状态，目前为 0x40 COMPLETE 或 0x41 FAILED; CommonEventData.data 表示任务的 taskId。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">COMPLETE</td><td style="text-align: left">'ohos.request.event.COMPLETE'</td><td style="text-align: left">表示任务完成事件。</td></tr>
+</tbody></table>
+</div>
+<h3 id="prop-value"><a class="header" href="#prop-value">prop value</a></h3>
+<pre><code class="language-cangjie">public prop value: String
+</code></pre>
+<p>返回该BroadcastEvent的字符串形式。</p>
+<h2 id="class-filespec"><a class="header" href="#class-filespec">class FileSpec</a></h2>
+<pre><code class="language-cangjie">public class FileSpec {
+    public FileSpec(
+        public var path!: String,
+        public var mimeType!: ?String = None,
+        public var filename!: ?String = None,
+        public var extras!: ?HashMap&lt;String, String&gt; = None
+    ) {}
+}
+</code></pre>
+<p>表单项的文件信息。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">path</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">文件路径：<br>-位于调用方的缓存文件夹下的相对路径。<br>-用户公共文件，如&quot;file://media/Photo/path/to/file.img&quot;。仅支持前端任务。</td></tr>
+<tr><td style="text-align: left">mimeType</td><td style="text-align: left">?String</td><td style="text-align: left">否</td><td style="text-align: left">文件的mimetype通过文件名获取。</td></tr>
+<tr><td style="text-align: left">filename</td><td style="text-align: left">?String</td><td style="text-align: left">否</td><td style="text-align: left">文件名，默认值通过路径获取。</td></tr>
+<tr><td style="text-align: left">extras</td><td style="text-align: left">?HashMap&lt;String, String&gt;</td><td style="text-align: left">否</td><td style="text-align: left">文件信息的附加内容。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-formitemvaluetype"><a class="header" href="#enum-formitemvaluetype">enum FormItemValueType</a></h2>
+<pre><code class="language-cangjie">public enum FormItemValueType {
+    | STR(String)
+    | FILE(FileSpec)
+    | FILES(Array&lt;FileSpec&gt;)
+}
+</code></pre>
+<p>表单项的文件信息枚举类型</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">STR</td><td style="text-align: left">String</td><td style="text-align: left">表示文件路径。</td></tr>
+<tr><td style="text-align: left">FILE</td><td style="text-align: left">FileSpec</td><td style="text-align: left">表示文件信息。</td></tr>
+<tr><td style="text-align: left">FILES</td><td style="text-align: left">Array&lt;FileSpec&gt;</td><td style="text-align: left">表示多个文件信息。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-configdatatype"><a class="header" href="#enum-configdatatype">enum ConfigDataType</a></h2>
+<pre><code class="language-cangjie">public enum ConfigDataType {
+    | STR(String)
+    | FORMITEMS(Array&lt;FormItem&gt;)
+}
+</code></pre>
+<p>上传/下载任务的data配置枚举类型</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">STR</td><td style="text-align: left">String</td><td style="text-align: left">下载时，data为字符串类型，通常使用json(object将被转换为json文本)，默认为空。</td></tr>
+<tr><td style="text-align: left">FORMITEMS</td><td style="text-align: left">Array&lt;FormItem&gt;</td><td style="text-align: left">表示上传时，data是表单项数组Array&lt;FormItem&gt;，默认为空。</td></tr>
+</tbody></table>
+</div>
+<h2 id="class-formitem"><a class="header" href="#class-formitem">class FormItem</a></h2>
+<pre><code class="language-cangjie">public class FormItem {
+    public FormItem(
+        public var name!: String,
+        public var value!: FormItemValueType
+    ) {}
+}
+</code></pre>
+<p>上传/下载任务的配置信息。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">name</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">表单参数名。</td></tr>
+<tr><td style="text-align: left">value</td><td style="text-align: left">FormItemValueType</td><td style="text-align: left">是</td><td style="text-align: left">表单参数值。</td></tr>
+</tbody></table>
+</div>
+<h2 id="class-config"><a class="header" href="#class-config">class Config</a></h2>
+<pre><code class="language-cangjie">public class Config {
+    public Config(
+        public var action!: Action,
+        public var url!: String,
+        public var title!: ?String = None,
+        public var description!: ?String = None,
+        public var mode!: ?Mode = None,
+        public var overwrite!: Bool = false,
+        public var method!: ?String= None,
+        public var headers!: ?HashMap&lt;String, String&gt; = None,
+        public var data!: ?ConfigDataType = None,
+        public var saveas!: ?String = None,
+        public var network!: Network = Network.ANY,
+        public var metered!: Bool = false,
+        public var roaming!: Bool = true,
+        public var retry!: Bool = true,
+        public var redirect!: Bool = true,
+        public var index!: UInt32 = 0,
+        public var begins!: Int64 = 0,
+        public var ends!: Int64 = -1,
+        public var gauge!: Bool = false,
+        public var precise!: Bool = false,
+        public var token!: ?String = None,
+        public var priority!: UInt32 = 0,
+        public var extras!: ?HashMap&lt;String, String&gt; = None
+    ) {}
+}
+</code></pre>
+<p>上传/下载任务的配置信息。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">action</td><td style="text-align: left">Action</td><td style="text-align: left">是</td><td style="text-align: left">任务操作选项。<br>-UPLOAD表示上传任务。<br>-DOWNLOAD表示下载任务。</td></tr>
+<tr><td style="text-align: left">url</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">资源地址，其最大长度为2048个字符。</td></tr>
+<tr><td style="text-align: left">title</td><td style="text-align: left">?String</td><td style="text-align: left">否</td><td style="text-align: left">任务标题，其最大长度为256个字符，默认值为小写的 upload 或 download，与上面的 action 保持一致。</td></tr>
+<tr><td style="text-align: left">description</td><td style="text-align: left">?String</td><td style="text-align: left">否</td><td style="text-align: left">任务的详细信息，其最大长度为1024个字符，默认值为空字符串。</td></tr>
+<tr><td style="text-align: left">mode</td><td style="text-align: left">?Mode</td><td style="text-align: left">否</td><td style="text-align: left">任务模式,默认为后台任务。</td></tr>
+<tr><td style="text-align: left">overwrite</td><td style="text-align: left">?Bool</td><td style="text-align: left">否</td><td style="text-align: left">下载过程中路径已存在时的解决方案选择，默认为false。<br>- true，覆盖已存在的文件。<br>- false，下载失败。</td></tr>
+<tr><td style="text-align: left">method</td><td style="text-align: left">?String</td><td style="text-align: left">否</td><td style="text-align: left">上传或下载的HTTP标准方法，包括GET、POST和PUT，不区分大小写。<br>-上传时，使用PUT或POST，默认值为PUT。<br>-下载时，使用GET或POST，默认值为GET。</td></tr>
+<tr><td style="text-align: left">headers</td><td style="text-align: left">?HashMap&lt;String, String&gt;</td><td style="text-align: left">否</td><td style="text-align: left">添加要包含在任务中的HTTP协议标志头。<br>-对于上传请求，默认的Content-Type为&quot;multipart/form-data&quot;。<br>-对于下载请求，默认的Content-Type为&quot;application/json&quot;。</td></tr>
+<tr><td style="text-align: left">data</td><td style="text-align: left">?ConfigDataType</td><td style="text-align: left">否</td><td style="text-align: left">-下载时，data为字符串类型，通常使用json(object将被转换为json文本)，默认为空。<br>-上传时，data是表单项数组Array&lt;FormItem&gt;，默认为空。</td></tr>
+<tr><td style="text-align: left">saveas</td><td style="text-align: left">?String</td><td style="text-align: left">否</td><td style="text-align: left">保存下载文件的路径，包括如下几种：<br>-相对路径，位于调用方的缓存路径下，如&quot;./xxx/yyy/zzz.html&quot;、&quot;xxx/yyy/zzz.html&quot;。<br>-internal协议路径，仅支持&quot;internal://cache/&quot;及其子路径，如&quot;internal://cache/path/to/file.txt&quot;。<br>-应用沙箱目录，只支持到base及其子目录下，如&quot;/data/storage/el1/base/path/to/file.txt&quot;。<br>-file协议路径，必须匹配应用包名，只支持到base及其子目录下，如&quot;file://com.example.test/data/storage/el2/base/file.txt&quot;。<br>默认为相对路径，即下载至调用方当前缓存路径下。</td></tr>
+<tr><td style="text-align: left">network</td><td style="text-align: left">?Network</td><td style="text-align: left">否</td><td style="text-align: left">网络选项，当前支持无线网络WIFI和蜂窝数据网络CELLULAR，默认为ANY（WIFI或CELLULAR）。</td></tr>
+<tr><td style="text-align: left">metered</td><td style="text-align: left">?Bool</td><td style="text-align: left">否</td><td style="text-align: left">是否允许在按流量计费的网络中工作，默认为false。<br>-true：是 <br>-false：否</td></tr>
+<tr><td style="text-align: left">roaming</td><td style="text-align: left">?Bool</td><td style="text-align: left">否</td><td style="text-align: left">是否允许在漫游网络中工作，默认为true。<br>-true：是 <br>-false：否</td></tr>
+<tr><td style="text-align: left">retry</td><td style="text-align: left">?Bool</td><td style="text-align: left">否</td><td style="text-align: left">是否为后台任务启用自动重试，仅应用于后台任务，默认为true。<br>-true：是 <br>-false：否</td></tr>
+<tr><td style="text-align: left">redirect</td><td style="text-align: left">?Bool</td><td style="text-align: left">否</td><td style="text-align: left">是否允许重定向，默认为true。<br>-true：是 <br>-false：否</td></tr>
+<tr><td style="text-align: left">index</td><td style="text-align: left">?UInt32</td><td style="text-align: left">否</td><td style="text-align: left">任务的路径索引，通常用于任务断点续传，默认为0。</td></tr>
+<tr><td style="text-align: left">begins</td><td style="text-align: left">?Int64</td><td style="text-align: left">否</td><td style="text-align: left">文件起点，通常用于断点续传。默认值为0，取值为闭区间。<br>-下载时，请求读取服务器开始下载文件时的起点位置（http协议中设置&quot;Range&quot;选项）。<br>-上传时，在上传开始时读取。</td></tr>
+<tr><td style="text-align: left">ends</td><td style="text-align: left">?Int64</td><td style="text-align: left">否</td><td style="text-align: left">文件终点，通常用于断点续传。默认值为-1，取值为闭区间。<br>-下载时，请求读取服务器开始下载文件时的结束位置（http协议中设置&quot;Range&quot;选项）。<br>-上传时，在上传时结束读取。</td></tr>
+<tr><td style="text-align: left">gauge</td><td style="text-align: left">?Bool</td><td style="text-align: left">否</td><td style="text-align: left">后台任务的过程进度通知策略，仅应用于后台任务，默认值为false。<br>-false：代表仅完成或失败的通知。<br>-true，发出每个进度已完成或失败的通知。</td></tr>
+<tr><td style="text-align: left">precise</td><td style="text-align: left">?Bool</td><td style="text-align: left">否</td><td style="text-align: left">-如果设置为true，在上传/下载无法获取文件大小时任务失败。<br>-如果设置为false，将文件大小设置为-1时任务继续。<br>默认值为false。</td></tr>
+<tr><td style="text-align: left">token</td><td style="text-align: left">?String</td><td style="text-align: left">否</td><td style="text-align: left">当创建了一个带有token的任务后，token则为正常查询期间必须提供的，否则将无法通过查询进行检索。其最小为8个字节，最大为2048个字节。默认为空。</td></tr>
+<tr><td style="text-align: left">priority</td><td style="text-align: left">?UInt32</td><td style="text-align: left">否</td><td style="text-align: left">任务的优先级。任务模式相同的情况下，该配置项的数字越小优先级越高，默认值为0。</td></tr>
+<tr><td style="text-align: left">extras</td><td style="text-align: left">?HashMap&lt;String, String&gt;</td><td style="text-align: left">否</td><td style="text-align: left">配置的附加功能，默认为空。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-state"><a class="header" href="#enum-state">enum State</a></h2>
+<pre><code class="language-cangjie">public enum State {
+    | INITIALIZED
+    | WAITING
+    | RUNNING
+    | RETRYING
+    | PAUSED
+    | STOPPED
+    | COMPLETED
+    | FAILED
+    | REMOVED
+}
+</code></pre>
+<p>定义任务当前的状态。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">INITIALIZED</td><td style="text-align: left">通过配置信息（Config）创建初始化任务。</td></tr>
+<tr><td style="text-align: left">WAITING</td><td style="text-align: left">表示任务缺少运行或重试的资源与网络状态不匹配。</td></tr>
+<tr><td style="text-align: left">RUNNING</td><td style="text-align: left">表示正在处理的任务。</td></tr>
+<tr><td style="text-align: left">RETRYING</td><td style="text-align: left">表示任务至少失败一次，现在正在再次处理中。</td></tr>
+<tr><td style="text-align: left">PAUSED</td><td style="text-align: left">表示任务暂停，通常后续会恢复任务。</td></tr>
+<tr><td style="text-align: left">STOPPED</td><td style="text-align: left">表示任务停止。</td></tr>
+<tr><td style="text-align: left">COMPLETED</td><td style="text-align: left">表示任务完成。</td></tr>
+<tr><td style="text-align: left">FAILED</td><td style="text-align: left">表示任务失败。</td></tr>
+<tr><td style="text-align: left">REMOVED</td><td style="text-align: left">表示任务移除。</td></tr>
+</tbody></table>
+</div>
+<h2 id="class-progress"><a class="header" href="#class-progress">class Progress</a></h2>
+<pre><code class="language-cangjie">public class Progress {
+    public Progress(
+        public let state!: State,
+        public let index!: UInt32,
+        public let processed!: Int64,
+        public let sizes!: Array&lt;Int64&gt;,
+        public let extras!: HashMap&lt;String, String&gt;
+    ){}
+}
+</code></pre>
+<p>任务进度的数据结构。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">state</td><td style="text-align: left">State</td><td style="text-align: left">是</td><td style="text-align: left">任务当前的状态。</td></tr>
+<tr><td style="text-align: left">index</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">任务中当前正在处理的文件索引。</td></tr>
+<tr><td style="text-align: left">processed</td><td style="text-align: left">Int64</td><td style="text-align: left">是</td><td style="text-align: left">任务中当前文件的已处理数据大小，单位为B。</td></tr>
+<tr><td style="text-align: left">sizes</td><td style="text-align: left">Array&lt;Int64&gt;</td><td style="text-align: left">是</td><td style="text-align: left">任务中文件的大小，单位为B。</td></tr>
+<tr><td style="text-align: left">extras</td><td style="text-align: left">?HashMap&lt;String, String&gt;</td><td style="text-align: left">否</td><td style="text-align: left">交互的额外内容，例如来自服务器的响应的header和body。</td></tr>
+</tbody></table>
+</div>
+<h2 id="class-httpresponsemessage"><a class="header" href="#class-httpresponsemessage">class HttpResponseMessage</a></h2>
+<pre><code class="language-cangjie">public class HttpResponseMessage {
+    public let version: String,
+    public let statusCode: Int32,
+    public let reason: String,
+    public let headers: HashMap&lt;String, Array&lt;String&gt;&gt;
+}
+</code></pre>
+<p>任务响应头的数据结构。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">version</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">Http版本。</td></tr>
+<tr><td style="text-align: left">statusCode</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">Http响应状态码。</td></tr>
+<tr><td style="text-align: left">reason</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">Http响应原因。</td></tr>
+<tr><td style="text-align: left">headers</td><td style="text-align: left">HashMap&lt;String, Array&lt;String&gt;&gt;</td><td style="text-align: left">是</td><td style="text-align: left">Http响应头部。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-faults"><a class="header" href="#enum-faults">enum Faults</a></h2>
+<pre><code class="language-cangjie">public enum Faults {
+    | OTHERS
+    | DISCONNECTED
+    | TIMEOUT
+    | PROTOCOL
+    | FSIO
+}
+</code></pre>
+<p>定义任务失败的原因。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">OTHERS</td><td style="text-align: left">表示其他故障。</td></tr>
+<tr><td style="text-align: left">DISCONNECTED</td><td style="text-align: left">表示网络断开连接。</td></tr>
+<tr><td style="text-align: left">TIMEOUT</td><td style="text-align: left">表示任务超时。</td></tr>
+<tr><td style="text-align: left">PROTOCOL</td><td style="text-align: left">表示协议错误，例如:服务器内部错误（500）、无法处理的数据区间（416）等。</td></tr>
+<tr><td style="text-align: left">FSIO</td><td style="text-align: left">表示文件系统io错误，例如打开/查找/读取/写入/关闭。</td></tr>
+</tbody></table>
+</div>
+<h2 id="class-filter"><a class="header" href="#class-filter">class Filter</a></h2>
+<pre><code class="language-cangjie">public class Filter {
+    public Filter (
+        public var before!: ?Int64 = None,
+        public var after!: ?Int64 = None,
+        public var state!: ?State = None,
+        public var action!: ?Action = None,
+        public var mode!: ?Mode = None
+    ) {}
+}
+</code></pre>
+<p>过滤条件。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">before</td><td style="text-align: left">?Int64</td><td style="text-align: left">否</td><td style="text-align: left">结束的Unix时间戳（毫秒），默认为调用时刻。</td></tr>
+<tr><td style="text-align: left">after</td><td style="text-align: left">?Int64</td><td style="text-align: left">否</td><td style="text-align: left">开始的Unix时间戳（毫秒），默认值为调用时刻减24小时。</td></tr>
+<tr><td style="text-align: left">state</td><td style="text-align: left">?State</td><td style="text-align: left">否</td><td style="text-align: left">指定任务的状态。</td></tr>
+<tr><td style="text-align: left">action</td><td style="text-align: left">?Action</td><td style="text-align: left">否</td><td style="text-align: left">任务操作选项。<br>-UPLOAD表示上传任务。<br>-DOWNLOAD表示下载任务。</td></tr>
+<tr><td style="text-align: left">mode</td><td style="text-align: left">?Mode</td><td style="text-align: left">否</td><td style="text-align: left">任务模式。<br>-FOREGROUND表示前端任务。<br>-BACKGROUND表示后台任务。<br>-如果未填写，则查询所有任务。</td></tr>
+</tbody></table>
+</div>
+<h2 id="class-taskinfo"><a class="header" href="#class-taskinfo">class TaskInfo</a></h2>
+<pre><code class="language-cangjie">public class TaskInfo {
+    public TaskInfo(
+        public let saveas!: ?String = None,
+        public let url!: ?String = None,
+        public let data!: ?ConfigDataType = None,
+        public let tid!: String,
+        public let title!: String,
+        public let description!: String,
+        public let action!: Action,
+        public let mode!: Mode,
+        public let priority!: UInt32,
+        public let mimeType!: String,
+        public let progress!: Progress,
+        public let gauge!: Bool,
+        public let ctime!: UInt64,
+        public let mtime!: UInt64,
+        public let retry!: Bool,
+        public let tries!: UInt32,
+        public let faults!: Faults,
+        public let reason!: String,
+        public let extras!: ?HashMap&lt;String, String&gt;
+    ) {}
+}
+</code></pre>
+<p>查询结果的任务信息数据结构，提供普通查询和系统查询，两种字段的可见范围不同。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">saveas</td><td style="text-align: left">?String</td><td style="text-align: left">否</td><td style="text-align: left">保存下载文件的路径。</td></tr>
+<tr><td style="text-align: left">url</td><td style="text-align: left">?String</td><td style="text-align: left">否</td><td style="text-align: left">任务的url。</td></tr>
+<tr><td style="text-align: left">data</td><td style="text-align: left">?ConfigDataType</td><td style="text-align: left">否</td><td style="text-align: left">任务值。</td></tr>
+<tr><td style="text-align: left">tid</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">任务id。</td></tr>
+<tr><td style="text-align: left">title</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">任务标题。</td></tr>
+<tr><td style="text-align: left">description</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">任务描述。</td></tr>
+<tr><td style="text-align: left">action</td><td style="text-align: left">Action</td><td style="text-align: left">是</td><td style="text-align: left">任务操作选项。<br>-UPLOAD表示上传任务。<br>-DOWNLOAD表示下载任务。</td></tr>
+<tr><td style="text-align: left">mode</td><td style="text-align: left">Mode</td><td style="text-align: left">是</td><td style="text-align: left">指定任务模式。<br>-FOREGROUND表示前端任务。<br>-BACKGROUND表示后台任务。</td></tr>
+<tr><td style="text-align: left">priority</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">任务配置中的优先级。前端任务的优先级比后台任务高。相同模式的任务，数字越小优先级越高。</td></tr>
+<tr><td style="text-align: left">mimeType</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">任务配置中的mimetype。</td></tr>
+<tr><td style="text-align: left">progress</td><td style="text-align: left"><a href="#class-progress">Progress</a></td><td style="text-align: left">是</td><td style="text-align: left">任务的过程进度。</td></tr>
+<tr><td style="text-align: left">gauge</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">后台任务的进度通知策略。</td></tr>
+<tr><td style="text-align: left">ctime</td><td style="text-align: left">UInt64</td><td style="text-align: left">是</td><td style="text-align: left">创建任务的Unix时间戳（毫秒），由当前设备的系统生成。</td></tr>
+<tr><td style="text-align: left">mtime</td><td style="text-align: left">UInt64</td><td style="text-align: left">是</td><td style="text-align: left">任务状态改变时的Unix时间戳（毫秒），由当前设备的系统生成。</td></tr>
+<tr><td style="text-align: left">retry</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">任务的重试开关，仅应用于后台任务。</td></tr>
+<tr><td style="text-align: left">tries</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">任务的尝试次数。</td></tr>
+<tr><td style="text-align: left">faults</td><td style="text-align: left">Faults</td><td style="text-align: left">是</td><td style="text-align: left">任务的失败原因。<br>-OTHERS表示其他故障。<br>-DISCONNECT表示网络断开连接。<br>-TIMEOUT表示任务超时。<br>-PROTOCOL表示协议错误。<br>-FSIO表示文件系统io错误。</td></tr>
+<tr><td style="text-align: left">reason</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">等待/失败/停止/暂停任务的原因。</td></tr>
+<tr><td style="text-align: left">extras</td><td style="text-align: left">?HashMap&lt;String, String&gt;</td><td style="text-align: left">否</td><td style="text-align: left">任务的额外部分。</td></tr>
+</tbody></table>
+</div>
+<h2 id="class-task"><a class="header" href="#class-task">class Task</a></h2>
+<pre><code class="language-cangjie">public class Task {
+    public Task(
+        public let tid: String,
+        public let config: Config
+    ) {}
+}
+</code></pre>
+<p>上传或下载任务。使用该方法前需要先获取Task对象，通过create获取。</p>
+<h3 id="属性"><a class="header" href="#属性">属性</a></h3>
+<p>包括任务id和任务的配置信息。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">tid</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">任务id，在系统上是唯一的，由系统自动生成。</td></tr>
+<tr><td style="text-align: left">config</td><td style="text-align: left"><a href="#class-config">Config</a></td><td style="text-align: left">是</td><td style="text-align: left">任务的配置信息。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-onstring-callback1argumentprogress"><a class="header" href="#func-onstring-callback1argumentprogress">func on(String, Callback1Argument&lt;Progress&gt;)</a></h3>
+<pre><code class="language-cangjie">public func on(event: String, callback: Callback1Argument&lt;Progress&gt;): Unit
+</code></pre>
+<p>订阅任务的事件。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">event</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">订阅的事件类型。<br>- 取值为'progress'，表示任务进度。<br>- 取值为'completed'，表示任务完成。<br>- 取值为'failed'，表示任务失败。<br>- 取值为'pause'，表示任务暂停。<br>- 取值为'resume'，表示任务恢复。<br>- 取值为'remove'，表示任务删除。</td></tr>
+<tr><td style="text-align: left">callback</td><td style="text-align: left"><a href="./cj-apis-base.html#class-callback1argumenta">Callback1Argument</a>&lt;<a href="#class-progress">Progress</a>&gt;</td><td style="text-align: left">是</td><td style="text-align: left">发生相关的事件时触发该回调方法，返回任务信息的数据结构。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-request.html">上传下载错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">21900005</td><td style="text-align: left">task mode error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let fileSpec = FileSpec(
+    path: &quot;./taskOnTest.avi&quot;,
+    filename: &quot;taskOnTest.avi&quot;,
+    mimeType: &quot;application/octet-stream&quot;
+)
+let attachments = ConfigDataType.FORMITEMS([
+    FormItem(
+        name: &quot;taskOnTest&quot;,
+        value: FormItemValueType.FILE(fileSpec)
+    )
+])
+let config = Config(
+    action: Action.UPLOAD,
+    url: &quot;http://127.0.0.1&quot;,
+    title: &quot;taskOnTest&quot;,
+    mode: Mode.FOREGROUND,
+    description: &quot;Sample code for event listening&quot;,
+    overwrite: false,
+    method: &quot;PUT&quot;,
+    data: attachments,
+    saveas: &quot;./&quot;,
+    network: Network.CELLULAR,
+    metered: false,
+    roaming: true,
+    retry: true,
+    redirect: true,
+    index: 0,
+    begins: 0,
+    ends: -1,
+    gauge: false,
+    precise: false,
+    token: &quot;it is a secret&quot;
+)
+
+class ProgressCallback &lt;: Callback1Argument&lt;Progress&gt; {
+    public init() {}
+    public open func invoke(arg: Progress): Unit {
+        Hilog.info(0, &quot;request&quot;, &quot;progress callback.&quot;)
+    }
+}
+let createOnCallback = ProgressCallback()
+try {
+    let task = create(getContext(), config)
+    task.on(&quot;progress&quot;, createOnCallback)
+} catch (e: BusinessException) {
+    Hilog.error(0, &quot;TaskCreate&quot;, e.toString())
+}
+</code></pre>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>示例中context的获取方式请参见<a href="./cj-apis-ability-context.html#func-getstagecontextabilitycontext">getStageContext</a>。</p>
+</blockquote>
+<h3 id="func-onstring-callback1argumenthttpresponsemessage"><a class="header" href="#func-onstring-callback1argumenthttpresponsemessage">func on(String, Callback1Argument&lt;HttpResponseMessage&gt;)</a></h3>
+<pre><code class="language-cangjie">public func on(event: String, callback: Callback1Argument&lt;HttpResponseMessage&gt;): Unit
+</code></pre>
+<p>订阅任务响应头。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">event</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">订阅的事件类型。<br>- 取值为'response'，表示任务响应。</td></tr>
+<tr><td style="text-align: left">callback</td><td style="text-align: left"><a href="./cj-apis-base.html#class-callback1argumenta">Callback1Argument</a>&lt;<a href="#class-httpresponsemessage">HttpResponseMessage</a>&gt;</td><td style="text-align: left">是</td><td style="text-align: left">发生相关的事件时触发该回调方法，返回任务响应头的数据结构。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-request.html">上传下载错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">Parameter error. Possible causes: 1. Missing mandatory parameters 2. Incorrect parameter type 3. Parameter verification failed</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">class ResponseCallback &lt;: Callback1Argument&lt;HttpResponseMessage&gt; {
+    public init() {}
+    public open func invoke(arg: HttpResponseMessage): Unit {
+        Hilog.info(0, &quot;request&quot;, &quot;response callback.&quot;)
+    }
+}
+
+func onExample() {
+    let fileSpec = FileSpec(
+        path: &quot;./taskOnTest.avi&quot;,
+        filename: &quot;taskOnTest.avi&quot;,
+        mimeType: &quot;application/octet-stream&quot;
+    )
+    let attachments = ConfigDataType.FORMITEMS([
+        FormItem(
+            name: &quot;taskOnTest&quot;,
+            value: FormItemValueType.FILE(fileSpec)
+        )
+    ])
+    let config = Config(
+        action: Action.UPLOAD,
+        url: &quot;http://127.0.0.1&quot;,
+        title: &quot;taskOnTest&quot;,
+        mode: Mode.FOREGROUND,
+        description: &quot;Sample code for event listening&quot;,
+        overwrite: false,
+        method: &quot;PUT&quot;,
+        data: attachments,
+        saveas: &quot;./&quot;,
+        network: Network.CELLULAR,
+        metered: false,
+        roaming: true,
+        retry: true,
+        redirect: true,
+        index: 0,
+        begins: 0,
+        ends: -1,
+        gauge: false,
+        precise: false,
+        token: &quot;it is a secret&quot;
+    )
+
+    let responseOnCallback = ResponseCallback()
+    try {
+        let task = create(getContext(), config)
+        task.on(&quot;response&quot;, responseOnCallback)
+    } catch (e: BusinessException) {
+        Hilog.error(0, &quot;TaskCreate&quot;, e.toString())
+    }
+}
+</code></pre>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>示例中context的获取方式请参见<a href="./cj-apis-ability-context.html#func-getstagecontextabilitycontext">getStageContext</a>。</p>
+</blockquote>
+<h3 id="func-offstring-callbackobject"><a class="header" href="#func-offstring-callbackobject">func off(String, ?CallbackObject)</a></h3>
+<pre><code class="language-cangjie">public func off(event: String, callback!: ?CallbackObject = None): Unit
+</code></pre>
+<p>取消订阅任务事件。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">event</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">订阅的事件类型。<br>- 取值为'progress'，表示任务进度。<br>- 取值为'completed'，表示任务完成。<br>- 取值为'failed'，表示任务失败。<br>- 取值为'pause'，表示任务暂停。<br>- 取值为'resume'，表示任务恢复。<br>- 取值为'remove'，表示任务删除。<br>- 取值为'response'，表示任务响应。</td></tr>
+<tr><td style="text-align: left">callback</td><td style="text-align: left">?<a href="./cj-apis-base.html#class-callbackobject">CallbackObject</a></td><td style="text-align: left">否</td><td style="text-align: left"><strong>命名参数。</strong> 需要取消订阅的回调函数。若无此参数，则取消订阅当前类型的所有回调函数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-request.html">上传下载错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">Parameter error. Possible causes: 1. Missing mandatory parameters 2. Incorrect parameter type 3. Parameter verification failed</td></tr>
+<tr><td style="text-align: left">21900005</td><td style="text-align: left">task mode error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let fileSpec = FileSpec(
+    path: &quot;./taskOffTest.avi&quot;,
+    filename: &quot;taskOffTest.avi&quot;,
+    mimeType: &quot;application/octet-stream&quot;
+)
+let attachments = ConfigDataType.FORMITEMS([
+    FormItem(
+        name: &quot;taskOffTest&quot;,
+        value: FormItemValueType.FILE(fileSpec)
+    )
+])
+let config = Config(
+    action: Action.UPLOAD,
+    url: &quot;http://127.0.0.1&quot;,
+    title: &quot;taskOffTest&quot;,
+    mode: Mode.FOREGROUND,
+    description: &quot;Sample code for event listening&quot;,
+    overwrite: false,
+    method: &quot;PUT&quot;,
+    data: attachments,
+    saveas: &quot;./&quot;,
+    network: Network.CELLULAR,
+    metered: false,
+    roaming: true,
+    retry: true,
+    redirect: true,
+    index: 0,
+    begins: 0,
+    ends: -1,
+    gauge: false,
+    precise: false,
+    token: &quot;it is a secret&quot;
+)
+
+class ProgressCallback &lt;: Callback1Argument&lt;Progress&gt; {
+    ProgressCallback(
+        let msg: String
+    ){}
+    public open func invoke(arg: Progress): Unit {
+        Hilog.info(0, &quot;request&quot;, &quot;progress callback, msg: ${msg}.&quot;)
+    }
+}
+let createOffCallback1 = ProgressCallback(&quot;test1&quot;)
+let createOffCallback2 = ProgressCallback(&quot;test2&quot;)
+try {
+    let task = create(getContext(), config)
+    task.on(&quot;progress&quot;, createOffCallback1)
+    task.on(&quot;progress&quot;, createOffCallback2)
+    //表示取消createOffCallback1的订阅
+    task.off(&quot;progress&quot;, createOffCallback1)
+    //表示取消订阅任务进度的所有回调
+    task.off(&quot;progress&quot;)
+} catch (e: BusinessException) {
+    Hilog.error(0, &quot;TaskCreate&quot;, e.toString())
+}
+</code></pre>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>示例中context的获取方式请参见<a href="./cj-apis-ability-context.html#func-getstagecontextabilitycontext">getStageContext</a>。</p>
+</blockquote>
+<h3 id="func-start"><a class="header" href="#func-start">func start()</a></h3>
+<pre><code class="language-cangjie">public func start(): Unit
+</code></pre>
+<p>启动任务，无法启动已初始化的任务。可以启动一个已失败或已停止的下载任务，从上次的进度开始续传。</p>
+<p><strong>需要权限</strong>：ohos.permission.INTERNET</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-request.html">上传下载错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">13400003</td><td style="text-align: left">task service ability error.</td></tr>
+<tr><td style="text-align: left">21900007</td><td style="text-align: left">task state error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let config = Config(
+    action: Action.DOWNLOAD,
+    url: &quot;http://127.0.0.1&quot;,
+    overwrite: true
+)
+try {
+    let task = create(getContext(), config)
+    task.start()
+} catch (e: BusinessException) {
+    Hilog.error(0, &quot;TaskStart&quot;, e.toString())
+}
+</code></pre>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>示例中context的获取方式请参见<a href="./cj-apis-ability-context.html#func-getstagecontextabilitycontext">getStageContext</a>。</p>
+</blockquote>
+<h3 id="func-pause"><a class="header" href="#func-pause">func pause()</a></h3>
+<pre><code class="language-cangjie">public func pause(): Unit
+</code></pre>
+<p>暂停任务，可以暂停正在等待/正在运行/正在重试的后台任务。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-request.html">上传下载错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">13400003</td><td style="text-align: left">task service ability error.</td></tr>
+<tr><td style="text-align: left">21900005</td><td style="text-align: left">task mode error.</td></tr>
+<tr><td style="text-align: left">21900007</td><td style="text-align: left">task state error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let config = Config(
+    action: Action.DOWNLOAD,
+    url: &quot;http://127.0.0.1&quot;,
+    overwrite: true
+)
+try {
+    let task = create(getContext(), config)
+    task.pause()
+} catch (e: BusinessException) {
+    Hilog.error(0, &quot;TaskPause&quot;, &quot;${e}&quot;)
+}
+</code></pre>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p><code>21900005 task mode error</code> 这个错误码将被移除。</p>
+</blockquote>
+<h3 id="func-resume"><a class="header" href="#func-resume">func resume()</a></h3>
+<pre><code class="language-cangjie">public func resume(): Unit
+</code></pre>
+<p>重新启动任务，可以恢复暂停的后台任务。</p>
+<p><strong>需要权限</strong>：ohos.permission.INTERNET</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-request.html">上传下载错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">13400003</td><td style="text-align: left">task service ability error.</td></tr>
+<tr><td style="text-align: left">21900005</td><td style="text-align: left">task mode error.</td></tr>
+<tr><td style="text-align: left">21900007</td><td style="text-align: left">task state error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let config = Config(
+    action: Action.DOWNLOAD,
+    url: &quot;http://127.0.0.1&quot;,
+    overwrite: true
+)
+try {
+    let task = create(getContext(), config)
+    task.resume()
+} catch (e: BusinessException) {
+    Hilog.error(0, &quot;TaskResume&quot;, &quot;${e}&quot;)
+}
+</code></pre>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p><code>21900005 task mode error</code> 这个错误码将被移除。</p>
+</blockquote>
+<h3 id="func-stop"><a class="header" href="#func-stop">func stop()</a></h3>
+<pre><code class="language-cangjie">public func stop(): Unit
+</code></pre>
+<p>停止任务，可以停止正在运行/正在等待/正在重试的任务。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-request.html">上传下载错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">13400003</td><td style="text-align: left">task service ability error.</td></tr>
+<tr><td style="text-align: left">21900007</td><td style="text-align: left">task state error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let config = Config(
+    action: Action.DOWNLOAD,
+    url: &quot;http://127.0.0.1&quot;,
+)
+try {
+    let task = create(getContext(), config)
+    task.stop()
+} catch (e: BusinessException) {
+    Hilog.error(0, &quot;TaskStop&quot;, &quot;${e}&quot;)
+}
+</code></pre>
+<h2 id="func-createstagecontext-config"><a class="header" href="#func-createstagecontext-config">func create(StageContext, Config)</a></h2>
+<p>public func create(context: StageContext, config: Config): Task</p>
+<p>创建要上传或下载的任务，并将其排入队列，每个应用最多支持创建10个未完成的任务。</p>
+<p><strong>需要权限</strong>：ohos.permission.INTERNET</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">config</td><td style="text-align: left"><a href="#class-config">Config</a></td><td style="text-align: left">是</td><td style="text-align: left">上传/下载任务的配置信息。</td></tr>
+<tr><td style="text-align: left">context</td><td style="text-align: left"><a href="./cj-apis-ability-context.html#func-getstagecontextabilitycontext">StageContext</a></td><td style="text-align: left">是</td><td style="text-align: left">基于应用程序的上下文。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-task">Task</a></td><td style="text-align: left">返回 一个Task对象，里面包括任务id和任务的配置信息。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-request.html">上传下载错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">201</td><td style="text-align: left">the permissions check fails</td></tr>
+<tr><td style="text-align: left">401</td><td style="text-align: left">the parameters check fails.Possible causes: 1. Missing mandatory parameters 2. Incorrect parameter type 3. Parameter verification failed</td></tr>
+<tr><td style="text-align: left">13400001</td><td style="text-align: left">Failed to open file errno xx</td></tr>
+<tr><td style="text-align: left">13400003</td><td style="text-align: left">task service ability error.</td></tr>
+<tr><td style="text-align: left">21900004</td><td style="text-align: left">application task queue full error.</td></tr>
+<tr><td style="text-align: left">21900005</td><td style="text-align: left">task mode error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let fileSpec = FileSpec(
+        path: &quot;./createTest.avi&quot;,
+        filename: &quot;createTest.avi&quot;,
+        mimeType: &quot;application/octet-stream&quot;
+    )
+let attachments = ConfigDataType.FORMITEMS([
+    FormItem(
+        name: &quot;createTest&quot;,
+        value: FormItemValueType.FILE(fileSpec)
+    )
+])
+let config = Config(
+    action: Action.UPLOAD,
+    url: &quot;http://127.0.0.1&quot;,
+    title: &quot;createTest&quot;,
+    mode: Mode.FOREGROUND,
+    description: &quot;Sample code for creating task&quot;,
+    overwrite: false,
+    method: &quot;PUT&quot;,
+    data: attachments,
+    saveas: &quot;./&quot;,
+    network: Network.CELLULAR,
+    metered: false,
+    roaming: true,
+    retry: true,
+    redirect: true,
+    index: 0,
+    begins: 0,
+    ends: -1,
+    gauge: false,
+    precise: false,
+    token: &quot;it is a secret&quot;
+)
+try {
+    let task = create(getContext(), config)
+} catch (e: BusinessException) {
+    Hilog.error(0, &quot;TaskCreate&quot;, e.toString())
+}
+</code></pre>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>示例中context的获取方式请参见<a href="./cj-apis-ability-context.html#func-getstagecontextabilitycontext">getStageContext</a>。</p>
+</blockquote>
+<h2 id="func-gettaskstagecontext-string-string"><a class="header" href="#func-gettaskstagecontext-string-string">func getTask(StageContext, String, ?String)</a></h2>
+<p>public func getTask(context: StageContext, id: String, token!: ?String = None): Task</p>
+<p>根据任务id查询任务。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>参数名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead><tbody>
+<tr><td>context</td><td>StageContext</td><td>是</td><td>基于应用程序的上下文。</td></tr>
+<tr><td>id</td><td>String</td><td>是</td><td>任务id。</td></tr>
+<tr><td>token</td><td>?String</td><td>否</td><td>任务查询token。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>类型</th><th>说明</th></tr></thead><tbody>
+<tr><td><a href="#class-task">Task</a></td><td>返回一个Task对象，里面包括任务id和任务的配置信息。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-request.html">上传下载错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th>错误码ID</th><th>错误信息</th></tr></thead><tbody>
+<tr><td>401</td><td>parameter error. Possible causes: 1. Missing mandatory parameters 2. Incorrect parameter type 3. Parameter verification failed</td></tr>
+<tr><td>13400003</td><td>task service ability error.</td></tr>
+<tr><td>21900006</td><td>task not found.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">try {
+    let task = getTask(getContext(), &quot;123456&quot;)
+} catch (e: BusinessException) {
+    Hilog.error(0, &quot;GetTask&quot;, &quot;Failed to get task, ${e}&quot;)
+}
+</code></pre>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>示例中context的获取方式请参见<a href="./cj-apis-ability-context.html#func-getstagecontextabilitycontext">getStageContext</a>。</p>
+</blockquote>
+<h2 id="func-removestring"><a class="header" href="#func-removestring">func remove(String)</a></h2>
+<pre><code class="language-cangjie">public func remove(id: String): Unit
+</code></pre>
+<p>移除属于调用方的指定任务，如果正在处理中，该任务将被迫停止。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">id</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">任务id。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-request.html">上传下载错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">13400003</td><td style="text-align: left">task service ability error.</td></tr>
+<tr><td style="text-align: left">21900006</td><td style="text-align: left">task not found error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">try {
+    remove(&quot;12345&quot;)
+} catch (e: BusinessException) {
+    Hilog.error(0, &quot;TaskRemove&quot;, &quot;${e}&quot;)
+}
+</code></pre>
+<h2 id="func-showstring"><a class="header" href="#func-showstring">func show(String)</a></h2>
+<pre><code class="language-cangjie">public func show(id: String): TaskInfo
+</code></pre>
+<p>根据任务id查询任务的详细信息。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>参数名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead><tbody>
+<tr><td>id</td><td>String</td><td>是</td><td>任务id。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>类型</th><th>说明</th></tr></thead><tbody>
+<tr><td><a href="#class-taskinfo">TaskInfo</a></td><td>返回任务详细信息的TaskInfo对象。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-request.html">上传下载错误码</a>与<a href="../errorcodes/cj-errorcode-request.html">通用错误码说明文档</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th>错误码ID</th><th>错误信息</th></tr></thead><tbody>
+<tr><td>401</td><td>parameter error. Possible causes: 1. Missing mandatory parameters 2. Incorrect parameter type</td></tr>
+<tr><td>13400003</td><td>task service ability error.</td></tr>
+<tr><td>21900006</td><td>task not found.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">try {
+    let taskInfo = show(&quot;123456&quot;)
+} catch (e: BusinessException) {
+    Hilog.error(0, &quot;ShowTask&quot;, &quot;Failed to show task, ${e}&quot;)
+}
+</code></pre>
+<h2 id="func-touchstring-string"><a class="header" href="#func-touchstring-string">func touch(String, String)</a></h2>
+<pre><code class="language-cangjie">public func touch(id: String, token: String): TaskInfo
+</code></pre>
+<p>根据任务id和token查询任务的详细信息。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>参数名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead><tbody>
+<tr><td>id</td><td>String</td><td>是</td><td>任务id。</td></tr>
+<tr><td>token</td><td>String</td><td>是</td><td>任务查询token。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>类型</th><th>说明</th></tr></thead><tbody>
+<tr><td><a href="#class-taskinfo">TaskInfo</a></td><td>返回任务详细信息的TaskInfo对象。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-request.html">上传下载错误码</a>与<a href="../errorcodes/cj-errorcode-request.html">通用错误码说明文档</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th>错误码ID</th><th>错误信息</th></tr></thead><tbody>
+<tr><td>401</td><td>parameter error. Possible causes: 1. Missing mandatory parameters 2. Incorrect parameter type 3. Parameter verification failed</td></tr>
+<tr><td>13400003</td><td>task service ability error.</td></tr>
+<tr><td>21900006</td><td>task not found.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">try {
+    let taskInfo = touch(&quot;123456&quot;, &quot;token123456&quot;)
+} catch (e: BusinessException) {
+    Hilog.error(0, &quot;TouchTask&quot;, &quot;Failed to touch task, ${e}&quot;)
+}
+</code></pre>
+<h2 id="func-search"><a class="header" href="#func-search">func search()</a></h2>
+<pre><code class="language-cangjie">public func search(): Array&lt;String&gt;
+</code></pre>
+<p>根据默认<a href="#class-filter">Filter</a>过滤条件查找任务id。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>类型</th><th>说明</th></tr></thead><tbody>
+<tr><td>Array&lt;String&gt;</td><td>返回满足条件任务id。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-request.html">上传下载错误码</a>与<a href="../errorcodes/cj-errorcode-request.html">通用错误码说明文档</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th>错误码ID</th><th>错误信息</th></tr></thead><tbody>
+<tr><td>401</td><td>parameter error. Possible causes: 1. Incorrect parameter type 2. Parameter verification failed</td></tr>
+<tr><td>13400003</td><td>task service ability error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">try {
+    let tids = search()
+} catch (e: BusinessException) {
+    Hilog.error(0, &quot;SearchTask&quot;, &quot;Failed to search task, ${e}&quot;)
+}
+</code></pre>
+<h2 id="func-searchfilter"><a class="header" href="#func-searchfilter">func search(Filter)</a></h2>
+<pre><code class="language-cangjie">public func search(filter: Filter): Array&lt;String&gt;
+</code></pre>
+<p>根据<a href="#class-filter">Filter</a>过滤条件查找任务id。</p>
+<p><strong>系统能力</strong>: SystemCapability.Request.FileTransferAgent</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>参数名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead><tbody>
+<tr><td>filter</td><td><a href="#class-filter">Filter</a></td><td>否</td><td>过滤条件。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>类型</th><th>说明</th></tr></thead><tbody>
+<tr><td>Array&lt;String&gt;</td><td>返回满足条件任务id。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-request.html">上传下载错误码</a>与<a href="../errorcodes/cj-errorcode-request.html">通用错误码说明文档</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th>错误码ID</th><th>错误信息</th></tr></thead><tbody>
+<tr><td>401</td><td>parameter error. Possible causes: 1. Incorrect parameter type 2. Parameter verification failed</td></tr>
+<tr><td>13400003</td><td>task service ability error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">try {
+    let tids: Array&lt;String&gt; = search(Filter(state: State.INITIALIZED))
+} catch (e: BusinessException) {
+    Hilog.error(0, &quot;SearchTask&quot;, &quot;Failed to search task, ${e}&quot;)
+}
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../source_zh_cn/apis/cj-apis-net-http.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../source_zh_cn/apis/cj-apis-hiappevent.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../source_zh_cn/apis/cj-apis-net-http.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../source_zh_cn/apis/cj-apis-hiappevent.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../highlight.js"></script>
+        <script src="../../assets/elasticlunr.js"></script>
+        <script src="../../assets/fzf.umd.js"></script>
+        <script src="../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

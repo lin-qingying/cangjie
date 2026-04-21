@@ -1,0 +1,51 @@
+{
+  "id": "[Cangjie] Empty Ability",
+  "displayName": "[Cangjie] Empty Ability",
+  "description": "This template implements the basic Hello Cangjie by Cangjie code.",
+  "category": "ability",
+  "baseProvider": "ohos",
+  "functionType": "basic",
+  "globalsFile": "parameter.json.ftl",
+  "recipeFile": "command.xml.ftl",
+  "templateIcon": "Cangjie.svg",
+  "templatePreviewImage": "Cangjie Preview.png",
+  "addOnMinCompatibleSdk": "5.0.0(12)",
+  "addOnMaxCompatibleSdk": "5.0.5(17)",
+  "projectType": "Application",
+  "suppoortLanguage": "Cangjie",
+  "apiType": {
+	"Application": {
+		"stageMode" : {
+		  "minCompileSdk" : "5.0.0(12)",
+		  "developmentMode": {
+			"traditionalCode": [
+			  {
+				"uiSyntax": "cangjie",
+				"deviceType": ["default"],
+				"isEnable": "true",
+				"minCompatibleSdk": 12
+			  }
+			]
+		  }
+		}
+	}
+  },
+  "addOnApiType": {
+	"Application": {
+		"stageMode" : {
+		  "minCompatibleSdk" : "5.0.0(12)",
+		  "developmentMode": {
+			"traditionalCode": [
+			  {
+				"uiSyntax": "cangjie",
+				"deviceType": ["phone"],
+				"isEnable": "true",
+				"minCompatibleSdk": "5.0.0(12)",
+				"minCompileSdk": "5.0.0(12)"
+			  }
+			]
+		  }
+		}
+	}
+  }
+}

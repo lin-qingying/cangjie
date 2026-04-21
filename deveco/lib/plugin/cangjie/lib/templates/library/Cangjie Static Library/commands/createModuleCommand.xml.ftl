@@ -1,0 +1,1 @@
+<open file="${rootOut}/src/main/cangjie/index.cj"/>

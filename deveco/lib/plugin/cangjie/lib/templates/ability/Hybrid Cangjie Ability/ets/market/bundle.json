@@ -1,0 +1,42 @@
+{
+  "name": "Empty Ability",
+  "version": "1.0.0",
+  "publishAs": "TEMPLATE",
+  "description": "This template implements the basic Hello World functions.",
+  "author": {
+    "name": "OFFICIAL",
+    "email": "",
+    "url": ""
+  },
+  "keywords": [
+    "default",
+    "tablet",
+    "eTS",
+    "JS",
+    "Empty"
+  ],
+  "language": [
+    "eTS",
+    "JS",
+    "Java"
+  ],
+  "apiVersion": 8,
+  "deviceType": [
+    "Phone",
+    "Tablet",
+    "2in1",
+    "Car",
+    "Default"
+  ],
+  "serviceDeviceType": [
+    "Phone",
+    "Tablet",
+    "Default"
+  ],
+  "metaVersion": "6.0.0",
+  "source": "OFFICIAL",
+  "categoryId":"CCF88774A558A47F2D695B",
+  "releaseTime": "2022-06-23 00:00:00",
+  "runtimeOS": "OpenHarmony",
+  "projectType": "Application,Atomic Service"
+}
