@@ -26,6 +26,9 @@
       <module name="cfir.cfir-tree" target="17" />
       <module name="cfir.cfir-tree.main" target="17" />
       <module name="cfir.cfir-tree.test" target="17" />
+      <module name="deveco" target="21" />
+      <module name="deveco.main" target="21" />
+      <module name="deveco.test" target="21" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">

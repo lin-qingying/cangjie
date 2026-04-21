@@ -1,0 +1,10 @@
+{
+  "id": "Cangjie Empty Page",
+  "displayName": "Cangjie Empty Page",
+  "description": "Cangjie Empty Page",
+  "category": "page",
+  "functionType": "basic",
+  "globalsFile": "parameter.json.ftl",
+  "recipeFile": "command.xml.ftl",
+  "minCompatibleSdk": 12
+}

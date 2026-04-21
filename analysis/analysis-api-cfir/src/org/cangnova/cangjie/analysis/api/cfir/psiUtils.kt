@@ -6,6 +6,7 @@ import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.unwrapFakeOverridesOrDelegated
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.getParentOfTypes2
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment

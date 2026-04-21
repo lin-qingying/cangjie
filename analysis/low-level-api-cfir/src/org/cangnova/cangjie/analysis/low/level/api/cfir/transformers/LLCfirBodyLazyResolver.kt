@@ -519,7 +519,13 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         )
 
         override val components: BodyResolveTransformerComponents =
-            BodyResolveTransformerComponents(resolveTargetSession, resolveTargetScopeSession, this, context)
+            BodyResolveTransformerComponents(
+                session = resolveTargetSession,
+                scopeSession = resolveTargetScopeSession,
+                transformer = this,
+                context = context,
+                expandTypeAliases = true,
+            )
 
         override val expressionsTransformer: CfirExpressionsResolveTransformer =
             CfirPartialBodyExpressionResolveTransformer(this, resolveTarget)

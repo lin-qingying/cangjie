@@ -47,6 +47,9 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
             }
             additionalImports(emptyArgumentListType)
         }
+        builder(argumentList) {
+            withCopy()
+        }
         builder(functionCall) {
             configurationForFunctionCallBuilder()
             default("origin") {

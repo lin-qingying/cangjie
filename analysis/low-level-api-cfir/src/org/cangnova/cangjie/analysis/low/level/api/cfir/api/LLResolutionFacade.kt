@@ -40,9 +40,6 @@ class LLResolutionFacade internal constructor(
     val sessionProvider: LLSessionProvider,
     val diagnosticProvider: LLDiagnosticProvider,
 ) {
-    private val callResolver: LLCallResolver by lazy(LazyThreadSafetyMode.NONE) {
-        LLCallResolver(useSiteCfirSession)
-    }
     val useSiteModule: CaModule
         get() = moduleProvider.useSiteModule
 
@@ -114,10 +111,6 @@ class LLResolutionFacade internal constructor(
      */
     internal fun collectDiagnosticsForFile(cjFile: CjFile, filter: DiagnosticCheckerFilter): Collection<CjPsiDiagnostic> {
         return diagnosticProvider.collectDiagnostics(cjFile, filter)
-    }
-
-    internal fun getCallInfo(element: CjElement): LLCallInfo? {
-        return callResolver.resolveCallInfo(this, element)
     }
 
     internal fun resolveToCfirSymbol(cjDeclaration: CjDeclaration, phase: CfirResolvePhase): CfirBasedSymbol<*> {

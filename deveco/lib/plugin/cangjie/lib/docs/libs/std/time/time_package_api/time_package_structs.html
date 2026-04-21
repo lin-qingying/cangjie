@@ -1,0 +1,1490 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>结构体 - 仓颉编程语言库 API</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../favicon.png">
+        <link rel="stylesheet" href="../../../css/variables.css">
+        <link rel="stylesheet" href="../../../css/general.css">
+        <link rel="stylesheet" href="../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../highlight.css">
+        <link rel="stylesheet" href="../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../../assets/style.css">
+        <link rel="stylesheet" href="../../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../../libs_overview_ohos.html"><strong aria-hidden="true">1.</strong> 仓颉编程语言库 API</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../std/std_module_overview_ohos.html"><strong aria-hidden="true">1.1.</strong> std 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_package_overview.html"><strong aria-hidden="true">1.1.1.</strong> std.core 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_funcs.html"><strong aria-hidden="true">1.1.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_types.html"><strong aria-hidden="true">1.1.1.2.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_intrinsics.html"><strong aria-hidden="true">1.1.1.3.</strong> 内置类型</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_interfaces.html"><strong aria-hidden="true">1.1.1.4.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_classes.html"><strong aria-hidden="true">1.1.1.5.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_enums.html"><strong aria-hidden="true">1.1.1.6.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_structs.html"><strong aria-hidden="true">1.1.1.7.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_exceptions.html"><strong aria-hidden="true">1.1.1.8.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.1.9.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_samples/core_spawn_sample.html"><strong aria-hidden="true">1.1.1.9.1.</strong> 仓颉并发编程示例</a></li><li class="chapter-item "><a href="../../../std/core/core_samples/core_cstring_sample.html"><strong aria-hidden="true">1.1.1.9.2.</strong> 使用 CString 与 C 代码交互示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/argopt/argopt_package_overview.html"><strong aria-hidden="true">1.1.2.</strong> std.argopt 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/argopt/argopt_package_api/argopt_package_classes.html"><strong aria-hidden="true">1.1.2.1.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.2.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/argopt/argopt_samples/long_argument_parse.html"><strong aria-hidden="true">1.1.2.2.1.</strong> 长命令行参数解析</a></li><li class="chapter-item "><a href="../../../std/argopt/argopt_samples/short_argument_parse.html"><strong aria-hidden="true">1.1.2.2.2.</strong> 短命令行参数解析</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/ast/ast_package_overview.html"><strong aria-hidden="true">1.1.3.</strong> std.ast 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_funcs.html"><strong aria-hidden="true">1.1.3.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_interfaces.html"><strong aria-hidden="true">1.1.3.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_classes.html"><strong aria-hidden="true">1.1.3.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_enums.html"><strong aria-hidden="true">1.1.3.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_structs.html"><strong aria-hidden="true">1.1.3.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_exceptions.html"><strong aria-hidden="true">1.1.3.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.3.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/ast/ast_samples/context.html"><strong aria-hidden="true">1.1.3.7.1.</strong> Macro With Context</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/dump.html"><strong aria-hidden="true">1.1.3.7.2.</strong> 语法树节点打印</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/operate.html"><strong aria-hidden="true">1.1.3.7.3.</strong> 操作 AST 对象示例</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/parse.html"><strong aria-hidden="true">1.1.3.7.4.</strong> 将仓颉源码解析为 AST 对象示例</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/report.html"><strong aria-hidden="true">1.1.3.7.5.</strong> 自定义报错接口</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/traverse.html"><strong aria-hidden="true">1.1.3.7.6.</strong> 自定义访问函数遍历 AST 对象示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/binary/binary_package_overview.html"><strong aria-hidden="true">1.1.4.</strong> std.binary 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/binary/binary_package_api/binary_package_interfaces.html"><strong aria-hidden="true">1.1.4.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/collection/collection_package_overview.html"><strong aria-hidden="true">1.1.5.</strong> std.collection 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_function.html"><strong aria-hidden="true">1.1.5.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_interface.html"><strong aria-hidden="true">1.1.5.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_class.html"><strong aria-hidden="true">1.1.5.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/colleciton_package_struct.html"><strong aria-hidden="true">1.1.5.4.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_exception.html"><strong aria-hidden="true">1.1.5.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.5.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_append_insert.html"><strong aria-hidden="true">1.1.5.6.1.</strong> ArrayList 的 append/insert 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_get_set.html"><strong aria-hidden="true">1.1.5.6.2.</strong> ArrayList 的 get/set 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_remove_clear_slice.html"><strong aria-hidden="true">1.1.5.6.3.</strong> ArrayList 的 remove/clear/slice 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashmap_get_put_contains.html"><strong aria-hidden="true">1.1.5.6.4.</strong> Hashmap 的 get/put/contains 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashmap_putall_remove_clear.html"><strong aria-hidden="true">1.1.5.6.5.</strong> HashMap 的 putAll/remove/clear 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashset_put_iterator_remove.html"><strong aria-hidden="true">1.1.5.6.6.</strong> HashSet 的 put/iterator/remove 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_iterator.html"><strong aria-hidden="true">1.1.5.6.7.</strong> 迭代器操作函数</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_overview.html"><strong aria-hidden="true">1.1.6.</strong> std.collection.concurrent 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_api/collection_concurrent_interface.html"><strong aria-hidden="true">1.1.6.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_api/collection_concurrent_class.html"><strong aria-hidden="true">1.1.6.2.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.6.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_samples/sample_concurrenthashmap.html"><strong aria-hidden="true">1.1.6.3.1.</strong> ConcurrentHashMap 使用示例</a></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_samples/sample_noblocking_queue.html"><strong aria-hidden="true">1.1.6.3.2.</strong> NonBlockingQueue 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/console/console_package_overview.html"><strong aria-hidden="true">1.1.7.</strong> std.console 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/console/console_package_api/console_package_class.html"><strong aria-hidden="true">1.1.7.1.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.7.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/console/console_samples/console_sample.html"><strong aria-hidden="true">1.1.7.2.1.</strong> Console 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/convert/convert_package_overview.html"><strong aria-hidden="true">1.1.8.</strong> std.convert 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/convert/convert_package_api/convert_package_interfaces.html"><strong aria-hidden="true">1.1.8.1.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.8.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/convert/convert_samples/convert_samples.html"><strong aria-hidden="true">1.1.8.2.1.</strong> covert 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/crypto/cipher/cipher_package_overview.html"><strong aria-hidden="true">1.1.9.</strong> std.crypto.cipher 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/crypto/cipher/cipher_package_api/cipher_package_interfaces.html"><strong aria-hidden="true">1.1.9.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_overview.html"><strong aria-hidden="true">1.1.10.</strong> std.crypto.digest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_api/digest_package_funcs.html"><strong aria-hidden="true">1.1.10.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_api/digest_package_interfaces.html"><strong aria-hidden="true">1.1.10.2.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_overview.html"><strong aria-hidden="true">1.1.11.</strong> std.database.sql 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_interfaces.html"><strong aria-hidden="true">1.1.11.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_classes.html"><strong aria-hidden="true">1.1.11.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_enums.html"><strong aria-hidden="true">1.1.11.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_exceptions.html"><strong aria-hidden="true">1.1.11.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.11.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_driver.html"><strong aria-hidden="true">1.1.11.5.1.</strong> 实现数据库驱动查询功能示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_get_connection.html"><strong aria-hidden="true">1.1.11.5.2.</strong> 获取数据库连接示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_modify_table.html"><strong aria-hidden="true">1.1.11.5.3.</strong> 删除表、创建表示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_operations.html"><strong aria-hidden="true">1.1.11.5.4.</strong> 执行数据库操作语句示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_transactions.html"><strong aria-hidden="true">1.1.11.5.5.</strong> 执行事务控制语句示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/format/format_package_overview.html"><strong aria-hidden="true">1.1.12.</strong> std.format 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/format/format_package_api/format_package_interfaces.html"><strong aria-hidden="true">1.1.12.1.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.12.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/format/format_samples/format_samples.html"><strong aria-hidden="true">1.1.12.2.1.</strong> format 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/fs/fs_package_overview.html"><strong aria-hidden="true">1.1.13.</strong> std.fs 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_classes.html"><strong aria-hidden="true">1.1.13.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_enums.html"><strong aria-hidden="true">1.1.13.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_structs.html"><strong aria-hidden="true">1.1.13.3.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_exceptions.html"><strong aria-hidden="true">1.1.13.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.13.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/fs/fs_samples/directory_samples.html"><strong aria-hidden="true">1.1.13.5.1.</strong> Directory 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/file_samples.html"><strong aria-hidden="true">1.1.13.5.2.</strong> File 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/fileinfo_samples.html"><strong aria-hidden="true">1.1.13.5.3.</strong> FileInfo 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/path_samples.html"><strong aria-hidden="true">1.1.13.5.4.</strong> Path 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/io/io_package_overview.html"><strong aria-hidden="true">1.1.14.</strong> std.io 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_interfaces.html"><strong aria-hidden="true">1.1.14.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_classes.html"><strong aria-hidden="true">1.1.14.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_enums.html"><strong aria-hidden="true">1.1.14.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_exceptions.html"><strong aria-hidden="true">1.1.14.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.14.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/io/io_samples/buffered_input_stream.html"><strong aria-hidden="true">1.1.14.5.1.</strong> BufferedInputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/buffered_output_stream.html"><strong aria-hidden="true">1.1.14.5.2.</strong> BufferedOutputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/byte_array_stream.html"><strong aria-hidden="true">1.1.14.5.3.</strong> ByteArrayStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/chained_input_stream.html"><strong aria-hidden="true">1.1.14.5.4.</strong> ChainedInputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/multi_output_stream.html"><strong aria-hidden="true">1.1.14.5.5.</strong> MultiOutputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/string_reader.html"><strong aria-hidden="true">1.1.14.5.6.</strong> StringReader 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/string_writer.html"><strong aria-hidden="true">1.1.14.5.7.</strong> StringWriter 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_overview.html"><strong aria-hidden="true">1.1.15.</strong> std.log 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_interfaces.html"><strong aria-hidden="true">1.1.15.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_classes.html"><strong aria-hidden="true">1.1.15.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_enums.html"><strong aria-hidden="true">1.1.15.3.</strong> 枚举</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.15.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/log/stdlog_samples/stdlog_sample.html"><strong aria-hidden="true">1.1.15.4.1.</strong> 日志打印示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/math/math_package_overview.html"><strong aria-hidden="true">1.1.16.</strong> std.math 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_funcs.html"><strong aria-hidden="true">1.1.16.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_interfaces.html"><strong aria-hidden="true">1.1.16.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_enums.html"><strong aria-hidden="true">1.1.16.3.</strong> 枚举</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.16.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math/math_samples/math_basic_operation.html"><strong aria-hidden="true">1.1.16.4.1.</strong> 数学基础运算示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_overview.html"><strong aria-hidden="true">1.1.17.</strong> std.math.numeric 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_funcs.html"><strong aria-hidden="true">1.1.17.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_enums.html"><strong aria-hidden="true">1.1.17.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_structs.html"><strong aria-hidden="true">1.1.17.3.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.17.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_arithmetic.html"><strong aria-hidden="true">1.1.17.4.1.</strong> BigInt 基础数学运算示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_prop.html"><strong aria-hidden="true">1.1.17.4.2.</strong> BigInt 基本属性示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_compare_opration.html"><strong aria-hidden="true">1.1.17.4.3.</strong> BigInt 大小比较示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_basic_arithmetic.html"><strong aria-hidden="true">1.1.17.4.4.</strong> Decimal 基础数学运算示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_basic_prop.html"><strong aria-hidden="true">1.1.17.4.5.</strong> Decimal 基本属性示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_compare_opration.html"><strong aria-hidden="true">1.1.17.4.6.</strong> Decimal 大小比较示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/objectpool/objectpool_package_overview.html"><strong aria-hidden="true">1.1.18.</strong> std.objectpool 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/objectpool/objectpool_package_api/objectpool_package_classes.html"><strong aria-hidden="true">1.1.18.1.</strong> 类</a></li></ol></li><li class="chapter-item "><a href="../../../std/os/os_package_overview.html"><strong aria-hidden="true">1.1.19.</strong> std.os 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os/os_package_api/os_package_funcs.html"><strong aria-hidden="true">1.1.19.1.</strong> 函数</a></li></ol></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_overview.html"><strong aria-hidden="true">1.1.20.</strong> std.os.posix 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_api/os_posix_package_constants_vars.html"><strong aria-hidden="true">1.1.20.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_api/os_posix_package_funcs.html"><strong aria-hidden="true">1.1.20.2.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.20.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_file_content_samples.html"><strong aria-hidden="true">1.1.20.3.1.</strong> 文件内容相关操作</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_file_info_samples.html"><strong aria-hidden="true">1.1.20.3.2.</strong> 文件信息相关操作</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_os_envinfo_samples.html"><strong aria-hidden="true">1.1.20.3.3.</strong> 获取各类系统信息</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_process_samples.html"><strong aria-hidden="true">1.1.20.3.4.</strong> 进程相关信息操作</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_overview.html"><strong aria-hidden="true">1.1.21.</strong> std.os.process 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_classes.html"><strong aria-hidden="true">1.1.21.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_enums.html"><strong aria-hidden="true">1.1.21.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_exceptions.html"><strong aria-hidden="true">1.1.21.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.21.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_currentprocess_sample.html"><strong aria-hidden="true">1.1.21.4.1.</strong> 当前进程相关操作</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_rm_file_win_platform_sample.html"><strong aria-hidden="true">1.1.21.4.2.</strong> Windows 平台子进程结束后删除子进程可执行文件</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_sample.html"><strong aria-hidden="true">1.1.21.4.3.</strong> 任意进程相关操作</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_subprocess_sample.html"><strong aria-hidden="true">1.1.21.4.4.</strong> 子进程相关操作</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/overflow/overflow_package_overview.html"><strong aria-hidden="true">1.1.22.</strong> std.overflow 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/overflow/overflow_package_api/overflow_package_interfaces.html"><strong aria-hidden="true">1.1.22.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_package_api/overflow_package_exceptions.html"><strong aria-hidden="true">1.1.22.2.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.22.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/option.html"><strong aria-hidden="true">1.1.22.3.1.</strong> 返回 Option 策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/saturating.html"><strong aria-hidden="true">1.1.22.3.2.</strong> 饱和策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/throwing.html"><strong aria-hidden="true">1.1.22.3.3.</strong> 抛出异常策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/wrapping.html"><strong aria-hidden="true">1.1.22.3.4.</strong> 高位截断策略的示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/random/random_package_overview.html"><strong aria-hidden="true">1.1.23.</strong> std.random 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/random/random_package_api/random_package_classes.html"><strong aria-hidden="true">1.1.23.1.</strong> 类</a></li></ol></li><li class="chapter-item "><a href="../../../std/regex/regex_package_overview.html"><strong aria-hidden="true">1.1.24.</strong> std.regex 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_classes.html"><strong aria-hidden="true">1.1.24.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_structs.html"><strong aria-hidden="true">1.1.24.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_exceptions.html"><strong aria-hidden="true">1.1.24.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.24.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/regex/regex_samples/regex_sample.html"><strong aria-hidden="true">1.1.24.4.1.</strong> Regex 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/runtime/runtime_package_overview.html"><strong aria-hidden="true">1.1.25.</strong> std.runtime 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/runtime/runtime_package_api/runtime_package_funcs.html"><strong aria-hidden="true">1.1.25.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/runtime/runtime_package_api/runtime_package_structs.html"><strong aria-hidden="true">1.1.25.2.</strong> 结构体</a></li></ol></li><li class="chapter-item "><a href="../../../std/socket/socket_package_overview.html"><strong aria-hidden="true">1.1.26.</strong> std.socket 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_constants_vars.html"><strong aria-hidden="true">1.1.26.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_interfaces.html"><strong aria-hidden="true">1.1.26.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_classes.html"><strong aria-hidden="true">1.1.26.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_enums.html"><strong aria-hidden="true">1.1.26.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_structs.html"><strong aria-hidden="true">1.1.26.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_exceptions.html"><strong aria-hidden="true">1.1.26.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.26.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/socket/socket_samples/socket_option.html"><strong aria-hidden="true">1.1.26.7.1.</strong> 属性配置使用用例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/tcp.html"><strong aria-hidden="true">1.1.26.7.2.</strong> TCP 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/udp.html"><strong aria-hidden="true">1.1.26.7.3.</strong> UDP 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/unix.html"><strong aria-hidden="true">1.1.26.7.4.</strong> UNIX 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/unix_datagram.html"><strong aria-hidden="true">1.1.26.7.5.</strong> UnixDatagram 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/sort/sort_package_overview.html"><strong aria-hidden="true">1.1.27.</strong> std.sort 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sort/sort_package_api/sort_package_funcs.html"><strong aria-hidden="true">1.1.27.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/sort/sort_package_api/sort_package_interfaces.html"><strong aria-hidden="true">1.1.27.2.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.27.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sort/sort_samples/sort_sample_array.html"><strong aria-hidden="true">1.1.27.3.1.</strong> 对 Array 进行排序</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/sync/sync_package_overview.html"><strong aria-hidden="true">1.1.28.</strong> std.sync 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_constants_vars.html"><strong aria-hidden="true">1.1.28.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_funcs.html"><strong aria-hidden="true">1.1.28.2.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_interfaces.html"><strong aria-hidden="true">1.1.28.3.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_classes.html"><strong aria-hidden="true">1.1.28.4.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_enums.html"><strong aria-hidden="true">1.1.28.5.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_structs.html"><strong aria-hidden="true">1.1.28.6.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_exceptions.html"><strong aria-hidden="true">1.1.28.7.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.28.8.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sync/sync_samples/sync_samples.html"><strong aria-hidden="true">1.1.28.8.1.</strong> 示例</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="../../../std/time/time_package_overview.html"><strong aria-hidden="true">1.1.29.</strong> std.time 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_interfaces.html"><strong aria-hidden="true">1.1.29.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_classes.html"><strong aria-hidden="true">1.1.29.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_enums.html"><strong aria-hidden="true">1.1.29.3.</strong> 枚举</a></li><li class="chapter-item expanded "><a href="../../../std/time/time_package_api/time_package_structs.html" class="active"><strong aria-hidden="true">1.1.29.4.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_exceptions.html"><strong aria-hidden="true">1.1.29.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.29.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_compare.html"><strong aria-hidden="true">1.1.29.6.1.</strong> DateTime 比较</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_parse.html"><strong aria-hidden="true">1.1.29.6.2.</strong> DateTime 与 String 类型的转换</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_prop.html"><strong aria-hidden="true">1.1.29.6.3.</strong> 获取日期时间信息</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_tz.html"><strong aria-hidden="true">1.1.29.6.4.</strong> 同一时间在不同时区的本地时间</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/monotime_test.html"><strong aria-hidden="true">1.1.29.6.5.</strong> 利用 MonoTime 作计时</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unicode/unicode_package_overview.html"><strong aria-hidden="true">1.1.30.</strong> std.unicode 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unicode/unicode_package_api/unicode_package_interfaces.html"><strong aria-hidden="true">1.1.30.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_overview.html"><strong aria-hidden="true">1.1.31.</strong> std.unittest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_functions.html"><strong aria-hidden="true">1.1.31.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_interfaces.html"><strong aria-hidden="true">1.1.31.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_classes.html"><strong aria-hidden="true">1.1.31.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_enums.html"><strong aria-hidden="true">1.1.31.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_structs.html"><strong aria-hidden="true">1.1.31.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_exceptions.html"><strong aria-hidden="true">1.1.31.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.31.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_getting_started.html"><strong aria-hidden="true">1.1.31.7.1.</strong> 快速入门</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_basics.html"><strong aria-hidden="true">1.1.31.7.2.</strong> 基础概念</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_parameterized_tests.html"><strong aria-hidden="true">1.1.31.7.3.</strong> 参数化测试</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_dynamic_tests.html"><strong aria-hidden="true">1.1.31.7.4.</strong> 动态测试</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_overview.html"><strong aria-hidden="true">1.1.32.</strong> std.unittest.mock 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_functions.html"><strong aria-hidden="true">1.1.32.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_interfaces.html"><strong aria-hidden="true">1.1.32.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_classes.html"><strong aria-hidden="true">1.1.32.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_enums.html"><strong aria-hidden="true">1.1.32.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_exceptions.html"><strong aria-hidden="true">1.1.32.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.32.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_getting_started.html"><strong aria-hidden="true">1.1.32.6.1.</strong> 快速入门</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_basics.html"><strong aria-hidden="true">1.1.32.6.2.</strong> 基础概念</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_stubs.html"><strong aria-hidden="true">1.1.32.6.3.</strong> 桩</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_verification.html"><strong aria-hidden="true">1.1.32.6.4.</strong> 验证</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_mock_mockmacro/unittest_mock_mockmacro_package_overview.html"><strong aria-hidden="true">1.1.33.</strong> std.unittest.mock.mockmacro 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock_mockmacro/unittest_mock_mockmacro_package_api/unittest_mock_mockmacro_package_macros.html"><strong aria-hidden="true">1.1.33.1.</strong> 宏</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_testmacro/unittest_testmacro_package_overview.html"><strong aria-hidden="true">1.1.34.</strong> std.unittest.testmacro 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_testmacro/unittest_testmacro_package_api/unittest_testmacro_package_macros.html"><strong aria-hidden="true">1.1.34.1.</strong> 宏</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_overview.html"><strong aria-hidden="true">1.1.35.</strong> std.unittest.common 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_functions.html"><strong aria-hidden="true">1.1.35.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html"><strong aria-hidden="true">1.1.35.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_classes.html"><strong aria-hidden="true">1.1.35.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_enums.html"><strong aria-hidden="true">1.1.35.4.</strong> 枚举</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_diff/unittest_diff_package_overview.html"><strong aria-hidden="true">1.1.36.</strong> unittest.diff</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_diff/unittest_diff_package_api/unittest_diff_package_interfaces.html"><strong aria-hidden="true">1.1.36.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_overview.html"><strong aria-hidden="true">1.1.37.</strong> unittest.prop_test</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_functions.html"><strong aria-hidden="true">1.1.37.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_interfaces.html"><strong aria-hidden="true">1.1.37.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_classes.html"><strong aria-hidden="true">1.1.37.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_structs.html"><strong aria-hidden="true">1.1.37.4.</strong> 结构体</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../compress/compress_module_overview.html"><strong aria-hidden="true">1.2.</strong> compress 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_overview.html"><strong aria-hidden="true">1.2.1.</strong> compress.zlib 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_classes.html"><strong aria-hidden="true">1.2.1.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_enums.html"><strong aria-hidden="true">1.2.1.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_exceptions.html"><strong aria-hidden="true">1.2.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.2.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_samples/deflate_compress_decompress.html"><strong aria-hidden="true">1.2.1.4.1.</strong> Deflate 格式数据的压缩和解压</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_samples/gzip_compress_decompress.html"><strong aria-hidden="true">1.2.1.4.2.</strong> Gzip 格式数据的压缩和解压</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/crypto_module_overview.html"><strong aria-hidden="true">1.3.</strong> crypto 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_overview.html"><strong aria-hidden="true">1.3.1.</strong> crypto.crypto 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_classes.html"><strong aria-hidden="true">1.3.1.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_structs.html"><strong aria-hidden="true">1.3.1.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_exceptions.html"><strong aria-hidden="true">1.3.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_samples/sample_secure_random.html"><strong aria-hidden="true">1.3.1.4.1.</strong> SecureRandom 使用</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_samples/sample_crypto.html"><strong aria-hidden="true">1.3.1.4.2.</strong> SM4 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/digest/crypto_digest_package_overview.html"><strong aria-hidden="true">1.3.2.</strong> crypto.digest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_classes.html"><strong aria-hidden="true">1.3.2.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_structs.html"><strong aria-hidden="true">1.3.2.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_exceptions.html"><strong aria-hidden="true">1.3.2.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.2.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/digest/digest_samples/sample_digest.html"><strong aria-hidden="true">1.3.2.4.1.</strong> digest 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_overview.html"><strong aria-hidden="true">1.3.3.</strong> crypto.keys 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_classes.html"><strong aria-hidden="true">1.3.3.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_enums.html"><strong aria-hidden="true">1.3.3.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_structs.html"><strong aria-hidden="true">1.3.3.3.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.3.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/keys/keys_samples/sample_keys.html"><strong aria-hidden="true">1.3.3.4.1.</strong> keys 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_overview.html"><strong aria-hidden="true">1.3.4.</strong> crypto.x509 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_type.html"><strong aria-hidden="true">1.3.4.1.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_interfaces.html"><strong aria-hidden="true">1.3.4.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_classes.html"><strong aria-hidden="true">1.3.4.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_enums.html"><strong aria-hidden="true">1.3.4.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_structs.html"><strong aria-hidden="true">1.3.4.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_exceptions.html"><strong aria-hidden="true">1.3.4.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.4.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/x509/x509_samples/sample_x509.html"><strong aria-hidden="true">1.3.4.7.1.</strong> x509 使用</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/encoding_module_overview.html"><strong aria-hidden="true">1.4.</strong> encoding 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_package_overview.html"><strong aria-hidden="true">1.4.1.</strong> encoding.base64 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_package_api/base64_package_funcs.html"><strong aria-hidden="true">1.4.1.1.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.1.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_samples/base64.html"><strong aria-hidden="true">1.4.1.2.1.</strong> Byte 数组和 Base64 互转</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/hex/hex_package_overview.html"><strong aria-hidden="true">1.4.2.</strong> encoding.hex 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/hex/hex_package_api/hex_package_funcs.html"><strong aria-hidden="true">1.4.2.1.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.2.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/hex/hex_samples/hex.html"><strong aria-hidden="true">1.4.2.2.1.</strong> Byte 数组和 Hex 互转</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/json/json_package_overview.html"><strong aria-hidden="true">1.4.3.</strong> encoding.json 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_interfaces.html"><strong aria-hidden="true">1.4.3.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_classes.html"><strong aria-hidden="true">1.4.3.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_enums.html"><strong aria-hidden="true">1.4.3.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_exceptions.html"><strong aria-hidden="true">1.4.3.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.3.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json/json_samples/json_array_sample.html"><strong aria-hidden="true">1.4.3.5.1.</strong> JsonArray 使用示例</a></li><li class="chapter-item "><a href="../../../encoding/json/json_samples/json_value_sample.html"><strong aria-hidden="true">1.4.3.5.2.</strong> JsonValue 和 String 互相转换</a></li><li class="chapter-item "><a href="../../../encoding/json/json_samples/to_json_sample.html"><strong aria-hidden="true">1.4.3.5.3.</strong> JsonValue 与 DataModel 的转换</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_overview.html"><strong aria-hidden="true">1.4.4.</strong> encoding.json.stream 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_interfaces.html"><strong aria-hidden="true">1.4.4.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_classes.html"><strong aria-hidden="true">1.4.4.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_enums.html"><strong aria-hidden="true">1.4.4.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_structs.html"><strong aria-hidden="true">1.4.4.4.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.4.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_reader.html"><strong aria-hidden="true">1.4.4.5.1.</strong> 使用 Json Stream 进行反序列化</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_writer.html"><strong aria-hidden="true">1.4.4.5.2.</strong> 使用 Json Stream 进行序列化</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_writeconfig.html"><strong aria-hidden="true">1.4.4.5.3.</strong> WriteConfig 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/url/url_package_overview.html"><strong aria-hidden="true">1.4.5.</strong> encoding.url 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/url/url_package_api/url_package_classes.html"><strong aria-hidden="true">1.4.5.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/url/url_package_api/url_package_exceptions.html"><strong aria-hidden="true">1.4.5.2.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.5.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/url/url_samples/form.html"><strong aria-hidden="true">1.4.5.3.1.</strong> Form 的构造使用</a></li><li class="chapter-item "><a href="../../../encoding/url/url_samples/url_parse.html"><strong aria-hidden="true">1.4.5.3.2.</strong> URL 解析函数 parse 的使用</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../fuzz/fuzz_module_overview.html"><strong aria-hidden="true">1.5.</strong> fuzz 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_overview.html"><strong aria-hidden="true">1.5.1.</strong> fuzz.fuzz 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_constants_vars.html"><strong aria-hidden="true">1.5.1.1.</strong> 常量变量</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_classes.html"><strong aria-hidden="true">1.5.1.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_exceptions.html"><strong aria-hidden="true">1.5.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.5.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/basic_fuzzing_test.html"><strong aria-hidden="true">1.5.1.4.1.</strong> 测试猜测字符功能</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/dataprovider_usage.html"><strong aria-hidden="true">1.5.1.4.2.</strong> 使用 DataProvider 功能进行测试</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/fake_coverage_usage.html"><strong aria-hidden="true">1.5.1.4.3.</strong> 使用 FakeCoverage 避免 DataProvider 模式下 Fuzz 异常终止</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/print_cj-fuzz_usage.html"><strong aria-hidden="true">1.5.1.4.4.</strong> 打印 fuzz 使用方法</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/print_coverage.html"><strong aria-hidden="true">1.5.1.4.5.</strong> 实验性特性-覆盖率信息打印</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/stack_backtrace_missing_solution.html"><strong aria-hidden="true">1.5.1.4.6.</strong> 栈回溯缺失的处理方案</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../log/log_module_overview.html"><strong aria-hidden="true">1.6.</strong> log 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_package_overview.html"><strong aria-hidden="true">1.6.1.</strong> log 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_types.html"><strong aria-hidden="true">1.6.1.1.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_funcs.html"><strong aria-hidden="true">1.6.1.2.</strong> 函数</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_interfaces.html"><strong aria-hidden="true">1.6.1.3.</strong> 接口</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_classes.html"><strong aria-hidden="true">1.6.1.4.</strong> 类</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_structs.html"><strong aria-hidden="true">1.6.1.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_exceptions.html"><strong aria-hidden="true">1.6.1.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.6.1.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_samples/log_sample.html"><strong aria-hidden="true">1.6.1.7.1.</strong> 日志打印示例</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../net/net_module_overview.html"><strong aria-hidden="true">1.7.</strong> net 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_package_overview.html"><strong aria-hidden="true">1.7.1.</strong> net.http 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_funcs.html"><strong aria-hidden="true">1.7.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_interfaces.html"><strong aria-hidden="true">1.7.1.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_classes.html"><strong aria-hidden="true">1.7.1.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_enums.html"><strong aria-hidden="true">1.7.1.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_structs.html"><strong aria-hidden="true">1.7.1.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_exceptions.html"><strong aria-hidden="true">1.7.1.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.7.1.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_samples/http_client.html"><strong aria-hidden="true">1.7.1.7.1.</strong> client</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/cookie.html"><strong aria-hidden="true">1.7.1.7.2.</strong> cookie</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/log.html"><strong aria-hidden="true">1.7.1.7.3.</strong> log</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/http_server.html"><strong aria-hidden="true">1.7.1.7.4.</strong> server</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/webSocket.html"><strong aria-hidden="true">1.7.1.7.5.</strong> webSocket</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../net/tls/tls_package_overview.html"><strong aria-hidden="true">1.7.2.</strong> net.tls 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_classes.html"><strong aria-hidden="true">1.7.2.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_enums.html"><strong aria-hidden="true">1.7.2.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_structs.html"><strong aria-hidden="true">1.7.2.3.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_exceptions.html"><strong aria-hidden="true">1.7.2.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.7.2.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/tls/tls_samples/cert_key.html"><strong aria-hidden="true">1.7.2.5.1.</strong> 服务端证书及公钥在一份文件中</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/client.html"><strong aria-hidden="true">1.7.2.5.2.</strong> 客户端示例</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/hot_update_cert.html"><strong aria-hidden="true">1.7.2.5.3.</strong> 证书热更新</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/server.html"><strong aria-hidden="true">1.7.2.5.4.</strong> 服务端示例</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../serialization/serialization_module_overview.html"><strong aria-hidden="true">1.8.</strong> serialization 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_overview.html"><strong aria-hidden="true">1.8.1.</strong> serialization.serialization 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_functions.html"><strong aria-hidden="true">1.8.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_interfaces.html"><strong aria-hidden="true">1.8.1.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_classes.html"><strong aria-hidden="true">1.8.1.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_exceptions.html"><strong aria-hidden="true">1.8.1.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.8.1.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_samples/serialize_and_deserialize_class.html"><strong aria-hidden="true">1.8.1.5.1.</strong> class 序列化和反序列化</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_samples/serialize_hashmap_and_hashset.html"><strong aria-hidden="true">1.8.1.5.2.</strong> HashSet 和 HashMap 序列化</a></li></ol></li></ol></li></ol></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">仓颉编程语言库 API</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="结构体"><a class="header" href="#结构体">结构体</a></h1>
+<h2 id="struct-datetime"><a class="header" href="#struct-datetime">struct DateTime</a></h2>
+<pre><code class="language-cangjie">public struct DateTime &lt;: ToString &amp; Hashable &amp; Comparable&lt;DateTime&gt;
+</code></pre>
+<p>功能：<a href="time_package_structs.html#struct-datetime">DateTime</a> 表示日期时间，是一个描述某一时间点的时间类型，提供了基于时区的日期时间读取、计算、比较、转换，以及序列化和反序列化等功能。</p>
+<ul>
+<li>
+<p><a href="time_package_structs.html#struct-datetime">DateTime</a> 是不可变的类型，包含了日期，时间和时区信息。可表示的时间区间为 [-999,999,999-01-01T00:00:00.000000000, 999,999,999-12-31T23:59:59.999999999]，该区间适用于任何合法的时区。</p>
+</li>
+<li>
+<p>以下为 <a href="time_package_structs.html#struct-datetime">DateTime</a> 中 <a href="#static-func-nowtimezone">now</a> 和 <a href="#static-func-nowutc">nowUTC</a> 函数获取当前时间使用的系统调用函数：</p>
+<div class="table-wrapper"><table><thead><tr><th>系统</th><th>系统调用函数</th><th>时钟类型</th></tr></thead><tbody>
+<tr><td>Linux</td><td>clock_gettime</td><td>CLOCK_REALTIME</td></tr>
+<tr><td>Windows</td><td>clock_gettime</td><td>CLOCK_REALTIME</td></tr>
+<tr><td>macOS</td><td>clock_gettime</td><td>CLOCK_REALTIME</td></tr>
+</tbody></table>
+</div></li>
+</ul>
+<p>父类型：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-tostring">ToString</a></li>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-hashable">Hashable</a></li>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#struct-datetime">DateTime</a>&gt;</li>
+</ul>
+<h3 id="static-prop-unixepoch"><a class="header" href="#static-prop-unixepoch">static prop UnixEpoch</a></h3>
+<pre><code class="language-cangjie">public static prop UnixEpoch: DateTime
+</code></pre>
+<p>功能：获取 Unix 时间纪元，即表示零时区 <code>1970年1月1日0时0分0秒0纳秒</code> 的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</p>
+<p>类型：<a href="time_package_structs.html#struct-datetime">DateTime</a></p>
+<h3 id="prop-dayofmonth"><a class="header" href="#prop-dayofmonth">prop dayOfMonth</a></h3>
+<pre><code class="language-cangjie">public prop dayOfMonth: Int64
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例基于当前月第几日。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a></p>
+<h3 id="prop-dayofweek"><a class="header" href="#prop-dayofweek">prop dayOfWeek</a></h3>
+<pre><code class="language-cangjie">public prop dayOfWeek: DayOfWeek
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例基于当前周的第几日。</p>
+<p>类型：<a href="time_package_enums.html#enum-dayofweek">DayOfWeek</a></p>
+<h3 id="prop-dayofyear"><a class="header" href="#prop-dayofyear">prop dayOfYear</a></h3>
+<pre><code class="language-cangjie">public prop dayOfYear: Int64
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例基于当前年份的第几日。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a></p>
+<h3 id="prop-hour"><a class="header" href="#prop-hour">prop hour</a></h3>
+<pre><code class="language-cangjie">public prop hour: Int64
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例的小时。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a></p>
+<h3 id="prop-isoweek"><a class="header" href="#prop-isoweek">prop isoWeek</a></h3>
+<pre><code class="language-cangjie">public prop isoWeek: (Int64, Int64)
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例基于 ISO8601 标准的年份和基于年的周数。</p>
+<p>类型：(<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a>, <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a>)</p>
+<h3 id="prop-minute"><a class="header" href="#prop-minute">prop minute</a></h3>
+<pre><code class="language-cangjie">public prop minute: Int64
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例的分钟。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a></p>
+<h3 id="prop-month"><a class="header" href="#prop-month">prop month</a></h3>
+<pre><code class="language-cangjie">public prop month: Month
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例的月份。</p>
+<p>类型：<a href="time_package_enums.html#enum-month">Month</a></p>
+<h3 id="prop-monthvalue"><a class="header" href="#prop-monthvalue">prop monthValue</a></h3>
+<pre><code class="language-cangjie">public prop monthValue: Int64
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例以数字形式表示的月份。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a></p>
+<h3 id="prop-nanosecond"><a class="header" href="#prop-nanosecond">prop nanosecond</a></h3>
+<pre><code class="language-cangjie">public prop nanosecond: Int64
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例的纳秒。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a></p>
+<h3 id="prop-second"><a class="header" href="#prop-second">prop second</a></h3>
+<pre><code class="language-cangjie">public prop second: Int64
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例的秒。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a></p>
+<h3 id="prop-year"><a class="header" href="#prop-year">prop year</a></h3>
+<pre><code class="language-cangjie">public prop year: Int64
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例的年份。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a></p>
+<h3 id="prop-zone"><a class="header" href="#prop-zone">prop zone</a></h3>
+<pre><code class="language-cangjie">public prop zone: TimeZone
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例所关联的时区。</p>
+<p>类型：<a href="time_package_classes.html#class-timezone">TimeZone</a></p>
+<h3 id="prop-zoneid"><a class="header" href="#prop-zoneid">prop zoneId</a></h3>
+<pre><code class="language-cangjie">public prop zoneId: String
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例所关联的 <a href="time_package_classes.html#class-timezone">TimeZone</a> 实例的时区 ID。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-zoneoffset"><a class="header" href="#prop-zoneoffset">prop zoneOffset</a></h3>
+<pre><code class="language-cangjie">public prop zoneOffset: Duration
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例所关联的 <a href="time_package_classes.html#class-timezone">TimeZone</a> 实例的时间偏移。</p>
+<p>类型：<a href="time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="static-func-fromunixtimestampduration"><a class="header" href="#static-func-fromunixtimestampduration">static func fromUnixTimeStamp(Duration)</a></h3>
+<pre><code class="language-cangjie">public static func fromUnixTimeStamp(d: Duration): DateTime
+</code></pre>
+<p>功能：获取自 <a href="#static-prop-unixepoch">UnixEpoch</a> 开始，参数 <code>d</code> 指定时间间隔后的日期时间。</p>
+<p>参数：</p>
+<ul>
+<li>d: <a href="time_package_structs.html#struct-duration">Duration</a> - 时间间隔。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> - 自 <a href="#static-prop-unixepoch">UnixEpoch</a> 开始，指定 <code>d</code> 后的日期时间。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当结果超过日期时间的表示范围时，抛出异常。</li>
+</ul>
+<h3 id="static-func-nowtimezone"><a class="header" href="#static-func-nowtimezone">static func now(TimeZone)</a></h3>
+<pre><code class="language-cangjie">public static func now(timeZone!: TimeZone = TimeZone.Local): DateTime
+</code></pre>
+<p>功能：获取参数 <code>timeZone</code> 指定时区的当前时间。该方法获取的当前时间受系统时间影响，如存在使用不受系统时间影响的计时场景，可使用 <a href="time_package_structs.html#struct-monotime">MonoTime</a>.now() 替代。</p>
+<p>参数：</p>
+<ul>
+<li>timeZone!: <a href="time_package_classes.html#class-timezone">TimeZone</a> - 时区，默认为本地时区。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> - 返回指定时区当前时间。</li>
+</ul>
+<h3 id="static-func-nowutc"><a class="header" href="#static-func-nowutc">static func nowUTC()</a></h3>
+<pre><code class="language-cangjie">public static func nowUTC(): DateTime
+</code></pre>
+<p>功能：获取 UTC 时区的当前时间。该方法获取的当前时间受系统时间影响，如存在使用不受系统时间影响的计时场景，可使用 <a href="time_package_structs.html#struct-monotime">MonoTime</a>.now() 替代。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> - UTC 时区当前时间。</li>
+</ul>
+<h3 id="static-func-ofint64-int64-int64-int64-int64-int64-int64-timezone"><a class="header" href="#static-func-ofint64-int64-int64-int64-int64-int64-int64-timezone">static func of(Int64, Int64, Int64, Int64, Int64, Int64, Int64, TimeZone)</a></h3>
+<pre><code class="language-cangjie">public static func of(
+    year!: Int64,
+    month!: Int64,
+    dayOfMonth!: Int64,
+    hour!: Int64 = 0,
+    minute!: Int64 = 0,
+    second!: Int64 = 0,
+    nanosecond!: Int64 = 0,
+    timeZone!: TimeZone = TimeZone.Local
+): DateTime
+</code></pre>
+<p>功能：根据参数指定的年、月、日、时、分、秒、纳秒、时区构造 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>year!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 年，范围[-999,999,999, 999,999,999]。</li>
+<li>month!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 月，范围[1, 12]。</li>
+<li>dayOfMonth!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 日，范围[1, 31]，最大取值需要跟 month 匹配，可能是 28、29、30、31。</li>
+<li>hour!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 时，范围[0, 23]。</li>
+<li>minute!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 分，范围[0, 59]。</li>
+<li>second!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 秒，范围[0, 59]。</li>
+<li>nanosecond!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 纳秒，范围[0, 999,999,999]。</li>
+<li>timeZone!: <a href="time_package_classes.html#class-timezone">TimeZone</a> - 时区。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> - 根据指定参数构造的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当参数值超出指定范围，抛出异常。</li>
+</ul>
+<h3 id="static-func-ofint64-month-int64-int64-int64-int64-int64-timezone"><a class="header" href="#static-func-ofint64-month-int64-int64-int64-int64-int64-timezone">static func of(Int64, Month, Int64, Int64, Int64, Int64, Int64, TimeZone)</a></h3>
+<pre><code class="language-cangjie">public static func of(
+    year!: Int64,
+    month!: Month,
+    dayOfMonth!: Int64,
+    hour!: Int64 = 0,
+    minute!: Int64 = 0,
+    second!: Int64 = 0,
+    nanosecond!: Int64 = 0,
+    timeZone!: TimeZone = TimeZone.Local
+): DateTime
+</code></pre>
+<p>功能：根据参数指定的年、月、日、时、分、秒、纳秒、时区构造 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>year!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 年，范围[-999,999,999, 999,999,999]。</li>
+<li>month!: <a href="time_package_enums.html#enum-month">Month</a> - 月，<a href="time_package_enums.html#enum-month">Month</a> 类型。</li>
+<li>dayOfMonth!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 日，范围[1, 31]，最大取值需要跟 month 匹配，可能是 28、29、30、31。</li>
+<li>hour!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 时，范围[0, 23]。</li>
+<li>minute!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 分，范围[0, 59]。</li>
+<li>second!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 秒，范围[0, 59]。</li>
+<li>nanosecond!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 纳秒，范围[0, 999,999,999]。</li>
+<li>timeZone!: <a href="time_package_classes.html#class-timezone">TimeZone</a> - 时区。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> - 根据指定参数构造的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当参数值超出指定范围，抛出异常。</li>
+</ul>
+<h3 id="static-func-ofepochint64-int64"><a class="header" href="#static-func-ofepochint64-int64">static func ofEpoch(Int64, Int64)</a></h3>
+<pre><code class="language-cangjie">public static func ofEpoch(second!: Int64, nanosecond!: Int64): DateTime
+</code></pre>
+<p>功能：根据入参 <code>second</code> 和 <code>nanosecond</code> 构造 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。入参 <code>second</code> 表示 unix 时间的秒部分，<code>nanosecond</code> 表示 unix 时间的纳秒部分。unix 时间以 <a href="#static-prop-unixepoch">UnixEpoch</a> 开始计算，<code>nanosecond</code> 的范围不可以超过[0, 999,999,999]，否则抛出异常。</p>
+<p>参数：</p>
+<ul>
+<li>second!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - unix 时间的秒部分。</li>
+<li>nanosecond!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - unix 时间的纳秒部分，范围不可以超过[0, 999,999,999]。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> - 自 <a href="#static-prop-unixepoch">UnixEpoch</a> 开始，指定 <code>second</code> 和 <code>nanosecond</code> 后的时间。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当 <code>nanosecond</code> 值超出指定范围时，抛出异常。</li>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当结果超过日期时间的表示范围时，抛出异常。</li>
+</ul>
+<h3 id="static-func-ofutcint64-int64-int64-int64-int64-int64-int64"><a class="header" href="#static-func-ofutcint64-int64-int64-int64-int64-int64-int64">static func ofUTC(Int64, Int64, Int64, Int64, Int64, Int64, Int64)</a></h3>
+<pre><code class="language-cangjie">public static func ofUTC(
+    year!: Int64,
+    month!: Int64,
+    dayOfMonth!: Int64,
+    hour!: Int64 = 0,
+    minute!: Int64 = 0,
+    second!: Int64 = 0,
+    nanosecond!: Int64 = 0
+): DateTime
+</code></pre>
+<p>功能：根据参数指定的年、月、日、时、分、秒、纳秒构造 <code>UTC</code> 时区 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>year!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 年，范围[-999,999,999, 999,999,999]。</li>
+<li>month!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 月，范围[1, 12]。</li>
+<li>dayOfMonth!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 日，范围[1, 31]，最大取值需要跟 month 匹配，可能是 28、29、30、31。</li>
+<li>hour!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 时，范围[0, 23]。</li>
+<li>minute!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 分，范围[0, 59]。</li>
+<li>second!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 秒，范围[0, 59]。</li>
+<li>nanosecond!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 纳秒，范围[0, 999,999,999]。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> - 根据指定参数构造的 <code>UTC</code> 时区 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当参数值超出指定范围时，抛出异常</li>
+</ul>
+<h3 id="static-func-ofutcint64-month-int64-int64-int64-int64-int64"><a class="header" href="#static-func-ofutcint64-month-int64-int64-int64-int64-int64">static func ofUTC(Int64, Month, Int64, Int64, Int64, Int64, Int64)</a></h3>
+<pre><code class="language-cangjie">public static func ofUTC(
+    year!: Int64,
+    month!: Month,
+    dayOfMonth!: Int64,
+    hour!: Int64 = 0,
+    minute!: Int64 = 0,
+    second!: Int64 = 0,
+    nanosecond!: Int64 = 0
+): DateTime
+</code></pre>
+<p>功能：根据参数指定的年、月、日、时、分、秒、纳秒构造 <code>UTC</code> 时区 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>year!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 年，范围[-999,999,999, 999,999,999]。</li>
+<li>month!: <a href="time_package_enums.html#enum-month">Month</a> - 月，<a href="time_package_enums.html#enum-month">Month</a> 类型</li>
+<li>dayOfMonth!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 日, 范围[1, 31]，最大取值需要跟 month 匹配，可能是 28、29、30、31。</li>
+<li>hour!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 时，范围[0, 23]。</li>
+<li>minute!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 分，范围[0, 59]。</li>
+<li>second!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 秒，范围[0, 59]。</li>
+<li>nanosecond!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 纳秒，范围[0, 999,999,999]。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> - 根据指定参数构造的 <code>UTC</code> 时区 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当参数值超出指定范围时，抛出异常。</li>
+</ul>
+<h3 id="static-func-parsestring"><a class="header" href="#static-func-parsestring">static func parse(String)</a></h3>
+<pre><code class="language-cangjie">public static func parse(str: String): DateTime
+</code></pre>
+<p>功能：从参数 <code>str</code> 中解析得到时间，解析成功时返回 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>str: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 时间字符串，格式为 <code>RFC3339</code> 中 <code>date-time</code> 格式，可包含小数秒，如 &quot;2023-04-10T08:00:00[.123456]+08:00&quot;(<code>[]</code> 中的内容表示可选项)。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> - 从参数 <code>str</code> 中解析出的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="time_package_exceptions.html#class-timeparseexception">TimeParseException</a> - 无法正常解析时，抛出异常。</li>
+</ul>
+<h3 id="static-func-parsestring-string"><a class="header" href="#static-func-parsestring-string">static func parse(String, String)</a></h3>
+<pre><code class="language-cangjie">public static func parse(str: String, format: String): DateTime
+</code></pre>
+<p>功能：根据 <code>format</code> 指定的时间格式，从字符串 <code>str</code> 中解析得到时间，解析成功时返回 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例，解析具体规格可见下文“从字符串中解析得到时间”模块。</p>
+<p>参数：</p>
+<ul>
+<li>str: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 时间字符串，例如：&quot;2023/04/10 08:00:00 +08:00&quot;。</li>
+<li>format: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 时间字符串的格式，例如：&quot;yyyy/MM/dd HH:mm:ss OOOO&quot;。格式说明详见<a href="../time_package_overview.html#%E6%97%B6%E9%97%B4%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%A0%BC%E5%BC%8F">时间字符串格式</a>。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> - 根据参数 <code>format</code> 指定的时间格式，从参数 <code>str</code> 中解析出的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="time_package_exceptions.html#class-timeparseexception">TimeParseException</a> - 当无法正常解析时，或存在同一 <code>format</code> 的多次取值时，抛出异常。</li>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当 <code>format</code> 格式不正确时，抛出异常。</li>
+</ul>
+<h3 id="static-func-parsestring-datetimeformat"><a class="header" href="#static-func-parsestring-datetimeformat">static func parse(String, DateTimeFormat)</a></h3>
+<pre><code class="language-cangjie">public static func parse(str: String, format: DateTimeFormat): DateTime
+</code></pre>
+<p>功能：根据 <code>format</code> 指定的时间格式，从字符串 <code>str</code> 中解析得到时间，解析成功时返回 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例，解析具体规格可见下文“从字符串中解析得到时间”模块。</p>
+<p>参数：</p>
+<ul>
+<li>str: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 时间字符串，例如：&quot;2023/04/10 08:00:00 +08:00&quot;。</li>
+<li>format: <a href="./time_package_classes.html#class-datetimeformat">DateTimeFormat</a> - 时间格式，例如：&quot;yyyy/MM/dd HH:mm:ss OOOO&quot;对应的时间格式。格式说明详见<a href="../time_package_overview.html#%E6%97%B6%E9%97%B4%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%A0%BC%E5%BC%8F">时间字符串格式</a>。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> - 根据参数 <code>format</code> 指定的时间格式，从参数 <code>str</code> 中解析出的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="time_package_exceptions.html#class-timeparseexception">TimeParseException</a> - 当无法正常解析时，或存在同一 <code>format</code> 的多次取值时，抛出异常。</li>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当 <code>format</code> 格式不正确时，抛出异常。</li>
+</ul>
+<h3 id="func-adddaysint64"><a class="header" href="#func-adddaysint64">func addDays(Int64)</a></h3>
+<pre><code class="language-cangjie">public func addDays(n: Int64): DateTime
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 天之后的时间，返回新的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 自 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例后多少天的数量。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 天后的时间。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 天后的日期时间超过表示范围时，抛出异常。</li>
+</ul>
+<h3 id="func-addhoursint64"><a class="header" href="#func-addhoursint64">func addHours(Int64)</a></h3>
+<pre><code class="language-cangjie">public func addHours(n: Int64): DateTime
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 小时之后的时间，返回新的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 自 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例后多少小时的数量。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 小时后的时间。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 小时后的日期时间超过表示范围时，抛出异常。</li>
+</ul>
+<h3 id="func-addminutesint64"><a class="header" href="#func-addminutesint64">func addMinutes(Int64)</a></h3>
+<pre><code class="language-cangjie">public func addMinutes(n: Int64): DateTime
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 分钟之后的时间，返回新的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 自 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例后多少分钟的数量。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 分钟后的时间。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 分钟后的日期时间超过表示范围时，抛出异常。</li>
+</ul>
+<h3 id="func-addmonthsint64"><a class="header" href="#func-addmonthsint64">func addMonths(Int64)</a></h3>
+<pre><code class="language-cangjie">public func addMonths(n: Int64): DateTime
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 月之后的时间，返回新的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</p>
+<blockquote>
+<p><strong>注意：</strong></p>
+<p>由于月的间隔不固定，若设 dt 表示 “2020年3月31日”，<code>dt.addMonths(1)</code> 不会返回非法日期“2020年4月31日”。为了尽量返回有效的日期，会偏移到当月最后一天，返回“2020年4月30日”。</p>
+</blockquote>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 自 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例后多少月的数量。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 月后的时间。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 月后的日期时间超过表示范围时，抛出异常。</li>
+</ul>
+<h3 id="func-addnanosecondsint64"><a class="header" href="#func-addnanosecondsint64">func addNanoseconds(Int64)</a></h3>
+<pre><code class="language-cangjie">public func addNanoseconds(n: Int64): DateTime
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 纳秒之后的时间，返回新的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 自 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例后多少纳秒的数量。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 纳秒后的时间。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 纳秒后时间的日期时间超过表示范围时，抛出异常。</li>
+</ul>
+<h3 id="func-addsecondsint64"><a class="header" href="#func-addsecondsint64">func addSeconds(Int64)</a></h3>
+<pre><code class="language-cangjie">public func addSeconds(n: Int64): DateTime
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 秒之后的时间，返回新的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 自 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例后多少秒的数量。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 秒后的时间。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 秒后的日期时间超过表示范围时，抛出异常。</li>
+</ul>
+<h3 id="func-addweeksint64"><a class="header" href="#func-addweeksint64">func addWeeks(Int64)</a></h3>
+<pre><code class="language-cangjie">public func addWeeks(n: Int64): DateTime
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 周之后的时间，返回新的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 自 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例后多少周的数量。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 周后的时间。</li>
+</ul>
+<p>异常：</p>
+<p>功能：获取入参 n 周之后的时间，返回新的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</p>
+<h3 id="func-addyearsint64"><a class="header" href="#func-addyearsint64">func addYears(Int64)</a></h3>
+<pre><code class="language-cangjie">public func addYears(n: Int64): DateTime
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 年之后的时间，返回新的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</p>
+<blockquote>
+<p><strong>注意：</strong></p>
+<p>由于年的间隔不固定，若设 dt 表示 “2020年2月29日”，<code>dt.addYears(1)</code> 不会返回非法日期“2021年2月29日”。为了尽量返回有效的日期，会偏移到当月最后一天，返回 “2021年2月28日”。</p>
+</blockquote>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 自 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例后多少年的数量。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 年后的时间。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例 <code>n</code> 年后的日期时间超过表示范围时，抛出异常。</li>
+</ul>
+<h3 id="func-comparedatetime"><a class="header" href="#func-comparedatetime">func compare(DateTime)</a></h3>
+<pre><code class="language-cangjie">public func compare(rhs: DateTime): Ordering
+</code></pre>
+<p>功能：判断一个 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例与参数 <code>rhs</code> 的大小关系。如果大于，返回 <a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a>.LT。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="time_package_structs.html#struct-datetime">DateTime</a> - 参与比较的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例与 <code>rhs</code> 大小关系。</li>
+</ul>
+<h3 id="func-hashcode"><a class="header" href="#func-hashcode">func hashCode()</a></h3>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例的哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="func-inlocal"><a class="header" href="#func-inlocal">func inLocal()</a></h3>
+<pre><code class="language-cangjie">public func inLocal(): DateTime
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例在本地时区的时间。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例在本地时区的时间。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当返回的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例表示的日期时间超过表示范围时，抛出异常。</li>
+</ul>
+<h3 id="func-intimezonetimezone"><a class="header" href="#func-intimezonetimezone">func inTimeZone(TimeZone)</a></h3>
+<pre><code class="language-cangjie">public func inTimeZone(timeZone: TimeZone): DateTime
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例在参数 <code>timeZone</code> 指定时区的时间。</p>
+<p>参数：</p>
+<ul>
+<li>timeZone: <a href="time_package_classes.html#class-timezone">TimeZone</a> - 目标时区。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例在参数 <code>timezone</code> 指定时区的时间。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当返回的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例表示的日期时间超过表示范围时，抛出异常。</li>
+</ul>
+<h3 id="func-inutc"><a class="header" href="#func-inutc">func inUTC()</a></h3>
+<pre><code class="language-cangjie">public func inUTC(): DateTime
+</code></pre>
+<p>功能：获取 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例在 <code>UTC</code> 时区的时间。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例在 <code>UTC</code> 时区的时间。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当返回的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例表示的日期时间超过表示范围时，抛出异常。</li>
+</ul>
+<h3 id="func-tostring"><a class="header" href="#func-tostring">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：返回一个表示 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例的字符串，其格式为 <code>RFC3339</code> 中 <code>date-time</code> 格式，如果时间包含纳秒信息（不为零），会打印出小数秒。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例的字符串表示。</li>
+</ul>
+<h3 id="func-tostringstring"><a class="header" href="#func-tostringstring">func toString(String)</a></h3>
+<pre><code class="language-cangjie">public func toString(format: String): String
+</code></pre>
+<p>功能：返回一个表示 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例的字符串，其格式由参数 <code>format</code> 指定。格式说明详见<a href="../time_package_overview.html#%E6%97%B6%E9%97%B4%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%A0%BC%E5%BC%8F">时间字符串格式</a></p>
+<p>参数：</p>
+<ul>
+<li>format: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 返回字符串的格式，其格式可为 &quot;yyyy/MM/dd HH:mm:ss OOOO&quot;。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例在 <code>format</code> 指定格式下的字符串。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当 <code>format</code> 格式不正确时，抛出异常。</li>
+</ul>
+<h3 id="func-tostringdatetimeformat"><a class="header" href="#func-tostringdatetimeformat">func toString(DateTimeFormat)</a></h3>
+<pre><code class="language-cangjie">public func toString(format: DateTimeFormat): String
+</code></pre>
+<p>功能：返回一个表示 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例的字符串，其格式由参数 <code>format</code> 指定。格式说明详见<a href="../time_package_overview.html#%E6%97%B6%E9%97%B4%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%A0%BC%E5%BC%8F">时间字符串格式</a></p>
+<p>参数：</p>
+<ul>
+<li>format: <a href="./time_package_classes.html#class-datetimeformat">DateTimeFormat</a> - 时间格式，其格式可为 &quot;yyyy/MM/dd HH:mm:ss OOOO&quot;。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> -  <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例在 <code>format</code> 指定格式下的字符串。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当 <code>format</code> 格式不正确时，抛出异常。</li>
+</ul>
+<h3 id="func-tounixtimestamp"><a class="header" href="#func-tounixtimestamp">func toUnixTimeStamp()</a></h3>
+<pre><code class="language-cangjie">public func toUnixTimeStamp(): Duration
+</code></pre>
+<p>功能：获取当前实例自 <a href="#static-prop-unixepoch">UnixEpoch</a> 的时间间隔。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-duration">Duration</a> - 当前实例自 <a href="#static-prop-unixepoch">UnixEpoch</a> 的时间间隔。</li>
+</ul>
+<h3 id="operator-func-datetime"><a class="header" href="#operator-func-datetime">operator func !=(DateTime)</a></h3>
+<pre><code class="language-cangjie">public operator func !=(r: DateTime): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例是否不等于 <code>r</code>。</p>
+<p>若两个 <a href="time_package_structs.html#struct-datetime">DateTime</a> 不相等，那么它们指向的不是同一 UTC 时间。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-datetime">DateTime</a> - <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例不等于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h3 id="operator-func-duration"><a class="header" href="#operator-func-duration">operator func +(Duration)</a></h3>
+<pre><code class="language-cangjie">public operator func +(r: Duration): DateTime
+</code></pre>
+<p>功能：实现 <a href="time_package_structs.html#struct-datetime">DateTime</a> 类型和 <a href="time_package_structs.html#struct-duration">Duration</a> 类型加法，即 <a href="time_package_structs.html#struct-datetime">DateTime</a> + <a href="time_package_structs.html#struct-duration">Duration</a> 运算。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-duration">Duration</a> - 加法的右操作数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> - <a href="time_package_structs.html#struct-datetime">DateTime</a> 类型实例和 <code>r</code> 的和。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当结果超过日期时间的表示范围时，抛出异常。</li>
+</ul>
+<h3 id="operator-func--datetime"><a class="header" href="#operator-func--datetime">operator func -(DateTime)</a></h3>
+<pre><code class="language-cangjie">public operator func -(r: DateTime): Duration
+</code></pre>
+<p>功能：实现 <a href="time_package_structs.html#struct-datetime">DateTime</a> 类型之间的减法，即 <a href="time_package_structs.html#struct-datetime">DateTime</a> - <a href="time_package_structs.html#struct-datetime">DateTime</a> 运算。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-datetime">DateTime</a> - 减法的右操作数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-datetime">DateTime</a> 类型实例和 <code>r</code> 的差。</li>
+</ul>
+<h3 id="operator-func--duration"><a class="header" href="#operator-func--duration">operator func -(Duration)</a></h3>
+<pre><code class="language-cangjie">public operator func -(r: Duration): DateTime
+</code></pre>
+<p>功能：实现 <a href="time_package_structs.html#struct-datetime">DateTime</a> 类型和 <a href="time_package_structs.html#struct-duration">Duration</a> 类型减法，即 <a href="time_package_structs.html#struct-datetime">DateTime</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 运算。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-duration">Duration</a> - 减法的右操作数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-datetime">DateTime</a> - <a href="time_package_structs.html#struct-datetime">DateTime</a> 类型实例和 <code>r</code> 的差。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当结果超过日期时间的表示范围时，抛出异常。</li>
+</ul>
+<h3 id="operator-func-datetime-1"><a class="header" href="#operator-func-datetime-1">operator func &lt;(DateTime)</a></h3>
+<pre><code class="language-cangjie">public operator func &lt;(r: DateTime): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例是否早于 <code>r</code>（指向更早的 UTC 时间的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 更小）。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-datetime">DateTime</a> - <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例早于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h3 id="operator-func-datetime-2"><a class="header" href="#operator-func-datetime-2">operator func &lt;=(DateTime)</a></h3>
+<pre><code class="language-cangjie">public operator func &lt;=(r: DateTime): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例是否早于或等于 <code>r</code>（指向更早的 UTC 时间的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 更小）。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-datetime">DateTime</a> - <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例早于或等于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h3 id="operator-func-datetime-3"><a class="header" href="#operator-func-datetime-3">operator func ==(DateTime)</a></h3>
+<pre><code class="language-cangjie">public operator func ==(r: DateTime): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例是否等于 <code>r</code>。</p>
+<p>若两个 <a href="time_package_structs.html#struct-datetime">DateTime</a> 相等，那么它们指向同一 UTC 时间。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-datetime">DateTime</a> - <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例等于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h3 id="operator-func-datetime-4"><a class="header" href="#operator-func-datetime-4">operator func &gt;(DateTime)</a></h3>
+<pre><code class="language-cangjie">public operator func &gt;(r: DateTime): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例是否晚于 <code>r</code>（指向更晚的 UTC 时间的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 更大）。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-datetime">DateTime</a> - <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例晚于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h3 id="operator-func-datetime-5"><a class="header" href="#operator-func-datetime-5">operator func &gt;=(DateTime)</a></h3>
+<pre><code class="language-cangjie">public operator func &gt;=(r: DateTime): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例是否晚于或等于 <code>r</code>（指向更晚的 UTC 时间的 <a href="time_package_structs.html#struct-datetime">DateTime</a> 更大）。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-datetime">DateTime</a> - <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例晚于或等于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h2 id="struct-duration"><a class="header" href="#struct-duration">struct Duration</a></h2>
+<pre><code class="language-cangjie">public struct Duration &lt;: ToString &amp; Hashable &amp; Comparable&lt;Duration&gt;
+</code></pre>
+<p>功能：<a href="time_package_structs.html#struct-duration">Duration</a> 表示时间间隔，是一个描述一段时间的时间类型，提供了常用的静态实例，以及计算、比较等功能。</p>
+<blockquote>
+<p><strong>说明：</strong></p>
+<ul>
+<li><a href="time_package_structs.html#struct-duration">Duration</a> 表示范围为 <a href="time_package_structs.html#struct-duration">Duration</a>.Min 至 <a href="time_package_structs.html#struct-duration">Duration</a>.Max，数值表示为 [-2<sup>63</sup>, 2<sup>63</sup>)（单位为秒），精度为纳秒。</li>
+<li><a href="time_package_structs.html#struct-duration">Duration</a> 每个时间单位均用整数表示，如果实际值不为整数，则向绝对值小的方向取整。例如表示 <code>1小时30分46秒</code> 的 <a href="time_package_structs.html#struct-duration">Duration</a> 实例调用 <code>toHours</code> 方法，将返回结果 1 而不是 1.5 或 2。</li>
+</ul>
+</blockquote>
+<p>父类型：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-tostring">ToString</a></li>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-hashable">Hashable</a></li>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#struct-duration">Duration</a>&gt;</li>
+</ul>
+<h3 id="static-prop-max"><a class="header" href="#static-prop-max">static prop Max</a></h3>
+<pre><code class="language-cangjie">public static prop Max: Duration
+</code></pre>
+<p>功能：表示最大时间间隔的 <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</p>
+<p>类型：<a href="time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="static-prop-min"><a class="header" href="#static-prop-min">static prop Min</a></h3>
+<pre><code class="language-cangjie">public static prop Min: Duration
+</code></pre>
+<p>功能：表示最小时间间隔的 <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</p>
+<p>类型：<a href="time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="static-prop-zero"><a class="header" href="#static-prop-zero">static prop Zero</a></h3>
+<pre><code class="language-cangjie">public static prop Zero: Duration
+</code></pre>
+<p>功能：表示 0 纳秒时间间隔的 <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</p>
+<p>类型：<a href="time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="static-prop-day"><a class="header" href="#static-prop-day">static prop day</a></h3>
+<pre><code class="language-cangjie">public static prop day: Duration
+</code></pre>
+<p>功能：表示 1 天时间间隔的 <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</p>
+<p>类型：<a href="time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="static-prop-hour"><a class="header" href="#static-prop-hour">static prop hour</a></h3>
+<pre><code class="language-cangjie">public static prop hour: Duration
+</code></pre>
+<p>功能：表示 1 小时时间间隔的 <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</p>
+<p>类型：<a href="time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="static-prop-microsecond"><a class="header" href="#static-prop-microsecond">static prop microsecond</a></h3>
+<pre><code class="language-cangjie">public static prop microsecond: Duration
+</code></pre>
+<p>功能：表示 1 微秒时间间隔的 <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</p>
+<p>类型：<a href="time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="static-prop-millisecond"><a class="header" href="#static-prop-millisecond">static prop millisecond</a></h3>
+<pre><code class="language-cangjie">public static prop millisecond: Duration
+</code></pre>
+<p>功能：表示 1 毫秒时间间隔的 <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</p>
+<p>类型：<a href="time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="static-prop-minute"><a class="header" href="#static-prop-minute">static prop minute</a></h3>
+<pre><code class="language-cangjie">public static prop minute: Duration
+</code></pre>
+<p>功能：表示 1 分钟时间间隔的 <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</p>
+<p>类型：<a href="time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="static-prop-nanosecond"><a class="header" href="#static-prop-nanosecond">static prop nanosecond</a></h3>
+<pre><code class="language-cangjie">public static prop nanosecond: Duration
+</code></pre>
+<p>功能：表示 1 纳秒时间间隔的 <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</p>
+<p>类型：<a href="time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="static-prop-second"><a class="header" href="#static-prop-second">static prop second</a></h3>
+<pre><code class="language-cangjie">public static prop second: Duration
+</code></pre>
+<p>功能：表示 1 秒时间间隔的 <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</p>
+<p>类型：<a href="time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="static-func-sincedatetime"><a class="header" href="#static-func-sincedatetime">static func since(DateTime)</a></h3>
+<pre><code class="language-cangjie">public static func since(t: DateTime): Duration
+</code></pre>
+<p>功能：计算从参数 <code>t</code> 开始到当前时间为止的时间间隔。</p>
+<p>参数：</p>
+<ul>
+<li>t: <a href="time_package_structs.html#struct-datetime">DateTime</a> - <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</li>
+</ul>
+<h3 id="static-func-untildatetime"><a class="header" href="#static-func-untildatetime">static func until(DateTime)</a></h3>
+<pre><code class="language-cangjie">public static func until(t: DateTime): Duration
+</code></pre>
+<p>功能：计算从当前时间开始到参数 <code>t</code> 为止的时间间隔。</p>
+<p>参数：</p>
+<ul>
+<li>t: <a href="time_package_structs.html#struct-datetime">DateTime</a> - <a href="time_package_structs.html#struct-datetime">DateTime</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</li>
+</ul>
+<h3 id="func-abs"><a class="header" href="#func-abs">func abs()</a></h3>
+<pre><code class="language-cangjie">public func abs(): Duration
+</code></pre>
+<p>功能：返回一个新的 <a href="time_package_structs.html#struct-duration">Duration</a> 实例，其值大小为当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例绝对值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-duration">Duration</a> - 当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例取绝对值的结果。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 如果当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例等于 <a href="time_package_structs.html#struct-duration">Duration</a>.Min，会因为取绝对值超出 <a href="time_package_structs.html#struct-duration">Duration</a> 表示范围而抛异常。</li>
+</ul>
+<h3 id="func-compareduration"><a class="header" href="#func-compareduration">func compare(Duration)</a></h3>
+<pre><code class="language-cangjie">public func compare(rhs: Duration): Ordering
+</code></pre>
+<p>功能：比较当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例与另一个 <a href="time_package_structs.html#struct-duration">Duration</a> 实例的关系，如果大于，返回 <a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a>.LT。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="time_package_structs.html#struct-duration">Duration</a> - 参与比较的 <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a> - 当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例与 <code>rhs</code> 的大小关系。</li>
+</ul>
+<h3 id="func-hashcode-1"><a class="header" href="#func-hashcode-1">func hashCode()</a></h3>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获得当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例的哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例的哈希值。</li>
+</ul>
+<h3 id="func-todays"><a class="header" href="#func-todays">func toDays()</a></h3>
+<pre><code class="language-cangjie">public func toDays(): Int64
+</code></pre>
+<p>功能：获得当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以天为单位的整数大小。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以天为单位的大小。</li>
+</ul>
+<h3 id="func-tohours"><a class="header" href="#func-tohours">func toHours()</a></h3>
+<pre><code class="language-cangjie">public func toHours(): Int64
+</code></pre>
+<p>功能：获得当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以小时为单位的整数大小。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以小时为单位的大小。</li>
+</ul>
+<h3 id="func-tomicroseconds"><a class="header" href="#func-tomicroseconds">func toMicroseconds()</a></h3>
+<pre><code class="language-cangjie">public func toMicroseconds(): Int64
+</code></pre>
+<p>功能：获得当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以微秒为单位的整数大小。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以微秒为单位的大小。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以微秒为单位的大小超过 <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 表示范围时，抛出异常。</li>
+</ul>
+<h3 id="func-tomilliseconds"><a class="header" href="#func-tomilliseconds">func toMilliseconds()</a></h3>
+<pre><code class="language-cangjie">public func toMilliseconds(): Int64
+</code></pre>
+<p>功能：获得当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以毫秒为单位的整数大小。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以毫秒为单位的大小。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以毫秒为单位的大小超过 <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 表示范围时，抛出异常。</li>
+</ul>
+<h3 id="func-tominutes"><a class="header" href="#func-tominutes">func toMinutes()</a></h3>
+<pre><code class="language-cangjie">public func toMinutes(): Int64
+</code></pre>
+<p>功能：获得当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以分钟为单位的整数大小。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以分钟为单位的大小。</li>
+</ul>
+<h3 id="func-tonanoseconds"><a class="header" href="#func-tonanoseconds">func toNanoseconds()</a></h3>
+<pre><code class="language-cangjie">public func toNanoseconds(): Int64
+</code></pre>
+<p>功能：获得当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以纳秒为单位的整数大小，向绝对值小的方向取整。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以纳秒为单位的大小。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以“纳秒”为单位的大小超过 <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 表示范围时，抛出异常。</li>
+</ul>
+<h3 id="func-toseconds"><a class="header" href="#func-toseconds">func toSeconds()</a></h3>
+<pre><code class="language-cangjie">public func toSeconds(): Int64
+</code></pre>
+<p>功能：获得当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以秒为单位的整数大小。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例以秒为单位的大小。</li>
+</ul>
+<h3 id="func-tostring-1"><a class="header" href="#func-tostring-1">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：获得当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例的字符串表示，格式形如：&quot;1d2h3m4s5ms6us7ns&quot;，表示“1天2小时3分钟4秒5毫秒6微秒7纳秒”。某个单位下数值为 0 时此项会被省略，特别地，当所有单位下数值都为 0 时，返回 &quot;0s&quot;。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例的字符串表示。</li>
+</ul>
+<h3 id="operator-func-duration-1"><a class="header" href="#operator-func-duration-1">operator func !=(Duration)</a></h3>
+<pre><code class="language-cangjie">public operator func !=(r: Duration): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例是否不等于 <code>r</code>。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例不等于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h3 id="operator-func-float64"><a class="header" href="#operator-func-float64">operator func *(Float64)</a></h3>
+<pre><code class="language-cangjie">public operator func *(r: Float64): Duration
+</code></pre>
+<p>功能：实现 <a href="time_package_structs.html#struct-duration">Duration</a> 类型与 <a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a> 类型的乘法，即 <a href="time_package_structs.html#struct-duration">Duration</a> * <a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a> 运算。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a> - 乘法的右操作数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 类型实例和 <code>r</code> 的乘积。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当相乘后的结果超出 <a href="time_package_structs.html#struct-duration">Duration</a> 的表示范围时，抛出异常。</li>
+</ul>
+<h3 id="operator-func-int64"><a class="header" href="#operator-func-int64">operator func *(Int64)</a></h3>
+<pre><code class="language-cangjie">public operator func *(r: Int64): Duration
+</code></pre>
+<p>功能：实现 <a href="time_package_structs.html#struct-duration">Duration</a> 类型与 <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 类型的乘法，即 <a href="time_package_structs.html#struct-duration">Duration</a> * <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 运算。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 乘法的右操作数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 类型实例和 <code>r</code> 的乘积。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当相乘后的结果超出 <a href="time_package_structs.html#struct-duration">Duration</a> 的表示范围时，抛出异常。</li>
+</ul>
+<h3 id="operator-func-duration-2"><a class="header" href="#operator-func-duration-2">operator func +(Duration)</a></h3>
+<pre><code class="language-cangjie">public operator func +(r: Duration): Duration
+</code></pre>
+<p>功能：实现 <a href="time_package_structs.html#struct-duration">Duration</a> 类型之间的加法，即 <a href="time_package_structs.html#struct-duration">Duration</a> + <a href="time_package_structs.html#struct-duration">Duration</a> 运算。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-duration">Duration</a> - 加法的右操作数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 类型实例和 <code>r</code> 的和。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当相加后的结果超出 <a href="time_package_structs.html#struct-duration">Duration</a> 的表示范围时，抛出异常。</li>
+</ul>
+<h3 id="operator-func--duration-1"><a class="header" href="#operator-func--duration-1">operator func -(Duration)</a></h3>
+<pre><code class="language-cangjie">public operator func -(r: Duration): Duration
+</code></pre>
+<p>功能：实现 <a href="time_package_structs.html#struct-duration">Duration</a> 类型之间的减法，即 <a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 运算。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-duration">Duration</a> - 减法的右操作数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 类型实例和 <code>r</code> 的差。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当相减后的结果超出 <a href="time_package_structs.html#struct-duration">Duration</a> 的表示范围时，抛出异常。</li>
+</ul>
+<h3 id="operator-func-duration-3"><a class="header" href="#operator-func-duration-3">operator func /(Duration)</a></h3>
+<pre><code class="language-cangjie">public operator func /(r: Duration): Float64
+</code></pre>
+<p>功能：实现 <a href="time_package_structs.html#struct-duration">Duration</a> 类型与 <a href="time_package_structs.html#struct-duration">Duration</a> 类型的除法，即 <a href="time_package_structs.html#struct-duration">Duration</a> / <a href="time_package_structs.html#struct-duration">Duration</a> 运算。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-duration">Duration</a> - 除数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 类型实例和 <code>r</code> 的商。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当 <code>r</code> 等于 <a href="time_package_structs.html#struct-duration">Duration</a>.Zero 时，抛出异常。</li>
+</ul>
+<h3 id="operator-func-float64-1"><a class="header" href="#operator-func-float64-1">operator func /(Float64)</a></h3>
+<pre><code class="language-cangjie">public operator func /(r: Float64): Duration
+</code></pre>
+<p>功能：实现 <a href="time_package_structs.html#struct-duration">Duration</a> 类型与 <a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a> 类型的除法，即 <a href="time_package_structs.html#struct-duration">Duration</a> / <a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a> 运算。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a> - 除数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 类型实例和 <code>r</code> 的商。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当 <code>r</code> 等于 0 时，抛出异常。</li>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当相除后的结果超出 <a href="time_package_structs.html#struct-duration">Duration</a> 的表示范围时，抛出异常。</li>
+</ul>
+<h3 id="operator-func-int64-1"><a class="header" href="#operator-func-int64-1">operator func /(Int64)</a></h3>
+<pre><code class="language-cangjie">public operator func /(r: Int64): Duration
+</code></pre>
+<p>功能：实现 <a href="time_package_structs.html#struct-duration">Duration</a> 类型与 <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 类型的除法，即 <a href="time_package_structs.html#struct-duration">Duration</a> / <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 运算。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 除数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 类型实例和 <code>r</code> 的商。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当 <code>r</code> 等于 0 时，抛出异常。</li>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当相除后的结果超出 <a href="time_package_structs.html#struct-duration">Duration</a> 的表示范围时，抛出异常。</li>
+</ul>
+<h3 id="operator-func-duration-4"><a class="header" href="#operator-func-duration-4">operator func &lt;(Duration)</a></h3>
+<pre><code class="language-cangjie">public operator func &lt;(r: Duration): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例是否小于 <code>r</code>。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例小于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h3 id="operator-func-duration-5"><a class="header" href="#operator-func-duration-5">operator func &lt;=(Duration)</a></h3>
+<pre><code class="language-cangjie">public operator func &lt;=(r: Duration): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例是否小于等于 <code>r</code>。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例小于等于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h3 id="operator-func-duration-6"><a class="header" href="#operator-func-duration-6">operator func ==(Duration)</a></h3>
+<pre><code class="language-cangjie">public operator func ==(r: Duration): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例是否等于 <code>r</code>。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例等于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h3 id="operator-func-duration-7"><a class="header" href="#operator-func-duration-7">operator func &gt;(Duration)</a></h3>
+<pre><code class="language-cangjie">public operator func &gt;(r: Duration): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例是否大于 <code>r</code>。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例大于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h3 id="operator-func-duration-8"><a class="header" href="#operator-func-duration-8">operator func &gt;=(Duration)</a></h3>
+<pre><code class="language-cangjie">public operator func &gt;=(r: Duration): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例是否大于等于 <code>r</code>。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-duration">Duration</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-duration">Duration</a> 实例大于等于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h2 id="struct-monotime"><a class="header" href="#struct-monotime">struct MonoTime</a></h2>
+<pre><code class="language-cangjie">public struct MonoTime &lt;: Hashable &amp; Comparable&lt;MonoTime&gt;
+</code></pre>
+<p>功能：<a href="time_package_structs.html#struct-monotime">MonoTime</a> 表示单调时间，是一个用来衡量经过时间的时间类型，类似于一直运行的秒表，提供了获取当前时间，计算和比较等功能。</p>
+<ul>
+<li>
+<p><a href="time_package_structs.html#struct-monotime">MonoTime</a> 可表示的范围为 <a href="#static-prop-zero">Duration.Zero</a> 至 <a href="#static-prop-max">Duration.Max</a>，数值表示为 [0, 2<sup>63</sup>)（单位为秒），精度为纳秒。通过 <a href="#static-func-now">now</a> 方法创建的 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 总是晚于先使用该方式创建的 <a href="time_package_structs.html#struct-monotime">MonoTime</a>，常用于性能测试和时间优先的任务队列。</p>
+</li>
+<li>
+<p>以下为 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 中 <a href="#static-func-now">now</a> 函数获取当前时间使用的系统调用函数：</p>
+<div class="table-wrapper"><table><thead><tr><th>系统</th><th>系统调用函数</th><th>时钟类型</th></tr></thead><tbody>
+<tr><td>Linux</td><td>clock_gettime</td><td>CLOCK_MONOTONIC</td></tr>
+<tr><td>Windows</td><td>clock_gettime</td><td>CLOCK_MONOTONIC</td></tr>
+<tr><td>macOS</td><td>clock_gettime</td><td>CLOCK_MONOTONIC</td></tr>
+</tbody></table>
+</div></li>
+</ul>
+<p>父类型：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-hashable">Hashable</a></li>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#struct-monotime">MonoTime</a>&gt;</li>
+</ul>
+<h3 id="static-func-now"><a class="header" href="#static-func-now">static func now()</a></h3>
+<pre><code class="language-cangjie">public static func now(): MonoTime
+</code></pre>
+<p>功能：获取与当前时间对应的 <a href="time_package_structs.html#struct-monotime">MonoTime</a>。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-monotime">MonoTime</a> - 与当前时间对应的 <a href="time_package_structs.html#struct-monotime">MonoTime</a>。</li>
+</ul>
+<h3 id="func-comparemonotime"><a class="header" href="#func-comparemonotime">func compare(MonoTime)</a></h3>
+<pre><code class="language-cangjie">public func compare(rhs: MonoTime): Ordering
+</code></pre>
+<p>功能：判断一个 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例与参数 <code>rhs</code> 的大小关系。如果大于，返回 <a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a>.LT。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="time_package_structs.html#struct-monotime">MonoTime</a> - 参与比较的 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a> - 当前 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例与 <code>rhs</code> 大小关系。</li>
+</ul>
+<h3 id="func-hashcode-2"><a class="header" href="#func-hashcode-2">func hashCode()</a></h3>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取当前 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例的哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="operator-func-monotime"><a class="header" href="#operator-func-monotime">operator func !=(MonoTime)</a></h3>
+<pre><code class="language-cangjie">public operator func !=(r: MonoTime): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例是否不等于 <code>r</code>。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-monotime">MonoTime</a> - 单调时间。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例不等于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h3 id="operator-func-duration-9"><a class="header" href="#operator-func-duration-9">operator func +(Duration)</a></h3>
+<pre><code class="language-cangjie">public operator func +(r: Duration): MonoTime
+</code></pre>
+<p>功能：实现 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 类型和 <a href="time_package_structs.html#struct-duration">Duration</a> 类型加法，即 <a href="time_package_structs.html#struct-monotime">MonoTime</a> + <a href="time_package_structs.html#struct-duration">Duration</a> 运算。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-duration">Duration</a> - 时间间隔。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-monotime">MonoTime</a> - 参数 <code>r</code> 表示时间间隔后的单调时间。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当结果超过单调时间的表示范围时，抛出异常。</li>
+</ul>
+<h3 id="operator-func--duration-2"><a class="header" href="#operator-func--duration-2">operator func -(Duration)</a></h3>
+<pre><code class="language-cangjie">public operator func -(r: Duration): MonoTime
+</code></pre>
+<p>功能：实现 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 类型和 <a href="time_package_structs.html#struct-duration">Duration</a> 类型减法，即 <a href="time_package_structs.html#struct-monotime">MonoTime</a> - <a href="time_package_structs.html#struct-duration">Duration</a> 运算。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-duration">Duration</a> - 时间间隔。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-monotime">MonoTime</a> - 参数 <code>r</code> 表示时间间隔前的单调时间。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当结果超过单调时间的表示范围时，抛出异常。</li>
+</ul>
+<h3 id="operator-func--monotime"><a class="header" href="#operator-func--monotime">operator func -(MonoTime)</a></h3>
+<pre><code class="language-cangjie">public operator func -(r: MonoTime): Duration
+</code></pre>
+<p>功能：实现 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 类型之间的减法，即 <a href="time_package_structs.html#struct-monotime">MonoTime</a> - <a href="time_package_structs.html#struct-monotime">MonoTime</a> 运算。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-monotime">MonoTime</a> - 单调时间。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="time_package_structs.html#struct-duration">Duration</a> - 当前实例距 <code>r</code> 经过的时间间隔。</li>
+</ul>
+<h3 id="operator-func-monotime-1"><a class="header" href="#operator-func-monotime-1">operator func &lt;(MonoTime)</a></h3>
+<pre><code class="language-cangjie">public operator func &lt;(r: MonoTime): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例是否早于 <code>r</code>。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-monotime">MonoTime</a> - 单调时间。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例早于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h3 id="operator-func-monotime-2"><a class="header" href="#operator-func-monotime-2">operator func &lt;=(MonoTime)</a></h3>
+<pre><code class="language-cangjie">public operator func &lt;=(r: MonoTime): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例是否早于或等于 <code>r</code>。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-monotime">MonoTime</a> - 单调时间。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例早于或等于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h3 id="operator-func-monotime-3"><a class="header" href="#operator-func-monotime-3">operator func ==(MonoTime)</a></h3>
+<pre><code class="language-cangjie">public operator func ==(r: MonoTime): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例是否等于 <code>r</code>。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-monotime">MonoTime</a> - 单调时间。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例等于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h3 id="operator-func-monotime-4"><a class="header" href="#operator-func-monotime-4">operator func &gt;(MonoTime)</a></h3>
+<pre><code class="language-cangjie">public operator func &gt;(r: MonoTime): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例是否晚于 <code>r</code>。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-monotime">MonoTime</a> - 单调时间。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例晚于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+<h3 id="operator-func-monotime-5"><a class="header" href="#operator-func-monotime-5">operator func &gt;=(MonoTime)</a></h3>
+<pre><code class="language-cangjie">public operator func &gt;=(r: MonoTime): Bool
+</code></pre>
+<p>功能：判断当前 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例是否晚于或等于 <code>r</code>。</p>
+<p>参数：</p>
+<ul>
+<li>r: <a href="time_package_structs.html#struct-monotime">MonoTime</a> - 单调时间。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - <code>true</code> 或 <code>false</code>。当前 <a href="time_package_structs.html#struct-monotime">MonoTime</a> 实例晚于或等于 <code>r</code> 时，返回 <code>true</code>；否则，返回 <code>false</code>。</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../std/time/time_package_api/time_package_enums.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../../std/time/time_package_api/time_package_exceptions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../std/time/time_package_api/time_package_enums.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../../std/time/time_package_api/time_package_exceptions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../../elasticlunr.min.js"></script>
+        <script src="../../../mark.min.js"></script>
+        <script src="../../../searcher.js"></script>
+
+        <script src="../../../clipboard.min.js"></script>
+        <script src="../../../highlight.js"></script>
+        <script src="../../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../../highlight.js"></script>
+        <script src="../../../assets/elasticlunr.js"></script>
+        <script src="../../../assets/fzf.umd.js"></script>
+        <script src="../../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

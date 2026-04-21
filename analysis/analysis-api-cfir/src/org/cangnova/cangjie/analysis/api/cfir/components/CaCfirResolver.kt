@@ -2,6 +2,13 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 
 import org.cangnova.cangjie.analysis.api.cfir.*
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
+import org.cangnova.cangjie.analysis.api.impl.base.resolution.CaBaseCall
+import org.cangnova.cangjie.analysis.api.impl.base.resolution.CaBaseCallArgumentMapping
+import org.cangnova.cangjie.analysis.api.impl.base.resolution.CaBaseCallInfo
+import org.cangnova.cangjie.analysis.api.resolution.CaCall
+import org.cangnova.cangjie.analysis.api.resolution.CaCallApplicability
+import org.cangnova.cangjie.analysis.api.types.CaClassLikeType
 import org.cangnova.cangjie.analysis.api.cfir.symbols.getExtendPublicSymbols
 import org.cangnova.cangjie.analysis.api.cfir.symbols.getPublicSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.publicSymbolCacheKeyOrNull
@@ -9,18 +16,36 @@ import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirBackedSymbol
 import org.cangnova.cangjie.analysis.api.components.CaResolver
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.resolution.CaCallInfo
+import org.cangnova.cangjie.analysis.api.resolution.CaCallKind
+import org.cangnova.cangjie.analysis.api.resolution.CaCallOrigin
+import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
+import org.cangnova.cangjie.analysis.low.level.api.cfir.resolver.AllCandidatesResolver
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.diagnostic.ConeHiddenCandidateError
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.resolve.body.OverloadCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.createConeDiagnosticForCandidateWithError
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
-import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjMatchEntry
+import org.cangnova.cangjie.psi.CjQualifiedExpression
 import org.cangnova.cangjie.psi.CjReferenceExpression
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjVarOrEnumPattern
+import org.cangnova.cangjie.psi.psiUtil.getParentOfType
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.psi.stubs.elements.getAllBindings
+import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 
 /**
  * CFIR resolver 组件。
@@ -48,7 +73,9 @@ internal class CaCfirResolver(
     }
 
     override fun CjElement.resolveToCall(): CaCallInfo? = withValidityAssertion {
-        analysisSession.diagnosticQueries.queryCallInfo(this@resolveToCall)
+        analysisSession.cacheStorage.getOrCreateCallInfo(this@resolveToCall) {
+            resolveCallInfo(this@resolveToCall)
+        }
     }
 
     /**
@@ -98,13 +125,17 @@ internal class CaCfirResolver(
     private fun restoreCallBackedSymbols(reference: CjReferenceExpression): Collection<CaSymbol> {
         val callInfo = generateSequence(reference as com.intellij.psi.PsiElement?) { current -> current.parent }
             .filterIsInstance<CjElement>()
-            .mapNotNull(analysisSession.diagnosticQueries::queryCallInfo)
+            .mapNotNull { element ->
+                analysisSession.cacheStorage.getOrCreateCallInfo(element) {
+                    resolveCallInfo(element)
+                }
+            }
             .firstOrNull { resolvedCallInfo ->
                 resolvedCallInfo.successfulCall?.target != null || resolvedCallInfo.calls.any { call -> call.target != null }
             }
             ?: return emptyList()
 
-        val lowLevelTargets = buildList {
+        val resolvedTargets = buildList {
             callInfo.successfulCall?.target?.let(::add)
             callInfo.calls.mapNotNullTo(this) { call -> call.target }
         }
@@ -114,7 +145,7 @@ internal class CaCfirResolver(
             return extendDispatchTargets
         }
 
-        return lowLevelTargets.map(analysisSession::getPublicSymbol)
+        return resolvedTargets
     }
 
     /**
@@ -131,9 +162,9 @@ internal class CaCfirResolver(
             ?: callInfo.successfulCall?.calleeName
             ?: return emptyList()
 
-        val receiverClassId = callInfo.successfulCall?.explicitReceiverType?.classIdOrPrimitiveClassId
+        val receiverClassId = (callInfo.successfulCall?.explicitReceiverType as? CaClassLikeType)?.classId
             ?: callInfo.calls.asSequence()
-                .mapNotNull { call -> call.explicitReceiverType?.classIdOrPrimitiveClassId }
+                .mapNotNull { call -> (call.explicitReceiverType as? CaClassLikeType)?.classId }
                 .firstOrNull()
             ?: return emptyList()
 
@@ -154,5 +185,119 @@ internal class CaCfirResolver(
             .map(analysisSession::getPublicSymbol)
             .filterIsInstance<CaPatternBindingSymbol>()
             .firstOrNull()
+    }
+
+    /**
+     * 调用解析结果对齐 Kotlin `KaFirResolver.resolveToCall()` 的组件职责：
+     * resolver 直接从后端解析结果构造公开调用模型，不经 low-level API 私有 call-info 包装层。
+     */
+    private fun resolveCallInfo(element: CjElement): CaCallInfo? {
+        val qualifiedAccess = element.getOrBuildCfir(analysisSession.resolutionFacade) as? CfirQualifiedAccessExpression
+            ?: element.getParentOfType<CjQualifiedExpression>(strict = false)
+                ?.getOrBuildCfir(analysisSession.resolutionFacade) as? CfirQualifiedAccessExpression
+            ?: return null
+        val calleeName = (qualifiedAccess.calleeReference as? CfirNamedReference)?.name ?: return null
+
+        val calls = AllCandidatesResolver(analysisSession.cfirSession)
+            .getAllCandidates(
+                resolutionFacade = analysisSession.resolutionFacade,
+                qualifiedAccess = qualifiedAccess,
+                calleeName = calleeName,
+                element = element,
+                resolutionMode = ResolutionMode.ContextIndependent,
+            )
+            .mapNotNull { overloadCandidate -> overloadCandidate.toAnalysisCallOrNull() }
+
+        val successfulCall = calls.firstOrNull { call ->
+            call.applicability == CaCallApplicability.RESOLVED ||
+                call.applicability == CaCallApplicability.RESOLVED_LOW_PRIORITY
+        }
+
+        return CaBaseCallInfo(
+            successfulCall = successfulCall,
+            calls = calls,
+            token = analysisSession.token,
+        )
+    }
+
+    private fun OverloadCandidate.toAnalysisCallOrNull(): CaCall? {
+        val applicability = candidate.toAnalysisApplicabilityOrNull() ?: return null
+        return candidate.toAnalysisCall(applicability)
+    }
+
+    private fun Candidate.toAnalysisApplicabilityOrNull(): CaCallApplicability? {
+        val applicability = if (isSuccessful) {
+            lowestApplicability
+        } else {
+            createConeDiagnosticForCandidateWithError(lowestApplicability, this).let { diagnostic ->
+                if (diagnostic is ConeHiddenCandidateError) {
+                    return null
+                }
+                lowestApplicability
+            }
+        }
+
+        return applicability.asAnalysisApplicability()
+    }
+
+    private fun Candidate.toAnalysisCall(applicability: CaCallApplicability): CaCall = CaBaseCall(
+        kind = callInfo.callKind.asAnalysisKind(),
+        origin = callInfo.origin.asAnalysisOrigin(),
+        applicability = applicability,
+        isImplicitInvoke = callInfo.isImplicitInvoke,
+        calleeName = callInfo.name,
+        target = (symbol as? org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>)
+            ?.let(analysisSession::getPublicSymbol) as? CaCallableSymbol,
+        explicitReceiverType = callInfo.explicitReceiver?.coneTypeOrNull?.asCaType(analysisSession),
+        dispatchReceiverType = dispatchReceiverExpression()?.coneTypeOrNull?.asCaType(analysisSession),
+        extensionReceiverType = chosenExtensionReceiverExpression()?.coneTypeOrNull?.asCaType(analysisSession),
+        contextArgumentTypes = contextArguments().map { expression -> expression.coneTypeOrNull?.asCaType(analysisSession) },
+        argumentTypes = callInfo.arguments.map { expression -> expression.coneTypeOrNull?.asCaType(analysisSession) },
+        typeArguments = callInfo.typeArguments.map { typeRef -> typeRef.coneTypeOrNull?.asCaType(analysisSession) },
+        argumentMapping = createAnalysisArgumentMapping(),
+        token = analysisSession.token,
+    )
+
+    private fun Candidate.createAnalysisArgumentMapping() = if (argumentMappingInitialized) {
+        arguments.mapIndexed { index, argumentAtom ->
+            val parameter = argumentMapping[argumentAtom]
+            CaBaseCallArgumentMapping(
+                argumentIndex = index,
+                parameterName = parameter?.name,
+                parameterType = parameter?.returnTypeRef?.coneTypeOrNull?.asCaType(analysisSession),
+                token = analysisSession.token,
+            )
+        }
+    } else {
+        emptyList()
+    }
+
+    private fun CallKind.asAnalysisKind(): CaCallKind = when (this) {
+        CallKind.Function,
+        CallKind.NamedValueAccess,
+        CallKind.EnumConstructorCall,
+            -> CaCallKind.FUNCTION
+    }
+
+    private fun CfirFunctionCallOrigin.asAnalysisOrigin(): CaCallOrigin = when (this) {
+        CfirFunctionCallOrigin.Regular -> CaCallOrigin.REGULAR
+        CfirFunctionCallOrigin.Operator -> CaCallOrigin.OPERATOR
+        CfirFunctionCallOrigin.ConstructorDelegationThis -> CaCallOrigin.CONSTRUCTOR_DELEGATION_THIS
+        CfirFunctionCallOrigin.ConstructorDelegationSuper -> CaCallOrigin.CONSTRUCTOR_DELEGATION_SUPER
+    }
+
+    private fun CandidateApplicability.asAnalysisApplicability(): CaCallApplicability = when (this) {
+        CandidateApplicability.HIDDEN -> CaCallApplicability.HIDDEN
+        CandidateApplicability.INAPPLICABLE_WRONG_RECEIVER -> CaCallApplicability.INAPPLICABLE_WRONG_RECEIVER
+        CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR -> CaCallApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR
+        CandidateApplicability.INAPPLICABLE -> CaCallApplicability.INAPPLICABLE
+        CandidateApplicability.VISIBILITY_ERROR -> CaCallApplicability.VISIBILITY_ERROR
+        CandidateApplicability.UNSAFE_CALL -> CaCallApplicability.UNSAFE_CALL
+        CandidateApplicability.UNSTABLE_SMARTCAST -> CaCallApplicability.UNSTABLE_SMARTCAST
+        CandidateApplicability.CONVENTION_ERROR -> CaCallApplicability.CONVENTION_ERROR
+        CandidateApplicability.RESOLVED_LOW_PRIORITY -> CaCallApplicability.RESOLVED_LOW_PRIORITY
+        CandidateApplicability.RESOLVED_NEED_PRESERVE_COMPATIBILITY -> CaCallApplicability.RESOLVED_NEED_PRESERVE_COMPATIBILITY
+        CandidateApplicability.RESOLVED_WITH_ERROR -> CaCallApplicability.RESOLVED_WITH_ERROR
+        CandidateApplicability.RESOLVED -> CaCallApplicability.RESOLVED
     }
 }

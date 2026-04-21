@@ -1,0 +1,84 @@
+{
+    "document": {
+        "VisualVersion": "12",
+        "type": "FA"
+    },
+    "visualModel": {
+        "dataType": "VisualModel",
+        "value": {
+            "property": {
+                "dataType": "Map",
+                "value": {
+                    "flex-direction": "column",
+                    "width": "100%",
+                    "height": "100%",
+                    "overflow": "scroll"
+                }
+            },
+            "dynamicProperty": {
+                "dataType": "Map",
+                "value": {}
+            },
+            "children": [
+                {
+                    "dataType": "VisualModel",
+                    "value": {
+                        "property": {
+                            "dataType": "Map",
+                            "value": {
+                                "width": "100%",
+                                "height": "100%",
+                                "justify-content": "center",
+                                "align-items": "center"
+                            }
+                        },
+                        "dynamicProperty": {
+                            "dataType": "Map",
+                            "value": {}
+                        },
+                        "children": [
+                            {
+                                "dataType": "VisualModel",
+                                "value": {
+                                    "property": {
+                                        "dataType": "Map",
+                                        "value": {
+                                            "height": "40%",
+                                            "width": "100%",
+                                            "text-align": "center",
+                                            "font-size": "60px",
+                                            "font-weight": "bold",
+                                            "margin": "10px",
+                                            "content": "{{title}}"
+                                        }
+                                    },
+                                    "dynamicProperty": {
+                                        "dataType": "Map",
+                                        "value": {}
+                                    },
+                                    "children": [],
+                                    "id": "text1",
+                                    "type": "text"
+                                }
+                            }
+                        ],
+                        "id": "div1",
+                        "type": "div"
+                    }
+                }
+            ],
+            "id": "wrapper",
+            "type": "div"
+        }
+    },
+    "formData": {
+        "data": {
+            "dataType": "Map",
+            "value": {}
+        },
+        "actions": {
+            "dataType": "Map",
+            "value": {}
+        }
+    }
+}

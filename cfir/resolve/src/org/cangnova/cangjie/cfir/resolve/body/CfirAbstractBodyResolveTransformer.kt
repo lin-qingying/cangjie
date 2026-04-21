@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.inference.CfirCallCompleter
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
@@ -57,6 +58,8 @@ abstract class CfirAbstractBodyResolveTransformer(
         override val scopeSession: ScopeSession,
         val transformer: CfirAbstractBodyResolveTransformerDispatcher,
         val context: BodyResolveContext,
+        expandTypeAliases: Boolean,
+
     ) : BodyResolveComponents() {
         override val containingDeclarations: List<CfirDeclaration>
             get() = context.containers.toList()
@@ -85,7 +88,7 @@ abstract class CfirAbstractBodyResolveTransformer(
         override val container: CfirDeclaration
             get() = context.containerIfAny ?: context.file
 
-        val resolutionStageRunner: ResolutionStageRunner = ResolutionStageRunner()
+        override val resolutionStageRunner: ResolutionStageRunner = ResolutionStageRunner()
 
 
 
@@ -110,9 +113,7 @@ abstract class CfirAbstractBodyResolveTransformer(
 
 
 
-        val towerResolver: CfirTowerResolver by lazy(LazyThreadSafetyMode.NONE) {
-            CfirTowerResolver(this, resolutionStageRunner)
-        }
+
 
         override val callResolver: CfirCallResolver by lazy(LazyThreadSafetyMode.NONE) {
             CfirCallResolver(this)

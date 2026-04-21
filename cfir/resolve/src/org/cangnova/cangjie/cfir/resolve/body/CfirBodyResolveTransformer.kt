@@ -27,7 +27,13 @@ open class CfirBodyResolveTransformer(
     )
 
     override val components: BodyResolveTransformerComponents =
-        BodyResolveTransformerComponents(session, scopeSession, this, context)
+        BodyResolveTransformerComponents(
+            session = session,
+            scopeSession = scopeSession,
+            transformer = this,
+            context = context,
+            expandTypeAliases = true,
+        )
 
     final override val expressionsTransformer = CfirExpressionsResolveTransformer(this)
     final override val declarationsTransformer = CfirDeclarationsResolveTransformer(this)

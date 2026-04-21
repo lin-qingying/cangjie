@@ -1,0 +1,1155 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>状态管理 - API 参考</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../assets/style.css">
+        <link rel="stylesheet" href="../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item "><a href="../../cover0.html"><strong aria-hidden="true">1.</strong> API参考（封面）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.</strong> 仓颉API</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">2.1.</strong> Ability框架</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability.html"><strong aria-hidden="true">2.1.1.</strong> Ability</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityStage.html"><strong aria-hidden="true">2.1.2.</strong> AbilityStage</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-context.html"><strong aria-hidden="true">2.1.3.</strong> AbilityContext</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-want.html"><strong aria-hidden="true">2.1.4.</strong> Want</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-wantConstant.html"><strong aria-hidden="true">2.1.5.</strong> wantConstant</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-errorManager.html"><strong aria-hidden="true">2.1.6.</strong> errorManager</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry.html"><strong aria-hidden="true">2.1.7.</strong> AbilityDelegatorRegistry</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-abilityDelegator.html"><strong aria-hidden="true">2.1.8.</strong> AbilityDelegator</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-shellCmdResult.html"><strong aria-hidden="true">2.1.9.</strong> shellCmdResult</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/support-definitions.html"><strong aria-hidden="true">2.2.1.</strong> 系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-common-event-manager.html"><strong aria-hidden="true">2.2.2.</strong> ohos.common_event_manager（公共事件模块）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-emitter.html"><strong aria-hidden="true">2.2.3.</strong> ohos.emitter（事件处理调度）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-manager.html"><strong aria-hidden="true">2.2.4.</strong> ohos.notification_manager（通知管理模块）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.5.</strong> application</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-application-eventHub.html"><strong aria-hidden="true">2.2.5.1.</strong> EventHub</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.6.</strong> commonEvent</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventData.html"><strong aria-hidden="true">2.2.6.1.</strong> CommonEventData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventPublishData.html"><strong aria-hidden="true">2.2.6.2.</strong> CommonEventPublishData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscriber.html"><strong aria-hidden="true">2.2.6.3.</strong> CommonEventSubscriber</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscribeInfo.html"><strong aria-hidden="true">2.2.6.4.</strong> CommonEventSubscribeInfo</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.7.</strong> notification</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationRequest.html"><strong aria-hidden="true">2.2.7.1.</strong> NotificationRequest</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationContent.html"><strong aria-hidden="true">2.2.7.2.</strong> NotificationContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.8.</strong> 公共事件定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ability.html"><strong aria-hidden="true">2.2.8.1.</strong> 元能力子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-account.html"><strong aria-hidden="true">2.2.8.2.</strong> 账号子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ans.html"><strong aria-hidden="true">2.2.8.3.</strong> 通知服务公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-bundleManager.html"><strong aria-hidden="true">2.2.8.4.</strong> 包管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-filemanagement.html"><strong aria-hidden="true">2.2.8.5.</strong> 文件管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-locale.html"><strong aria-hidden="true">2.2.8.6.</strong> 语言子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-mms.html"><strong aria-hidden="true">2.2.8.7.</strong> 短信应用公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-netmanager.html"><strong aria-hidden="true">2.2.8.8.</strong> 网络管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-nfc.html"><strong aria-hidden="true">2.2.8.9.</strong> NFC子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-powermgr.html"><strong aria-hidden="true">2.2.8.10.</strong> 电源管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-resourceschedule.html"><strong aria-hidden="true">2.2.8.11.</strong> 资源调度子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-screenlock.html"><strong aria-hidden="true">2.2.8.12.</strong> 主题框架子系统-锁屏管理公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-telephony.html"><strong aria-hidden="true">2.2.8.13.</strong> 电话服务子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-time.html"><strong aria-hidden="true">2.2.8.14.</strong> 时间时区子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-usb.html"><strong aria-hidden="true">2.2.8.15.</strong> USB子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-wifi.html"><strong aria-hidden="true">2.2.8.16.</strong> Wifi子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-window.html"><strong aria-hidden="true">2.2.8.17.</strong> 窗口管理子系统公共事件定义</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager.html"><strong aria-hidden="true">2.3.1.</strong> ohos.bundle_manager（bundleManager管理）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.2.</strong> bundle_manager</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-abilityInfo.html"><strong aria-hidden="true">2.3.2.1.</strong> AbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-applicationInfo.html"><strong aria-hidden="true">2.3.2.2.</strong> ApplicationInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-bundleInfo.html"><strong aria-hidden="true">2.3.2.3.</strong> BundleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-extensionAbilityInfo.html"><strong aria-hidden="true">2.3.2.4.</strong> ExtensionAbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-hapModuleInfo.html"><strong aria-hidden="true">2.3.2.5.</strong> HapModuleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-metadata.html"><strong aria-hidden="true">2.3.2.6.</strong> Metadata</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-animator.html"><strong aria-hidden="true">2.4.1.</strong> ohos.animator（动画）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-font.html"><strong aria-hidden="true">2.4.2.</strong> ohos.font（自定义字体）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-measure.html"><strong aria-hidden="true">2.4.3.</strong> ohos.measure（文本计算）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-prompt.html"><strong aria-hidden="true">2.4.4.</strong> ohos.prompt_action（弹窗）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-router.html"><strong aria-hidden="true">2.4.5.</strong> ohos.router（页面路由）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-display.html"><strong aria-hidden="true">2.5.1.</strong> ohos.display（屏幕属性）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-colorManager.html"><strong aria-hidden="true">2.5.2.</strong> ohos.colorManager（色彩管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-window.html"><strong aria-hidden="true">2.5.3.</strong> ohos.window（窗口）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-image.html"><strong aria-hidden="true">2.6.1.</strong> ohos.multimedia.image（图片处理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-i18n.html"><strong aria-hidden="true">2.7.1.</strong> ohos.i18n（国际化-I18n）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resource-manager.html"><strong aria-hidden="true">2.7.2.</strong> ohos.resource_manager（资源管理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-backgroundTaskManager.html"><strong aria-hidden="true">2.8.1.</strong> ohos.resourceschedule.backgroundTaskManager（后台任务管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-workScheduler.html"><strong aria-hidden="true">2.8.2.</strong> ohos.resourceschedule.workScheduler（延迟任务调度）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-access-ctrl.html"><strong aria-hidden="true">2.9.1.</strong> ohos.abilityAccessCtrl（程序访问控制管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-crypto.html"><strong aria-hidden="true">2.9.2.</strong> ohos.security.crypto（加解密算法库框架）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-huks.html"><strong aria-hidden="true">2.9.3.</strong> ohos.security.huks（通用密钥库系统）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-user-auth.html"><strong aria-hidden="true">2.9.4.</strong> ohos.userIAM.userAuth（用户认证）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-asset.html"><strong aria-hidden="true">2.9.5.</strong> ohos.asset_store（关键资产存储服务）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.6.</strong> 访问控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/security/AccessToken/cj-permissions-for-all.html"><strong aria-hidden="true">2.9.6.1.</strong> 应用权限列表</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-distributedKVStore.html"><strong aria-hidden="true">2.10.1.</strong> ohos.data.distributed（分布式键值数据库）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-preferences.html"><strong aria-hidden="true">2.10.2.</strong> ohos.data.preferences（用户首选项）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-relationalStore.html"><strong aria-hidden="true">2.10.3.</strong> ohos.data.relationalStore（关系型数据库）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fileuri.html"><strong aria-hidden="true">2.11.1.</strong> ohos.file.fileuri（文件URI）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fs.html"><strong aria-hidden="true">2.11.2.</strong> ohos.file.fs（文件管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-picker.html"><strong aria-hidden="true">2.11.3.</strong> ohos.file.picker（选择器）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-telephony-data.html"><strong aria-hidden="true">2.12.1.</strong> ohos.telephony.call（拨打电话）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-vibrator.html"><strong aria-hidden="true">2.13.1.</strong> ohos.vibrator（振动）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-connection.html"><strong aria-hidden="true">2.14.1.</strong> ohos.net.connection（网络连接管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-http.html"><strong aria-hidden="true">2.14.2.</strong> ohos.net.http（数据请求）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-request.html"><strong aria-hidden="true">2.14.3.</strong> ohos.request（上传下载）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hiappevent.html"><strong aria-hidden="true">2.15.1.</strong> ohos.hiAppEvent（应用事件打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracechain.html"><strong aria-hidden="true">2.15.2.</strong> ohos.hiTraceChain（分布式跟踪）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracemeter.html"><strong aria-hidden="true">2.15.3.</strong> ohos.hiTraceMeter（性能打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hilog.html"><strong aria-hidden="true">2.15.4.</strong> ohos.hilog (HiLog日志打印)</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-pasteboard.html"><strong aria-hidden="true">2.15.5.</strong> ohos.pasteboard（剪切板）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-date-time.html"><strong aria-hidden="true">2.15.6.</strong> ohos.systemDateTime（系统时间、时区）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-webview.html"><strong aria-hidden="true">2.15.7.</strong> ohos.web.webview（Webview）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-device-info.html"><strong aria-hidden="true">2.16.1.</strong> ohos.deviceInfo（设备信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.17.</strong> 系统参数</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-parameterEnhance-sys.html"><strong aria-hidden="true">2.17.1.</strong> ohos.systemParameterEnhance（系统参数）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.18.</strong> 其他</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-base.html"><strong aria-hidden="true">2.18.1.</strong> ohos.base（公共回调信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.19.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-uitest.html"><strong aria-hidden="true">2.19.1.</strong> ohos.ui_test（UI测试）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.</strong> 错误码参考</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-universal.html"><strong aria-hidden="true">2.20.1.</strong> 通用错误码</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.2.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-bundle.html"><strong aria-hidden="true">2.20.2.1.</strong> 包管理子系统通用错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.3.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-CommonEventService.html"><strong aria-hidden="true">2.20.3.1.</strong> 事件错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-notification.html"><strong aria-hidden="true">2.20.3.2.</strong> 通知错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-animator.html"><strong aria-hidden="true">2.20.4.1.</strong> 动画错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-colorspace-manager.html"><strong aria-hidden="true">2.20.5.1.</strong> 色彩管理错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-display.html"><strong aria-hidden="true">2.20.5.2.</strong> 屏幕错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-window.html"><strong aria-hidden="true">2.20.5.3.</strong> 窗口错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-image.html"><strong aria-hidden="true">2.20.6.1.</strong> Image错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-i18n.html"><strong aria-hidden="true">2.20.7.1.</strong> I18n错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-resource-manager.html"><strong aria-hidden="true">2.20.7.2.</strong> 资源管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-backgroundTaskMgr.html"><strong aria-hidden="true">2.20.8.1.</strong> backgroundTaskManager错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-workScheduler.html"><strong aria-hidden="true">2.20.8.2.</strong> workScheduler错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-access-token.html"><strong aria-hidden="true">2.20.9.1.</strong> 访问控制错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-huks.html"><strong aria-hidden="true">2.20.9.2.</strong> huks错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-crypto.html"><strong aria-hidden="true">2.20.9.3.</strong> crypto错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-asset.html"><strong aria-hidden="true">2.20.9.4.</strong> 关键资产存储服务错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-data-rdb.html"><strong aria-hidden="true">2.20.10.1.</strong> 关系型数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-distributedKVStore.html"><strong aria-hidden="true">2.20.10.2.</strong> 分布式键值数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-preferences.html"><strong aria-hidden="true">2.20.10.3.</strong> 用户首选项错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-filemanagement.html"><strong aria-hidden="true">2.20.11.1.</strong> 文件管理子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-telephony.html"><strong aria-hidden="true">2.20.12.1.</strong> 电话子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-vibrator.html"><strong aria-hidden="true">2.20.13.1.</strong> vibrator错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-request.html"><strong aria-hidden="true">2.20.14.1.</strong> 上传下载错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-http.html"><strong aria-hidden="true">2.20.14.2.</strong> HTTP错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-connection.html"><strong aria-hidden="true">2.20.14.3.</strong> 网络连接管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-hiappevent.html"><strong aria-hidden="true">2.20.15.1.</strong> 应用事件打点错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-pasteboard.html"><strong aria-hidden="true">2.20.15.2.</strong> 剪贴板错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-errorManager.html"><strong aria-hidden="true">2.20.15.3.</strong> 错误观察器错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-time.html"><strong aria-hidden="true">2.20.15.4.</strong> 时间时区错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-webview.html"><strong aria-hidden="true">2.20.15.5.</strong> Web错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-system-parameter.html"><strong aria-hidden="true">2.20.16.1.</strong> 系统参数错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.17.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-uitest.html"><strong aria-hidden="true">2.20.17.1.</strong> uitest错误码</a></li></ol></li></ol></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">3.</strong> 仓颉组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.</strong> 组件通用信息</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.1.</strong> 通用事件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-click.html"><strong aria-hidden="true">3.1.1.1.</strong> 点击事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-touch.html"><strong aria-hidden="true">3.1.1.2.</strong> 触摸事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-appear.html"><strong aria-hidden="true">3.1.1.3.</strong> 挂载卸载事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-drag.html"><strong aria-hidden="true">3.1.1.4.</strong> 拖拽事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-key.html"><strong aria-hidden="true">3.1.1.5.</strong> 按键事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-focus.html"><strong aria-hidden="true">3.1.1.6.</strong> 焦点事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-mouse.html"><strong aria-hidden="true">3.1.1.7.</strong> 鼠标事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-component-area-change-event.html"><strong aria-hidden="true">3.1.1.8.</strong> 组件区域变化事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-keyboardshortcut.html"><strong aria-hidden="true">3.1.1.9.</strong> 组件快捷键事件</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.</strong> 通用属性</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-size.html"><strong aria-hidden="true">3.1.2.1.</strong> 尺寸设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-location.html"><strong aria-hidden="true">3.1.2.2.</strong> 位置设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-layout-constraints.html"><strong aria-hidden="true">3.1.2.3.</strong> 布局约束</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-flex-layout.html"><strong aria-hidden="true">3.1.2.4.</strong> Flex布局</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-border.html"><strong aria-hidden="true">3.1.2.5.</strong> 边框设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-background.html"><strong aria-hidden="true">3.1.2.6.</strong> 背景设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-opacity.html"><strong aria-hidden="true">3.1.2.7.</strong> 透明度设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-visibility.html"><strong aria-hidden="true">3.1.2.8.</strong> 显隐控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-enable.html"><strong aria-hidden="true">3.1.2.9.</strong> 禁用控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-overlay.html"><strong aria-hidden="true">3.1.2.10.</strong> 浮层</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-z-order.html"><strong aria-hidden="true">3.1.2.11.</strong> Z序控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transform.html"><strong aria-hidden="true">3.1.2.12.</strong> 图形变换</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-image-effect.html"><strong aria-hidden="true">3.1.2.13.</strong> 图像效果</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-shap-clip.html"><strong aria-hidden="true">3.1.2.14.</strong> 形状裁剪</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-gradient-color.html"><strong aria-hidden="true">3.1.2.15.</strong> 颜色渐变</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-popup.html"><strong aria-hidden="true">3.1.2.16.</strong> Popup控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-menu.html"><strong aria-hidden="true">3.1.2.17.</strong> 菜单控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-focus.html"><strong aria-hidden="true">3.1.2.18.</strong> 焦点控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-component-id.html"><strong aria-hidden="true">3.1.2.19.</strong> 组件标识</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-color.html"><strong aria-hidden="true">3.1.2.20.</strong> 前景色设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-blur-style.html"><strong aria-hidden="true">3.1.2.21.</strong> 组件内容模糊</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-touch-target.html"><strong aria-hidden="true">3.1.2.22.</strong> 触摸热区设置</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.23.</strong> 模态转场设置</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-bindcontentcover.html"><strong aria-hidden="true">3.1.2.23.1.</strong> 全屏模态转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sheet-transition.html"><strong aria-hidden="true">3.1.2.23.2.</strong> 半模态转场</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-text-style.html"><strong aria-hidden="true">3.1.2.24.</strong> 文本通用</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-expand-safe-area.html"><strong aria-hidden="true">3.1.2.25.</strong> 安全区域</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-renderfit.html"><strong aria-hidden="true">3.1.2.26.</strong> 组件内容填充方式</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.2.</strong> 基础组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-alphabet-indexer.html"><strong aria-hidden="true">3.2.1.</strong> AlphabetIndexer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-blank.html"><strong aria-hidden="true">3.2.2.</strong> Blank</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-button.html"><strong aria-hidden="true">3.2.3.</strong> Button</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkbox.html"><strong aria-hidden="true">3.2.4.</strong> Checkbox</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkboxgroup.html"><strong aria-hidden="true">3.2.5.</strong> CheckboxGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-datapanel.html"><strong aria-hidden="true">3.2.6.</strong> DataPanel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-datepicker.html"><strong aria-hidden="true">3.2.7.</strong> Datepicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-divider.html"><strong aria-hidden="true">3.2.8.</strong> Divider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-gauge.html"><strong aria-hidden="true">3.2.9.</strong> Gauge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-image.html"><strong aria-hidden="true">3.2.10.</strong> Image</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-imageSpan.html"><strong aria-hidden="true">3.2.11.</strong> ImageSpan</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-loadingprogress.html"><strong aria-hidden="true">3.2.12.</strong> LoadingProgress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menu.html"><strong aria-hidden="true">3.2.13.</strong> Menu</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitem.html"><strong aria-hidden="true">3.2.14.</strong> MenuItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitemgroup.html"><strong aria-hidden="true">3.2.15.</strong> MenuItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-progress.html"><strong aria-hidden="true">3.2.16.</strong> Progress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-qrcode.html"><strong aria-hidden="true">3.2.17.</strong> QRCode</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-radio.html"><strong aria-hidden="true">3.2.18.</strong> Radio</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rating.html"><strong aria-hidden="true">3.2.19.</strong> Rating</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richeditor.html"><strong aria-hidden="true">3.2.20.</strong> RichEditor</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richtext.html"><strong aria-hidden="true">3.2.21.</strong> RichText</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-scrollbar.html"><strong aria-hidden="true">3.2.22.</strong> ScrollBar</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-search.html"><strong aria-hidden="true">3.2.23.</strong> Search</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-select.html"><strong aria-hidden="true">3.2.24.</strong> Select</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-slider.html"><strong aria-hidden="true">3.2.25.</strong> Slider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-span.html"><strong aria-hidden="true">3.2.26.</strong> Span</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepper.html"><strong aria-hidden="true">3.2.27.</strong> Stepper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepperitem.html"><strong aria-hidden="true">3.2.28.</strong> Stepperitem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-text.html"><strong aria-hidden="true">3.2.29.</strong> Text</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textarea.html"><strong aria-hidden="true">3.2.30.</strong> TextArea</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textclock.html"><strong aria-hidden="true">3.2.31.</strong> TextClock</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textinput.html"><strong aria-hidden="true">3.2.32.</strong> TextInput</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textpicker.html"><strong aria-hidden="true">3.2.33.</strong> TextPicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-texttimer.html"><strong aria-hidden="true">3.2.34.</strong> TextTimer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-toggle.html"><strong aria-hidden="true">3.2.35.</strong> Toggle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-web.html"><strong aria-hidden="true">3.2.36.</strong> Web</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.3.</strong> 容器组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-badge.html"><strong aria-hidden="true">3.3.1.</strong> Badge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-column.html"><strong aria-hidden="true">3.3.2.</strong> Column</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-columnsplit.html"><strong aria-hidden="true">3.3.3.</strong> ColumnSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-flex.html"><strong aria-hidden="true">3.3.4.</strong> Flex</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-col.html"><strong aria-hidden="true">3.3.5.</strong> GridCol</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-row.html"><strong aria-hidden="true">3.3.6.</strong> GridRow</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid.html"><strong aria-hidden="true">3.3.7.</strong> Grid</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-item.html"><strong aria-hidden="true">3.3.8.</strong> GridItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list.html"><strong aria-hidden="true">3.3.9.</strong> List</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-listitem.html"><strong aria-hidden="true">3.3.10.</strong> ListItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list-group.html"><strong aria-hidden="true">3.3.11.</strong> ListItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-panel.html"><strong aria-hidden="true">3.3.12.</strong> Panel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-refresh.html"><strong aria-hidden="true">3.3.13.</strong> Refresh</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-relativecontainer.html"><strong aria-hidden="true">3.3.14.</strong> RelativeContainer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-row.html"><strong aria-hidden="true">3.3.15.</strong> Row</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rowsplit.html"><strong aria-hidden="true">3.3.16.</strong> RowSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-scroll.html"><strong aria-hidden="true">3.3.17.</strong> Scroll</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-stack.html"><strong aria-hidden="true">3.3.18.</strong> Stack</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-swiper.html"><strong aria-hidden="true">3.3.19.</strong> Swiper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabs.html"><strong aria-hidden="true">3.3.20.</strong> Tabs</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabcontent.html"><strong aria-hidden="true">3.3.21.</strong> TabContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.4.</strong> 绘制组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-circle.html"><strong aria-hidden="true">3.4.1.</strong> Circle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-line.html"><strong aria-hidden="true">3.4.2.</strong> Line</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-rect.html"><strong aria-hidden="true">3.4.3.</strong> Rect</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-shape.html"><strong aria-hidden="true">3.4.4.</strong> Shape</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.5.</strong> 画布组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas.html"><strong aria-hidden="true">3.5.1.</strong> Canvas</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-gradient.html"><strong aria-hidden="true">3.5.2.</strong> CanvasGradient</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-rendering-context-2d.html"><strong aria-hidden="true">3.5.3.</strong> CanvasRenderingContext2D</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-imagebitmap.html"><strong aria-hidden="true">3.5.4.</strong> ImageBitmap</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.6.</strong> 渲染控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-ifelse.html"><strong aria-hidden="true">3.6.1.</strong> if/else</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-foreach.html"><strong aria-hidden="true">3.6.2.</strong> ForEach</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-lazyforeach.html"><strong aria-hidden="true">3.6.3.</strong> LazyForEach</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.</strong> 动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-animation.html"><strong aria-hidden="true">3.7.1.</strong> 属性动画</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-methods-animateTo.html"><strong aria-hidden="true">3.7.2.</strong> 显式动画</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.3.</strong> 转场动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-page-transition.html"><strong aria-hidden="true">3.7.3.1.</strong> 页面间转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transition.html"><strong aria-hidden="true">3.7.3.2.</strong> 组件内转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sharedTransition.html"><strong aria-hidden="true">3.7.3.3.</strong> 共享元素转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-geometryTransition.html"><strong aria-hidden="true">3.7.3.4.</strong> 组件内隐式共享元素转场</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.8.</strong> 全局UI方法</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.8.1.</strong> 弹窗</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-alert-dialog-box.html"><strong aria-hidden="true">3.8.1.1.</strong> 警告弹窗</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-customdialog.html"><strong aria-hidden="true">3.8.1.2.</strong> 自定义弹窗</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-menu.html"><strong aria-hidden="true">3.8.2.</strong> 菜单</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.9.</strong> 自定义组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-custom-component-lifecycle.html"><strong aria-hidden="true">3.9.1.</strong> 自定义组件的生命周期</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.10.</strong> 类型定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-enums.html"><strong aria-hidden="true">3.10.1.</strong> 基础类型定义</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-pixel-units.html"><strong aria-hidden="true">3.11.</strong> 像素单位</a></li><li class="chapter-item expanded "><a href="../../source_zh_cn/arkui-cj/cj-state-management-manual.html" class="active"><strong aria-hidden="true">3.12.</strong> 状态管理</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-config.html"><strong aria-hidden="true">3.13.</strong> 应用配置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-thread.html"><strong aria-hidden="true">3.14.</strong> 线程控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid.html"><strong aria-hidden="true">3.15.</strong> 混合开发V1</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid-v2.html"><strong aria-hidden="true">3.16.</strong> 混合开发V2</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.17.</strong> 管理应用拥有的状态</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-app-storage.html"><strong aria-hidden="true">3.17.1.</strong> AppStorage（应用全局的UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-local-storage.html"><strong aria-hidden="true">3.17.2.</strong> LocalStorage（页面级UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-persistent-storage.html"><strong aria-hidden="true">3.17.3.</strong> PersistentStorage（持久化存储UI状态）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-environment.html"><strong aria-hidden="true">3.17.4.</strong> Environment（设备环境查询）</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_ui_framework.html"><strong aria-hidden="true">3.18.</strong> 框架接口</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkinterop/cj-ark-interop-apis.html"><strong aria-hidden="true">4.</strong> 仓颉与ArkTS互操作库</a></li><li class="chapter-item "><a href="../../source_zh_cn/cj-libs-api.html"><strong aria-hidden="true">5.</strong> 仓颉编程语言库API</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">API 参考</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="状态管理"><a class="header" href="#状态管理">状态管理</a></h1>
+<h2 id="entry"><a class="header" href="#entry">@Entry</a></h2>
+<p><strong>@Entry</strong> 用于指明当前页面的入口组件，仅能装饰在被 <strong>@Component</strong> 修饰的子组件上。一个文件最多只能有一个 <strong>@Entry</strong></p>
+<p>示例</p>
+<pre><code class="language-cangjie">@Entry
+@Component
+class ParentComponent {
+    func build() {
+        Column {
+            Text(&quot;&quot;)
+        }
+    }
+}
+</code></pre>
+<h2 id="hybridcomponententry"><a class="header" href="#hybridcomponententry">@HybridComponentEntry</a></h2>
+<p><strong>@HybridComponentEntry</strong> 用于ArkTS与仓颉混合开发场景下指明仓颉组件，仅能修饰被 <strong>@Component</strong> 修饰的子组件。</p>
+<p>示例</p>
+<pre><code class="language-cangjie">@HybridComponentEntry
+@Component
+class ParentComponent {
+    func build() {
+        Column {
+            Text(&quot;&quot;)
+        }
+    }
+}
+</code></pre>
+<h2 id="component"><a class="header" href="#component">@Component</a></h2>
+<p><strong>@Component</strong> 用于修饰可重用的 UI 单元，该单元必须为 Class 类型。被修饰的class能够成为一个单独的组件，也被称为自定义组件。在build函数中描述UI结构。</p>
+<ul>
+<li>自定义组件中的成员变量必须声明类型</li>
+<li>自定义组件必须实现build函数</li>
+<li>自定义组件禁止自定义构造函数</li>
+<li>自定义组件禁止继承</li>
+<li>自定义组件禁止使用泛型</li>
+<li>自定义组件中禁止声明静态变量</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">@Component
+class ParentComponent {
+    func build() {
+        Column {
+            Text(&quot;&quot;)
+        }
+    }
+}
+</code></pre>
+<p>自定义组件可以在其他组件中使用</p>
+<pre><code class="language-cangjie">@Component
+class SubComponent {
+    func build() {
+        Column {
+            Text(&quot;&quot;)
+        }
+    }
+}
+
+@Component
+class ParentComponent {
+    func build() {
+        Column {
+            Text(&quot;&quot;)
+            SubComponent()
+        }
+    }
+}
+</code></pre>
+<p>如果类中有成员变量，可以通过命名参数传值。其中，对于没有初始值的成员变量，必须在创建实例的时候传值（ <strong>@Consume</strong> 装饰的变量除外），有初始值的则可以选择性地传值；对于let修饰的且带有初始值的成员变量，则不可在创建实例的时候传值。</p>
+<pre><code class="language-cangjie">@Component
+class SubComponent {
+    @Link var cnt: Int64
+    let innerCnt = 0
+    var count: Int64 = 0
+    func build() {
+        Column {
+            Text(&quot;&quot;)
+        }
+    }
+}
+
+@Component
+class ParentComponent {
+    @State var cnt: Int64 = 0
+    func build() {
+        Column {
+            Text(&quot;&quot;)
+            SubComponent() // Error cnt没有初始化
+            SubComponent(cnt: cnt) // OK count有初始值，可以不传值
+            SubComponent(cnt: cnt, innerCnt: cnt) // Error innerCnt不可通过构造传值
+        }
+    }
+}
+</code></pre>
+<h2 id="state"><a class="header" href="#state">@State</a></h2>
+<p><strong>@State</strong> 修饰的变量是组件内部的状态数据，当这些状态数据被修改时，将会调用所在组件的render刷新。</p>
+<p>被 <strong>@State</strong> 修饰的成员变量必须指明类型和初始值。由于状态是需要被更改的数据，所以对于被 <strong>@State</strong> 修饰的变量必须通过 var 来声明，不能使用 let。</p>
+<ul>
+<li><strong>支持多种类型</strong>：支持基础数据类型：char、UInt8/16/32/64、Int8/16/32/64、Float16/32/64、Bool、String、Enum、Struct等；支持类类型和数组类型，但是如果要感知内部的变化，对于类类型，在定义的时候需要被@Observed修饰（详见@Observed和@Publish一节）；对于数组类型则需要使用<code>ObservedArray&lt;T&gt;</code>和<code>ObservedArrayList&lt;T&gt;</code>，详见ObservedArray和ObservedArrayList一节。</li>
+<li><strong>私有</strong>：仅在组件内访问；不可被 public protected 等修饰符修饰；</li>
+<li><strong>支持多个实例</strong>：一个组件中可以定义多个标有 <strong>@State</strong>的属性；</li>
+<li><strong>需要本地初始化</strong>：必须为所有 <strong>@State</strong> 变量分配初始值。</li>
+<li><strong>创建自定义组件时支持通过状态变量名设置初始值</strong>：在创建组件实例时，可以通过变量名显式指定 <strong>@State</strong>状态属性的初始值。</li>
+</ul>
+<p>示例</p>
+<pre><code class="language-cangjie">@Entry
+@Component
+class ParentComponent {
+    @State var count: ObservedArrayList&lt;T&gt; = 0
+    func build() {
+        Column {
+            Button(&quot;This is a case of @State ${count}&quot;)
+            .onClick({evt =&gt;
+                count[0] = 9
+            })
+        }
+    }
+}
+</code></pre>
+<h2 id="link"><a class="header" href="#link">@Link</a></h2>
+<p><strong>@Link</strong> 与 <strong>@State</strong> 有相同的语义，但初始化方式不同。 <strong>@Link</strong> 装饰的变量必须使用其父组件提供的变量进行初始化，被 <strong>@Link</strong> 修饰的成员变量必须指明类型，且只能使用 <strong>var</strong> 来声明。允许组件内部修改 <strong>@Link</strong> 变量，且更改会通知给父组件，即 <strong>@Link</strong> 属于双向数据绑定。 <strong>@Link</strong> 修饰当前组件所拥有的状态，仅可在子组件中定义。</p>
+<ul>
+<li><strong>支持多种类型</strong>： <strong>@Link</strong> 变量的值与 <strong>@State</strong> 变量的类型相同。</li>
+<li><strong>私有</strong>：仅在组件内访问；不可被 public protected 等修饰符修饰；</li>
+<li><strong>支持多个实例</strong>：一个组件中可以定义多个标有 <strong>@Link</strong> 的属性；</li>
+<li><strong>双向通信</strong>：子组件对 <strong>@Link</strong> 变量的更改将同步修改父组件的 <strong>@State</strong> 变量；</li>
+</ul>
+<p>示例</p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+
+@Component
+class SubSubComponent {
+    @Link var count: Int64
+    var commonCount: Int64 = 0
+    func build() {
+        Column {
+            Button(&quot;This is a case of @Link ${count} _____ SubSubComponent ${commonCount}&quot;).onClick({evt =&gt;
+                count = count + 1
+            })
+        }
+    }
+}
+
+@Component
+class SubComponent {
+    @Link var count: Int64
+    func build() {
+        Column {
+            Button(&quot;This is a case of @Link ${count} _____ SubComponent&quot;)
+            .onClick({evt =&gt;
+                count = count + 1
+            })
+            SubSubComponent(count: count, commonCount: count)
+        }
+    }
+}
+
+@Entry
+@Component
+class ParentComponent {
+    @State var count: Int64 = 0
+    func build() {
+        Column {
+            Button(&quot;This is a case of @Link ${count} _____ ParentComponent&quot;)
+            .onClick({evt =&gt;
+                count = count + 1
+            })
+            SubComponent(count: count)
+        }
+    }
+}
+</code></pre>
+<h2 id="prop"><a class="header" href="#prop">@Prop</a></h2>
+<p><strong>@Prop</strong> 与 <strong>@State</strong> 有相同的语义，但初始化方式不同。 <strong>@Prop</strong> 装饰的变量必须使用其父组件提供的变量进行初始化，被 <strong>@Prop</strong> 修饰的成员变量必须指明类型，且只能使用 <strong>var</strong> 来声明。允许组件内部修改 <strong>@Prop</strong> 变量，但更改不会通知给父组件，即 <strong>@Prop</strong> 属于单向数据绑定。 <strong>@Prop</strong> 修饰当前组件所拥有的状态，仅可在子组件中定义。</p>
+<p><strong>@Prop</strong> 状态数据具有以下特征：</p>
+<ul>
+<li><strong>支持类型</strong>： <strong>@Prop</strong> 变量的值与 <strong>@State</strong> 变量的类型相同。</li>
+<li><strong>私有</strong>：仅在组件内访问；不可被 public protected 等修饰符修饰；</li>
+<li><strong>支持多个实例</strong>：一个组件中可以定义多个标有 <strong>@Prop</strong> 的属性；</li>
+<li><strong>创建自定义组件时将值传递给@Prop变量进行初始化</strong>：在创建组件的新实例时，必须初始化所有 <strong>@Prop</strong> 变量，不支持在组件内部进行初始化。</li>
+</ul>
+<p>示例</p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+
+@Component
+class SubComponent {
+    @Prop var count: Int64
+    func build() {
+        Column {
+            Button(&quot;This is a case of @Prop ${count} _____ SubComponent&quot;)
+            .onClick({evt =&gt;
+                count = count + 1
+            })
+        }
+    }
+}
+
+@Entry
+@Component
+class ParentComponent {
+    @State var count: Int64 = 0
+    func build() {
+        Column {
+            Button(&quot;This is a case of @Prop ${count} _____ ParentComponent&quot;)
+            .onClick({evt =&gt;
+                count = count + 1
+            })
+            SubComponent(count: count)
+        }
+    }
+}
+</code></pre>
+<h2 id="observed-and-publish"><a class="header" href="#observed-and-publish">@Observed and @Publish</a></h2>
+<p>针对类类型的状态变量，引入 <strong>@Observed</strong> 和 <strong>@Publish</strong>。</p>
+<ul>
+<li><strong>@Observed</strong> 修饰类，被修饰的类表示可以被观察到。需要和 <strong>@Publish</strong> 一起使用。没有被 <strong>@Publish</strong> 修饰的属性，变化了也不会触发UI更新。 <strong>@Observed</strong> 的类中不能定义init函数, 被修饰的类不能继承其他类或实现接口。</li>
+<li><strong>@Publish</strong> 修饰属性，被修饰的属性能够被观察到，一旦属性发生变化，会自动修改页面。 <strong>@Publish</strong> 只能在 <strong>@Observed</strong> 修饰的类中使用。可以给属性赋初值，如果没有赋值，需要在构造时给值。</li>
+<li><strong>@Publish</strong> 修饰的变量只能由var声明。</li>
+</ul>
+<blockquote>
+<p><strong>注意：</strong></p>
+<p>被 <strong>@Publish</strong> 修饰的成员变量必须指明类型和初始值。但对于String，Int64，Float64和Bool类型，如果变量的初始值是上述类型的字面量，则可以省略类型。</p>
+</blockquote>
+<p>示例</p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+
+@Observed
+class Book {
+    @Publish var title: String = &quot;&quot;
+    @Publish var price: Int64 = 9
+    var id: Int64
+}
+
+@Entry
+@Component
+class Demo {
+    @State var book: Book = Book(title: &quot;myBook&quot;, id: 3214324)
+
+    func build() {
+        Column {
+            Text(&quot;${book.title}, ${book.price}&quot;)
+            Button(&quot;click&quot;).onClick({e =&gt;
+                book.title = &quot;noBook&quot;
+            })
+        }
+    }
+}
+</code></pre>
+<p>多层嵌套类</p>
+<p>如果类中的属性也是类类型，且该属性需要被监听，那么这个类也要被@Observed修饰</p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+
+@Observed
+class Directory {
+    @Publish var title: String = &quot;&quot;
+    @Publish var price: Int64 = 9
+}
+
+@Observed
+class Book {
+    @Publish var dir: Directory = Directory()
+    @Publish var title: String = &quot;&quot;
+    @Publish var price: Int64 = 9
+    var id: Int64
+}
+
+@Entry
+@Component
+class Demo {
+    @State var book: Book = Book(title: &quot;myBook&quot;, id: 3214324)
+
+    func build() {
+        Column {
+            Text(&quot;${book.title}, ${book.price}&quot;)
+            Button(&quot;click&quot;).onClick({e =&gt;
+                book.title = &quot;noBook&quot;
+            })
+        }
+    }
+}
+</code></pre>
+<h2 id="provide-and-consume"><a class="header" href="#provide-and-consume">@Provide and @Consume</a></h2>
+<p><strong>@Provide</strong> 作为数据的提供方，可以更新其子孙节点的数据，并触发页面渲染。 <strong>@Consume</strong> 在感知到 <strong>@Provide</strong> 数据的更新后，会触发当前view的重新渲染。</p>
+<p>同样地， <strong>@Consume</strong> 发生变化后，也会触发 <strong>@Provide</strong> 所在的页面渲染，二者构成双向数据绑定。</p>
+<ul>
+<li>
+<p><strong>支持类型</strong>： <strong>@Provide</strong> 和 <strong>@Consume</strong> 变量的值与 <strong>@State</strong> 变量的类型相同。</p>
+</li>
+<li>
+<p>相互关联的 <strong>@Provide</strong> 和 <strong>@Consume</strong> 的变量名和类型必须相同，</p>
+</li>
+<li>
+<p><strong>@Provide</strong> 和 <strong>@Consume</strong> 修饰当前组件所拥有的状态，仅在当前组件内生效，且只可以用于修饰当前子组件的成员变量，不可被 public protected 等修饰符修饰；</p>
+</li>
+<li>
+<p><strong>@Provide</strong> 修饰的成员变量必须指明类型且有初始值，变量只能由var声明。</p>
+</li>
+<li>
+<p><strong>@Consume</strong> 修饰的成员变量必须指明类型且不能有初始值，变量只能由var声明。</p>
+</li>
+<li>
+<p>与 <strong>@Link</strong> 和 <strong>@Prop</strong> 不同的是， <strong>@Consume</strong> 的值不需要通过构造函数传递。只要保证 <strong>@Provide</strong> 和 <strong>@Consume</strong> 的类型和变量名一致，且 <strong>@Consume</strong> 声明的变量所在的组件是 <strong>@Provide</strong> 声明的变量所在的组件的子孙组件，就可以建立 <strong>@Provide</strong> 和 <strong>@Consume</strong> 之间的双向数据绑定。</p>
+</li>
+</ul>
+<p>如果只有 <strong>@Provide</strong> ，没有 <strong>@Consume</strong>，则该 <strong>@Provide</strong>可视作 <strong>@State</strong>。而 <strong>@Consume</strong>必须有对应的 <strong>@Provide</strong>，如果其父辈节点中没有相对应的 <strong>@Provide</strong>变量，则该@Consume变量定义所在的自定义组件将不会显示，且会在log中打印runtime报错。</p>
+<p>示例</p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+
+@Component
+class SubSubComponent {
+    @Consume var stateContent: Int64
+
+    func build() {
+      Column {
+        Text(&quot;this is SubSubComponent ${this.stateContent}&quot;)
+        Button(&quot;${this.stateContent}&quot;).onClick({evt =&gt; this.stateContent += 1})
+      }
+    }
+}
+
+@Component
+class SubComponent {
+    func build() {
+      Column {
+        Text(&quot;this is SubComponent&quot;)
+        SubSubComponent()
+      }
+    }
+}
+
+@Entry
+@Component
+class ParentComponent {
+    @Provide var stateContent: Int64 = 0
+    func build() {
+      Column {
+        SubComponent()
+        Button(&quot;${this.stateContent}&quot;).onClick({evt =&gt; this.stateContent += 1})
+      }
+    }
+}
+</code></pre>
+<h2 id="builder"><a class="header" href="#builder">@Builder</a></h2>
+<p><strong>@Builder</strong> 装饰的方法用于定义组件的声明式UI描述，在一个自定义组件内快速生成多个布局内容。 <strong>@Builder</strong> 装饰方法的功能和语法规范与render函数相同。</p>
+<ul>
+<li>支持泛型参数、泛型约束、命名参数、命名参数默认值等仓颉函数基本功能；</li>
+<li>可以修饰全局函数，也可以修饰类的成员函数；</li>
+<li>不支持使用 open 修饰并被重写（我们建议 @Builder 函数只定义在全局或 @Component 修饰的类中）；</li>
+<li>不支持使用 static 修饰作为类的静态方法；</li>
+<li>函数的返回值类型为 Unit，返回值类型可以省略；</li>
+<li>函数体中只允许包含 UI 组件声明（UI 组件声明包括：内置组件、@Component 修饰类的实例构造、@Builder 修饰函数的调用）；</li>
+<li>可以使用导出普通仓颉函数同样的策略，导出 @Builder 修饰的函数。</li>
+</ul>
+<p>示例1</p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+
+@Builder
+func f(fontSz: Int64, color: Color) {
+    Text(&quot;hello world&quot;).fontSize(fontSz).fontColor(color)
+}
+
+@Entry
+@Component
+class EntryView {
+    func build() {
+        Column(20) {
+            f(20, Color.BLUE)
+        }
+    }
+}
+</code></pre>
+<p>示例2</p>
+<p>对于对象中使用 CustomBuilder 时，可以通过 bind 方法将 Builder 函数 ListItemGroup 中使用的 builder。</p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+
+struct TimeTable {
+  let title: String
+  let projects: Array&lt;String&gt;
+
+    public init(title:String,projects: Array&lt;String&gt;){
+        this.title = title
+        this.projects = projects
+    }
+}
+
+@Entry
+@Component
+class EntryView {
+    let timeTable: Array&lt;TimeTable&gt; = [
+        TimeTable(&quot;星期一&quot;,[&quot;语文&quot;, &quot;数学&quot;, &quot;英语&quot;]),
+        TimeTable(&quot;星期二&quot;,[&quot;物理&quot;, &quot;化学&quot;, &quot;生物&quot;]),
+        TimeTable(&quot;星期三&quot;,[&quot;历史&quot;, &quot;地理&quot;, &quot;政治&quot;]),
+        TimeTable(&quot;星期四&quot;,[&quot;美术&quot;, &quot;音乐&quot;, &quot;体育&quot;])]
+
+    @Builder func itemHead(text:String) {
+        Text(text)
+        .fontSize(20)
+        .backgroundColor(0xAABBCC)
+        .width(100.percent)
+        .padding(10)
+    }
+
+    @Builder func itemFoot(num:Int64) {
+        Text(&quot;共&quot; + &quot;${num}&quot; + &quot;节课&quot;)
+        .fontSize(16)
+        .backgroundColor(0xAABBCC)
+        .width(100.percent)
+        .padding(5)
+    }
+
+
+    func build() {
+        Column() {
+            List(space: 20) {
+                ForEach(this.timeTable, itemGeneratorFunc: {item:TimeTable ,_:Int64 =&gt;
+                        ListItemGroup(ListItemGroupParams(header:{=&gt;bind(this.itemHead,this)(item.title)},footer:{=&gt;bind(this.itemFoot,this)(item.projects.size)})){
+                            ForEach(item.projects,itemGeneratorFunc: {project:String,_:Int64=&gt;
+                                ListItem(){
+                                    Text(project)
+                                    .width(100.percent)
+                                    .height(100)
+                                    .fontSize(20)
+                                    .textAlign(TextAlign.Center)
+                                    .backgroundColor(0xFFFFFF)
+                                }})
+                            }
+                        })
+             }
+        }
+        .height(800.vp)
+        .backgroundColor(Color(0XD3D3D3))
+    }
+}
+</code></pre>
+<h2 id="builderparam"><a class="header" href="#builderparam">@BuilderParam</a></h2>
+<p><strong>@BuilderParam</strong> 用来装饰指向@Builder方法的变量，开发者可在初始化自定义组件时对此属性进行赋值，为自定义组件增加特定的功能。</p>
+<ul>
+<li>所修饰变量的类型为函数类型，且返回值类型为 Unit；</li>
+<li>所修饰的变量声明中，变量的类型需要显示标注；</li>
+<li>只能修饰类的成员变量声明，禁止修饰全局变量（否则将产生编译错误）；</li>
+<li>所修饰的类成员变量遵循 private 修饰符的可见性（即：只允许在类内部使用）；</li>
+<li>所修饰变量可以是可变的，也可以是不可变的，变量的可变性遵循仓颉语法由 let/var 关键字标识。</li>
+</ul>
+<p>示例</p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+
+@Entry
+@Component
+class EntryView {
+    @Builder
+    func f1(): Unit {
+        f&lt;Int64&gt;(100, 30, color: Color.BLACK)
+    }
+
+    @Builder
+    func f2(): Unit {
+        f&lt;String&gt;(&quot;hello&quot;, 30, color: Color.RED)
+    }
+
+    func build() {
+        Column(10) {
+            FrameView(ab: f1, color: Color.GREEN)
+            FrameView(ab: f2, color: Color.GRAY)
+        }
+    }
+}
+
+@Component
+class FrameView {
+    @BuilderParam let ab: () -&gt; Unit
+    let color: Color
+
+    func build() {
+        Column(10) {
+            ab()
+        }.backgroundColor(color)
+    }
+}
+
+@Builder
+func f&lt;T&gt;(label: T, fontSz: Int64, color!: Color = Color.WHITE): Unit where T &lt;: ToString {
+    Text(&quot;${label}&quot;).fontSize(fontSz).fontColor(color)
+}
+</code></pre>
+<h2 id="watch"><a class="header" href="#watch">@Watch</a></h2>
+<p><strong>@Watch</strong> 用于监听状态变量的变化。如下给状态变量增加一个@Watch装饰器，通过@Watch注册一个回调方法onChanged，当状态变量count被改变时，触发onChanged回调。</p>
+<ul>
+<li>可以监听 <strong>@State</strong> 、 <strong>@Prop</strong> 、 <strong>@Link</strong> 、 <strong>@Provide</strong> 、 <strong>@Consume</strong> 、 <strong>@StorageLink</strong> 和 <strong>@StorageProp</strong> 装饰的变量的变化。</li>
+<li>被监听的变量必须声明类型。</li>
+</ul>
+<p>示例</p>
+<pre><code class="language-cangjie">@Component
+class EntryView {
+    @State @Watch[onChanged] count: Int64 = 0
+
+    func onChanged() {}
+
+    func build() {...}
+}
+</code></pre>
+<p>其中，onChanged函数是一个参数为空，且返回为空的函数。</p>
+<h2 id="observedarray-and-observedarraylist"><a class="header" href="#observedarray-and-observedarraylist">ObservedArray and ObservedArrayList</a></h2>
+<p>提供ObservedArray和ObservedArrayList作为状态管理的数组类型，当其中数组发生变化时，如修改其中一项的值，删除或添加一项，就会触发UI更新。</p>
+<h3 id="observedarray"><a class="header" href="#observedarray">ObservedArray</a></h3>
+<p>定义了状态管理的一个数组类型。</p>
+<h4 id="initarrayt"><a class="header" href="#initarrayt">init(Array&lt;T&gt;)</a></h4>
+<pre><code class="language-cangjie">public init(initValue: Array&lt;T&gt;)
+</code></pre>
+<p>状态管理数组的构造函数。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">initValue</td><td style="text-align: left">Array&lt;T&gt;</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">状态管理数组的初始化数组。</td></tr>
+</tbody></table>
+</div>
+<h4 id="subscribeinnerobserver"><a class="header" href="#subscribeinnerobserver">subscribeInner(Observer)</a></h4>
+<pre><code class="language-cangjie">public func subscribeInner(observer: Observer): Unit
+</code></pre>
+<p>对状态管理数组的每一项进行递归的观察绑定。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">observer</td><td style="text-align: left">Observer</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">绑定的观察类。</td></tr>
+</tbody></table>
+</div>
+<h4 id="unsubscribeinnerobserver"><a class="header" href="#unsubscribeinnerobserver">unsubscribeInner(Observer)</a></h4>
+<pre><code class="language-cangjie">public func unsubscribeInner(observer: Observer): Unit
+</code></pre>
+<p>对状态管理数组的每一项进行递归的解绑。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">observer</td><td style="text-align: left">Observer</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">解绑的观察类。</td></tr>
+</tbody></table>
+</div>
+<h4 id="get"><a class="header" href="#get">get()</a></h4>
+<pre><code class="language-cangjie">public func get(): Array&lt;T&gt;
+</code></pre>
+<p>获取状态管理数组。</p>
+<h4 id="setarrayt"><a class="header" href="#setarrayt">set(Array&lt;T&gt;)</a></h4>
+<pre><code class="language-cangjie">public func set(newValue: Array&lt;T&gt;): Unit
+</code></pre>
+<p>设置状态管理数组。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">newValue</td><td style="text-align: left">Array&lt;T&gt;</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">状态管理数组被设置的新数组值。</td></tr>
+</tbody></table>
+</div>
+<h4 id="setobservedcomplexabstract"><a class="header" href="#setobservedcomplexabstract">set(ObservedComplexAbstract)</a></h4>
+<pre><code class="language-cangjie">public func set(newValue: ObservedComplexAbstract): Unit
+</code></pre>
+<p>设置状态管理数组。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">newValue</td><td style="text-align: left">ObservedComplexAbstract</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">状态管理数组被设置的新值。</td></tr>
+</tbody></table>
+</div>
+<h4 id="int64"><a class="header" href="#int64">[](Int64)</a></h4>
+<pre><code class="language-cangjie">public operator func [](index: Int64): T
+</code></pre>
+<p>读取数组中指定索引对应的数组项。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">index</td><td style="text-align: left">Int64</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">指定读取数组项的索引。</td></tr>
+</tbody></table>
+</div>
+<h4 id="int64-t"><a class="header" href="#int64-t">[](Int64, T)</a></h4>
+<pre><code class="language-cangjie">public operator func [](index: Int64, value!: T): Unit
+</code></pre>
+<p>改变数组中指定索引对应的数组项的值。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">index</td><td style="text-align: left">Int64</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">指定数组项的索引。</td></tr>
+<tr><td style="text-align: left">value</td><td style="text-align: left">T</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">指定索引对应的数组项的新值。</td></tr>
+</tbody></table>
+</div>
+<h4 id="size"><a class="header" href="#size">size</a></h4>
+<pre><code class="language-cangjie">public prop size: Int64
+</code></pre>
+<p>获取状态管理数组的大小。</p>
+<h3 id="observedarraylist"><a class="header" href="#observedarraylist">ObservedArrayList</a></h3>
+<p>提供支持状态管理的可变长度的数组的功能，可以感知内部的变化。</p>
+<h4 id="构造函数"><a class="header" href="#构造函数">构造函数</a></h4>
+<h5 id="initarraylistt"><a class="header" href="#initarraylistt">init(ArrayList&lt;T&gt;)</a></h5>
+<pre><code class="language-cangjie">public init(initValue: ArrayList&lt;T&gt;)
+</code></pre>
+<p>构造一个包含指定ArrayList数组中所有元素的 ObservedArrayList。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">initValue</td><td style="text-align: left">ArrayList&lt;T&gt;</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">ArrayList数组,用来初始化ObservedArrayList。</td></tr>
+</tbody></table>
+</div>
+<h5 id="initinitvalue-arrayt"><a class="header" href="#initinitvalue-arrayt">init(initValue: Array&lt;T&gt;)</a></h5>
+<pre><code class="language-cangjie">public init(initValue: Array&lt;T&gt;)
+</code></pre>
+<p>构造一个包含指定Array数组中所有元素的 ObservedArrayList。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">initValue</td><td style="text-align: left">Array&lt;T&gt;</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">Array数组,用来初始化ObservedArrayList。</td></tr>
+</tbody></table>
+</div>
+<h4 id="函数"><a class="header" href="#函数">函数</a></h4>
+<h5 id="subscribeinnerobserver-1"><a class="header" href="#subscribeinnerobserver-1">subscribeInner(Observer)</a></h5>
+<pre><code class="language-cangjie">public func subscribeInner(observer: Observer): Unit
+</code></pre>
+<p>对状态管理数组的每一项进行递归的观察绑定。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">observer</td><td style="text-align: left">Observer</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">绑定的观察类。</td></tr>
+</tbody></table>
+</div>
+<h5 id="unsubscribeinnerobserver-1"><a class="header" href="#unsubscribeinnerobserver-1">unsubscribeInner(Observer)</a></h5>
+<pre><code class="language-cangjie">public func unsubscribeInner(observer: Observer): Unit
+</code></pre>
+<p>对状态管理数组的每一项进行递归的解绑。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">observer</td><td style="text-align: left">Observer</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">解绑的观察类。</td></tr>
+</tbody></table>
+</div>
+<h5 id="get-1"><a class="header" href="#get-1">get()</a></h5>
+<pre><code class="language-cangjie">public func get(): ArrayList&lt;T&gt;
+</code></pre>
+<p>返回一个ArrayList数组，其中包含此ObservedArrayList中按正确顺序排列的所有元素。</p>
+<h5 id="setarraylistt"><a class="header" href="#setarraylistt">set(ArrayList&lt;T&gt;)</a></h5>
+<pre><code class="language-cangjie">public func set(newValue: ArrayList&lt;T&gt;): Unit
+</code></pre>
+<p>通过一个ArrayList数组重置当前ObservedArrayList的值。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">newValue</td><td style="text-align: left">ArrayList&lt;T&gt;</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">ArrayList数组,用来设置ObservedArrayList的值。</td></tr>
+</tbody></table>
+</div>
+<h5 id="setarrayt-1"><a class="header" href="#setarrayt-1">set(Array&lt;T&gt;)</a></h5>
+<pre><code class="language-cangjie">public func set(newValue: Array&lt;T&gt;): Unit
+</code></pre>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">newValue</td><td style="text-align: left">Array&lt;T&gt;</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">Array数组,用来设置ObservedArrayList的值。</td></tr>
+</tbody></table>
+</div>
+<p>通过一个Array数组重置当前ObservedArrayList的值。</p>
+<h5 id="setobservedcomplexabstract-1"><a class="header" href="#setobservedcomplexabstract-1">set(ObservedComplexAbstract)</a></h5>
+<pre><code class="language-cangjie">public func set(newValue: ObservedComplexAbstract): Unit
+</code></pre>
+<p>通过ObservedComplexAbstract重置当前ObservedArrayList的值。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">newValue</td><td style="text-align: left">ObservedComplexAbstract</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">ObservedComplexAbstract数据,用来设置ObservedArrayList的值。</td></tr>
+</tbody></table>
+</div>
+<h5 id="int64-1"><a class="header" href="#int64-1">[](Int64)</a></h5>
+<pre><code class="language-cangjie">public operator func [](index: Int64): T
+</code></pre>
+<p>操作符重载 - get。返回索引位置的元素的值。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">index</td><td style="text-align: left">Int64</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">表示 get 接口的索引。</td></tr>
+</tbody></table>
+</div>
+<h5 id="int64-t-1"><a class="header" href="#int64-t-1">[](Int64, T)</a></h5>
+<pre><code class="language-cangjie">public operator func [](index: Int64, value!: T): Unit
+</code></pre>
+<p>操作符重载 - set，通过下标运算符用指定的元素替换此列表中指定位置的元素。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">index</td><td style="text-align: left">Int64</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">要设置的索引值。</td></tr>
+<tr><td style="text-align: left">value</td><td style="text-align: left">T</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">要设置的 T 类型的值。</td></tr>
+</tbody></table>
+</div>
+<h5 id="isempty"><a class="header" href="#isempty">isEmpty()</a></h5>
+<pre><code class="language-cangjie">public func isEmpty(): Bool
+</code></pre>
+<p>判断 ObservedArrayList 是否为空。</p>
+<h5 id="clone"><a class="header" href="#clone">clone()</a></h5>
+<pre><code class="language-cangjie">public func clone(): ObservedArrayList&lt;T&gt;
+</code></pre>
+<p>返回此ObservedArrayList实例的拷贝(浅拷贝)。</p>
+<h5 id="clear"><a class="header" href="#clear">clear()</a></h5>
+<pre><code class="language-cangjie">public func clear(): Unit
+</code></pre>
+<p>从此 ObservedArrayList 中删除所有元素。</p>
+<h5 id="appendt"><a class="header" href="#appendt">append(T)</a></h5>
+<pre><code class="language-cangjie">public func append(element: T): Unit
+</code></pre>
+<p>将指定的元素附加到此 ObservedArrayList 的末尾。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">element</td><td style="text-align: left">T</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">插入的元素。</td></tr>
+</tbody></table>
+</div>
+<h5 id="appendallcollectiont"><a class="header" href="#appendallcollectiont">appendAll(Collection&lt;T&gt;)</a></h5>
+<pre><code class="language-cangjie">public func appendAll(elements: Collection&lt;T&gt;): Unit
+</code></pre>
+<p>将指定集合中的所有元素附加到此 ObservedArrayList 的末尾。</p>
+<p>函数会按照迭代器顺序遍历入参中的集合，并且将所有元素插入到此 ObservedArrayList 的尾部。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">elements</td><td style="text-align: left">Collection&lt;T&gt;</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">需要插入的元素的集合。</td></tr>
+</tbody></table>
+</div>
+<h5 id="insertint64-t"><a class="header" href="#insertint64-t">insert(Int64, T)</a></h5>
+<pre><code class="language-cangjie">public func insert(index: Int64, element: T): Unit
+</code></pre>
+<p>在此 ObservedArrayList 中的指定位置插入指定元素。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">index</td><td style="text-align: left">Int64</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">插入元素的目标索引。</td></tr>
+<tr><td style="text-align: left">element</td><td style="text-align: left">T</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">要插入的 T 类型元素。</td></tr>
+</tbody></table>
+</div>
+<h5 id="insertallint64-collectiont"><a class="header" href="#insertallint64-collectiont">insertAll(Int64, Collection&lt;T&gt;)</a></h5>
+<pre><code class="language-cangjie">public func insertAll(index: Int64, elements: Collection&lt;T&gt;): Unit
+</code></pre>
+<p>从指定位置开始，将指定集合中的所有元素插入此 ObservedArrayList。</p>
+<p>函数会按照迭代器顺序遍历入参中的集合，并且将所有元素插入到指定位置。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">index</td><td style="text-align: left">Int64</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">插入集合的目标索引。</td></tr>
+<tr><td style="text-align: left">elements</td><td style="text-align: left">Collection&lt;T&gt;</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">要插入的 T 类型元素集合。</td></tr>
+</tbody></table>
+</div>
+<h5 id="prependt"><a class="header" href="#prependt">prepend(T)</a></h5>
+<pre><code class="language-cangjie">public func prepend(element: T): Unit
+</code></pre>
+<p>在起始位置，将指定元素插入此 ObservedArrayList。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">element</td><td style="text-align: left">T</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">要插入 T 类型元素。</td></tr>
+</tbody></table>
+</div>
+<h5 id="prependallcollectiont"><a class="header" href="#prependallcollectiont">prependAll(Collection&lt;T&gt;)</a></h5>
+<pre><code class="language-cangjie">public func prependAll(elements: Collection&lt;T&gt;): Unit
+</code></pre>
+<p>从起始位置开始，将指定集合中的所有元素插入此 ObservedArrayList。</p>
+<p>函数会按照迭代器顺序遍历入参中的集合，并且将所有元素插入到指定位置。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">elements</td><td style="text-align: left">Collection&lt;T&gt;</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">要插入的 T 类型元素集合。</td></tr>
+</tbody></table>
+</div>
+<h5 id="removeint64"><a class="header" href="#removeint64">remove(Int64)</a></h5>
+<pre><code class="language-cangjie">public func remove(index: Int64): T
+</code></pre>
+<p>删除此 ObservedArrayList 中指定位置的元素。返回被移除的元素。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">index</td><td style="text-align: left">Int64</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">被删除元素的索引。</td></tr>
+</tbody></table>
+</div>
+<h5 id="removerangeint64"><a class="header" href="#removerangeint64">remove(Range&lt;Int64&gt;)</a></h5>
+<pre><code class="language-cangjie">public func remove(range: Range&lt;Int64&gt;): Unit
+</code></pre>
+<p>删除此 ObservedArrayList 中 Range 范围所包含的所有元素。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">range</td><td style="text-align: left">Range&lt;Int64&gt;</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">需要被删除的元素的范围。</td></tr>
+</tbody></table>
+</div>
+<h5 id="removeift---bool"><a class="header" href="#removeift---bool">removeIf((T) -&gt; Bool)</a></h5>
+<pre><code class="language-cangjie">public func removeIf(predicate: (T) -&gt; Bool): Unit
+</code></pre>
+<p>删除此 ObservedArrayList 中满足给定 lambda 表达式或函数的所有元素。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">predicate</td><td style="text-align: left">(T) -&gt; Bool</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">判断删除的条件。</td></tr>
+</tbody></table>
+</div>
+<h4 id="属性"><a class="header" href="#属性">属性</a></h4>
+<h5 id="size-1"><a class="header" href="#size-1">size</a></h5>
+<pre><code class="language-cangjie">public prop size: Int64
+</code></pre>
+<p>此 ObservedArrayList 中的元素个数。</p>
+<h3 id="示例如下"><a class="header" href="#示例如下">示例如下</a></h3>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+
+@Entry
+@Component
+class EntryView {
+    @State var arr: ObservedArray&lt;Int64&gt; = ObservedArray&lt;Int64&gt;([1, 2])
+
+    func build() {
+        Column {
+            Text(&quot;arr[0] is ${arr[0]}&quot;)
+            Button(&quot;click&quot;).onClick {
+                arr[0] = 0
+            }
+        }
+    }
+}
+</code></pre>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+
+@Entry
+@Component
+class EntryView {
+    @State var arr: ObservedArrayList&lt;Int64&gt; = ObservedArrayList&lt;Int64&gt;([1, 2])
+
+    func build() {
+        Column {
+            Text(&quot;arr[0] is ${arr[0]}&quot;)
+            Button(&quot;click&quot;).onClick {
+                arr[0] = 0
+            }
+            Button(&quot;append&quot;).onClick {
+                arr.append(0)
+            }
+        }
+    }
+}
+</code></pre>
+<h2 id="observedpropertyt"><a class="header" href="#observedpropertyt">ObservedProperty&lt;T&gt;</a></h2>
+<h3 id="get-2"><a class="header" href="#get-2">get()</a></h3>
+<pre><code class="language-cangjie">public func get(): T
+</code></pre>
+<p>读取同步属性的数据</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">T</td><td style="text-align: left">同步属性的数据。</td></tr>
+</tbody></table>
+</div>
+<ul>
+<li>示例：</li>
+</ul>
+<pre><code class="language-cangjie">AppStorage.setOrCreate&lt;Int64&gt;(&quot;propA&quot;, 47)
+let prop1: ObservedProperty&lt;Int64&gt; = AppStorage.`prop`&lt;Int64&gt;(&quot;propA&quot;)
+prop1.get() // 47
+</code></pre>
+<h3 id="sett"><a class="header" href="#sett">set(T)</a></h3>
+<pre><code class="language-cangjie">public func set(newValue: T): Unit
+</code></pre>
+<p>设置同步属性的数据</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">参数类型</th><th style="text-align: left">必填</th><th style="text-align: left">默认值</th><th style="text-align: left">描述</th></tr></thead><tbody>
+<tr><td style="text-align: left">newValue</td><td style="text-align: left">T</td><td style="text-align: left">是</td><td style="text-align: left">-</td><td style="text-align: left">要设置的数据。</td></tr>
+</tbody></table>
+</div>
+<ul>
+<li>示例：</li>
+</ul>
+<pre><code class="language-cangjie">AppStorage.setOrCreate&lt;Int64&gt;(&quot;propA&quot;, 47)
+let prop1: ObservedProperty&lt;Int64&gt; = AppStorage.`prop`&lt;Int64&gt;(&quot;propA&quot;)
+prop1.set(1); //  prop1.get()=1
+</code></pre>
+<h2 id="状态更新的注意事项"><a class="header" href="#状态更新的注意事项">状态更新的注意事项</a></h2>
+<p>不允许在spawn表达式中对状态变量进行并发修改，会导致并发安全问题。建议当需要修改状态变量时，采用<code>concurrency</code>包提供的<code>launch</code>方法，将状态更新的步骤放回主线程中运行，以保证并发安全。如下实例演示如何在spawn表达式中更新变量状态：</p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.concurrency.*
+import std.sync.*
+import std.collection.*
+
+@Entry
+@Component
+class EntryView {
+    @State var text: String = &quot;begin&quot;
+
+    func build() {
+        Column(30) {
+            Button(text).onClick { evt =&gt;
+                changeText({ p: String =&gt;
+                    // 使用launch表达式在主线程中更新状态变量
+                    launch {
+                        text = p
+                    }
+                })
+            }
+        }.width(100.percent)
+    }
+
+    private func changeText(callback: (String) -&gt; Unit): Unit {
+        spawn {
+            while (true) {
+                callback(&quot;blink 0&quot;)
+                sleep(Duration.millisecond * 100)
+                callback(&quot;blink 1&quot;)
+                sleep(Duration.millisecond * 100)
+            }
+        }
+    }
+}
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../source_zh_cn/arkui-cj/cj-basic-components-pixel-units.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../source_zh_cn/arkui-cj/cj-appendix-config.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../source_zh_cn/arkui-cj/cj-basic-components-pixel-units.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../source_zh_cn/arkui-cj/cj-appendix-config.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../highlight.js"></script>
+        <script src="../../assets/elasticlunr.js"></script>
+        <script src="../../assets/fzf.umd.js"></script>
+        <script src="../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>
