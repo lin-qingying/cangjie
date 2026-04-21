@@ -38,8 +38,7 @@ import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.resolve.body.SnapshotCfirMapper
 import org.cangnova.cangjie.cfir.resolve.codeFragmentContext
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.*
-import org.cangnova.cangjie.cfir.scopes.CfirLocalScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
+import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
@@ -131,7 +130,7 @@ private class CfirPartialBodyExpressionResolveTransformer(
         private val MAX_ANALYSES_COUNT: Int by lazy(LazyThreadSafetyMode.PUBLICATION) {
             // On various repositories, number of declarations analyzed more than five times, is under 1%.
             // So here we cap only unusually lengthy declarations.
-            Registry.intValue("kotlin.analysis.partialBodyAnalysis.attemptCount", 5)
+            Registry.intValue("cangjie.analysis.partialBodyAnalysis.attemptCount", 5)
         }
     }
 

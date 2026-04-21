@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.test.services
 
+import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.AnalysisFlag
 import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.config.CompilerConfiguration
@@ -7,8 +8,10 @@ import org.cangnova.cangjie.config.CompilerConfigurationKey
 import org.cangnova.cangjie.config.CommonConfigurationKeys
 import org.cangnova.cangjie.config.addClasspathRoot
 import org.cangnova.cangjie.config.useLightTree
+import org.cangnova.cangjie.cfir.entrypoint.configuration.noPrelude
 import org.cangnova.cangjie.test.CfirParser
 import org.cangnova.cangjie.test.config.TestPhaseDirectives
+import org.cangnova.cangjie.test.directives.CangjieTestDirectives.NO_PRELUDE
 import org.cangnova.cangjie.test.config.addSourcesForDependsOnClosure
 import org.cangnova.cangjie.test.directives.CangjieTestDirectives.WITH_STDLIB
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
@@ -58,13 +61,26 @@ abstract class EnvironmentConfigurator(protected val testServices: TestServices)
 }
 
 class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigurator(testServices) {
+    override fun provideAdditionalAnalysisFlags(
+        directives: RegisteredDirectives,
+        languageVersion: LanguageVersion,
+    ): Map<AnalysisFlag<*>, Any?> {
+        return buildMap {
+            if (NO_PRELUDE in directives) {
+                put(AnalysisFlags.noPrelude, true)
+            }
+        }
+    }
+
     override fun DirectiveToConfigurationKeyExtractor.provideConfigurationKeys() {
         register(CfirDiagnosticsDirectives.DUMP_INFERENCE_LOGS, CommonConfigurationKeys.DUMP_INFERENCE_LOGS)
     }
 
     override fun configureCompilerConfiguration(configuration: CompilerConfiguration, module: TestModule) {
+        val noPreludeEnabled = module.hasDirective(NO_PRELUDE)
         addRuntimeClasspathRoots(configuration, module)
-        if (WITH_STDLIB in module.directives) {
+        configuration.noPrelude = noPreludeEnabled
+        if (WITH_STDLIB in module.directives && !noPreludeEnabled) {
             addStdlibClasspathRoots(configuration)
         }
         setupCliConfiguration(module, configuration)
@@ -139,6 +155,11 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
         return normalized
     }
 }
+
+private fun TestModule.hasDirective(directive: SimpleDirective): Boolean {
+    return directive in directives || files.any { directive in it.directives }
+}
+
 class DirectiveToConfigurationKeyExtractor {
     private val booleanDirectivesMap = mutableMapOf<SimpleDirective, CompilerConfigurationKey<Boolean>>()
     private val invertedBooleanDirectives = mutableSetOf<SimpleDirective>()

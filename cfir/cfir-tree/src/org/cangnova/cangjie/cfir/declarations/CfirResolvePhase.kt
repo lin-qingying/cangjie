@@ -287,15 +287,17 @@ fun CfirResolvePhase.isItAllowedToCallLazyResolveTo(requestedPhase: CfirResolveP
  * - 并非所有 jumping phase 都允许同阶段请求。
  * - [SUPER_TYPES] 允许同阶段请求，以支持继承链递归展开与父类型图构建。
  * - [STATUS] 允许同阶段请求，以支持 override / modality / visibility 在父声明上的联动判定。
- * - [IMPLICIT_TYPES] 与 [BODY_RESOLVE] 允许同阶段请求，
- *   以支持隐式类型与函数体推断中的相互依赖场景。
+ * - [IMPLICIT_TYPES] 允许同阶段请求，
+ *   以对齐 Kotlin `IMPLICIT_TYPES_BODY_RESOLVE` 的隐式类型递归求解能力。
+ * - [BODY_RESOLVE] 不允许同阶段请求；
+ *   low-level BODY resolver 会在 `doResolveWithoutLock()` 中走 `performCustomResolveUnderLock()` 构 CFG，
+ *   若将其标成 jumping phase，会直接破坏该锁契约。
  * - [EXTENSIONS] 当前仍不开放 same-phase 请求，避免扩展链递归在尚无稳定收敛策略时引入死循环风险。
  */
 val CfirResolvePhase.isItAllowedToCallLazyResolveToTheSamePhase: Boolean
     get() = when (this) {
         CfirResolvePhase.SUPER_TYPES,
         CfirResolvePhase.STATUS,
-        CfirResolvePhase.IMPLICIT_TYPES,
-        CfirResolvePhase.BODY_RESOLVE -> true
+        CfirResolvePhase.IMPLICIT_TYPES -> true
         else -> false
     }

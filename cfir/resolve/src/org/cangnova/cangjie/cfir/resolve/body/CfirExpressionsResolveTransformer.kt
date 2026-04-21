@@ -35,7 +35,7 @@ import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessResult
 import org.cangnova.cangjie.cfir.resolve.typeFromCallee
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
-import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
+import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
@@ -1420,8 +1420,9 @@ open class CfirExpressionsResolveTransformer(
 
             components.dataFlowAnalyzer.enterFunction(anonFunc)
 
-            val parameterTypes = withNewLocalScope(scopeAction = { lambdaScope ->
-                anonFunc.valueParameters.mapIndexed { i, param ->
+            val parameterTypes = context.withTowerDataCleanup {
+                context.addLocalScope(CfirLocalScope(session))
+                val types = anonFunc.valueParameters.mapIndexed { i, param ->
                     val expectedParamType = expectedFuncType?.parameterTypes?.getOrNull(i)
                     val declaredParamType = (param.returnTypeRef as? CfirResolvedTypeRef)?.coneType
                     if (param.returnTypeRef !is CfirResolvedTypeRef && expectedParamType != null) {
@@ -1429,12 +1430,12 @@ open class CfirExpressionsResolveTransformer(
                             param.returnTypeRef.resolvedTypeFromPrototype(expectedParamType, param.returnTypeRef.source)
                         )
                     }
-                    (param.symbol as? CfirCallableSymbol<*>)?.let { sym ->
-                        lambdaScope.addVariable(param.name, sym)
-                    }
+                    context.storeValueParameterIfNeeded(param, session)
                     declaredParamType ?: expectedParamType
                 }
-            }) { anonFunc.body?.resolveIndependently() }
+                anonFunc.body?.resolveIndependently()
+                types
+            }
 
             val returnType = when {
                 anonFunc.returnTypeRef is CfirResolvedTypeRef -> (anonFunc.returnTypeRef as CfirResolvedTypeRef).coneType
@@ -1699,33 +1700,9 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Scope Utilities ───────────────────────────────────────────────────────
 
-    /**
-     * Execute [block] inside a fresh local scope, restoring the outer scope on exit.
-     * The overload that takes [scopeAction] provides the scope object to [scopeAction]
-     * before running [block], so that the scope can be populated (e.g. lambda params).
-     */
-    private inline fun <T> withNewLocalScope(crossinline block: () -> T): T {
-        val saved = context.towerDataContext
-        val scope = CfirLocalScopeImpl()
-        context.addLocalScope(scope)
-        return try { block() } finally { context.replaceTowerDataContext(saved) }
-    }
-
-    private inline fun <T> withNewLocalScope(
-        crossinline scopeAction: (CfirLocalScopeImpl) -> T,
-        crossinline block: () -> Unit,
-    ): T {
-        val saved = context.towerDataContext
-        val scope = CfirLocalScopeImpl()
-        context.addLocalScope(scope)
-        return try {
-            val result = scopeAction(scope)
-            block()
-            result
-        } finally {
-            context.replaceTowerDataContext(saved)
-        }
-    }
+    /** 在新的空局部作用域里执行 [block]，退出后恢复外层作用域。薄壳包装 `context.forBlock`。 */
+    private inline fun <T> withNewLocalScope(crossinline block: () -> T): T =
+        context.forBlock(session) { block() }
 
     /**
      * `super` 的语义在仓颉里是固定的：

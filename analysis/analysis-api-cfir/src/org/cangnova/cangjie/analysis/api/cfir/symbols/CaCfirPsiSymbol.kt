@@ -31,7 +31,7 @@ import kotlin.reflect.KClass
 
 /**
  * A [CaCfirSymbol] that is possibly backed by some [PsiElement] and builds [cfirSymbol] lazily (by convention),
- * allowing some properties to be calculated without the need to build a [cfirSymbol].
+ * allowing some variables to be calculated without the need to build a [cfirSymbol].
  */
 internal interface CaCfirPsiSymbol<out P : PsiElement, out S : CfirBasedSymbol<*>> : CaCfirSymbol<S> {
     /**

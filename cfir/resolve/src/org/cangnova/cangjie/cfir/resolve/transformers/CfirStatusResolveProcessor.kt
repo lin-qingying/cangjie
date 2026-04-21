@@ -5,17 +5,22 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
 import org.cangnova.cangjie.cfir.declarations.resolvePhase
+import org.cangnova.cangjie.cfir.declarations.resolvedForStatuslessDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
+import org.cangnova.cangjie.cfir.declarations.builder.buildResolvedDeclarationStatus
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -138,6 +143,10 @@ open class AbstractCfirStatusResolveTransformer(
         if (computationStatus != CfirStatusComputationSession.StatusComputationStatus.Computed) {
             transformDeclaration(target)
         }
+        // STATUS 阶段的发布语义要求 member declaration 持有 resolved status。
+        // raw/status 前置阶段里承载的是可变 CfirDeclarationStatusImpl；
+        // 这里在主干 phase 发布点统一收敛成不可变 resolved 形态，保证 CLI 与 LL API 的契约一致。
+        (target as? CfirMemberDeclaration)?.publishResolvedStatusIfNeeded()
         target.replaceResolvePhase(CfirResolvePhase.STATUS)
         statusComputationSession.endComputing(target)
     }
@@ -178,3 +187,41 @@ private val CfirDeclaration.declarationNameOrNull: Name?
         is CfirTypeAlias -> name
         else -> null
     }
+
+private fun CfirMemberDeclaration.publishResolvedStatusIfNeeded() {
+    val currentStatus = status
+    if (currentStatus is CfirResolvedDeclarationStatus) return
+
+    if (this is CfirValueParameter) {
+        // 对齐 Kotlin FIR：value parameter 属于 statusless declaration，
+        // STATUS 发布时直接收敛到稳定 resolved status，而不是参与常规模态推导。
+        replaceStatus(currentStatus.resolvedForStatuslessDeclaration())
+        return
+    }
+
+    val currentModality = currentStatus.modality
+        ?: error("Status modality must be initialized before publishing STATUS for ${this::class.simpleName}")
+
+    replaceStatus(
+        buildResolvedDeclarationStatus {
+            source = currentStatus.source
+            visibility = currentStatus.visibility
+            isVisibilityExplicit = currentStatus.isVisibilityExplicit
+            isModalityExplicit = currentStatus.isModalityExplicit
+            isOverride = currentStatus.isOverride
+            isOperator = currentStatus.isOperator
+            isStatic = currentStatus.isStatic
+            isConst = currentStatus.isConst
+            isMut = currentStatus.isMut
+            isUnsafe = currentStatus.isUnsafe
+            isForeign = currentStatus.isForeign
+            isCommon = currentStatus.isCommon
+            isSpecific = currentStatus.isSpecific
+            isRedef = currentStatus.isRedef
+            isAbstract = currentStatus.isAbstract
+            isOpen = currentStatus.isOpen
+            isSealed = currentStatus.isSealed
+            modality = currentModality
+        }
+    )
+}

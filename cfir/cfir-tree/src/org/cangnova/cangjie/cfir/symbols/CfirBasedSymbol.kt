@@ -315,7 +315,7 @@ sealed class CfirNamedValueSymbol<out D : CfirCallableDeclaration> (override val
 }
 
 /** 具名函数符号，对齐 K2 `FirNamedFunctionSymbol`。 */
-class CfirNamedFunctionSymbol(
+ class CfirNamedFunctionSymbol(
    callableId: CallableId,
 ) : CfirFunctionSymbol<CfirNamedFunction>(callableId) {
     override val name: Name get() = callableId.callableName

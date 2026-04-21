@@ -194,6 +194,7 @@ class CfirDeclDeserializer(
         return CfirResolvedTypeRefImpl(
             source = null,
             annotations = MutableOrEmptyList.empty(),
+            customRenderer = false,
             coneType = coneType,
             delegatedTypeRef = null,
         )
@@ -270,7 +271,7 @@ class CfirDeclDeserializer(
     private fun convertClass(decl: Decl): CfirClass {
         val name = decl.classLikeName()
         val symbol = CfirClassSymbol(resolveClassId(decl, name))
-        val status = buildStatus(decl)
+        val status = buildStatus(decl).resolvedForStatuslessDeclaration()
         val typeParams = withContainingDeclarationSymbol(symbol) {
             deserializeTypeParameters(decl)
         }
@@ -977,12 +978,15 @@ class CfirDeclDeserializer(
     }
 
     private fun buildEnumConstructorReturnTypeRef(owner: EnumOwnerContext?): CfirTypeRef {
-        owner ?: return buildImplicitTypeRef()
+        owner ?: return buildImplicitTypeRef {
+            customRenderer = false
+        }
 
         val typeArguments = owner.typeParameters.map { parameter ->
             ConeTypeProjection(ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag()))
         }
         return buildResolvedTypeRef {
+            customRenderer = false
             coneType = ConeEnumType(
                 lookupTag = owner.classId.toLookupTag(),
                 typeArguments = typeArguments,

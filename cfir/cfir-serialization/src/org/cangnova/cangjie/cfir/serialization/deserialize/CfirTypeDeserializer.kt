@@ -221,6 +221,7 @@ class CfirTypeDeserializer(
             CfirResolvedTypeRefImpl(
                 source = null,
                 annotations = MutableOrEmptyList.empty(),
+                customRenderer = false,
                 coneType = upperBound,
                 delegatedTypeRef = null,
             )

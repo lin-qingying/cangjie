@@ -28,9 +28,9 @@ import org.cangnova.cangjie.psi.*
 internal fun CjTypeReference?.toCfirOrImplicitTypeRef(
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
 ): CfirTypeRef {
-    if (this == null) return buildImplicitTypeRef()
+    if (this == null) return buildImplicitTypeRef {}
     val typeElement = typeElement
-        ?: return buildImplicitTypeRef()
+        ?: return buildImplicitTypeRef {}
     return typeElement.toCfirTypeRef(this, toSource)
 }
 

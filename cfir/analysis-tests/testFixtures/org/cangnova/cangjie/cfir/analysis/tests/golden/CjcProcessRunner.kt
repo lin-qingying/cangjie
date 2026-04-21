@@ -42,14 +42,24 @@ object CjcProcessRunner {
      *
      * @param cjcPath cjc 可执行文件路径
      * @param sourceFile 要编译的 .cj 文件
+     * @param noPrelude 是否显式关闭 prelude
      * @return JSON 诊断字符串（可能为空表示无输出）
      */
-    fun compileSingleFile(cjcPath: Path, sourceFile: File): CjcCompilationResult {
-        val process = ProcessBuilder(
+    fun compileSingleFile(
+        cjcPath: Path,
+        sourceFile: File,
+        noPrelude: Boolean = false,
+    ): CjcCompilationResult {
+        val args = mutableListOf(
             cjcPath.toString(),
             sourceFile.absolutePath,
             "--diagnostic-format", "json",
-        ).apply {
+        )
+        if (noPrelude) {
+            args += "--no-prelude"
+        }
+
+        val process = ProcessBuilder(args).apply {
             redirectErrorStream(true)
         }.start()
 

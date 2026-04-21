@@ -8,9 +8,12 @@ import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.Severity
 import org.cangnova.cangjie.cfir.session.diagnosticCollector
+import org.cangnova.cangjie.test.directives.CangjieTestDirectives.NO_PRELUDE
 import org.cangnova.cangjie.test.WrappedException
 import org.cangnova.cangjie.test.model.AfterAnalysisChecker
 import org.cangnova.cangjie.test.model.FrontendKinds
+import org.cangnova.cangjie.test.model.TestFile
+import org.cangnova.cangjie.test.model.TestModule
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.artifactsProvider
 import org.cangnova.cangjie.test.services.moduleStructure
@@ -51,7 +54,7 @@ class CfirCjcLlTDiagnosticsChecker(
 
                     val realFile = testServices.sourceFileProvider.getOrCreateRealFileForSourceFile(testFile)
                     val cfirDiagnostics = collectCfirDiagnostics(artifact, realFile, testFile.originalFile)
-                    val cjcDiagnostics = collectCjcDiagnostics(realFile)
+                    val cjcDiagnostics = collectCjcDiagnostics(realFile, testFile, module)
                     val report = compareDiagnostics(
                         originalFile = testFile.originalFile,
                         cfirDiagnostics = cfirDiagnostics,
@@ -88,8 +91,12 @@ class CfirCjcLlTDiagnosticsChecker(
             }
     }
 
-    private fun collectCjcDiagnostics(realFile: File): List<CjcDiag> {
-        val result = CjcProcessRunner.compileSingleFile(cjcPath, realFile)
+    private fun collectCjcDiagnostics(realFile: File, testFile: TestFile, module: TestModule): List<CjcDiag> {
+        val result = CjcProcessRunner.compileSingleFile(
+            cjcPath = cjcPath,
+            sourceFile = realFile,
+            noPrelude = NO_PRELUDE in testFile.directives || NO_PRELUDE in module.directives,
+        )
         val parsed = parseJsonOutput(result.output)
             ?: error(
                 "Failed to parse cjc diagnostic JSON for ${realFile.path}. " +
@@ -107,7 +114,9 @@ class CfirCjcLlTDiagnosticsChecker(
         }
 
         val candidate = output.substring(start)
-        return runCatching { CjcDiagnosticJsonParser.parse(candidate).diags }.getOrNull()
+        return runCatching { CjcDiagnosticJsonParser.parse(candidate).diags }
+            .recoverCatching { CjcDiagnosticJsonParser.parseLenient(candidate).diags }
+            .getOrNull()
     }
 
     private fun compareDiagnostics(

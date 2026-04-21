@@ -66,5 +66,25 @@
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings"
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.platform.CaBasePlatformSettings"
     />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderFactory"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.platform.declarations.CaIdeDeclarationProviderFactory"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderMerger"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.platform.declarations.CaIdeDeclarationProviderMerger"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProviderFactory"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.platform.packages.CaIdePackageProviderFactory"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProviderMerger"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.platform.packages.CaIdePackageProviderMerger"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.declarations.CangJieAnnotationsResolverFactory"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.platform.declarations.CaIdeAnnotationsResolverFactory"
+    />
   </extensions>
 </idea-plugin>

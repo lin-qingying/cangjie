@@ -430,7 +430,7 @@ class Candidate(
                 isNamed = false
                 dispatchReceiverType = null
                 symbol = parameterSymbol
-                status = CfirDeclarationStatusImpl.DEFAULT
+                status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
                 returnTypeRef = buildResolvedTypeRef {
                     source = declaration.returnTypeRef.source
                     coneType = parameterType

@@ -21,6 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirUserTypeRefImpl @CfirImplementationDetail constructor(
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
+    override val customRenderer: Boolean,
     override val source: CjSourceElement,
     override val qualifier: MutableList<Name>,
     override var typeArguments: MutableOrEmptyList<CfirTypeRef>,

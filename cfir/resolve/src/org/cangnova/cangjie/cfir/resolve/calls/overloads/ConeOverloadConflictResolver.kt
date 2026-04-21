@@ -99,10 +99,13 @@ class ConeOverloadConflictResolver(
         val scope = originScope as? CfirTypeScope ?: return false
 
         return when (candidateSymbol) {
-            is CfirFunctionSymbol<*> -> overrides(
+            // 仓颉的 override 决议只涉及 named function：
+            // constructor / enum constructor / init / property accessor 不参与普通重写判定，
+            // 按 CfirNamedFunctionSymbol 窄化即可满足 CfirTypeScope API。
+            is CfirNamedFunctionSymbol -> overrides(
                 MemberWithBaseScope(candidateSymbol, scope),
                 otherSymbol,
-                ProcessAllOverridden<CfirFunctionSymbol<*>> { baseScope, symbol, processor ->
+                ProcessAllOverridden<CfirNamedFunctionSymbol> { baseScope, symbol, processor ->
                     baseScope.processDirectOverriddenFunctionsWithBaseScope(symbol, processor)
                 },
             )

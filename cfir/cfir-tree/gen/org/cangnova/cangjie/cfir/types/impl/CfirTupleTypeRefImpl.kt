@@ -21,6 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirTupleTypeRefImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
+    override val customRenderer: Boolean,
     override val elementTypeRefs: MutableList<CfirTypeRef>,
 ) : CfirTupleTypeRef() {
 

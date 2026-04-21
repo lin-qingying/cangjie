@@ -95,46 +95,53 @@ fun <R : CfirTypeRef> R.copyWithNewSource(newSource: CjSourceElement): R {
         }
 
         is CfirUserTypeRef -> CfirUserTypeRefImpl(
-            source = newSource,
-            annotations = typeRef.annotations.toMutableOrEmpty(),
-            qualifier = typeRef.qualifier.toMutableList(),
-            typeArguments = typeRef.typeArguments.toMutableOrEmpty(),
+            typeRef.annotations.toMutableOrEmpty(),
+            typeRef.customRenderer,
+            newSource,
+            typeRef.qualifier.toMutableList(),
+            typeRef.typeArguments.toMutableOrEmpty(),
         )
 
         is CfirFunctionTypeRef -> CfirFunctionTypeRefImpl(
-            source = newSource,
-            annotations = typeRef.annotations.toMutableOrEmpty(),
-            parameterTypeRefs = typeRef.parameterTypeRefs.toMutableList(),
-            returnTypeRef = typeRef.returnTypeRef,
+            newSource,
+            typeRef.annotations.toMutableOrEmpty(),
+            typeRef.customRenderer,
+            typeRef.parameterTypeRefs.toMutableList(),
+            typeRef.returnTypeRef,
         )
 
         is CfirOptionTypeRef -> CfirOptionTypeRefImpl(
-            source = newSource,
-            annotations = typeRef.annotations.toMutableOrEmpty(),
-            componentTypeRef = typeRef.componentTypeRef,
+            typeRef.annotations.toMutableOrEmpty(),
+            typeRef.customRenderer,
+            newSource,
+            typeRef.componentTypeRef,
         )
 
         is CfirTupleTypeRef -> CfirTupleTypeRefImpl(
-            source = newSource,
-            annotations = typeRef.annotations.toMutableOrEmpty(),
-            elementTypeRefs = typeRef.elementTypeRefs.toMutableList(),
+            newSource,
+            typeRef.annotations.toMutableOrEmpty(),
+            typeRef.customRenderer,
+            typeRef.elementTypeRefs.toMutableList(),
         )
 
         is CfirVArrayTypeRef -> CfirVArrayTypeRefImpl(
-            source = newSource,
-            annotations = typeRef.annotations.toMutableOrEmpty(),
-            elementTypeRef = typeRef.elementTypeRef,
-            sizeLiteral = typeRef.sizeLiteral,
+            newSource,
+            typeRef.annotations.toMutableOrEmpty(),
+            typeRef.customRenderer,
+            typeRef.elementTypeRef,
+            typeRef.sizeLiteral,
         )
 
         is CfirBasicTypeRef -> CfirBasicTypeRefImpl(
-            source = newSource,
-            annotations = typeRef.annotations.toMutableOrEmpty(),
-            name = typeRef.name,
+            newSource,
+            typeRef.annotations.toMutableOrEmpty(),
+            typeRef.customRenderer,
+            typeRef.name,
         )
 
         is CfirImplicitTypeRef -> CfirImplicitTypeRefImpl(
-            annotations = typeRef.annotations.toMutableOrEmpty(),
+            typeRef.annotations.toMutableOrEmpty(),
+            typeRef.customRenderer,
         )
 
         else -> error("copyWithNewSource is not implemented for ${typeRef::class.qualifiedName}")

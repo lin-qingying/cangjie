@@ -26,6 +26,10 @@ object CangjieTestDirectives : SimpleDirectivesContainer() {
         description = "Include stdlib in compilation.",
     )
 
+    val NO_PRELUDE by directive(
+        description = "Compile without prelude support.",
+    )
+
     val IGNORE_ERRORS by directive(
         description = "Allow test data with compile errors.",
     )

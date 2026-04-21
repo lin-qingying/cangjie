@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.declarations
 
-import org.cangnova.cangjie.cfir.scopes.CfirLocalScope
+
 import kotlinx.collections.immutable.PersistentList
+import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 
 typealias CfirLocalScopes = PersistentList<CfirLocalScope>

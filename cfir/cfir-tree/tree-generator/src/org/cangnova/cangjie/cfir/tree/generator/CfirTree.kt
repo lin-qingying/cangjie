@@ -1048,6 +1048,9 @@ object CfirTree : AbstractCfirTreeBuilder() {
 
         parent(annotationContainer)
         +FieldSets.annotations
+        +field("customRenderer", boolean) {
+            defaultValueInBuilder = "false"
+        }
 
     }
 
@@ -1074,7 +1077,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("name", nameType)
     }
 
-    val implicitTypeRef: Element by element(TypeRef, name = "ImplicitTypeRef") { parent(typeRef) }
+    val implicitTypeRef: Element by element(TypeRef ) { parent(typeRef) }
 
     val functionTypeRef: Element by element(TypeRef, name = "FunctionTypeRef") {
         parent(typeRef)

@@ -4,6 +4,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.transformers
 
+import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -35,11 +36,18 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.constructType
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeTypeProjection
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.SpecialNames
@@ -155,7 +163,16 @@ class CfirTypeResolveTransformer(
             .withTopContainer(constructor)
             .withAdditionalTypeParameters(constructor.typeParameters)
         constructor.transformTypeParameters(this, configuration)
-        constructor.transformReturnTypeRef(this, configuration)
+        if (constructor.returnTypeRef is CfirImplicitTypeRef) {
+            val ownerClass = data.topContainer as? CfirClassLikeDeclaration
+            val ownerType = ownerClass?.let(::buildConstructedTypeForConstructorOwner)
+                ?: ConeErrorType(ConeSimpleDiagnostic("cannot resolve constructor owner type"))
+            constructor.replaceReturnTypeRef(
+                constructor.returnTypeRef.resolvedTypeFromPrototype(ownerType, constructor.returnTypeRef.source),
+            )
+        } else {
+            constructor.transformReturnTypeRef(this, configuration)
+        }
         constructor.transformValueParameters(this, configuration)
         bumpPhase(constructor)
         return constructor
@@ -269,10 +286,24 @@ class CfirTypeResolveTransformer(
             origin = CfirDeclarationOrigin.ImplicitDefault
             attributes = CfirDeclarationAttributes.EMPTY
             status = klass.status
-            returnTypeRef = buildImplicitTypeRef()
+            returnTypeRef = buildImplicitTypeRef {}
             body = null
         }
 
         classImpl.declarations += constructor
+    }
+
+    /**
+     * 构造器返回类型在仓颉 CFIR 中直接建模为 `returnTypeRef`。
+     * 它不依赖 body 推断，TYPES 阶段就应回填为所属 class-like 的构造后类型，
+     * 否则 low-level 的 IMPLICIT_TYPES 校验会把 constructor 误判为未完成。
+     */
+    private fun buildConstructedTypeForConstructorOwner(owner: CfirClassLikeDeclaration): ConeCangJieType {
+        val ownerSymbol = owner.symbol as? CfirClassLikeSymbol<*>
+            ?: return ConeErrorType(ConeSimpleDiagnostic("constructor owner has no class-like symbol"))
+        val typeArguments = owner.typeParameters.map { parameter ->
+            ConeTypeProjection(ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag()))
+        }
+        return ownerSymbol.constructType(typeArguments)
     }
 }

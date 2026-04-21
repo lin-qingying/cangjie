@@ -26,6 +26,7 @@ class CfirErrorTypeRefImpl @CfirImplementationDetail constructor(
 ) : CfirErrorTypeRef() {
 
     override val coneType: ConeCangJieType = typeOrNull ?: ConeErrorType(diagnostic)
+    override val customRenderer: Boolean get() = false
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }

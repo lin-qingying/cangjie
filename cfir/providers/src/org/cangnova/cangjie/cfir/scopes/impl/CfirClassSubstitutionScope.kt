@@ -61,7 +61,7 @@ class CfirClassSubstitutionScope(
     private val useSiteMemberScope: CfirTypeScope,
     private val dispatchReceiverType: ConeCangJieType,
 ) : CfirTypeScope() {
-    private val functionOverrideCache = mutableMapOf<CfirFunctionSymbol<*>, CfirFunctionSymbol<*>>()
+    private val functionOverrideCache = mutableMapOf<CfirNamedFunctionSymbol, CfirNamedFunctionSymbol>()
     private val propertyOverrideCache = mutableMapOf<CfirPropertySymbol, CfirPropertySymbol>()
     private val fieldOverrideCache = mutableMapOf<CfirFieldVariableSymbol, CfirFieldVariableSymbol>()
     private val wrappedBaseScopeCache = mutableMapOf<CfirTypeScope, CfirTypeScope>()
@@ -71,7 +71,7 @@ class CfirClassSubstitutionScope(
 
     override fun getClassifierNames(): Set<Name> = useSiteMemberScope.getClassifierNames()
 
-    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol<*>) -> Unit) {
+    override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         useSiteMemberScope.processFunctionsByName(name) { original ->
             processor(substituteFunctionSymbol(original))
         }
@@ -94,8 +94,8 @@ class CfirClassSubstitutionScope(
     }
 
     override fun processDirectOverriddenFunctionsWithBaseScope(
-        functionSymbol: CfirFunctionSymbol<*>,
-        processor: (CfirFunctionSymbol<*>, CfirTypeScope) -> ProcessorAction,
+        functionSymbol: CfirNamedFunctionSymbol,
+        processor: (CfirNamedFunctionSymbol, CfirTypeScope) -> ProcessorAction
     ): ProcessorAction {
         val originalSymbol = functionSymbol.unwrapOriginalForSubstitutionOverride()
         return useSiteMemberScope.processDirectOverriddenFunctionsWithBaseScope(originalSymbol) { overridden, baseScope ->
@@ -130,14 +130,14 @@ class CfirClassSubstitutionScope(
     private fun substituteCallableSymbol(symbol: CfirCallableSymbol<*>): CfirCallableSymbol<*> {
         val originalSymbol = symbol.originalForSubstitutionOverride ?: symbol
         return when (originalSymbol) {
-            is CfirFunctionSymbol<*> -> substituteFunctionSymbol(originalSymbol)
+            is CfirNamedFunctionSymbol -> substituteFunctionSymbol(originalSymbol)
             is CfirPropertySymbol -> substitutePropertySymbol(originalSymbol)
             is CfirFieldVariableSymbol -> substituteFieldSymbol(originalSymbol)
             else -> originalSymbol
         }
     }
 
-    private fun substituteFunctionSymbol(symbol: CfirFunctionSymbol<*>): CfirFunctionSymbol<*> {
+    private fun substituteFunctionSymbol(symbol: CfirNamedFunctionSymbol): CfirNamedFunctionSymbol {
         val originalSymbol = symbol.unwrapOriginalForSubstitutionOverride()
         return synchronized(functionOverrideCache) {
             functionOverrideCache.getOrPut(originalSymbol) {
@@ -164,7 +164,7 @@ class CfirClassSubstitutionScope(
         }
     }
 
-    private fun createSubstitutedFunctionSymbol(symbol: CfirFunctionSymbol<*>): CfirFunctionSymbol<*> {
+    private fun createSubstitutedFunctionSymbol(symbol: CfirNamedFunctionSymbol): CfirNamedFunctionSymbol {
         val substitutor = computeCallableSubstitutor(symbol)
         if (substitutor === ConeSubstitutor.Empty || substitutor == null) return symbol
 

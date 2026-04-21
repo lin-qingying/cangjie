@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
@@ -11,6 +12,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.Name
 
@@ -33,7 +35,7 @@ class CfirClassStaticScope(
         memberIndex.classifiers[name]?.forEach(processor)
     }
 
-    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol<*>) -> Unit) {
+    override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         memberIndex.functions[name]?.forEach(processor)
     }
 
@@ -55,7 +57,7 @@ class CfirClassStaticScope(
     private data class MemberIndex(
         val classifiers: Map<Name, List<CfirClassLikeSymbol<*>>>,
         val enumConstructors: Map<Name, List<CfirEnumConstructorSymbol>>,
-        val functions: Map<Name, List<CfirFunctionSymbol<*>>>,
+        val functions: Map<Name, List<CfirNamedFunctionSymbol>>,
         val properties: Map<Name, List<CfirPropertySymbol>>,
     ) {
         val callableNames: Set<Name> = buildSet {
@@ -73,7 +75,7 @@ class CfirClassStaticScope(
     private fun buildIndex(declarations: List<CfirDeclaration>): MemberIndex {
         val classifiers = linkedMapOf<Name, MutableList<CfirClassLikeSymbol<*>>>()
         val enumConstructors = linkedMapOf<Name, MutableList<CfirEnumConstructorSymbol>>()
-        val functions = linkedMapOf<Name, MutableList<CfirFunctionSymbol<*>>>()
+        val functions = linkedMapOf<Name, MutableList<CfirNamedFunctionSymbol>>()
         val properties = linkedMapOf<Name, MutableList<CfirPropertySymbol>>()
 
         for (declaration in declarations) {
@@ -88,9 +90,9 @@ class CfirClassStaticScope(
                     enumConstructors.getOrPut(declaration.name) { mutableListOf() }.add(symbol)
                 }
 
-                is CfirFunction -> {
+                is CfirNamedFunction -> {
                     if (!declaration.status.isStatic) continue
-                    val symbol = declaration.symbol as? CfirFunctionSymbol<*> ?: continue
+                    val symbol = declaration.symbol ?: continue
                     val callableName = declaration.callableNameOrNull() ?: continue
                     functions.getOrPut(callableName) { mutableListOf() }.add(symbol)
                 }

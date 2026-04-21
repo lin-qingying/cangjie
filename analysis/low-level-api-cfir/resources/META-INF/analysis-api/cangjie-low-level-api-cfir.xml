@@ -1,0 +1,45 @@
+<idea-plugin>
+  <extensionPoints>
+    <extensionPoint
+        qualifiedName="org.cangnova.cangjie.llCfirSessionConfigurator"
+        interface="org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionConfigurator"
+        area="IDEA_PROJECT"
+        dynamic="true"/>
+  </extensionPoints>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- 低层 CFIR 解析依赖一组项目级服务，必须与 Analysis API 一并注册。 -->
+    <projectService
+        serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.LLResolutionFacadeService"
+    />
+    <projectService
+        serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents"
+    />
+    <projectService
+        serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCache"
+    />
+    <projectService
+        serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirBuiltinsSessionFactory"
+    />
+    <projectService
+        serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirDeclarationModificationService"
+    />
+    <projectService
+        serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionInvalidationService"
+    />
+    <projectService
+        serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionInvalidationEventPublisher"
+    />
+    <projectService
+        serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.low.level.api.cfir.api.services.LLCfirElementByPsiElementChooser"
+        serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.services.LLRealCfirElementByPsiElementChooser"
+    />
+    <applicationService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.resolution.CaResolutionActivityTracker"
+        serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirResolutionActivityTracker"
+    />
+  </extensions>
+</idea-plugin>

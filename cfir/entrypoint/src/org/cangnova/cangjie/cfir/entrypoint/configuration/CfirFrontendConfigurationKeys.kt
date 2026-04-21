@@ -16,6 +16,11 @@ object CfirFrontendConfigurationKeys {
     @JvmField
     val DIAGNOSTIC_FACTORIES_STORAGE =
         CompilerConfigurationKey.create<CjRegisteredDiagnosticFactoriesStorage>("DIAGNOSTIC_FACTORIES_STORAGE")
+
+    /** 是否关闭 prelude。 */
+    @JvmField
+    val NO_PRELUDE =
+        CompilerConfigurationKey.create<Boolean>("NO_PRELUDE")
 }
 
 /**
@@ -32,4 +37,9 @@ var CompilerConfiguration.diagnosticFactoriesStorage: CjRegisteredDiagnosticFact
         )
     }
 
+var CompilerConfiguration.noPrelude: Boolean
+    get() = getBoolean(CfirFrontendConfigurationKeys.NO_PRELUDE)
+    set(value) {
+        put(CfirFrontendConfigurationKeys.NO_PRELUDE, value)
+    }
 

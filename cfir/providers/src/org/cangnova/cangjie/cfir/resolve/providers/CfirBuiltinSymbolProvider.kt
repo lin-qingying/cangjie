@@ -10,6 +10,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
+import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
@@ -111,10 +113,12 @@ class CfirBuiltinSymbolProvider(
                     origin = CfirDeclarationOrigin.Synthetic.FakeFunction
                     attributes = CfirDeclarationAttributes.EMPTY
                     isLocal = false
+                    deprecationsProvider = EmptyDeprecationsProvider
                     dispatchReceiverType = null
                     symbol = parameterSymbol
+                    containingDeclarationSymbol = functionSymbol
                     isNamed = false
-                    status = CfirDeclarationStatusImpl()
+                    status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
                     returnTypeRef = buildResolvedTypeRef {
                         coneType = ConePrimitiveType(parameterKind)
                     }
