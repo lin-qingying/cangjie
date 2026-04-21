@@ -4,8 +4,10 @@ import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
@@ -161,6 +163,31 @@ class CfirDataFlowAnalyzer(
         if (hasActiveGraph) {
             graphBuilder.enterAnonymousFunctionExpression(anonymousFunctionExpression)
         }
+    }
+
+    fun enterFieldInitializer(field: CfirFieldVariable) {
+        if (hasActiveGraph) {
+            graphBuilder.enterFieldInitializer(field)
+        }
+    }
+
+    fun exitFieldInitializer(): ControlFlowGraph? {
+        return graphBuilder.currentGraphOrNull
+            ?.takeIf { it.kind == ControlFlowGraph.Kind.FieldInitializer }
+            ?.let { graphBuilder.exitFieldInitializer().second }
+    }
+
+    fun enterValueParameter(parameter: CfirValueParameter) {
+        if (!hasActiveGraph || parameter.defaultValue == null) return
+        graphBuilder.enterValueParameter(parameter)
+        graphBuilder.enterDefaultArguments(parameter)
+    }
+
+    fun exitValueParameter(parameter: CfirValueParameter): ControlFlowGraph? {
+        if (!hasActiveGraph || parameter.defaultValue == null) return null
+        val graph = graphBuilder.exitDefaultArguments().second
+        graphBuilder.exitValueParameter(parameter)
+        return graph
     }
 
     fun enterLoop(loop: CfirLoopExpression) {

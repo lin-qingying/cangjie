@@ -15,15 +15,15 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirLocalScopes
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueMapper
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueStorage
 import org.cangnova.cangjie.cfir.resolve.LocalVariableScopeStorage
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
-import org.cangnova.cangjie.cfir.scopes.CfirLocalScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassStaticScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
+import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -52,19 +52,18 @@ data class CfirTowerDataContext private constructor(
         nonLocalTowerDataElements = persistentListOf(),
         localVariableScopeStorage = LocalVariableScopeStorage(),
     )
-
-    fun addLocalVariable(name: Name, symbol: CfirCallableSymbol<*>): CfirTowerDataContext {
-        val oldLastScope = localScopes.lastOrNull() as? CfirLocalScopeImpl ?: return this
+    fun addLocalVariable(variable: CfirVariable, session: CfirSession): CfirTowerDataContext {
+        val oldLastScope = localScopes.lastOrNull() ?: return this
         val indexOfLastLocalScope = towerDataElements.indexOfLast { it.scope === oldLastScope }
-        if (indexOfLastLocalScope < 0) return this
+        val newLastScope = oldLastScope.storeVariable(variable, session)
 
-        val newLastScope = oldLastScope.withVariable(name, symbol)
         return copy(
             towerDataElements = towerDataElements.set(indexOfLastLocalScope, newLastScope.asTowerDataElement(isLocal = true)),
             localScopes = localScopes.set(localScopes.lastIndex, newLastScope),
-            localVariableScopeStorage = localVariableScopeStorage.addLocalVariable(symbol),
+            localVariableScopeStorage = localVariableScopeStorage.addLocalVariable(variable.symbol)
         )
     }
+
 
     fun setLastLocalScope(newLastScope: CfirLocalScope): CfirTowerDataContext {
         val oldLastScope = localScopes.last()
@@ -152,9 +151,8 @@ data class CfirTowerDataContext private constructor(
         return copy(
             towerDataElements = towerDataElements.map { it.createSnapshot(keepMutable, implicitValueMapper) }.toPersistentList(),
             implicitValueStorage = implicitValueStorage.createSnapshot(implicitValueMapper),
-            localScopes = localScopes.map {
-                if (it is CfirLocalScopeImpl) it.snapshot() else it
-            }.toPersistentList(),
+            // CfirLocalScope 本身 persistent/immutable，复用即可
+            localScopes = localScopes,
             nonLocalTowerDataElements = nonLocalTowerDataElements.map { it.createSnapshot(keepMutable, implicitValueMapper) }.toPersistentList(),
         )
     }

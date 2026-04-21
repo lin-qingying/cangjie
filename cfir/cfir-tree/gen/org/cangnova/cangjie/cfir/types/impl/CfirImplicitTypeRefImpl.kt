@@ -19,6 +19,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirImplicitTypeRefImpl @CfirImplementationDetail constructor(
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
+    override val customRenderer: Boolean,
 ) : CfirImplicitTypeRef() {
     override val source: CjSourceElement?
         get() = null

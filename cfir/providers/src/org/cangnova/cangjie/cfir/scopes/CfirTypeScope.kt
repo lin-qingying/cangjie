@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.Name
 
@@ -24,8 +25,8 @@ abstract class CfirTypeScope : CfirContainingNamesAwareScope() {
     // - It may return the same overridden symbols more than once in case of substitution or intersection
     //     (but with different base scope)
     abstract fun processDirectOverriddenFunctionsWithBaseScope(
-        functionSymbol: CfirFunctionSymbol<*>,
-        processor: (CfirFunctionSymbol<*>, CfirTypeScope) -> ProcessorAction
+        functionSymbol: CfirNamedFunctionSymbol,
+        processor: (CfirNamedFunctionSymbol, CfirTypeScope) -> ProcessorAction
     ): ProcessorAction
 
     // ------------------------------------------------------------------------------------
@@ -44,8 +45,8 @@ abstract class CfirTypeScope : CfirContainingNamesAwareScope() {
 
     object Empty : CfirTypeScope() {
         override fun processDirectOverriddenFunctionsWithBaseScope(
-            functionSymbol: CfirFunctionSymbol<*>,
-            processor: (CfirFunctionSymbol<*>, CfirTypeScope) -> ProcessorAction
+            functionSymbol: CfirNamedFunctionSymbol,
+            processor: (CfirNamedFunctionSymbol, CfirTypeScope) -> ProcessorAction
         ): ProcessorAction = ProcessorAction.NEXT
 
         override fun processDirectOverriddenPropertiesWithBaseScope(

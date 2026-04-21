@@ -18,11 +18,13 @@ import org.cangnova.cangjie.cfir.types.impl.CfirImplicitTypeRefImpl
 @CfirBuilderDsl
 class CfirImplicitTypeRefBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
+    var customRenderer: Boolean = false
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirImplicitTypeRef {
         return CfirImplicitTypeRefImpl(
             annotations.toMutableOrEmpty(),
+            customRenderer,
         )
     }
 }
@@ -42,5 +44,6 @@ inline fun buildImplicitTypeRefCopy(original: CfirImplicitTypeRef, init: CfirImp
     }
     val copyBuilder = CfirImplicitTypeRefBuilder()
     copyBuilder.annotations.addAll(original.annotations)
+    copyBuilder.customRenderer = original.customRenderer
     return copyBuilder.apply(init).build()
 }

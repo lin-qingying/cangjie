@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.diagnostics.SourceElementPositioningStrategies
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.typeContext
@@ -38,7 +39,8 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
             if (!callable.isValidOverrideLikeDeclaration()) continue
 
             val overriddenCandidates = when (val symbol = callable.symbol) {
-                is CfirFunctionSymbol<*> -> classScope.collectDirectOverriddenFunctions(symbol)
+                is CfirNamedFunctionSymbol -> classScope.collectDirectOverriddenFunctions(symbol)
+                is CfirFunctionSymbol<*> -> emptyList()
                 is CfirPropertySymbol -> classScope.collectDirectOverriddenProperties(symbol)
                 else -> emptyList()
             }

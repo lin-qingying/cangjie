@@ -7,6 +7,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder
 
 import com.intellij.openapi.util.registry.Registry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.partialBodyAnalysisState
+import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirLazyResolveContractChecker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.PartialBodyAnalysisSuspendedException
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLPhaseSuspensionEventCompleter
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLFlightRecorder
@@ -25,11 +26,12 @@ import java.util.concurrent.locks.ReentrantLock
  * Each [CfirElementWithResolveState] have [CfirResolveState] which is used by this provider
  * to build the lock system.
  *
+ * @see LLCfirLazyResolveContractChecker
  * @see withWriteLock
  * @see withReadLock
  * @see withJumpingLock
  */
-internal class LLCfirLockProvider {
+internal class LLCfirLockProvider(private val checker: LLCfirLazyResolveContractChecker) {
     private val globalLock = ReentrantLock()
 
     inline fun <R> withGlobalLock(action: () -> R): R {
@@ -53,7 +55,9 @@ internal class LLCfirLockProvider {
         phase: CfirResolvePhase,
         action: () -> Unit,
     ) {
-        target.withLock(toPhase = phase, updatePhase = true, action = action)
+        checker.lazyResolveToPhaseInside(phase) {
+            target.withLock(toPhase = phase, updatePhase = true, action = action)
+        }
     }
 
     /**
@@ -69,7 +73,9 @@ internal class LLCfirLockProvider {
         phase: CfirResolvePhase,
         action: () -> Unit,
     ) {
-        target.withLock(toPhase = phase, updatePhase = false, action = action)
+        checker.lazyResolveToPhaseInside(phase) {
+            target.withLock(toPhase = phase, updatePhase = false, action = action)
+        }
     }
 
     /**
@@ -226,7 +232,9 @@ internal class LLCfirLockProvider {
         actionUnderLock: () -> Unit,
         actionOnCycle: () -> Unit,
     ) {
-        target.withJumpingLockImpl(phase, actionUnderLock, actionOnCycle)
+        checker.lazyResolveToPhaseInside(phase) {
+            target.withJumpingLockImpl(phase, actionUnderLock, actionOnCycle)
+        }
     }
 
     /**

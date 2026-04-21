@@ -21,6 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 @CfirBuilderDsl
 class CfirUserTypeRefBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
+    var customRenderer: Boolean = false
     lateinit var source: CjSourceElement
     val qualifier: MutableList<Name> = mutableListOf()
     val typeArguments: MutableList<CfirTypeRef> = mutableListOf()
@@ -29,6 +30,7 @@ class CfirUserTypeRefBuilder {
     fun build(): CfirUserTypeRef {
         return CfirUserTypeRefImpl(
             annotations.toMutableOrEmpty(),
+            customRenderer,
             source,
             qualifier,
             typeArguments.toMutableOrEmpty(),
@@ -51,6 +53,7 @@ inline fun buildUserTypeRefCopy(original: CfirUserTypeRef, init: CfirUserTypeRef
     }
     val copyBuilder = CfirUserTypeRefBuilder()
     copyBuilder.annotations.addAll(original.annotations)
+    copyBuilder.customRenderer = original.customRenderer
     copyBuilder.source = original.source
     copyBuilder.qualifier.addAll(original.qualifier)
     copyBuilder.typeArguments.addAll(original.typeArguments)

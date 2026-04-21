@@ -257,7 +257,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 attributes = CfirDeclarationAttributes.EMPTY
                 isLocal = context.inLocalContext
                 dispatchReceiverType = currentDispatchReceiverType()
-                status = CfirDeclarationStatusImpl.DEFAULT
+                status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
                 returnTypeRef = buildImplicitTypeRef()
                 body = null
             }

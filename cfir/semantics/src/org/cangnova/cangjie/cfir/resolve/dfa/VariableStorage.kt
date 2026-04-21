@@ -27,6 +27,11 @@ class VariableStorage private constructor(
         )
     }
 
+    fun reset() {
+        realVariables.clear()
+        memberVariables.clear()
+    }
+
     fun get(
         fir: CfirExpression,
         createReal: Boolean,

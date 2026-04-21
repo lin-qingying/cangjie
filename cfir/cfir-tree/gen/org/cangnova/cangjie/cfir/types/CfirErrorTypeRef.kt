@@ -18,6 +18,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 abstract class CfirErrorTypeRef : CfirResolvedTypeRef(), CfirDiagnosticHolder {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
+    abstract override val customRenderer: Boolean
     abstract override val coneType: ConeCangJieType
     abstract override val delegatedTypeRef: CfirTypeRef?
     abstract override val diagnostic: ConeDiagnostic

@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.name.Name
@@ -15,7 +16,7 @@ import org.cangnova.cangjie.name.Name
  * 在泛型类或泛型函数的作用域中注入类型参数名称。
  * 例如 `class Foo<T>` 内部，`T` 通过此 scope 解析为对应的 [CfirTypeParameterSymbol]。
  *
- * 注意：类型参数不是 classifiers/functions/properties，但为了简化 scope 查找，
+ * 注意：类型参数不是 classifiers/functions/variables，但为了简化 scope 查找，
  * 通过 processClassifiersByName 查找时如果存在同名的类型参数，也不会冲突，
  * 因为类型参数在仓颉中通过单独的名称解析路径处理。
  * 这里提供独立的 [processTypeParametersByName] 方法用于类型参数查找。
@@ -40,8 +41,8 @@ class CfirTypeParameterScopeImpl(
         typeParametersByName[name]?.forEach(processor)
     }
 
-    // CfirScope 的默认方法保持空实现，因为类型参数不是 classifiers/functions/properties
+    // CfirScope 的默认方法保持空实现，因为类型参数不是 classifiers/functions/variables
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {}
-    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol<*>) -> Unit) {}
+    override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {}
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {}
 }

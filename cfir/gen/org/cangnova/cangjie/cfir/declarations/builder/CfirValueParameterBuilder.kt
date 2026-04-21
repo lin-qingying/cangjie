@@ -11,6 +11,7 @@ import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirValueParameterImpl
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -29,7 +30,7 @@ class CfirValueParameterBuilder {
     var initializer: CfirExpression? = null
     var isVar: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     lateinit var symbol: CfirValueParameterSymbol
-    lateinit var status: CfirDeclarationStatus
+    var status: CfirDeclarationStatus = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
     lateinit var name: Name

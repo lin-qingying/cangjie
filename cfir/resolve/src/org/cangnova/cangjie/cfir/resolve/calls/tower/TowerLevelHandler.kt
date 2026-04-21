@@ -14,7 +14,8 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateCollector
 import org.cangnova.cangjie.cfir.resolve.calls.processFunctionsAndConstructorsByName
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
+import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
+
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
@@ -90,7 +91,7 @@ internal class ScopeBasedTowerLevel(
                 processor.consumeCandidate(symbol, scope, dispatchReceiver, givenExtensionReceiver)
             }
 
-            if (scope is CfirLocalScopeImpl) {
+            if (scope is CfirLocalScope) {
                 scope.processVariablesByName(info.name, ::consumeCallableValue)
             }
 

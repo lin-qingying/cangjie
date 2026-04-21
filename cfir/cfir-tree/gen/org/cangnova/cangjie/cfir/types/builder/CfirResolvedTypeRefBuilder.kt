@@ -22,6 +22,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirResolvedTypeRefBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
+    var customRenderer: Boolean = false
     lateinit var coneType: ConeCangJieType
     var delegatedTypeRef: CfirTypeRef? = null
 
@@ -30,6 +31,7 @@ class CfirResolvedTypeRefBuilder {
         return CfirResolvedTypeRefImpl(
             source,
             annotations.toMutableOrEmpty(),
+            customRenderer,
             coneType,
             delegatedTypeRef,
         )
@@ -53,6 +55,7 @@ inline fun buildResolvedTypeRefCopy(original: CfirResolvedTypeRef, init: CfirRes
     val copyBuilder = CfirResolvedTypeRefBuilder()
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
+    copyBuilder.customRenderer = original.customRenderer
     copyBuilder.coneType = original.coneType
     copyBuilder.delegatedTypeRef = original.delegatedTypeRef
     return copyBuilder.apply(init).build()

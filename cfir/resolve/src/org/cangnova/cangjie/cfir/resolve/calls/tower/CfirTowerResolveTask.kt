@@ -11,11 +11,10 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateCollector
 import org.cangnova.cangjie.cfir.scopes.CfirImportScope
-import org.cangnova.cangjie.cfir.scopes.CfirLocalScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
+import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
@@ -174,7 +173,7 @@ internal open class CfirTowerResolveTask(
 private fun classifyNonLocalScope(scope: CfirScope, importedDepth: Int): CfirTowerGroup {
     return when (scope) {
         is CfirClassDeclaredMemberScope -> CfirTowerGroup.MEMBER
-        is CfirLocalScopeImpl, is CfirLocalScope -> CfirTowerGroup.local(0)
+        is CfirLocalScope -> CfirTowerGroup.local(0)
         is CfirExtendMemberScope -> CfirTowerGroup.EXTEND
         is CfirImportScope -> CfirTowerGroup.imported(importedDepth)
         is CfirPackageMemberScope -> CfirTowerGroup.PACKAGE

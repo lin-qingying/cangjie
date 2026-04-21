@@ -21,6 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirBasicTypeRefBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
+    var customRenderer: Boolean = false
     lateinit var name: Name
 
     @OptIn(CfirImplementationDetail::class)
@@ -28,6 +29,7 @@ class CfirBasicTypeRefBuilder {
         return CfirBasicTypeRefImpl(
             source,
             annotations.toMutableOrEmpty(),
+            customRenderer,
             name,
         )
     }
@@ -50,6 +52,7 @@ inline fun buildBasicTypeRefCopy(original: CfirBasicTypeRef, init: CfirBasicType
     val copyBuilder = CfirBasicTypeRefBuilder()
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
+    copyBuilder.customRenderer = original.customRenderer
     copyBuilder.name = original.name
     return copyBuilder.apply(init).build()
 }

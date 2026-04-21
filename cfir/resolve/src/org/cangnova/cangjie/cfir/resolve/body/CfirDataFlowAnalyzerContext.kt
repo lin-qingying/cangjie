@@ -69,9 +69,13 @@ class CfirDataFlowAnalyzerContext(
      * 与 Kotlin FIR 对位：`assignmentCounter` 不在这里回零。
      */
     fun reset() {
-        graphBuilder = ControlFlowGraphBuilder()
-        variableAssignmentAnalyzer = CfirLocalVariableAssignmentAnalyzer()
-        variableStorage = VariableStorage()
+        graphBuilder.reset()
+        variableAssignmentAnalyzer.reset()
+        variableStorage.reset()
+    }
+
+    fun newAssignmentIndex(): Int {
+        return assignmentCounter++
     }
 }
 

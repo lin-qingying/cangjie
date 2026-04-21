@@ -261,7 +261,7 @@ private class CfirOwnersStorage(private val declarationToOwner: Map<CfirDeclarat
 
 /**
  * Walks over every [CfirElement] in [this] file and invokes [saveDeclaration] on it, passing each element and the list of its containing
- * declarations (like file, classes, functions/properties and so on).
+ * declarations (like file, classes, functions/variables and so on).
  */
 private inline fun CfirFile.forEachElementWithContainers(
     crossinline saveDeclaration: (element: CfirElement, owners: List<CfirBasedSymbol<*>>) -> Unit

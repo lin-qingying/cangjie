@@ -21,6 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirBasicTypeRefImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
+    override val customRenderer: Boolean,
     override val name: Name,
 ) : CfirBasicTypeRef() {
 

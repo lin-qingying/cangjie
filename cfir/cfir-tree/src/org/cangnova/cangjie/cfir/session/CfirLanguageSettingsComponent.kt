@@ -13,9 +13,18 @@ class CfirLanguageSettingsComponent(
     val languageVersionSettings: LanguageVersionSettings,
 ) : CfirSessionComponent
 
+class CfirPreludeSettingsComponent(
+    val noPrelude: Boolean,
+) : CfirSessionComponent
+
 private val CfirSession.languageSettingsComponent: CfirLanguageSettingsComponent
     by CfirSession.sessionComponentAccessor()
+
+private val CfirSession.preludeSettingsComponent: CfirPreludeSettingsComponent?
+    by CfirSession.nullableSessionComponentAccessor()
 
 val CfirSession.languageVersionSettings: LanguageVersionSettings
     get() = languageSettingsComponent.languageVersionSettings
 
+val CfirSession.noPrelude: Boolean
+    get() = preludeSettingsComponent?.noPrelude == true

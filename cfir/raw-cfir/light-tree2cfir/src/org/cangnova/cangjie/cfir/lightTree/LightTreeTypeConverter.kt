@@ -26,7 +26,7 @@ fun convertTypeReference(
     source: CharSequence,
     toSource: (LighterASTNode) -> AbstractCjSourceElement,
 ): CfirTypeRef {
-    if (typeRefNode == null) return buildImplicitTypeRef()
+    if (typeRefNode == null) return buildImplicitTypeRef {}
     // TYPE_REFERENCE 内部包含一个具体的类型元素子节点
     var typeElement: LighterASTNode? = null
     tree.forEachChildren(typeRefNode) { child ->
@@ -39,7 +39,7 @@ fun convertTypeReference(
             typeElement = child
         }
     }
-    val element = typeElement ?: return buildImplicitTypeRef()
+    val element = typeElement ?: return buildImplicitTypeRef {}
     return convertTypeElement(element, typeRefNode, tree, source, toSource)
 }
 
@@ -208,7 +208,7 @@ private fun convertFunctionType(
     toSource: (LighterASTNode) -> AbstractCjSourceElement,
 ): CfirTypeRef {
     val parameterTypes = mutableListOf<CfirTypeRef>()
-    var returnType: CfirTypeRef = buildImplicitTypeRef()
+    var returnType: CfirTypeRef = buildImplicitTypeRef {}
 
     val paramList = tree.findChildByType(typeElement, CjNodeTypes.VALUE_PARAMETER_LIST)
     if (paramList != null) {

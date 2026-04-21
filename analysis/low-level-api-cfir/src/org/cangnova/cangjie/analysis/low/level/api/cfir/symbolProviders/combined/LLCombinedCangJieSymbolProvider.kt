@@ -49,7 +49,7 @@ import java.time.Duration
  *   need to call every single subordinate symbol provider.
  * - A small Caffeine cache can avoid most index accesses for classes, because many names are requested multiple times, with a minor memory
  *   footprint.
- * - Caffeine caches for functions and properties use time-based eviction, which allows them to scale up in short bursts when many callables
+ * - Caffeine caches for functions and variables use time-based eviction, which allows them to scale up in short bursts when many callables
  *   are requested.
  *
  * @param declarationProvider The declaration provider must have a scope which combines the scopes of the individual [providers].
@@ -105,7 +105,7 @@ internal class LLCombinedCangJieSymbolProvider private constructor(
 
         val callableId = CallableId(packageFqName, name)
 
-        // Callables are provided very rarely (compared to functions/properties individually), so it's acceptable to hit caches and indices
+        // Callables are provided very rarely (compared to functions/variables individually), so it's acceptable to hit caches and indices
         // twice here.
         destination.addAll(getTopLevelFunctionSymbolsFromCache(callableId))
         destination.addAll(getTopLevelPropertySymbolsFromCache(callableId))

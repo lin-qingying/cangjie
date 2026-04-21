@@ -68,7 +68,7 @@ internal abstract class LLCangJieSymbolProvider(session: CfirSession) :
      * Maps the [CfirPropertySymbol]s with the given [callableId] for known [properties] to [destination].
      *
      * As the [properties] are already known, this function is optimized to avoid declaration provider accesses. However, the given property
-     * declarations have to be coherent with [CangJieDeclarationProvider.getTopLevelProperties]. In other words, the properties must be
+     * declarations have to be coherent with [CangJieDeclarationProvider.getTopLevelProperties]. In other words, the variables must be
      * chosen such that the resulting [CfirPropertySymbol]s are the same as the result of [getTopLevelPropertySymbolsTo] without known
      * declarations.
      */

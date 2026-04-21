@@ -16,6 +16,7 @@ import org.cangnova.cangjie.source.CjSourceElement
  */
 sealed class CfirUnresolvedTypeRef : CfirTypeRef() {
     abstract override val annotations: List<CfirAnnotation>
+    abstract override val customRenderer: Boolean
     abstract override val source: CjSourceElement
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =

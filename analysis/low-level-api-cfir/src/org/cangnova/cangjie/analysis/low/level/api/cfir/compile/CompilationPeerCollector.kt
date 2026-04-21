@@ -104,7 +104,7 @@ class CompilationPeerCollector private constructor() {
 
 class CompilationPeerData(
     /**
-     * The original file and all files that contain inline functions/properties called from that file or any other files from the list.
+     * The original file and all files that contain inline functions/variables called from that file or any other files from the list.
      * The returned list is in post-order.
      * Files in the list are unique.
      *

@@ -12,6 +12,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 
 /**
@@ -159,7 +160,7 @@ internal class CaCfirSymbolRelationProvider(
         val memberScope = scopeQueries.queryMemberScope(ownerClassId) ?: return emptyList()
 
         return when (backingSymbol) {
-            is CfirFunctionSymbol<*> -> buildList {
+            is CfirNamedFunctionSymbol -> buildList {
                 memberScope.processDirectOverriddenFunctionsWithBaseScope(backingSymbol) { overridden, _ ->
                     add(overridden)
                     ProcessorAction.NEXT

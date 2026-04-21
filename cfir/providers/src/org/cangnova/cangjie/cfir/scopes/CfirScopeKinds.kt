@@ -1,14 +1,19 @@
 package org.cangnova.cangjie.cfir.scopes
 
+import kotlinx.collections.immutable.PersistentMap
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.utils.PersistentMultimap
 
 /** 包级 scope，解析包内的顶级声明 */
 abstract class CfirPackageScope : CfirContainingNamesAwareScope() {
@@ -28,10 +33,6 @@ abstract class CfirImportScope : CfirScope() {
     override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirScope? = null
 }
 
-/** 局部 scope，解析函数体/代码块内的局部声明 */
-abstract class CfirLocalScope : CfirScope() {
-    override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirScope? = null
-}
 
 /** extend scope，解析 extend 声明引入的成员 */
 abstract class CfirExtendScope : CfirScope() {
@@ -54,7 +55,7 @@ class CfirCompositeScope(private val scopes: List<CfirScope>) : CfirScope() {
         for (scope in scopes) scope.processClassifiersByName(name, processor)
     }
 
-    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol<*>) -> Unit) {
+    override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         for (scope in scopes) scope.processFunctionsByName(name, processor)
     }
 
