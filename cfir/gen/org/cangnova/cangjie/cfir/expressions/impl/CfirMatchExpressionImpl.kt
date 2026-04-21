@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
+import org.cangnova.cangjie.cfir.expressions.CfirMatchExhaustivenessStatus
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -23,6 +24,7 @@ class CfirMatchExpressionImpl @CfirImplementationDetail constructor(
     override var coneTypeOrNull: ConeCangJieType?,
     override var subject: CfirExpression?,
     override var branches: List<CfirMatchBranch>,
+    override var exhaustiveness: CfirMatchExhaustivenessStatus,
 ) : CfirMatchExpression() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -39,6 +41,11 @@ class CfirMatchExpressionImpl @CfirImplementationDetail constructor(
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
      {
         this.coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun replaceExhaustiveness(newExhaustiveness: CfirMatchExhaustivenessStatus)
+     {
+        this.exhaustiveness = newExhaustiveness
     }
 
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirMatchExpression

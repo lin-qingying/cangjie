@@ -15,6 +15,7 @@ val cfirDefaultVisitorVoidType = generatedType("visitors", "CfirDefaultVisitorVo
 val cfirTransformerType = generatedType("visitors", "CfirTransformer")
 val sourceFileLinesMappingType = type<CjSourceFileLinesMapping>()
 val functionCallOrigin = type("expressions", "CfirFunctionCallOrigin")
+val matchExhaustivenessStatusType = type("expressions", "CfirMatchExhaustivenessStatus")
 val errorFunctionSymbolType = type("symbols", "CfirErrorFunctionSymbol")
 val errorNamedValueSymbolType = type("symbols", "CfirErrorNamedValueSymbol")
 val emptyArgumentListType = type("expressions", "CfirEmptyArgumentList")

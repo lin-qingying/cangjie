@@ -10,10 +10,7 @@ package org.cangnova.cangjie.cfir.expressions.impl
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
-import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
+import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -26,6 +23,7 @@ class CfirMatchExpressionImpl @CfirImplementationDetail constructor(
     override var coneTypeOrNull: ConeCangJieType?,
     override var subject: CfirExpression?,
     override val branches: MutableList<CfirMatchBranch>,
+    override var exhaustiveness: CfirMatchExhaustivenessStatus,
 ) : CfirMatchExpression() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -62,5 +60,9 @@ class CfirMatchExpressionImpl @CfirImplementationDetail constructor(
 
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
         coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun replaceExhaustiveness(newExhaustiveness: CfirMatchExhaustivenessStatus) {
+        exhaustiveness = newExhaustiveness
     }
 }

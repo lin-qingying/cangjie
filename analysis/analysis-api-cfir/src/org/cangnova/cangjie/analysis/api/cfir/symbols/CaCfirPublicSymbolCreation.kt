@@ -49,7 +49,7 @@ internal fun CaCfirSession.createFileSymbol(file: CjFile): CaFileSymbol =
 
 internal fun CaCfirSession.createClassLikeSymbol(symbol: CfirClassLikeSymbol<*>): CaClassLikeSymbol =
     getOrCreatePublicSymbol(CaCfirClassLikeSymbolCacheKey(symbol.classId)) {
-        symbolBuilder.classifierBuilder.buildClassLikeSymbol(symbol)
+        cfirSymbolBuilder.classifierBuilder.buildClassLikeSymbol(symbol)
     }
 
 internal fun CaCfirSession.createExtendSymbol(symbol: CfirExtendSymbol): CaExtendSymbol {
@@ -63,10 +63,10 @@ internal fun CaCfirSession.createCallableSymbol(symbol: CfirCallableSymbol<*>): 
     val cacheKey = symbol.publicSymbolCacheKeyOrNull(this)
     return if (cacheKey != null) {
         getOrCreatePublicSymbol(cacheKey) {
-            symbolBuilder.callableBuilder.buildCallableSymbol(symbol)
+            cfirSymbolBuilder.callableBuilder.buildCallableSymbol(symbol)
         }
     } else {
-        symbolBuilder.callableBuilder.buildCallableSymbol(symbol)
+        cfirSymbolBuilder.callableBuilder.buildCallableSymbol(symbol)
     }
 }
 
@@ -75,13 +75,13 @@ internal fun CaCfirSession.createTypeParameterSymbol(symbol: CfirTypeParameterSy
     if (ownerKey == null) {
         val psi = symbol.cfir.source?.psi ?: error("Type parameter `${symbol.name}` requires source PSI")
         return getOrCreatePublicSymbol(CaCfirPsiSymbolCacheKey(psi, CaCfirPsiSymbolKind.TYPE_PARAMETER)) {
-            symbolBuilder.classifierBuilder.buildTypeParameterSymbol(symbol)
+            cfirSymbolBuilder.classifierBuilder.buildTypeParameterSymbol(symbol)
         }
     }
     val parameterIndex = symbol.stableTypeParameterIndex()
         ?: error("Type parameter `${symbol.name}` is missing a stable owner index")
     return getOrCreatePublicSymbol(CaCfirTypeParameterSymbolCacheKey(ownerKey, symbol.name, parameterIndex)) {
-        symbolBuilder.classifierBuilder.buildTypeParameterSymbol(symbol)
+        cfirSymbolBuilder.classifierBuilder.buildTypeParameterSymbol(symbol)
     }
 }
 
@@ -103,7 +103,7 @@ internal fun CaCfirSession.createValueParameterSymbol(
                 parameterName = parameter.name,
             ),
         ) {
-            symbolBuilder.variableBuilder.buildOwnedValueParameterSymbol(ownerSymbol, parameter, parameterIndex)
+            cfirSymbolBuilder.variableBuilder.buildOwnedValueParameterSymbol(ownerSymbol, parameter, parameterIndex)
         }
     } else {
         createValueParameterSymbol(parameter.symbol)
@@ -115,10 +115,10 @@ internal fun CaCfirSession.createValueParameterSymbol(symbol: CfirValueParameter
     val cacheKey = psi?.let { CaCfirPsiSymbolCacheKey(it, CaCfirPsiSymbolKind.LOCAL_VARIABLE) }
     return if (cacheKey != null) {
         getOrCreatePublicSymbol(cacheKey) {
-            symbolBuilder.variableBuilder.buildValueParameterSymbol(symbol)
+            cfirSymbolBuilder.variableBuilder.buildValueParameterSymbol(symbol)
         }
     } else {
-        symbolBuilder.variableBuilder.buildValueParameterSymbol(symbol)
+        cfirSymbolBuilder.variableBuilder.buildValueParameterSymbol(symbol)
     }
 }
 
@@ -130,7 +130,7 @@ internal fun CaCfirSession.createPropertyAccessorSymbol(
     val ownerKey = ownerSymbol.publicSymbolCacheKeyOrNull()
         ?: error("Property accessor owner must expose a stable public key")
     return getOrCreatePublicSymbol(CaCfirPropertyAccessorSymbolCacheKey(ownerKey, kind)) {
-        symbolBuilder.functionBuilder.buildPropertyAccessorSymbol(backingSymbol, ownerSymbol, kind)
+        cfirSymbolBuilder.functionBuilder.buildPropertyAccessorSymbol(backingSymbol, ownerSymbol, kind)
     }
 }
 
@@ -143,7 +143,7 @@ internal fun CaCfirSession.createPropertyAccessorSymbol(
  * 就落回 `cfir.symbols`，避免 builder 继续向“中心化工厂”膨胀。
  */
 internal fun CaCfirSession.constructPackageSymbol(fqName: FqName): CaPackageSymbol =
-    CaCfirPackageSymbolImpl(fqName, useSiteModule, token)
+    CaCfirPackageSymbol(fqName, useSiteModule, token)
 
 internal fun CaCfirSession.constructFilePublicSymbol(symbol: CfirFileSymbol): CaFileSymbol {
     val file = symbolQueries.lookupContainingFile(symbol)
@@ -154,12 +154,12 @@ internal fun CaCfirSession.constructFilePublicSymbol(symbol: CfirFileSymbol): Ca
 internal fun CaCfirSession.constructFileSymbol(file: CjFile): CaFileSymbol {
     val fileSymbol = symbolQueries.lookupFileSymbol(file)
         ?: error("Cannot build low-level file symbol for `${file.name}`")
-    return CaCfirFileSymbolImpl(fileSymbol, file, useSiteModule, token)
+    return CaCfirFileSymbol(fileSymbol, file, useSiteModule, token)
 }
 
 internal fun CaCfirSession.constructExtendSymbol(symbol: CfirExtendSymbol): CaExtendSymbol {
     val identity = resolveExtendIdentity(symbol)
-    return CaCfirExtendSymbolImpl(
+    return CaCfirExtendSymbol(
         symbol,
         identity.extendPsi,
         identity.stableIdentity,

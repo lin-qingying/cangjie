@@ -20,7 +20,7 @@ import org.cangnova.cangjie.name.Name
  *
  * 对齐 Kotlin 的 `KaFirPackageSymbol` 落位，把 package 叶子从巨型模型文件中拆出。
  */
-internal class CaCfirPackageSymbolImpl(
+internal class CaCfirPackageSymbol(
     override val fqName: FqName,
     containingModule: CaModule,
     token: CaLifetimeToken,

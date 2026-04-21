@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.declarations.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
+import org.cangnova.cangjie.cfir.expressions.CfirMatchExhaustivenessStatus
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirMatchExpressionImpl
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -25,6 +26,7 @@ class CfirMatchExpressionBuilder {
     var coneTypeOrNull: ConeCangJieType? = null
     var subject: CfirExpression? = null
     val branches: MutableList<CfirMatchBranch> = mutableListOf()
+    var exhaustiveness: CfirMatchExhaustivenessStatus = CfirMatchExhaustivenessStatus.Unknown
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirMatchExpression {
@@ -34,6 +36,7 @@ class CfirMatchExpressionBuilder {
             coneTypeOrNull,
             subject,
             branches,
+            exhaustiveness,
         )
     }
 
@@ -58,5 +61,6 @@ inline fun buildMatchExpressionCopy(original: CfirMatchExpression, init: CfirMat
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.subject = original.subject
     copyBuilder.branches.addAll(original.branches)
+    copyBuilder.exhaustiveness = original.exhaustiveness
     return copyBuilder.apply(init).build()
 }

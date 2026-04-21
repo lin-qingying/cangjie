@@ -751,6 +751,9 @@ object CfirTree : AbstractCfirTreeBuilder() {
         parent(expression)
         +field("subject", expression, withTransform = true, nullable = true)
         +listField("branches", matchBranch, withTransform = true)
+        +field("exhaustiveness", matchExhaustivenessStatusType, withReplace = true) {
+            defaultValueInBuilder = "CfirMatchExhaustivenessStatus.Unknown"
+        }
     }
 
     val orPattern: Element by element(Pattern, name = "OrPattern") {

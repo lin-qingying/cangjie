@@ -1,7 +1,6 @@
 package org.cangnova.cangjie.analysis.api.cfir.types
 
 import org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirTypeParameterSymbolImpl
 import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
 import org.cangnova.cangjie.analysis.api.impl.base.CaMapBackedSubstitutor
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken

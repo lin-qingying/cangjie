@@ -1,10 +1,12 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
+import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.components.CaAnalysisScopeProvider
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
-import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScope
 
 /**
  * 对齐 Kotlin 的 analysis-scope provider 落位，
@@ -13,7 +15,16 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 internal class CaCfirAnalysisScopeProvider(
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaAnalysisScopeProvider {
-    override fun CaModule.analysisScope(): GlobalSearchScope = withValidityAssertion {
-        contentScope
+    @OptIn(CaPlatformInterface::class)
+    private val resolutionScope: CaResolutionScope
+        get() = CaResolutionScope.forModule(analysisSession.useSiteModule)
+
+    @OptIn(CaPlatformInterface::class)
+    override val analysisScope: GlobalSearchScope
+        get() = withValidityAssertion { resolutionScope }
+
+    @OptIn(CaPlatformInterface::class)
+    override fun PsiElement.canBeAnalysed(): Boolean = withValidityAssertion {
+        resolutionScope.contains(this)
     }
 }

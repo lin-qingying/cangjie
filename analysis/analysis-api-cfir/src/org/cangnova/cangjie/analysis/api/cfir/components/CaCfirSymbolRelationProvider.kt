@@ -9,6 +9,10 @@ import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.cfir.session.ProcessorAction
+import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 
 /**
  * 符号关系组件。
@@ -32,7 +36,7 @@ internal class CaCfirSymbolRelationProvider(
                 ?.backingSymbol as? org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>
                 ?: return@withValidityAssertion emptySequence()
 
-            analysisSession.resolutionFacade.getDirectlyOverriddenCallableSymbols(backingSymbol)
+            analysisSession.collectDirectlyOverriddenCallableSymbols(backingSymbol)
                 .map(analysisSession::getPublicSymbol)
                 .filterIsInstance<CaCallableSymbol>()
                 .distinctStableCallables()
@@ -144,5 +148,32 @@ internal class CaCfirSymbolRelationProvider(
         }
 
         return "${this::class.qualifiedName}@${System.identityHashCode(this)}"
+    }
+
+    private fun CaCfirSession.collectDirectlyOverriddenCallableSymbols(
+        backingSymbol: org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>,
+    ): List<org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>> {
+        val ownerClassId = backingSymbol.callableId.classId
+            ?: cfirSession.cfirProvider.getContainingClass(backingSymbol)?.classId
+            ?: return emptyList()
+        val memberScope = scopeQueries.queryMemberScope(ownerClassId) ?: return emptyList()
+
+        return when (backingSymbol) {
+            is CfirFunctionSymbol<*> -> buildList {
+                memberScope.processDirectOverriddenFunctionsWithBaseScope(backingSymbol) { overridden, _ ->
+                    add(overridden)
+                    ProcessorAction.NEXT
+                }
+            }
+
+            is CfirPropertySymbol -> buildList {
+                memberScope.processDirectOverriddenPropertiesWithBaseScope(backingSymbol) { overridden, _ ->
+                    add(overridden)
+                    ProcessorAction.NEXT
+                }
+            }
+
+            else -> emptyList()
+        }
     }
 }

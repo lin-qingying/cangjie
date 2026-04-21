@@ -26,7 +26,7 @@ import org.cangnova.cangjie.name.FqName
  *
  * 这是仓颉特有公开语义，保留该差异，但组织方式改为 Kotlin 风格的单叶子单文件。
  */
-internal class CaCfirExtendSymbolImpl(
+internal class CaCfirExtendSymbol(
     backingSymbol: CfirExtendSymbol,
     internal val extendPsi: org.cangnova.cangjie.psi.CjExtend?,
     internal val stableIdentity: CaCfirExtendSymbolIdentity,

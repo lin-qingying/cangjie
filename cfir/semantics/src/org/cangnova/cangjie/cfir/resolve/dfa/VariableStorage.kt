@@ -5,16 +5,13 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSmartCastExpression
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 
 class VariableStorage private constructor(
-    private val session: CfirSession,
     private val realVariables: MutableMap<RealVariable, RealVariable>,
     private val memberVariables: MutableMap<RealVariable, MutableSet<RealVariable>>,
 ) {
-    constructor(session: CfirSession) : this(
-        session = session,
+    constructor() : this(
         realVariables = LinkedHashMap(),
         memberVariables = LinkedHashMap(),
     )
@@ -25,7 +22,6 @@ class VariableStorage private constructor(
             membersCopy[key] = LinkedHashSet(value)
         }
         return VariableStorage(
-            session = session,
             realVariables = LinkedHashMap(realVariables),
             memberVariables = membersCopy,
         )

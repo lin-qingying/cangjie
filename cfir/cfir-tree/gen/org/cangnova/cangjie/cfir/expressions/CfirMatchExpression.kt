@@ -20,6 +20,7 @@ abstract class CfirMatchExpression : CfirExpression() {
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract val subject: CfirExpression?
     abstract val branches: List<CfirMatchBranch>
+    abstract val exhaustiveness: CfirMatchExhaustivenessStatus
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitMatchExpression(this, data)
@@ -31,6 +32,8 @@ abstract class CfirMatchExpression : CfirExpression() {
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+
+    abstract fun replaceExhaustiveness(newExhaustiveness: CfirMatchExhaustivenessStatus)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirMatchExpression
 

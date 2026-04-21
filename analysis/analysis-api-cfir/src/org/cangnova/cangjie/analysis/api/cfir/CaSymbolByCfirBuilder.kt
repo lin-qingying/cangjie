@@ -1,24 +1,24 @@
 package org.cangnova.cangjie.analysis.api.cfir
 
 import com.intellij.openapi.project.Project
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirAnonymousFunctionSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirAnonymousFunctionSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPropertyAccessorKind
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassSymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirConstructorSymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirEnumConstructorSymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFieldSymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFinalizerSymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirMacroSymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirMainFunctionSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirConstructorSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirEnumConstructorSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFieldSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFinalizerSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirMacroSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirMainFunctionSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirNamedFunctionSymbol
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPatternBindingSymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPatternVariableSymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPropertyGetterSymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPropertySetterSymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPropertySymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirTypeAliasSymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirTypeParameterSymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirValueParameterSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPatternBindingSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPatternVariableSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPropertyGetterSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPropertySetterSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPropertySymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirTypeAliasSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirTypeParameterSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.constructExtendSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.constructFilePublicSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.findContainingDeclarationSymbol
@@ -123,13 +123,13 @@ internal class CaSymbolByCfirBuilder(
 
     inner class ClassifierSymbolBuilder {
         fun buildClassLikeSymbol(symbol: CfirClassLikeSymbol<*>): CaClassLikeSymbol = when (symbol) {
-            is CfirTypeAliasSymbol -> CaCfirTypeAliasSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
-            is CfirClassSymbol -> CaCfirClassSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
-            else -> CaCfirClassSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
+            is CfirTypeAliasSymbol -> CaCfirTypeAliasSymbol(symbol, analysisSession)
+            is CfirClassSymbol -> CaCfirClassSymbol(symbol, analysisSession)
+            else -> CaCfirClassSymbol(symbol, analysisSession)
         }
 
         fun buildTypeParameterSymbol(symbol: CfirTypeParameterSymbol): CaTypeParameterSymbol =
-            CaCfirTypeParameterSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
+            CaCfirTypeParameterSymbol(symbol, analysisSession)
     }
 
     inner class FunctionSymbolBuilder {
@@ -139,18 +139,18 @@ internal class CaSymbolByCfirBuilder(
             kind: CaCfirPropertyAccessorKind,
         ): CaSymbol = when (kind) {
             CaCfirPropertyAccessorKind.GETTER ->
-                CaCfirPropertyGetterSymbolImpl(backingSymbol, analysisSession, useSiteModule, analysisSession.token)
+                CaCfirPropertyGetterSymbol(backingSymbol, analysisSession, useSiteModule, analysisSession.token)
 
             CaCfirPropertyAccessorKind.SETTER ->
-                CaCfirPropertySetterSymbolImpl(backingSymbol, analysisSession, useSiteModule, analysisSession.token)
+                CaCfirPropertySetterSymbol(backingSymbol, analysisSession, useSiteModule, analysisSession.token)
         }
 
         fun buildFunctionSymbol(symbol: CfirCallableSymbol<*>): CaCallableSymbol = when (symbol) {
-            is CfirAnonymousFunctionSymbol -> CaCfirAnonymousFunctionSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
-            is CfirMainFunctionSymbol -> CaCfirMainFunctionSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
-            is CfirMacroDeclarationSymbol -> CaCfirMacroSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
-            is CfirFinalizerSymbol -> CaCfirFinalizerSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
-            is CfirConstructorSymbol -> CaCfirConstructorSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
+            is CfirAnonymousFunctionSymbol -> CaCfirAnonymousFunctionSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
+            is CfirMainFunctionSymbol -> CaCfirMainFunctionSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
+            is CfirMacroDeclarationSymbol -> CaCfirMacroSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
+            is CfirFinalizerSymbol -> CaCfirFinalizerSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
+            is CfirConstructorSymbol -> CaCfirConstructorSymbol(symbol, analysisSession)
             is CfirNamedFunctionSymbol -> CaCfirNamedFunctionSymbol(symbol, analysisSession)
             else -> error("Unsupported function public symbol mapping for `${symbol::class.simpleName}`")
         }
@@ -158,12 +158,12 @@ internal class CaSymbolByCfirBuilder(
 
     inner class VariableSymbolBuilder {
         fun buildVariableSymbol(symbol: CfirCallableSymbol<*>): CaCallableSymbol = when (symbol) {
-            is CfirPropertySymbol -> CaCfirPropertySymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
-            is CfirFieldVariableSymbol -> CaCfirFieldSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
-            is CfirPatternVariableSymbol -> CaCfirPatternVariableSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
-            is CfirPatternBindingSymbol -> CaCfirPatternBindingSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
+            is CfirPropertySymbol -> CaCfirPropertySymbol(symbol, analysisSession)
+            is CfirFieldVariableSymbol -> CaCfirFieldSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
+            is CfirPatternVariableSymbol -> CaCfirPatternVariableSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
+            is CfirPatternBindingSymbol -> CaCfirPatternBindingSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
             is CfirValueParameterSymbol -> buildValueParameterSymbol(symbol)
-            is CfirEnumConstructorSymbol -> CaCfirEnumConstructorSymbolImpl(symbol, analysisSession, useSiteModule, analysisSession.token)
+            is CfirEnumConstructorSymbol -> CaCfirEnumConstructorSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
             else -> error("Unsupported variable public symbol mapping for `${symbol::class.simpleName}`")
         }
 
@@ -176,11 +176,9 @@ internal class CaSymbolByCfirBuilder(
             val parameterIndex = parameterPsi?.let { currentParameter ->
                 (currentParameter.parent as? org.cangnova.cangjie.psi.CjParameterList)?.parameters?.indexOf(currentParameter)
             }
-            return CaCfirValueParameterSymbolImpl(
-                backingSymbol = symbol,
-                analysisSession = analysisSession,
-                containingModule = useSiteModule,
-                token = analysisSession.token,
+            return CaCfirValueParameterSymbol(
+                symbol = symbol,
+                session = analysisSession,
                 ownerSymbol = ownerSymbol,
                 stableParameterIndex = parameterIndex,
                 parameterPsi = parameterPsi,
@@ -192,11 +190,9 @@ internal class CaSymbolByCfirBuilder(
             parameter: CfirValueParameter,
             parameterIndex: Int,
         ): CaValueParameterSymbol =
-            CaCfirValueParameterSymbolImpl(
-                backingSymbol = parameter.symbol,
-                analysisSession = analysisSession,
-                containingModule = useSiteModule,
-                token = analysisSession.token,
+            CaCfirValueParameterSymbol(
+                symbol = parameter.symbol,
+                session = analysisSession,
                 ownerSymbol = ownerSymbol,
                 stableParameterIndex = parameterIndex,
                 parameterPsi = (ownerSymbol as? CaDeclarationSymbol)
@@ -288,7 +284,7 @@ internal class CaSymbolByCfirBuilder(
 
             val coneMappings = buildList {
                 normalizedMappings.forEach { (typeParameter, type) ->
-                    val cfirTypeParameter = typeParameter as? CaCfirTypeParameterSymbolImpl
+                    val cfirTypeParameter = typeParameter as? CaCfirTypeParameterSymbol
                         ?: error("仅支持使用 CFIR 类型参数符号构建替换器：${typeParameter::class.simpleName}")
                     val cfirType = type as? CaCfirType
                         ?: error("仅支持使用 CFIR Analysis API 类型构建替换器：${type::class.simpleName}")

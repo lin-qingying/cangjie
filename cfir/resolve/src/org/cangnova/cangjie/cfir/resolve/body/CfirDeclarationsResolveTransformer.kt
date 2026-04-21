@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
+import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -65,7 +66,11 @@ open class CfirDeclarationsResolveTransformer(
             val importScopes = createImportingScopes(file)
             context.addNonLocalScopes(importScopes)
 
+            dataFlowAnalyzer.enterFile(file, buildGraph = true)
             file.transformDeclarations(transformer, ResolutionMode.ContextIndependent)
+            dataFlowAnalyzer.exitFile()?.let { graph ->
+                file.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(graph))
+            }
         }
         context.replaceTowerDataContext(savedContext)
         return file
@@ -99,8 +104,12 @@ open class CfirDeclarationsResolveTransformer(
 
             when (classLike) {
                 is CfirClass -> {
+                    dataFlowAnalyzer.enterClass(classLike, buildGraph = true)
                     context.withContainingClass(classLike) {
                         context.withScopesForClass(classLike, components, resolveDeclarations)
+                    }
+                    dataFlowAnalyzer.exitClass()?.let { graph ->
+                        classLike.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(graph))
                     }
                 }
 
@@ -158,10 +167,12 @@ open class CfirDeclarationsResolveTransformer(
         resolutionModeForBody: ResolutionMode,
         shouldResolveEverything: Boolean,
     ): CfirFunction {
+        dataFlowAnalyzer.enterFunction(function)
         val body = function.body
         if (body != null) {
             function.transformBody(transformer, resolutionModeForBody)
         }
+        function.replaceControlFlowGraphReference(dataFlowAnalyzer.exitFunction(function))
         return function
     }
 
@@ -208,10 +219,12 @@ open class CfirDeclarationsResolveTransformer(
         constructor: CfirConstructor,
         data: ResolutionMode,
     ): CfirConstructor {
+        dataFlowAnalyzer.enterFunction(constructor)
         val body = constructor.body
         if (body != null) {
             constructor.transformBody(transformer, data)
         }
+        constructor.replaceControlFlowGraphReference(dataFlowAnalyzer.exitFunction(constructor))
         return constructor
     }
 

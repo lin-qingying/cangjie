@@ -126,10 +126,10 @@ internal fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSes
 }
 
 internal fun CaSymbol.publicSymbolCacheKeyOrNull(): CaCfirPublicSymbolCacheKey? = when (this) {
-    is CaCfirFileSymbolImpl -> CaCfirFileSymbolCacheKey(file)
-    is CaCfirPackageSymbolImpl -> CaCfirPackageSymbolCacheKey(fqName)
+    is CaCfirFileSymbol -> CaCfirFileSymbolCacheKey(file)
+    is CaCfirPackageSymbol -> CaCfirPackageSymbolCacheKey(fqName)
     is CaCfirClassLikeSymbolBase<*> -> classId?.let(::CaCfirClassLikeSymbolCacheKey)
-    is CaCfirExtendSymbolImpl -> CaCfirExtendSymbolCacheKey(stableIdentity)
+    is CaCfirExtendSymbol -> CaCfirExtendSymbolCacheKey(stableIdentity)
     is CaPropertyGetterSymbol,
     is CaPropertySetterSymbol,
         -> {
@@ -140,13 +140,13 @@ internal fun CaSymbol.publicSymbolCacheKeyOrNull(): CaCfirPublicSymbolCacheKey? 
         )
     }
 
-    is CaCfirValueParameterSymbolImpl -> {
+    is CaCfirValueParameterSymbol -> {
         val ownerKey = (containingDeclaration as? CaSymbol)?.publicSymbolCacheKeyOrNull() ?: return null
         val parameterIndex = stableParameterIndex ?: return null
         CaCfirValueParameterSymbolCacheKey(ownerKey, parameterIndex, name)
     }
 
-    is CaCfirTypeParameterSymbolImpl -> {
+    is CaCfirTypeParameterSymbol -> {
         val owner = containingDeclaration ?: return null
         val ownerKey = owner.publicSymbolCacheKeyOrNull() ?: return null
         val parameterIndex = stableParameterIndex ?: return null
