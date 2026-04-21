@@ -278,6 +278,27 @@ internal class ControlFlowGraphCopier : ControlFlowGraphVisitor<CFGNode<*>, Unit
     override fun visitWrappedExpressionNode(node: WrappedExpressionNode, data: Unit): CFGNode<*> =
         WrappedExpressionNode(get(node.owner), node.fir, node.level)
 
+    override fun visitFieldInitializerEnterNode(node: FieldInitializerEnterNode, data: Unit): CFGNode<*> =
+        FieldInitializerEnterNode(get(node.owner), node.fir, node.level)
+
+    override fun visitFieldInitializerExitNode(node: FieldInitializerExitNode, data: Unit): CFGNode<*> =
+        FieldInitializerExitNode(get(node.owner), node.fir, node.level)
+
+    override fun visitSpawnExpressionNode(node: SpawnExpressionNode, data: Unit): CFGNode<*> =
+        SpawnExpressionNode(get(node.owner), node.fir, node.level)
+
+    override fun visitSynchronizedEnterNode(node: SynchronizedEnterNode, data: Unit): CFGNode<*> =
+        SynchronizedEnterNode(get(node.owner), node.fir, node.level)
+
+    override fun visitSynchronizedExitNode(node: SynchronizedExitNode, data: Unit): CFGNode<*> =
+        SynchronizedExitNode(get(node.owner), node.fir, node.level)
+
+    override fun visitUnsafeEnterNode(node: UnsafeEnterNode, data: Unit): CFGNode<*> =
+        UnsafeEnterNode(get(node.owner), node.fir, node.level)
+
+    override fun visitUnsafeExitNode(node: UnsafeExitNode, data: Unit): CFGNode<*> =
+        UnsafeExitNode(get(node.owner), node.fir, node.level)
+
     override fun visitStubNode(node: StubNode, data: Unit): CFGNode<*> =
         StubNode(get(node.owner), node.level)
 

@@ -15,6 +15,6 @@ internal class CaCfirSubstitutorProvider(
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaSubstitutorProvider {
     override fun createSubstitutor(mappings: Map<CaTypeParameterSymbol, CaType>): CaSubstitutor = withValidityAssertion {
-        analysisSession.symbolBuilder.typeBuilder.buildSubstitutor(mappings)
+        analysisSession.cfirSymbolBuilder.typeBuilder.buildSubstitutor(mappings)
     }
 }

@@ -6,6 +6,7 @@ import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.unwrapFakeOverridesOrDelegated
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.getParentOfTypes2
@@ -44,12 +45,11 @@ internal fun CaCfirSymbol<*>.findPsi(): PsiElement? {
     return cfirSymbol.findPsi(analysisSession.analysisScope)
 }
 fun CfirBasedSymbol<*>.findPsi(scope: GlobalSearchScope): PsiElement? {
-    return if (
-        this is CfirCallableSymbol<*> &&
-        !this.isTypeAliasedConstructor // type-aliased constructors should not be unwrapped
-    ) {
-        cfir.unwrapFakeOverridesOrDelegated().findPsi()
+    val declaration = if (this is CfirCallableSymbol<*>) {
+        cfir.unwrapFakeOverridesOrDelegated()
     } else {
-        cfir.findPsi()
-    } ?: CfirSyntheticFunctionInterfaceSourceProvider.findPsi(cfir, scope)
+        cfir
+    }
+
+    return declaration.realPsi?.takeIf { psi -> scope.contains(psi.containingFile.virtualFile) }
 }

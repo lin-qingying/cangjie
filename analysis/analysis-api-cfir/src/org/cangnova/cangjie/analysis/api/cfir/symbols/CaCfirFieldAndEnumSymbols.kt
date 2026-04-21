@@ -17,6 +17,7 @@ import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.payloadParameterTypesOrEmpty
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
@@ -29,7 +30,7 @@ import org.cangnova.cangjie.name.Name
  * 这两类都属于 variable/callable 分支，但公开语义与 property、value parameter 完全不同，
  * 独立落位后更容易维持稳定的 pointer 与宿主恢复规则。
  */
-internal class CaCfirFieldSymbolImpl(
+internal class CaCfirFieldSymbol(
     final override val backingSymbol: CfirFieldVariableSymbol,
     final override val analysisSession: CaCfirSession,
     final override val containingModule: CaModule,
@@ -67,7 +68,7 @@ internal class CaCfirFieldSymbolImpl(
         get() = nameImpl
 }
 
-internal class CaCfirEnumConstructorSymbolImpl(
+internal class CaCfirEnumConstructorSymbol(
     final override val backingSymbol: CfirEnumConstructorSymbol,
     final override val analysisSession: CaCfirSession,
     final override val containingModule: CaModule,

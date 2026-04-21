@@ -5,7 +5,7 @@ import org.cangnova.cangjie.analysis.api.cfir.*
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirBackedSymbol
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbol
 import org.cangnova.cangjie.analysis.api.components.CaOriginalPsiProvider
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
@@ -28,7 +28,7 @@ internal class CaCfirOriginalPsiProvider(
     override fun CaSymbol.getOriginalPsi(): PsiElement? = withValidityAssertion {
         when (this@getOriginalPsi) {
             is CaFileSymbol -> file
-            is CaCfirExtendSymbolImpl -> extendPsi ?: psi
+            is CaCfirExtendSymbol -> extendPsi ?: psi
             is CaDeclarationSymbol -> psi
             is CaClassLikeSymbol,
             is CaCallableSymbol,

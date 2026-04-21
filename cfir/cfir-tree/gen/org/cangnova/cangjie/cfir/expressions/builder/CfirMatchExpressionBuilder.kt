@@ -11,10 +11,7 @@ import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
-import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
+import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.impl.CfirMatchExpressionImpl
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
@@ -26,6 +23,7 @@ class CfirMatchExpressionBuilder {
     var coneTypeOrNull: ConeCangJieType? = null
     var subject: CfirExpression? = null
     val branches: MutableList<CfirMatchBranch> = mutableListOf()
+    lateinit var exhaustiveness: CfirMatchExhaustivenessStatus
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirMatchExpression {
@@ -35,13 +33,14 @@ class CfirMatchExpressionBuilder {
             coneTypeOrNull,
             subject,
             branches,
+            exhaustiveness,
         )
     }
 
 }
 
 @OptIn(ExperimentalContracts::class)
-inline fun buildMatchExpression(init: CfirMatchExpressionBuilder.() -> Unit = {}): CfirMatchExpression {
+inline fun buildMatchExpression(init: CfirMatchExpressionBuilder.() -> Unit): CfirMatchExpression {
     contract {
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }
@@ -49,7 +48,7 @@ inline fun buildMatchExpression(init: CfirMatchExpressionBuilder.() -> Unit = {}
 }
 
 @OptIn(ExperimentalContracts::class)
-inline fun buildMatchExpressionCopy(original: CfirMatchExpression, init: CfirMatchExpressionBuilder.() -> Unit = {}): CfirMatchExpression {
+inline fun buildMatchExpressionCopy(original: CfirMatchExpression, init: CfirMatchExpressionBuilder.() -> Unit): CfirMatchExpression {
     contract {
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }
@@ -59,5 +58,6 @@ inline fun buildMatchExpressionCopy(original: CfirMatchExpression, init: CfirMat
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.subject = original.subject
     copyBuilder.branches.addAll(original.branches)
+    copyBuilder.exhaustiveness = original.exhaustiveness
     return copyBuilder.apply(init).build()
 }

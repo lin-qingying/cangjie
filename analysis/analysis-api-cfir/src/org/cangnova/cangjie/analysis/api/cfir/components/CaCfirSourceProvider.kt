@@ -4,7 +4,7 @@ import org.cangnova.cangjie.analysis.api.cfir.*
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirBackedSymbol
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbol
 import org.cangnova.cangjie.analysis.api.components.CaSourceProvider
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
@@ -24,7 +24,7 @@ internal class CaCfirSourceProvider(
     override fun CaSymbol.getContainingFile(): CjFile? = withValidityAssertion {
         when (this@getContainingFile) {
             is CaFileSymbol -> file
-            is CaCfirExtendSymbolImpl -> (extendPsi?.containingFile as? CjFile) ?: decompiledFallbackFile(this@getContainingFile)
+            is CaCfirExtendSymbol -> (extendPsi?.containingFile as? CjFile) ?: decompiledFallbackFile(this@getContainingFile)
             is CaDeclarationSymbol -> {
                 (psi?.containingFile as? CjFile)
                     ?: (this@getContainingFile as? CaCfirBackedSymbol<*>)?.let { symbol ->

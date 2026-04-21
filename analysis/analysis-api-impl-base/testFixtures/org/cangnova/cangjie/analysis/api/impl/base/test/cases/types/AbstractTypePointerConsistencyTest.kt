@@ -4,9 +4,11 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.expectedExpressionType
 import org.cangnova.cangjie.analysis.api.impl.base.test.targetCallText
+
 import org.cangnova.cangjie.analysis.api.session.restoreType
 import org.cangnova.cangjie.analysis.api.types.CaType
-import org.cangnova.cangjie.analysis.api.types.pointers.CaTypePointer
+import org.cangnova.cangjie.analysis.api.types.CaTypePointer
+
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjFile

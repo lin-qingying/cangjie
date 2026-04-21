@@ -22,7 +22,7 @@ import org.cangnova.cangjie.psi.CjFile
  *
  * 对齐 Kotlin 的 `KaFirFileSymbol` 落位，把文件叶子独立到单文件中。
  */
-internal class CaCfirFileSymbolImpl(
+internal class CaCfirFileSymbol(
     override val backingSymbol: CfirFileSymbol,
     override val file: CjFile,
     containingModule: CaModule,

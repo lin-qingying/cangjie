@@ -1,13 +1,13 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test.cases.projectStructure
 
-import org.cangnova.cangjie.analysis.api.CaBuiltinsModule
-import org.cangnova.cangjie.analysis.api.CaDanglingFileModule
-import org.cangnova.cangjie.analysis.api.CaLibraryFallbackDependenciesModule
-import org.cangnova.cangjie.analysis.api.CaLibraryModule
-import org.cangnova.cangjie.analysis.api.CaLibrarySourceModule
-import org.cangnova.cangjie.analysis.api.CaModule
-import org.cangnova.cangjie.analysis.api.CaNotUnderContentRootModule
-import org.cangnova.cangjie.analysis.api.CaSourceModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryFallbackDependenciesModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiProjectStructureTestDirectives
 import org.cangnova.cangjie.analysis.api.impl.base.test.ExpectedCaModuleShape
 import org.cangnova.cangjie.analysis.api.impl.base.test.expectedBinaryArtifactModuleShape

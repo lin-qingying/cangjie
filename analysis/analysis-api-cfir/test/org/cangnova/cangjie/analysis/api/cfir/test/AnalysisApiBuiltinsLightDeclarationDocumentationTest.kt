@@ -5,6 +5,7 @@ import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationOri
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationProvider
 import org.cangnova.cangjie.analysis.api.lightDeclarations.documentation
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiMode
@@ -51,7 +52,7 @@ class AnalysisApiBuiltinsLightDeclarationDocumentationTest : AbstractAnalysisApi
     fun builtinsLightDeclarationDocs(mainFile: CjFile, mainModule: CjTestModule) {
         withStdlibFixtureProperty(locateStdlibFixtureRoot()) {
             val decompiledFile = mainFile.project.getService(CaDecompiledPsiProvider::class.java)
-                .findDecompiledFile(mainModule.caModule as org.cangnova.cangjie.analysis.api.CaBuiltinsModule, FqName("std.core"))
+                .findDecompiledFile(mainModule.caModule as CaBuiltinsModule, FqName("std.core"))
             assertNotNull(decompiledFile, "builtins decompiled PSI 应可恢复 `std.core`")
 
             val provider = CaLightDeclarationProvider.getInstance(mainFile.project)

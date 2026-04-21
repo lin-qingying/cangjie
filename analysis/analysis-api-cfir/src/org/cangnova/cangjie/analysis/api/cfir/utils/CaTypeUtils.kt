@@ -71,10 +71,10 @@ internal fun restoreErrorType(coneType: ConeCangJieType, session: CaCfirSession)
     coneType.asCaType(session) as? CaErrorType
 
 internal fun ConeCangJieType.asCaType(analysisSession: CaCfirSession): CaType =
-    analysisSession.symbolBuilder.typeBuilder.buildType(this)
+    analysisSession.cfirSymbolBuilder.typeBuilder.buildType(this)
 
 internal fun ConeCangJieType.asPublicTypeProjections(analysisSession: CaCfirSession): List<CaTypeProjection> =
-    analysisSession.symbolBuilder.typeBuilder.buildTypeProjections(this)
+    analysisSession.cfirSymbolBuilder.typeBuilder.buildTypeProjections(this)
 
 internal fun ConeTypeProjection.asPublicTypeProjection(analysisSession: CaCfirSession): CaTypeProjection =
     CaTypeProjection(

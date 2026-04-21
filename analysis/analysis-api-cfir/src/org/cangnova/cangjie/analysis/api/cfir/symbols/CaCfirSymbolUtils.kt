@@ -120,6 +120,7 @@ internal fun CfirDeclarationOrigin.asPublicOrigin(): CaSymbolOrigin = when (this
     CfirDeclarationOrigin.GenericInstantiation -> CaSymbolOrigin.GENERIC_INSTANTIATION
     CfirDeclarationOrigin.Extension -> CaSymbolOrigin.EXTENSION
     CfirDeclarationOrigin.SamConstructor -> CaSymbolOrigin.SAM_CONSTRUCTOR
+    CfirDeclarationOrigin.IntersectionOverride -> CaSymbolOrigin.SYNTHETIC
     CfirDeclarationOrigin.SubstitutionOverride.DeclarationSite -> CaSymbolOrigin.SUBSTITUTION_OVERRIDE_DECLARATION_SITE
     CfirDeclarationOrigin.SubstitutionOverride.CallSite -> CaSymbolOrigin.SUBSTITUTION_OVERRIDE_CALL_SITE
     is CfirDeclarationOrigin.Synthetic -> CaSymbolOrigin.SYNTHETIC

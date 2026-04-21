@@ -4,6 +4,7 @@ import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
+import java.lang.ref.SoftReference
 
 /**
  * CFIR 符号指针的内部基类。
@@ -13,6 +14,27 @@ import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
  */
 internal abstract class CaCfirSymbolPointerBase<out S : CaSymbol> : CaSymbolPointer<S> {
     protected fun restoreSession(session: CaSession): CaCfirSession? = session as? CaCfirSession
+}
+
+/**
+ * 对齐 Kotlin `KaBaseCachedSymbolPointer` 的仓颉侧 cached pointer 基座。
+ *
+ * 这里把“优先返回原始 symbol、否则走后端恢复”的协议统一收敛，
+ * 让 top-level/member 等分层 pointer 只关心候选选择职责。
+ */
+internal abstract class CaCfirCachedSymbolPointer<S : CaSymbol>(
+    originalSymbol: S?,
+) : CaCfirSymbolPointerBase<S>() {
+    private val originalSymbolRef = SoftReference(originalSymbol)
+
+    final override fun restoreSymbol(session: CaSession): S? {
+        originalSymbolRef.get()?.let { symbol ->
+            return symbol
+        }
+        return restoreIfNotCached(session)
+    }
+
+    protected abstract fun restoreIfNotCached(session: CaSession): S?
 }
 
 internal fun <S : CaSymbol> Class<S>.castOrNull(symbol: CaSymbol?): S? =

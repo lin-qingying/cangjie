@@ -1,22 +1,32 @@
-package org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive
+package org.cangnova.cangjie.cfir.resolve.match.exhaustive
 
-import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatchPattern
-import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.CfirMatrix
-import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.calculateMatrix
-import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.inferExpressionType
-import org.cangnova.cangjie.cfir.analysis.checkers.expression.match.exhaustive.inria.isWellTyped
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPattern
+import org.cangnova.cangjie.cfir.resolve.match.CfirMatrix
+import org.cangnova.cangjie.cfir.resolve.match.calculateMatrix
+import org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria.isWellTyped
+import org.cangnova.cangjie.cfir.resolve.match.inferExpressionType
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
+/**
+ * 仓颉 match 穷尽性共享分析入口。
+ *
+ * 对位原 checkers 侧 `ExhaustivenessAnalyzer`，但依赖 [MatchExhaustivenessContext]，
+ * 从而可被 BODY_RESOLVE 与 CHECKERS 共同复用。
+ */
 object ExhaustivenessAnalyzer {
     private val dispatcher = HybridDispatcher.DEFAULT
 
+    fun checkMatch(match: CfirMatchExpression, session: CfirSession): ExhaustivenessResult {
+        return checkMatch(match, MatchExhaustivenessContext.fromSession(session))
+    }
+
     fun checkMatch(
         match: CfirMatchExpression,
-        context: CheckerContext,
+        context: MatchExhaustivenessContext,
     ): ExhaustivenessResult {
         val subjectType = inferExpressionType(match.subject)
         val matrix = try {
@@ -33,7 +43,15 @@ object ExhaustivenessAnalyzer {
     fun checkPattern(
         pattern: CfirPattern,
         expression: CfirExpression?,
-        context: CheckerContext,
+        session: CfirSession,
+    ): ExhaustivenessResult {
+        return checkPattern(pattern, expression, MatchExhaustivenessContext.fromSession(session))
+    }
+
+    fun checkPattern(
+        pattern: CfirPattern,
+        expression: CfirExpression?,
+        context: MatchExhaustivenessContext,
     ): ExhaustivenessResult {
         val type = inferExpressionType(expression)
         val matrix = try {
@@ -50,7 +68,15 @@ object ExhaustivenessAnalyzer {
     fun checkMatrix(
         matrix: CfirMatrix,
         type: ConeCangJieType,
-        context: CheckerContext,
+        session: CfirSession,
+    ): ExhaustivenessResult {
+        return checkMatrix(matrix, type, MatchExhaustivenessContext.fromSession(session))
+    }
+
+    fun checkMatrix(
+        matrix: CfirMatrix,
+        type: ConeCangJieType,
+        context: MatchExhaustivenessContext,
     ): ExhaustivenessResult {
         if (!matrix.isWellTyped()) {
             return ExhaustivenessResult.Error("matrix is not well typed")
@@ -60,7 +86,7 @@ object ExhaustivenessAnalyzer {
 
     fun getMissingPatterns(
         match: CfirMatchExpression,
-        context: CheckerContext,
+        context: MatchExhaustivenessContext,
     ): List<CfirMatchPattern>? {
         return when (val result = checkMatch(match, context)) {
             is ExhaustivenessResult.NonExhaustive -> result.missingPatterns
@@ -71,7 +97,7 @@ object ExhaustivenessAnalyzer {
 
     fun getMissingPatternTexts(
         match: CfirMatchExpression,
-        context: CheckerContext,
+        context: MatchExhaustivenessContext,
     ): List<String> {
         return when (val result = checkMatch(match, context)) {
             is ExhaustivenessResult.NonExhaustive -> result.getMissingPatternTexts()
@@ -81,7 +107,14 @@ object ExhaustivenessAnalyzer {
 
     fun checkWithAnalysis(
         match: CfirMatchExpression,
-        context: CheckerContext,
+        session: CfirSession,
+    ): DispatchAnalysis? {
+        return checkWithAnalysis(match, MatchExhaustivenessContext.fromSession(session))
+    }
+
+    fun checkWithAnalysis(
+        match: CfirMatchExpression,
+        context: MatchExhaustivenessContext,
     ): DispatchAnalysis? {
         val subjectType = inferExpressionType(match.subject)
         val matrix = try {
@@ -92,4 +125,3 @@ object ExhaustivenessAnalyzer {
         return AnalyzingDispatcher.DEFAULT.checkWithAnalysis(matrix, subjectType, context)
     }
 }
-

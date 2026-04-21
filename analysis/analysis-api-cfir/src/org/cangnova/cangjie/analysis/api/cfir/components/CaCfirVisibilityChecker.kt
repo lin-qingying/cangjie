@@ -14,8 +14,8 @@ import org.cangnova.cangjie.analysis.api.cfir.symbols.restoreExtendMemberCallabl
 import org.cangnova.cangjie.analysis.api.cfir.symbols.restoreExtendPublicSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCallableSymbolSupport
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassLikeSymbolBase
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFileSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFileSymbol
 import org.cangnova.cangjie.analysis.api.components.CaVisibilityChecker
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
@@ -35,10 +35,10 @@ internal class CaCfirVisibilityChecker(
     override fun CaSymbol.isVisible(): Boolean = withValidityAssertion {
         when (this@isVisible) {
             is CaPackageSymbol -> analysisSession.scopeQueries.hasVisiblePackage(fqName)
-            is CaCfirFileSymbolImpl -> analysisSession.symbolQueries.lookupFileSymbol(file) != null
+            is CaCfirFileSymbol -> analysisSession.symbolQueries.lookupFileSymbol(file) != null
             is CaExtendSymbol -> {
                 val restoredSymbol = when (this@isVisible) {
-                    is CaCfirExtendSymbolImpl -> analysisSession.restoreExtendPublicSymbol(stableIdentity)
+                    is CaCfirExtendSymbol -> analysisSession.restoreExtendPublicSymbol(stableIdentity)
                     else -> null
                 }
                 restoredSymbol === this@isVisible

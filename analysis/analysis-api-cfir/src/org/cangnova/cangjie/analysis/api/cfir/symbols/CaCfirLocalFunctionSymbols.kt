@@ -28,7 +28,7 @@ import org.cangnova.cangjie.name.ClassId
  * 匿名函数、析构器这类函数虽然都属于 `CaFunctionSymbol` 族，
  * 但它们的公开语义和 pointer/宿主恢复策略不同，单独落位更接近 Kotlin FIR 的叶子组织方式。
  */
-internal class CaCfirAnonymousFunctionSymbolImpl(
+internal class CaCfirAnonymousFunctionSymbol(
     final override val backingSymbol: CfirAnonymousFunctionSymbol,
     final override val analysisSession: CaCfirSession,
     final override val containingModule: CaModule,
@@ -95,7 +95,7 @@ internal class CaCfirAnonymousFunctionSymbolImpl(
         get() = false
 }
 
-internal class CaCfirFinalizerSymbolImpl(
+internal class CaCfirFinalizerSymbol(
     final override val backingSymbol: CfirFinalizerSymbol,
     final override val analysisSession: CaCfirSession,
     final override val containingModule: CaModule,

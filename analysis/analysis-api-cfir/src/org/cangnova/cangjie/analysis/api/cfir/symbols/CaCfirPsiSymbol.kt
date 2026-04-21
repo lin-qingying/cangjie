@@ -1,8 +1,8 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.api.resolveToCfirSymbolOfType
 import org.cangnova.cangjie.analysis.api.impl.base.symbols.pointers.CaBasePsiSymbolPointer
 import org.cangnova.cangjie.analysis.api.impl.base.util.lazyPub
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
@@ -13,8 +13,11 @@ import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbolOfType
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.realPsi
+import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
+import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.psi.CjCallableDeclaration
@@ -121,7 +124,7 @@ internal val CfirBasedSymbol<*>.backingPsiIfApplicable: PsiElement?
 internal fun CaCfirCjBasedSymbol<CjDeclarationWithBody, CfirCallableSymbol<*>>.createReturnType(): CaType {
     val backingPsi = backingPsi
     if (backingPsi?.hasBlockBody() == true && !backingPsi.hasDeclaredReturnType()) {
-        return analysisSession.builtinTypes.unit
+        return analysisSession.cfirSession.builtinTypes.unitType.asCaType(analysisSession)
     }
 
     return cfirSymbol.returnType(builder)
@@ -133,6 +136,7 @@ internal inline fun <reified S : CaSymbol> CaCfirPsiSymbol<out CjElement, *>.psi
     return psiBasedSymbolPointerOfTypeIfSource(S::class, restoreSymbolByPsi)
 }
 
+@OptIn(CaImplementationDetail::class)
 internal fun <S : CaSymbol> CaCfirPsiSymbol<out CjElement, *>.psiBasedSymbolPointerOfTypeIfSource(
     expectedClass: KClass<S>,
     restoreSymbolByPsi: org.cangnova.cangjie.analysis.api.CaSession.(CjElement) -> CaSymbol?,

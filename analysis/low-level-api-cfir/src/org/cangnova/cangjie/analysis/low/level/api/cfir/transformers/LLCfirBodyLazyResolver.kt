@@ -186,6 +186,7 @@ private class CfirPartialBodyExpressionResolveTransformer(
         }
     }
 
+    @OptIn(CfgInternals::class)
     private fun transformPartially(
         request: LLPartialBodyResolveRequest,
         block: CfirBlock,
@@ -231,7 +232,11 @@ private class CfirPartialBodyExpressionResolveTransformer(
 
         // Run analysis with the previous tower data context
         context.withTowerDataContext(resolveSnapshot.towerDataContext) {
-            context.dataFlowAnalyzerContext.resetFrom(resolveSnapshot.dataFlowAnalyzerContext)
+            val dataFlowSnapshot = resolveSnapshot.dataFlowAnalyzerContext.createSnapshot(
+                LLSnapshotCfirMapper(listOf(block, declaration))
+            )
+            patchControlFlowGraphReferences(listOf(block, declaration), dataFlowSnapshot.graphMapping)
+            context.dataFlowAnalyzerContext.resetFrom(dataFlowSnapshot.context)
 
             /** No [BodyResolveContext.forBlock] as here we manually restore the tower data context from the snapshot. */
             val isAnalyzedEntirely = transformStatementsPartially(

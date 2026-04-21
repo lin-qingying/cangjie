@@ -28,7 +28,7 @@ import org.cangnova.cangjie.name.Name
  * 把普通局部变量、模式变量、模式绑定变量的本地可见性语义集中在同一簇，
  * 避免与属性或值参数混在一起。
  */
-internal open class CaCfirLocalVariableSymbolImpl(
+internal open class CaCfirLocalVariableSymbol(
     final override val backingSymbol: CfirCallableSymbol<*>,
     final override val analysisSession: CaCfirSession,
     final override val containingModule: CaModule,
@@ -77,7 +77,7 @@ internal open class CaCfirLocalVariableSymbolImpl(
         get() = nameImpl
 }
 
-internal class CaCfirPatternVariableSymbolImpl(
+internal class CaCfirPatternVariableSymbol(
     final override val backingSymbol: CfirPatternVariableSymbol,
     final override val analysisSession: CaCfirSession,
     final override val containingModule: CaModule,
@@ -121,7 +121,7 @@ internal class CaCfirPatternVariableSymbolImpl(
         get() = nameImpl
 }
 
-internal class CaCfirPatternBindingSymbolImpl(
+internal class CaCfirPatternBindingSymbol(
     final override val backingSymbol: CfirPatternBindingSymbol,
     final override val analysisSession: CaCfirSession,
     final override val containingModule: CaModule,

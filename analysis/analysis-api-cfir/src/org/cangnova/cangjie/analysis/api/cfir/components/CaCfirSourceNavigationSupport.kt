@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbol
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
@@ -29,11 +29,11 @@ internal fun CaSymbol.decompiledContainingPackageFqName(): FqName? = when (this)
     is CaClassLikeSymbol -> classId?.packageFqName
     is CaExtendSymbol -> {
         val declarationPsi = when (this) {
-            is CaCfirExtendSymbolImpl -> extendPsi?.containingFile as? CjFile
+            is CaCfirExtendSymbol -> extendPsi?.containingFile as? CjFile
             else -> (this as? CaDeclarationSymbol)?.psi?.containingFile as? CjFile
         }
         declarationPsi?.packageFqName
-            ?: (this as? CaCfirExtendSymbolImpl)?.extendPackageFqName
+            ?: (this as? CaCfirExtendSymbol)?.extendPackageFqName
             ?: targetClassId?.packageFqName
     }
 

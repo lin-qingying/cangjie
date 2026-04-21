@@ -19,6 +19,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirJump
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirOptionalChainExpression
@@ -166,22 +167,22 @@ fun ControlFlowGraphBuilder.createIfExitNode(fir: CfirIfExpression): IfExitNode 
 
 // ----------------------------------- Loop (while / do-while / for-in) -----------------------------------
 
-fun ControlFlowGraphBuilder.createLoopEnterNode(fir: CfirExpression): LoopEnterNode =
+fun ControlFlowGraphBuilder.createLoopEnterNode(fir: CfirLoopExpression): LoopEnterNode =
     LoopEnterNode(currentGraph, fir, levelCounter)
 
-fun ControlFlowGraphBuilder.createLoopBlockEnterNode(fir: CfirExpression): LoopBlockEnterNode =
+fun ControlFlowGraphBuilder.createLoopBlockEnterNode(fir: CfirLoopExpression): LoopBlockEnterNode =
     LoopBlockEnterNode(currentGraph, fir, levelCounter)
 
-fun ControlFlowGraphBuilder.createLoopBlockExitNode(fir: CfirExpression): LoopBlockExitNode =
+fun ControlFlowGraphBuilder.createLoopBlockExitNode(fir: CfirLoopExpression): LoopBlockExitNode =
     LoopBlockExitNode(currentGraph, fir, levelCounter)
 
-fun ControlFlowGraphBuilder.createLoopConditionEnterNode(fir: CfirExpression, loop: CfirExpression): LoopConditionEnterNode =
+fun ControlFlowGraphBuilder.createLoopConditionEnterNode(fir: CfirExpression, loop: CfirLoopExpression): LoopConditionEnterNode =
     LoopConditionEnterNode(currentGraph, fir, loop, levelCounter)
 
-fun ControlFlowGraphBuilder.createLoopConditionExitNode(fir: CfirExpression, loop: CfirExpression): LoopConditionExitNode =
+fun ControlFlowGraphBuilder.createLoopConditionExitNode(fir: CfirExpression, loop: CfirLoopExpression): LoopConditionExitNode =
     LoopConditionExitNode(currentGraph, fir, loop, levelCounter)
 
-fun ControlFlowGraphBuilder.createLoopExitNode(fir: CfirExpression): LoopExitNode =
+fun ControlFlowGraphBuilder.createLoopExitNode(fir: CfirLoopExpression): LoopExitNode =
     LoopExitNode(currentGraph, fir, levelCounter)
 
 // ----------------------------------- Try / catch / finally -----------------------------------

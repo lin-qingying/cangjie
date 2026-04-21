@@ -3,129 +3,374 @@ package org.cangnova.cangjie.cfir.resolve.body
 import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
+import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirCatch
 import org.cangnova.cangjie.cfir.expressions.CfirCall
+import org.cangnova.cangjie.cfir.expressions.CfirJump
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
+import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
+import org.cangnova.cangjie.cfir.expressions.CfirMatchExhaustivenessStatus
+import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
+import org.cangnova.cangjie.cfir.expressions.CfirOptionalChainExpression
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
+import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraphBuilder.MatchSyntheticElseDecision
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
-import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 
 /**
- * Body-resolve 阶段的数据流门面。
+ * CFIR body-resolve 数据流门面，对位 Kotlin FIR `FirDataFlowAnalyzer` 的 CFG / assignment facade 角色。
  *
- * 目前仍未实现完整 CFG / smart-cast 分析，但已经需要与 Kotlin FIR 对齐这些调用级钩子：
- * - enter/exit call arguments
- * - exit explicit receiver
- * - enter/exit function call
- * - 匿名函数 return 表达式收集
- *
- * 这样可以先把调用解析与 completion 的结构边界固定住，后续再逐步往这些 frame 上叠加
- * CFG、赋值分析与 smart-cast 状态。
+ * 当前仓颉侧尚未迁入 Kotlin 全量 smart-cast/logic-system，但以下职责已经切换到真实状态对象：
+ * - CFG 建图统一委托给 [CfirDataFlowAnalyzerContext.graphBuilder]
+ * - 局部变量赋值稳定性统一委托给 [CfirDataFlowAnalyzerContext.variableAssignmentAnalyzer]
+ * - 匿名函数 return 收集优先从 CFG 投影，而不是手工 DFS
  */
 class CfirDataFlowAnalyzer(
     private val sessionHolder: SessionHolder,
     private val context: BodyResolveContext,
 ) : SessionHolder by sessionHolder {
-    private val graphStack: ArrayDeque<ControlFlowGraph> = ArrayDeque()
+    private val graphBuilder
+        get() = context.dataFlowAnalyzerContext.graphBuilder
 
-    val currentCallArgumentsFrame: CfirDataFlowAnalyzerContext.CallArgumentsFrame?
-        get() = context.dataFlowAnalyzerContext.currentCallArgumentsFrame
+    private val variableAssignmentAnalyzer
+        get() = context.dataFlowAnalyzerContext.variableAssignmentAnalyzer
 
-    val currentFunctionCallFrame: CfirDataFlowAnalyzerContext.FunctionCallFrame?
-        get() = context.dataFlowAnalyzerContext.currentFunctionCallFrame
+    private val hasActiveGraph: Boolean
+        get() = graphBuilder.currentGraphOrNull != null
 
     fun enterCallArguments(call: CfirCall, arguments: List<CfirExpression>) {
-        context.dataFlowAnalyzerContext.enterCallArguments(
-            call = call,
-            lambdaArguments = collectAnonymousFunctionArguments(arguments),
-        )
+        val lambdaArguments = collectAnonymousFunctionArguments(arguments)
+        variableAssignmentAnalyzer.enterFunctionCall(lambdaArguments)
+        if (hasActiveGraph) {
+            graphBuilder.enterCallArguments(call, lambdaArguments)
+        }
     }
 
     fun exitCallExplicitReceiver() {
-        context.dataFlowAnalyzerContext.exitCallExplicitReceiver()
+        if (hasActiveGraph) {
+            graphBuilder.exitCallExplicitReceiver()
+        }
     }
 
     fun exitCallArguments() {
-        context.dataFlowAnalyzerContext.exitCallArguments()
+        if (hasActiveGraph) {
+            graphBuilder.exitCallArguments()
+        }
     }
 
     fun enterFunctionCall(functionCall: CfirFunctionCall) {
-        context.dataFlowAnalyzerContext.enterFunctionCall(
-            functionCall = functionCall,
-            lambdaArguments = currentCallArgumentsFrame?.lambdaArguments.orEmpty(),
-        )
+        if (hasActiveGraph) {
+            graphBuilder.enterFunctionCall(functionCall)
+        }
     }
 
     fun exitFunctionCall(functionCall: CfirFunctionCall, callCompleted: Boolean) {
-        context.dataFlowAnalyzerContext.exitFunctionCall(functionCall, callCompleted)
+        if (hasActiveGraph) {
+            graphBuilder.exitFunctionCall(functionCall, callCompleted)
+        }
+        variableAssignmentAnalyzer.exitFunctionCall(callCompleted)
     }
 
-    fun enterBlock(block: org.cangnova.cangjie.cfir.expressions.CfirBlock) {}
+    fun enterBlock(block: CfirBlock) {
+        if (hasActiveGraph) {
+            graphBuilder.enterBlock(block)
+        }
+    }
 
-    fun exitBlock(block: org.cangnova.cangjie.cfir.expressions.CfirBlock) {}
+    fun exitBlock(block: CfirBlock) {
+        if (hasActiveGraph) {
+            graphBuilder.exitBlock(block)
+        }
+    }
+
+    fun enterJump(jump: CfirJump<*>) {
+        if (hasActiveGraph) {
+            graphBuilder.enterJump(jump)
+        }
+    }
 
     fun enterFile(file: CfirFile, buildGraph: Boolean) {
         if (buildGraph) {
-            graphStack.addLast(ControlFlowGraph(file, "<file>", ControlFlowGraph.Kind.File))
+            graphBuilder.enterFile(file)
         }
     }
 
     fun exitFile(): ControlFlowGraph? {
-        return graphStack.removeLastOrNull()
+        return graphBuilder.currentGraphOrNull
+            ?.takeIf { it.kind == ControlFlowGraph.Kind.File }
+            ?.let { graphBuilder.exitFile().second }
     }
 
     fun enterClass(klass: CfirClass, buildGraph: Boolean) {
         if (buildGraph) {
-            graphStack.addLast(ControlFlowGraph(klass, klass.name.asString(), ControlFlowGraph.Kind.Class))
+            graphBuilder.enterClass(klass)
         }
+        variableAssignmentAnalyzer.enterClass(klass)
     }
 
     fun exitClass(): ControlFlowGraph? {
-        return graphStack.removeLastOrNull()
+        variableAssignmentAnalyzer.exitClass()
+        return graphBuilder.currentGraphOrNull
+            ?.takeIf { it.kind == ControlFlowGraph.Kind.Class }
+            ?.let { graphBuilder.exitClass().second }
     }
 
     fun enterFunction(function: CfirFunction) {
-        val kind = when (function) {
-            is org.cangnova.cangjie.cfir.declarations.CfirConstructor -> ControlFlowGraph.Kind.Constructor
-            is CfirAnonymousFunction -> ControlFlowGraph.Kind.AnonymousFunction
-            else -> ControlFlowGraph.Kind.Function
+        variableAssignmentAnalyzer.enterFunction(function)
+        if (function is CfirAnonymousFunction) {
+            graphBuilder.enterAnonymousFunction(function)
+        } else {
+            graphBuilder.enterFunction(function)
         }
-        val graphName = when (function) {
-            is org.cangnova.cangjie.cfir.declarations.CfirNamedFunction -> function.name.asString()
-            is org.cangnova.cangjie.cfir.declarations.CfirConstructor -> "<init>"
-            else -> "<anonymous>"
-        }
-        graphStack.addLast(ControlFlowGraph(function, graphName, kind))
     }
 
     fun exitFunction(function: CfirFunction): CfirControlFlowGraphReference? {
-        val graph = graphStack.removeLastOrNull() ?: return null
+        variableAssignmentAnalyzer.exitFunction()
+        val graph = if (function is CfirAnonymousFunction) {
+            graphBuilder.exitAnonymousFunction(function).third
+        } else {
+            graphBuilder.exitFunction(function).second
+        }
         return CfirControlFlowGraphReferenceImpl(graph)
     }
 
-    fun resetSmartCastPosition() {}
+    fun enterCodeFragment(codeFragment: CfirCodeFragment) {
+        variableAssignmentAnalyzer.enterCodeFragment(codeFragment)
+        graphBuilder.enterCodeFragment(codeFragment)
+    }
+
+    fun exitCodeFragment(codeFragment: CfirCodeFragment): ControlFlowGraph {
+        variableAssignmentAnalyzer.exitCodeFragment(codeFragment)
+        return graphBuilder.exitCodeFragment().second
+    }
+
+    fun enterAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) {
+        if (hasActiveGraph) {
+            graphBuilder.enterAnonymousFunctionExpression(anonymousFunctionExpression)
+        }
+    }
+
+    fun enterLoop(loop: CfirLoopExpression) {
+        variableAssignmentAnalyzer.enterLoop(loop)
+    }
+
+    fun exitLoop() {
+        variableAssignmentAnalyzer.exitLoop()
+    }
+
+    fun enterWhileLoop(loop: CfirLoopExpression) {
+        variableAssignmentAnalyzer.enterLoop(loop)
+        if (hasActiveGraph) {
+            graphBuilder.enterWhileLoop(loop)
+        }
+    }
+
+    fun exitWhileLoopCondition(loop: CfirLoopExpression) {
+        if (hasActiveGraph) {
+            graphBuilder.exitWhileLoopCondition(loop)
+        }
+    }
+
+    fun exitWhileLoop(loop: CfirLoopExpression) {
+        if (hasActiveGraph) {
+            graphBuilder.exitWhileLoop(loop)
+        }
+        variableAssignmentAnalyzer.exitLoop()
+    }
+
+    fun enterDoWhileLoop(loop: CfirLoopExpression) {
+        variableAssignmentAnalyzer.enterLoop(loop)
+        if (hasActiveGraph) {
+            graphBuilder.enterDoWhileLoop(loop)
+        }
+    }
+
+    fun enterDoWhileLoopCondition(loop: CfirLoopExpression) {
+        if (hasActiveGraph) {
+            graphBuilder.enterDoWhileLoopCondition(loop)
+        }
+    }
+
+    fun exitDoWhileLoop(loop: CfirLoopExpression) {
+        if (hasActiveGraph) {
+            graphBuilder.exitDoWhileLoop(loop)
+        }
+        variableAssignmentAnalyzer.exitLoop()
+    }
+
+    fun enterMatchExpression(matchExpression: CfirMatchExpression) {
+        if (hasActiveGraph) {
+            graphBuilder.enterMatchExpression(matchExpression)
+        }
+    }
+
+    fun enterMatchBranchCondition(branch: CfirMatchBranch) {
+        if (hasActiveGraph) {
+            graphBuilder.enterMatchBranchCondition(branch)
+        }
+    }
+
+    fun exitMatchBranchCondition(branch: CfirMatchBranch) {
+        if (hasActiveGraph) {
+            graphBuilder.exitMatchBranchCondition(branch)
+        }
+    }
+
+    fun exitMatchBranchResult(branch: CfirMatchBranch) {
+        if (hasActiveGraph) {
+            graphBuilder.exitMatchBranchResult(branch)
+        }
+    }
+
+    /**
+     * 从 tree 正式承载字段读取 CFG synthetic else 决策。
+     *
+     * 不允许回退到语法兜底；若 body-resolve 尚未写出可信穷尽性状态，直接失败。
+     */
+    fun matchSyntheticElseDecision(matchExpression: CfirMatchExpression): MatchSyntheticElseDecision {
+        return when (val exhaustiveness = matchExpression.exhaustiveness) {
+            is CfirMatchExhaustivenessStatus.Exhaustive -> MatchSyntheticElseDecision.NotRequired
+            is CfirMatchExhaustivenessStatus.NonExhaustive -> MatchSyntheticElseDecision.Required
+            CfirMatchExhaustivenessStatus.Unknown -> error(
+                "Missing match exhaustiveness status for ${matchExpression::class.qualifiedName}. " +
+                    "Body-resolve must write CfirMatchExpression.exhaustiveness before CFG exit."
+            )
+
+            is CfirMatchExhaustivenessStatus.Error -> error(
+                "Invalid match exhaustiveness status for ${matchExpression::class.qualifiedName}: ${exhaustiveness.reason}"
+            )
+        }
+    }
+
+    fun exitMatchExpression(
+        matchExpression: CfirMatchExpression,
+        syntheticElseDecision: MatchSyntheticElseDecision,
+        callCompleted: Boolean,
+    ) {
+        if (hasActiveGraph) {
+            graphBuilder.exitMatchExpression(matchExpression, syntheticElseDecision, callCompleted)
+        }
+    }
+
+    fun enterTryExpression(tryExpression: CfirTryExpression) {
+        if (hasActiveGraph) {
+            graphBuilder.enterTryExpression(tryExpression)
+        }
+    }
+
+    fun exitTryMainBlock() {
+        if (hasActiveGraph) {
+            graphBuilder.exitTryMainBlock()
+        }
+    }
+
+    fun enterCatchClause(catch: CfirCatch) {
+        if (hasActiveGraph) {
+            graphBuilder.enterCatchClause(catch)
+        }
+    }
+
+    fun exitCatchClause(catch: CfirCatch) {
+        if (hasActiveGraph) {
+            graphBuilder.exitCatchClause(catch)
+        }
+    }
+
+    fun enterFinallyBlock() {
+        if (hasActiveGraph) {
+            graphBuilder.enterFinallyBlock()
+        }
+    }
+
+    fun exitFinallyBlock() {
+        if (hasActiveGraph) {
+            graphBuilder.exitFinallyBlock()
+        }
+    }
+
+    fun exitTryExpression(callCompleted: Boolean) {
+        if (hasActiveGraph) {
+            graphBuilder.exitTryExpression(callCompleted)
+        }
+    }
+
+    fun enterOptionalChain(optionalChainExpression: CfirOptionalChainExpression) {
+        if (hasActiveGraph) {
+            graphBuilder.enterOptionalChain(optionalChainExpression)
+        }
+    }
+
+    fun exitOptionalChain(optionalChainExpression: CfirOptionalChainExpression) {
+        if (hasActiveGraph) {
+            graphBuilder.exitOptionalChain(optionalChainExpression)
+        }
+    }
+
+    fun exitWrappedExpression(wrappedExpression: CfirWrappedExpression) {
+        if (hasActiveGraph) {
+            graphBuilder.exitWrappedExpression(wrappedExpression)
+        }
+    }
+
+    fun exitJump(jump: CfirJump<*>) {
+        if (hasActiveGraph) {
+            graphBuilder.exitJump(jump)
+        }
+    }
+
+    fun exitThrowException(throwExpression: CfirThrowExpression) {
+        if (hasActiveGraph) {
+            graphBuilder.exitThrowExceptionNode(throwExpression)
+        }
+    }
+
+    fun exitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression) {
+        if (hasActiveGraph) {
+            graphBuilder.exitQualifiedAccessExpression(qualifiedAccessExpression)
+        }
+    }
+
+    fun exitLiteralExpression(literalExpression: CfirLiteralExpression) {
+        if (hasActiveGraph) {
+            graphBuilder.exitLiteralExpression(literalExpression)
+        }
+    }
+
+    fun exitVariableAssignment(assignment: CfirAssignment) {
+        if (hasActiveGraph) {
+            graphBuilder.exitVariableAssignment(assignment)
+        }
+    }
+
+    fun recordAssignment(assignment: CfirAssignment) {
+        val lValue = assignment.lValue as? CfirQualifiedAccessExpression ?: return
+        val symbol = (lValue.calleeReference as? org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference)?.resolvedSymbol?.cfir
+            ?: return
+        val declaration = symbol as? org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration ?: return
+        val type = assignment.rValue.coneTypeOrNull ?: return
+        variableAssignmentAnalyzer.visitAssignment(declaration, type)
+    }
+
+    fun resetSmartCastPosition() {
+    }
 
     fun returnExpressionsOfAnonymousFunction(function: CfirAnonymousFunction): Collection<CfirAnonymousFunctionReturnExpressionInfo> {
-        val body = function.body ?: return emptyList()
-        val collector = ReturnExpressionCollector(function)
-        body.acceptChildren(collector)
-        val results = collector.results.toMutableList()
-
-        val lastExpression = body.statements.lastOrNull() as? CfirExpression
-        if (lastExpression != null && lastExpression !is CfirReturnExpression) {
-            if (results.none { it.expression === lastExpression }) {
-                results += CfirAnonymousFunctionReturnExpressionInfo(lastExpression)
-            }
-        }
-
-        return results
+        return graphBuilder.returnExpressionsOfAnonymousFunction(function)
+            ?.map(::CfirAnonymousFunctionReturnExpressionInfo)
+            .orEmpty()
     }
 
     data class CfirAnonymousFunctionReturnExpressionInfo(
@@ -135,31 +380,6 @@ class CfirDataFlowAnalyzer(
     private fun collectAnonymousFunctionArguments(arguments: List<CfirExpression>): List<CfirAnonymousFunction> {
         return arguments.mapNotNull { argument ->
             (argument as? CfirAnonymousFunctionExpression)?.anonymousFunction
-        }
-    }
-
-    private class ReturnExpressionCollector(
-        private val owner: CfirAnonymousFunction,
-    ) : CfirDefaultVisitorVoid() {
-        private val _results = mutableListOf<CfirAnonymousFunctionReturnExpressionInfo>()
-        val results: List<CfirAnonymousFunctionReturnExpressionInfo>
-            get() = _results
-
-        override fun visitElement(element: org.cangnova.cangjie.cfir.CfirElement) {
-            element.acceptChildren(this)
-        }
-
-        override fun visitAnonymousFunction(anonymousFunction: CfirAnonymousFunction) {
-            if (anonymousFunction === owner) {
-                anonymousFunction.acceptChildren(this)
-            }
-        }
-
-        override fun visitReturnExpression(returnExpression: CfirReturnExpression) {
-            returnExpression.result?.let { expression ->
-                _results += CfirAnonymousFunctionReturnExpressionInfo(expression)
-            }
-            returnExpression.acceptChildren(this)
         }
     }
 }

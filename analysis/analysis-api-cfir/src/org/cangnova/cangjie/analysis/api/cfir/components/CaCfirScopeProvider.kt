@@ -9,8 +9,8 @@ import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirFileScope
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirMemberScope
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirPackageScope
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassLikeSymbolBase
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbolImpl
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPackageSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPackageSymbol
 import org.cangnova.cangjie.analysis.api.components.CaScopeProvider
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
@@ -59,7 +59,7 @@ internal class CaCfirScopeProvider(
 
     override val CaPackageSymbol.packageScope: CaScope
         get() = withValidityAssertion {
-            val packageSymbol = this@packageScope as? CaCfirPackageSymbolImpl
+            val packageSymbol = this@packageScope as? CaCfirPackageSymbol
                 ?: error("仅 CFIR 包符号支持包级作用域查询：${this@packageScope::class.simpleName}")
             analysisSession.scopeQueries.queryPackageScope(packageSymbol.fqName)?.let { packageScope ->
                 CaCfirPackageScope(
@@ -82,7 +82,7 @@ internal class CaCfirScopeProvider(
 
     override val org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol.declaredMemberScope: CaScope
         get() = withValidityAssertion {
-            val extendSymbol = this@declaredMemberScope as? CaCfirExtendSymbolImpl
+            val extendSymbol = this@declaredMemberScope as? CaCfirExtendSymbol
                 ?: error("Only CFIR extend symbols can expose declared-member scope: ${this@declaredMemberScope::class.simpleName}")
             extendSymbol.backingSymbol.cfir.declarations.asDeclarationListScope()
         }
