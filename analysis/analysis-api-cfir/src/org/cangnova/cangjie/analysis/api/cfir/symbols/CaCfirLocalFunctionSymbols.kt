@@ -3,8 +3,6 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.components.asCaAnnotationList
-import org.cangnova.cangjie.analysis.api.cfir.components.renderAnnotations
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -36,7 +34,7 @@ internal class CaCfirAnonymousFunctionSymbol(
 ) : CaAnonymousFunctionSymbol(), CaCfirFunctionSymbolSupport<CfirAnonymousFunctionSymbol> {
     override val annotations: CaAnnotationList
         get() = withValidityAssertion {
-            analysisSession.renderAnnotations(this).asCaAnnotationList(token)
+            CaCfirAnnotationListForDeclaration.create(backingSymbol, builder)
         }
 
     override val receiverType: CaType?
@@ -103,9 +101,8 @@ internal class CaCfirFinalizerSymbol(
 ) : CaFinalizerSymbol(), CaCfirFunctionSymbolSupport<CfirFinalizerSymbol> {
     override val annotations: CaAnnotationList
         get() = withValidityAssertion {
-            analysisSession.renderAnnotations(this).asCaAnnotationList(token)
+            CaCfirAnnotationListForDeclaration.create(backingSymbol, builder)
         }
-
     override val callableId: org.cangnova.cangjie.name.CallableId?
         get() = callableIdImpl
 

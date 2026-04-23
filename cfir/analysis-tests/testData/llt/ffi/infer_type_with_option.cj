@@ -14,27 +14,9 @@ func malloc<T>(initial: Option<T>): Int64 {
 }
 
 main() {
-    var a: Option<CString> = CString(CPointer())
+    var a: Option<CString> = <!TYPE_MISMATCH!>CString(CPointer())<!>
     var b: Option<Array<Int64>> = Array<Int64>()
     malloc<CPointer<Byte>>(CPointer())
-    malloc<CString>(CString(CPointer()))
+    malloc<CString>(<!TYPE_MISMATCH!>CString(CPointer())<!>)
     0
 }
-
-/* SCAN
-error: mismatched types
-  ==> infer_type_with_option.cj:11:30:
-   |
-11 |     var a: Option<CString> = CString(CPointer())
-   |                              ^^^^^^^^^^^^^^^^^^^ expected 'Enum-Option<CString>', found 'CString'
-   |
-
-error: mismatched types
-  ==> infer_type_with_option.cj:14:21:
-   |
-14 |     malloc<CString>(CString(CPointer()))
-   |                     ^^^^^^^^^^^^^^^^^^^ expected 'Enum-Option<CString>', found 'CString'
-   |
-
-2 errors generated, 2 errors printed.
- */

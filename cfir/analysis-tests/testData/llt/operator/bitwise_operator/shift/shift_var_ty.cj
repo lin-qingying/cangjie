@@ -4,13 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 main(): Int64 {
     var varRune: Rune = '1'
-    varRune = varRune << 1
+    varRune = <!INVALID_BINARY_OPERATOR!>varRune << 1<!>
     return 0
 }
-
-// ASSERT: regex-auto invalid binary operator '<<' on type 'Rune' and 'Int64'
-// ASSERT: regex-not type incompatible in this assignment

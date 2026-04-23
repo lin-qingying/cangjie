@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 class A<T> {
     mut prop a: String {
         get() {
@@ -15,16 +13,5 @@ class A<T> {
             b = v
         }
     }
-    var b: String = "a${a}"
+    var b: String = "a${<!USED_BEFORE_INITIALIZATION!>a<!>}"
 }
-
-/* SCAN
-error: 'a' is not allowed to be accessed before all member variables are initialized
-  ==> class_initialization6.cj:18:25:
-   | 
-18 |     var b: String = "a${a}"
-   |                         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

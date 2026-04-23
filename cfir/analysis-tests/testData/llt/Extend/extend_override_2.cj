@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
 interface I2 {
     func foo(): Unit
 }
@@ -17,24 +15,7 @@ extend C2 <: I2 {
 }
 
 class D2 <: C2 {
-    public func foo() {}
+    public func <!EXTEND_FUNCTION_CANNOT_OVERRIDDEN!>foo<!>() {}
 }
 
 main() {}
-
-/* SCAN
-error: cannot override function 'foo' in extend of supertype
-  ==> extend_override_2.cj:20:17:
-   | 
-20 |     public func foo() {}
-   |                 ^^^ 
-   | 
-note: overridden definition of 'foo' is here
-  ==> extend_override_2.cj:16:17:
-   | 
-16 |     public func foo() {}
-   |                 ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

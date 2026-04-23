@@ -105,7 +105,7 @@ internal open class LLCfirDiagnosticVisitor(
      */
     private fun commitPendingDiagnosticsOnNestedDeclarations(element: CfirElement) {
         val declarationContainer = when (element) {
-            is CfirFile, is CfirClass -> element
+            is CfirFile, is CfirClass, is CfirExtend -> element
             else -> return
         }
 

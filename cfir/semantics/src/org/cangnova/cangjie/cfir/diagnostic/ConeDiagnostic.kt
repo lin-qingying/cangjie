@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.diagnostic
 
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
@@ -18,6 +19,37 @@ import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
  * Base type for unresolved diagnostics.
  */
 sealed interface ConeUnresolvedError : ConeDiagnostic
+
+/**
+ * 类型限定名逐段解析失败。
+ *
+ * 对齐 Kotlin FIR `ConeUnresolvedTypeQualifierError`，保留每一段 qualifier 的名字与显式类型实参，
+ * 供 analysis-api 和 low-level API 做高保真投影。
+ */
+data class ConeUnresolvedQualifierPart(
+    val name: Name,
+    val typeArguments: List<CfirTypeRef>,
+)
+
+data class ConeUnresolvedTypeQualifierError(
+    val qualifiers: List<ConeUnresolvedQualifierPart>,
+) : ConeUnresolvedError {
+    override val reason: String = buildString {
+        append("unresolved type qualifier: ")
+        append(
+            qualifiers.joinToString(".") { qualifier ->
+                buildString {
+                    append(qualifier.name.asString())
+                    if (qualifier.typeArguments.isNotEmpty()) {
+                        append('<')
+                        append(qualifier.typeArguments.joinToString(",") { it.toString() })
+                        append('>')
+                    }
+                }
+            }
+        )
+    }
+}
 
 data class ConeUnresolvedReferenceError(
     val name: Name,
@@ -41,6 +73,19 @@ data class ConeUnresolvedSymbolError(
     val classId: ClassId,
 ) : ConeUnresolvedError {
     override val reason: String = "unresolved symbol: ${classId.asString()}"
+}
+
+/**
+ * 类型构造器已解析成功，但类型实参数量不匹配。
+ */
+data class ConeUnmatchedTypeArgumentsError(
+    val symbol: CfirClassLikeSymbol<*>,
+    val expectedCount: Int,
+    val actualCount: Int,
+    val providedTypeArguments: List<CfirTypeRef>,
+) : ConeDiagnostic {
+    override val reason: String =
+        "type argument count mismatch for ${describeSymbol(symbol)}: expected $expectedCount but got $actualCount"
 }
 
 interface ConeDiagnosticWithCandidates : ConeDiagnostic {

@@ -21,19 +21,6 @@ func get(): ((A, A), Int64) {
 main() {
     var i: (I, I)
     var val = 1
-    (i, val) = get()
+    <!TYPE_MISMATCH!>(i, val) = get()<!>
     0
 }
-
-/* SCAN
-error: mismatched types
-  ==> case07.cj:15:16:
-   |
-15 |     (i, val) = get()
-   |      ~         ^^^^^ the expression has type 'Tuple<Tuple<Class-A, Class-A>, Int64>'
-   |      |
-   |      can not assign 'Tuple<Interface-I, Interface-I>' with 'Tuple<Class-A, Class-A>'
-   |
-
-1 error generated, 1 error printed.
- */

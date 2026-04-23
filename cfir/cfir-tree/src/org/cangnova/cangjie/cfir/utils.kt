@@ -22,6 +22,7 @@ import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.CfirVArrayTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.impl.CfirQualifierPartImpl
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRefCopy
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
@@ -98,8 +99,13 @@ fun <R : CfirTypeRef> R.copyWithNewSource(newSource: CjSourceElement): R {
             typeRef.annotations.toMutableOrEmpty(),
             typeRef.customRenderer,
             newSource,
-            typeRef.qualifier.toMutableList(),
-            typeRef.typeArguments.toMutableOrEmpty(),
+            typeRef.qualifier.map { qualifier ->
+                CfirQualifierPartImpl(
+                    newSource,
+                    qualifier.name,
+                    qualifier.typeArguments.toMutableOrEmpty(),
+                )
+            }.toMutableOrEmpty(),
         )
 
         is CfirFunctionTypeRef -> CfirFunctionTypeRefImpl(

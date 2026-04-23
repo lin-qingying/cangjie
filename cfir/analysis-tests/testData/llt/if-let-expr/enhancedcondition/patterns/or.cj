@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %output
-// RUN-EXEC: %run %run_opt %output %run_args | compare %f
-
 func foo(a: ?Int64, b: ?Int64) {
     if (true && false || let None <- b) {
         8
@@ -23,8 +20,3 @@ main() {
     println(foo(Some(15), Some(3)))
     println(foo(Some(8), None))
 }
-
-/* SCAN-IN
--1
-8
-*/

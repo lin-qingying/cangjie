@@ -34,12 +34,15 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirErrorFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirErrorNamedValueSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
@@ -53,6 +56,8 @@ fun BodyResolveComponents.initialTypeOfCandidate(candidate: Candidate): ConeCang
     val type = typeFromSymbol(candidate.symbol)
     return type.initialTypeOfCandidate(candidate)
 }
+val CfirTypeParameterSymbol.defaultType: ConeTypeParameterType
+    get() = ConeTypeParameterTypeImpl(toLookupTag())
 
 fun <T : CfirResolvable> BodyResolveComponents.typeFromCallee(access: T): ConeCangJieType {
     return typeFromCallee(access.calleeReference)
@@ -134,7 +139,7 @@ private fun BodyResolveComponents.typeFromNamedValueCandidate(candidate: Candida
         ?: return ConeErrorType(ConeSimpleDiagnostic("Unresolved function return type", DiagnosticKind.Other))
     val substitutedReturnType = runCatching { candidate.substitutor.substituteOrSelf(returnType) }.getOrDefault(returnType)
 
-    return ConeFuncType(parameterTypes, substitutedReturnType)
+    return ConeFunctionType(parameterTypes, substitutedReturnType)
 }
 
 private fun BodyResolveComponents.typeFromSymbol(symbol: CfirBasedSymbol<*>): ConeCangJieType {

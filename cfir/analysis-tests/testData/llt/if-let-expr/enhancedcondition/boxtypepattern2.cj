@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %output
-// RUN-EXEC-PIPE: %run %run_opt %output %run_args | compare %f
-
 main() {
     let r: Any = "fff"
     let a = Some(r)
@@ -18,8 +15,3 @@ main() {
         break
     }
 }
-
-/* SCAN
-fff
-fff
-*/

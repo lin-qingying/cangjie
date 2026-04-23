@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
-
 // case 1
 class A {}
 
@@ -28,7 +26,7 @@ extend B {
 // case 3
 class C {
     private func f() {}
-    private func f() {} // error
+    private func <!CONFLICTING_OVERLOADS!>f<!>() {} // error
 }
 
 // case 4
@@ -37,7 +35,7 @@ class D {
 }
 
 extend D {
-    private func f() {} // error
+    private func <!EXTEND_MEMBER_CANNOT_SHADOW!>f<!>() {} // error
 }
 // case 5
 class E {
@@ -52,7 +50,7 @@ extend E {
 class F {}
 
 extend F {
-    private func f() {} //error
+    private func <!EXTEND_MEMBER_CANNOT_SHADOW!>f<!>() {} //error
 }
 
 extend F {
@@ -67,53 +65,9 @@ extend I {
 }
 
 extend I {
-    private func f() {} // error
+    private func <!EXTEND_MEMBER_CANNOT_SHADOW!>f<!>() {} // error
 }
 
 main() {
     0
 }
-
-/* SCAN
-error: function 'f' has overload conflicts
-  ==> private_visible02.cj:31:18:
-   | 
-31 |     private func f() {} // error
-   |                  ^ 
-   | 
-note: conflict with the declaration
-  ==> private_visible02.cj:30:18:
-   | 
-30 |     private func f() {}
-   |                  ^ 
-   | 
-
-error: extend member 'f' is not allowed to shadow members of 'Class-D'
-  ==> private_visible02.cj:40:18:
-   | 
-40 |     private func f() {} // error
-   |                  ^ 
-   | 
-note: shadowed definition of 'f' is here
-  ==> private_visible02.cj:36:10:
-   | 
-36 |     func f() {}
-   |          ^ 
-   | 
-
-error: extend member 'f' is not allowed to shadow members of 'extend F'
-  ==> private_visible02.cj:55:18:
-   | 
-55 |     private func f() {} //error
-   |                  ^ 
-   | 
-
-error: extend member 'f' is not allowed to shadow members of 'extend I'
-  ==> private_visible02.cj:70:18:
-   | 
-70 |     private func f() {} // error
-   |                  ^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

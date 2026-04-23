@@ -1,18 +1,14 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
-import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.calls.*
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
-import org.cangnova.cangjie.cfir.resolve.inference.ConeConstraintSystemUtilContext.createArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExplicitTypeParameterConstraintPosition
-import org.cangnova.cangjie.cfir.resolve.inference.model.ConeReceiverConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeRegularLambdaArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaParameterType
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
@@ -24,11 +20,9 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeIntersector
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
-import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemBuilder
@@ -281,7 +275,7 @@ internal object ArgumentCheckingProcessor {
     ): ConeResolvedLambdaAtom {
         val expression = atom.lambdaExpression
         val anonymousFunction = expression.anonymousFunction
-        val expectedFunctionType = expectedType as? ConeFuncType
+        val expectedFunctionType = expectedType as? ConeFunctionType
 
         val parameterTypes = anonymousFunction.valueParameters.mapIndexed { index, parameter ->
             parameter.returnTypeRef.coneTypeOrNull
@@ -320,7 +314,7 @@ internal object ArgumentCheckingProcessor {
 
         val targetExpectedType = expectedType
         if (targetExpectedType != null) {
-            val lambdaType = ConeFuncType(parameterTypes = parameterTypes, returnType = lambdaReturnType)
+            val lambdaType = ConeFunctionType(parameterTypes = parameterTypes, returnType = lambdaReturnType)
             val position = ConeArgumentConstraintPosition(expression)
             if (duringCompletion) {
                 csBuilder.addSubtypeConstraint(lambdaType, targetExpectedType, position)

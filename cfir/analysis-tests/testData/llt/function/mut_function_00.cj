@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 interface I {
     mut func f(): Unit
 }
@@ -25,7 +23,7 @@ class Bar <: I {
 }
 
 func g1<T>(v: T): Unit where T <: I {
-    v.f()
+    v.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>f<!>()
 }
 
 func g2<T>(v: T): Unit where T <: Bar & I {
@@ -33,22 +31,3 @@ func g2<T>(v: T): Unit where T <: Bar & I {
 }
 
 main() {}
-
-/* SCAN
-error: cannot use mutable function on immutable value
-  ==> mut_function_00.cj:28:5:
-   | 
-28 |     v.f()
-   |     ^ ~ is a mutable function
-   |     |
-   |     is immutable
-   | 
-note: 'v' is a variable declared with 'let'
-  ==> mut_function_00.cj:27:12:
-   | 
-27 | func g1<T>(v: T): Unit where T <: I {
-   |            ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

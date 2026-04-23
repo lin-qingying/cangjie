@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 class ConeTypeUtilsTest {
     @Test
     fun `getConstructor returns self for structural rigid types`() {
-        val functionType = ConeFuncType(
+        val functionType = ConeFunctionType(
             parameterTypes = listOf(ConePrimitiveType.INT32),
             returnType = ConePrimitiveType.BOOLEAN,
         )

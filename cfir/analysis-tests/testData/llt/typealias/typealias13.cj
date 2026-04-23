@@ -4,9 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-
-type B<T> = Cl<T>
+type B<T> = <!UNRESOLVED_REFERENCE!>Cl<!><T>
 
 func run<T>(a: T): Int64 {
     var b: B<T>
@@ -16,14 +14,3 @@ func run<T>(a: T): Int64 {
 main(): Int64 {
     return run<Int64>(1)
 }
-
-/* SCAN
-error: undeclared type name 'Cl'
- ==> typealias13.cj:9:13:
-  | 
-9 | type B<T> = Cl<T>
-  |             ^ 
-  | 
-
-1 error generated, 1 error printed.
-*/

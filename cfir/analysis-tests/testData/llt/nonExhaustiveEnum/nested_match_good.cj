@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %output
-
 enum E {
     A | B(Int64) | ...
 }
@@ -17,13 +15,9 @@ enum D {
 let k = (D1, B(10))
 
 main() {
-    match (k) {
+    <!NON_EXHAUSTIVE_MATCH!>match (k) {
         case (D1, A) => 1
         case (D1, _) => 2
         case (D2(a), _) => a
-    }
+    }<!>
 }
-
-// ASSERT: scan error: non-exhaustive patterns
-// ASSERT: scan # note: (D1, _) is not covered
-// ASSERT: scan 1 error generated, 1 error printed.

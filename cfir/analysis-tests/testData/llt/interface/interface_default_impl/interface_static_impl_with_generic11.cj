@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-
 interface Ser<T> {
     static func foo(): Unit
 }
@@ -16,19 +14,8 @@ extend<T> AL<T> <: Ser<AL<T>> where T <: Ser<T> {
     public static func foo(): Unit {}
 }
 
-abstract class DM <: Ser<DM> {}
+abstract class <!INHERIT_ABSTRACT_CLASS_STATIC_UNIMPLEMENT_FUNC!>DM<!> <: Ser<DM> {}
 
 main() {
     var a = AL<DM>()
 }
-
-/* SCAN
-error: abstract class 'DM' cannot contain unimplemented static function 'foo'
-  ==> interface_static_impl_with_generic11.cj:19:16:
-   | 
-19 | abstract class DM <: Ser<DM> {}
-   |                ^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %compile_lib_opt %f -o %output 2>&1 | compare %f
-
 interface I {
     func foo(a: Int32): Unit {}
 }
@@ -17,28 +15,5 @@ extend<T> CPointer<T> <: I {
 }
 
 main() {
-    let x: CType = CPointer<Int32>()
+    let x: CType = <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS!>CPointer<Int32><!>()
 }
-
-/* SCAN
-error: generic instantiation 'CPointer<Int32>' causes ambiguous function 'foo'
-  ==> inst_dup_functions009.cj:20:20:
-   | 
-20 |     let x: CType = CPointer<Int32>()
-   |                    ^^^^^^^^^^^^^^^ 
-   | 
-note: found candidate
-  ==> inst_dup_functions009.cj:10:10:
-   | 
-10 |     func foo(a: Int32): Unit {}
-   |          ^^^ 
-   | 
-note: found candidate
-  ==> inst_dup_functions009.cj:14:10:
-   | 
-14 |     func foo(a: T): Int32 {
-   |          ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

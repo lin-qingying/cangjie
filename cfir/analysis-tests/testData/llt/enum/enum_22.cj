@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args | compare %f
-// ASSERT: scan-not error
-// ASSERT: scan ResultFailureException
-
 class ResultFailureException <: Exception {
     private var msg: String = ""
     public init() {

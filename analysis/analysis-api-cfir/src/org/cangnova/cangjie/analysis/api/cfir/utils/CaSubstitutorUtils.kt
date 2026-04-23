@@ -2,7 +2,7 @@ package org.cangnova.cangjie.analysis.api.cfir.utils
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
-import org.cangnova.cangjie.cfir.types.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 
 /**
  * 对齐 Kotlin `typeUtils.kt` 中 `ConeSubstitutor -> KaSubstitutor` 的入口。

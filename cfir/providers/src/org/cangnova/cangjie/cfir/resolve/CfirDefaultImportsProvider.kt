@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.ImportPath
+import org.cangnova.cangjie.resolve.DefaultImportsProvider
 
 /**
  * Default imports provider for Cangjie frontend sessions.

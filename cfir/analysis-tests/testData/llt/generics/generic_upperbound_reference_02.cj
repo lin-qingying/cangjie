@@ -4,7 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %frontendCompiler %cmp_opt %typecheck %f 2>&1 | compare %f
+// DIAGNOSTICS: -UNUSED_VARIABLE
 
 interface I<T> {
     func test(a: T) {
@@ -15,29 +15,11 @@ interface I<T> {
 class A <: I<Rune> & I<Int32> {}
 
 func test<T>(a: T) where T <: I<Rune> & I<Int32> {
-    let f = a.test
-    a.test
+    let f = <!AMBIGUOUS_USE!>a.test<!>
+    <!AMBIGUOUS_USE!>a.test<!>
     return 1
 }
 
 main() {
     return test(A())
 }
-
-/* SCAN
-error: ambiguous match for reference 'test'
-  ==> generic_upperbound_reference_02.cj:18:13:
-   | 
-18 |     let f = a.test
-   |             ^ 
-   | 
-
-error: ambiguous match for reference 'test'
-  ==> generic_upperbound_reference_02.cj:19:5:
-   | 
-19 |     a.test
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

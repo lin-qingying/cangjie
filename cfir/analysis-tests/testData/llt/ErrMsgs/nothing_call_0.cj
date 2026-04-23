@@ -4,12 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt  %f  -o %output
-
 main() {
-    (return 0) % n
-    (return 0).f
+    (return 0) % <!UNRESOLVED_REFERENCE!>n<!>
+    (return 0).<!UNRESOLVED_REFERENCE!>f<!>
     0
 }
-// ASSERT: scan undeclared identifier 'n'
-// ASSERT: scan undeclared identifier 'f'

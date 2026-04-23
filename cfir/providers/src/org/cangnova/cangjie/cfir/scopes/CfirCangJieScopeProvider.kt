@@ -3,7 +3,11 @@ package org.cangnova.cangjie.cfir.scopes
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.ScopeSessionKey
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.scopes.impl.CfirScopeWithCallableCopyReturnTypeUpdater
+import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
@@ -56,20 +60,44 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
         )
     }
 
-    override fun getPackageMemberScope(
+    fun getPackageMemberScope(
         packageFqName: FqName,
         symbolProvider: CfirSymbolProvider,
         useSiteSession: CfirSession,
         scopeSession: ScopeSession,
     ): CfirPackageScope {
         val key: ScopeSessionKey<PackageMemberScopeKey, CfirPackageMemberScope> = scopeSessionKey()
-        return scopeSession.getOrBuild(PackageMemberScopeKey(packageFqName, symbolProvider), key) {
-            CfirPackageMemberScope(packageFqName, symbolProvider)
+        return scopeSession.getOrBuild(PackageMemberScopeKey(packageFqName, useSiteSession), key) {
+            CfirPackageMemberScope(packageFqName, useSiteSession)
         }
     }
 
     private data class PackageMemberScopeKey(
         val packageFqName: FqName,
-        val symbolProvider: CfirSymbolProvider,
+        val useSiteSession: CfirSession,
     )
+}
+
+fun CfirClassLikeDeclaration.unsubstitutedScope(
+    useSiteSession: CfirSession,
+    scopeSession: ScopeSession,
+    withForcedTypeCalculator: Boolean,
+    memberRequiredPhase: CfirResolvePhase?,
+): CfirTypeScope {
+    val scope = when (this) {
+        is CfirClass -> scopeProvider.getUseSiteMemberScope(this, useSiteSession, scopeSession)
+        else -> {
+            val symbol = symbol as? CfirClassSymbol ?: return CfirTypeScope.Empty
+            CfirClassUseSiteMemberScope(
+                session = useSiteSession,
+                classSymbol = symbol,
+                symbolProvider = useSiteSession.symbolProvider,
+                extendProvider = useSiteSession.extendProvider,
+                directSupertypeProvider = useSiteSession.directSupertypeProviderOrNull,
+                scopeKind = CfirClassMemberScopeKind.USE_SITE,
+            )
+        }
+    }
+    if (withForcedTypeCalculator) return CfirScopeWithCallableCopyReturnTypeUpdater(scope, CallableCopyTypeCalculator.CalculateDeferredForceLazyResolution)
+    return scope
 }

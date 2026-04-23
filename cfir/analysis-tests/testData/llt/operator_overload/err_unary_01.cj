@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 internal import std.sync.*
 internal import std.time.*
 internal import std.convert.*
@@ -31,18 +29,6 @@ main(): Int64 {
     endTime = DateTime.now()
 
     perTime = Float64((endTime - startTime).toNanoseconds()) / Float64(reps)
-    println(!"BenchmarkAtomicSwapUInt32: " + perTime.format(".2") + " ns/op")
+    println(<!INVALID_UNARY_EXPR!>!"BenchmarkAtomicSwapUInt32: "<!> + perTime.format(".2") + " ns/op")
     return 0
 }
-
-/* SCAN
-error: invalid unary operator '!' on type 'Struct-String'
-  ==> err_unary_01.cj:34:13:
-   | 
-34 |     println(!"BenchmarkAtomicSwapUInt32: " + perTime.format(".2") + " ns/op")
-   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
-   | 
-   # note: you may want to implement 'operator func !()' for type 'Struct-String'
-
-1 error generated, 1 error printed.
-*/

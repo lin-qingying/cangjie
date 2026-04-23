@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 main(): Int64 {
     var tup: (Int64, Int64) = (444, 888)
     var removedOpt: Option<Int64> = tup[1]

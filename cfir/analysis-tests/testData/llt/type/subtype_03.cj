@@ -16,26 +16,8 @@ extend A <: I {}
 
 main() {
     let a = (A(), A())
-    let a1: (I, I) = a
+    let a1: (I, I) = <!TYPE_MISMATCH!>a<!>
 
     let b = {x: I => A()}
-    let b1: (A) -> I = b
+    let b1: (A) -> I = <!TYPE_MISMATCH!>b<!>
 }
-
-/* SCAN
-error: mismatched types
-  ==> subtype_03.cj:11:22:
-   |
-11 |     let a1: (I, I) = a
-   |                      ^ expected 'Tuple<Interface-I, Interface-I>', found 'Tuple<Class-A, Class-A>'
-   |
-
-error: mismatched types
-  ==> subtype_03.cj:14:22:
-   |
-14 |     let b1: (A)->I = b
-   |                      ^ expected '(Class-A) -> Interface-I', found '(Interface-I) -> Class-A'
-   |
-
-2 errors generated, 2 errors printed.
- */

@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %typecheck %cmp_opt %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-
 class A<T> {
     public func f(a!: A<T> = f()): A<T> {
         return A<T>()

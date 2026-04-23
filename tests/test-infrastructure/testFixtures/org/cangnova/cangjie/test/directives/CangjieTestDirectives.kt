@@ -22,6 +22,10 @@ object CangjieTestDirectives : SimpleDirectivesContainer() {
         description = "Add dependencies for current module (comma/space separated).",
     )
 
+    val IMPORT_PATH by stringDirective(
+        description = "Add an import/classpath root for the current test module.",
+    )
+
     val WITH_STDLIB by directive(
         description = "Include stdlib in compilation.",
     )
@@ -36,6 +40,14 @@ object CangjieTestDirectives : SimpleDirectivesContainer() {
 
     val LANGUAGE_VERSION by stringDirective(
         description = "Pin language version, e.g. `// LANGUAGE_VERSION: 1.0`.",
+    )
+
+    val API_LEVEL by stringDirective(
+        description = "Configure project API level for APILevel diagnostics.",
+    )
+
+    val API_LEVEL_SYSCAP by stringDirective(
+        description = "Configure syscap json/config path for APILevel diagnostics.",
     )
 
     val EXPECT_COMPLETION_ITEM by stringDirective(

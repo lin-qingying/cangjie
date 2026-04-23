@@ -4,8 +4,6 @@ import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.location
-import org.cangnova.cangjie.analysis.api.cfir.components.asCaAnnotationList
-import org.cangnova.cangjie.analysis.api.cfir.components.renderAnnotations
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirPropertyGetterSymbolPointer
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirPropertySetterSymbolPointer
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
@@ -41,7 +39,7 @@ internal class CaCfirPropertyGetterSymbol(
     final override val token: CaLifetimeToken,
 ) : CaPropertyGetterSymbol(), CaCfirPropertyAccessorSymbolSupport<CfirCallableSymbol<*>> {
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(backingSymbol, builder) }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
         get() = accessorCallableIdImpl
@@ -103,7 +101,7 @@ internal class CaCfirPropertySetterSymbol(
     final override val token: CaLifetimeToken,
 ) : CaPropertySetterSymbol(), CaCfirPropertyAccessorSymbolSupport<CfirCallableSymbol<*>> {
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(backingSymbol, builder) }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
         get() = accessorCallableIdImpl
@@ -171,6 +169,9 @@ internal class CaCfirPropertySymbol private constructor(
     CaCfirVariableSymbolSupport<CfirPropertySymbol>,
     CaTypeParameterOwnerSymbol,
     CaDeclarationContainerSymbol {
+    override val cfirSymbol: CfirPropertySymbol
+        get() = super<CaCfirCjBasedSymbol>.cfirSymbol
+
     constructor(declaration: CjProperty, session: CaCfirSession) : this(
         backingPsi = declaration,
         analysisSession = session,
@@ -190,7 +191,7 @@ internal class CaCfirPropertySymbol private constructor(
         get() = analysisSession.useSiteModule
 
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { psiOrSymbolAnnotationList() }
 
     override val psi
         get() = withValidityAssertion { backingPsi ?: findPsi() }
@@ -239,18 +240,18 @@ internal class CaCfirPropertySymbol private constructor(
         get() = withValidityAssertion {
             createCaTypeParameters() ?: (backingSymbol.cfir as? CfirProperty)
                 ?.typeParameters
-                ?.map { analysisSession.createTypeParameterSymbol(it.symbol) }
+                ?.map { builder.classifierBuilder.buildTypeParameterSymbol(it.symbol) }
                 .orEmpty()
         }
 
     override val getter: CaPropertyGetterSymbol?
         get() = (backingSymbol.cfir as? CfirProperty)?.getter?.symbol?.let { getterSymbol ->
-            analysisSession.createPropertyAccessorSymbol(getterSymbol, this, CaCfirPropertyAccessorKind.GETTER) as CaPropertyGetterSymbol
+            builder.functionBuilder.buildPropertyAccessorSymbol(getterSymbol, this, CaCfirPropertyAccessorKind.GETTER) as CaPropertyGetterSymbol
         }
 
     override val setter: CaPropertySetterSymbol?
         get() = (backingSymbol.cfir as? CfirProperty)?.setter?.symbol?.let { setterSymbol ->
-            analysisSession.createPropertyAccessorSymbol(setterSymbol, this, CaCfirPropertyAccessorKind.SETTER) as CaPropertySetterSymbol
+            builder.functionBuilder.buildPropertyAccessorSymbol(setterSymbol, this, CaCfirPropertyAccessorKind.SETTER) as CaPropertySetterSymbol
         }
 
     override val name: Name

@@ -4,26 +4,13 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 func foo(): Int32 {
     var a: Int32 = 1
     var m: Int32 = 2
     var b = match (m) {
-        case 1.1 => 1
+        case <!TYPE_MISMATCH!>1.1<!> => 1
         case 2 => 2
         case _ => 3
     }
     return b
 }
-
-/* SCAN
-error: cannot convert a floating-point literal to type 'Int32'
-  ==> matchcase2.cj:13:14:
-   | 
-13 |         case 1.1 => 1
-   |              ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

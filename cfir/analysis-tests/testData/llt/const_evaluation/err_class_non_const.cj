@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 var global = 0
 
 func f() {
@@ -14,19 +12,8 @@ func f() {
 }
 
 class A {
-    let x = f()
+    let x = <!EXPECT_CONST!>f()<!>
     const init() {}
 }
 
 main() {}
-
-/* SCAN
-error: expected 'const' expression guaranteed to be evaluated at compile time
-  ==> err_class_non_const.cj:17:13:
-   | 
-17 |     let x = f()
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

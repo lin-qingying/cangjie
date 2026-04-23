@@ -18,7 +18,10 @@ import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.types.resolvedType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjCallExpression
@@ -299,7 +302,7 @@ private fun CaScalarCompileTimeValue.toPublicConstantValue(
 }
 
 private fun CjExpression.sessionExpressionClassId(session: CaCfirSession): ClassId? =
-    session.typeQueries.queryExpressionType(this)?.classIdOrPrimitiveClassId
+    (getOrBuildCfir(session.resolutionFacade) as? CfirExpression)?.resolvedType?.classIdOrPrimitiveClassId
 
 /**
  * 将“文本到类型化常量”的解析失败收束为结构化错误常量。

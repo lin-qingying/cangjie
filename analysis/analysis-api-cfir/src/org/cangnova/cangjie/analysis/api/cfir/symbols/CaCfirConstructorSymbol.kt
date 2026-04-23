@@ -1,14 +1,9 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
-import org.cangnova.cangjie.analysis.api.cfir.*
-
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
-import org.cangnova.cangjie.analysis.api.cfir.components.asCaAnnotationList
-import org.cangnova.cangjie.analysis.api.cfir.components.renderAnnotations
-import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -20,9 +15,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjConstructor
@@ -32,8 +25,9 @@ import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 /**
  * 构造器叶子实现。
  *
- * 构造器的 `modality` 与普通函数不同，在公开 Analysis API 中是固定语义，
- * 因此单独落位，避免错误复用通用函数 support。
+ * 对齐 Kotlin `KaFirConstructorSymbol` 的独立叶子落位：
+ * 构造器不复用普通命名函数叶子，而是直接在类内表达自身的参数、返回类型、
+ * 所属类与 pointer 语义。
  */
 internal class CaCfirConstructorSymbol private constructor(
     override val backingPsi: CjConstructor<*>?,
@@ -42,6 +36,9 @@ internal class CaCfirConstructorSymbol private constructor(
 ) : CaConstructorSymbol(),
     CaCfirCjBasedSymbol<CjConstructor<*>, CfirConstructorSymbol>,
     CaCfirBackedSymbol<CfirConstructorSymbol> {
+    override val cfirSymbol: CfirConstructorSymbol
+        get() = super<CaCfirCjBasedSymbol>.cfirSymbol
+
     constructor(declaration: CjConstructor<*>, session: CaCfirSession) : this(
         backingPsi = declaration,
         analysisSession = session,
@@ -64,7 +61,7 @@ internal class CaCfirConstructorSymbol private constructor(
         get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
 
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { psiOrSymbolAnnotationList() }
 
     override val psi: PsiElement?
         get() = withValidityAssertion { backingPsi ?: findPsi() }
@@ -94,14 +91,11 @@ internal class CaCfirConstructorSymbol private constructor(
         get() = withValidityAssertion {
             val callablePsi = psi as? org.cangnova.cangjie.psi.CjCallableDeclaration ?: return@withValidityAssertion null
             if (callablePsi.getStrictParentOfType<org.cangnova.cangjie.psi.CjExtend>() == null) return@withValidityAssertion null
-            (cfirSymbol.cfir as? CfirCallableDeclaration)?.dispatchReceiverType?.asCaType(analysisSession)
+            (cfirSymbol.cfir as? CfirCallableDeclaration)?.dispatchReceiverType?.let(builder.typeBuilder::buildType)
         }
 
     override val returnType: CaType
-        get() = withValidityAssertion {
-            analysisSession.typeQueries.queryCallableReturnType(cfirSymbol)?.asCaType(analysisSession)
-                ?: error("Cannot build return type for `${cfirSymbol::class.simpleName}`")
-        }
+        get() = withValidityAssertion { cfirSymbol.returnType(builder) }
 
     override val location: CaSymbolLocation
         get() = withValidityAssertion { analysisSession.locationForDeclaration(this) }
@@ -133,30 +127,22 @@ internal class CaCfirConstructorSymbol private constructor(
 
     override val typeParameters: List<CaTypeParameterSymbol>
         get() = withValidityAssertion {
-            (cfirSymbol.cfir as? CfirCallableDeclaration)
-                ?.typeParameters
-                ?.filterIsInstance<CfirTypeParameter>()
-                ?.map { typeParameter -> analysisSession.createTypeParameterSymbol(typeParameter.symbol) }
-                .orEmpty()
+            with(analysisSession) {
+                backingPsi?.getContainingTypeStatement()?.classSymbol?.typeParameters ?: cfirSymbol.createCjTypeParameters(builder)
+            }
         }
 
     override val valueParameters: List<CaValueParameterSymbol>
         get() = withValidityAssertion {
-            (cfirSymbol.cfir as? CfirFunction)
-                ?.valueParameters
-                ?.mapIndexed { index, parameter ->
-                    analysisSession.createValueParameterSymbol(
-                        ownerSymbol = this,
-                        parameter = parameter,
-                        parameterIndex = index,
-                    )
-                }
-                .orEmpty()
+            createCaValueParameters() ?: cfirSymbol.createCjValueParameters(builder)
         }
 
     override val isPrimary: Boolean
         get() = withValidityAssertion { backingPsi is CjPrimaryConstructor || cfirSymbol.cfir.isPrimary }
 
     override val containingClassId: ClassId?
-        get() = withValidityAssertion { backingPsi?.getContainingTypeStatement()?.getClassId() }
+        get() = withValidityAssertion {
+            backingPsi?.getContainingTypeStatement()?.getClassId()
+                ?: cfirSymbol.callableId.classId
+        }
 }

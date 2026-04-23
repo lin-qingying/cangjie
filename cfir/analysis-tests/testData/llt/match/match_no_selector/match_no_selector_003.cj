@@ -4,17 +4,11 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-// ASSERT: scan cannot convert an integer literal to type 'Bool'
-
 main(): Int64 {
     var b: Int64 = match {
         case true => 0
-        case 1 => 2
+        case <!TYPE_MISMATCH!>1<!> => 2
         case _ => 3
     }
     return b
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

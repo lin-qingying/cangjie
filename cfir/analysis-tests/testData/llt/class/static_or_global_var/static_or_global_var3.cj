@@ -4,10 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 class A {
-    public init() {}
+    <!CLASS_UNINITIALIZED_FIELD!>public init() {}<!>
 
     public var a: UInt
     public mut static prop v: UInt64 {
@@ -22,7 +20,7 @@ class A {
             b = Value
         }
     }
-    static var b: UInt64
+    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var b: UInt64<!>
     static init() {}
     // Should not report error bellow
     func goo() {
@@ -37,28 +35,3 @@ class A {
 main(): Int64 {
     1
 }
-
-/* SCAN
-error: the static member variable 'b' is not initialized
-  ==> static_or_global_var3.cj:25:5:
-   | 
-25 |     static var b: UInt64
-   |     ^^^^^^^^^^^^^^^^^^^^ 
-   | 
-   # note: you may add an initializer inline or initialize the variable in the 'static init'
-note: static init defined here
-  ==> static_or_global_var3.cj:26:12:
-   | 
-26 |     static init() {}
-   |            ^^^^ 
-   | 
-
-error: the uninitialized member variable 'a' is not initialized in the constructor of class or struct
-  ==> static_or_global_var3.cj:10:5:
-   | 
-10 |     public init() {}
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

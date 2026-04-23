@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %f %cmp_opt 2>&1 | compare %f
-
 import std.collection.*
 
 let array = [1, 2, 3]
@@ -18,32 +16,7 @@ main() {
 }
 
 const func test(a: Int64) {
-    array[0]++
-    array[1] = a
-    list.add(a)
+    <!EXPECT_CONST!>array[0]++<!>
+    <!EXPECT_CONST!>array[1] = a<!>
+    <!EXPECT_CONST!>list.add(a)<!>
 }
-
-/* SCAN
-error: expected 'const' expression
-  ==> array_inc.cj:21:5:
-   | 
-21 |     array[0]++
-   |     ^^^^^ 
-   | 
-
-error: expected 'const' expression
-  ==> array_inc.cj:22:5:
-   | 
-22 |     array[1] = a
-   |     ^^^^^ 
-   | 
-
-error: expected 'const' expression
-  ==> array_inc.cj:23:5:
-   | 
-23 |     list.add(a)
-   |     ^^^^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

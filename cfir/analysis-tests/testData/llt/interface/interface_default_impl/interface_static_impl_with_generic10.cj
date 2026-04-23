@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE)EXEC: %compiler %cmp_opt %f -o %output
-
 interface fatherInterface<T> {
     static func foo1(): Int8
     static func foo3(): Int8

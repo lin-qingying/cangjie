@@ -492,12 +492,16 @@ class ControlFlowGraphBuilder private constructor(
     // ----------------------------------- Return expressions -----------------------------------
 
     /**
-     * 从匿名函数 CFG 中提取真实 return 值集合。
+     * 从函数 CFG 中提取真实返回结果集合。
      *
-     * 当前仓颉门面层仍只消费 `expression`，这里先提供 CFG 驱动的表达式集合，
-     * 不额外引入 Kotlin `isExplicit/containingStatement` 投影结构。
+     * 收集来源统一为：
+     * - 直接连到函数 exit 的 block 尾表达式；
+     * - 通过 non-direct jump 连到函数 exit 的显式 `return expr`。
+     *
+     * 这样既能覆盖“最后一条表达式即返回值”，也能覆盖显式 return，
+     * 并且天然排除 CFG 上不可达的块尾表达式。
      */
-    fun returnExpressionsOfAnonymousFunction(function: CfirAnonymousFunction): Collection<CfirExpression>? {
+    fun returnExpressionsOfFunction(function: CfirFunction): Collection<CfirExpression>? {
         val exitNode = function.controlFlowGraphReference?.controlFlowGraph?.exitNode ?: return null
         val result = linkedSetOf<CfirExpression>()
 
@@ -512,6 +516,10 @@ class ControlFlowGraphBuilder private constructor(
             .mapNotNullTo(result) { it.returnExpression() }
         nonDirectJumps[exitNode].mapNotNullTo(result) { it.returnExpression() }
         return result
+    }
+
+    fun returnExpressionsOfAnonymousFunction(function: CfirAnonymousFunction): Collection<CfirExpression>? {
+        return returnExpressionsOfFunction(function)
     }
 
     // ----------------------------------- Block -----------------------------------

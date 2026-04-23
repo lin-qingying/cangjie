@@ -1,19 +1,5 @@
-// EXEC-PIPE: %compiler %cmp_opt --no-sub-pkg %f -o %output 2>&1 | compare %f
-
-internal import std.collection.count as f
+internal import <!UNUSED_IMPORT!>std.collection.count as f<!>
 main() {}
-
-/* SCAN
-warning: unused import 'std.collection.count as f'
- ==> unused009.cj:3:1:
-  | 
-3 | internal import std.collection.count as f
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused import
-  | 
-  # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-1 warning generated, 1 warning printed.
-*/
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

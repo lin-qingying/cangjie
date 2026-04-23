@@ -1,8 +1,14 @@
 package org.cangnova.cangjie.analysis.api.scopes
 
+import org.cangnova.cangjie.analysis.api.CaExperimentalApi
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
+import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.name.Name
 
@@ -13,35 +19,128 @@ import org.cangnova.cangjie.name.Name
  * IDE、引用解析、补全与测试框架都应通过这里观察“当前上下文有哪些声明可见”，
  * 而不是直接扫描底层 CFIR 结构。
  */
-interface CaScope : CaLifetimeOwner {
+@OptIn(CaExperimentalApi::class, CaImplementationDetail::class)
+interface CaScope : CaScopeLike {
+
+
+
     /**
-     * 当前作用域已经物化出来的全部符号。
+     * A sequence of all [CaDeclarationSymbol]s contained in the scope.
+     */
+    public val declarations: Sequence<CaDeclarationSymbol>
+        get() = withValidityAssertion {
+            sequence {
+                yieldAll(callables)
+                yieldAll(classifiers)
+                yieldAll(constructors)
+            }
+        }
+
+    /**
+     * A sequence of [CaCallableSymbol]s contained in the scope.
      *
-     * 该集合适合调试、测试断言与一次性枚举；真正的按名称查询
-     * 应优先走 [getSymbols]、[getCallableSymbols] 与 [getClassifierSymbols]。
+     * The implementation of this property needs to retrieve a set of all possible names before processing callables. The overload with
+     * `Collection<Name>` should be used when the candidate name set is known.
      */
-    val symbols: List<CaSymbol>
+    public val callables: Sequence<CaCallableSymbol>
+        get() = callables { true }
 
     /**
-     * 当前作用域已经建立稳定索引的名字集合。
+     * Returns a sequence of [CaCallableSymbol]s contained in the scope which match the [nameFilter].
      *
-     * 某些底层 provider 只能保证“按名字查询”，不能保证“完整枚举全部名字”。
-     * 因此这里表达的是“当前可直接索引的名字”，而不是理论上的全部候选。
+     * The implementation of this function needs to retrieve a set of all possible names before processing callables. The overload with
+     * `Collection<Name>` should be used when the candidate name set is known.
      */
-    val availableNames: Set<Name>
+    public fun callables(nameFilter: (Name) -> Boolean): Sequence<CaCallableSymbol>
 
     /**
-     * 查询指定名字在当前作用域内可见的所有符号。
+     * Returns a sequence of [CaCallableSymbol]s contained in the scope which match the given [names].
+     *
+     * The implementation of this function is optimized compared to using a name filter and should be used when the candidate name set is
+     * known.
      */
-    fun getSymbols(name: Name): List<CaSymbol>
+    public fun callables(names: Collection<Name>): Sequence<CaCallableSymbol>
 
     /**
-     * 查询指定名字在当前作用域内可见的所有可调用符号。
+     * Returns a sequence of [CaCallableSymbol]s contained in the scope which match the given [names].
+     *
+     * The implementation of this function is optimized compared to using a name filter and should be used when the candidate name set is
+     * known.
      */
-    fun getCallableSymbols(name: Name): List<CaCallableSymbol>
+    public fun callables(vararg names: Name): Sequence<CaCallableSymbol> =
+        callables(names.toList())
 
     /**
-     * 查询指定名字在当前作用域内可见的所有 class-like 符号。
+     * A sequence of [CaClassifierSymbol]s contained in the scope.
+     *
+     * The result includes:
+     *
+     * - Nested classes
+     * - Inner classes
+     * - Nested type aliases for a class scope
+     * - Top-level classes and top-level type aliases for a file scope
+     *
+     * The implementation of this property needs to retrieve a set of all possible names before processing classifiers. The overload with
+     * `Collection<Name>` should be used when the candidate name set is known.
      */
-    fun getClassifierSymbols(name: Name): List<CaClassifierSymbol>
+    public val classifiers: Sequence<CaClassifierSymbol>
+        get() = classifiers { true }
+
+    /**
+     * Returns a sequence of [CaClassifierSymbol]s contained in the scope which match the [nameFilter].
+     *
+     * The result includes:
+     *
+     * - Nested classes
+     * - Inner classes
+     * - Nested type aliases for a class scope
+     * - Top-level classes and top-level type aliases for a file scope
+     *
+     * The implementation of this function needs to retrieve a set of all possible names before processing classifiers. The overload with
+     * `Collection<Name>` should be used when the candidate name set is known.
+     */
+    public fun classifiers(nameFilter: (Name) -> Boolean): Sequence<CaClassifierSymbol>
+
+    /**
+     * Returns a sequence of [CaClassifierSymbol]s contained in the scope which match the given [names].
+     *
+     * The result includes:
+     *
+     * - Nested classes
+     * - Inner classes
+     * - Nested type aliases for a class scope
+     * - Top-level classes and top-level type aliases for a file scope
+     *
+     * The implementation of this function is optimized compared to using a name filter and should be used when the candidate name set is
+     * known.
+     */
+    public fun classifiers(names: Collection<Name>): Sequence<CaClassifierSymbol>
+
+    /**
+     * Returns a sequence of [CaClassifierSymbol]s contained in the scope which match the given [names].
+     *
+     * The result includes:
+     *
+     * - Nested classes
+     * - Inner classes
+     * - Nested type aliases for a class scope
+     * - Top-level classes and top-level type aliases for a file scope
+     *
+     * The implementation of this function is optimized compared to using a name filter and should be used when the candidate name set is
+     * known.
+     */
+    public fun classifiers(vararg names: Name): Sequence<CaClassifierSymbol> =
+        classifiers(names.toList())
+
+    /**
+     * A sequence of [CaConstructorSymbol] contained in the scope.
+     */
+    public val constructors: Sequence<CaConstructorSymbol>
+
+    /**
+     * Returns a sequence of [CaPackageSymbol]s matching [nameFilter] which are a direct subpackage of the scope's package.
+     */
+    @CaExperimentalApi
+    public fun getPackageSymbols(nameFilter: (Name) -> Boolean = { true }): Sequence<CaPackageSymbol>
+
 }

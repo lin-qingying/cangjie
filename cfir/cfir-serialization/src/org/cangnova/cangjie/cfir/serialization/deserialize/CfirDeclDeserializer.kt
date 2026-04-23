@@ -23,6 +23,7 @@ import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.descriptors.Visibility
@@ -298,8 +299,8 @@ class CfirDeclDeserializer(
             superTypeRefs = superTypeRefs,
             declarations = members,
             name = name,
-
-            )
+            scopeProvider = context.moduleData.session.cangjieScopeProvider,
+        )
         symbol.bind(cfirClass)
         cfirClass.markResolved()
         return cfirClass
@@ -340,6 +341,7 @@ class CfirDeclDeserializer(
             symbol = symbol,
             superTypeRefs = superTypeRefs,
             name = name,
+            scopeProvider = context.moduleData.session.cangjieScopeProvider,
         )
         symbol.bind(cfirInterface)
         cfirInterface.markResolved()
@@ -377,6 +379,7 @@ class CfirDeclDeserializer(
             superTypeRefs = superTypeRefs,
             declarations = members,
             name = name,
+            scopeProvider = context.moduleData.session.cangjieScopeProvider,
         )
         symbol.bind(cfirStruct)
         cfirStruct.markResolved()
@@ -419,6 +422,7 @@ class CfirDeclDeserializer(
             declarations = members,
             name = name,
             isRefEnum = isRefEnum,
+            scopeProvider = context.moduleData.session.cangjieScopeProvider,
         )
         symbol.bind(cfirEnum)
         cfirEnum.markResolved()
@@ -855,6 +859,7 @@ class CfirDeclDeserializer(
             typeParameters = typeParams,
             name = name,
             expandedTypeRef = expandedTypeRef,
+            scopeProvider = context.moduleData.session.cangjieScopeProvider,
         )
         symbol.bind(cfirAlias)
         cfirAlias.markResolved()
@@ -983,7 +988,7 @@ class CfirDeclDeserializer(
         }
 
         val typeArguments = owner.typeParameters.map { parameter ->
-            ConeTypeProjection(ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag()))
+            ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag())
         }
         return buildResolvedTypeRef {
             customRenderer = false

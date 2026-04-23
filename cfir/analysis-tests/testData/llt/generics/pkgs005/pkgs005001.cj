@@ -5,11 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: pkgs005001a
-// EXEC: %frontendCompiler %typecheck %cmp_opt pkgs005001a/pkgs005001a.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkgs005001a/pkgs005001a.cj -o pkgs005001a/pkgs005001a.%middle
-// EXEC: %frontendCompiler %typecheck %cmp_opt pkgs005001a/pkgs005001a.%middle %n.cj --import-path pkgs005001a
-// EXEC: %compiler %cmp_opt pkgs005001a/pkgs005001a.%middle %n.cj --import-path pkgs005001a -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
 // Test condition: package with a single generic function is imported by only importing packageName like "import pkgName"
 
 internal import pkgs005001a.*

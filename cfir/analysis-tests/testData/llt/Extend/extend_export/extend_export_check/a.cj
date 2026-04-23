@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// LEVLE: 0
-// EXEC-PIPE-0: %compiler %cmp_opt %f --no-sub-pkg -o %output 
-
 package test
 
 public interface A {
@@ -29,4 +26,3 @@ main() {
     println(Foo().a())
     0
 }
-

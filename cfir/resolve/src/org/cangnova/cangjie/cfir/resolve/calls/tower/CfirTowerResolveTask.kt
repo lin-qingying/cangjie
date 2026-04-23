@@ -2,10 +2,8 @@ package org.cangnova.cangjie.cfir.resolve.calls.tower
 
 import org.cangnova.cangjie.cfir.calls.ExpressionReceiverValue
 import org.cangnova.cangjie.cfir.calls.ImplicitReceiverValue
-import org.cangnova.cangjie.cfir.calls.ReceiverValue
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
-import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataElement
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 var i16 = Array<Int64>(10, repeat: 5)
 
 public enum Test<T> {
@@ -17,32 +15,8 @@ public enum Test<T> {
 }
 
 main(): Int64 {
-    if (T1.a16(i16) != i16) {
+    if (<!UNABLE_TO_INFER_GENERIC_FUNC!><!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>T1<!>.a16(i16)<!> != i16) {
         return 1
     }
     return 0
 }
-
-/* SCAN
-error: unable to infer generic argument of this function
-  ==> infer_member_access_with_enum_ctor_fail.cj:20:9:
-   | 
-20 |     if (T1.a16(i16) != i16) {
-   |         ^^^^^^ 
-   | 
-note: no information known for type variable 'Generics-T'
-  ==> infer_member_access_with_enum_ctor_fail.cj:11:18:
-   | 
-11 | public enum Test<T> {
-   |                  ^ 
-   | 
-
-error: generic type should be used with type argument
-  ==> infer_member_access_with_enum_ctor_fail.cj:20:9:
-   | 
-20 |     if (T1.a16(i16) != i16) {
-   |         ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

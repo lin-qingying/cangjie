@@ -177,8 +177,10 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
         val userTypeRef = resolvedTypeRef.delegatedTypeRef as? CfirUserTypeRef ?: return
         val qualifiers = userTypeRef.qualifier
         if (qualifiers.size <= 1) return
-        // 仓颉主干的 user-type qualifier 当前只保留 Name 列表，没有 Kotlin FIR 那种 qualifier-part source。
-        // 因而这里不能再伪造逐段 qualifier 映射，只保留整条 typeRef 的锚点映射。
+        qualifiers.forEach { qualifier ->
+            val qualifierPsi = qualifier.anchorPsi as? CjElement ?: return@forEach
+            cache(qualifierPsi, resolvedTypeRef, data)
+        }
     }
 
     companion object {

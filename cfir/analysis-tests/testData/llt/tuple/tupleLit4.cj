@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 main(): Int64 {
     var a = (1, 1)
     var myArray = [[(1, (2, 3)), (1, (2, 3))]]
@@ -15,6 +12,3 @@ main(): Int64 {
     let myArray1 = [a1, (1, 1)]
     return 0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

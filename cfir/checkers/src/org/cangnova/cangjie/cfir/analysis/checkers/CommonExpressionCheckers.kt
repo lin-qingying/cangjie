@@ -39,6 +39,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTryHandleRetur
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirSpawnSemanticsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirInoutSemanticsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirExpressionTypeInferenceChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirFunctionBodyTypeMismatchChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirEffectsBasicChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirSubscriptAssignmentChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirSubscriptExpressionChecker
@@ -50,6 +51,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirSpawnSemanticsChecker,
             CfirExpressionTypeInferenceChecker,
             CfirEffectsBasicChecker,
+            CfirFunctionBodyTypeMismatchChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirQuoteImportChecker,
         )
 

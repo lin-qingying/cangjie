@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.api.session
 
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
@@ -15,13 +16,15 @@ import org.cangnova.cangjie.analysis.api.types.CaTypePointer
 fun <S : CaSymbol> CaSession.restoreSymbol(pointer: CaSymbolPointer<S>): S? =
     pointer.restoreSymbol(this)
 
+@OptIn(CaImplementationDetail::class)
 fun <T : CaType> CaSession.restoreType(pointer: CaTypePointer<T>): T? =
-    pointer.restoreType(this)
+    pointer.restore(this)
 
 fun <S : CaSymbol> CaSession.restoreSymbols(
     pointers: Collection<CaSymbolPointer<S>>,
 ): List<S?> = pointers.map { pointer -> pointer.restoreSymbol(this) }
 
+@OptIn(CaImplementationDetail::class)
 fun <T : CaType> CaSession.restoreTypes(
     pointers: Collection<CaTypePointer<T>>,
-): List<T?> = pointers.map { pointer -> pointer.restoreType(this) }
+): List<T?> = pointers.map { pointer -> pointer.restore(this) }

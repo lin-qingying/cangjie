@@ -4,20 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 main() {
     println(0 is Any)
-    println((1 / 0) is Any)
+    println((<!CONST_EVAL_DIVIDE_BY_ZERO!>1 / 0<!>) is Any)
 }
-
-/* SCAN
-error: divide by zero
-  ==> is_expr_01.cj:11:14:
-   | 
-11 |     println((1 / 0) is Any)
-   |              ^^^^^ attempt to divide by zero
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -23,6 +23,7 @@ dependencies {
     api(project(":common"))
     api(project(":psi"))
     api(project(":util"))
+    api(project(":cfir:cfir-cones"))
 
 }
 

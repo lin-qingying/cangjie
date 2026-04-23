@@ -1,6 +1,3 @@
-// EXEC: %compiler %cmp_opt %overflowOpt %enableO2 %n.cj -o %n.%suffix 
-// EXEC: %run %run_opt %n.%suffix
-
 @Deprecated
 internal const func func_1747770243692_63<T0>() : Unit { // block id: 67
 

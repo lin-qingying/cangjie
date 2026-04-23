@@ -1,4 +1,3 @@
-// ERRCHECK: %compiler %diag_json %f -o %output 
 main():Int64 {
     return 0
 }
@@ -9,19 +8,18 @@ open class Boo{
 }
 class Aoo <: Boo{
     public var c = if(true){
-        func foo1(x!:Int32=a){return x}
+        func foo1(x!:Int32=<!USED_BEFORE_INITIALIZATION!>a<!>){return x}
     }
 
     let d = if(true) {
         func foo(_:Int32){
-            func bar(x!:Int32=a) {
+            func bar(x!:Int32=<!USED_BEFORE_INITIALIZATION!>a<!>) {
                 x
             }
             bar()
         }
     }
 }
-// ASSERT: scan-2 sema_illegal_usage_of_super_member
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

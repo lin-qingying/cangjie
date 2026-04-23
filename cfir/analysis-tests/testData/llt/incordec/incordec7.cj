@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-
 main(): Int64 {
     let a = B()
     return 0
@@ -21,28 +19,8 @@ class B <: A {
         this.p++
         p++
         super.p++
-        this.a++
-        a++
+        <!TYPE_MISMATCH!>this.a++<!>
+        <!TYPE_MISMATCH!>a++<!>
         a
     }
 }
-
-/* SCAN
-error: mismatched types
-  ==> incordec7.cj:24:9:
-   | 
-24 |         this.a++
-   |         ^^^^^^ expected 'integer type', found 'Unit'
-   | 
-   # note: the base of increment or decrement expressions should be of integer type
-
-error: mismatched types
-  ==> incordec7.cj:25:9:
-   | 
-25 |         a++
-   |         ^ expected 'integer type', found 'Unit'
-   | 
-   # note: the base of increment or decrement expressions should be of integer type
-
-2 errors generated, 2 errors printed.
-*/

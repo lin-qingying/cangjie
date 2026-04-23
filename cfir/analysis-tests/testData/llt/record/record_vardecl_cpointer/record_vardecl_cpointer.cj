@@ -5,13 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: %n.c
-// EXEC: %clang %clang_shared_opt %n.c -o %cffi_output
-// EXEC: %compiler %verbose_opt %f %cffi-link -o %output
-// EXEC: %pwd_to_ld_path %run %output
-// ASSERT: regex-auto [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-// ASSERT: regex-auto [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-// ASSERT: regex-auto hello
-// ASSERT: regex-auto hello world
 
 class RPtr {
     public var a = CPointer<Int64>()

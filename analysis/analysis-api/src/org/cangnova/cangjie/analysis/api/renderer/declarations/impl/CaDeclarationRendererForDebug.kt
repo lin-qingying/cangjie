@@ -2,7 +2,6 @@ package org.cangnova.cangjie.analysis.api.renderer.declarations.impl
 
 import org.cangnova.cangjie.analysis.api.renderer.base.annotations.CaAnnotationRendererForSource
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaClassifierBodyRendererForSource
 import org.cangnova.cangjie.analysis.api.renderer.declarations.modifiers.CaDeclarationModifiersRendererForSource
 import org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForDebug
 
@@ -20,7 +19,6 @@ object CaDeclarationRendererForDebug {
 
     val WITH_QUALIFIED_NAMES: CaDeclarationRenderer = CaDeclarationRendererForSource.WITH_QUALIFIED_NAMES.with {
         modifiersRenderer = CaDeclarationModifiersRendererForSource.WITH_IMPLICIT_MODIFIERS
-        classifierBodyRenderer = CaClassifierBodyRendererForSource.NO_BODY
         typeRenderer = CaTypeRendererForDebug.WITH_QUALIFIED_NAMES
         annotationRenderer = CaAnnotationRendererForSource.WITH_QUALIFIED_NAMES
     }

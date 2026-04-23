@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 abstract class Base {
     public func foo(a: Int64) {
         return a
@@ -13,7 +11,7 @@ abstract class Base {
 }
 
 class Data <: Base {
-    public static func foo() {
+    public static func <!INHERIT_MEMBER_KIND_INCONSISTENT!>foo<!>() {
         return 1
     }
 }
@@ -22,14 +20,3 @@ main(): Int64 {
     Data.foo()
     0
 }
-
-/* SCAN
-error: static member 'foo' cannot have the same name with non-static member in parent class or interfaces
-  ==> class_extends_class1.cj:16:5:
-   | 
-16 |     public static func foo() {
-   |     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

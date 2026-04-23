@@ -4,6 +4,7 @@ import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.utils.createTypePointer
 import org.cangnova.cangjie.analysis.api.cfir.utils.restoreErrorType
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.types.CaErrorType
 import org.cangnova.cangjie.analysis.api.types.CaTypePointer
@@ -18,10 +19,13 @@ import org.cangnova.cangjie.cfir.types.renderForDebugging
  */
 internal class CaCfirNonClassErrorType(
     override val coneType: ConeCangJieType,
-    override val analysisSession: CaCfirSession,
+    private val analysisSession: CaCfirSession,
     private val errorMessageImpl: String,
     private val presentableTextImpl: String? = null,
 ) : CaErrorType, CaCfirType {
+    override val token: CaLifetimeToken
+        get() = analysisSession.token
+
     override val presentation: String
         get() = withValidityAssertion { coneType.renderForDebugging() }
 

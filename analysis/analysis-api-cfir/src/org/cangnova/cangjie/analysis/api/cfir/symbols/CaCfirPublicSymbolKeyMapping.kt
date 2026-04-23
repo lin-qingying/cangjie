@@ -26,6 +26,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 
 /**
  * public symbol 稳定 key 推导协议。
@@ -72,7 +73,7 @@ internal fun CfirTypeParameterSymbol.stableTypeParameterIndex(): Int? {
  * `extend` 成员不再依赖 PSI 父链，而是通过 `extendIndexStore` 的 owner 语义索引恢复。
  */
 internal fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSession): CaCfirPublicSymbolCacheKey? {
-    val psi = session.symbolQueries.lookupSourcePsi(this)
+    val psi = backingPsiIfApplicable
     if ((cfir as? CfirCallableDeclaration)?.isLocal == true) {
         return psi?.let { localPsi ->
             when (this) {
@@ -128,7 +129,7 @@ internal fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSes
 internal fun CaSymbol.publicSymbolCacheKeyOrNull(): CaCfirPublicSymbolCacheKey? = when (this) {
     is CaCfirFileSymbol -> CaCfirFileSymbolCacheKey(file)
     is CaCfirPackageSymbol -> CaCfirPackageSymbolCacheKey(fqName)
-    is CaCfirClassLikeSymbolBase<*> -> classId?.let(::CaCfirClassLikeSymbolCacheKey)
+    is CaClassLikeSymbol -> classId?.let(::CaCfirClassLikeSymbolCacheKey)
     is CaCfirExtendSymbol -> CaCfirExtendSymbolCacheKey(stableIdentity)
     is CaPropertyGetterSymbol,
     is CaPropertySetterSymbol,

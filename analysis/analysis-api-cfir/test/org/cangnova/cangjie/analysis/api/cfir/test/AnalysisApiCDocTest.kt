@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.analysis.api.cfir.test
 
 import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.analysis.api.components.findCDoc
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.lexer.cdoc.parser.CDocKnownTag
@@ -16,9 +17,10 @@ import org.junit.jupiter.api.Test
  *
  * 这组测试锁定两层契约：
  * 1. declaration PSI 上的 CDoc 结构视图稳定；
- * 2. `CaDocProvider` 能从 declaration symbol 与 reference-resolved symbol
- *    恢复到同一份文档文本。
+ * 2. declaration symbol 与 reference-resolved symbol
+ *    能恢复到同一份结构化 CDoc。
  */
+@OptIn(org.cangnova.cangjie.analysis.api.CaNonPublicApi::class)
 class AnalysisApiCDocTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/cdoc",
 ) {
@@ -48,25 +50,20 @@ class AnalysisApiCDocTest : AbstractAnalysisApiExecutionTest(
     }
 
     @Test
-    fun symbolDocumentation(mainFile: CjFile) {
+    fun symbolCDoc(mainFile: CjFile) {
         val declaration = PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java)
             .single { it.name == "describe" }
         val reference = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
             .last { it.referencedName == "describe" }
 
         analyzeForTest(reference) {
-            val declarationDocumentation = declaration.symbol.documentation()
-            val referenceDocumentation = reference.resolveToSymbol()?.documentation()
+            val declarationDescriptor = declaration.symbol.findCDoc()
+            val referenceDescriptor = reference.resolveToSymbol()?.findCDoc()
 
-            val expected = """
-                Greets the caller.
-                @param value input value
-                @return rendered text
-                @see Document
-            """.trimIndent()
-
-            assertEquals(expected, declarationDocumentation)
-            assertEquals(expected, referenceDocumentation)
+            assertEquals("Greets the caller.", declarationDescriptor?.primaryTag?.getContent())
+            assertEquals("Greets the caller.", referenceDescriptor?.primaryTag?.getContent())
+            assertEquals(4, declarationDescriptor?.additionalSections?.size)
+            assertEquals(4, referenceDescriptor?.additionalSections?.size)
         }
     }
 }

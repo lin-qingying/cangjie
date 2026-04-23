@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 main(): Int64 {
     return run()
 }
@@ -30,24 +28,6 @@ class Data <: Base {
 }
 
 abstract class Base {
-    public func Poo(a!: Int64 = 2): Int64
-    public func Qoo(a!: Int64 = 3): Int64
+    public func Poo(<!CANNOT_HAVE_DEFAULT_PARAM!>a!: Int64 = 2<!>): Int64
+    public func Qoo(<!CANNOT_HAVE_DEFAULT_PARAM!>a!: Int64 = 3<!>): Int64
 }
-
-/* SCAN
-error: optional parameter cannot be used in abstract function
-  ==> defaultParameter1.cj:33:21:
-   | 
-33 |     public func Poo(a!: Int64 = 2): Int64
-   |                     ^^^^^^^^^^^^^ 
-   | 
-
-error: optional parameter cannot be used in abstract function
-  ==> defaultParameter1.cj:34:21:
-   | 
-34 |     public func Qoo(a!: Int64 = 3): Int64
-   |                     ^^^^^^^^^^^^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

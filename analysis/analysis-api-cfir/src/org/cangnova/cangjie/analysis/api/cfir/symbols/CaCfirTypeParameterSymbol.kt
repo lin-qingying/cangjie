@@ -4,11 +4,8 @@ import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.location
-import org.cangnova.cangjie.analysis.api.cfir.components.asCaAnnotationList
-import org.cangnova.cangjie.analysis.api.cfir.components.renderAnnotations
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirSourceTypeParameterSymbolPointer
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirTypeParameterSymbolPointer
-import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaAnnotatedSymbol
@@ -38,6 +35,9 @@ internal class CaCfirTypeParameterSymbol private constructor(
     CaNamedSymbol,
     CaCfirCjBasedSymbol<org.cangnova.cangjie.psi.CjTypeParameter, CfirTypeParameterSymbol>,
     CaCfirBackedSymbol<CfirTypeParameterSymbol> {
+    override val cfirSymbol: CfirTypeParameterSymbol
+        get() = super<CaCfirCjBasedSymbol>.cfirSymbol
+
     constructor(declaration: org.cangnova.cangjie.psi.CjTypeParameter, session: CaCfirSession) : this(
         backingPsi = declaration,
         analysisSession = session,
@@ -61,13 +61,13 @@ internal class CaCfirTypeParameterSymbol private constructor(
         get() = withValidityAssertion { backingPsi ?: findPsi() }
 
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { psiOrSymbolAnnotationList() }
 
     override val name: Name
         get() = withValidityAssertion { backingPsi?.nameAsSafeName ?: backingSymbol.name }
 
     override val upperBounds: List<CaType>
-        get() = withValidityAssertion { backingSymbol.cfir.bounds.mapNotNull { bound -> bound.coneTypeOrNull?.asCaType(analysisSession) } }
+        get() = withValidityAssertion { backingSymbol.cfir.bounds.mapNotNull { bound -> bound.coneTypeOrNull?.let(builder.typeBuilder::buildType) } }
 
     override val containingDeclaration: CaSymbol?
         get() = withValidityAssertion { analysisSession.findContainingDeclarationSymbol(psi) }

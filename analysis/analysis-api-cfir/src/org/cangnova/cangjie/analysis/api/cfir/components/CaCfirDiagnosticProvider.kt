@@ -7,7 +7,9 @@ import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticProvider
 import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.collectDiagnosticsForFile
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getDiagnostics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.plus
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
@@ -20,13 +22,13 @@ internal class CaCfirDiagnosticProvider(
 ) : CaBaseSessionComponent<CaCfirSession>(), CaDiagnosticProvider, CaCfirSessionComponent {
     override fun CjElement.diagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>> =
         this@CaCfirDiagnosticProvider.withValidityAssertion {
-            analysisSession.diagnosticQueries.queryDiagnostics(this@diagnostics, filter.asCfilter())
+            this@diagnostics.getDiagnostics(analysisSession.resolutionFacade, filter.asCfilter())
                 .map { diagnostic -> diagnostic.asPublicDiagnostic() }
         }
 
     override fun CjFile.collectDiagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>> =
         this@CaCfirDiagnosticProvider.withValidityAssertion {
-            analysisSession.diagnosticQueries.queryFileDiagnostics(this@collectDiagnostics, filter.asCfilter())
+            this@collectDiagnostics.collectDiagnosticsForFile(analysisSession.resolutionFacade, filter.asCfilter())
                 .map { diagnostic -> diagnostic.asPublicDiagnostic() }
         }
 

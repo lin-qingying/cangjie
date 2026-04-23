@@ -4,17 +4,12 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %diag_json %f -o %output
-
 interface I<T> {
-    static func f<T1, T2>(): Unit where T1 <: T2, T2 <: T {}
+    static func f<T1, T2>(): Unit where T1 <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T2<!>, T2 <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!> {}
 }
 
 class A <: I<Int64> {
-    public static func f<T1, T2>(): Unit where T1 <: Int64 {}
+    public static func f<T1, T2>(): Unit where T1 <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>Int64<!> {}
 }
 
 main() {}
-
-// ASSERT: scan-3 sema_upper_bound_must_be_class_or_interface
-// ASSERT: scan "Errors": 3

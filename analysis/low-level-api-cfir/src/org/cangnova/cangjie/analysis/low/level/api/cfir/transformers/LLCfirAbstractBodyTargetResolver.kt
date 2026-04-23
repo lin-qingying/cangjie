@@ -52,6 +52,13 @@ internal sealed class LLCfirAbstractBodyTargetResolver(
         }
     }
 
+    @Deprecated("Should never be called directly, only for override purposes, please use withExtend", level = DeprecationLevel.ERROR)
+    override fun withContainingExtend(cfirExtend: CfirExtend, action: () -> Unit) {
+        transformer.declarationsTransformer.context.withContainer(cfirExtend) {
+            action()
+        }
+    }
+
     protected fun <T : CfirElementWithResolveState> resolve(target: T, keeper: StateKeeper<T, CfirDesignation>) {
         val cfirDesignation = CfirDesignation(containingDeclarations, target)
         resolveWithKeeper(target, cfirDesignation, keeper, { CfirLazyBodiesCalculator.calculateBodies(cfirDesignation) }) {

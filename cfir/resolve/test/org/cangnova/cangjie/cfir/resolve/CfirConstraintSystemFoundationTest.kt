@@ -8,7 +8,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeQuestType
 import org.cangnova.cangjie.cfir.types.ConeTypeContext
@@ -187,8 +187,8 @@ class CfirConstraintSystemFoundationTest {
 
         // (Int32) -> Unit  <:  (T) -> Unit
         system.addSubtypeConstraint(
-            ConeFuncType(listOf(ConePrimitiveType.INT32), ConePrimitiveType.UNIT),
-            ConeFuncType(listOf(placeholderT), ConePrimitiveType.UNIT),
+            ConeFunctionType(listOf(ConePrimitiveType.INT32), ConePrimitiveType.UNIT),
+            ConeFunctionType(listOf(placeholderT), ConePrimitiveType.UNIT),
             CfirConstraintPosition.ArgumentPosition(0),
         )
 

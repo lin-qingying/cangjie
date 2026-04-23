@@ -2,8 +2,6 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.components.asCaAnnotationList
-import org.cangnova.cangjie.analysis.api.cfir.components.renderAnnotations
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -36,7 +34,7 @@ internal open class CaCfirLocalVariableSymbol(
 ) : org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol(),
     CaCfirLocalVariableSymbolSupport<CfirCallableSymbol<*>> {
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(backingSymbol, builder) }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
         get() = localCallableIdImpl
@@ -84,7 +82,7 @@ internal class CaCfirPatternVariableSymbol(
     final override val token: CaLifetimeToken,
 ) : CaPatternVariableSymbol(), CaCfirLocalVariableSymbolSupport<CfirPatternVariableSymbol> {
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(backingSymbol, builder) }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
         get() = localCallableIdImpl
@@ -128,7 +126,7 @@ internal class CaCfirPatternBindingSymbol(
     final override val token: CaLifetimeToken,
 ) : CaPatternBindingSymbol(), CaCfirLocalVariableSymbolSupport<CfirPatternBindingSymbol> {
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(backingSymbol, builder) }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
         get() = localCallableIdImpl

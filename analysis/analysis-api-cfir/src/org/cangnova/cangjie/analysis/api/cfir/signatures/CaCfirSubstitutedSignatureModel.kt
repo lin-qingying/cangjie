@@ -1,145 +1,84 @@
 package org.cangnova.cangjie.analysis.api.cfir.signatures
 
-import org.cangnova.cangjie.analysis.api.cfir.*
-
-import org.cangnova.cangjie.analysis.api.annotations.CaAnnotation
-import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirMapBackedSubstitutor
-import org.cangnova.cangjie.analysis.api.signatures.CaFunctionSignature
-import org.cangnova.cangjie.analysis.api.signatures.CaSignature
-import org.cangnova.cangjie.analysis.api.signatures.CaValueParameterSignature
+import org.cangnova.cangjie.analysis.api.CaExperimentalApi
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
+import org.cangnova.cangjie.analysis.api.cfir.buildSymbol
+import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirType
+import org.cangnova.cangjie.analysis.api.cfir.utils.cached
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
+import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.signatures.CaVariableSignature
-import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
 import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 
-internal open class CaCfirSubstitutedSignatureImpl<out S : CaCallableSymbol>(
-    override val symbol: S,
-    typeParameters: List<CaTypeParameterSymbol>,
-    valueParameters: List<CaValueParameterSignature>,
-    returnType: CaType?,
-    receiverType: CaType?,
-    annotations: List<CaAnnotation>,
-    analysisSession: CaCfirSession,
-    token: org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken,
-) : CaCfirSignatureImpl<S>(
-    symbol = symbol,
-    typeParameters = typeParameters,
-    valueParameters = valueParameters,
-    returnType = returnType,
-    receiverType = receiverType,
-    annotations = annotations,
-    analysisSession = analysisSession,
-    token = token,
-)
+@OptIn(CaExperimentalApi::class, CaImplementationDetail::class)
+internal class CaCfirFunctionSubstitutorBasedSignature<out S : CaFunctionSymbol>(
+    override val token: CaLifetimeToken,
+    override val cfirSymbol: CfirFunctionSymbol<*>,
+    override val cfirSymbolBuilder: org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder,
+    private val coneSubstitutor: ConeSubstitutor = ConeSubstitutor.Empty,
+) : CaCfirFunctionSignature<S>() {
+    @Suppress("UNCHECKED_CAST")
+    override val symbol: S
+        get() = withValidityAssertion { cfirSymbol.buildSymbol(cfirSymbolBuilder) as S }
 
-internal class CaCfirSubstitutedFunctionSignatureImpl<out S : CaFunctionSymbol>(
-    symbol: S,
-    typeParameters: List<CaTypeParameterSymbol>,
-    valueParameters: List<CaValueParameterSignature>,
-    returnType: CaType?,
-    receiverType: CaType?,
-    annotations: List<CaAnnotation>,
-    analysisSession: CaCfirSession,
-    token: org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken,
-) : CaCfirSubstitutedSignatureImpl<S>(
-    symbol = symbol,
-    typeParameters = typeParameters,
-    valueParameters = valueParameters,
-    returnType = returnType,
-    receiverType = receiverType,
-    annotations = annotations,
-    analysisSession = analysisSession,
-    token = token,
-), CaFunctionSignature<S>
-
-internal class CaCfirSubstitutedVariableSignatureImpl<out S : CaVariableSymbol>(
-    symbol: S,
-    typeParameters: List<CaTypeParameterSymbol>,
-    valueParameters: List<CaValueParameterSignature>,
-    returnType: CaType?,
-    receiverType: CaType?,
-    annotations: List<CaAnnotation>,
-    analysisSession: CaCfirSession,
-    token: org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken,
-) : CaCfirSubstitutedSignatureImpl<S>(
-    symbol = symbol,
-    typeParameters = typeParameters,
-    valueParameters = valueParameters,
-    returnType = returnType,
-    receiverType = receiverType,
-    annotations = annotations,
-    analysisSession = analysisSession,
-    token = token,
-), CaVariableSignature<S>
-
-internal fun <S : CaCallableSymbol> CaCfirSession.substituteSignature(
-    signature: CaSignature<S>,
-    substitutor: CaSubstitutor,
-): CaSignature<S> {
-    if (substitutor is CaSubstitutor.Empty) return signature
-
-    val cfirSubstitutor = when (substitutor) {
-        is CaCfirMapBackedSubstitutor -> substitutor
-        else -> error("仅支持使用 CFIR substitutor 实例化签名：${substitutor::class.simpleName}")
+    override val returnType: CaType by cached {
+        cfirSymbolBuilder.typeBuilder.buildType(coneSubstitutor.substituteOrSelf(cfirSymbol.resolvedReturnType))
     }
 
-    val cacheKey = CaCfirSubstitutedSignatureCacheKey(signature, cfirSubstitutor.mappings)
-    @Suppress("UNCHECKED_CAST")
-    return getOrCreateSubstitutedSignature(cacheKey) {
-        buildSubstitutedSignature(signature, cfirSubstitutor)
-    } as CaSignature<S>
+    override val receiverType: CaType? by cached {
+        symbol.receiverType?.let { substitutePublicType(it, coneSubstitutor, cfirSymbolBuilder) }
+    }
+
+    override val valueParameters: List<CaVariableSignature<CaValueParameterSymbol>> by cached {
+        cfirSymbol.cfir.valueParameters.map {
+            CaCfirVariableSubstitutorBasedSignature(token, it.symbol, cfirSymbolBuilder, coneSubstitutor)
+        }
+    }
+
+    override fun substitute(substitutor: CaSubstitutor): CaCfirFunctionSignature<S> = withValidityAssertion {
+        if (substitutor is CaSubstitutor.Empty) return@withValidityAssertion this
+        error("Chained signature substitution is not wired for CFIR yet")
+    }
 }
 
-private fun <S : CaCallableSymbol> CaCfirSession.buildSubstitutedSignature(
-    signature: CaSignature<S>,
-    substitutor: CaCfirMapBackedSubstitutor,
-): CaSignature<S> {
-    val substitutedValueParameters = signature.valueParameters.map { parameter ->
-        CaCfirValueParameterSignatureImpl(
-            name = parameter.name,
-            type = parameter.type?.let(substitutor::substitute),
-            annotations = parameter.annotations,
-            token = token,
-        )
-    }
-
+@OptIn(CaExperimentalApi::class, CaImplementationDetail::class)
+internal class CaCfirVariableSubstitutorBasedSignature<out S : CaVariableSymbol>(
+    override val token: CaLifetimeToken,
+    override val cfirSymbol: CfirCallableSymbol<*>,
+    override val cfirSymbolBuilder: org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder,
+    private val coneSubstitutor: ConeSubstitutor = ConeSubstitutor.Empty,
+) : CaCfirVariableSignature<S>() {
     @Suppress("UNCHECKED_CAST")
-    return when (val symbol = signature.symbol) {
-        is CaFunctionSymbol -> CaCfirSubstitutedFunctionSignatureImpl(
-            symbol = symbol,
-            typeParameters = signature.typeParameters,
-            valueParameters = substitutedValueParameters,
-            returnType = signature.returnType?.let(substitutor::substitute),
-            receiverType = signature.receiverType?.let(substitutor::substitute),
-            annotations = signature.annotations,
-            analysisSession = this,
-            token = token,
-        ) as CaSignature<S>
+    override val symbol: S
+        get() = withValidityAssertion { cfirSymbol.buildSymbol(cfirSymbolBuilder) as S }
 
-        is CaVariableSymbol -> CaCfirSubstitutedVariableSignatureImpl(
-            symbol = symbol,
-            typeParameters = signature.typeParameters,
-            valueParameters = substitutedValueParameters,
-            returnType = signature.returnType?.let(substitutor::substitute),
-            receiverType = signature.receiverType?.let(substitutor::substitute),
-            annotations = signature.annotations,
-            analysisSession = this,
-            token = token,
-        ) as CaSignature<S>
-
-        else -> CaCfirSubstitutedSignatureImpl(
-            symbol = symbol,
-            typeParameters = signature.typeParameters,
-            valueParameters = substitutedValueParameters,
-            returnType = signature.returnType?.let(substitutor::substitute),
-            receiverType = signature.receiverType?.let(substitutor::substitute),
-            annotations = signature.annotations,
-            analysisSession = this,
-            token = token,
-        )
+    override val returnType: CaType by cached {
+        cfirSymbolBuilder.typeBuilder.buildType(coneSubstitutor.substituteOrSelf((symbol.returnType as CaCfirType).coneType))
     }
+
+    override val receiverType: CaType? by cached {
+        symbol.receiverType?.let { substitutePublicType(it, coneSubstitutor, cfirSymbolBuilder) }
+    }
+
+    override fun substitute(substitutor: CaSubstitutor): CaCfirVariableSignature<S> = withValidityAssertion {
+        if (substitutor is CaSubstitutor.Empty) return@withValidityAssertion this
+        error("Chained signature substitution is not wired for CFIR yet")
+    }
+}
+
+private fun substitutePublicType(
+    type: CaType,
+    substitutor: ConeSubstitutor,
+    builder: org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder,
+): CaType {
+    val cfirType = type as? CaCfirType
+        ?: error("Only CFIR public types can participate in CFIR signature substitution")
+    return builder.typeBuilder.buildType(substitutor.substituteOrSelf(cfirType.coneType))
 }

@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %output
-// EXEC: %run %run_opt %output
-
 func f<A, B, C>(a: A): (B) -> (C) -> Unit {
     {b: B => {c: C => ()}}
 }

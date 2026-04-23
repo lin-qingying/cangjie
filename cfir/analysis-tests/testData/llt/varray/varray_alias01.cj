@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f  -o %output
-// RUN-EXEC-PIPE-0: %run %run_opt %output %run_args
-
 type varr = VArray<Int64, $3>
 type varr1_1<T> = VArray<Int64, $3>
 

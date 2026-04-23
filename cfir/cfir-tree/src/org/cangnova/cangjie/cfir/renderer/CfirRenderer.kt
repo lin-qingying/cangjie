@@ -205,14 +205,19 @@ class CfirRenderer(
             }
             is CfirUserTypeRef -> {
                 print("R|")
-                print(typeRef.qualifier.joinToString(".") { it.asString() })
-                if (typeRef.typeArguments.isNotEmpty()) {
-                    print("<")
-                    typeRef.typeArguments.forEachIndexed { index, argument ->
-                        if (index > 0) print(", ")
-                        renderType(argument)
+                typeRef.qualifier.forEachIndexed { index, qualifier ->
+                    if (index > 0) {
+                        print(".")
                     }
-                    print(">")
+                    print(qualifier.name.asString())
+                    if (qualifier.typeArguments.isNotEmpty()) {
+                        print("<")
+                        qualifier.typeArguments.forEachIndexed { argumentIndex, argument ->
+                            if (argumentIndex > 0) print(", ")
+                            renderType(argument)
+                        }
+                        print(">")
+                    }
                 }
                 print("|")
             }

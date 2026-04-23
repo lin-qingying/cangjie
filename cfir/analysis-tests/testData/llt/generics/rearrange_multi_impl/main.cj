@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: ser.cj ser2.cj
-// EXEC: %compiler %cmp_opt ser.cj ser2.cj %n.cj  -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
 
 package test
 

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %f 2>&1 | compare %f
-
 struct RA {
     public let a = 10
     public init(a: Int64) {
@@ -16,6 +14,3 @@ struct RA {
 main() {
     return 0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

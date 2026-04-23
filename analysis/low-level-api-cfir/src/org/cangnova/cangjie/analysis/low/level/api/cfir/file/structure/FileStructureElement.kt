@@ -43,6 +43,7 @@ internal sealed class FileStructureElement(
         fun recorderFor(fir: CfirDeclaration): CfirElementsRecorder = when (fir) {
             is CfirFile -> RootStructureElement.Recorder(fir)
             is CfirClass -> ClassDeclarationStructureElement.Recorder(fir)
+            is CfirExtend -> ExtendDeclarationStructureElement.Recorder(fir)
             else -> DeclarationStructureElement.Recorder
         }
     }
@@ -153,9 +154,32 @@ internal class ClassDeclarationStructureElement(
     )
 }
 
+internal class ExtendDeclarationStructureElement(
+    file: CfirFile,
+    extend: CfirExtend,
+    moduleComponents: LLCfirModuleResolveComponents,
+) : FileStructureElement(
+    declaration = extend,
+    diagnostics = FileStructureElementDiagnostics(
+        SingleNonLocalDeclarationDiagnosticRetriever(
+            declaration = extend,
+            file = file,
+            moduleComponents = moduleComponents,
+        )
+    ),
+) {
+    class Recorder(firExtend: CfirExtend) : CfirElementContainerRecorder(
+        container = firExtend,
+        declarationsToIgnore = firExtend.declarationsToIgnore,
+    )
+}
+
 /** @see ClassDeclarationStructureElement */
 internal val CfirClass.declarationsToIgnore: Set<CfirDeclaration>
     get() = declarations.filterNot(CfirDeclaration::isPartOfClassStructureElement).toSet()
+
+internal val CfirExtend.declarationsToIgnore: Set<CfirDeclaration>
+    get() = emptySet()
 
 /**
  * The recorder is supposed to visit only elements that belong to the [container].

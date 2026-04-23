@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %n.%suffix
-// EXEC-PIPE-0: %run %run_opt %n.%suffix | compare %f
-
-
 main() {
     var arr: Array<Int64> = [0, 1, 2]
     var arr2 = Array<Int64>(4, {i => i})
@@ -43,6 +39,3 @@ main() {
     }
     return 0
 }
-
-/* SCAN
-*/

@@ -6,8 +6,6 @@
 
 // LEVEL: 0
 // DEPENDENCE: testa.cj, testb.cj
-// EXEC: %compiler testa.cj -o testa.%middle %compile_lib_opt
-// EXEC: %compiler testb.cj -o testb.%middle %compile_lib_opt
 // (CJNATIVE) EXEC-0: %compiler  %f testa.%middle testb.%middle
 
 package c

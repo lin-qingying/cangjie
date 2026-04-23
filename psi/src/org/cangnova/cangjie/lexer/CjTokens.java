@@ -773,6 +773,7 @@ TokenSet FLOAT_SUPPORT_OPERATOR = TokenSet.create(
 
     TokenSet WHITESPACES = TokenSet.create(TokenType.WHITE_SPACE);
     CjModifierKeywordToken DEFAULT_VISIBILITY_KEYWORD = INTERNAL_KEYWORD;
+    TokenSet INCREMENT_AND_DECREMENT = TokenSet.create(PLUSPLUS, MINUSMINUS);
 
     TokenSet WHITE_SPACE_OR_COMMENT_BIT_SET = TokenSet.orSet(COMMENTS, WHITESPACES);
     CjToken EOF = new CjToken("EOF", EOF_Id);

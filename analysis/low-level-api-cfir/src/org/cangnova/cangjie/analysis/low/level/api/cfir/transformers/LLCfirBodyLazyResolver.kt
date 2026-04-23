@@ -725,6 +725,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
 
         when (target) {
             is CfirFile, is CfirClass, is CfirCodeFragment -> error("Should have been resolved in ${::doResolveWithoutLock.name}")
+            is CfirExtend -> {
+                // extend 自身不拥有独立 body，成员会作为独立目标继续推进到 BODY_RESOLVE。
+            }
             is CfirConstructor -> resolve(target, BodyStateKeepers.CONSTRUCTOR)
             is CfirFunction -> resolve(target, BodyStateKeepers.FUNCTION)
             is CfirProperty -> resolve(target, BodyStateKeepers.PROPERTY)

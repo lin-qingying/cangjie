@@ -2,9 +2,6 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.components.asCaAnnotationList
-import org.cangnova.cangjie.analysis.api.cfir.components.renderAnnotations
-import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -37,7 +34,7 @@ internal class CaCfirFieldSymbol(
     final override val token: CaLifetimeToken,
 ) : CaFieldSymbol(), CaCfirVariableSymbolSupport<CfirFieldVariableSymbol> {
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(backingSymbol, builder) }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
         get() = callableIdImpl
@@ -77,7 +74,7 @@ internal class CaCfirEnumConstructorSymbol(
     CaCfirCallableSymbolSupport<CfirEnumConstructorSymbol>,
     CaNamedSymbol {
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(backingSymbol, builder) }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
         get() = callableIdImpl
@@ -102,5 +99,5 @@ internal class CaCfirEnumConstructorSymbol(
         get() = analysisSession.cfirSession.cfirProvider.getContainingClass(backingSymbol)?.classId
 
     override val payloadTypes: List<CaType>
-        get() = backingSymbol.cfir.payloadParameterTypesOrEmpty().map { it.asCaType(analysisSession) }
+        get() = backingSymbol.cfir.payloadParameterTypesOrEmpty().map(builder.typeBuilder::buildType)
 }

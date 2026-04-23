@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE)ERRCHECK: %frontendCompiler %typecheck %cmp_opt %f %diag_json
-// (CJNATIVE)ASSERT: scan sema_static_variable_use_generic_parameter
-// (not CJNATIVE) EXEC: %compiler %f
-
 class C {
     static func test() {
         0
@@ -16,7 +12,7 @@ class C {
 
 class A<T> where T <: C {
     static init() {
-        T.test()
+        <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>T<!>.test()
     }
 }
 

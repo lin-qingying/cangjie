@@ -1,9 +1,4 @@
 // DEPENDENCE: pkg.cj pkg1.cj pkg2.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg.cj -o pkg.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg1.cj -o pkg1.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg2.cj -o pkg2.%middle
-// EXEC: %compiler %cmp_opt pkg.%middle pkg1.%middle pkg2.%middle %f -o %output
-// EXEC: %run %run_opt %output
 internal import pkg.*
 internal import pkg1.*
 internal import pkg2.*

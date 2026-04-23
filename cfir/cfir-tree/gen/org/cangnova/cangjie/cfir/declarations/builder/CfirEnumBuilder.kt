@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirEnumImpl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
@@ -29,6 +30,7 @@ class CfirEnumBuilder {
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
     var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
+    lateinit var scopeProvider: CfirScopeProvider
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var symbol: CfirEnumSymbol
@@ -47,6 +49,7 @@ class CfirEnumBuilder {
             origin,
             attributes,
             deprecationsProvider,
+            scopeProvider,
             status,
             typeParameters,
             symbol,
@@ -80,6 +83,7 @@ inline fun buildEnumCopy(original: CfirEnum, init: CfirEnumBuilder.() -> Unit): 
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
     copyBuilder.deprecationsProvider = original.deprecationsProvider
+    copyBuilder.scopeProvider = original.scopeProvider
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)

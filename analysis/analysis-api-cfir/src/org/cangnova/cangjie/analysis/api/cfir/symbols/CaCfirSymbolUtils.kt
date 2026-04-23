@@ -33,6 +33,7 @@ import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjFinalizer
 import org.cangnova.cangjie.psi.CjFunctionLiteral
 import org.cangnova.cangjie.psi.CjMacroDeclaration
@@ -43,6 +44,8 @@ import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjConstructor
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbolOfTypeSafe
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 
 /**
  * declaration 的公开位置语义由宿主声明结构决定。
@@ -75,15 +78,24 @@ internal fun <S : CaSymbol> CaCfirSession.getPublicSymbolByPsi(
     psi: PsiElement,
     symbolType: Class<S>,
 ): S? {
-    val matches = symbolQueries.lookupSymbolsByPsi(psi)
-        .map(::getPublicSymbol)
-        .filter { symbol -> symbolType.isInstance(symbol) }
+    val matches = resolvePsiSymbols(psi)
+        .map { symbol -> getPublicSymbol(symbol) }
+        .filter(symbolType::isInstance)
         .map(symbolType::cast)
     return matches.singleOrNull()
 }
 
 internal inline fun <reified S : CaSymbol> CaCfirSession.getPublicSymbolByPsi(psi: PsiElement): S? =
     getPublicSymbolByPsi(psi, S::class.java)
+
+internal fun CaCfirSession.resolvePsiSymbols(psi: PsiElement): List<CfirBasedSymbol<*>> {
+    val declaration = psi as? CjDeclaration ?: return emptyList()
+    val symbol = declaration.resolveToCfirSymbolOfTypeSafe<CfirBasedSymbol<*>>(resolutionFacade) ?: return emptyList()
+    return listOf(symbol)
+}
+
+internal fun CaCfirSession.getPublicSymbol(symbol: CfirBasedSymbol<*>): CaSymbol =
+    cfirSymbolBuilder.buildSymbol(symbol)
 
 /**
  * 通过 PSI 宿主链恢复 containing declaration。
@@ -104,7 +116,7 @@ internal fun CaCfirSession.findContainingDeclarationSymbol(psi: PsiElement?): Ca
             is CjConstructor<*> -> getPublicSymbolByPsi<CaConstructorSymbol>(current)
             is CjFinalizer -> getPublicSymbolByPsi<CaFinalizerSymbol>(current)
             is CjMacroDeclaration -> getPublicSymbolByPsi<CaMacroSymbol>(current)
-            is CjFile -> createFileSymbol(current)
+            is CjFile -> CaCfirFileSymbol(current, this)
             else -> null
         }
         if (container != null) return container

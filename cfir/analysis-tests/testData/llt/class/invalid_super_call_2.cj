@@ -4,12 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 open class B {}
 
 class A <: B {
-    public var a = super()
+    public var a = <!ILLEGAL_THIS_OR_SUPER_CALL!>super<!>()
 }
 
 main() {
@@ -19,23 +17,5 @@ main() {
 }
 
 class C {
-    public var a = super()
+    public var a = <!ILLEGAL_THIS_OR_SUPER_CALL!>super<!>()
 }
-
-/* SCAN
-error: invalid calling 'super' outside the constructor
-  ==> invalid_super_call_2.cj:12:20:
-   | 
-12 |     public var a = super()
-   |                    ^ 
-   | 
-
-error: invalid calling 'super' outside the constructor
-  ==> invalid_super_call_2.cj:22:20:
-   | 
-22 |     public var a = super()
-   |                    ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

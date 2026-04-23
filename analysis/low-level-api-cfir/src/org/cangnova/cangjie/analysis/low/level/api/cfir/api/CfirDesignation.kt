@@ -26,6 +26,7 @@ import org.cangnova.cangjie.cfir.types.toPrimitiveTypeKindOrNull
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.psiUtil.containingTypeStatement
 import org.cangnova.cangjie.utils.SmartList
 import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
@@ -64,7 +65,9 @@ class CfirDesignation(
                     withCfirDesignationEntry("designation", this@CfirDesignation)
                 }
 
-                is CfirClass -> {}
+                is CfirClass,
+                is CfirExtend,
+                    -> {}
                 else -> errorWithAttachment("Unexpected declaration type: ${declaration::class.simpleName}") {
                     withCfirDesignationEntry("designation", this@CfirDesignation)
                 }
@@ -126,8 +129,16 @@ private fun tryCollectDesignation(providedFile: CfirFile?, target: CfirElementWi
                 return null
             }
 
-            val containingClassId = target.containingClassLookupTag()?.toClassSymbol(target.moduleData.session)?.classId
+            val containingClassId =
+                target.containingClassLookupTag()?.toClassSymbol(target.moduleData.session)?.classId
+                    ?: (target.psi as? org.cangnova.cangjie.psi.CjDeclaration)
+                        ?.containingTypeStatement
+                        ?.getClassId()
             collectDesignationPathWithContainingClass(providedFile, target, containingClassId)
+        }
+
+        is CfirExtend -> {
+            collectDesignationPathWithContainingClass(providedFile, target, containingClassId = null)
         }
 
         is CfirClassLikeDeclaration -> {
@@ -189,7 +200,7 @@ private fun collectDesignationPathWithContainingClassFallback(
 ): List<CfirDeclaration> {
     val useSiteSession by lazy(LazyThreadSafetyMode.NONE) { getTargetSession(target) }
 
-    fun resolveChunk(classId: ClassId): CfirClass {
+    fun resolveChunk(classId: ClassId): CfirDeclaration {
         val declaration = if (useSiteSession.requiresDependenciesSearch) {
             useSiteSession.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
         } else {
@@ -198,9 +209,9 @@ private fun collectDesignationPathWithContainingClassFallback(
         }
 
         checkWithAttachment(
-            declaration is CfirClass,
+            declaration is CfirClass || declaration is CfirExtend,
             {
-                "'${CfirClass::class.simpleName}' expected as a containing declaration, " +
+                "'${CfirClass::class.simpleName}' or '${CfirExtend::class.simpleName}' expected as a containing declaration, " +
                         "got '${declaration?.javaClass?.simpleName}'. " +
                         "Module: ${useSiteSession.caModule::class.simpleName}"
             },
@@ -216,7 +227,7 @@ private fun collectDesignationPathWithContainingClassFallback(
     }
 
     val containingClassIds = sequenceOf(containingClassId)
-    val (_, containingClasses) = containingClassIds.fold(target to SmartList<CfirClass>()) { (declaration, result), classId ->
+    val (_, containingClasses) = containingClassIds.fold(target to SmartList<CfirDeclaration>()) { (declaration, result), classId ->
         // Psi-based calculator is called explicitly to avoid `LLCfirProvider#getContainingClassSymbol`
         // since we have a fallback logic with strict checking (no dependencies in the search scope)
         val psiBasedContainingClass = LLContainingClassCalculator.getContainingClassSymbol(declaration.symbol)?.cfir
@@ -244,9 +255,9 @@ private fun collectDesignationPathWithContainingClassFallback(
             }
         }
 
-        val containingClass = psiBasedContainingClass ?: resolveChunk(classId)
-        result += containingClass
-        containingClass to result
+        val containingDeclaration = psiBasedContainingClass ?: resolveChunk(classId)
+        result += containingDeclaration
+        containingDeclaration to result
     }
 
     return containingClasses.asReversed()

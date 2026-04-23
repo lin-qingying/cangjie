@@ -4,36 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %f %cmp_opt 2>&1 | compare %f 
-
 main() {
     let a = Some(1)
     while (let Some(b) <- a) {
-        let b = b
+        let <!REDECLARATION!>b<!> = <!UNRESOLVED_REFERENCE!>b<!>
         break
     }
 }
-
-/* SCAN
-error: redefinition of declaration 'b'
-  ==> samename_conditionandifbody.cj:12:13:
-   | 
-12 |         let b = b
-   |             ^ 
-   | 
-note: 'b' is previously declared here
-  ==> samename_conditionandifbody.cj:11:21:
-   | 
-11 |     while (let Some(b) <- a) {
-   |                     ^ 
-   | 
-
-error: undeclared identifier 'b'
-  ==> samename_conditionandifbody.cj:12:17:
-   | 
-12 |         let b = b
-   |                 ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

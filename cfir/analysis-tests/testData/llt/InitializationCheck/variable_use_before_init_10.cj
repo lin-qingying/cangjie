@@ -4,19 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
-let (x, _) = (x = 1)
+let (x, _) = (<!UNRESOLVED_REFERENCE!>x<!> = 1)
 
 main() {}
-
-/* SCAN
-error: undeclared identifier 'x'
- ==> variable_use_before_init_10.cj:9:15:
-  | 
-9 | let (x, _) = (x = 1)
-  |               ^ 
-  | 
-
-1 error generated, 1 error printed.
-*/

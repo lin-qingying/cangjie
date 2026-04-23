@@ -991,7 +991,7 @@ open class CfirExpressionsResolveTransformer(
         arrayLiteral.replaceConeTypeOrNull(
             constructNamedType(
                 classId = StdlibClassIds.Array,
-                typeArguments = listOf(ConeTypeProjection(elementType)),
+                typeArguments = listOf(elementType),
             )
         )
         return arrayLiteral
@@ -1409,7 +1409,7 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression {
         return withClearedEffectHandlers {
             val anonFunc = anonymousFunctionExpression.anonymousFunction
-            val expectedFuncType = data.expectedTypeOrNull as? ConeFuncType
+            val expectedFuncType = data.expectedTypeOrNull as? ConeFunctionType
 
             val hasUnresolvedParameterType = anonFunc.valueParameters.any { it.returnTypeRef !is CfirResolvedTypeRef }
             if (expectedFuncType == null && hasUnresolvedParameterType) {
@@ -1452,7 +1452,7 @@ open class CfirExpressionsResolveTransformer(
             if (returnType != null && parameterTypes.all { it != null }) {
                 // CfirAnonymousFunctionExpression.coneTypeOrNull is derived from anonymousFunction.typeRef.
                 // Keep the source of truth on declaration side instead of writing expression cone type directly.
-                val lambdaType = ConeFuncType(parameterTypes.filterNotNull(), returnType)
+                val lambdaType = ConeFunctionType(parameterTypes.filterNotNull(), returnType)
                 anonFunc.replaceTypeRef(lambdaType.toCfirResolvedTypeRef(anonFunc.typeRef.source, anonFunc.typeRef))
             }
             anonFunc.replaceControlFlowGraphReference(components.dataFlowAnalyzer.exitFunction(anonFunc))
@@ -1478,7 +1478,7 @@ open class CfirExpressionsResolveTransformer(
         rangeExpression.replaceConeTypeOrNull(
             constructNamedType(
                 classId = StdlibClassIds.Range,
-                typeArguments = listOf(ConeTypeProjection(elementType)),
+                typeArguments = listOf(elementType),
             )
         )
         return rangeExpression
@@ -1495,7 +1495,7 @@ open class CfirExpressionsResolveTransformer(
         spawnExpression.replaceConeTypeOrNull(
             constructNamedType(
                 classId = StdlibClassIds.Future,
-                typeArguments = listOf(ConeTypeProjection(taskReturnType)),
+                typeArguments = listOf(taskReturnType),
             )
         )
         return spawnExpression
@@ -1551,7 +1551,7 @@ open class CfirExpressionsResolveTransformer(
         )
         return constructNamedType(
             classId = StdlibClassIds.Option,
-            typeArguments = listOf(ConeTypeProjection(effectiveResultType)),
+            typeArguments = listOf(effectiveResultType),
         )
     }
 

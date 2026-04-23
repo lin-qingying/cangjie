@@ -16,15 +16,15 @@
   </extensions>
 
   <extensions defaultExtensionNs="org.cangnova.cangjie">
-    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaSimpleNameReference$Provider" />
-    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaBasicTypeReference$Provider" />
-    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaArrayAccessReference$Provider" />
-    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaCollectionLiteralReference$Provider" />
-    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaConstructorDelegationReference$Provider" />
-    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaInvokeFunctionReference$Provider" />
-    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaDefaultAnnotationArgumentReference$Provider" />
-    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaNamedArgumentReference$Provider" />
-    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaSuperTypeCallReference$Provider" />
-    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaRangeReference$Provider" />
+<!--    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaSimpleNameReference$Provider" />-->
+<!--    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaBasicTypeReference$Provider" />-->
+<!--    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaArrayAccessReference$Provider" />-->
+<!--    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaCollectionLiteralReference$Provider" />-->
+<!--    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaConstructorDelegationReference$Provider" />-->
+<!--    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaInvokeFunctionReference$Provider" />-->
+<!--    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaDefaultAnnotationArgumentReference$Provider" />-->
+<!--    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaNamedArgumentReference$Provider" />-->
+<!--    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaSuperTypeCallReference$Provider" />/-->
+<!--    <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.references.CaRangeReference$Provider" />-->
   </extensions>
 </idea-plugin>

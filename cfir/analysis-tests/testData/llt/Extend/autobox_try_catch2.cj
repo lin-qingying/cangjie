@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %output | compare %f
-// ASSERT: scan In f of extend Int64!
-
 interface I {
     func f() {
         println("In f of interface!");

@@ -20,6 +20,8 @@ import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.type
+import org.cangnova.cangjie.cfir.types.type
 
 /**
  * 为类型系统提供“具体类型 -> 已实例化父类型”的统一入口。
@@ -197,7 +199,7 @@ class CfirTypeAwareSupertypeProviderImpl(
         if (typeParameters.isEmpty()) return null
         if (typeParameters.size != type.typeArguments.size) return null
 
-        val replacements = typeParameters.zip(type.typeArguments).associate { (typeParameter, argument) ->
+        val replacements: Map<String, ConeCangJieType> = typeParameters.zip(type.typeArguments).associate { (typeParameter, argument) ->
             typeParameter.symbol.name.asString() to argument.type
         }
         return CfirTypeSubstitutorByMap(replacements)

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 class Class {
     static var b: Int64 = 1
 }
@@ -15,26 +13,9 @@ enum A<T> where T <: Class {
 
     static prop c: Int64 {
         get() {
-            T.b // error
+            <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>T<!>.b // error
         }
     }
 }
 
 main() {}
-
-/* SCAN
-error: static member cannot depend on generic parameter 'Generics-T'
-  ==> generic_static_prop04.cj:18:13:
-   | 
-18 |             T.b // error
-   |             ^ 
-   | 
-note: generic argument declaration here
-  ==> generic_static_prop04.cj:13:8:
-   | 
-13 | enum A<T> where T <: Class {
-   |        ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

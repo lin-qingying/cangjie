@@ -14,6 +14,9 @@ import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.originalCjFile
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.originalDeclaration
+import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjFile
 
 /**
@@ -24,28 +27,24 @@ import org.cangnova.cangjie.psi.CjFile
  */
 internal class CaCfirOriginalPsiProvider(
     override val analysisSessionProvider: () -> CaCfirSession,
-) : CaBaseSessionComponent<CaCfirSession>(), CaOriginalPsiProvider {
-    override fun CaSymbol.getOriginalPsi(): PsiElement? = withValidityAssertion {
-        when (this@getOriginalPsi) {
-            is CaFileSymbol -> file
-            is CaCfirExtendSymbol -> extendPsi ?: psi
-            is CaDeclarationSymbol -> psi
-            is CaClassLikeSymbol,
-            is CaCallableSymbol,
-            is CaPackageSymbol -> resolveContainingFile(this@getOriginalPsi)
-            else -> null
-        }
+) : CaBaseSessionComponent<CaCfirSession>(), CaOriginalPsiProvider,CaCfirSessionComponent {
+    @Deprecated("Obsolete API")
+    override fun CjFile.recordOriginalCjFile(file: CjFile) = withValidityAssertion {
+        originalCjFile = file
     }
 
-    private fun resolveContainingFile(symbol: CaSymbol): CjFile? {
-        if (symbol is CaDeclarationSymbol) {
-            (symbol.psi?.containingFile as? CjFile)?.let { return it }
-        }
-        if (symbol is CaCfirBackedSymbol<*>) {
-            analysisSession.symbolQueries.lookupContainingFile(symbol.backingSymbol)?.let { return it }
-        }
+    @Deprecated("Obsolete API")
+    override fun CjDeclaration.recordOriginalDeclaration(declaration: CjDeclaration) = withValidityAssertion {
+        originalDeclaration = declaration
+    }
 
-        val packageFqName = symbol.decompiledContainingPackageFqName() ?: return null
-        return analysisSession.findDecompiledContainingFile(packageFqName)
+    @Deprecated("Obsolete API")
+    override fun CjFile.getOriginalCjFile(): CjFile? = withValidityAssertion {
+        return originalCjFile
+    }
+
+    @Deprecated("Obsolete API")
+    override fun CjDeclaration.getOriginalDeclaration(): CjDeclaration? = withValidityAssertion {
+        return originalDeclaration
     }
 }

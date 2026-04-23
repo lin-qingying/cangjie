@@ -4,11 +4,9 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 class A {
     var `init` = 1
-    prop `init`: Int64 {
+    prop <!REDECLARATION!>`init`<!>: Int64 {
         get() {
             1
         }
@@ -17,20 +15,3 @@ class A {
 
 main() {
 }
-
-/* SCAN
-error: redefinition of declaration 'init'
-  ==> raw_init_main03.cj:11:11:
-   | 
-11 |     prop `init`: Int64 {
-   |           ^^^^ 
-   | 
-note: 'init' is previously declared here
-  ==> raw_init_main03.cj:10:10:
-   | 
-10 |     var `init` = 1
-   |          ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

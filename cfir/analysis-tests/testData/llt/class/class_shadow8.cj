@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 open class Base {
     public static let val: Int32 = 0
     public static func f(): Int32 {
@@ -14,8 +12,8 @@ open class Base {
 }
 
 class Data <: Base {
-    public let val: Int32 = 1
-    public let f: Int32 = 2
+    public let <!INHERIT_MEMBER_KIND_INCONSISTENT!>val<!>: Int32 = 1
+    public let <!INHERIT_MEMBER_KIND_INCONSISTENT!>f<!>: Int32 = 2
 }
 
 main(): Int64 {
@@ -27,21 +25,3 @@ main(): Int64 {
     }
     return 0
 }
-
-/* SCAN
-error: non-static member 'val' cannot have the same name with static member in parent class or interfaces
-  ==> class_shadow8.cj:17:5:
-   | 
-17 |     public let val: Int32 = 1
-   |     ^ 
-   | 
-
-error: non-static member 'f' cannot have the same name with static member in parent class or interfaces
-  ==> class_shadow8.cj:18:5:
-   | 
-18 |     public let f: Int32 = 2
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

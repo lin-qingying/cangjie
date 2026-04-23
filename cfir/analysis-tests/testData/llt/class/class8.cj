@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 open class A {
     public init() {}
     public init(a: Int64) {
@@ -13,26 +11,8 @@ open class A {
         this.a = a
     }
     public func test() {
-        var res = this(1)
+        var res = <!ILLEGAL_THIS_OR_SUPER_CALL!>this<!>(1)
     }
     public var a: Int64 = 1
-    public var b = this()
+    public var b = <!ILLEGAL_THIS_OR_SUPER_CALL!>this<!>()
 }
-
-/* SCAN
-error: invalid calling 'this' outside the constructor
-  ==> class8.cj:16:19:
-   | 
-16 |         var res = this(1)
-   |                   ^ 
-   | 
-
-error: invalid calling 'this' outside the constructor
-  ==> class8.cj:19:20:
-   | 
-19 |     public var b = this()
-   |                    ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

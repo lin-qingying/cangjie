@@ -3,15 +3,16 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 import org.cangnova.cangjie.analysis.api.cfir.*
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.symbols.createClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirType
 import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
 import org.cangnova.cangjie.analysis.api.components.CaTypeInformationProvider
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.types.CaClassLikeType
+import org.cangnova.cangjie.analysis.api.types.CaPrimitiveType
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.toClassLikeSymbol
 
 /**
  * 对齐 Kotlin `KaFirTypeInformationProvider` 的职责边界。
@@ -42,7 +43,9 @@ internal class CaCfirTypeInformationProvider(
         get() = withValidityAssertion {
             when (this@classLikeSymbol) {
                 is CaClassLikeType -> symbol
-                is CaCfirType -> analysisSession.typeQueries.queryTypeClassLikeSymbol(coneType)?.let(analysisSession::createClassLikeSymbol)
+                is CaPrimitiveType -> null
+                is CaCfirType -> coneType.toClassLikeSymbol(analysisSession.cfirSession)
+                    ?.let(analysisSession.cfirSymbolBuilder.classifierBuilder::buildClassLikeSymbol)
                 else -> error("Only CFIR public types can resolve class-like symbols: ${this@classLikeSymbol::class.simpleName}")
             }
         }

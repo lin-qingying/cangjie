@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f
-
 main(): Int64 {
     return run()
 }
@@ -24,5 +22,3 @@ func run(): Int64 {
 func Foo(a: Int64, b: String, A!: Int64 = x, B!: String = Foo(1, "x")): String {
     return (a + A).toString() + b + B
 }
-
-// ASSERT: regex-not .

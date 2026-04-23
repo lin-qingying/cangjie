@@ -4,12 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 class A<T> {
     static prop test: Int64 {
         get() {
-            c
+            <!USED_BEFORE_INITIALIZATION!>c<!>
         }
     }
     mut static prop foo: Int64 {
@@ -17,15 +15,15 @@ class A<T> {
             1
         }
         set(v) {
-            b
+            <!USED_BEFORE_INITIALIZATION!>b<!>
         }
     }
     static var b: Int64
-    static var c: Int64 = test
+    static var c: Int64 = <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>test<!>
     static init() {
         b = if (true) {
-            foo = 2
-            foo
+            <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>foo<!> = 2
+            <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>foo<!>
         } else {
             2
         }
@@ -33,60 +31,3 @@ class A<T> {
 }
 
 main() {}
-
-/* SCAN
-error: static member cannot depend on generic parameter 'Generics-T'
-  ==> static_variable_use_before_init_07.cj:24:27:
-   | 
-24 |     static var c: Int64 = test
-   |                           ^^^^ 
-   | 
-note: generic argument declaration here
- ==> static_variable_use_before_init_07.cj:9:9:
-  | 
-9 | class A<T> {
-  |         ^ 
-  | 
-
-error: static member cannot depend on generic parameter 'Generics-T'
-  ==> static_variable_use_before_init_07.cj:27:13:
-   | 
-27 |             foo = 2
-   |             ^^^ 
-   | 
-note: generic argument declaration here
- ==> static_variable_use_before_init_07.cj:9:9:
-  | 
-9 | class A<T> {
-  |         ^ 
-  | 
-
-error: static member cannot depend on generic parameter 'Generics-T'
-  ==> static_variable_use_before_init_07.cj:28:13:
-   | 
-28 |             foo
-   |             ^^^ 
-   | 
-note: generic argument declaration here
- ==> static_variable_use_before_init_07.cj:9:9:
-  | 
-9 | class A<T> {
-  |         ^ 
-  | 
-
-error: global/static variable 'b' is used before initialization during initializing 'b'
-  ==> static_variable_use_before_init_07.cj:20:13:
-   | 
-20 |             b
-   |             ^ 
-   | 
-
-error: global/static variable 'c' is used before initialization during initializing 'c'
-  ==> static_variable_use_before_init_07.cj:12:13:
-   | 
-12 |             c
-   |             ^ 
-   | 
-
-5 errors generated, 5 errors printed.
-*/

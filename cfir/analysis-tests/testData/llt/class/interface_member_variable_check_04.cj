@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-// EXEC: %run %run_opt %n.%suffix
-
 interface I {
     static func a(): Int64 {
         return 1
@@ -23,5 +20,3 @@ main(): Int64 {
     return -1
 }
 
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
-
 main(): Int64 {
     var x = Boo()
     if (x.a != 2) {
@@ -42,17 +40,6 @@ struct Boo {
     }
     // a = 1,b = 1
     public var c: Unit = if (true) {
-        m = 1
+        <!USED_BEFORE_INITIALIZATION!>m<!> = 1
     }
 }
-
-/* SCAN
-error: 'm' is not allowed to be accessed before all member variables are initialized
-  ==> property29.cj:45:9:
-   | 
-45 |         m = 1
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

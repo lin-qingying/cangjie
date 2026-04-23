@@ -4,18 +4,13 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
 enum A<T> {
     | B | ...
 }
 
 main() {
     let a = A<Int64>.B
-    match (a) {
+    <!NON_EXHAUSTIVE_MATCH!>match (a) {
         case B => 0
-    }
+    }<!>
 }
-
-// ASSERT: scan error: non-exhaustive patterns
-// ASSERT: scan # note: _ is not covered
-// ASSERT: scan 1 error generated, 1 error printed.

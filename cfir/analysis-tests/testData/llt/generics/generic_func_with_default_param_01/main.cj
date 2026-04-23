@@ -5,11 +5,8 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: pkg0 pkg1
-// EXEC: %compiler %cmp_opt %compile_lib_opt -p pkg0 -o pkg0.%lib_extension
-// EXEC: %compiler %cmp_opt %compile_lib_opt -p pkg1 -o pkg1.%lib_extension
 // (CJNATIVE) EXEC: %compiler %cmp_opt %f pkg1.%lib_extension pkg0.%lib_extension -o %output
 // (not CJNATIVE) EXEC: %compiler %cmp_opt %f pkg0.%lib_extension pkg1.%lib_extension -o %output
-// EXEC: %run %run_opt %output
 
 package test
 

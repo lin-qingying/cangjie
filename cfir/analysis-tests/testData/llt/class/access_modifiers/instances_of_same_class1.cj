@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
-// EXEC: %run %run_opt %n.%suffix
-
 open class A {
     private var b: Int64 = 1
     public func test() {
@@ -24,6 +21,3 @@ main(): Int64 {
     }
     return 1
 }
-
-/* SCAN
-*/ 

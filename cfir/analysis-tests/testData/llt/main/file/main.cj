@@ -4,19 +4,4 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
-main(): Int64 {}
-
-/* SCAN
-error: mismatched types
- ==> main.cj:9:15:
-  | 
-9 | main(): Int64 {}
-  |         ~~~~~ ^^ expected 'Int64', found 'Unit'
-  |         |
-  |         expected 'Int64' because of return type
-  | 
-
-1 error generated, 1 error printed.
-*/
+main(): Int64 <!TYPE_MISMATCH!>{}<!>

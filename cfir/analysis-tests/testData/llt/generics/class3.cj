@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 func codegenUnitTest(): Int32 {
     return run()
 }
@@ -38,6 +36,3 @@ func run(): Int64 {
     }
     return 1
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

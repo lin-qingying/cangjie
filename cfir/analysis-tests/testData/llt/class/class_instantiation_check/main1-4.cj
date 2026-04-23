@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 open class C1<T> {
     public static func c1(a: Int32) {
         return 0
@@ -15,54 +13,12 @@ open class C1<T> {
     }
 }
 
-class C2 <: C1<Int32> {}
+class C2 <: <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS!>C1<Int32><!> {}
 
 class C3 <: C1<Int64> {}
 
 main() {
-    var a = C1<Int32>()
+    var a = <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS!>C1<Int32><!>()
     var b = C1<Int64>()
     return 0
 }
-
-/* SCAN
-error: generic instantiation 'C1<Int32>' causes ambiguous function 'c1'
-  ==> main1-4.cj:18:13:
-   | 
-18 | class C2 <: C1<Int32> {}
-   |             ^^^^^^^^^ 
-   | 
-note: found candidate
-  ==> main1-4.cj:10:24:
-   | 
-10 |     public static func c1(a: Int32) {
-   |                        ^^ 
-   | 
-note: found candidate
-  ==> main1-4.cj:13:24:
-   | 
-13 |     public static func c1(a: T) {
-   |                        ^^ 
-   | 
-
-error: generic instantiation 'C1<Int32>' causes ambiguous function 'c1'
-  ==> main1-4.cj:23:13:
-   | 
-23 |     var a = C1<Int32>()
-   |             ^^^^^^^^^ 
-   | 
-note: found candidate
-  ==> main1-4.cj:10:24:
-   | 
-10 |     public static func c1(a: Int32) {
-   |                        ^^ 
-   | 
-note: found candidate
-  ==> main1-4.cj:13:24:
-   | 
-13 |     public static func c1(a: T) {
-   |                        ^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

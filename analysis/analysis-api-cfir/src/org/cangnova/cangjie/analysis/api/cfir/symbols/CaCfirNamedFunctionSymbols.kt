@@ -4,8 +4,6 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.components.asCaAnnotationList
-import org.cangnova.cangjie.analysis.api.cfir.components.renderAnnotations
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.location
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirMemberFunctionSymbolPointer
@@ -56,13 +54,16 @@ internal class CaCfirNamedFunctionSymbol private constructor(
 ) : CaNamedFunctionSymbol(),
     CaCfirCjBasedSymbol<CjNamedFunction, CfirNamedFunctionSymbol>,
     CaCfirNamedFunctionSymbolSupport<CfirNamedFunctionSymbol> {
+    override val cfirSymbol: CfirNamedFunctionSymbol
+        get() = super<CaCfirCjBasedSymbol>.cfirSymbol
+
     init {
         require(backingPsi?.isAnonymous != true)
     }
 
     constructor(declaration: CjNamedFunction, session: CaCfirSession) : this(
         backingPsi = declaration,
-        lazyCfirSymbol = lazyNamedFunctionSymbol(declaration, session),
+        lazyCfirSymbol = lazyCfirSymbol(declaration, session),
         analysisSession = session,
     )
 
@@ -84,7 +85,7 @@ internal class CaCfirNamedFunctionSymbol private constructor(
 
     override val annotations: CaAnnotationList
         get() = withValidityAssertion {
-            analysisSession.renderAnnotations(this).asCaAnnotationList(token)
+            psiOrSymbolAnnotationList()
         }
     override val typeParameters: List<CaTypeParameterSymbol>
         get() = withValidityAssertion {
@@ -212,7 +213,7 @@ internal class CaCfirMainFunctionSymbol(
 ) : CaMainFunctionSymbol(), CaCfirNamedFunctionSymbolSupport<CfirMainFunctionSymbol> {
     override val annotations: CaAnnotationList
         get() = withValidityAssertion {
-            analysisSession.renderAnnotations(this).asCaAnnotationList(token)
+            CaCfirAnnotationListForDeclaration.create(backingSymbol, builder)
         }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
@@ -270,7 +271,7 @@ internal class CaCfirMacroSymbol(
 ) : CaMacroSymbol(), CaCfirNamedFunctionSymbolSupport<CfirMacroDeclarationSymbol> {
     override val annotations: CaAnnotationList
         get() = withValidityAssertion {
-            analysisSession.renderAnnotations(this).asCaAnnotationList(token)
+            CaCfirAnnotationListForDeclaration.create(backingSymbol, builder)
         }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
@@ -318,20 +319,4 @@ internal class CaCfirMacroSymbol(
 
     override val name: Name
         get() = nameImpl
-}
-
-/**
- * 命名函数 PSI 到 CFIR 函数符号的懒恢复入口。
- *
- * 这里保持和 Kotlin `lazyFirSymbol(declaration, session)` 同一职责：
- * 只负责把 declaration 懒绑定到同类后端符号，不在这里再发明额外恢复协议。
- */
-private fun lazyNamedFunctionSymbol(
-    declaration: CjNamedFunction,
-    session: CaCfirSession,
-): Lazy<CfirNamedFunctionSymbol> = lazy(LazyThreadSafetyMode.NONE) {
-    session.symbolQueries.lookupSymbolsByPsi(declaration)
-        .filterIsInstance<CfirNamedFunctionSymbol>()
-        .singleOrNull()
-        ?: error("Cannot resolve CFIR named-function symbol for `${declaration.fqName ?: declaration.nameAsSafeName}`")
 }

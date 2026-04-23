@@ -19,7 +19,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassLookupTagImpl
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeTypeContext
 import org.cangnova.cangjie.cfir.types.ConeTypeParameterLookupTag
@@ -56,11 +56,11 @@ class CfirConstraintSystemImplTest {
         val system = CfirConstraintSystemImpl(typeRelations)
         val t = newTypeVariable(system, "T")
 
-        val sub = ConeFuncType(
+        val sub = ConeFunctionType(
             parameterTypes = listOf(ConePrimitiveType.INT32),
             returnType = ConePrimitiveType.INT32,
         )
-        val sup = ConeFuncType(
+        val sup = ConeFunctionType(
             parameterTypes = listOf(ConeTypeParameterType(t.lookupTag)),
             returnType = ConePrimitiveType.INT32,
         )

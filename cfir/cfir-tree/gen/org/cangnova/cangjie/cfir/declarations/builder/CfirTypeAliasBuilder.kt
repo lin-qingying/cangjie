@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeAliasImpl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
@@ -31,6 +32,7 @@ class CfirTypeAliasBuilder {
     var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     val declarations: MutableList<CfirDeclaration> = mutableListOf()
     val superTypeRefs: MutableList<CfirTypeRef> = mutableListOf()
+    lateinit var scopeProvider: CfirScopeProvider
     lateinit var symbol: CfirTypeAliasSymbol
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
@@ -49,6 +51,7 @@ class CfirTypeAliasBuilder {
             deprecationsProvider,
             declarations,
             superTypeRefs,
+            scopeProvider,
             symbol,
             status,
             typeParameters,
@@ -82,6 +85,7 @@ inline fun buildTypeAliasCopy(original: CfirTypeAlias, init: CfirTypeAliasBuilde
     copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.declarations.addAll(original.declarations)
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)
+    copyBuilder.scopeProvider = original.scopeProvider
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.name = original.name

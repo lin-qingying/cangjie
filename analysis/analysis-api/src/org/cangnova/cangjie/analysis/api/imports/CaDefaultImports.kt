@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.analysis.api.imports
 
 import org.cangnova.cangjie.ImportPath
+import org.cangnova.cangjie.analysis.api.CaIdeApi
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.name.FqName
 
@@ -10,27 +12,44 @@ import org.cangnova.cangjie.name.FqName
  * 默认导入属于 use-site session 语义的一部分，而不是某个单独文件私有的解析细节。
  * 因此 Analysis API 需要提供稳定的公开视图，供 resolver、补全、渲染和工具层共享。
  */
-interface CaDefaultImports : CaLifetimeOwner {
+interface CaDefaultImports  {
     /**
-     * 常规优先级的默认导入。
+     * A list of [ImportPath] with [CaDefaultImportPriority] that represents a list of imports which are implicitly present
+     * by default in every file.
      *
-     * 该集合已经包含语言级和平台级的常规默认导入。
+     * Some of these imports are star imports, and from them, we exclude some specific paths. This information is present in [excludedFromDefaultImports].
      */
-    val regularImports: List<ImportPath>
+    public val defaultImports: List<CaDefaultImport>
 
     /**
-     * 低优先级默认导入。
+     * A list of non-star import paths that are excluded from some star default imports provided by [defaultImports].
      */
-    val lowPriorityImports: List<ImportPath>
+    public val excludedFromDefaultImports: List<ImportPath>
+}
+@SubclassOptInRequired(CaImplementationDetail::class)
+public interface CaDefaultImport {
+    /**
+     * The path that is imported by default.
+     *
+     * It may be a star import if [ImportPath.isAllUnder] is `true`, or a non-star import if `false`.
+     */
+    public val importPath: ImportPath
 
     /**
-     * 被显式排除的默认导入目标。
+     * Represents the priority of the current default import.
+     *
+     * @see [CaDefaultImportPriority]
      */
-    val excludedImports: List<FqName>
-
-    /**
-     * 当前分析上下文最终生效的默认导入集合。
-     */
-    val allImports: List<ImportPath>
-        get() = regularImports + lowPriorityImports
+    @OptIn(CaIdeApi::class)
+    public val priority: CaDefaultImportPriority
+}
+/**
+ * Represents the priority of a default import.
+ *
+ * In the case of name conflicts, higher priority wins during resolution.
+ */
+@CaIdeApi
+public enum class CaDefaultImportPriority {
+    LOW,
+    HIGH,
 }

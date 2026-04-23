@@ -1,4 +1,4 @@
-// EXEC-PIPE-1: %compiler %f | compare %f
+// EXEC: %compiler %f | compare %f
 // ASSERT: regex-not core dump
 
 // All global variable need to be defined before use!

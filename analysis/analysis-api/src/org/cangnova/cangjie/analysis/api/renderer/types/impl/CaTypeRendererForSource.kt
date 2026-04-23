@@ -9,6 +9,7 @@ import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaClassTypeQua
 import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaErrorTypeRenderer
 import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaFunctionalTypeRenderer
 import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaIntersectionTypeRenderer
+import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaPrimitiveTypeRenderer
 import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaTupleTypeRenderer
 import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaTypeNameRenderer
 import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaTypeParameterTypeRenderer
@@ -32,6 +33,7 @@ object CaTypeRendererForSource {
         typeNameRenderer = CaTypeNameRenderer.QUOTED
         typeApproximator = CaRendererTypeApproximator.NO_APPROXIMATION
         typeProjectionRenderer = CaTypeProjectionRenderer.WITH_TYPE_ARGUMENTS
+        primitiveTypeRenderer = CaPrimitiveTypeRenderer.AS_SOURCE
         usualClassTypeRenderer = CaUsualClassTypeRenderer.AS_CLASS_TYPE_WITH_TYPE_ARGUMENTS
         functionalTypeRenderer = CaFunctionalTypeRenderer.AS_SOURCE
         typeParameterTypeRenderer = CaTypeParameterTypeRenderer.AS_SOURCE

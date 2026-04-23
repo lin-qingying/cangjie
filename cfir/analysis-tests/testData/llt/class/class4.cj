@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-// ASSERT:regex-auto class 'D' missing abstract modifier, otherwise abstract function or property should be implemented
-
 interface A {
     func foo1(input: Bool): Int32
 }
@@ -17,6 +14,6 @@ interface B {
 
 interface C <: A & B {}
 
-class D <: C {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class D<!> <: C {}
 
 abstract class E <: C {}

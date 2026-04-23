@@ -4,23 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 main() {
     var v: Int64 = try {
         1
     } catch (e: Exception) {
-        do {} while (false)
+        <!TYPE_MISMATCH!>do {} while (false)<!>
     }
 }
-
-/* SCAN
-error: mismatched types
-  ==> do_while_check_type.cj:13:9:
-   | 
-13 |         do {} while (false)
-   |         ^^^^^^^^^^^^^^^^^^^ expected 'Int64', found 'Unit'
-   | 
-
-1 error generated, 1 error printed.
-*/

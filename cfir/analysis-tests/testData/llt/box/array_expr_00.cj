@@ -4,19 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %n.cj -o %output
-
 main() {
-    let x: Bool = Array<Int64>()
+    let x: Bool = <!TYPE_MISMATCH!>Array<Int64>()<!>
 }
-
-/* SCAN
-error: mismatched types
-  ==> array_expr_00.cj:10:19:
-   | 
-10 |     let x: Bool = Array<Int64>()
-   |                   ^^^^^^^^^^^^^^ expected 'Bool', found 'Struct-Array<Int64>'
-   | 
-
-1 error generated, 1 error printed.
-*/

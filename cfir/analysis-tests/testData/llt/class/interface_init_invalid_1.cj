@@ -4,25 +4,12 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 interface I0 {
     func f() {
-        this()
+        <!ILLEGAL_THIS_OR_SUPER_CALL!>this<!>()
     }
 }
 
 main(): Int64 {
     return 1
 }
-
-/* SCAN
-error: invalid calling 'this' outside the constructor
-  ==> interface_init_invalid_1.cj:11:9:
-   | 
-11 |         this()
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -21,6 +21,16 @@ object CfirFrontendConfigurationKeys {
     @JvmField
     val NO_PRELUDE =
         CompilerConfigurationKey.create<Boolean>("NO_PRELUDE")
+
+    /** 测试/命令行注入的项目 API level。 */
+    @JvmField
+    val API_LEVEL =
+        CompilerConfigurationKey.create<Int>("API_LEVEL")
+
+    /** 测试/命令行注入的 syscap 配置文件路径。 */
+    @JvmField
+    val API_LEVEL_SYSCAP_CONFIG_PATH =
+        CompilerConfigurationKey.create<String>("API_LEVEL_SYSCAP_CONFIG_PATH")
 }
 
 /**
@@ -43,3 +53,16 @@ var CompilerConfiguration.noPrelude: Boolean
         put(CfirFrontendConfigurationKeys.NO_PRELUDE, value)
     }
 
+var CompilerConfiguration.apiLevel: Int?
+    get() = get(CfirFrontendConfigurationKeys.API_LEVEL)
+    set(value) {
+        if (value == null) return
+        put(CfirFrontendConfigurationKeys.API_LEVEL, value)
+    }
+
+var CompilerConfiguration.apiLevelSyscapConfigPath: String?
+    get() = get(CfirFrontendConfigurationKeys.API_LEVEL_SYSCAP_CONFIG_PATH)
+    set(value) {
+        if (value == null) return
+        put(CfirFrontendConfigurationKeys.API_LEVEL_SYSCAP_CONFIG_PATH, value)
+    }

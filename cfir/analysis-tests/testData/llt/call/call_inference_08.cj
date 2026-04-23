@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %output
-// EXEC: %run %run_opt %output
-
 type TASK_TYPE<IN, OUT> = (IN) -> OUT
 
 open class A<X, Y> {}

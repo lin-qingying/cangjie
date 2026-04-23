@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt --int-overflow wrapping %f -o %output
-// EXEC-PIPE: %run %run_opt %output %run_args | compare %f
-// ASSERT:scan 1024.0
-
 func f(x: Int64): Float64 {
     10.0
 }

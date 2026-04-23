@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-
 interface I<T> {
     static func f1(a: T): Unit
 }
@@ -23,22 +21,5 @@ interface I2 <: I1<Int64> & I1<String> {
 }
 
 main() {
-    I2.f3(1)
+    <!INTERFACE_CALL_WITH_UNIMPLEMENTED_CALL!>I2.f3(1)<!>
 }
-
-/* SCAN
-error: static invocation contains unimplemented static function 'f1'
-  ==> interface_static_impl_with_generic04.cj:26:5:
-   | 
-26 |     I2.f3(1)
-   |     ^^^^^ 
-   | 
-note: indirect use of unimplemented function reference here
-  ==> interface_static_impl_with_generic04.cj:15:9:
-   | 
-15 |         f1("123")
-   |         ^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

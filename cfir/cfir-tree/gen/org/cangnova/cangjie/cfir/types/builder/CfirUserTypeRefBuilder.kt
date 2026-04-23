@@ -9,13 +9,12 @@ package org.cangnova.cangjie.cfir.types.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.impl.CfirUserTypeRefImpl
-import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
@@ -23,8 +22,7 @@ class CfirUserTypeRefBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var customRenderer: Boolean = false
     lateinit var source: CjSourceElement
-    val qualifier: MutableList<Name> = mutableListOf()
-    val typeArguments: MutableList<CfirTypeRef> = mutableListOf()
+    val qualifier: MutableList<CfirQualifierPart> = mutableListOf()
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirUserTypeRef {
@@ -32,8 +30,7 @@ class CfirUserTypeRefBuilder {
             annotations.toMutableOrEmpty(),
             customRenderer,
             source,
-            qualifier,
-            typeArguments.toMutableOrEmpty(),
+            qualifier.toMutableOrEmpty(),
         )
     }
 }
@@ -56,6 +53,5 @@ inline fun buildUserTypeRefCopy(original: CfirUserTypeRef, init: CfirUserTypeRef
     copyBuilder.customRenderer = original.customRenderer
     copyBuilder.source = original.source
     copyBuilder.qualifier.addAll(original.qualifier)
-    copyBuilder.typeArguments.addAll(original.typeArguments)
     return copyBuilder.apply(init).build()
 }

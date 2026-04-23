@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %output | compare %f
-// ASSERT: scan Hello, extend in Obj!
-// ASSERT: scan f in SubObj!
 
 interface ToObj {
     func toObj(): Object

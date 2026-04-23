@@ -5,7 +5,6 @@ import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCallableSymbolCacheKey
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendMemberCallableSymbolCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.symbols.createCallableSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.restoreCallablePublicSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.restoreExtendMemberCallablePublicSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
@@ -15,6 +14,8 @@ import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.CfirCallableSignature
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.name.CallableId
 
@@ -64,17 +65,19 @@ internal abstract class CaTopLevelCallableSymbolPointer<S : CaCallableSymbol>(
     private val callableId: CallableId,
     originalSymbol: S?,
 ) : CaCfirCachedSymbolPointer<S>(originalSymbol) {
-    final override fun restoreIfNotCached(session: CaSession): S? {
-        val cfirSession = restoreSession(session) ?: return null
-        val candidates = cfirSession.symbolQueries.queryTopLevelSymbols(callableId.packageName, callableId.callableName).callableSymbols
+    final override fun restoreIfNotCached(analysisSession: CaSession): S? {
+        require(analysisSession is CaCfirSession)
+        val candidates = analysisSession.getCallableSymbols(callableId)
         if (candidates.isEmpty()) return null
-        return cfirSession.chooseCandidateAndCreateSymbol(candidates)
+        val session = candidates.first().cfir.moduleData.session
+        return analysisSession.chooseCandidateAndCreateSymbol(candidates, session)
     }
+
 
     protected abstract fun CaCfirSession.chooseCandidateAndCreateSymbol(
         candidates: Collection<CfirCallableSymbol<*>>,
+        cfirSession: CfirSession
     ): S?
-
     protected fun hasTheSameOwner(other: CaTopLevelCallableSymbolPointer<*>): Boolean = other.callableId == callableId
 }
 
@@ -92,9 +95,11 @@ internal class CaCfirTopLevelFunctionSymbolPointer(
 ) : CaTopLevelCallableSymbolPointer<CaNamedFunctionSymbol>(callableId, originalSymbol) {
     override fun CaCfirSession.chooseCandidateAndCreateSymbol(
         candidates: Collection<CfirCallableSymbol<*>>,
+        cfirSession: CfirSession
     ): CaNamedFunctionSymbol? {
         val function = candidates.findDeclarationWithSignatureBySymbols<CfirNamedFunction>(signature) ?: return null
-        return createCallableSymbol(function.symbol) as? CaNamedFunctionSymbol
+        return cfirSymbolBuilder.functionBuilder.buildNamedFunctionSymbol(function.symbol)
+
     }
 
     fun pointsToTheSameSymbolAs(other: CaSymbolPointer<CaSymbol>): Boolean = this === other ||
@@ -115,3 +120,6 @@ internal inline fun <reified D : CfirCallableDeclaration> Collection<CfirCallabl
     }
     return null
 }
+
+internal fun CaCfirSession.getCallableSymbols(callableId: CallableId) =
+    cfirSession.symbolProvider.getTopLevelCallableSymbols(callableId.packageName, callableId.callableName)

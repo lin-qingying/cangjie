@@ -5,10 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: ./a.cj ./b.cj ./c.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt a.cj -o a.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt b.cj -o b.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt c.cj -o c.%middle
-// EXEC-PIPE: %compiler %cmp_opt a.%middle b.%middle c.%middle %f -o %output 2>&1 | compare %f
 
 package d
 
@@ -24,5 +20,3 @@ public func test(typeNum: Type): Unit {
 
 main() {
 }
-
-// ASSERT: scan-not unused import

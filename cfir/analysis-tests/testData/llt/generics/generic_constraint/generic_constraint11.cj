@@ -4,12 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %diag_json %f -o %output
+// DIAGNOSTICS: -UNUSED_VARIABLE
 
-class B<K, L> where K <: (B<L, L>) -> Unit {}
+class B<K, L> where K <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>(<!GENERIC_ARGUMENT_NO_MATCH!>B<L, L><!>) -> Unit<!> {}
 
 main() {}
-
-// ASSERT: scan-1 sema_generic_type_argument_not_match_constraint
-// ASSERT: scan-1 sema_upper_bound_must_be_class_or_interface
-// ASSERT: scan "Errors": 2

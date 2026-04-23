@@ -5,15 +5,10 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: pkg1.cj pkg2.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg1.cj -o pkg1.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg2.cj -o pkg2.%middle
-// ERRCHECK: %compiler %cmp_opt %diag_json %f -o %output
 
 internal import pkg2.y
 
 // Should report "not member of package". NOT "pkg2.x is not imported"
 main() {
-    println(pkg2.x)
+    println(pkg2.<!UNRESOLVED_REFERENCE!>x<!>)
 }
-
-// ASSERT: scan sema_undeclared_identifier

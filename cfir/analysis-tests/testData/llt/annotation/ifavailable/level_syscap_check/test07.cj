@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: apilevel.cj canIUse.cj device_info.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt apilevel.cj -o apilevel.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt device_info.cj -o device_info.%middle
-// ERRCHECK: %compiler %noColor %cmp_opt_chir2hlir %f device_info.%middle -o %output --cfg=APILevel_level=21
 
 import ohos.labels.*
 import ohos.device_info.*
@@ -34,87 +31,27 @@ main() {
             f20() // ok
             f21() // ok
             f22() // ok
-            f23() // error
+            <!APILEVEL_REF_HIGHER!>f23()<!> // error
         }, {=> // <= 20
             f19() // ok
             f20() // ok
-            f21() // error
-            f22() // error
-            f23() // error
+            <!APILEVEL_REF_HIGHER!>f21()<!> // error
+            <!APILEVEL_REF_HIGHER!>f22()<!> // error
+            <!APILEVEL_REF_HIGHER!>f23()<!> // error
         }) 
     }, {=>
         @IfAvailable(level: 21, {=> // <= 21
             f19() // ok
             f20() // ok
             f21() // ok
-            f22() // error
-            f23() // error
+            <!APILEVEL_REF_HIGHER!>f22()<!> // error
+            <!APILEVEL_REF_HIGHER!>f23()<!> // error
         }, {=> // <= 20
             f19() // ok
             f20() // ok
-            f21() // error
-            f22() // error
-            f23() // error
+            <!APILEVEL_REF_HIGHER!>f21()<!> // error
+            <!APILEVEL_REF_HIGHER!>f22()<!> // error
+            <!APILEVEL_REF_HIGHER!>f23()<!> // error
         })
     })
 }
-
-/* SCAN
-error: cannot reference 'f23'(level: 23) which higher than level of the current scope(level: 22)
-  ==> test07.cj:37:13:
-   | 
-37 |             f23() // error
-   |             ^^^^^ 
-   | 
-
-error: cannot reference 'f21'(level: 21) which higher than level of the current scope(level: 20)
-  ==> test07.cj:41:13:
-   | 
-41 |             f21() // error
-   |             ^^^^^ 
-   | 
-
-error: cannot reference 'f22'(level: 22) which higher than level of the current scope(level: 20)
-  ==> test07.cj:42:13:
-   | 
-42 |             f22() // error
-   |             ^^^^^ 
-   | 
-
-error: cannot reference 'f23'(level: 23) which higher than level of the current scope(level: 20)
-  ==> test07.cj:43:13:
-   | 
-43 |             f23() // error
-   |             ^^^^^ 
-   | 
-
-error: cannot reference 'f22'(level: 22) which higher than level of the current scope(level: 21)
-  ==> test07.cj:50:13:
-   | 
-50 |             f22() // error
-   |             ^^^^^ 
-   | 
-
-error: cannot reference 'f23'(level: 23) which higher than level of the current scope(level: 21)
-  ==> test07.cj:51:13:
-   | 
-51 |             f23() // error
-   |             ^^^^^ 
-   | 
-
-error: cannot reference 'f22'(level: 22) which higher than level of the current scope(level: 21)
-  ==> test07.cj:56:13:
-   | 
-56 |             f22() // error
-   |             ^^^^^ 
-   | 
-
-error: cannot reference 'f23'(level: 23) which higher than level of the current scope(level: 21)
-  ==> test07.cj:57:13:
-   | 
-57 |             f23() // error
-   |             ^^^^^ 
-   | 
-
-8 errors generated, 8 errors printed.
-*/

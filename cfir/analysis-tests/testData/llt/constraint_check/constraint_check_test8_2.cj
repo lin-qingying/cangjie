@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
 // UpperBound: rule 3: If there are multiple classes then these classes, they must be in one inheritance chain.
 
 open class Base {}

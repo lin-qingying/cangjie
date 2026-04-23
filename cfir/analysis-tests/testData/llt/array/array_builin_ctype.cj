@@ -4,13 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC-PIPE: %run %run_opt %output %run_args 2>&1 | compare %f
-
-
-
-
-
 foreign func malloc(size: IntNative): CPointer<Int64>
 
 foreign func free(ptr: CPointer<Unit>): Unit
@@ -56,14 +49,3 @@ unsafe main(): Int64 {
     }
     return 0
 }
-
-/* SCAN
-123
-456
-789
-true
-123
-456
-789
-true
-*/

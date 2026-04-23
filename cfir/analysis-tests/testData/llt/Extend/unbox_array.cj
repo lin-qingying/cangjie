@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %output | compare %f
-// ASSERT: scan-not core dumped
-
 main() {
     var arr = [1, 2, 3]
     var c: Collection<Int64> = arr

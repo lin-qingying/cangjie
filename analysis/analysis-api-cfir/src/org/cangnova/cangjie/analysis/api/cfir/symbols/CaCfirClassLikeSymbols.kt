@@ -7,10 +7,7 @@ import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.location
-import org.cangnova.cangjie.analysis.api.cfir.components.asCaAnnotationList
-import org.cangnova.cangjie.analysis.api.cfir.components.renderAnnotations
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirClassLikeSymbolPointer
-import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaAnnotatedSymbol
@@ -52,6 +49,9 @@ internal class CaCfirClassSymbol private constructor(
     CaCfirBackedSymbol<CfirClassLikeSymbol<*>>,
     CaTypeParameterOwnerSymbol,
     CaDeclarationContainerSymbol {
+    override val cfirSymbol: CfirClassLikeSymbol<*>
+        get() = super<CaCfirCjBasedSymbol>.cfirSymbol
+
     constructor(declaration: CjTypeStatement, session: CaCfirSession) : this(
         backingPsi = declaration,
         analysisSession = session,
@@ -74,7 +74,7 @@ internal class CaCfirClassSymbol private constructor(
         get() = analysisSession.useSiteModule
 
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { psiOrSymbolAnnotationList() }
 
     override val psi: PsiElement?
         get() = withValidityAssertion { backingPsi ?: findPsi() }
@@ -102,9 +102,7 @@ internal class CaCfirClassSymbol private constructor(
 
     override val typeParameters: List<CaTypeParameterSymbol>
         get() = withValidityAssertion {
-            createCaTypeParameters() ?: (cfirSymbol.cfir.typeParameters.map { typeParameter ->
-                analysisSession.createTypeParameterSymbol(typeParameter.symbol)
-            })
+            createCaTypeParameters() ?: cfirSymbol.createCjTypeParameters(builder)
         }
 
     override val location
@@ -123,7 +121,7 @@ internal class CaCfirClassSymbol private constructor(
 
     override val superTypes: List<CaType>
         get() = withValidityAssertion {
-            analysisSession.typeQueries.queryClassLikeSuperTypes(cfirSymbol).map { superType -> superType.asCaType(analysisSession) }
+            cfirSymbol.superTypesList(builder)
         }
 
     override fun createPointer(): CaSymbolPointer<CaAnnotatedSymbol> = withValidityAssertion {
@@ -140,6 +138,9 @@ internal class CaCfirTypeAliasSymbol private constructor(
     CaCfirCjBasedSymbol<CjTypeAlias, CfirTypeAliasSymbol>,
     CaCfirBackedSymbol<CfirTypeAliasSymbol>,
     CaTypeParameterOwnerSymbol {
+    override val cfirSymbol: CfirTypeAliasSymbol
+        get() = super<CaCfirCjBasedSymbol>.cfirSymbol
+
     constructor(declaration: CjTypeAlias, session: CaCfirSession) : this(
         backingPsi = declaration,
         analysisSession = session,
@@ -162,7 +163,7 @@ internal class CaCfirTypeAliasSymbol private constructor(
         get() = analysisSession.useSiteModule
 
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { psiOrSymbolAnnotationList() }
 
     override val psi: PsiElement?
         get() = withValidityAssertion { backingPsi ?: findPsi() }
@@ -190,9 +191,7 @@ internal class CaCfirTypeAliasSymbol private constructor(
 
     override val typeParameters: List<CaTypeParameterSymbol>
         get() = withValidityAssertion {
-            createCaTypeParameters() ?: cfirSymbol.cfir.typeParameters.map { typeParameter ->
-                analysisSession.createTypeParameterSymbol(typeParameter.symbol)
-            }
+            createCaTypeParameters() ?: cfirSymbol.createCjTypeParameters(builder)
         }
 
     override val location
@@ -200,7 +199,7 @@ internal class CaCfirTypeAliasSymbol private constructor(
 
     override val expandedType: CaType
         get() = withValidityAssertion {
-            ((cfirSymbol.cfir as CfirTypeAlias).expandedTypeRef.coneTypeOrNull?.asCaType(analysisSession))
+            (cfirSymbol.cfir as CfirTypeAlias).expandedTypeRef.coneTypeOrNull?.let(builder.typeBuilder::buildType)
                 ?: error("Cannot build expanded type for `${cfirSymbol.classId.asString()}`")
         }
 

@@ -3,7 +3,6 @@ package org.cangnova.cangjie.cfir.resolve.calls.candidate
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
-import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
 import org.cangnova.cangjie.cfir.resolve.calls.CallableReferenceAdaptation
@@ -24,6 +23,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.name.CallableId
@@ -380,7 +380,7 @@ class Candidate(
         val ownerClassId = callInfo.session.cfirProvider.getContainingClass(enumConstructorSymbol)?.classId
             ?: return null
         val ownerTypeArguments = enumConstructorTypeParameters(declaration).map { typeParameter ->
-            ConeTypeProjection(ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag()))
+            ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
         }
         return ConeEnumType(ownerClassId.toLookupTag(), ownerTypeArguments)
     }
@@ -403,7 +403,7 @@ class Candidate(
 
     private fun callableValueReturnType(declaration: CfirVariable): ConeCangJieType? {
         val variableType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return null
-        val functionType = variableType as? ConeFuncType ?: return null
+        val functionType = variableType as? ConeFunctionType ?: return null
         return functionType.returnType
     }
 
@@ -411,7 +411,7 @@ class Candidate(
         cachedSyntheticCallableValueParameters?.let { return it }
 
         val variableType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
-        val functionType = variableType as? ConeFuncType
+        val functionType = variableType as? ConeFunctionType
         if (functionType == null || functionType.parameterTypes.isEmpty()) {
             cachedSyntheticCallableValueParameters = emptyList()
             return emptyList()

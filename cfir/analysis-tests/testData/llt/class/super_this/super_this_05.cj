@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 abstract class C1 {
     public var a: Int32 = 5
     public func f(): Int32
@@ -20,7 +18,7 @@ open class C2 <: C1 {
 class C3 <: C2 {
     public var k: Int32
     public init() {
-        k = super.f()
+        k = <!USED_BEFORE_INITIALIZATION!>super.f<!>()
     }
     public func getK(): Int32 {
         return k
@@ -34,14 +32,3 @@ main() {
     }
     return 1
 }
-
-/* SCAN
-error: 'f' is not allowed to be accessed before all member variables are initialized
-  ==> super_this_05.cj:23:13:
-   | 
-23 |         k = super.f()
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f  -o %output
-// EXEC: %run %run_opt %output %run_args
-
 main(): Int64 {
     A<Int64>().a
     return 0

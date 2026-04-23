@@ -27,6 +27,7 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjModifierListOwner
@@ -98,7 +99,6 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
         val hasStdCorePackage = context.session.symbolProvider.hasPackage(stdCoreFqName)
         val reportSource = file.source ?: file.packageDirective.source ?: file.declarations.firstOrNull()?.source
         if (!hasStdCorePackage) {
-            error("DEBUG checker reached missing std.core, reportSource=${reportSource != null}")
             reporter.reportOn(
                 source = reportSource,
                 factory = CfirErrors.CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE,
@@ -114,7 +114,6 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
             context.session.symbolProvider.getClassLikeSymbolByClassId(stdCoreObjectId)
         }.getOrNull()
         if (objectSymbol == null) {
-            error("DEBUG checker reached missing Object, reportSource=${reportSource != null}")
             reporter.reportOn(
                 source = reportSource,
                 factory = CfirErrors.CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE,

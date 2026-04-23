@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 struct S {
     mut func f() {}
 }
@@ -16,24 +14,5 @@ class A {
 
 main() {
     let a = A()
-    ((((a)))).s.f()
+    ((((a)))).s.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>f<!>()
 }
-
-/* SCAN
-error: cannot use mutable function on immutable value
-  ==> mut_err_paren.cj:19:5:
-   | 
-19 |     ((((a)))).s.f()
-   |     ^^^^^^^^^^^ ~ is a mutable function
-   |     |
-   |     is immutable
-   | 
-note: 's' is a variable declared with 'let'
-  ==> mut_err_paren.cj:14:9:
-   | 
-14 |     let s = S()
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

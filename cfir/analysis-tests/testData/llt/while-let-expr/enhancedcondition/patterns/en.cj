@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %output
-// RUN-EXEC: %run %run_opt %output %run_args | compare %f
 enum A {
     B | C | D
 }
@@ -22,8 +20,3 @@ func foo(a: A) {
     }
     -1
 }
-
-/* SCAN-IN
-1
--1
- */

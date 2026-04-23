@@ -7,13 +7,13 @@ import org.cangnova.cangjie.cfir.analysis.tests.golden.DiagnosticNameMapper
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.Severity
-import org.cangnova.cangjie.cfir.session.diagnosticCollector
 import org.cangnova.cangjie.test.directives.CangjieTestDirectives.NO_PRELUDE
 import org.cangnova.cangjie.test.WrappedException
 import org.cangnova.cangjie.test.model.AfterAnalysisChecker
 import org.cangnova.cangjie.test.model.FrontendKinds
 import org.cangnova.cangjie.test.model.TestFile
 import org.cangnova.cangjie.test.model.TestModule
+import org.cangnova.cangjie.test.frontend.cfirDiagnosticCollectorService
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.artifactsProvider
 import org.cangnova.cangjie.test.services.moduleStructure
@@ -77,11 +77,10 @@ class CfirCjcLlTDiagnosticsChecker(
         val normalizedRealPath = normalizePath(realFile.canonicalPath)
         val normalizedOriginalPath = normalizePath(originalFile.canonicalPath)
 
-        return artifact.partsForDependsOnModules
-            .flatMap { part ->
-                val collector = runCatching { part.session.diagnosticCollector }.getOrNull() ?: return@flatMap emptyList()
-                collector.rawDiagnostics
-            }
+        return testServices.cfirDiagnosticCollectorService
+            .getFrontendDiagnosticsForModule(artifact)
+            .values
+            .flatten()
             .filter { diagnostic ->
                 if (diagnostic.severity != Severity.ERROR) return@filter false
                 val pathFromContext = (diagnostic.context as? DiagnosticContext)

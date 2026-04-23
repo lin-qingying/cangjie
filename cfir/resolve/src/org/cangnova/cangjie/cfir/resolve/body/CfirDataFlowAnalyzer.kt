@@ -400,6 +400,10 @@ class CfirDataFlowAnalyzer(
             .orEmpty()
     }
 
+    fun returnExpressionsOfFunction(function: CfirFunction): Collection<CfirExpression> {
+        return graphBuilder.returnExpressionsOfFunction(function).orEmpty()
+    }
+
     data class CfirAnonymousFunctionReturnExpressionInfo(
         val expression: CfirExpression,
     )

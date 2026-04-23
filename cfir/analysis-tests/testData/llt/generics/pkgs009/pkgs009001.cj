@@ -5,10 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: pkgs009001a pkgs009002.cj pkgs009003.cj
-// EXEC: %frontendCompiler %typecheck %cmp_opt pkgs009001a/pkgs009001a.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkgs009001a/pkgs009001a.cj -o pkgs009001a/pkgs009001a.%middle
-// EXEC: %compiler %cmp_opt pkgs009001a/pkgs009001a.%middle %n.cj pkgs009002.cj pkgs009003.cj --import-path pkgs009001a -o %output
-// EXEC: %run %run_opt %output %run_args
 
 internal import pkgs009001a.NormalFunc
 internal import pkgs009001a.Bar
@@ -34,6 +30,3 @@ main(): Int64 {
         return 1
     }
 }
-
-// ASSERT: scan-not core dumped
-// ASSERT: scan-not stack trace

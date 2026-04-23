@@ -4,26 +4,12 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 func f<T>(x: T) {
-    match (x) {
+    <!NON_EXHAUSTIVE_MATCH!>match (x) {
         case _: Int64 => 0 // reachable
-    }
+    }<!>
 }
 
 main() {
     f(0)
 }
-
-/* SCAN
-error: non-exhaustive patterns
-  ==> non_exhaustive_generic.cj:10:12:
-   | 
-10 |     match (x) {
-   |            ^ the selector is of type 'Generics-T'
-   | 
-   # note: _ is not covered
-
-1 error generated, 1 error printed.
-*/

@@ -163,7 +163,7 @@ abstract class CfirAbstractBodyResolveTransformer(
             return buildList {
                 // 当前文件顶层声明必须先于包级/导入级 scope，避免默认导入抢占本地声明。
                 add(CfirFileDeclaredTopLevelScope(file))
-                add(CfirPackageMemberScope(file.packageDirective.packageFqName, symbolProvider))
+                add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
                 add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
                 add(CfirExplicitStarImportingScope(imports, symbolProvider))
                 add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))

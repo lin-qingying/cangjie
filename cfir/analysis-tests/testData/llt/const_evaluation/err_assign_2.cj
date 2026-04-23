@@ -4,12 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 struct S {
     static var v = 0
     const init() {
-        v = 0
+        <!EXPECT_CONST!>v = 0<!>
     }
 }
 
@@ -17,14 +15,3 @@ main() {
     const s = S()
     S.v
 }
-
-/* SCAN
-error: expected 'const' expression
-  ==> err_assign_2.cj:12:9:
-   | 
-12 |         v = 0
-   |         ^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

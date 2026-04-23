@@ -4,10 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 main() {
-    let err1 = 1 + false
+    let err1 = 1 <!INVALID_BINARY_OPERATOR!>+<!> false
     "a${err1}c"
     let b: String = "a${err1}c"
 
@@ -18,11 +16,3 @@ main() {
     err2(true)
     0
 }
-
-// ASSERT: scan-not :11:
-// ASSERT: scan-not :14:
-
-// ASSERT: scan-not :16:
-// ASSERT: scan-not :17:
-// ASSERT: scan-not :19:
-// ASSERT: scan 1 error generated, 1 error printed.

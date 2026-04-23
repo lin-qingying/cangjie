@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjModifierListOwner
 import org.cangnova.cangjie.source.psi

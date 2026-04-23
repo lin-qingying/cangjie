@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: hide.cj hide_use1.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt hide.cj -o hide.%middle
-// ERRCHECK: %compiler %cmp_opt %compile_lib_opt hide.%middle %n.cj -o %n.%suffix -Woff all
 
 package ohos.dep
 
@@ -20,52 +18,9 @@ public interface I {
 
 public class A <: I {
     @!Hide
-    public func foo() {}
+    public func <!HIDE_MISSING_HIDE!>foo<!>() {}
     @!Hide[isChecked: false]
-    public func goo() {}
+    public func <!HIDE_MISSING_HIDE!>goo<!>() {}
     @!Hide[isChecked: true]
-    public func koo() {}
+    public func <!HIDE_MISSING_HIDE!>koo<!>() {}
 }
-
-/* SCAN
-error: should be marked with '@!Hide' to be hidden
-  ==> override_by_hide1.cj:16:5:
-   | 
-16 |     func foo() {}
-   |     ^^^^^^^^^^^^^ 
-   | 
-note: the override function is marked with '@!Hide'
-  ==> override_by_hide1.cj:23:5:
-   | 
-23 |     public func foo() {}
-   |     ^^^^^^^^^^^^^^^^^^^^ 
-   | 
-
-error: should be marked with '@!Hide' to be hidden
-  ==> override_by_hide1.cj:17:5:
-   | 
-17 |     func goo() {}
-   |     ^^^^^^^^^^^^^ 
-   | 
-note: the override function is marked with '@!Hide'
-  ==> override_by_hide1.cj:25:5:
-   | 
-25 |     public func goo() {}
-   |     ^^^^^^^^^^^^^^^^^^^^ 
-   | 
-
-error: should be marked with '@!Hide' to be hidden
-  ==> override_by_hide1.cj:18:5:
-   | 
-18 |     func koo() {}
-   |     ^^^^^^^^^^^^^ 
-   | 
-note: the override function is marked with '@!Hide'
-  ==> override_by_hide1.cj:27:5:
-   | 
-27 |     public func koo() {}
-   |     ^^^^^^^^^^^^^^^^^^^^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

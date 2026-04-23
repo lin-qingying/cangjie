@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC-3: %run %run_opt %output %run_args
-
 class A {
     operator func ()(x: Array<Int64>) {
         x.size

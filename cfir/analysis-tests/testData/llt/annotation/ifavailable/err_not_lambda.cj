@@ -4,28 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %f %cmp_opt
-
 func mem() {}
 
 main() {
-    @IfAvailable(APILevel:11, mem, mem)
+    @IfAvailable(APILevel:11, <!IFAVAILABLE_ARG_NOT_LITERAL!>mem<!>, <!IFAVAILABLE_ARG_NOT_LITERAL!>mem<!>)
 }
-
-/* SCAN
-error: @IfAvailable expect a literal lambda here
-  ==> err_not_lambda.cj:12:31:
-   | 
-12 |     @IfAvailable(APILevel:11, mem, mem)
-   |                               ^^^ 
-   | 
-
-error: @IfAvailable expect a literal lambda here
-  ==> err_not_lambda.cj:12:36:
-   | 
-12 |     @IfAvailable(APILevel:11, mem, mem)
-   |                                    ^^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

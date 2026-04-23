@@ -5,10 +5,7 @@
 
 package org.cangnova.cangjie.cfir.visitors
 
-import org.cangnova.cangjie.cfir.CfirAnnotationContainer
-import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.CfirElementWithResolveState
-import org.cangnova.cangjie.cfir.CfirTargetElement
+import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.expressions.*
@@ -937,6 +934,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitUnresolvedTypeRef(unresolvedTypeRef: CfirUnresolvedTypeRef, data: D): CfirTypeRef {
         return transformUnresolvedTypeRef(unresolvedTypeRef, data)
+    }
+
+    open fun transformQualifierPart(qualifierPart: CfirQualifierPart, data: D): CfirQualifierPart {
+        return transformElement(qualifierPart, data)
+    }
+
+    final override fun visitQualifierPart(qualifierPart: CfirQualifierPart, data: D): CfirQualifierPart {
+        return transformQualifierPart(qualifierPart, data)
     }
 
     open fun transformUserTypeRef(userTypeRef: CfirUserTypeRef, data: D): CfirTypeRef {

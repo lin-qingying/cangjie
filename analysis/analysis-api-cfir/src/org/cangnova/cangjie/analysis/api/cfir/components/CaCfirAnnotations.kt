@@ -16,27 +16,8 @@ import org.cangnova.cangjie.psi.CjAnnotated
 import org.cangnova.cangjie.psi.CjAnnotation
 import org.cangnova.cangjie.psi.CjValueArgument
 
-/**
- * CFIR 注解公开语义映射。
- *
- * Kotlin FIR 侧把“注解对象构建”和“注解值转换”拆在独立文件中。
- * 这里沿用同样的职责边界：本文件只负责注解公开模型，不再混放签名和默认导入逻辑。
- */
-internal fun CaCfirSession.renderAnnotations(symbol: CaDeclarationSymbol): List<CaAnnotation> {
-    val owner = symbol.psi as? CjAnnotated ?: return emptyList()
-    return renderAnnotations(owner)
-}
 
-/**
- * 直接从源码注解容器构建公开注解快照。
- */
-internal fun CaCfirSession.renderAnnotations(owner: CjAnnotated): List<CaAnnotation> {
-    return getOrCreateDeclarationAnnotations(owner) {
-        owner.annotationEntries.map { annotation -> annotation.asPublicAnnotation(this, token) }
-    }
-}
-
-private fun CjAnnotation.asPublicAnnotation(
+internal fun CjAnnotation.asPublicAnnotation(
     session: CaCfirSession,
     token: CaLifetimeToken,
 ): CaAnnotation {

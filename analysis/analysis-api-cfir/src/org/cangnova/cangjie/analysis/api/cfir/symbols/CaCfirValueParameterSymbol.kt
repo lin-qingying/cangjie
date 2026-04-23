@@ -2,8 +2,6 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.components.asCaAnnotationList
-import org.cangnova.cangjie.analysis.api.cfir.components.renderAnnotations
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirValueParameterSymbolPointer
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
@@ -39,6 +37,9 @@ internal class CaCfirValueParameterSymbol private constructor(
 ) : CaValueParameterSymbol(),
     CaCfirCjBasedSymbol<org.cangnova.cangjie.psi.CjParameter, CfirValueParameterSymbol>,
     CaCfirVariableSymbolSupport<CfirValueParameterSymbol> {
+    override val cfirSymbol: CfirValueParameterSymbol
+        get() = super<CaCfirCjBasedSymbol>.cfirSymbol
+
     constructor(declaration: org.cangnova.cangjie.psi.CjParameter, session: CaCfirSession) : this(
         backingPsi = declaration,
         analysisSession = session,
@@ -70,7 +71,7 @@ internal class CaCfirValueParameterSymbol private constructor(
         get() = backingSymbol.cfir
 
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { psiOrSymbolAnnotationList() }
 
     override val psi
         get() = withValidityAssertion { backingPsi ?: findPsi() }

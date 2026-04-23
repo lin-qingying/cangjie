@@ -388,6 +388,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         source: CjSourceElement?,
         name: Name,
         returnTypeRef: CfirTypeRef,
+        containingDeclarationSymbol: CfirBasedSymbol<*>,
     ): CfirValueParameter {
         return buildValueParameter {
             this.source = source
@@ -403,6 +404,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
             this.returnTypeRef = returnTypeRef
             this.name = name
             defaultValue = null
+            this.containingDeclarationSymbol = containingDeclarationSymbol
         }
     }
 }

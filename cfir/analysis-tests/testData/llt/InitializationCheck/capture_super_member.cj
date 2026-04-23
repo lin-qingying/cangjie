@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %n.cj -o %output 2>&1 | compare %f
-
 main(): Int64 {
     return 0
 }
@@ -18,19 +16,8 @@ open class Boo {
 class Aoo <: Boo {
     public var c = if (true) {
         func foo2() {
-            var x = a;
+            var x = <!USED_BEFORE_INITIALIZATION!>a<!>;
             return x
         }
     }
 }
-
-/* SCAN
-error: super member 'a' is not allowed to be used before calling super()
-  ==> capture_super_member.cj:21:21:
-   | 
-21 |             var x = a;
-   |                     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

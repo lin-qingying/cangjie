@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 var g = 0
 
 interface I {
@@ -41,14 +39,14 @@ enum E {
     a
 }
 
-extend E <: I {
+<!EXTEND_INTERFACE_NOT_EXTENDABLE!>extend E <: I {<!>
     func f() {
         p = 0
         p
     }
 }
 
-extend Int32 <: I {
+<!EXTEND_INTERFACE_NOT_EXTENDABLE!>extend Int32 <: I {<!>
     func f() {
         p = 0
         p
@@ -73,31 +71,3 @@ main(): Int64 {
     }
     return 0
 }
-
-/* SCAN
-error: interface 'I' is not able to be extended
-  ==> basic_prop.cj:44:1:
-   | 
-44 |   extend E <: I {
-   |  _^
-45 | |     func f() {
-   | | ...
-49 | | }
-   | |_^
-   | 
-   # note: interface 'I' contains mutable member 'p'
-
-error: interface 'I' is not able to be extended
-  ==> basic_prop.cj:51:1:
-   | 
-51 |   extend Int32 <: I {
-   |  _^
-52 | |     func f() {
-   | | ...
-56 | | }
-   | |_^
-   | 
-   # note: interface 'I' contains mutable member 'p'
-
-2 errors generated, 2 errors printed.
-*/

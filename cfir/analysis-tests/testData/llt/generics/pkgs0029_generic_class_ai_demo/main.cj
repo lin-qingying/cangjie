@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: nn
-// EXEC: %compiler %cmp_opt %compile_lib_opt nn/nn.cj -o nn/nn.%middle
-// EXEC: %compiler %cmp_opt nn/nn.%middle %n.cj --import-path nn -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
 
 internal import nn.*
 

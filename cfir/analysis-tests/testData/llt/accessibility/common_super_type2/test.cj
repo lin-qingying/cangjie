@@ -5,13 +5,11 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: a.cj
-// ERRCHECK: %compiler %cmp_opt --diagnostic-format=json test.cj a.cj
-// ASSERT: regex sema_mismatched_types
 
 package pa
 
 private import std.ast.*
 
 main() {
-    let arr: Array<ToTokens> = foo()
+    let arr: Array<ToTokens> = <!TYPE_MISMATCH!>foo()<!>
 }

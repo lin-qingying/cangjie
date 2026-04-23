@@ -4,21 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 main() {
     var i: Int64 = 1
-    ().a
+    ().<!UNRESOLVED_REFERENCE!>a<!>
     return i
 }
-
-/* SCAN
-error: undeclared identifier 'a'
-  ==> unit2.cj:11:8:
-   | 
-11 |     ().a
-   |        ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

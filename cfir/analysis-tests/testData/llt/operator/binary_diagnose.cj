@@ -4,26 +4,12 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 main(): Int64 {
     let a: Float32 = 10.0
     let b: Bool = true
 
-    if (a == b) {
+    if (a <!INVALID_BINARY_OPERATOR!>==<!> b) {
         return 1
     }
     return 0
 }
-
-/* SCAN
-error: invalid binary operator '==' on type 'Float32' and 'Bool'
-  ==> binary_diagnose.cj:13:11:
-   | 
-13 |     if (a == b) {
-   |           ^^ 
-   | 
-   # note: you may want to implement 'operator func ==(right: Bool)' for type 'Float32'
-
-1 error generated, 1 error printed.
-*/

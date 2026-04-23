@@ -4,31 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %frontendCompiler %typecheck %cmp_opt %f
-
 class A<T> {
-    public init(a!: A<T> = A<T>()) {}
+    public <!RECURSIVE_CONSTRUCTOR_CALL!>init<!>(a!: A<T> = <!RECURSIVE_CONSTRUCTOR_CALL!>A<T>()<!>) {}
 }
-
-/* SCAN
-error: recursive constructor calling detected
-  ==> class_generic_recursive_function_call01.cj:10:12:
-   | 
-10 |     public init(a!: A<T> = A<T>()) {}
-   |            ^^^^ 
-   | 
-note: depends on
-  ==> class_generic_recursive_function_call01.cj:10:28:
-   | 
-10 |     public init(a!: A<T> = A<T>()) {}
-   |                            ^^^^ 
-   | 
-note: depends on
-  ==> class_generic_recursive_function_call01.cj:10:12:
-   | 
-10 |     public init(a!: A<T> = A<T>()) {}
-   |            ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

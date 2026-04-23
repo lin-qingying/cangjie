@@ -4,29 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-// TIMEOUT: 10
-
 main() {
-    let (a, b) = (unde, fined)
+    let (a, b) = (<!UNRESOLVED_REFERENCE!>unde<!>, <!UNRESOLVED_REFERENCE!>fined<!>)
     let _ = ((a == ((a == ((a == ((a == ((a == ((a == ((a == ((a == ((a == ((a == ((a == ((a == ((a == ((a == ((a == ((a ==
         ((a == ((a == ((a == ((a == ((a == ((a == ((a == ((a == ((a == ((a == b) && (a == true))))))))))))))))))))))))))))))))))))))))))))))))))))
 }
-
-/* SCAN
-error: undeclared identifier 'unde'
-  ==> timeout_03.cj:11:19:
-   | 
-11 |     let (a, b) = (unde, fined)
-   |                   ^ 
-   | 
-
-error: undeclared identifier 'fined'
-  ==> timeout_03.cj:11:25:
-   | 
-11 |     let (a, b) = (unde, fined)
-   |                         ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/
