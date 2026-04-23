@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-
 let f = {x: String => x}
 
 func f2<T, R>(x: T) {
@@ -18,17 +16,6 @@ func f3(x: (String) -> Any) {
 
 main() {
     let v: Any = f2("s")("s")
-    f3(f)
+    f3(<!TYPE_MISMATCH!>f<!>)
     ()
 }
-
-/* SCAN
-error: mismatched types
-  ==> call_inference_11.cj:21:8:
-   | 
-21 |     f3(f)
-   |        ^ expected '(Struct-String) -> Interface-Any', found '(Struct-String) -> Struct-String'
-   | 
-
-1 error generated, 1 error printed.
-*/

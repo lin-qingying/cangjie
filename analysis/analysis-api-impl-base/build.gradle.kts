@@ -23,6 +23,8 @@ sourceSets {
 }
 
 dependencies {
+    implementation(project(":analysis:cj-references"))
+
     api(project(":analysis:analysis-api"))
     api(project(":analysis:analysis-api-platform-interface"))
     implementation(project(":common"))

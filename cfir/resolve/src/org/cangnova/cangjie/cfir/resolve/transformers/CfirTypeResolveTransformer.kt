@@ -4,6 +4,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.transformers
 
+import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -23,7 +24,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
-import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
@@ -33,14 +33,28 @@ import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
+import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
+import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitSimpleImportingScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitStarImportingScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirFileDeclaredTopLevelScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.constructType
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
+import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.SpecialNames
 
@@ -52,7 +66,7 @@ class CfirTypeResolveProcessor(
     session: CfirSession,
     scopeSession: ScopeSession,
 ) : CfirTransformerBasedResolveProcessor(session, scopeSession, CfirResolvePhase.TYPES) {
-    private val typeResolveTransformer = CfirTypeResolveTransformer(session)
+    private val typeResolveTransformer = CfirTypeResolveTransformer(session, scopeSession)
 
     @Suppress("UNCHECKED_CAST")
     override val transformer get() = typeResolveTransformer as org.cangnova.cangjie.cfir.visitors.CfirTransformer<Nothing?>
@@ -68,17 +82,19 @@ class CfirTypeResolveProcessor(
  */
 class CfirTypeResolveTransformer(
     override val session: CfirSession,
+    private val scopeSession: ScopeSession,
 ) : CfirAbstractTreeTransformer<CfirTypeResolutionConfiguration>(CfirResolvePhase.TYPES) {
-
     private val typeResolverTransformer = CfirSpecificTypeResolverTransformer(session)
+    private var currentFile: CfirFile? = null
+    private val classDeclarationsStack: ArrayDeque<CfirClassLikeDeclaration> = ArrayDeque()
 
     // ---- 声明遍历 ----
 
     override fun transformFile(file: CfirFile, data: CfirTypeResolutionConfiguration): CfirFile {
         checkSessionConsistency(file)
-        val configuration = data.withUseSiteFile(file).withTopContainer(file)
-        file.transformDeclarations(this, configuration)
-        return file
+        return withFileScope(file) {
+            super.transformFile(file, buildConfiguration(file))
+        }
     }
 
     override fun transformClass(klass: CfirClass, data: CfirTypeResolutionConfiguration): CfirClass {
@@ -111,16 +127,9 @@ class CfirTypeResolveTransformer(
         declaration: CfirClassLikeDeclaration,
         data: CfirTypeResolutionConfiguration,
     ) {
-        val typeParameters = when (declaration) {
-            is CfirClass -> declaration.typeParameters
-            is CfirInterface -> declaration.typeParameters
-            is CfirStruct -> declaration.typeParameters
-            is CfirEnum -> declaration.typeParameters
-            else -> emptyList()
-        }
         val configuration = data
             .withTopContainer(declaration)
-            .withAdditionalTypeParameters(typeParameters)
+            .withAdditionalTypeParameters(declaration.typeParametersForResolution())
         declaration.transformTypeParameters(this, configuration)
         declaration.transformSuperTypeRefs(this, configuration)
         declaration.transformDeclarations(this, configuration)
@@ -155,7 +164,16 @@ class CfirTypeResolveTransformer(
             .withTopContainer(constructor)
             .withAdditionalTypeParameters(constructor.typeParameters)
         constructor.transformTypeParameters(this, configuration)
-        constructor.transformReturnTypeRef(this, configuration)
+        if (constructor.returnTypeRef is CfirImplicitTypeRef) {
+            val ownerClass = data.topContainer as? CfirClassLikeDeclaration
+            val ownerType = ownerClass?.let(::buildConstructedTypeForConstructorOwner)
+                ?: ConeErrorType(ConeSimpleDiagnostic("cannot resolve constructor owner type"))
+            constructor.replaceReturnTypeRef(
+                constructor.returnTypeRef.resolvedTypeFromPrototype(ownerType, constructor.returnTypeRef.source),
+            )
+        } else {
+            constructor.transformReturnTypeRef(this, configuration)
+        }
         constructor.transformValueParameters(this, configuration)
         bumpPhase(constructor)
         return constructor
@@ -251,6 +269,102 @@ class CfirTypeResolveTransformer(
     }
 
     /**
+     * 对齐 Kotlin `FirTypeResolveTransformer.withFileScope`：
+     * 统一建立当前 use-site file 上下文，供 low-level TYPES 指定解析复用。
+     */
+    fun <R> withFileScope(file: CfirFile, action: () -> R): R {
+        val previousFile = currentFile
+        currentFile = file
+        return try {
+            action()
+        } finally {
+            currentFile = previousFile
+        }
+    }
+
+    /**
+     * 对齐 Kotlin `withClassDeclarationCleanup`：
+     * 维护外围 class-like 声明栈，保证 designated lazy resolve 的类型配置与主干一致。
+     */
+    fun <R> withClassDeclarationCleanup(classLike: CfirClassLikeDeclaration, action: () -> R): R {
+        classDeclarationsStack.addLast(classLike)
+        return try {
+            action()
+        } finally {
+            classDeclarationsStack.removeLast()
+        }
+    }
+
+    /**
+     * 对齐 Kotlin `withScopeCleanup`。
+     *
+     * 仓颉当前类型解析配置是值对象拼装，没有 Kotlin FIR 那套持久化 scope 栈状态，
+     * 因而这里主要承担结构对齐与未来扩展挂载点职责。
+     */
+    fun <R> withScopeCleanup(action: () -> R): R = action()
+
+    /**
+     * 对齐 Kotlin `withClassScopes`：
+     * 在当前 file / 外围 class 语境下执行 action，但不在这里递归改写 nested declarations。
+     */
+    fun <R> withClassScopes(classLike: CfirClassLikeDeclaration, action: () -> R): R {
+        return withClassDeclarationCleanup(classLike, action)
+    }
+
+    /**
+     * 对齐 Kotlin `transformClassTypeParameters + resolveClassTypes`：
+     * low-level TYPES 在 class 锁内只解析 class 自身头部，不递归推进其成员。
+     */
+    fun resolveClassTypes(classLike: CfirClassLikeDeclaration) {
+        if (classLike is CfirClass) {
+            ensureImplicitDefaultConstructorIfNeeded(classLike)
+        }
+
+        val configuration = buildConfiguration(classLike)
+        transformClassTypeParameters(classLike, configuration)
+        withScopeCleanup {
+            classLike.transformAnnotations(this, configuration)
+        }
+    }
+
+    /**
+     * 对齐 Kotlin `transformClassTypeParameters`。
+     */
+    fun transformClassTypeParameters(
+        classLike: CfirClassLikeDeclaration,
+        data: CfirTypeResolutionConfiguration,
+    ) {
+        val configuration = data
+            .withTopContainer(classLike)
+            .withAdditionalTypeParameters(classLike.typeParametersForResolution())
+        classLike.transformTypeParameters(this, configuration)
+    }
+
+    /**
+     * `extend` 在 low-level TYPES 中只处理自身头部；
+     * 其成员声明由各自 designated target 在独立锁下推进。
+     */
+    fun resolveExtendTypes(extend: CfirExtend) {
+        val configuration = buildConfiguration(extend)
+            .withTopContainer(extend)
+            .withAdditionalTypeParameters(extend.typeParameters)
+        extend.transformTypeParameters(this, configuration)
+        extend.transformExtendedTypeRef(this, configuration)
+        extend.transformSuperTypeRefs(this, configuration)
+        extend.transformAnnotations(this, configuration)
+    }
+
+    /**
+     * 文件级 TYPES 只建立 file 语境并处理文件自身头部信息，
+     * 不能像全量编译那样在同一把 file 锁里递归推进所有 nested declarations。
+     */
+    fun resolveFileTypes(file: CfirFile) {
+        withFileScope(file) {
+            file.transformAnnotations(this, buildConfiguration(file))
+        }
+    }
+
+    /**
      * 推进声明的 resolve phase。
      */
     private fun bumpPhase(declaration: CfirDeclaration) {
@@ -269,10 +383,79 @@ class CfirTypeResolveTransformer(
             origin = CfirDeclarationOrigin.ImplicitDefault
             attributes = CfirDeclarationAttributes.EMPTY
             status = klass.status
-            returnTypeRef = buildImplicitTypeRef()
+            returnTypeRef = buildImplicitTypeRef {}
             body = null
         }
 
         classImpl.declarations += constructor
+    }
+
+    /**
+     * 构造器返回类型在仓颉 CFIR 中直接建模为 `returnTypeRef`。
+     * 它不依赖 body 推断，TYPES 阶段就应回填为所属 class-like 的构造后类型，
+     * 否则 low-level 的 IMPLICIT_TYPES 校验会把 constructor 误判为未完成。
+     */
+    private fun buildConstructedTypeForConstructorOwner(owner: CfirClassLikeDeclaration): ConeCangJieType {
+        val ownerSymbol = owner.symbol as? CfirClassLikeSymbol<*>
+            ?: return ConeErrorType(ConeSimpleDiagnostic("constructor owner has no class-like symbol"))
+        val typeArguments = owner.typeParameters.map { parameter ->
+            ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag())
+        }
+        return ownerSymbol.constructType(typeArguments)
+    }
+
+    private fun buildConfiguration(topContainer: CfirDeclaration): CfirTypeResolutionConfiguration {
+        var configuration = CfirTypeResolutionConfiguration.EMPTY.withTopContainer(topContainer)
+
+        currentFile?.let { file ->
+            configuration = configuration
+                .withUseSiteFile(file)
+                .withScopes(createImportingScopes(file))
+        }
+
+        val containingClasses = classDeclarationsStack.filterIsInstance<CfirClass>()
+        if (containingClasses.isNotEmpty()) {
+            configuration = configuration.withContainingClassDeclarations(containingClasses)
+            for (containingClass in containingClasses) {
+                configuration = configuration.withAdditionalTypeParameters(containingClass.typeParameters)
+            }
+        }
+
+        return configuration
+    }
+
+    private fun createImportingScopes(file: CfirFile): List<CfirScope> {
+        val symbolProvider = session.symbolProvider
+        val imports = file.imports
+        val defaultImports = session.defaultImportsProvider
+            .getDefaultImports(includeLowPriorityImports = true)
+            .filter { it.fqName !in session.defaultImportsProvider.excludedImports }
+            .map { importPath ->
+                buildImport {
+                    source = null
+                    importedFqName = importPath.fqName
+                    isAllUnder = importPath.isAllUnder
+                    aliasName = importPath.alias
+                    aliasSource = null
+                }
+            }
+
+        return buildList {
+            add(CfirFileDeclaredTopLevelScope(file))
+            add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
+            add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
+            add(CfirExplicitStarImportingScope(imports, symbolProvider))
+            add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
+            add(CfirExplicitStarImportingScope(defaultImports, symbolProvider))
+        }
+    }
+
+    private fun CfirClassLikeDeclaration.typeParametersForResolution(): List<CfirTypeParameter> = when (this) {
+        is CfirClass -> typeParameters
+        is org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration -> emptyList()
+        is CfirInterface -> typeParameters
+        is CfirStruct -> typeParameters
+        is CfirEnum -> typeParameters
+        is CfirTypeAlias -> typeParameters
     }
 }

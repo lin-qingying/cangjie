@@ -6,21 +6,3 @@
 
 // DEPENDENCE: pkg
 // ERRCHECK: %compiler %noColor %pkg_opt pkg -o %output
-
-/* SCAN
-error: undeclared type name 'example_XX'
-  ==> pkg/main.cj:11:28:
-   | 
-11 |     public const init(p0!: example_XX = example_XX.ALL) {}
-   |                            ^ 
-   | 
-
-error: undeclared identifier 'example_XX'
-  ==> pkg/main.cj:11:41:
-   | 
-11 |     public const init(p0!: example_XX = example_XX.ALL) {}
-   |                                         ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -4,24 +4,11 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 func f() {
     var x: Int64
     while (true) {
-        x++
+        <!USED_BEFORE_INITIALIZATION!>x<!>++
     }
 }
 
 main() {}
-
-/* SCAN
-error: variable 'x' is used before initialization
-  ==> variable_use_before_init_17.cj:12:9:
-   | 
-12 |         x++
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-0: %compiler %cmp_opt %f -o %output
-// EXEC-0: %run %run_opt %output %run_args
-
 interface I1 {
     func f1(): Int32
     func f2(): Int32 {

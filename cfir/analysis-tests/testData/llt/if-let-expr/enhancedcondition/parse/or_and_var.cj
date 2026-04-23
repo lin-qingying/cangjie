@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %output
-// RUN-EXEC: %run %run_opt %output %run_args
-
 main() {
     let a = Some(3)
     if ((true || false) && let Some(b) <- a) {

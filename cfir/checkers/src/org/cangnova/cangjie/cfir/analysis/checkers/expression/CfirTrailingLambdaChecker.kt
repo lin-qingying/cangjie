@@ -6,7 +6,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 
 /**
  * trailing lambda 只能用于函数类型。
@@ -23,7 +23,7 @@ object CfirTrailingLambdaChecker : CfirFunctionCallChecker() {
         val receiver = expression.explicitReceiver ?: return
         val type = receiver.coneTypeOrNull ?: return
         if (type is ConeErrorType) return
-        if (type is ConeFuncType) return
+        if (type is ConeFunctionType) return
         reporter.reportOn(
             source = expression.source,
             factory = CfirErrors.TRAILING_LAMBDA_CANNOT_USED_FOR_NON_FUNCTION,

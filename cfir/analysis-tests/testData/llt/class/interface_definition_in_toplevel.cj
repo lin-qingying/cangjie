@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 interface I1 {
     func foo1(): Int32 {
         return 1
@@ -32,5 +29,3 @@ main(): Int64 {
     return 0
 }
 
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

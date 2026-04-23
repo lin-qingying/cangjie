@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 open class Boo {
     public var x: Int64
     public init(x: Int64) {
@@ -17,7 +15,7 @@ class Coo <: Boo {
     public var y: Int64
     public init(x: Int64) {
         try {
-            super(x)
+            <!ILLEGAL_THIS_OR_SUPER_CALL!>super<!>(x)
             this.y = x
         } catch (e: NegativeArraySizeException) {
             throw e
@@ -26,14 +24,3 @@ class Coo <: Boo {
 }
 
 main() {}
-
-/* SCAN
-error: call to 'super' must be first expression in constructor of class 'Coo'
-  ==> super_this_11.cj:20:13:
-   | 
-20 |             super(x)
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

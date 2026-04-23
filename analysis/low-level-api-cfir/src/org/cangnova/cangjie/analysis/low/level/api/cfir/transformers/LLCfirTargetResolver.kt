@@ -97,6 +97,17 @@ internal sealed class LLCfirTargetResolver(
         return containingDeclaration
     }
 
+    /**
+     * 基于当前解析栈查找最近的外围 class。
+     *
+     * LL 解析路径总会先压入 file，再按需压入外层 class。
+     * 对于非法源码或文件级错误恢复产物，constructor 可能并不真正位于 class 内。
+     * 此时不能把 file 误当成 class 并强行报框架错误，而应仅在确有外围 class 时建立该依赖。
+     */
+    fun containingClassOrNull(): CfirClass? {
+        return containingDeclarations.lastOrNull { it is CfirClass } as? CfirClass
+    }
+
     protected inline fun withContainingDeclaration(declaration: CfirDeclaration, action: () -> Unit) {
         containingDeclarations += declaration
         try {
@@ -144,7 +155,7 @@ internal sealed class LLCfirTargetResolver(
 
             // constructor shares types inside delegation call with the containing class
             target is CfirConstructor -> {
-                containingClass(target).lazyResolveToPhase(resolverPhase)
+                containingClassOrNull()?.lazyResolveToPhase(resolverPhase)
             }
 
         }
@@ -167,10 +178,22 @@ internal sealed class LLCfirTargetResolver(
         action()
     }
 
+    @Deprecated("Should never be called directly, only for override purposes, please use withExtend", level = DeprecationLevel.ERROR)
+    protected open fun withContainingExtend(cfirExtend: CfirExtend, action: () -> Unit) {
+        action()
+    }
+
     final override fun withClass(cfirClass: CfirClass, action: () -> Unit) {
         withContainingDeclaration(cfirClass) {
             @Suppress("DEPRECATION_ERROR")
             withContainingClass(cfirClass, action)
+        }
+    }
+
+    final override fun withExtend(cfirExtend: CfirExtend, action: () -> Unit) {
+        withContainingDeclaration(cfirExtend) {
+            @Suppress("DEPRECATION_ERROR")
+            withContainingExtend(cfirExtend, action)
         }
     }
 

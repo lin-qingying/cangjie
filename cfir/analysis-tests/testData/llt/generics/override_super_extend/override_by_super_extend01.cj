@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE)EXEC: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-// (not CJNATIVE) EXEC: %frontendCompiler %f
-
 interface I1 {
     func foo(): Unit {
         println(1)
@@ -23,23 +20,6 @@ extend<T> A<T> where T <: I2 {
     }
 }
 
-class B<T> <: A<T> & I1 {} // error
+class <!EXTEND_FUNCTION_CANNOT_OVERRIDDEN!>B<T> <: A<T> & I1 {}<!> // error
 
 main() {}
-
-/* SCAN
-error: cannot override function 'foo'
-  ==> override_by_super_extend01.cj:26:1:
-   | 
-26 | class B<T> <: A<T> & I1 {} // error
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^ 
-   | 
-note: member function 'foo' in 'A''s extension conflict with that in interface 'I1'
-  ==> override_by_super_extend01.cj:21:17:
-   | 
-21 |     public func foo(): Unit {
-   |                 ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

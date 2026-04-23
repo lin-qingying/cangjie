@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %enableO2 %f -o %output
-// EXEC-0: %run %run_opt %output %run_args
 
 interface IA {
     mut static prop p: Int64 {

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-
 interface I1 {
     func foo(): Int64 {
         1
@@ -21,7 +19,7 @@ interface I2 {
 class C1 {}
 
 extend C1 {
-    public func foo(): Int64 {
+    public func <!EXTEND_MEMBER_CANNOT_SHADOW!>foo<!>(): Int64 {
         3
     }
 }
@@ -33,14 +31,3 @@ extend C1 <: I2 {}
 main() {
     return 0
 }
-
-/* SCAN
-error: extend member 'foo' is not allowed to shadow members of 'extend C1'
-  ==> extend_function_shadow_invalid.cj:24:17:
-   | 
-24 |     public func foo(): Int64 {
-   |                 ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

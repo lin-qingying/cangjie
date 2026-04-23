@@ -11,7 +11,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirInoutArgumentExpression
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 
 /**
@@ -30,7 +30,7 @@ object CfirInoutArgumentChecker : CfirFunctionCallChecker() {
         val calleeFunc = funcSymbol.cfir
         val calleeType = (calleeFunc.returnTypeRef as? CfirResolvedTypeRef)?.coneType
         val isCFuncCall = calleeFunc.status.isForeign
-            || (calleeType as? ConeFuncType)?.isCFunc == true
+            || (calleeType as? ConeFunctionType)?.isCFunc == true
 
         for (argument in expression.argumentList.arguments) {
             val unwrapped = unwrapArgument(argument)

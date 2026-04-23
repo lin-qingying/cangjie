@@ -11,6 +11,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFinalizerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaMacroSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPatternVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertyGetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
@@ -27,6 +28,7 @@ import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjFinalizer
 import org.cangnova.cangjie.psi.CjFunctionLiteral
 import org.cangnova.cangjie.psi.CjMacroDeclaration
+import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjPropertyAccessor
 import org.cangnova.cangjie.psi.CjSecondaryConstructor
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -62,6 +64,7 @@ class AnalysisApiSymbolProviderEntryTest : AbstractAnalysisApiExecutionTest(
             accessor.isSetter
         }
         val functionLiteral = PsiTreeUtil.findChildrenOfType(mainFile, CjFunctionLiteral::class.java).single()
+        val patternVariable = PsiTreeUtil.findChildrenOfType(mainFile, CjPatternVariable::class.java).single()
         val patternBinding = PsiTreeUtil.findChildrenOfType(mainFile, CjBindingPattern::class.java)
             .single { binding -> binding.name == "left" }
 
@@ -81,6 +84,7 @@ class AnalysisApiSymbolProviderEntryTest : AbstractAnalysisApiExecutionTest(
             val getterSymbol = getterDeclaration.symbol as CaPropertyGetterSymbol
             val setterSymbol = setterDeclaration.symbol as CaPropertySetterSymbol
             val anonymousFunctionSymbol = functionLiteral.symbol as CaAnonymousFunctionSymbol
+            val patternVariableSymbol = patternVariable.symbol as CaPatternVariableSymbol
             val patternBindingSymbol = patternBinding.symbol as CaPatternBindingSymbol
 
             assertRestoresToSamePsi(macroDeclaration, macroSymbol)
@@ -92,12 +96,14 @@ class AnalysisApiSymbolProviderEntryTest : AbstractAnalysisApiExecutionTest(
             assertRestoresToSamePsi(getterDeclaration, getterSymbol)
             assertRestoresToSamePsi(setterDeclaration, setterSymbol)
             assertRestoresToSamePsi(functionLiteral, anonymousFunctionSymbol)
+            assertRestoresToSamePsi(patternVariable, patternVariableSymbol)
             assertRestoresToSamePsi(patternBinding, patternBindingSymbol)
 
             assertEquals(CaSymbolLocation.TOP_LEVEL, extendSymbol.location)
             assertEquals(CaSymbolLocation.PROPERTY, getterSymbol.location)
             assertEquals(CaSymbolLocation.PROPERTY, setterSymbol.location)
             assertEquals(CaSymbolLocation.LOCAL, anonymousFunctionSymbol.location)
+            assertEquals(CaSymbolLocation.LOCAL, patternVariableSymbol.location)
             assertEquals(CaSymbolLocation.LOCAL, patternBindingSymbol.location)
 
             assertEquals("state", getterSymbol.owningProperty.name.asString())

@@ -17,7 +17,7 @@ internal fun declarationSelfType(symbol: CfirClassLikeSymbol<*>): ConeCangJieTyp
     if (!symbol.isBound) return null
 
     val declarationTypeArguments = symbol.cfir.typeParameters.map { typeParameter ->
-        ConeTypeProjection(ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag()))
+        ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
     }
 
     return when (symbol) {

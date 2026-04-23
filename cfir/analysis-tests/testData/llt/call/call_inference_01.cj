@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %diag_json %f -o %output 2>&1 | compare %f
-
 class A {}
 
 class B<T> where T <: ToString {
@@ -15,10 +13,7 @@ class B<T> where T <: ToString {
 
 main(): Int64 {
     var arr: Array<A> = [A()]
-    B.test(arr)
-    B.foo(arr[0])
+    <!UNABLE_TO_INFER_GENERIC_FUNC!>B.test(arr)<!>
+    <!UNABLE_TO_INFER_GENERIC_FUNC!>B.foo(arr[0])<!>
     return 0
 }
-
-// ASSERT: scan-2 sema_unable_to_infer_generic_func
-// ASSERT: scan "Errors": 2

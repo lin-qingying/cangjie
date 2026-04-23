@@ -150,7 +150,7 @@ internal class StubBasedCfirTypeDeserializer(
         val componentType = type(innerTypeReference, attributes)
         return ConeClassLikeType(
             StdlibClassIds.Option.toLookupTag(),
-            typeArguments = listOf(ConeTypeProjection(componentType)),
+            typeArguments = listOf(componentType),
             attributes = attributes,
         )
     }
@@ -174,22 +174,22 @@ internal class StubBasedCfirTypeDeserializer(
                 var current: CjUserType? = typeElement
                 while (current != null) {
                     current.typeArguments.forEach { projection ->
-                        projection.typeReference?.let { add(ConeTypeProjection(type(it))) }
+                        projection.typeReference?.let { add(type(it)) }
                     }
                     current = current.qualifier
                 }
             }
             is CjFunctionType -> buildList<ConeTypeProjection> {
                 typeElement.parameters.mapTo(this) { parameter ->
-                    ConeTypeProjection(type(parameter.typeReference ?: errorWithAttachment("Function type parameter lacks type reference") {
+                    type(parameter.typeReference ?: errorWithAttachment("Function type parameter lacks type reference") {
                         withPsiEntry("parameter", parameter)
-                    }))
+                    })
                 }
                 val returnTypeReference = typeElement.returnTypeReference
                     ?: errorWithAttachment("Function type lacks return type reference") {
                         withPsiEntry("typeReference", typeReference)
                     }
-                add(ConeTypeProjection(type(returnTypeReference)))
+                add(type(returnTypeReference))
             }
             else -> errorWithAttachment("not supported ${typeElement?.let { it::class }}") {
                 withPsiEntry("typeElement", typeElement)

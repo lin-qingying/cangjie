@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %f
-
-
 main():Int64 {
     var a = Coo(1)
     return 0

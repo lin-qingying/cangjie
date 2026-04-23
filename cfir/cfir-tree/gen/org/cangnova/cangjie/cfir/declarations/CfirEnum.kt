@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
+import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -26,6 +27,7 @@ abstract class CfirEnum : CfirClassLikeDeclaration(), CfirControlFlowGraphOwner 
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
     abstract override val deprecationsProvider: DeprecationsProvider
+    abstract override val scopeProvider: CfirScopeProvider
     abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
     abstract override val status: CfirDeclarationStatus
     abstract override val typeParameters: List<CfirTypeParameter>

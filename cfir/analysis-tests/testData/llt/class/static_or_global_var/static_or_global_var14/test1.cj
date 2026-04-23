@@ -5,10 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: a.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt a.cj -o libpkga.a
-// EXEC-PIPE-1: %compiler %cmp_opt %n.cj -o %output 2>&1 | compare %f
-
-// ASSERT: scan error: cannot assign to immutable value
 
 import pkga.foo
 
@@ -20,7 +16,7 @@ class B {
         foo(
             {
                 =>
-                    CTX = 10
+                    <!CANNOT_ASSIGN_TO_IMMUTABLE!>CTX<!> = 10
                     println(CTX)
             }
         )

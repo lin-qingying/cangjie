@@ -4,70 +4,22 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %compile_lib_opt %n.cj 2>&1 | compare %f
-
-
-
 main() {
-    let a = 1 + true
+    let a = 1 <!INVALID_BINARY_OPERATOR!>+<!> true
 
     while (a) {
-        let b = 1 + false
+        let b = 1 <!INVALID_BINARY_OPERATOR!>+<!> false
     }
 
     do {
-        let b = 1 + false
+        let b = 1 <!INVALID_BINARY_OPERATOR!>+<!> false
     } while (a)
 
     for (x in [1] where a) {
-        let b = 1 + false
+        let b = 1 <!INVALID_BINARY_OPERATOR!>+<!> false
     }
 
     for (a in a) {}
 
     0
 }
-
-// No errors:
-
-
-
-
-
-// Errors:
-
-/* SCAN
-error: invalid binary operator '+' on type 'Int64' and 'Bool'
-  ==> loops_0.cj:12:15:
-   | 
-12 |     let a = 1 + true
-   |               ^ 
-   | 
-   # note: you may want to implement 'operator func +(right: Bool)' for type 'Int64'
-
-error: invalid binary operator '+' on type 'Int64' and 'Bool'
-  ==> loops_0.cj:15:19:
-   | 
-15 |         let b = 1 + false
-   |                   ^ 
-   | 
-   # note: you may want to implement 'operator func +(right: Bool)' for type 'Int64'
-
-error: invalid binary operator '+' on type 'Int64' and 'Bool'
-  ==> loops_0.cj:19:19:
-   | 
-19 |         let b = 1 + false
-   |                   ^ 
-   | 
-   # note: you may want to implement 'operator func +(right: Bool)' for type 'Int64'
-
-error: invalid binary operator '+' on type 'Int64' and 'Bool'
-  ==> loops_0.cj:23:19:
-   | 
-23 |         let b = 1 + false
-   |                   ^ 
-   | 
-   # note: you may want to implement 'operator func +(right: Bool)' for type 'Int64'
-
-4 errors generated, 4 errors printed.
-*/

@@ -1,0 +1,1441 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>类 - 仓颉编程语言库 API</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../favicon.png">
+        <link rel="stylesheet" href="../../../css/variables.css">
+        <link rel="stylesheet" href="../../../css/general.css">
+        <link rel="stylesheet" href="../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../highlight.css">
+        <link rel="stylesheet" href="../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../../assets/style.css">
+        <link rel="stylesheet" href="../../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../../libs_overview_ohos.html"><strong aria-hidden="true">1.</strong> 仓颉编程语言库 API</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../std/std_module_overview_ohos.html"><strong aria-hidden="true">1.1.</strong> std 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_package_overview.html"><strong aria-hidden="true">1.1.1.</strong> std.core 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_funcs.html"><strong aria-hidden="true">1.1.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_types.html"><strong aria-hidden="true">1.1.1.2.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_intrinsics.html"><strong aria-hidden="true">1.1.1.3.</strong> 内置类型</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_interfaces.html"><strong aria-hidden="true">1.1.1.4.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_classes.html"><strong aria-hidden="true">1.1.1.5.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_enums.html"><strong aria-hidden="true">1.1.1.6.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_structs.html"><strong aria-hidden="true">1.1.1.7.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_exceptions.html"><strong aria-hidden="true">1.1.1.8.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.1.9.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_samples/core_spawn_sample.html"><strong aria-hidden="true">1.1.1.9.1.</strong> 仓颉并发编程示例</a></li><li class="chapter-item "><a href="../../../std/core/core_samples/core_cstring_sample.html"><strong aria-hidden="true">1.1.1.9.2.</strong> 使用 CString 与 C 代码交互示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/argopt/argopt_package_overview.html"><strong aria-hidden="true">1.1.2.</strong> std.argopt 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/argopt/argopt_package_api/argopt_package_classes.html"><strong aria-hidden="true">1.1.2.1.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.2.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/argopt/argopt_samples/long_argument_parse.html"><strong aria-hidden="true">1.1.2.2.1.</strong> 长命令行参数解析</a></li><li class="chapter-item "><a href="../../../std/argopt/argopt_samples/short_argument_parse.html"><strong aria-hidden="true">1.1.2.2.2.</strong> 短命令行参数解析</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/ast/ast_package_overview.html"><strong aria-hidden="true">1.1.3.</strong> std.ast 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_funcs.html"><strong aria-hidden="true">1.1.3.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_interfaces.html"><strong aria-hidden="true">1.1.3.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_classes.html"><strong aria-hidden="true">1.1.3.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_enums.html"><strong aria-hidden="true">1.1.3.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_structs.html"><strong aria-hidden="true">1.1.3.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_exceptions.html"><strong aria-hidden="true">1.1.3.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.3.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/ast/ast_samples/context.html"><strong aria-hidden="true">1.1.3.7.1.</strong> Macro With Context</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/dump.html"><strong aria-hidden="true">1.1.3.7.2.</strong> 语法树节点打印</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/operate.html"><strong aria-hidden="true">1.1.3.7.3.</strong> 操作 AST 对象示例</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/parse.html"><strong aria-hidden="true">1.1.3.7.4.</strong> 将仓颉源码解析为 AST 对象示例</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/report.html"><strong aria-hidden="true">1.1.3.7.5.</strong> 自定义报错接口</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/traverse.html"><strong aria-hidden="true">1.1.3.7.6.</strong> 自定义访问函数遍历 AST 对象示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/binary/binary_package_overview.html"><strong aria-hidden="true">1.1.4.</strong> std.binary 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/binary/binary_package_api/binary_package_interfaces.html"><strong aria-hidden="true">1.1.4.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/collection/collection_package_overview.html"><strong aria-hidden="true">1.1.5.</strong> std.collection 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_function.html"><strong aria-hidden="true">1.1.5.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_interface.html"><strong aria-hidden="true">1.1.5.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_class.html"><strong aria-hidden="true">1.1.5.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/colleciton_package_struct.html"><strong aria-hidden="true">1.1.5.4.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_exception.html"><strong aria-hidden="true">1.1.5.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.5.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_append_insert.html"><strong aria-hidden="true">1.1.5.6.1.</strong> ArrayList 的 append/insert 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_get_set.html"><strong aria-hidden="true">1.1.5.6.2.</strong> ArrayList 的 get/set 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_remove_clear_slice.html"><strong aria-hidden="true">1.1.5.6.3.</strong> ArrayList 的 remove/clear/slice 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashmap_get_put_contains.html"><strong aria-hidden="true">1.1.5.6.4.</strong> Hashmap 的 get/put/contains 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashmap_putall_remove_clear.html"><strong aria-hidden="true">1.1.5.6.5.</strong> HashMap 的 putAll/remove/clear 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashset_put_iterator_remove.html"><strong aria-hidden="true">1.1.5.6.6.</strong> HashSet 的 put/iterator/remove 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_iterator.html"><strong aria-hidden="true">1.1.5.6.7.</strong> 迭代器操作函数</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_overview.html"><strong aria-hidden="true">1.1.6.</strong> std.collection.concurrent 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_api/collection_concurrent_interface.html"><strong aria-hidden="true">1.1.6.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_api/collection_concurrent_class.html"><strong aria-hidden="true">1.1.6.2.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.6.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_samples/sample_concurrenthashmap.html"><strong aria-hidden="true">1.1.6.3.1.</strong> ConcurrentHashMap 使用示例</a></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_samples/sample_noblocking_queue.html"><strong aria-hidden="true">1.1.6.3.2.</strong> NonBlockingQueue 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/console/console_package_overview.html"><strong aria-hidden="true">1.1.7.</strong> std.console 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/console/console_package_api/console_package_class.html"><strong aria-hidden="true">1.1.7.1.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.7.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/console/console_samples/console_sample.html"><strong aria-hidden="true">1.1.7.2.1.</strong> Console 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/convert/convert_package_overview.html"><strong aria-hidden="true">1.1.8.</strong> std.convert 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/convert/convert_package_api/convert_package_interfaces.html"><strong aria-hidden="true">1.1.8.1.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.8.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/convert/convert_samples/convert_samples.html"><strong aria-hidden="true">1.1.8.2.1.</strong> covert 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/crypto/cipher/cipher_package_overview.html"><strong aria-hidden="true">1.1.9.</strong> std.crypto.cipher 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/crypto/cipher/cipher_package_api/cipher_package_interfaces.html"><strong aria-hidden="true">1.1.9.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_overview.html"><strong aria-hidden="true">1.1.10.</strong> std.crypto.digest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_api/digest_package_funcs.html"><strong aria-hidden="true">1.1.10.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_api/digest_package_interfaces.html"><strong aria-hidden="true">1.1.10.2.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_overview.html"><strong aria-hidden="true">1.1.11.</strong> std.database.sql 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_interfaces.html"><strong aria-hidden="true">1.1.11.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_classes.html"><strong aria-hidden="true">1.1.11.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_enums.html"><strong aria-hidden="true">1.1.11.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_exceptions.html"><strong aria-hidden="true">1.1.11.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.11.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_driver.html"><strong aria-hidden="true">1.1.11.5.1.</strong> 实现数据库驱动查询功能示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_get_connection.html"><strong aria-hidden="true">1.1.11.5.2.</strong> 获取数据库连接示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_modify_table.html"><strong aria-hidden="true">1.1.11.5.3.</strong> 删除表、创建表示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_operations.html"><strong aria-hidden="true">1.1.11.5.4.</strong> 执行数据库操作语句示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_transactions.html"><strong aria-hidden="true">1.1.11.5.5.</strong> 执行事务控制语句示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/format/format_package_overview.html"><strong aria-hidden="true">1.1.12.</strong> std.format 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/format/format_package_api/format_package_interfaces.html"><strong aria-hidden="true">1.1.12.1.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.12.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/format/format_samples/format_samples.html"><strong aria-hidden="true">1.1.12.2.1.</strong> format 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/fs/fs_package_overview.html"><strong aria-hidden="true">1.1.13.</strong> std.fs 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_classes.html"><strong aria-hidden="true">1.1.13.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_enums.html"><strong aria-hidden="true">1.1.13.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_structs.html"><strong aria-hidden="true">1.1.13.3.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_exceptions.html"><strong aria-hidden="true">1.1.13.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.13.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/fs/fs_samples/directory_samples.html"><strong aria-hidden="true">1.1.13.5.1.</strong> Directory 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/file_samples.html"><strong aria-hidden="true">1.1.13.5.2.</strong> File 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/fileinfo_samples.html"><strong aria-hidden="true">1.1.13.5.3.</strong> FileInfo 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/path_samples.html"><strong aria-hidden="true">1.1.13.5.4.</strong> Path 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/io/io_package_overview.html"><strong aria-hidden="true">1.1.14.</strong> std.io 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_interfaces.html"><strong aria-hidden="true">1.1.14.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_classes.html"><strong aria-hidden="true">1.1.14.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_enums.html"><strong aria-hidden="true">1.1.14.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_exceptions.html"><strong aria-hidden="true">1.1.14.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.14.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/io/io_samples/buffered_input_stream.html"><strong aria-hidden="true">1.1.14.5.1.</strong> BufferedInputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/buffered_output_stream.html"><strong aria-hidden="true">1.1.14.5.2.</strong> BufferedOutputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/byte_array_stream.html"><strong aria-hidden="true">1.1.14.5.3.</strong> ByteArrayStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/chained_input_stream.html"><strong aria-hidden="true">1.1.14.5.4.</strong> ChainedInputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/multi_output_stream.html"><strong aria-hidden="true">1.1.14.5.5.</strong> MultiOutputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/string_reader.html"><strong aria-hidden="true">1.1.14.5.6.</strong> StringReader 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/string_writer.html"><strong aria-hidden="true">1.1.14.5.7.</strong> StringWriter 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_overview.html"><strong aria-hidden="true">1.1.15.</strong> std.log 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_interfaces.html"><strong aria-hidden="true">1.1.15.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_classes.html"><strong aria-hidden="true">1.1.15.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_enums.html"><strong aria-hidden="true">1.1.15.3.</strong> 枚举</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.15.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/log/stdlog_samples/stdlog_sample.html"><strong aria-hidden="true">1.1.15.4.1.</strong> 日志打印示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/math/math_package_overview.html"><strong aria-hidden="true">1.1.16.</strong> std.math 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_funcs.html"><strong aria-hidden="true">1.1.16.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_interfaces.html"><strong aria-hidden="true">1.1.16.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_enums.html"><strong aria-hidden="true">1.1.16.3.</strong> 枚举</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.16.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math/math_samples/math_basic_operation.html"><strong aria-hidden="true">1.1.16.4.1.</strong> 数学基础运算示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_overview.html"><strong aria-hidden="true">1.1.17.</strong> std.math.numeric 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_funcs.html"><strong aria-hidden="true">1.1.17.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_enums.html"><strong aria-hidden="true">1.1.17.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_structs.html"><strong aria-hidden="true">1.1.17.3.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.17.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_arithmetic.html"><strong aria-hidden="true">1.1.17.4.1.</strong> BigInt 基础数学运算示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_prop.html"><strong aria-hidden="true">1.1.17.4.2.</strong> BigInt 基本属性示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_compare_opration.html"><strong aria-hidden="true">1.1.17.4.3.</strong> BigInt 大小比较示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_basic_arithmetic.html"><strong aria-hidden="true">1.1.17.4.4.</strong> Decimal 基础数学运算示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_basic_prop.html"><strong aria-hidden="true">1.1.17.4.5.</strong> Decimal 基本属性示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_compare_opration.html"><strong aria-hidden="true">1.1.17.4.6.</strong> Decimal 大小比较示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/objectpool/objectpool_package_overview.html"><strong aria-hidden="true">1.1.18.</strong> std.objectpool 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/objectpool/objectpool_package_api/objectpool_package_classes.html"><strong aria-hidden="true">1.1.18.1.</strong> 类</a></li></ol></li><li class="chapter-item "><a href="../../../std/os/os_package_overview.html"><strong aria-hidden="true">1.1.19.</strong> std.os 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os/os_package_api/os_package_funcs.html"><strong aria-hidden="true">1.1.19.1.</strong> 函数</a></li></ol></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_overview.html"><strong aria-hidden="true">1.1.20.</strong> std.os.posix 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_api/os_posix_package_constants_vars.html"><strong aria-hidden="true">1.1.20.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_api/os_posix_package_funcs.html"><strong aria-hidden="true">1.1.20.2.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.20.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_file_content_samples.html"><strong aria-hidden="true">1.1.20.3.1.</strong> 文件内容相关操作</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_file_info_samples.html"><strong aria-hidden="true">1.1.20.3.2.</strong> 文件信息相关操作</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_os_envinfo_samples.html"><strong aria-hidden="true">1.1.20.3.3.</strong> 获取各类系统信息</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_process_samples.html"><strong aria-hidden="true">1.1.20.3.4.</strong> 进程相关信息操作</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_overview.html"><strong aria-hidden="true">1.1.21.</strong> std.os.process 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_classes.html"><strong aria-hidden="true">1.1.21.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_enums.html"><strong aria-hidden="true">1.1.21.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_exceptions.html"><strong aria-hidden="true">1.1.21.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.21.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_currentprocess_sample.html"><strong aria-hidden="true">1.1.21.4.1.</strong> 当前进程相关操作</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_rm_file_win_platform_sample.html"><strong aria-hidden="true">1.1.21.4.2.</strong> Windows 平台子进程结束后删除子进程可执行文件</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_sample.html"><strong aria-hidden="true">1.1.21.4.3.</strong> 任意进程相关操作</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_subprocess_sample.html"><strong aria-hidden="true">1.1.21.4.4.</strong> 子进程相关操作</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/overflow/overflow_package_overview.html"><strong aria-hidden="true">1.1.22.</strong> std.overflow 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/overflow/overflow_package_api/overflow_package_interfaces.html"><strong aria-hidden="true">1.1.22.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_package_api/overflow_package_exceptions.html"><strong aria-hidden="true">1.1.22.2.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.22.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/option.html"><strong aria-hidden="true">1.1.22.3.1.</strong> 返回 Option 策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/saturating.html"><strong aria-hidden="true">1.1.22.3.2.</strong> 饱和策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/throwing.html"><strong aria-hidden="true">1.1.22.3.3.</strong> 抛出异常策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/wrapping.html"><strong aria-hidden="true">1.1.22.3.4.</strong> 高位截断策略的示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/random/random_package_overview.html"><strong aria-hidden="true">1.1.23.</strong> std.random 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/random/random_package_api/random_package_classes.html"><strong aria-hidden="true">1.1.23.1.</strong> 类</a></li></ol></li><li class="chapter-item "><a href="../../../std/regex/regex_package_overview.html"><strong aria-hidden="true">1.1.24.</strong> std.regex 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_classes.html"><strong aria-hidden="true">1.1.24.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_structs.html"><strong aria-hidden="true">1.1.24.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_exceptions.html"><strong aria-hidden="true">1.1.24.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.24.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/regex/regex_samples/regex_sample.html"><strong aria-hidden="true">1.1.24.4.1.</strong> Regex 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/runtime/runtime_package_overview.html"><strong aria-hidden="true">1.1.25.</strong> std.runtime 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/runtime/runtime_package_api/runtime_package_funcs.html"><strong aria-hidden="true">1.1.25.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/runtime/runtime_package_api/runtime_package_structs.html"><strong aria-hidden="true">1.1.25.2.</strong> 结构体</a></li></ol></li><li class="chapter-item "><a href="../../../std/socket/socket_package_overview.html"><strong aria-hidden="true">1.1.26.</strong> std.socket 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_constants_vars.html"><strong aria-hidden="true">1.1.26.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_interfaces.html"><strong aria-hidden="true">1.1.26.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_classes.html"><strong aria-hidden="true">1.1.26.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_enums.html"><strong aria-hidden="true">1.1.26.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_structs.html"><strong aria-hidden="true">1.1.26.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_exceptions.html"><strong aria-hidden="true">1.1.26.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.26.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/socket/socket_samples/socket_option.html"><strong aria-hidden="true">1.1.26.7.1.</strong> 属性配置使用用例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/tcp.html"><strong aria-hidden="true">1.1.26.7.2.</strong> TCP 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/udp.html"><strong aria-hidden="true">1.1.26.7.3.</strong> UDP 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/unix.html"><strong aria-hidden="true">1.1.26.7.4.</strong> UNIX 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/unix_datagram.html"><strong aria-hidden="true">1.1.26.7.5.</strong> UnixDatagram 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/sort/sort_package_overview.html"><strong aria-hidden="true">1.1.27.</strong> std.sort 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sort/sort_package_api/sort_package_funcs.html"><strong aria-hidden="true">1.1.27.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/sort/sort_package_api/sort_package_interfaces.html"><strong aria-hidden="true">1.1.27.2.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.27.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sort/sort_samples/sort_sample_array.html"><strong aria-hidden="true">1.1.27.3.1.</strong> 对 Array 进行排序</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/sync/sync_package_overview.html"><strong aria-hidden="true">1.1.28.</strong> std.sync 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_constants_vars.html"><strong aria-hidden="true">1.1.28.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_funcs.html"><strong aria-hidden="true">1.1.28.2.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_interfaces.html"><strong aria-hidden="true">1.1.28.3.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_classes.html"><strong aria-hidden="true">1.1.28.4.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_enums.html"><strong aria-hidden="true">1.1.28.5.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_structs.html"><strong aria-hidden="true">1.1.28.6.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_exceptions.html"><strong aria-hidden="true">1.1.28.7.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.28.8.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sync/sync_samples/sync_samples.html"><strong aria-hidden="true">1.1.28.8.1.</strong> 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/time/time_package_overview.html"><strong aria-hidden="true">1.1.29.</strong> std.time 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_interfaces.html"><strong aria-hidden="true">1.1.29.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_classes.html"><strong aria-hidden="true">1.1.29.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_enums.html"><strong aria-hidden="true">1.1.29.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_structs.html"><strong aria-hidden="true">1.1.29.4.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_exceptions.html"><strong aria-hidden="true">1.1.29.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.29.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_compare.html"><strong aria-hidden="true">1.1.29.6.1.</strong> DateTime 比较</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_parse.html"><strong aria-hidden="true">1.1.29.6.2.</strong> DateTime 与 String 类型的转换</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_prop.html"><strong aria-hidden="true">1.1.29.6.3.</strong> 获取日期时间信息</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_tz.html"><strong aria-hidden="true">1.1.29.6.4.</strong> 同一时间在不同时区的本地时间</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/monotime_test.html"><strong aria-hidden="true">1.1.29.6.5.</strong> 利用 MonoTime 作计时</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unicode/unicode_package_overview.html"><strong aria-hidden="true">1.1.30.</strong> std.unicode 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unicode/unicode_package_api/unicode_package_interfaces.html"><strong aria-hidden="true">1.1.30.1.</strong> 接口</a></li></ol></li><li class="chapter-item expanded "><a href="../../../std/unittest/unittest_package_overview.html"><strong aria-hidden="true">1.1.31.</strong> std.unittest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_functions.html"><strong aria-hidden="true">1.1.31.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_interfaces.html"><strong aria-hidden="true">1.1.31.2.</strong> 接口</a></li><li class="chapter-item expanded "><a href="../../../std/unittest/unittest_package_api/unittest_package_classes.html" class="active"><strong aria-hidden="true">1.1.31.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_enums.html"><strong aria-hidden="true">1.1.31.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_structs.html"><strong aria-hidden="true">1.1.31.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_exceptions.html"><strong aria-hidden="true">1.1.31.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.31.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_getting_started.html"><strong aria-hidden="true">1.1.31.7.1.</strong> 快速入门</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_basics.html"><strong aria-hidden="true">1.1.31.7.2.</strong> 基础概念</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_parameterized_tests.html"><strong aria-hidden="true">1.1.31.7.3.</strong> 参数化测试</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_dynamic_tests.html"><strong aria-hidden="true">1.1.31.7.4.</strong> 动态测试</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_overview.html"><strong aria-hidden="true">1.1.32.</strong> std.unittest.mock 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_functions.html"><strong aria-hidden="true">1.1.32.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_interfaces.html"><strong aria-hidden="true">1.1.32.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_classes.html"><strong aria-hidden="true">1.1.32.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_enums.html"><strong aria-hidden="true">1.1.32.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_exceptions.html"><strong aria-hidden="true">1.1.32.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.32.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_getting_started.html"><strong aria-hidden="true">1.1.32.6.1.</strong> 快速入门</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_basics.html"><strong aria-hidden="true">1.1.32.6.2.</strong> 基础概念</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_stubs.html"><strong aria-hidden="true">1.1.32.6.3.</strong> 桩</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_verification.html"><strong aria-hidden="true">1.1.32.6.4.</strong> 验证</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_mock_mockmacro/unittest_mock_mockmacro_package_overview.html"><strong aria-hidden="true">1.1.33.</strong> std.unittest.mock.mockmacro 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock_mockmacro/unittest_mock_mockmacro_package_api/unittest_mock_mockmacro_package_macros.html"><strong aria-hidden="true">1.1.33.1.</strong> 宏</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_testmacro/unittest_testmacro_package_overview.html"><strong aria-hidden="true">1.1.34.</strong> std.unittest.testmacro 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_testmacro/unittest_testmacro_package_api/unittest_testmacro_package_macros.html"><strong aria-hidden="true">1.1.34.1.</strong> 宏</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_overview.html"><strong aria-hidden="true">1.1.35.</strong> std.unittest.common 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_functions.html"><strong aria-hidden="true">1.1.35.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html"><strong aria-hidden="true">1.1.35.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_classes.html"><strong aria-hidden="true">1.1.35.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_enums.html"><strong aria-hidden="true">1.1.35.4.</strong> 枚举</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_diff/unittest_diff_package_overview.html"><strong aria-hidden="true">1.1.36.</strong> unittest.diff</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_diff/unittest_diff_package_api/unittest_diff_package_interfaces.html"><strong aria-hidden="true">1.1.36.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_overview.html"><strong aria-hidden="true">1.1.37.</strong> unittest.prop_test</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_functions.html"><strong aria-hidden="true">1.1.37.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_interfaces.html"><strong aria-hidden="true">1.1.37.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_classes.html"><strong aria-hidden="true">1.1.37.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_structs.html"><strong aria-hidden="true">1.1.37.4.</strong> 结构体</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../compress/compress_module_overview.html"><strong aria-hidden="true">1.2.</strong> compress 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_overview.html"><strong aria-hidden="true">1.2.1.</strong> compress.zlib 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_classes.html"><strong aria-hidden="true">1.2.1.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_enums.html"><strong aria-hidden="true">1.2.1.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_exceptions.html"><strong aria-hidden="true">1.2.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.2.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_samples/deflate_compress_decompress.html"><strong aria-hidden="true">1.2.1.4.1.</strong> Deflate 格式数据的压缩和解压</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_samples/gzip_compress_decompress.html"><strong aria-hidden="true">1.2.1.4.2.</strong> Gzip 格式数据的压缩和解压</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/crypto_module_overview.html"><strong aria-hidden="true">1.3.</strong> crypto 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_overview.html"><strong aria-hidden="true">1.3.1.</strong> crypto.crypto 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_classes.html"><strong aria-hidden="true">1.3.1.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_structs.html"><strong aria-hidden="true">1.3.1.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_exceptions.html"><strong aria-hidden="true">1.3.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_samples/sample_secure_random.html"><strong aria-hidden="true">1.3.1.4.1.</strong> SecureRandom 使用</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_samples/sample_crypto.html"><strong aria-hidden="true">1.3.1.4.2.</strong> SM4 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/digest/crypto_digest_package_overview.html"><strong aria-hidden="true">1.3.2.</strong> crypto.digest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_classes.html"><strong aria-hidden="true">1.3.2.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_structs.html"><strong aria-hidden="true">1.3.2.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_exceptions.html"><strong aria-hidden="true">1.3.2.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.2.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/digest/digest_samples/sample_digest.html"><strong aria-hidden="true">1.3.2.4.1.</strong> digest 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_overview.html"><strong aria-hidden="true">1.3.3.</strong> crypto.keys 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_classes.html"><strong aria-hidden="true">1.3.3.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_enums.html"><strong aria-hidden="true">1.3.3.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_structs.html"><strong aria-hidden="true">1.3.3.3.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.3.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/keys/keys_samples/sample_keys.html"><strong aria-hidden="true">1.3.3.4.1.</strong> keys 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_overview.html"><strong aria-hidden="true">1.3.4.</strong> crypto.x509 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_type.html"><strong aria-hidden="true">1.3.4.1.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_interfaces.html"><strong aria-hidden="true">1.3.4.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_classes.html"><strong aria-hidden="true">1.3.4.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_enums.html"><strong aria-hidden="true">1.3.4.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_structs.html"><strong aria-hidden="true">1.3.4.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_exceptions.html"><strong aria-hidden="true">1.3.4.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.4.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/x509/x509_samples/sample_x509.html"><strong aria-hidden="true">1.3.4.7.1.</strong> x509 使用</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/encoding_module_overview.html"><strong aria-hidden="true">1.4.</strong> encoding 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_package_overview.html"><strong aria-hidden="true">1.4.1.</strong> encoding.base64 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_package_api/base64_package_funcs.html"><strong aria-hidden="true">1.4.1.1.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.1.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_samples/base64.html"><strong aria-hidden="true">1.4.1.2.1.</strong> Byte 数组和 Base64 互转</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/hex/hex_package_overview.html"><strong aria-hidden="true">1.4.2.</strong> encoding.hex 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/hex/hex_package_api/hex_package_funcs.html"><strong aria-hidden="true">1.4.2.1.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.2.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/hex/hex_samples/hex.html"><strong aria-hidden="true">1.4.2.2.1.</strong> Byte 数组和 Hex 互转</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/json/json_package_overview.html"><strong aria-hidden="true">1.4.3.</strong> encoding.json 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_interfaces.html"><strong aria-hidden="true">1.4.3.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_classes.html"><strong aria-hidden="true">1.4.3.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_enums.html"><strong aria-hidden="true">1.4.3.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_exceptions.html"><strong aria-hidden="true">1.4.3.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.3.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json/json_samples/json_array_sample.html"><strong aria-hidden="true">1.4.3.5.1.</strong> JsonArray 使用示例</a></li><li class="chapter-item "><a href="../../../encoding/json/json_samples/json_value_sample.html"><strong aria-hidden="true">1.4.3.5.2.</strong> JsonValue 和 String 互相转换</a></li><li class="chapter-item "><a href="../../../encoding/json/json_samples/to_json_sample.html"><strong aria-hidden="true">1.4.3.5.3.</strong> JsonValue 与 DataModel 的转换</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_overview.html"><strong aria-hidden="true">1.4.4.</strong> encoding.json.stream 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_interfaces.html"><strong aria-hidden="true">1.4.4.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_classes.html"><strong aria-hidden="true">1.4.4.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_enums.html"><strong aria-hidden="true">1.4.4.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_structs.html"><strong aria-hidden="true">1.4.4.4.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.4.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_reader.html"><strong aria-hidden="true">1.4.4.5.1.</strong> 使用 Json Stream 进行反序列化</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_writer.html"><strong aria-hidden="true">1.4.4.5.2.</strong> 使用 Json Stream 进行序列化</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_writeconfig.html"><strong aria-hidden="true">1.4.4.5.3.</strong> WriteConfig 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/url/url_package_overview.html"><strong aria-hidden="true">1.4.5.</strong> encoding.url 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/url/url_package_api/url_package_classes.html"><strong aria-hidden="true">1.4.5.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/url/url_package_api/url_package_exceptions.html"><strong aria-hidden="true">1.4.5.2.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.5.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/url/url_samples/form.html"><strong aria-hidden="true">1.4.5.3.1.</strong> Form 的构造使用</a></li><li class="chapter-item "><a href="../../../encoding/url/url_samples/url_parse.html"><strong aria-hidden="true">1.4.5.3.2.</strong> URL 解析函数 parse 的使用</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../fuzz/fuzz_module_overview.html"><strong aria-hidden="true">1.5.</strong> fuzz 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_overview.html"><strong aria-hidden="true">1.5.1.</strong> fuzz.fuzz 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_constants_vars.html"><strong aria-hidden="true">1.5.1.1.</strong> 常量变量</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_classes.html"><strong aria-hidden="true">1.5.1.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_exceptions.html"><strong aria-hidden="true">1.5.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.5.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/basic_fuzzing_test.html"><strong aria-hidden="true">1.5.1.4.1.</strong> 测试猜测字符功能</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/dataprovider_usage.html"><strong aria-hidden="true">1.5.1.4.2.</strong> 使用 DataProvider 功能进行测试</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/fake_coverage_usage.html"><strong aria-hidden="true">1.5.1.4.3.</strong> 使用 FakeCoverage 避免 DataProvider 模式下 Fuzz 异常终止</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/print_cj-fuzz_usage.html"><strong aria-hidden="true">1.5.1.4.4.</strong> 打印 fuzz 使用方法</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/print_coverage.html"><strong aria-hidden="true">1.5.1.4.5.</strong> 实验性特性-覆盖率信息打印</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/stack_backtrace_missing_solution.html"><strong aria-hidden="true">1.5.1.4.6.</strong> 栈回溯缺失的处理方案</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../log/log_module_overview.html"><strong aria-hidden="true">1.6.</strong> log 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_package_overview.html"><strong aria-hidden="true">1.6.1.</strong> log 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_types.html"><strong aria-hidden="true">1.6.1.1.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_funcs.html"><strong aria-hidden="true">1.6.1.2.</strong> 函数</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_interfaces.html"><strong aria-hidden="true">1.6.1.3.</strong> 接口</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_classes.html"><strong aria-hidden="true">1.6.1.4.</strong> 类</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_structs.html"><strong aria-hidden="true">1.6.1.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_exceptions.html"><strong aria-hidden="true">1.6.1.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.6.1.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_samples/log_sample.html"><strong aria-hidden="true">1.6.1.7.1.</strong> 日志打印示例</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../net/net_module_overview.html"><strong aria-hidden="true">1.7.</strong> net 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_package_overview.html"><strong aria-hidden="true">1.7.1.</strong> net.http 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_funcs.html"><strong aria-hidden="true">1.7.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_interfaces.html"><strong aria-hidden="true">1.7.1.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_classes.html"><strong aria-hidden="true">1.7.1.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_enums.html"><strong aria-hidden="true">1.7.1.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_structs.html"><strong aria-hidden="true">1.7.1.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_exceptions.html"><strong aria-hidden="true">1.7.1.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.7.1.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_samples/http_client.html"><strong aria-hidden="true">1.7.1.7.1.</strong> client</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/cookie.html"><strong aria-hidden="true">1.7.1.7.2.</strong> cookie</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/log.html"><strong aria-hidden="true">1.7.1.7.3.</strong> log</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/http_server.html"><strong aria-hidden="true">1.7.1.7.4.</strong> server</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/webSocket.html"><strong aria-hidden="true">1.7.1.7.5.</strong> webSocket</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../net/tls/tls_package_overview.html"><strong aria-hidden="true">1.7.2.</strong> net.tls 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_classes.html"><strong aria-hidden="true">1.7.2.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_enums.html"><strong aria-hidden="true">1.7.2.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_structs.html"><strong aria-hidden="true">1.7.2.3.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_exceptions.html"><strong aria-hidden="true">1.7.2.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.7.2.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/tls/tls_samples/cert_key.html"><strong aria-hidden="true">1.7.2.5.1.</strong> 服务端证书及公钥在一份文件中</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/client.html"><strong aria-hidden="true">1.7.2.5.2.</strong> 客户端示例</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/hot_update_cert.html"><strong aria-hidden="true">1.7.2.5.3.</strong> 证书热更新</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/server.html"><strong aria-hidden="true">1.7.2.5.4.</strong> 服务端示例</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../serialization/serialization_module_overview.html"><strong aria-hidden="true">1.8.</strong> serialization 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_overview.html"><strong aria-hidden="true">1.8.1.</strong> serialization.serialization 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_functions.html"><strong aria-hidden="true">1.8.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_interfaces.html"><strong aria-hidden="true">1.8.1.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_classes.html"><strong aria-hidden="true">1.8.1.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_exceptions.html"><strong aria-hidden="true">1.8.1.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.8.1.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_samples/serialize_and_deserialize_class.html"><strong aria-hidden="true">1.8.1.5.1.</strong> class 序列化和反序列化</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_samples/serialize_hashmap_and_hashset.html"><strong aria-hidden="true">1.8.1.5.2.</strong> HashSet 和 HashMap 序列化</a></li></ol></li></ol></li></ol></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">仓颉编程语言库 API</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="类"><a class="header" href="#类">类</a></h1>
+<h2 id="class-benchmark"><a class="header" href="#class-benchmark">class Benchmark</a></h2>
+<pre><code class="language-cangjie">public class Benchmark {}
+</code></pre>
+<p>功能：该类提供创建和运行单个性能测试用例的方法。</p>
+<h3 id="prop-name"><a class="header" href="#prop-name">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：获取用例名称。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a>。</p>
+<h3 id="func-run"><a class="header" href="#func-run">func run()</a></h3>
+<pre><code class="language-cangjie">public func run(): BenchReport 
+</code></pre>
+<p>功能：运行该性能用例。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-benchreport">BenchReport</a> - 运行结果报告。</li>
+</ul>
+<h3 id="static-func-createstring-configuration----unit"><a class="header" href="#static-func-createstring-configuration----unit">static func create(String, Configuration, () -&gt; Unit)</a></h3>
+<pre><code class="language-cangjie">public static func create(name: String, configuration!: Configuration = Configuration(), body!: () -&gt; Unit): Benchmark
+</code></pre>
+<p>功能：创建一个性能测试用例对象。</p>
+<p>参数：</p>
+<ul>
+<li>name : <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 用例名称。</li>
+<li>configuration!: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 用例配置信息。</li>
+<li>body!: () -&gt; Unit - 用例执行体。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-benchmark">Benchmark</a> - 性能测试用例对象。</li>
+</ul>
+<h3 id="static-func-createparameterizedtstring-datastrategyt-configuration-t---unit"><a class="header" href="#static-func-createparameterizedtstring-datastrategyt-configuration-t---unit">static func createParameterized&lt;T&gt;(String, DataStrategy&lt;T&gt;, Configuration, (T) -&gt; Unit)</a></h3>
+<pre><code class="language-cangjie">public static func createParameterized&lt;T&gt;(name: String, strategy: DataStrategy&lt;T&gt;, configuration!: Configuration = Configuration(), body!: (T) -&gt; Unit): Benchmark
+</code></pre>
+<p>功能：创建一个参数化的性能测试用例对象。</p>
+<p>参数：</p>
+<ul>
+<li>name : <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 用例名称。</li>
+<li>strategy : <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a> - 参数数据策略。</li>
+<li>configuration!: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 用例配置信息。</li>
+<li>body!: () -&gt; Unit - 用例执行体。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-benchmark">Benchmark</a> - 性能测试用例对象。</li>
+</ul>
+<h3 id="static-func-createparameterizedtstring-datastrategyprocessort-configuration-t---unit"><a class="header" href="#static-func-createparameterizedtstring-datastrategyprocessort-configuration-t---unit">static func createParameterized&lt;T&gt;(String, DataStrategyProcessor&lt;T&gt;, Configuration, (T) -&gt; Unit)</a></h3>
+<pre><code class="language-cangjie">public static func createParameterized&lt;T&gt;(name: String, strategy: DataStrategyProcessor&lt;T&gt;, configuration!: Configuration = Configuration(), body!: (T) -&gt; Unit): Benchmark
+</code></pre>
+<p>功能：创建一个参数化的性能测试用例对象。</p>
+<p>参数：</p>
+<ul>
+<li>name : <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 用例名称。</li>
+<li>strategy : <a href="#class-datastrategyprocessor">DataStrategyProcessor</a> - 参数数据处理器。</li>
+<li>configuration!: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 用例配置信息。</li>
+<li>body!: () -&gt; Unit - 用例执行体。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-benchmark">Benchmark</a> - 性能测试用例对象。</li>
+</ul>
+<h2 id="class-benchreport"><a class="header" href="#class-benchreport">class BenchReport</a></h2>
+<pre><code class="language-cangjie">public class BenchReport &lt;: Report {}
+</code></pre>
+<p>功能：提供性能用例执行结果报告处理能力。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="#class-report">Report</a></li>
+</ul>
+<h3 id="func-reporttotreporterbenchreport-t"><a class="header" href="#func-reporttotreporterbenchreport-t">func reportTo&lt;T&gt;(Reporter&lt;BenchReport, T&gt;)</a></h3>
+<pre><code class="language-cangjie">public func reportTo&lt;T&gt;(reporter: Reporter&lt;BenchReport, T&gt;): T
+</code></pre>
+<p>功能：打印性能用例结果报告。</p>
+<p>参数：</p>
+<ul>
+<li>reporter : <a href="#class-report">Reporter</a>&lt;<a href="#class-benchreport">BenchReport</a>, T&gt; - 性能用例结果报告</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li>T : 打印结果返回值。一般为 Unit 类型。</li>
+</ul>
+<h2 id="class-cartesianproductprocessor"><a class="header" href="#class-cartesianproductprocessor">class CartesianProductProcessor</a></h2>
+<pre><code class="language-cangjie">public class CartesianProductProcessor&lt;T0,T1&gt; &lt;: DataStrategyProcessor&lt;(T0,T1)&gt; {}
+</code></pre>
+<p>功能：笛卡尔积处理器。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="#class-datastrategyprocessor">DataStrategyProcessor</a>&lt;(T0, T1)&gt;</li>
+</ul>
+<h3 id="initdatastrategyprocessort0-datastrategyprocessort1"><a class="header" href="#initdatastrategyprocessort0-datastrategyprocessort1">init(DataStrategyProcessor&lt;T0&gt;, DataStrategyProcessor&lt;T1&gt;)</a></h3>
+<pre><code class="language-cangjie">public CartesianProductProcessor(let left: DataStrategyProcessor&lt;T0&gt;, let right: DataStrategyProcessor&lt;T1&gt;)
+</code></pre>
+<p>功能：构造函数</p>
+<p>参数：</p>
+<ul>
+<li>left : <a href="#class-datastrategyprocessor">DataStrategyProcessor</a>&lt;T0&gt; - 数据策略处理器。</li>
+<li>right : <a href="#class-datastrategyprocessor">DataStrategyProcessor</a>&lt;T1&gt; - 数据策略处理器。</li>
+</ul>
+<h2 id="class-consolereporter"><a class="header" href="#class-consolereporter">class ConsoleReporter</a></h2>
+<pre><code class="language-cangjie">public class ConsoleReporter &lt;: Reporter&lt;TestReport, Unit&gt; &amp; Reporter&lt;BenchReport, Unit&gt;{
+    public ConsoleReporter(let colored!: Bool = true)
+}
+</code></pre>
+<p>功能：打印单元测试用例结果或者性能测试用例结果到控制台。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="unittest_package_interfaces.html#interface-reporter">Reporter</a>&lt;<a href="#class-testreport">TestReport</a>, <a href="../../core/core_package_api/core_package_intrinsics.html#unit">Unit</a>&gt;</li>
+<li><a href="unittest_package_interfaces.html#interface-reporter">Reporter</a>&lt;<a href="#class-benchreport">BenchReport</a>, <a href="../../core/core_package_api/core_package_intrinsics.html#unit">Unit</a>&gt;</li>
+</ul>
+<h3 id="initbool"><a class="header" href="#initbool">init(Bool)</a></h3>
+<pre><code class="language-cangjie">public ConsoleReporter(let colored!: Bool = true)
+</code></pre>
+<p>功能：构造函数。</p>
+<p>参数：</p>
+<ul>
+<li>colored!: <a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> -  是否使用带颜色的打印，默认带颜色。</li>
+</ul>
+<h2 id="class-csvreporter"><a class="header" href="#class-csvreporter">class CsvReporter</a></h2>
+<pre><code class="language-cangjie">public class CsvReporter &lt;: Reporter&lt;BenchReport, Unit&gt; {
+    public CsvReporter(let directory: Directory)
+}
+</code></pre>
+<p>功能：打印性能测试用例结果数据到 Csv 文件上。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="unittest_package_interfaces.html#interface-reporter">Reporter</a>&lt;<a href="#class-benchreport">BenchReport</a>, <a href="../../core/core_package_api/core_package_intrinsics.html#unit">Unit</a>&gt;</li>
+</ul>
+<h3 id="initdirectory"><a class="header" href="#initdirectory">init(Directory)</a></h3>
+<pre><code class="language-cangjie">public CsvReporter(let directory: Directory)
+</code></pre>
+<p>功能：构造函数。</p>
+<p>参数：</p>
+<ul>
+<li>directory: <a href="../../fs/fs_package_api/fs_package_classes.html#class-directory">Directory</a> - 打印文件生成地址。</li>
+</ul>
+<h2 id="class-csvrawreporter"><a class="header" href="#class-csvrawreporter">class CsvRawReporter</a></h2>
+<pre><code class="language-cangjie">public class CsvRawReporter &lt;: Reporter&lt;BenchReport, Unit&gt; {
+    public CsvRawReporter(let directory: Directory)
+}
+</code></pre>
+<p>功能：打印性能测试用例结果数据，该数据只有批次的原始测量值，到 Csv 文件上。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="unittest_package_interfaces.html#interface-reporter">Reporter</a>&lt;<a href="#class-benchreport">BenchReport</a>, <a href="../../core/core_package_api/core_package_intrinsics.html#unit">Unit</a>&gt;</li>
+</ul>
+<h3 id="initdirectory-1"><a class="header" href="#initdirectory-1">init(Directory)</a></h3>
+<pre><code class="language-cangjie">public CsvRawReporter(let directory: Directory)
+</code></pre>
+<p>功能：构造函数。</p>
+<p>参数：</p>
+<ul>
+<li>directory: <a href="../../fs/fs_package_api/fs_package_classes.html#class-directory">Directory</a> - 打印文件生成地址。</li>
+</ul>
+<h2 id="class-csvstrategy"><a class="header" href="#class-csvstrategy">class CsvStrategy</a></h2>
+<pre><code class="language-cangjie">public class CsvStrategy&lt;T&gt; &lt;: DataStrategy&lt;T&gt; where T &lt;: Serializable&lt;T&gt; {}
+</code></pre>
+<p>功能：<a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a> 对 CSV 数据格式的序列化实现。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a>&lt;T&gt;</li>
+</ul>
+<h3 id="func-providerconfiguration"><a class="header" href="#func-providerconfiguration">func provider(Configuration)</a></h3>
+<pre><code class="language-cangjie">public override func provider(configuration: Configuration): SerializableProvider&lt;T&gt;
+</code></pre>
+<p>功能：生成序列化数据迭代器。</p>
+<p>参数：</p>
+<ul>
+<li>configuration: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 数据配置信息。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-serializableprovider">SerializableProvider</a>&lt;T&gt; - 序列化迭代器对象。</li>
+</ul>
+<h2 id="class-datastrategyprocessor"><a class="header" href="#class-datastrategyprocessor">class DataStrategyProcessor</a></h2>
+<pre><code class="language-cangjie">abstract sealed class DataStrategyProcessor&lt;T&gt; {}
+</code></pre>
+<p>功能：所有 <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a> 组件的基类。该类的实例由 <a href="../../unittest_testmacro/unittest_testmacro_package_api/unittest_testmacro_package_macros.html#strategy-%E5%AE%8F">@Strategy</a> 宏或成员函数创建。</p>
+<h3 id="prop-isinfinite"><a class="header" href="#prop-isinfinite">prop isInfinite</a></h3>
+<pre><code class="language-cangjie">protected prop isInfinite: Bool
+</code></pre>
+<p>功能： 获取该策略是否为无限。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a>。</p>
+<h3 id="func-intobenchmarkstring-configuration-t-int64-int64---float64"><a class="header" href="#func-intobenchmarkstring-configuration-t-int64-int64---float64">func intoBenchmark(String, Configuration, (T, Int64, Int64) -&gt; Float64)</a></h3>
+<pre><code class="language-cangjie">public func intoBenchmark(
+    caseName!: String,
+    configuration!: Configuration,
+    doRun!: (T, Int64, Int64) -&gt; Float64
+): Benchmark
+</code></pre>
+<p>功能：宏生成的代码使用的辅助函数。用于创建使用该策略的性能测试用例。</p>
+<p>参数：</p>
+<ul>
+<li>caseName!: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 用例名称。</li>
+<li>configuration!: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 配置信息。</li>
+<li>doRun!: (T, Int64, Int64) -&gt; Float64 - 性能测试用例执行体。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-benchmark">Benchmark</a> - 性能测试用例对象。</li>
+</ul>
+<h3 id="func-intounittestcasestring-configuration-t---unit"><a class="header" href="#func-intounittestcasestring-configuration-t---unit">func intoUnitTestCase(String, Configuration, (T) -&gt; Unit)</a></h3>
+<pre><code class="language-cangjie">public func intoUnitTestCase(
+    caseName!: String,
+    configuration!: Configuration,
+    doRun!: (T) -&gt; Unit
+): UnitTestCase
+</code></pre>
+<p>功能：宏生成的代码使用的辅助函数。用于创建使用该策略的测试用例。</p>
+<p>参数：</p>
+<ul>
+<li>caseName!: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 用例名称。</li>
+<li>configuration!: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 配置信息。</li>
+<li>doRun!: (T) -&gt; Unit - 性能测试用例执行体。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-unittestcase">UnitTestCase</a> - 测试用例对象。</li>
+</ul>
+<h3 id="func-lastiteminfo"><a class="header" href="#func-lastiteminfo">func lastItemInfo()</a></h3>
+<pre><code class="language-cangjie">protected func lastItemInfo(): Array&lt;InputParameter&gt;
+</code></pre>
+<p>功能：获取上一个处理条目的信息。</p>
+<p>返回值：</p>
+<ul>
+<li>Array&lt;<a href="./unittest_package_classes.html#class-inputparameter">InputParameter</a>&gt; - 上一个处理条目的信息。</li>
+</ul>
+<h3 id="func-lastitemconfiguration"><a class="header" href="#func-lastitemconfiguration">func lastItem(Configuration)</a></h3>
+<pre><code class="language-cangjie">protected func lastItem(configuration: Configuration): T
+</code></pre>
+<p>功能：获取上一个处理条目。</p>
+<p>参数：</p>
+<ul>
+<li>configuration : <a href="./../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 处理策略配置信息。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li>T - 上一个处理条目。</li>
+</ul>
+<h3 id="func-provideconfiguration"><a class="header" href="#func-provideconfiguration">func provide(Configuration)</a></h3>
+<pre><code class="language-cangjie">protected func provide(configuration: Configuration): Iterable&lt;T&gt;
+</code></pre>
+<p>功能：生成依据配置信息和数据策略生成的数据迭代器。</p>
+<p>参数：</p>
+<ul>
+<li>configuration : <a href="./../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 处理策略配置信息。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-iterablee">Iterable</a>&lt;T&gt; - 数据迭代器。</li>
+</ul>
+<h3 id="func-shrinklastitemconfiguration-lazycyclicnode"><a class="header" href="#func-shrinklastitemconfiguration-lazycyclicnode">func shrinkLastItem(Configuration, LazyCyclicNode)</a></h3>
+<pre><code class="language-cangjie">protected func shrinkLastItem(configuration: Configuration, engine: LazyCyclicNode): Iterable&lt;T&gt;
+</code></pre>
+<p>功能：收缩上一个条目。</p>
+<p>参数：</p>
+<ul>
+<li>configuration:<a href="./../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 配置信息。</li>
+<li>engine : <a href="./unittest_package_classes.html#class-lazycyclicnode">LazyCyclicNode</a> - 惰性节点。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-iterablee">Iterable</a>&lt;T&gt; - 收缩后的数据迭代器。</li>
+</ul>
+<h3 id="static-func-startdatastrategyt-string"><a class="header" href="#static-func-startdatastrategyt-string">static func start(DataStrategy&lt;T&gt;, String)</a></h3>
+<pre><code class="language-cangjie">public static func start(s: DataStrategy&lt;T&gt;, name: String): SimpleProcessor&lt;T&gt;
+</code></pre>
+<p>功能：<a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a> 的组合和映射的起点。</p>
+<p>参数：</p>
+<ul>
+<li>s: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a>&lt;T&gt; - 数据策略。</li>
+<li>name: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 用例名称。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-simpleprocessor">SimpleProcessor</a>&lt;T&gt; - 测试用例处理器。</li>
+</ul>
+<h3 id="static-func-startu---datastrategyu-string"><a class="header" href="#static-func-startu---datastrategyu-string">static func start&lt;U&gt;(() -&gt; DataStrategy&lt;U&gt;, String)</a></h3>
+<pre><code class="language-cangjie">public static func start&lt;U&gt;(f: () -&gt; DataStrategy&lt;U&gt;, name: String): DataStrategyProcessor&lt;U&gt; where U &lt;: BenchInputProvider &lt; T &gt;
+</code></pre>
+<p>功能：<a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a> 的组合和映射的起点。</p>
+<p>参数：</p>
+<ul>
+<li>s: () -&gt; <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a>&lt;U&gt; - 生成数据策略的闭包。</li>
+<li>name: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 用例名称。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-datastrategyprocessor">DataStrategyProcessor</a>&lt;T&gt; - 数据策略处理器。</li>
+</ul>
+<h3 id="static-func-start---datastrategyt-string-int64"><a class="header" href="#static-func-start---datastrategyt-string-int64">static func start(() -&gt; DataStrategy&lt;T&gt;, String, Int64)</a></h3>
+<pre><code class="language-cangjie">public static func start(f: () -&gt; DataStrategy&lt;T&gt;, name: String, x!: Int64 = 0): SimpleProcessor&lt;T&gt;
+</code></pre>
+<p>功能：<a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a> 的组合和映射的起点。</p>
+<p>参数：</p>
+<ul>
+<li>s: () -&gt; <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a>&lt;T&gt; - 生成数据策略的闭包。</li>
+<li>name: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 用例名称。</li>
+<li>x!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> -  为实现不同返回值的重构增加的参数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-simpleprocessor">SimpleProcessor</a>&lt;T&gt; - 测试用例处理器。</li>
+</ul>
+<h3 id="static-func-start---datastrategyprocessort-string"><a class="header" href="#static-func-start---datastrategyprocessort-string">static func start(() -&gt; DataStrategyProcessor&lt;T&gt;, String)</a></h3>
+<pre><code class="language-cangjie">public static func start(f: () -&gt; DataStrategyProcessor&lt;T&gt;, name: String): DataStrategyProcessor&lt;T&gt;
+</code></pre>
+<p>功能：<a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a> 的组合和映射的起点。</p>
+<p>参数：</p>
+<ul>
+<li>s: () -&gt; <a href="#class-datastrategyprocessor">DataStrategyProcessor</a>&lt;T&gt; - 生成数据策略处理器的闭包。</li>
+<li>name: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 用例名称。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-datastrategyprocessor">DataStrategyProcessor</a>&lt;T&gt; - 数据策略处理器。</li>
+</ul>
+<h3 id="static-func-startu---datastrategyprocessoru-string-int64"><a class="header" href="#static-func-startu---datastrategyprocessoru-string-int64">static func start&lt;U&gt;(() -&gt; DataStrategyProcessor&lt;U&gt;, String, Int64)</a></h3>
+<pre><code class="language-cangjie">public static func start&lt;U&gt;(f: () -&gt; DataStrategyProcessor&lt;U&gt;, name: String, x!: Int64 = 0):
+    DataStrategyProcessor&lt;U&gt; where U &lt;: BenchInputProvider&lt;T&gt;
+</code></pre>
+<p>功能：<a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a> 的组合和映射的起点。</p>
+<p>参数：</p>
+<ul>
+<li>s: () -&gt; <a href="#class-datastrategyprocessor">DataStrategyProcessor</a>&lt;U&gt; - 生成数据策略处理器的闭包。</li>
+<li>name: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 用例名称。</li>
+<li>x!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> -  为实现不同返回值的重构增加的参数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-datastrategyprocessor">DataStrategyProcessor</a>&lt;U&gt; where U &lt;: <a href="./unittest_package_interfaces.html#interface-benchinputprovider">BenchInputProvider</a>&lt;T&gt; - 数据策略处理器。</li>
+</ul>
+<h3 id="extend-t-datastrategyprocessort"><a class="header" href="#extend-t-datastrategyprocessort">extend &lt;T&gt; DataStrategyProcessor&lt;T&gt;</a></h3>
+<pre><code class="language-cangjie">extend &lt;T&gt; DataStrategyProcessor&lt;T&gt; {}
+</code></pre>
+<h4 id="func-maprt---r"><a class="header" href="#func-maprt---r">func map&lt;R&gt;((T) -&gt; R)</a></h4>
+<pre><code class="language-cangjie">public func map&lt;R&gt;(f: (T) -&gt; R): MapProcessor&lt;T, R&gt; 
+</code></pre>
+<p>功能：简单地将 <code>f</code> 应用于原始数据策略的每个项目。 <a href="../../unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_interfaces.html#interface-shrinkt">Shrink</a> 也会发生在原始输入上，然后进行映射。</p>
+<p>参数：</p>
+<ul>
+<li>f: (T) -&gt; R - 需要增加的处理逻辑函数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-mapprocessor">MapProcessor</a>&lt;T, R&gt; - 应用 <code>f</code> 后的处理器。</li>
+</ul>
+<h4 id="func-mapwithconfigrt-configuration---r"><a class="header" href="#func-mapwithconfigrt-configuration---r">func mapWithConfig&lt;R&gt;((T, Configuration) -&gt; R)</a></h4>
+<pre><code class="language-cangjie">public func mapWithConfig&lt;R&gt;(f: (T, Configuration) -&gt; R): MapProcessor&lt;T, R&gt;
+</code></pre>
+<p>功能：可以访问当前的 <a href="./../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> ，只需将 <code>f</code> 应用于原始数据策略的每个项目。 <a href="../../unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_interfaces.html#interface-shrinkt">Shrink</a> 也会发生在原始输入上，然后进行映射。</p>
+<p>参数：</p>
+<ul>
+<li>f: (T, Configuration) -&gt; R - 需要增加的处理逻辑函数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-mapprocessor">MapProcessor</a>&lt;T, R&gt; - 应用 <code>f</code> 后的处理器。</li>
+</ul>
+<h4 id="func-flatmaprt---dataproviderr"><a class="header" href="#func-flatmaprt---dataproviderr">func flatMap&lt;R&gt;((T) -&gt; DataProvider&lt;R&gt;)</a></h4>
+<pre><code class="language-cangjie">public func flatMap&lt;R&gt;(f: (T) -&gt; DataProvider&lt;R&gt;): FlatMapProcessor&lt;T, R&gt;
+</code></pre>
+<p>功能：简单地将 <code>f</code> 应用于原始数据策略的每个项目，然后展平结果。 <a href="../../unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_interfaces.html#interface-shrinkt">Shrink</a>  也会发生在原始输入上，然后进行 <a href="../../collection/collection_package_api/collection_package_function.html#func-flatmapt-r-t---iterabler">flatMap</a> 。</p>
+<p>参数：</p>
+<ul>
+<li>f: (T) -&gt; <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataProvider</a>&lt;R&gt; - 需要增加的处理逻辑函数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-flatmapprocessor">FlatMapProcessor</a>&lt;T, R&gt; - 应用 <code>f</code> 后的处理器。</li>
+</ul>
+<h4 id="func-flatmapstrategyt---datastrategyr"><a class="header" href="#func-flatmapstrategyt---datastrategyr">func flatMapStrategy((T) -&gt; DataStrategy&lt;R&gt;)</a></h4>
+<pre><code class="language-cangjie">public func flatMapStrategy&lt;R&gt;(f: (T) -&gt; DataStrategy&lt;R&gt;): FlatMapStrategyProcessor&lt;T, R&gt;
+</code></pre>
+<p>功能：简单地将 <code>f</code> 应用于原始数据策略的每个项目，然后展平结果。 <a href="../../unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_interfaces.html#interface-shrinkt">Shrink</a> 是通过返回的策略而不是原始输入来完成的。</p>
+<p>参数：</p>
+<ul>
+<li>f: (T) -&gt; <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a>&lt;R&gt; - 需要增加的处理逻辑函数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-flatmapstrategyprocessor">FlatMapStrategyProcessor</a>&lt;T, R&gt; - 应用 <code>f</code> 后的处理器。</li>
+</ul>
+<h4 id="func-productdatastrategyprocessorr"><a class="header" href="#func-productdatastrategyprocessorr">func product(DataStrategyProcessor&lt;R&gt;)</a></h4>
+<pre><code class="language-cangjie">public func product&lt;R&gt;(p: DataStrategyProcessor&lt;R&gt;): CartesianProductProcessor&lt;T, R&gt;
+</code></pre>
+<p>功能：笛卡尔积组合器创建包含原始策略中元素的所有可能排列的数据策略。
+对于无限策略，它首先迭代所有有限的子策略，然后才推进无限的子策略。
+<a href="../../unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_interfaces.html#interface-shrinkt">Shrink</a>  独立且统一地发生在原始策略的每个元素上。</p>
+<p>参数：</p>
+<ul>
+<li>p: <a href="#class-datastrategyprocessor">DataStrategyProcessor</a>&lt;R&gt; - 数据策略处理器。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-cartesianproductprocessor">CartesianProductProcessor</a>&lt;T, R&gt; - 笛卡尔积处理器。</li>
+</ul>
+<h2 id="class-flatmapprocessor"><a class="header" href="#class-flatmapprocessor">class FlatMapProcessor</a></h2>
+<pre><code class="language-cangjie">public class FlatMapProcessor&lt;T,R&gt; &lt;: DataStrategyProcessor&lt;R&gt; {}
+</code></pre>
+<p>功能：对参数数据进行 <a href="../../collection/collection_package_api/collection_package_function.html#func-flatmapt-r-t---iterabler">FlatMap</a> 的处理器。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="#class-datastrategyprocessor">DataStrategyProcessor</a>&lt;R&gt;</li>
+</ul>
+<h2 id="class-flatmapstrategyprocessor"><a class="header" href="#class-flatmapstrategyprocessor">class FlatMapStrategyProcessor</a></h2>
+<pre><code class="language-cangjie">public class FlatMapStrategyProcessor&lt;T,R&gt; &lt;: DataStrategyProcessor&lt;R&gt; {}
+</code></pre>
+<p>功能：对参数数据进行 <a href="../../collection/collection_package_api/collection_package_function.html#func-flatmapt-r-t---iterabler">FlatMap</a> 的处理器。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="#class-datastrategyprocessor">DataStrategyProcessor</a>&lt;R&gt;</li>
+</ul>
+<h2 id="class-inputparameter"><a class="header" href="#class-inputparameter">class InputParameter</a></h2>
+<pre><code class="language-cangjie">public class InputParameter {}
+</code></pre>
+<p>功能：入参对象类型</p>
+<h2 id="class-jsonstrategy"><a class="header" href="#class-jsonstrategy">class JsonStrategy</a></h2>
+<pre><code class="language-cangjie">public class JsonStrategy&lt;T&gt; &lt;: DataStrategy&lt;T&gt; where T &lt;: Serializable&lt;T&gt; {}
+</code></pre>
+<p>功能：<a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a> 对 JSON 数据格式的序列化实现。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a>&lt;T&gt;</li>
+</ul>
+<h3 id="func-providerconfiguration-1"><a class="header" href="#func-providerconfiguration-1">func provider(Configuration)</a></h3>
+<pre><code class="language-cangjie">public override func provider(configuration: Configuration): SerializableProvider&lt;T&gt;
+</code></pre>
+<p>功能：生成序列化数据迭代器。</p>
+<p>参数：</p>
+<ul>
+<li>configuration: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 数据配置信息。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li>SerializableProvider&lt;T&gt; - 序列化迭代器对象。</li>
+</ul>
+<h2 id="class-lazycyclicnode"><a class="header" href="#class-lazycyclicnode">class LazyCyclicNode</a></h2>
+<pre><code class="language-cangjie">public open class LazyCyclicNode {}
+</code></pre>
+<p>功能：用于在一个循环中一个接一个地推进类型擦除的内部惰性迭代器。</p>
+<h3 id="func-advance"><a class="header" href="#func-advance">func advance()</a></h3>
+<pre><code class="language-cangjie">protected open func advance(): ?Unit
+</code></pre>
+<p>功能：前进一个值。</p>
+<p>返回值：</p>
+<ul>
+<li>?Unit - 当无法前进时返回 None ，否则返回 Unit 。</li>
+</ul>
+<h3 id="func-recover"><a class="header" href="#func-recover">func recover()</a></h3>
+<pre><code class="language-cangjie">protected open func recover(): Unit
+</code></pre>
+<p>功能： 恢复或后退一个值。</p>
+<h2 id="class-mapprocessor"><a class="header" href="#class-mapprocessor">class MapProcessor</a></h2>
+<pre><code class="language-cangjie">public class MapProcessor&lt;T,R&gt; &lt;: DataStrategyProcessor&lt;R&gt; {}
+</code></pre>
+<p>功能：对参数数据进行 <a href="../../collection/collection_package_api/collection_package_function.html#func-mapt-rt---r">Map</a> 的处理器。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="#class-datastrategyprocessor">DataStrategyProcessor</a>&lt;R&gt;</li>
+</ul>
+<h2 id="class-powerassertdiagrambuilder"><a class="header" href="#class-powerassertdiagrambuilder">class PowerAssertDiagramBuilder</a></h2>
+<pre><code class="language-cangjie">public class PowerAssertDiagramBuilder {
+    public init(expression: String, initialPosition: Int64)
+}
+</code></pre>
+<p>功能：<a href="../../unittest_testmacro/unittest_testmacro_package_api/unittest_testmacro_package_macros.html#powerassert-%E5%AE%8F">PowerAssert</a> 输出结果构造器。</p>
+<h3 id="initstring-int64"><a class="header" href="#initstring-int64">init(String, Int64)</a></h3>
+<pre><code class="language-cangjie">public init(expression: String, initialPosition: Int64)
+</code></pre>
+<p>功能：构造函数。</p>
+<p>参数：</p>
+<ul>
+<li>expression: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 表达式字符串。</li>
+<li>initialPosition: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> -  表达式的初始位置。</li>
+</ul>
+<h3 id="func-rtt-string-int64"><a class="header" href="#func-rtt-string-int64">func r&lt;T&gt;(T, String, Int64)</a></h3>
+<pre><code class="language-cangjie">public func r&lt;T&gt;(value: T, exprAsText: String, position: Int64): T 
+</code></pre>
+<p>功能：记录对比数据。</p>
+<p>参数：</p>
+<ul>
+<li>value: T - 被记录的数据。</li>
+<li>exprAsText: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 表达式字符串。</li>
+<li>position: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> -  位置信息。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li>T - 被记录的数据。</li>
+</ul>
+<h3 id="func-rrune-string-int64"><a class="header" href="#func-rrune-string-int64">func r(Rune, String, Int64)</a></h3>
+<pre><code class="language-cangjie">public func r(value: Rune, exprAsText: String, position: Int64): Rune
+</code></pre>
+<p>功能：记录对比数据。</p>
+<p>参数：</p>
+<ul>
+<li>value: <a href="../../core/core_package_api/core_package_intrinsics.html#rune">Rune</a> - 被记录的数据。</li>
+<li>exprAsText: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 表达式字符串。</li>
+<li>position: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> -  位置信息。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#rune">Rune</a> - 被记录的数据。</li>
+</ul>
+<h3 id="func-rstring-string-int64"><a class="header" href="#func-rstring-string-int64">func r(String, String, Int64)</a></h3>
+<pre><code class="language-cangjie">public func r(value: String, exprAsText: String, position: Int64): String
+</code></pre>
+<p>功能：记录对比数据。</p>
+<p>参数：</p>
+<ul>
+<li>value: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 被记录的数据。</li>
+<li>exprAsText: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 表达式字符串。</li>
+<li>position: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> -  位置信息。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 被记录的数据。</li>
+</ul>
+<h3 id="func-hexception-string-int64"><a class="header" href="#func-hexception-string-int64">func h(Exception, String, Int64)</a></h3>
+<pre><code class="language-cangjie">public func h(exception: Exception, exprAsText: String, position: Int64): Nothing
+</code></pre>
+<p>功能：处理异常。</p>
+<p>参数：</p>
+<ul>
+<li>exception: Exception - 需要被处理的异常。</li>
+<li>exprAsText: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 表达式字符串。</li>
+<li>position: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> -  位置信息。</li>
+</ul>
+<h3 id="func-wbool"><a class="header" href="#func-wbool">func w(Bool)</a></h3>
+<pre><code class="language-cangjie">public func w(passed: Bool): Unit
+</code></pre>
+<p>功能：当用例通过时返回成功结果，失败时抛出异常并打印对比结果。</p>
+<p>参数：</p>
+<ul>
+<li>passed: <a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 用例是否通过。</li>
+</ul>
+<h2 id="class-randomdataprovider"><a class="header" href="#class-randomdataprovider">class RandomDataProvider</a></h2>
+<pre><code class="language-cangjie">public class RandomDataProvider&lt;T&gt; &lt;: DataProvider&lt;T&gt; where T &lt;: Arbitrary&lt;T&gt; {
+    public RandomDataProvider(private let configuration: Configuration)
+}
+</code></pre>
+<p>功能：使用随机数据生成的 <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-dataprovider">DataProvider</a> 接口的实现。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-dataprovider">DataProvider</a>&lt;T&gt;</li>
+</ul>
+<h3 id="initconfiguration"><a class="header" href="#initconfiguration">init(Configuration)</a></h3>
+<pre><code class="language-cangjie">public RandomDataProvider(private let configuration: Configuration)
+</code></pre>
+<p>功能：构造一个随机数据提供者的对象。</p>
+<p>参数：</p>
+<ul>
+<li>configuration: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 配置对象，必须包含一个随机生成器，名称为 <code>random</code> ，类型为 random.<a href="../../random/random_package_api/random_package_classes.html#class-random">Random</a>。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当 configuration 不包含 random 实例时，抛出异常。</li>
+</ul>
+<h3 id="prop-isinfinite-1"><a class="header" href="#prop-isinfinite-1">prop isInfinite</a></h3>
+<pre><code class="language-cangjie">public override prop isInfinite: Bool
+</code></pre>
+<p>功能：是否生成无限的数据。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a>。</p>
+<h3 id="func-provide"><a class="header" href="#func-provide">func provide()</a></h3>
+<pre><code class="language-cangjie">public override func provide(): Iterable&lt;T&gt;
+</code></pre>
+<p>功能：提供随机化生成的数据。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-iterablee">Iterable</a>&lt;T&gt; - 从 T 的任意实例创建的无限迭代器。</li>
+</ul>
+<h2 id="class-randomdatashrinker"><a class="header" href="#class-randomdatashrinker">class RandomDataShrinker</a></h2>
+<pre><code class="language-cangjie">public class RandomDataShrinker&lt;T&gt; &lt;: DataShrinker&lt;T&gt; {}
+</code></pre>
+<p>功能：使用随机数据生成的 <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datashrinkert">DataShrinker</a> 接口的实现。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datashrinkert">DataShrinker</a>&lt;T&gt;</li>
+</ul>
+<h3 id="func-shrinkert"><a class="header" href="#func-shrinkert">func shrinker(T)</a></h3>
+<pre><code class="language-cangjie">public override func shrink(value: T): Iterable&lt;T&gt;
+</code></pre>
+<p>功能：获取值的缩减器。</p>
+<p>参数：</p>
+<ul>
+<li>value: T - 参数值。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-iterablee">Iterable</a>&lt;T&gt; - 如果参数实现了 <a href="../../unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_interfaces.html#interface-shrinkt">Shrink</a> 接口，则返回缩减后的迭代器，如果未实现，则返回空的数组。</li>
+</ul>
+<h2 id="class-randomdatastrategy"><a class="header" href="#class-randomdatastrategy">class RandomDataStrategy</a></h2>
+<pre><code class="language-cangjie">public class RandomDataStrategy&lt;T&gt; &lt;: DataStrategy&lt;T&gt; where T &lt;: Arbitrary&lt;T&gt;{}
+</code></pre>
+<p>功能：使用随机数据生成的 <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a> 接口的实现。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a>&lt;T&gt;</li>
+</ul>
+<h3 id="func-providerconfiguration-2"><a class="header" href="#func-providerconfiguration-2">func provider(Configuration)</a></h3>
+<pre><code class="language-cangjie">public override func provider(configuration: Configuration): RandomDataProvider&lt;T&gt;
+</code></pre>
+<p>功能：获取随机数据的提供者。</p>
+<p>参数：</p>
+<ul>
+<li>configuration: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 参数配置信息。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="unittest_package_classes.html#class-randomdataprovider">RandomDataProvider</a> - 随机数提供者。</li>
+</ul>
+<h3 id="func-shrinkerconfiguration"><a class="header" href="#func-shrinkerconfiguration">func shrinker(Configuration)</a></h3>
+<pre><code class="language-cangjie">public override func shrinker(_: Configuration): RandomDataShrinker&lt;T&gt;
+</code></pre>
+<p>功能：获取随机数据的缩减器。</p>
+<p>参数：</p>
+<ul>
+<li>_: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 参数配置信息。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="unittest_package_classes.html#class-randomdatashrinker">RandomDataShrinker</a> - 随机数据的缩减器。</li>
+</ul>
+<h2 id="class-report"><a class="header" href="#class-report">class Report</a></h2>
+<pre><code class="language-cangjie">sealed abstract class Report {}
+</code></pre>
+<p>功能：打印测试用例结果报告的基类。</p>
+<h3 id="prop-errorcount"><a class="header" href="#prop-errorcount">prop errorCount</a></h3>
+<pre><code class="language-cangjie">public prop errorCount: Int64
+</code></pre>
+<p>功能：获取错误的用例个数。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a>。</p>
+<h3 id="prop-casecount"><a class="header" href="#prop-casecount">prop caseCount</a></h3>
+<pre><code class="language-cangjie">public prop caseCount: Int64
+</code></pre>
+<p>功能：获取用例个数。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a>。</p>
+<h3 id="prop-passedcount"><a class="header" href="#prop-passedcount">prop passedCount</a></h3>
+<pre><code class="language-cangjie">public prop passedCount:   Int64
+</code></pre>
+<p>功能：获取通过的用例个数。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a>。</p>
+<h3 id="prop-failedcount"><a class="header" href="#prop-failedcount">prop failedCount</a></h3>
+<pre><code class="language-cangjie">public prop failedCount:   Int64
+</code></pre>
+<p>功能：获取失败的用例个数。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a>。</p>
+<h3 id="prop-skippedcount"><a class="header" href="#prop-skippedcount">prop skippedCount</a></h3>
+<pre><code class="language-cangjie">public prop skippedCount:   Int64
+</code></pre>
+<p>功能：获取跳过的用例个数。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a>。</p>
+<h2 id="class-rawstatsreporter"><a class="header" href="#class-rawstatsreporter">class RawStatsReporter</a></h2>
+<pre><code class="language-cangjie">public class RawStatsReporter &lt;: Reporter&lt;BenchReport, HashMap&lt;String, (Float64, Float64)&gt;&gt; {
+    public RawStatsReporter()
+}
+</code></pre>
+<p>功能：未处理的性能测试数据报告器。仅给框架内部使用。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="unittest_package_interfaces.html#interface-reporter">Reporter</a>&lt;<a href="#class-benchreport">BenchReport</a>, <a href="../../collection/collection_package_api/collection_package_class.html#class-hashmapk-v-where-k--hashable--equatablek">HashMap</a>&lt;<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a>, (<a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a>, <a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a>)&gt;&gt;</li>
+</ul>
+<h3 id="init"><a class="header" href="#init">init()</a></h3>
+<pre><code class="language-cangjie">public RawStatsReporter()
+</code></pre>
+<p>功能：构造器。</p>
+<h2 id="class-serializableprovider"><a class="header" href="#class-serializableprovider">class SerializableProvider</a></h2>
+<pre><code class="language-cangjie">public class SerializableProvider&lt;T&gt; &lt;: DataProvider&lt;T&gt; where T &lt;: Serializable&lt;T&gt; {}
+</code></pre>
+<p>功能：获取序列化数据 <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-dataprovider">DataProvider</a> 接口的实现。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-dataprovider">DataProvider</a>&lt;T&gt;</li>
+</ul>
+<h3 id="prop-isinfinite-2"><a class="header" href="#prop-isinfinite-2">prop isInfinite</a></h3>
+<pre><code class="language-cangjie">public prop isInfinite: Bool
+</code></pre>
+<p>功能：是否生成无限的数据。</p>
+<p><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a>。</p>
+<h3 id="func-provide-1"><a class="header" href="#func-provide-1">func provide()</a></h3>
+<pre><code class="language-cangjie">public override func provide(): Iterable&lt;T&gt; 
+</code></pre>
+<p>功能：获取数据迭代器。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-iterablee">Iterable</a>&lt;T&gt; - 数据迭代器。</li>
+</ul>
+<h2 id="class-simpleprocessor"><a class="header" href="#class-simpleprocessor">class SimpleProcessor</a></h2>
+<pre><code class="language-cangjie">public class SimpleProcessor&lt;T&gt; &lt;: DataStrategyProcessor&lt;T&gt; {}
+</code></pre>
+<p>功能：简单的数据策略处理器。对 <a href="#class-datastrategyprocessor">DataStrategyProcessor</a> 的一种实现。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="#class-datastrategyprocessor">DataStrategyProcessor</a>&lt;T&gt;</li>
+</ul>
+<h3 id="init---datastrategyt-string"><a class="header" href="#init---datastrategyt-string">init(() -&gt; DataStrategy&lt;T&gt;, String)</a></h3>
+<pre><code class="language-cangjie">public SimpleProcessor(let buildDelegate:() -&gt; DataStrategy&lt;T&gt;, let name: String)
+</code></pre>
+<p>功能：构造函数。</p>
+<p>参数：</p>
+<ul>
+<li>buildDelegate : () -&gt; <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a>&lt;T&gt; - 生成数据策略的闭包。</li>
+<li>name : <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 处理器名称。</li>
+</ul>
+<h2 id="class-testgroup"><a class="header" href="#class-testgroup">class TestGroup</a></h2>
+<pre><code class="language-cangjie">public class TestGroup {}
+</code></pre>
+<p>功能：提供构建和运行测试组合方法的类。</p>
+<h3 id="prop-name-1"><a class="header" href="#prop-name-1">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：获取测试组合名称。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a>。</p>
+<h3 id="func-runbenchmarks"><a class="header" href="#func-runbenchmarks">func runBenchmarks()</a></h3>
+<pre><code class="language-cangjie">public func runBenchmarks(): BenchReport
+</code></pre>
+<p>功能：运行所有性能测试用例。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-benchreport">BenchReport</a> - 性能测试用例报告。</li>
+</ul>
+<h3 id="func-runbenchmarksconfiguration"><a class="header" href="#func-runbenchmarksconfiguration">func runBenchmarks(Configuration)</a></h3>
+<pre><code class="language-cangjie">public func runBenchmarks(Configuration): BenchReport
+</code></pre>
+<p>功能：带运行配置得执行所有性能测试用例。</p>
+<p>参数：</p>
+<ul>
+<li>configuration: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 运行配置。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-benchreport">BenchReport</a> - 性能测试用例报告。</li>
+</ul>
+<h3 id="func-runtests"><a class="header" href="#func-runtests">func runTests()</a></h3>
+<pre><code class="language-cangjie">public func runTests(): TestReport
+</code></pre>
+<p>功能：执行所有单元测试用例。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testreport">TestReport</a> - 单元测试用例报告。</li>
+</ul>
+<h3 id="func-runtestsconfiguration"><a class="header" href="#func-runtestsconfiguration">func runTests(Configuration)</a></h3>
+<pre><code class="language-cangjie">public func runTests(configuration: Configuration): TestReport
+</code></pre>
+<p>功能：带运行配置得执行所有单元测试用例。</p>
+<p>参数：</p>
+<ul>
+<li>configuration: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 运行配置。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testreport">TestReport</a> - 单元测试用例报告。</li>
+</ul>
+<h3 id="static-func-builderstring"><a class="header" href="#static-func-builderstring">static func builder(String)</a></h3>
+<pre><code class="language-cangjie">public static func builder(name: String): TestGroupBuilder
+</code></pre>
+<p>功能：创建测试组合构造器。</p>
+<p>参数：</p>
+<ul>
+<li>name : <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 测试组合名称。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a> - 测试组合构造器。</li>
+</ul>
+<h3 id="static-func-buildertestgroup"><a class="header" href="#static-func-buildertestgroup">static func builder(TestGroup)</a></h3>
+<pre><code class="language-cangjie">public static func builder(group: TestGroup): TestGroupBuilder
+</code></pre>
+<p>功能：创建测试组合构造器。</p>
+<p>参数：</p>
+<ul>
+<li>group : <a href="#class-testgroup">TestGroup</a> - 测试组合。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a> - 测试组合构造器。</li>
+</ul>
+<h2 id="class-testgroupbuilder"><a class="header" href="#class-testgroupbuilder">class TestGroupBuilder</a></h2>
+<pre><code class="language-cangjie">public class TestGroupBuilder {}
+</code></pre>
+<p>功能：提供配置测试组合的方法的构造器。</p>
+<h3 id="func-addbenchmark"><a class="header" href="#func-addbenchmark">func add(Benchmark)</a></h3>
+<pre><code class="language-cangjie">public func add(benchmark: Benchmark): TestGroupBuilder
+</code></pre>
+<p>功能：为测试组合增加性能测试用例。</p>
+<p>参数：</p>
+<ul>
+<li>benchmark : <a href="#class-benchmark">Benchmark</a> - 性能测试用例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a>  - 测试组合构造器。</li>
+</ul>
+<h3 id="func-addtestsuite"><a class="header" href="#func-addtestsuite">func add(TestSuite)</a></h3>
+<pre><code class="language-cangjie">public func add(suite: TestSuite): TestGroupBuilder
+</code></pre>
+<p>功能：为测试组合增加单元测试套。</p>
+<p>参数：</p>
+<ul>
+<li>suite : <a href="#class-testsuite">TestSuite</a> - 单元测试套。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a>  - 测试组合构造器。</li>
+</ul>
+<h3 id="func-addunittestcase"><a class="header" href="#func-addunittestcase">func add(UnitTestCase)</a></h3>
+<pre><code class="language-cangjie">public func add(test: UnitTestCase): TestGroupBuilder
+</code></pre>
+<p>功能：为测试组合增加单元测试用例。</p>
+<p>参数：</p>
+<ul>
+<li>test : <a href="#class-unittestcase">UnitTestCase</a> - 单元测试用例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a> - 测试组合构造器。</li>
+</ul>
+<h3 id="func-build"><a class="header" href="#func-build">func build()</a></h3>
+<pre><code class="language-cangjie">public func build(): TestGroup
+</code></pre>
+<p>功能：配置完成后，构建测试组合对象。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroup">TestGroup</a> - 测试组合。</li>
+</ul>
+<h3 id="func-configureconfiguration"><a class="header" href="#func-configureconfiguration">func configure(Configuration)</a></h3>
+<pre><code class="language-cangjie">public func configure(configuration: Configuration): TestGroupBuilder
+</code></pre>
+<p>功能：为测试组合配置配置信息。</p>
+<p>参数：</p>
+<ul>
+<li>configuration : <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 配置信息。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a> - 测试组合构造器。</li>
+</ul>
+<h3 id="func-setnamestring"><a class="header" href="#func-setnamestring">func setName(String)</a></h3>
+<pre><code class="language-cangjie">public func setName(name: String): TestGroupBuilder
+</code></pre>
+<p>功能：为测试组合设置名称。</p>
+<p>参数：</p>
+<ul>
+<li>name : <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 名称。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a> - 测试组合构造器。</li>
+</ul>
+<h2 id="class-testpackage"><a class="header" href="#class-testpackage">class TestPackage</a></h2>
+<pre><code class="language-cangjie">public class TestPackage {
+    public TestPackage(let name: String)
+}
+</code></pre>
+<p>功能：用例包对象。</p>
+<h3 id="initstring"><a class="header" href="#initstring">init(String)</a></h3>
+<pre><code class="language-cangjie">public TestPackage(let name: String)
+</code></pre>
+<p>功能：构造函数。</p>
+<p>参数：</p>
+<ul>
+<li>name: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 用例包名称。</li>
+</ul>
+<h3 id="func-registercase---unittestcase"><a class="header" href="#func-registercase---unittestcase">func registerCase(() -&gt; UnitTestCase)</a></h3>
+<pre><code class="language-cangjie">public func registerCase(testCase: () -&gt; UnitTestCase): Unit
+</code></pre>
+<p>功能：注册单元测试用例。</p>
+<p>参数：</p>
+<ul>
+<li>testCase: () -&gt; <a href="#class-unittestcase">UnitTestCase</a> - 单元测试用例生成闭包。</li>
+</ul>
+<h3 id="func-registersuite---testsuite"><a class="header" href="#func-registersuite---testsuite">func registerSuite(() -&gt; TestSuite)</a></h3>
+<pre><code class="language-cangjie">public func registerSuite(suite: () -&gt; TestSuite): Unit
+</code></pre>
+<p>功能：注册测试套。</p>
+<p>参数：</p>
+<ul>
+<li>suite: () -&gt; <a href="#class-testsuite">TestSuite</a> - 测试套生成闭包。</li>
+</ul>
+<h3 id="func-registerbench---benchmark"><a class="header" href="#func-registerbench---benchmark">func registerBench(() -&gt; Benchmark)</a></h3>
+<pre><code class="language-cangjie">public func registerBench(bench: () -&gt; Benchmark): Unit
+</code></pre>
+<p>功能：注册性能用例。</p>
+<p>参数：</p>
+<ul>
+<li>bench: () -&gt; <a href="#class-benchmark">Benchmark</a> - 性能用例生成闭包。</li>
+</ul>
+<h2 id="class-testreport"><a class="header" href="#class-testreport">class TestReport</a></h2>
+<pre><code class="language-cangjie">public class TestReport &lt;: Report {}
+</code></pre>
+<p>功能：单元测试执行结果报告。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="#class-report">Report</a></li>
+</ul>
+<h3 id="func-reporttotreportertestreport-t"><a class="header" href="#func-reporttotreportertestreport-t">func reportTo&lt;T&gt;(Reporter&lt;TestReport, T&gt;)</a></h3>
+<pre><code class="language-cangjie">public func reportTo&lt;T&gt;(reporter: Reporter&lt;TestReport, T&gt;): T
+</code></pre>
+<p>功能：打印单元测试执行报告。</p>
+<p>参数：</p>
+<ul>
+<li>reporter : <a href="#class-report">Reporter</a>&lt;<a href="#class-testreport">TestReport</a>, T&gt; - 单元测试报告打印器。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li>T : 打印返回值，一般为 Unit 。</li>
+</ul>
+<h2 id="class-testsuite"><a class="header" href="#class-testsuite">class TestSuite</a></h2>
+<pre><code class="language-cangjie">public class TestSuite {}
+</code></pre>
+<p>功能：提供构建和执行测试套方法的类。</p>
+<h3 id="prop-name-2"><a class="header" href="#prop-name-2">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：获取测试套名称。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a>。</p>
+<h3 id="func-runbenchmarks-1"><a class="header" href="#func-runbenchmarks-1">func runBenchmarks()</a></h3>
+<pre><code class="language-cangjie">public func runBenchmarks(): BenchReport 
+</code></pre>
+<p>功能：运行所有性能测试用例。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-benchreport">BenchReport</a> - 性能测试运行结果。</li>
+</ul>
+<h3 id="func-runbenchmarksconfiguration-1"><a class="header" href="#func-runbenchmarksconfiguration-1">func runBenchmarks(Configuration)</a></h3>
+<pre><code class="language-cangjie">public func runBenchmarks(configuration: Configuration): BenchReport
+</code></pre>
+<p>功能：带配置信息得运行所有性能测试用例。</p>
+<p>参数：</p>
+<ul>
+<li>configuration : <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 运行配置信息。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-benchreport">BenchReport</a> - 性能测试用例运行结果。</li>
+</ul>
+<h3 id="func-runtests-1"><a class="header" href="#func-runtests-1">func runTests()</a></h3>
+<pre><code class="language-cangjie">public func runTests(): TestReport
+</code></pre>
+<p>功能：运行测试套。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testreport">TestReport</a> - 测试套运行结果。</li>
+</ul>
+<h3 id="func-runtestsconfiguration-1"><a class="header" href="#func-runtestsconfiguration-1">func runTests(Configuration)</a></h3>
+<pre><code class="language-cangjie">public func runTests(configuration: Configuration): TestReport
+</code></pre>
+<p>功能：带配置信息得运行测试套。</p>
+<p>参数：</p>
+<ul>
+<li>configuration : <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 运行配置信息。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testreport">TestReport</a> - 测试套运行结果。</li>
+</ul>
+<h3 id="static-func-builderstring-1"><a class="header" href="#static-func-builderstring-1">static func builder(String)</a></h3>
+<pre><code class="language-cangjie">public static func builder(name: String): TestSuiteBuilder
+</code></pre>
+<p>功能：创建测试套构建器。</p>
+<p>参数：</p>
+<ul>
+<li>name : <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 测试套名称。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testsuitebuilder">TestSuiteBuilder</a> - 测试套构造器。</li>
+</ul>
+<h3 id="static-func-buildertestsuite"><a class="header" href="#static-func-buildertestsuite">static func builder(TestSuite)</a></h3>
+<pre><code class="language-cangjie">public static func builder(suite: TestSuite): TestSuiteBuilder
+</code></pre>
+<p>功能：创建测试套构建器。</p>
+<p>参数：</p>
+<ul>
+<li>suite : <a href="#class-testsuite">TestSuite</a> - 测试套。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testsuitebuilder">TestSuiteBuilder</a> - 测试套构造器。</li>
+</ul>
+<h2 id="class-testsuitebuilder"><a class="header" href="#class-testsuitebuilder">class TestSuiteBuilder</a></h2>
+<pre><code class="language-cangjie">public class TestSuiteBuilder {}
+</code></pre>
+<p>功能：提供配置测试套方法的测试套构造器。</p>
+<h3 id="addbenchmark"><a class="header" href="#addbenchmark">add(Benchmark)</a></h3>
+<pre><code class="language-cangjie">public func add(benchmark: Benchmark): TestSuiteBuilder
+</code></pre>
+<p>功能：为测试套添加性能用例。</p>
+<p>参数：</p>
+<ul>
+<li>benchmark : <a href="#class-benchmark">Benchmark</a> - 性能测试用例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a> - 测试组合构造器。</li>
+</ul>
+<h3 id="addunittestcase"><a class="header" href="#addunittestcase">add(UnitTestCase)</a></h3>
+<pre><code class="language-cangjie">public func add(test: UnitTestCase): TestSuiteBuilder
+</code></pre>
+<p>功能：为测试套添加单元测试用例。</p>
+<p>参数：</p>
+<ul>
+<li>test : <a href="#class-unittestcase">UnitTestCase</a> - 单元测试用例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a> - 测试组合构造器。</li>
+</ul>
+<h3 id="afterall---unit"><a class="header" href="#afterall---unit">afterAll(() -&gt; Unit)</a></h3>
+<pre><code class="language-cangjie">public func afterAll(body: () -&gt; Unit): TestSuiteBuilder
+</code></pre>
+<p>功能：为测试套添加在所有用例执行完成后执行的生命周期管理闭包。</p>
+<p>参数：</p>
+<ul>
+<li>body : () -&gt; Unit - 执行体。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a> - 测试组合构造器。</li>
+</ul>
+<h3 id="aftereach---unit"><a class="header" href="#aftereach---unit">afterEach(() -&gt; Unit)</a></h3>
+<pre><code class="language-cangjie">public func afterEach(body: () -&gt; Unit): TestSuiteBuilder
+</code></pre>
+<p>功能：为测试套添加在每个用例执行完成后执行的生命周期管理闭包。</p>
+<p>参数：</p>
+<ul>
+<li>body : () -&gt; Unit - 执行体。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a> - 测试组合构造器。</li>
+</ul>
+<h3 id="aftereachstring---unit"><a class="header" href="#aftereachstring---unit">afterEach((String) -&gt; Unit)</a></h3>
+<pre><code class="language-cangjie">public func afterEach(body: (String) -&gt; Unit): TestSuiteBuilder
+</code></pre>
+<p>功能：为测试套添加在每个用例执行完成后执行的生命周期管理闭包。</p>
+<p>参数：</p>
+<ul>
+<li>body : (String) -&gt; Unit - 执行体。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a> - 测试组合构造器。</li>
+</ul>
+<h3 id="beforeall---unit"><a class="header" href="#beforeall---unit">beforeAll(() -&gt; Unit)</a></h3>
+<pre><code class="language-cangjie">public func beforeAll(body: () -&gt; Unit): TestSuiteBuilder
+</code></pre>
+<p>功能：为测试套添加在所有用例执行前执行的生命周期管理闭包。</p>
+<p>参数：</p>
+<ul>
+<li>body : () -&gt; Unit - 执行体。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a> - 测试组合构造器。</li>
+</ul>
+<h3 id="beforeeach---unit"><a class="header" href="#beforeeach---unit">beforeEach(() -&gt; Unit)</a></h3>
+<pre><code class="language-cangjie">public func beforeEach(body: () -&gt; Unit): TestSuiteBuilder
+</code></pre>
+<p>功能：为测试套添加在每个用例执行前执行的生命周期管理闭包。</p>
+<p>参数：</p>
+<ul>
+<li>body : () -&gt; Unit - 执行体。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a> - 测试组合构造器。</li>
+</ul>
+<h3 id="beforeeachstring---unit"><a class="header" href="#beforeeachstring---unit">beforeEach((String) -&gt; Unit)</a></h3>
+<pre><code class="language-cangjie">public func beforeEach(body: (String) -&gt; Unit): TestSuiteBuilder
+</code></pre>
+<p>功能：为测试套添加在每个用例执行前执行的生命周期管理闭包。</p>
+<p>参数：</p>
+<ul>
+<li>body : (String) -&gt; Unit - 执行体。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a> - 测试组合构造器。</li>
+</ul>
+<h3 id="build"><a class="header" href="#build">build()</a></h3>
+<pre><code class="language-cangjie">public func build(): TestSuite
+</code></pre>
+<p>功能：配置完成后构造测试套。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testsuite">TestSuite</a> - 测试套。</li>
+</ul>
+<h3 id="configureconfiguration"><a class="header" href="#configureconfiguration">configure(Configuration)</a></h3>
+<pre><code class="language-cangjie">public func configure(configuration: Configuration): TestSuiteBuilder
+</code></pre>
+<p>功能：为测试套添加配置信息。</p>
+<p>参数：</p>
+<ul>
+<li>configuration : <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 测试配置信息。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a> - 测试组合构造器。</li>
+</ul>
+<h3 id="setnamestring"><a class="header" href="#setnamestring">setName(String)</a></h3>
+<pre><code class="language-cangjie">public func setName(name: String): TestSuiteBuilder
+</code></pre>
+<p>功能：为测试套设置名称。</p>
+<p>参数：</p>
+<ul>
+<li>name : <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 测试套名称。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testgroupbuilder">TestGroupBuilder</a> - 测试组合构造器。</li>
+</ul>
+<h2 id="class-unittestcase"><a class="header" href="#class-unittestcase">class UnitTestCase</a></h2>
+<pre><code class="language-cangjie">public class UnitTestCase {}
+</code></pre>
+<p>功能：提供创建和执行单元测试用例的方法的类。</p>
+<h3 id="prop-name-3"><a class="header" href="#prop-name-3">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：获取单元测试名称。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a>。</p>
+<h3 id="func-run-1"><a class="header" href="#func-run-1">func run()</a></h3>
+<pre><code class="language-cangjie">public func run(): TestReport 
+</code></pre>
+<p>功能：运行单元测试用例。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-testreport">TestReport</a> - 单元测试执行结果报告。</li>
+</ul>
+<h3 id="static-func-createstring-configuration----unit-1"><a class="header" href="#static-func-createstring-configuration----unit-1">static func create(String, Configuration, () -&gt; Unit)</a></h3>
+<pre><code class="language-cangjie">public static func create(name: String, configuration!: Configuration = Configuration(), body!: () -&gt; Unit): UnitTestCase
+</code></pre>
+<p>功能：创建单元测试用例。</p>
+<p>参数：</p>
+<ul>
+<li>name : <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 用例名称。</li>
+<li>configuration!: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 用例配置信息。</li>
+<li>body!: () -&gt; Unit - 用例执行体。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-unittestcase">UnitTestCase</a> - 单元测试用例对象。</li>
+</ul>
+<h3 id="static-func-createparameterizedtstring-datastrategyt-configuration-t---unit-1"><a class="header" href="#static-func-createparameterizedtstring-datastrategyt-configuration-t---unit-1">static func createParameterized&lt;T&gt;(String, DataStrategy&lt;T&gt;, Configuration, (T) -&gt; Unit)</a></h3>
+<pre><code class="language-cangjie">public static func createParameterized&lt;T&gt;(name: String, strategy: DataStrategy&lt;T&gt;, configuration!: Configuration = Configuration(), body!: (T) -&gt; Unit): UnitTestCase
+</code></pre>
+<p>功能：创建参数化的单元测试用例。</p>
+<p>参数：</p>
+<ul>
+<li>name : <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 用例名称。</li>
+<li>strategy : <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html#interface-datastrategy">DataStrategy</a> - 参数数据策略。</li>
+<li>configuration!: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 用例配置信息。</li>
+<li>body!: () -&gt; Unit - 用例执行体。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-unittestcase">UnitTestCase</a> - 单元测试用例对象。</li>
+</ul>
+<h3 id="static-func-createparameterizedtstring-datastrategyprocessort-configuration-t---unit-1"><a class="header" href="#static-func-createparameterizedtstring-datastrategyprocessort-configuration-t---unit-1">static func createParameterized&lt;T&gt;(String, DataStrategyProcessor&lt;T&gt;, Configuration, (T) -&gt; Unit)</a></h3>
+<pre><code class="language-cangjie">public static func createParameterized&lt;T&gt;(name: String, strategy: DataStrategyProcessor&lt;T&gt;, configuration!: Configuration = Configuration(), body!: (T) -&gt; Unit): UnitTestCase
+</code></pre>
+<p>功能：创建参数化的单元测试用例。</p>
+<p>参数：</p>
+<ul>
+<li>name : <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 用例名称。</li>
+<li>strategy : <a href="#class-datastrategyprocessor">DataStrategyProcessor</a> - 参数数据处理器。</li>
+<li>configuration!: <a href="../../unittest_common/unittest_common_package_api/unittest_common_package_classes.html#class-configuration">Configuration</a> - 用例配置信息。</li>
+<li>body!: () -&gt; Unit - 用例执行体。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="#class-unittestcase">UnitTestCase</a> - 单元测试用例对象。</li>
+</ul>
+<h2 id="class-xmlreporter"><a class="header" href="#class-xmlreporter">class XmlReporter</a></h2>
+<pre><code class="language-cangjie">public class XmlReporter &lt;: Reporter&lt;TestReport, Unit&gt; {
+    public XmlReporter(let directory: Directory)
+}
+</code></pre>
+<p>功能：打印单元测试用例结果数据到 Xml 文件上。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="unittest_package_interfaces.html#interface-reporter">Reporter</a>&lt;<a href="#class-testreport">TestReport</a>, <a href="../../core/core_package_api/core_package_intrinsics.html#unit">Unit</a>&gt;</li>
+</ul>
+<h3 id="initdirectory-2"><a class="header" href="#initdirectory-2">init(Directory)</a></h3>
+<pre><code class="language-cangjie">public XmlReporter(let directory: Directory)
+</code></pre>
+<p>功能：构造函数。</p>
+<p>参数：</p>
+<ul>
+<li>directory: <a href="../../fs/fs_package_api/fs_package_classes.html#class-directory">Directory</a> - 打印文件生成地址。</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../std/unittest/unittest_package_api/unittest_package_interfaces.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../../std/unittest/unittest_package_api/unittest_package_enums.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../std/unittest/unittest_package_api/unittest_package_interfaces.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../../std/unittest/unittest_package_api/unittest_package_enums.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../../elasticlunr.min.js"></script>
+        <script src="../../../mark.min.js"></script>
+        <script src="../../../searcher.js"></script>
+
+        <script src="../../../clipboard.min.js"></script>
+        <script src="../../../highlight.js"></script>
+        <script src="../../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../../highlight.js"></script>
+        <script src="../../../assets/elasticlunr.js"></script>
+        <script src="../../../assets/fzf.umd.js"></script>
+        <script src="../../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

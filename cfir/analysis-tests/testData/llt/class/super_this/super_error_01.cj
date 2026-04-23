@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 open class Base {
     public var b: Int32 = 6
     public init(x: Int32) {
@@ -15,11 +13,11 @@ open class Base {
 
 class Test<T> <: Base {
     public var a: Int32 = 3
-    public Test() {
+    <!EXPLICIT_SUPER_CALL_REQUIRED!>public Test()<!> {
         this.a == a
     }
 
-    public init(x: Int32) {
+    <!EXPLICIT_SUPER_CALL_REQUIRED!>public init(x: Int32)<!> {
         super.b = x
         this.a = x
     }
@@ -33,21 +31,3 @@ main(): Int64 {
     }
     return 1
 }
-
-/* SCAN
-error: there is no non-parameter constructor in super class, please invoke super call explicitly
-  ==> super_error_01.cj:22:12:
-   | 
-22 |     public init(x: Int32) {
-   |            ^^^^ 
-   | 
-
-error: there is no non-parameter constructor in super class, please invoke super call explicitly
-  ==> super_error_01.cj:18:12:
-   | 
-18 |     public Test() {
-   |            ^^^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

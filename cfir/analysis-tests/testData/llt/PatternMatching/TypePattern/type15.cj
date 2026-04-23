@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output
-// EXEC: %run %run_opt %output
-
 // Option box shouldn't work at pattern matching
 package test
 
@@ -22,4 +19,3 @@ public class ListView<T> {
         "${_data.toArray() as String}"
     }
 }
-

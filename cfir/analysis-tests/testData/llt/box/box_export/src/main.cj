@@ -5,10 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: config host service
-// EXEC: %compiler %import-cangjie-stdx %cmp_opt %compile_lib_opt -g --no-sub-pkg -p ./config -o asp.config.%middle
-// EXEC: %compiler %import-cangjie-stdx %cmp_opt %compile_lib_opt -g --no-sub-pkg -p ./service asp.config.%middle -o asp.service.%middle
-// EXEC: %compiler %import-cangjie-stdx %cmp_opt %compile_lib_opt -g --no-sub-pkg -p ./host asp.service.%middle asp.config.%middle -o asp.host.%middle
-// (CJNATIVE) EXEC-PIPE: %compiler %cmp_opt -g %f asp.host.%middle asp.service.%middle asp.config.%middle %import-cangjie-stdx
 
 package asp
 

@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args 2>&1 | compare %f
-
 func f(x: Array<Int8>) {
     x.size
 }
@@ -19,7 +16,3 @@ main() {
     let gf = f ~> g
     println(gf(1, 2, 3))
 }
-
-/* SCAN
-4
-*/

@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %output
-// RUN-EXEC-PIPE: %run %run_opt %output %run_args | compare %f
-
 class A {
     public var test: Any = "any"
     public var value: Int64 = 0
@@ -26,8 +23,3 @@ main() {
     }
     0
 }
-
-/* SCAN
-1
-2
-*/

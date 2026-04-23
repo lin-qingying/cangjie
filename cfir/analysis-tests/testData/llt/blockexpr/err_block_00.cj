@@ -4,23 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 func f(_: Unit, _: Array<Bool>) {
     0
 }
 
 main() {
-    f(unsafe { let _ = wrong }, [])
+    f(unsafe { let _ = <!UNRESOLVED_REFERENCE!>wrong<!> }, [])
 }
-
-/* SCAN
-error: undeclared identifier 'wrong'
-  ==> err_block_00.cj:14:24:
-   | 
-14 |     f(unsafe { let _ = wrong }, [])
-   |                        ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

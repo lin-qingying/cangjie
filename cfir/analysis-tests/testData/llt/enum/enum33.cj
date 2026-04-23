@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %n.cj -o %output 2>&1 | compare %f
-
 enum E1 {
     e | e2
 
@@ -24,13 +22,13 @@ enum E2 {
     e(Int64) | e2
 
     public func foo() {
-        e
+        <!ENUM_CONSTRUCTOR_WITH_PARAM_MUST_HAVE_ARGS!>e<!>
     } // Choose E1.e
 }
 
 extend E2 {
     public func goo() {
-        e
+        <!ENUM_CONSTRUCTOR_WITH_PARAM_MUST_HAVE_ARGS!>e<!>
     } // Choose E1.e
 }
 
@@ -62,33 +60,3 @@ extend<T> F<T> {
 main(): Int64 {
     0
 }
-
-/* SCAN
-error: enum constructor 'e' must be used with arguments
-  ==> enum33.cj:27:9:
-   | 
-27 |         e
-   |         ^ 
-   | 
-note: found candidate
-  ==> enum33.cj:24:5:
-   | 
-24 |     e(Int64) | e2
-   |     ^ 
-   | 
-
-error: enum constructor 'e' must be used with arguments
-  ==> enum33.cj:33:9:
-   | 
-33 |         e
-   |         ^ 
-   | 
-note: found candidate
-  ==> enum33.cj:24:5:
-   | 
-24 |     e(Int64) | e2
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

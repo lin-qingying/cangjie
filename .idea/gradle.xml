@@ -130,10 +130,223 @@
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
+        <compositeConfiguration>
+          <compositeBuild compositeDefinitionSource="SCRIPT">
+            <builds>
+              <build path="$PROJECT_DIR$" name="cangjie">
+                <projects>
+                  <project path="$PROJECT_DIR$" />
+                  <project path="$PROJECT_DIR$/analysis" />
+                  <project path="$PROJECT_DIR$/analysis/analysis-api" />
+                  <project path="$PROJECT_DIR$/analysis/analysis-api-cfir" />
+                  <project path="$PROJECT_DIR$/analysis/analysis-api-impl-base" />
+                  <project path="$PROJECT_DIR$/analysis/analysis-api-platform-interface" />
+                  <project path="$PROJECT_DIR$/analysis/analysis-api-standalone" />
+                  <project path="$PROJECT_DIR$/analysis/analysis-internal-utils" />
+                  <project path="$PROJECT_DIR$/analysis/analysis-test-framework" />
+                  <project path="$PROJECT_DIR$/analysis/analysis-tools" />
+                  <project path="$PROJECT_DIR$/analysis/cj-references" />
+                  <project path="$PROJECT_DIR$/analysis/decompiled" />
+                  <project path="$PROJECT_DIR$/analysis/decompiled/decompiler-to-file-stubs" />
+                  <project path="$PROJECT_DIR$/analysis/decompiled/decompiler-to-psi" />
+                  <project path="$PROJECT_DIR$/analysis/decompiled/decompiler-to-stubs" />
+                  <project path="$PROJECT_DIR$/analysis/decompiled/light-declarations-for-decompiled" />
+                  <project path="$PROJECT_DIR$/analysis/light-declarations" />
+                  <project path="$PROJECT_DIR$/analysis/low-level-api-cfir" />
+                  <project path="$PROJECT_DIR$/analysis/stubs" />
+                  <project path="$PROJECT_DIR$/analysis/symbol-light-declarations" />
+                  <project path="$PROJECT_DIR$/cfir" />
+                  <project path="$PROJECT_DIR$/cfir/analysis-tests" />
+                  <project path="$PROJECT_DIR$/cfir/cfir-common" />
+                  <project path="$PROJECT_DIR$/cfir/cfir-cones" />
+                  <project path="$PROJECT_DIR$/cfir/cfir-serialization" />
+                  <project path="$PROJECT_DIR$/cfir/cfir-tree" />
+                  <project path="$PROJECT_DIR$/cfir/cfir-tree/tree-generator" />
+                  <project path="$PROJECT_DIR$/cfir/checkers" />
+                  <project path="$PROJECT_DIR$/cfir/checkers/checkers-component-generator" />
+                  <project path="$PROJECT_DIR$/cfir/diagnostic-renderers" />
+                  <project path="$PROJECT_DIR$/cfir/entrypoint" />
+                  <project path="$PROJECT_DIR$/cfir/providers" />
+                  <project path="$PROJECT_DIR$/cfir/raw-cfir" />
+                  <project path="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir" />
+                  <project path="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir" />
+                  <project path="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common" />
+                  <project path="$PROJECT_DIR$/cfir/resolve" />
+                  <project path="$PROJECT_DIR$/cfir/semantics" />
+                  <project path="$PROJECT_DIR$/common" />
+                  <project path="$PROJECT_DIR$/common/diagnostics" />
+                  <project path="$PROJECT_DIR$/compiler" />
+                  <project path="$PROJECT_DIR$/compiler/arguments" />
+                  <project path="$PROJECT_DIR$/compiler/chir" />
+                  <project path="$PROJECT_DIR$/compiler/codegen" />
+                  <project path="$PROJECT_DIR$/compiler/config" />
+                  <project path="$PROJECT_DIR$/compiler/frontend" />
+                  <project path="$PROJECT_DIR$/compiler/frontend-arguments-generator" />
+                  <project path="$PROJECT_DIR$/compiler/phaser" />
+                  <project path="$PROJECT_DIR$/compiler/plugin" />
+                  <project path="$PROJECT_DIR$/dependencies" />
+                  <project path="$PROJECT_DIR$/dependencies/intellij-core" />
+                  <project path="$PROJECT_DIR$/flatbuffers-gen" />
+                  <project path="$PROJECT_DIR$/generators" />
+                  <project path="$PROJECT_DIR$/llvm-interop" />
+                  <project path="$PROJECT_DIR$/llvm-interop/llvm-interop-api" />
+                  <project path="$PROJECT_DIR$/llvm-interop/llvm-interop-jni" />
+                  <project path="$PROJECT_DIR$/lsp" />
+                  <project path="$PROJECT_DIR$/macro" />
+                  <project path="$PROJECT_DIR$/macro/macro-common" />
+                  <project path="$PROJECT_DIR$/macro/macro-process" />
+                  <project path="$PROJECT_DIR$/macro/macro-stub" />
+                  <project path="$PROJECT_DIR$/prepare" />
+                  <project path="$PROJECT_DIR$/prepare/analysis-test-framework" />
+                  <project path="$PROJECT_DIR$/prepare/frontend" />
+                  <project path="$PROJECT_DIR$/prepare/frontend-embeddable" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-analysis-api-cfir-for-ide-module" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-analysis-api-for-ide-module" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-analysis-api-standalone-for-ide-module" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-cfir-for-ide-module" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-common-for-ide-module" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-psi-for-ide-module" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-cfir-for-ide" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-for-ide" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-standalone-for-ide" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-cfir-for-ide" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-common-for-ide" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-psi-for-ide" />
+                  <project path="$PROJECT_DIR$/prepare/test-infrastructure" />
+                  <project path="$PROJECT_DIR$/psi" />
+                  <project path="$PROJECT_DIR$/resolution.common" />
+                  <project path="$PROJECT_DIR$/tests" />
+                  <project path="$PROJECT_DIR$/tests/test-infrastructure" />
+                  <project path="$PROJECT_DIR$/util" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/repo/gradle-build-conventions" name="gradle-build-conventions">
+                <projects>
+                  <project path="$PROJECT_DIR$/repo/gradle-build-conventions" />
+                  <project path="$PROJECT_DIR$/repo/gradle-build-conventions/analysis-coverage-convention" />
+                  <project path="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat" />
+                  <project path="$PROJECT_DIR$/repo/gradle-build-conventions/generators" />
+                  <project path="$PROJECT_DIR$/repo/gradle-build-conventions/gradle-plugins-common" />
+                  <project path="$PROJECT_DIR$/repo/gradle-build-conventions/native-compile-plugin" />
+                  <project path="$PROJECT_DIR$/repo/gradle-build-conventions/project-tests-convention" />
+                  <project path="$PROJECT_DIR$/repo/gradle-build-conventions/utilities" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/repo/gradle-settings-conventions" name="gradle-settings-conventions">
+                <projects>
+                  <project path="$PROJECT_DIR$/repo/gradle-settings-conventions" />
+                  <project path="$PROJECT_DIR$/repo/gradle-settings-conventions/jvm-toolchain-provisioning" />
+                </projects>
+              </build>
+            </builds>
+          </compositeBuild>
+        </compositeConfiguration>
         <option name="externalProjectPath" value="$PROJECT_DIR$/deveco" />
         <option name="modules">
           <set>
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/analysis" />
+            <option value="$PROJECT_DIR$/analysis/analysis-api" />
+            <option value="$PROJECT_DIR$/analysis/analysis-api-cfir" />
+            <option value="$PROJECT_DIR$/analysis/analysis-api-impl-base" />
+            <option value="$PROJECT_DIR$/analysis/analysis-api-platform-interface" />
+            <option value="$PROJECT_DIR$/analysis/analysis-api-standalone" />
+            <option value="$PROJECT_DIR$/analysis/analysis-internal-utils" />
+            <option value="$PROJECT_DIR$/analysis/analysis-test-framework" />
+            <option value="$PROJECT_DIR$/analysis/analysis-tools" />
+            <option value="$PROJECT_DIR$/analysis/cj-references" />
+            <option value="$PROJECT_DIR$/analysis/decompiled" />
+            <option value="$PROJECT_DIR$/analysis/decompiled/decompiler-to-file-stubs" />
+            <option value="$PROJECT_DIR$/analysis/decompiled/decompiler-to-psi" />
+            <option value="$PROJECT_DIR$/analysis/decompiled/decompiler-to-stubs" />
+            <option value="$PROJECT_DIR$/analysis/decompiled/light-declarations-for-decompiled" />
+            <option value="$PROJECT_DIR$/analysis/light-declarations" />
+            <option value="$PROJECT_DIR$/analysis/low-level-api-cfir" />
+            <option value="$PROJECT_DIR$/analysis/stubs" />
+            <option value="$PROJECT_DIR$/analysis/symbol-light-declarations" />
+            <option value="$PROJECT_DIR$/cfir" />
+            <option value="$PROJECT_DIR$/cfir/analysis-tests" />
+            <option value="$PROJECT_DIR$/cfir/cfir-common" />
+            <option value="$PROJECT_DIR$/cfir/cfir-cones" />
+            <option value="$PROJECT_DIR$/cfir/cfir-serialization" />
+            <option value="$PROJECT_DIR$/cfir/cfir-tree" />
+            <option value="$PROJECT_DIR$/cfir/cfir-tree/tree-generator" />
+            <option value="$PROJECT_DIR$/cfir/checkers" />
+            <option value="$PROJECT_DIR$/cfir/checkers/checkers-component-generator" />
+            <option value="$PROJECT_DIR$/cfir/diagnostic-renderers" />
+            <option value="$PROJECT_DIR$/cfir/entrypoint" />
+            <option value="$PROJECT_DIR$/cfir/providers" />
+            <option value="$PROJECT_DIR$/cfir/raw-cfir" />
+            <option value="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir" />
+            <option value="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir" />
+            <option value="$PROJECT_DIR$/cfir/raw-cfir/raw-cfir-common" />
+            <option value="$PROJECT_DIR$/cfir/resolve" />
+            <option value="$PROJECT_DIR$/cfir/semantics" />
+            <option value="$PROJECT_DIR$/common" />
+            <option value="$PROJECT_DIR$/common/diagnostics" />
+            <option value="$PROJECT_DIR$/compiler" />
+            <option value="$PROJECT_DIR$/compiler/arguments" />
+            <option value="$PROJECT_DIR$/compiler/chir" />
+            <option value="$PROJECT_DIR$/compiler/codegen" />
+            <option value="$PROJECT_DIR$/compiler/config" />
+            <option value="$PROJECT_DIR$/compiler/frontend" />
+            <option value="$PROJECT_DIR$/compiler/frontend-arguments-generator" />
+            <option value="$PROJECT_DIR$/compiler/phaser" />
+            <option value="$PROJECT_DIR$/compiler/plugin" />
+            <option value="$PROJECT_DIR$/dependencies" />
+            <option value="$PROJECT_DIR$/dependencies/intellij-core" />
             <option value="$PROJECT_DIR$/deveco" />
+            <option value="$PROJECT_DIR$/deveco/modules" />
+            <option value="$PROJECT_DIR$/deveco/modules/core" />
+            <option value="$PROJECT_DIR$/deveco/modules/deveco-bridge" />
+            <option value="$PROJECT_DIR$/deveco/modules/test-support" />
+            <option value="$PROJECT_DIR$/deveco/product" />
+            <option value="$PROJECT_DIR$/flatbuffers-gen" />
+            <option value="$PROJECT_DIR$/generators" />
+            <option value="$PROJECT_DIR$/llvm-interop" />
+            <option value="$PROJECT_DIR$/llvm-interop/llvm-interop-api" />
+            <option value="$PROJECT_DIR$/llvm-interop/llvm-interop-jni" />
+            <option value="$PROJECT_DIR$/lsp" />
+            <option value="$PROJECT_DIR$/macro" />
+            <option value="$PROJECT_DIR$/macro/macro-common" />
+            <option value="$PROJECT_DIR$/macro/macro-process" />
+            <option value="$PROJECT_DIR$/macro/macro-stub" />
+            <option value="$PROJECT_DIR$/prepare" />
+            <option value="$PROJECT_DIR$/prepare/analysis-test-framework" />
+            <option value="$PROJECT_DIR$/prepare/frontend" />
+            <option value="$PROJECT_DIR$/prepare/frontend-embeddable" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-analysis-api-cfir-for-ide-module" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-analysis-api-for-ide-module" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-analysis-api-standalone-for-ide-module" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-cfir-for-ide-module" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-common-for-ide-module" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-psi-for-ide-module" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-cfir-for-ide" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-for-ide" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-standalone-for-ide" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-cfir-for-ide" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-common-for-ide" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-psi-for-ide" />
+            <option value="$PROJECT_DIR$/prepare/test-infrastructure" />
+            <option value="$PROJECT_DIR$/psi" />
+            <option value="$PROJECT_DIR$/repo/gradle-build-conventions" />
+            <option value="$PROJECT_DIR$/repo/gradle-build-conventions/analysis-coverage-convention" />
+            <option value="$PROJECT_DIR$/repo/gradle-build-conventions/buildsrc-compat" />
+            <option value="$PROJECT_DIR$/repo/gradle-build-conventions/generators" />
+            <option value="$PROJECT_DIR$/repo/gradle-build-conventions/gradle-plugins-common" />
+            <option value="$PROJECT_DIR$/repo/gradle-build-conventions/native-compile-plugin" />
+            <option value="$PROJECT_DIR$/repo/gradle-build-conventions/project-tests-convention" />
+            <option value="$PROJECT_DIR$/repo/gradle-build-conventions/utilities" />
+            <option value="$PROJECT_DIR$/repo/gradle-settings-conventions" />
+            <option value="$PROJECT_DIR$/repo/gradle-settings-conventions/jvm-toolchain-provisioning" />
+            <option value="$PROJECT_DIR$/resolution.common" />
+            <option value="$PROJECT_DIR$/tests" />
+            <option value="$PROJECT_DIR$/tests/test-infrastructure" />
+            <option value="$PROJECT_DIR$/util" />
           </set>
         </option>
       </GradleProjectSettings>

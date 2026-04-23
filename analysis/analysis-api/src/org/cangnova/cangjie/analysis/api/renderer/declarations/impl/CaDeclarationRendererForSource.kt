@@ -1,12 +1,13 @@
 package org.cangnova.cangjie.analysis.api.renderer.declarations.impl
 
+import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.renderer.base.CaKeywordsRenderer
 import org.cangnova.cangjie.analysis.api.renderer.base.annotations.CaAnnotationRendererForSource
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaCallableReturnTypeFilter
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationNameRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaRecommendedRendererCodeStyle
-import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaClassifierBodyRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaClassifierBodyRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaFunctionLikeBodyRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaParameterDefaultValueRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaPropertyAccessorBodyRenderer
@@ -15,10 +16,10 @@ import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaRendererBodyMemberScopeSorter
 import org.cangnova.cangjie.analysis.api.renderer.declarations.bodies.CaVariableInitializerRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.modifiers.CaDeclarationModifiersRendererForSource
-import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaCallableParameterRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaCallableParameterRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaCallableReceiverRendererForSource
-import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaCallableReturnTypeRendererForSource
-import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaCallableSignatureRendererForSource
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaCallableReturnTypeRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaCallableSignatureRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaConstructorSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaEnumConstructorSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaFieldSymbolRenderer
@@ -46,6 +47,7 @@ object CaDeclarationRendererForSource {
         annotationRenderer = CaAnnotationRendererForSource.WITH_SHORT_NAMES
     }
 
+    @OptIn(CaExperimentalApi::class)
     val WITH_QUALIFIED_NAMES: CaDeclarationRenderer = CaDeclarationRenderer {
         nameRenderer = CaDeclarationNameRenderer.QUOTED
         keywordsRenderer = CaKeywordsRenderer.AS_WORD
@@ -54,7 +56,8 @@ object CaDeclarationRendererForSource {
         annotationRenderer = CaAnnotationRendererForSource.WITH_QUALIFIED_NAMES
         modifiersRenderer = CaDeclarationModifiersRendererForSource.NO_IMPLICIT_MODIFIERS
         declarationTypeApproximator = CaRendererTypeApproximator.NO_APPROXIMATION
-        classifierBodyRenderer = CaClassifierBodyRendererForSource.NO_BODY
+        classifierBodyRenderer = CaClassifierBodyRenderer.NO_BODY
+
         superTypeRenderer = CaSuperTypeRendererForSource.WITH_OUT_APPROXIMATION
         superTypeListRenderer = CaSuperTypeListRendererForSource.AS_LIST
         superTypesFilter = CaSuperTypesFilter.ALL
@@ -65,12 +68,12 @@ object CaDeclarationRendererForSource {
         parameterDefaultValueRenderer = CaParameterDefaultValueRenderer.NO_DEFAULT_VALUE
         propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_ACCESSORS
         accessorBodyRenderer = CaPropertyAccessorBodyRenderer.NO_BODY
-        returnTypeRenderer = CaCallableReturnTypeRendererForSource.WITH_OUT_APPROXIMATION
+        returnTypeRenderer = CaCallableReturnTypeRenderer.WITH_OUT_APPROXIMATION
         callableReceiverRenderer = CaCallableReceiverRendererForSource.AS_TYPE_WITH_IN_APPROXIMATION
-        valueParametersRenderer = CaCallableParameterRendererForSource.PARAMETERS_IN_PARENS
+        valueParametersRenderer = CaCallableParameterRenderer.PARAMETERS_IN_PARENS
         typeParametersRenderer = CaTypeParametersRendererForSource.WITH_BOUNDS_IN_WHERE_CLAUSE
         typeParametersFilter = CaTypeParametersFilter.ALL
-        callableSignatureRenderer = CaCallableSignatureRendererForSource.FOR_SOURCE
+        callableSignatureRenderer = CaCallableSignatureRenderer.FOR_SOURCE
         returnTypeFilter = CaCallableReturnTypeFilter.NO_UNIT_FOR_FUNCTIONS
         functionLikeKeywordRenderer = CaFunctionLikeKeywordRenderer.AS_SOURCE
         classLikeRenderer = CaClassLikeSymbolRenderer.AS_SOURCE
@@ -88,11 +91,11 @@ object CaDeclarationRendererForSource {
     }
 
     val WITH_QUALIFIED_NAMES_WITH_MEMBERS: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
-        classifierBodyRenderer = CaClassifierBodyRendererForSource.BODY_WITH_MEMBERS
+        classifierBodyRenderer = CaClassifierBodyRenderer.BODY_WITH_MEMBERS
     }
 
     val WITH_QUALIFIED_NAMES_WITH_MEMBERS_OR_EMPTY_BRACES: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
-        classifierBodyRenderer = CaClassifierBodyRendererForSource.BODY_WITH_MEMBERS_OR_EMPTY_BRACES
+        classifierBodyRenderer = CaClassifierBodyRenderer.BODY_WITH_MEMBERS_OR_EMPTY_BRACES
     }
 
     val WITH_QUALIFIED_NAMES_WITH_BODY: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
@@ -102,7 +105,7 @@ object CaDeclarationRendererForSource {
     }
 
     val WITH_QUALIFIED_NAMES_WITH_MEMBERS_AND_BODY: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
-        classifierBodyRenderer = CaClassifierBodyRendererForSource.BODY_WITH_MEMBERS
+        classifierBodyRenderer = CaClassifierBodyRenderer.BODY_WITH_MEMBERS
         functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.NO_BODY
         propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_ACCESSORS
         accessorBodyRenderer = CaPropertyAccessorBodyRenderer.NO_BODY

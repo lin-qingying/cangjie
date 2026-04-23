@@ -33,10 +33,10 @@ fun interface CaExtendSymbolRenderer {
                 }
             }
             val members = with(analysisSession) {
-                val extendPsi = symbol.getOriginalPsi() as? CjExtend
+                val extendPsi = symbol.psi as? CjExtend
                 extendPsi?.declarations
                     ?.mapNotNull { declaration ->
-                        (declaration as? CjDeclaration)?.let { it.symbol as? org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol }
+                        declaration?.let { it.symbol }
                     }
                     .orEmpty()
             }

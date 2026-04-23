@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix | compare %f
-// ASSERT: scan c1 = C1
-// ASSERT: scan c2 = C2
-
 import std.reflect.ClassTypeInfo
 import std.reflect.TypeInfo
 

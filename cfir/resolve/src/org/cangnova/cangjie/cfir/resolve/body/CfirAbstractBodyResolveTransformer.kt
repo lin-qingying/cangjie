@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.inference.CfirCallCompleter
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
@@ -29,6 +30,7 @@ import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import kotlinx.collections.immutable.toPersistentList
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
+import org.cangnova.cangjie.util.PrivateForInline
 
 /**
  * Body resolve transformer 的抽象基类。
@@ -47,8 +49,25 @@ abstract class CfirAbstractBodyResolveTransformer(
     inline val dataFlowAnalyzer: CfirDataFlowAnalyzer
         get() = components.dataFlowAnalyzer
 
-    final override val session: CfirSession get() = components.session
+    @set:PrivateForInline
+    abstract var implicitTypeOnly: Boolean
+        internal set
 
+    final override val session: CfirSession get() = components.session
+    @OptIn(PrivateForInline::class)
+    internal inline fun <T> withFullBodyResolve(crossinline l: () -> T): T {
+        val shouldSwitchMode = implicitTypeOnly
+        if (shouldSwitchMode) {
+            implicitTypeOnly = false
+        }
+        return try {
+            l()
+        } finally {
+            if (shouldSwitchMode) {
+                implicitTypeOnly = true
+            }
+        }
+    }
     /**
      * 共享组件容器，集中持有 body resolve 所需的会话、上下文和服务。
      */
@@ -57,6 +76,8 @@ abstract class CfirAbstractBodyResolveTransformer(
         override val scopeSession: ScopeSession,
         val transformer: CfirAbstractBodyResolveTransformerDispatcher,
         val context: BodyResolveContext,
+        expandTypeAliases: Boolean,
+
     ) : BodyResolveComponents() {
         override val containingDeclarations: List<CfirDeclaration>
             get() = context.containers.toList()
@@ -85,7 +106,7 @@ abstract class CfirAbstractBodyResolveTransformer(
         override val container: CfirDeclaration
             get() = context.containerIfAny ?: context.file
 
-        val resolutionStageRunner: ResolutionStageRunner = ResolutionStageRunner()
+        override val resolutionStageRunner: ResolutionStageRunner = ResolutionStageRunner()
 
 
 
@@ -110,9 +131,7 @@ abstract class CfirAbstractBodyResolveTransformer(
 
 
 
-        val towerResolver: CfirTowerResolver by lazy(LazyThreadSafetyMode.NONE) {
-            CfirTowerResolver(this, resolutionStageRunner)
-        }
+
 
         override val callResolver: CfirCallResolver by lazy(LazyThreadSafetyMode.NONE) {
             CfirCallResolver(this)
@@ -144,7 +163,7 @@ abstract class CfirAbstractBodyResolveTransformer(
             return buildList {
                 // 当前文件顶层声明必须先于包级/导入级 scope，避免默认导入抢占本地声明。
                 add(CfirFileDeclaredTopLevelScope(file))
-                add(CfirPackageMemberScope(file.packageDirective.packageFqName, symbolProvider))
+                add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
                 add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
                 add(CfirExplicitStarImportingScope(imports, symbolProvider))
                 add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
@@ -164,7 +183,7 @@ abstract class CfirAbstractBodyResolveTransformer(
  */
 abstract class CfirAbstractBodyResolveTransformerDispatcher(
     phase: CfirResolvePhase,
-    open val implicitTypeOnly: Boolean = false,
+    override var implicitTypeOnly: Boolean = false,
 ) : CfirAbstractBodyResolveTransformer(phase) {
 
     abstract override val context: BodyResolveContext
@@ -227,11 +246,11 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
     }
 
     override fun transformNamedFunction(namedFunction: CfirNamedFunction, data: ResolutionMode): CfirNamedFunction {
-        return declarationsTransformer.transformFunction(namedFunction, data) as CfirNamedFunction
+        return declarationsTransformer.transformNamedFunction(namedFunction, data)
     }
 
     override fun transformMainFunction(mainFunction: CfirMainFunction, data: ResolutionMode): CfirMainFunction {
-        return declarationsTransformer.transformFunction(mainFunction, data) as CfirMainFunction
+        return declarationsTransformer.transformMainFunction(mainFunction, data)
     }
 
     override fun transformProperty(property: CfirProperty, data: ResolutionMode): CfirProperty {

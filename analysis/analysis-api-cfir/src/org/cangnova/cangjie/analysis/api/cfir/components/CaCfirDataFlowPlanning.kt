@@ -13,6 +13,9 @@ import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.types.resolvedType
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjExpression
@@ -41,23 +44,21 @@ internal class CaCfirDataFlowInfoImpl(
  * 计算表达式在当前 use-site session 下的数据流快照。
  */
 internal fun CaCfirSession.getDataFlowInfo(expression: CjExpression): CaDataFlowInfo {
-    return getOrCreateDataFlowInfo(expression) {
-        val compileTimeValue = evaluateCompileTimeValue(expression)
-        val resolvedSymbol = resolveStableReferenceTarget(expression)
-        val isPureReference = expression.isPureReferenceExpression()
-        CaCfirDataFlowInfoImpl(
-            expressionType = typeQueries.queryExpressionType(expression)?.asCaType(this),
+    val compileTimeValue = evaluateCompileTimeValue(expression)
+    val resolvedSymbol = resolveStableReferenceTarget(expression)
+    val isPureReference = expression.isPureReferenceExpression()
+    return CaCfirDataFlowInfoImpl(
+        expressionType = (expression.getOrBuildCfir(resolutionFacade) as? CfirExpression)?.resolvedType?.asCaType(this),
+        compileTimeValue = compileTimeValue,
+        isPureReference = isPureReference,
+        stability = computeDataFlowStability(
+            expression = expression,
             compileTimeValue = compileTimeValue,
+            resolvedSymbol = resolvedSymbol,
             isPureReference = isPureReference,
-            stability = computeDataFlowStability(
-                expression = expression,
-                compileTimeValue = compileTimeValue,
-                resolvedSymbol = resolvedSymbol,
-                isPureReference = isPureReference,
-            ),
-            token = token,
-        )
-    }
+        ),
+        token = token,
+    )
 }
 
 private fun CaCfirSession.computeDataFlowStability(

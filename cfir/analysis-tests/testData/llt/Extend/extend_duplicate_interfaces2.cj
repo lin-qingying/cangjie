@@ -4,25 +4,12 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
 interface Foo {}
 
 class A <: Foo {}
 
-extend A <: Foo {}
+extend A <: <!EXTEND_DUPLICATE_INTERFACE!>Foo<!> {}
 
 main(): Int64 {
     return 1
 }
-
-/* SCAN
-error: interface 'Interface-Foo' has been implemented by 'Class-A', please remove it
-  ==> extend_duplicate_interfaces2.cj:13:13:
-   | 
-13 | extend A <: Foo {}
-   |             ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

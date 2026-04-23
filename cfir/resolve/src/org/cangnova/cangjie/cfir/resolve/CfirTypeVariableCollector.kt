@@ -5,7 +5,7 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIntersectionType
 import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConeStructType
@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.ConeUnionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.type
 
 internal fun ConeCangJieType.collectTypeVariableNames(result: MutableSet<String>) {
     when (this) {
@@ -22,7 +23,7 @@ internal fun ConeCangJieType.collectTypeVariableNames(result: MutableSet<String>
         is ConeClassLikeType -> typeArguments.forEach { it.collectTypeVariableNames(result) }
         is ConeStructType -> typeArguments.forEach { it.collectTypeVariableNames(result) }
         is ConeEnumType -> typeArguments.forEach { it.collectTypeVariableNames(result) }
-        is ConeFuncType -> {
+        is ConeFunctionType -> {
             parameterTypes.forEach { it.collectTypeVariableNames(result) }
             returnType.collectTypeVariableNames(result)
         }

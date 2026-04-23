@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
 extend<T> Array<T> {
     public static prop ns: Int64 {
         get() {
@@ -15,16 +13,5 @@ extend<T> Array<T> {
 }
 
 main(): Int64 {
-    return Array.ns
+    return <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>Array<!>.ns
 }
-
-/* SCAN
-error: generic type should be used with type argument
-  ==> extend_array_static.cj:18:12:
-   | 
-18 |     return Array.ns
-   |            ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

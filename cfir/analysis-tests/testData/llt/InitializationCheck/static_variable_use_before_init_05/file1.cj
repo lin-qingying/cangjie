@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: file2.cj
-// ERRCHECK: %compiler %cmp_opt %f file2.cj -o %output
-
 // Test for sub class using parent class's static member in different file
 // Circular initialization
 
@@ -23,14 +21,3 @@ main() {
     }
     return 1
 }
-
-/* SCAN
-error: variable 'y' is used before initialization
-  ==> file2.cj:10:17:
-   | 
-10 |         x = Foo.y
-   |                 ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

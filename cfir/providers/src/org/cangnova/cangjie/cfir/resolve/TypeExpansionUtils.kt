@@ -14,7 +14,7 @@ import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeCStringType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIntersectionType
 import org.cangnova.cangjie.cfir.types.ConePlaceholderType
 import org.cangnova.cangjie.cfir.types.ConePointerType
@@ -30,6 +30,7 @@ import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.types.type
 
 context(sessionHolder: SessionHolder)
 fun ConeCangJieType.fullyExpandedType(): ConeCangJieType {
@@ -126,13 +127,13 @@ private fun ConeCangJieType.substituteTypeParameters(
             ConeEnumType(lookupTag, arguments, attributes, isRefEnum)
         } ?: this
 
-        is ConeFuncType -> {
+        is ConeFunctionType -> {
             val parameterTypes = parameterTypes.substituteTypes(replacements) ?: this.parameterTypes
             val returnType = returnType.substituteTypeParameters(replacements)
             if (parameterTypes === this.parameterTypes && returnType === this.returnType) {
                 this
             } else {
-                ConeFuncType(parameterTypes, returnType, isCFunc, isClosureType, hasVariableLenArg, attributes)
+                ConeFunctionType(parameterTypes, returnType, isCFunc, isClosureType, hasVariableLenArg, attributes)
             }
         }
 
@@ -207,7 +208,7 @@ private fun ConeCangJieType.substituteArguments(
         val substitutedType = projection.type.substituteTypeParameters(replacements)
         if (substitutedType !== projection.type) {
             changed = true
-            ConeTypeProjection(substitutedType)
+            substitutedType
         } else {
             projection
         }
@@ -237,7 +238,7 @@ private fun ConeCangJieType.withAttributes(newAttributes: ConeAttributes): ConeC
         is ConePrimitiveType -> ConePrimitiveType(kind, newAttributes)
         is ConeCStringType -> ConeCStringType(newAttributes)
         is ConeTypeParameterType -> ConeTypeParameterTypeImpl(lookupTag, newAttributes)
-        is ConeFuncType -> ConeFuncType(parameterTypes, returnType, isCFunc, isClosureType, hasVariableLenArg, newAttributes)
+        is ConeFunctionType -> ConeFunctionType(parameterTypes, returnType, isCFunc, isClosureType, hasVariableLenArg, newAttributes)
         is ConeTupleType -> ConeTupleType(elementTypes, newAttributes)
         is ConeVArrayType -> ConeVArrayType(elementType, size, newAttributes)
         is ConePointerType -> ConePointerType(pointeeType, newAttributes)
@@ -251,4 +252,3 @@ private fun ConeCangJieType.withAttributes(newAttributes: ConeAttributes): ConeC
         else -> this
     }
 }
-

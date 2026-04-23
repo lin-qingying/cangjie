@@ -5,10 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: ./testa.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt testa.cj -o testa.%middle
-// EXEC: %compiler %cmp_opt testa.%middle %f -o %output
-// EXEC: %run %run_opt %output %run_args
-
 import pkg1.*
 
 main() {

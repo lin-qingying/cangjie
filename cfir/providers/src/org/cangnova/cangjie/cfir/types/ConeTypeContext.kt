@@ -94,7 +94,7 @@ interface ConeTypeContext :
 
     override fun CangJieTypeMarker.asTypeArgument(): TypeArgumentMarker {
         require(this is ConeCangJieType)
-        return ConeTypeProjection(this)
+        return this
     }
 
     override fun TypeArgumentMarker.getType(): CangJieTypeMarker? {
@@ -104,7 +104,7 @@ interface ConeTypeContext :
 
     override fun TypeArgumentMarker.replaceType(newType: CangJieTypeMarker): TypeArgumentMarker {
         require(newType is ConeCangJieType)
-        return ConeTypeProjection(newType)
+        return newType
     }
 
     override fun TypeConstructorMarker.parametersCount(): Int = getParameters().size

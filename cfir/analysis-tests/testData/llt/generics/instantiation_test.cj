@@ -4,10 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-
-interface a<b, c> where b <: Int8, c <: d<UInt8, Range<UInt16>> {
-    static func e<b, c>(f!: Float64) where b <: UInt64, c <: Int64 {
+interface a<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>b<!>, c> where b <: Int8, c <: d<UInt8, Range<UInt16>> {
+    static func e<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>b<!>, <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>c<!>>(f!: Float64) where b <: UInt64, c <: Int64 {
         {=>} is d<UInt8, Range<UInt16>>
     }
 }
@@ -36,28 +34,3 @@ main() {
     l()
     0
 }
-
-/* SCAN
-error: the upper bound 'Int8' of generic parameter 'Generics-b' must be class or interface
- ==> instantiation_test.cj:9:13:
-  | 
-9 | interface a<b, c> where b <: Int8, c <: d<UInt8, Range<UInt16>> {
-  |             ^ 
-  | 
-
-error: the upper bound 'UInt64' of generic parameter 'Generics-b' must be class or interface
-  ==> instantiation_test.cj:10:19:
-   | 
-10 |     static func e<b, c>(f!: Float64) where b <: UInt64, c <: Int64 {
-   |                   ^ 
-   | 
-
-error: the upper bound 'Int64' of generic parameter 'Generics-c' must be class or interface
-  ==> instantiation_test.cj:10:22:
-   | 
-10 |     static func e<b, c>(f!: Float64) where b <: UInt64, c <: Int64 {
-   |                      ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

@@ -1,5 +1,9 @@
 package org.cangnova.cangjie.analysis.api.renderer.declarations
 
+import org.cangnova.cangjie.analysis.api.CaSession
+import org.cangnova.cangjie.analysis.api.annotations.CaAnnotated
+import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
+
 /**
  * renderer 代码风格协议。
  *
@@ -7,7 +11,19 @@ package org.cangnova.cangjie.analysis.api.renderer.declarations
  * 可以在这一层继续扩展。
  */
 interface CaRendererCodeStyle {
-    val spaceAfterColon: Boolean
+    public fun getIndentSize(analysisSession: CaSession): Int
 
-    val spaceAfterComma: Boolean
+    public fun getSeparatorAfterContextReceivers(analysisSession: CaSession): String
+
+    public fun getSeparatorBetweenAnnotationAndOwner(analysisSession: CaSession, symbol: CaAnnotated): String
+
+    public fun getSeparatorBetweenAnnotations(analysisSession: CaSession, symbol: CaAnnotated): String
+
+    public fun getSeparatorBetweenModifiers(analysisSession: CaSession): String
+
+    public fun getSeparatorBetweenMembers(
+        analysisSession: CaSession,
+        first: CaDeclarationSymbol,
+        second:CaDeclarationSymbol,
+    ): String
 }

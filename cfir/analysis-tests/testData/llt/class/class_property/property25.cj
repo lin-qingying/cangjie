@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 open class A {
     public static var x: Int64 = 5
     public mut static prop v: Int64 {

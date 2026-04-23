@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: apilevel.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt apilevel.cj -o apilevel.%middle
-// ERRCHECK: %compiler %cmp_opt apilevel.%middle %n.cj -o %n.%suffix --cfg=APILevel_level=20
 
 import ohos.labels.*
 
@@ -16,16 +14,5 @@ class A {
 }
 
 main() {
-    var a = A()
+    var a = <!APILEVEL_REF_HIGHER!>A()<!>
 }
-
-/* SCAN
-error: cannot reference 'A'(level: 21) which higher than level of the current scope(level: 20)
-  ==> call_construct.cj:19:13:
-   | 
-19 |     var a = A()
-   |             ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

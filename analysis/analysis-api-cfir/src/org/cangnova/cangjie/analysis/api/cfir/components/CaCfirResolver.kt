@@ -2,18 +2,17 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 
 import org.cangnova.cangjie.analysis.api.cfir.*
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.symbols.getExtendPublicSymbols
-import org.cangnova.cangjie.analysis.api.cfir.symbols.getPublicSymbol
+import org.cangnova.cangjie.analysis.api.cfir.references.CaCfirReference
 import org.cangnova.cangjie.analysis.api.cfir.symbols.publicSymbolCacheKeyOrNull
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirBackedSymbol
 import org.cangnova.cangjie.analysis.api.components.CaResolver
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.resolution.CaCallInfo
 import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
-import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.idea.references.mainReference
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjMatchEntry
 import org.cangnova.cangjie.psi.CjReferenceExpression
@@ -21,6 +20,8 @@ import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjVarOrEnumPattern
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.psi.stubs.elements.getAllBindings
+import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
 /**
  * CFIR resolver 组件。
@@ -32,23 +33,35 @@ internal class CaCfirResolver(
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaResolver, CaCfirSessionComponent {
     override fun CjReferenceExpression.resolveToSymbols(): Collection<CaSymbol> = withValidityAssertion {
-        val matchBranchBindings = restoreMatchBranchPatternBindings(this@resolveToSymbols).distinctSymbols()
-        if (matchBranchBindings.isNotEmpty()) {
-            return@withValidityAssertion matchBranchBindings
+        val directSymbols = doResolveToSymbols(this)
+        if (directSymbols.isNotEmpty()) {
+            return@withValidityAssertion directSymbols
         }
 
-        val callBackedSymbols = restoreCallBackedSymbols(this@resolveToSymbols).distinctSymbols()
-        if (callBackedSymbols.isNotEmpty()) {
-            return@withValidityAssertion callBackedSymbols
+        val branchBindings = restoreMatchBranchPatternBindings(this)
+        if (branchBindings.isNotEmpty()) {
+            return@withValidityAssertion branchBindings.distinctSymbols()
         }
 
-        analysisSession.symbolQueries.resolveSymbols(this@resolveToSymbols)
-            .map(analysisSession::getPublicSymbol)
-            .distinctSymbols()
+        return@withValidityAssertion emptyList()
+    }
+
+    private fun doResolveToSymbols(referenceExpression: CjReferenceExpression): Collection<CaSymbol> {
+        val reference = referenceExpression.mainReference ?: return emptyList()
+        checkWithAttachment(
+            reference is CaCfirReference,
+            { "${reference::class.simpleName} is not extends ${CaCfirReference::class.simpleName}" },
+        ) {
+            withPsiEntry("reference", reference.element)
+        }
+
+        with(reference) {
+            return analysisSession.resolveToSymbols()
+        }
     }
 
     override fun CjElement.resolveToCall(): CaCallInfo? = withValidityAssertion {
-        analysisSession.diagnosticQueries.queryCallInfo(this@resolveToCall)
+        null
     }
 
     /**
@@ -88,71 +101,16 @@ internal class CaCfirResolver(
         }
     }
 
-    /**
-     * `resolveToSymbol()` 不能只盯住“当前 PSI 节点恰好被 low-level 语义索引命中”这一种形态。
-     *
-     * 对位上游的调用入口设计，call-shaped PSI 也需要稳定映射回目标 callable；
-     * 仓颉这里同样需要把 `call info` 作为正式语义来源之一，而不是让 `CjCallExpression`
-     * 因为索引锚点落在父节点/子节点就直接解析失败。
-     */
-    private fun restoreCallBackedSymbols(reference: CjReferenceExpression): Collection<CaSymbol> {
-        val callInfo = generateSequence(reference as com.intellij.psi.PsiElement?) { current -> current.parent }
-            .filterIsInstance<CjElement>()
-            .mapNotNull(analysisSession.diagnosticQueries::queryCallInfo)
-            .firstOrNull { resolvedCallInfo ->
-                resolvedCallInfo.successfulCall?.target != null || resolvedCallInfo.calls.any { call -> call.target != null }
-            }
-            ?: return emptyList()
-
-        val lowLevelTargets = buildList {
-            callInfo.successfulCall?.target?.let(::add)
-            callInfo.calls.mapNotNullTo(this) { call -> call.target }
-        }
-
-        val extendDispatchTargets = restoreExtendDispatchTargets(reference, callInfo)
-        if (extendDispatchTargets.isNotEmpty()) {
-            return extendDispatchTargets
-        }
-
-        return lowLevelTargets.map(analysisSession::getPublicSymbol)
-    }
-
-    /**
-     * extend 成员调用在 low-level `call target` 上可能先落到被实现的接口成员。
-     *
-     * 为了让引用、导航、查找用法统一指向真正承载实现体的 extend 成员，
-     * 这里基于接收者类型把目标回收到对应的 extend declared-member scope。
-     */
-    private fun restoreExtendDispatchTargets(
-        reference: CjReferenceExpression,
-        callInfo: CaCallInfo,
-    ): Collection<CaSymbol> {
-        val memberName = (reference as? CjSimpleNameExpression)?.referencedNameAsName
-            ?: callInfo.successfulCall?.calleeName
-            ?: return emptyList()
-
-        val receiverClassId = callInfo.successfulCall?.explicitReceiverType?.classIdOrPrimitiveClassId
-            ?: callInfo.calls.asSequence()
-                .mapNotNull { call -> call.explicitReceiverType?.classIdOrPrimitiveClassId }
-                .firstOrNull()
-            ?: return emptyList()
-
-        return analysisSession.getExtendPublicSymbols(receiverClassId)
-            .flatMap { extendSymbol ->
-                with(analysisSession) {
-                    extendSymbol.declaredMemberScope.getCallableSymbols(memberName)
-                }
-            }
-            .onEach { symbol ->
-                (symbol as? CaCfirBackedSymbol<*>)?.backingSymbol?.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
-            }
-            .distinctSymbols()
-    }
-
     private fun resolvePatternBindingSymbolByPsi(psi: com.intellij.psi.PsiElement): CaPatternBindingSymbol? {
-        return analysisSession.symbolQueries.lookupSymbolsByPsi(psi)
-            .map(analysisSession::getPublicSymbol)
+        val cfirDeclaration = (psi as? CjElement)
+            ?.getOrBuildCfir(analysisSession.resolutionFacade) as? CfirDeclaration
+            ?: return null
+        return listOf(buildPublicSymbol(cfirDeclaration.symbol))
             .filterIsInstance<CaPatternBindingSymbol>()
             .firstOrNull()
+    }
+
+    private fun buildPublicSymbol(symbol: CfirBasedSymbol<*>): CaSymbol {
+        return analysisSession.cfirSymbolBuilder.buildSymbol(symbol)
     }
 }

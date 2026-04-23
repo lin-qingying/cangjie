@@ -4,10 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 class A {
-    public var a = f
+    public var a = <!USED_BEFORE_INITIALIZATION!>f<!>
     public var b: () -> Int64
     public var d = g
     public static var e = g
@@ -31,14 +29,3 @@ class A {
         return 1
     }
 }
-
-/* SCAN
-error: 'f' is not allowed to be accessed before all member variables are initialized
-  ==> class_no_member_func_use_before_init2.cj:10:20:
-   | 
-10 |     public var a = f
-   |                    ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -1,0 +1,1088 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>ohos.security.crypto（加解密算法库框架） - API 参考</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../assets/style.css">
+        <link rel="stylesheet" href="../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item "><a href="../../cover0.html"><strong aria-hidden="true">1.</strong> API参考（封面）</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.</strong> 仓颉API</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">2.1.</strong> Ability框架</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability.html"><strong aria-hidden="true">2.1.1.</strong> Ability</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityStage.html"><strong aria-hidden="true">2.1.2.</strong> AbilityStage</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-context.html"><strong aria-hidden="true">2.1.3.</strong> AbilityContext</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-want.html"><strong aria-hidden="true">2.1.4.</strong> Want</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-wantConstant.html"><strong aria-hidden="true">2.1.5.</strong> wantConstant</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-errorManager.html"><strong aria-hidden="true">2.1.6.</strong> errorManager</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry.html"><strong aria-hidden="true">2.1.7.</strong> AbilityDelegatorRegistry</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-abilityDelegator.html"><strong aria-hidden="true">2.1.8.</strong> AbilityDelegator</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-shellCmdResult.html"><strong aria-hidden="true">2.1.9.</strong> shellCmdResult</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/support-definitions.html"><strong aria-hidden="true">2.2.1.</strong> 系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-common-event-manager.html"><strong aria-hidden="true">2.2.2.</strong> ohos.common_event_manager（公共事件模块）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-emitter.html"><strong aria-hidden="true">2.2.3.</strong> ohos.emitter（事件处理调度）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-manager.html"><strong aria-hidden="true">2.2.4.</strong> ohos.notification_manager（通知管理模块）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.5.</strong> application</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-application-eventHub.html"><strong aria-hidden="true">2.2.5.1.</strong> EventHub</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.6.</strong> commonEvent</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventData.html"><strong aria-hidden="true">2.2.6.1.</strong> CommonEventData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventPublishData.html"><strong aria-hidden="true">2.2.6.2.</strong> CommonEventPublishData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscriber.html"><strong aria-hidden="true">2.2.6.3.</strong> CommonEventSubscriber</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscribeInfo.html"><strong aria-hidden="true">2.2.6.4.</strong> CommonEventSubscribeInfo</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.7.</strong> notification</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationRequest.html"><strong aria-hidden="true">2.2.7.1.</strong> NotificationRequest</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationContent.html"><strong aria-hidden="true">2.2.7.2.</strong> NotificationContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.8.</strong> 公共事件定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ability.html"><strong aria-hidden="true">2.2.8.1.</strong> 元能力子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-account.html"><strong aria-hidden="true">2.2.8.2.</strong> 账号子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ans.html"><strong aria-hidden="true">2.2.8.3.</strong> 通知服务公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-bundleManager.html"><strong aria-hidden="true">2.2.8.4.</strong> 包管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-filemanagement.html"><strong aria-hidden="true">2.2.8.5.</strong> 文件管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-locale.html"><strong aria-hidden="true">2.2.8.6.</strong> 语言子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-mms.html"><strong aria-hidden="true">2.2.8.7.</strong> 短信应用公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-netmanager.html"><strong aria-hidden="true">2.2.8.8.</strong> 网络管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-nfc.html"><strong aria-hidden="true">2.2.8.9.</strong> NFC子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-powermgr.html"><strong aria-hidden="true">2.2.8.10.</strong> 电源管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-resourceschedule.html"><strong aria-hidden="true">2.2.8.11.</strong> 资源调度子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-screenlock.html"><strong aria-hidden="true">2.2.8.12.</strong> 主题框架子系统-锁屏管理公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-telephony.html"><strong aria-hidden="true">2.2.8.13.</strong> 电话服务子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-time.html"><strong aria-hidden="true">2.2.8.14.</strong> 时间时区子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-usb.html"><strong aria-hidden="true">2.2.8.15.</strong> USB子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-wifi.html"><strong aria-hidden="true">2.2.8.16.</strong> Wifi子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-window.html"><strong aria-hidden="true">2.2.8.17.</strong> 窗口管理子系统公共事件定义</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager.html"><strong aria-hidden="true">2.3.1.</strong> ohos.bundle_manager（bundleManager管理）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.2.</strong> bundle_manager</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-abilityInfo.html"><strong aria-hidden="true">2.3.2.1.</strong> AbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-applicationInfo.html"><strong aria-hidden="true">2.3.2.2.</strong> ApplicationInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-bundleInfo.html"><strong aria-hidden="true">2.3.2.3.</strong> BundleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-extensionAbilityInfo.html"><strong aria-hidden="true">2.3.2.4.</strong> ExtensionAbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-hapModuleInfo.html"><strong aria-hidden="true">2.3.2.5.</strong> HapModuleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-metadata.html"><strong aria-hidden="true">2.3.2.6.</strong> Metadata</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-animator.html"><strong aria-hidden="true">2.4.1.</strong> ohos.animator（动画）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-font.html"><strong aria-hidden="true">2.4.2.</strong> ohos.font（自定义字体）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-measure.html"><strong aria-hidden="true">2.4.3.</strong> ohos.measure（文本计算）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-prompt.html"><strong aria-hidden="true">2.4.4.</strong> ohos.prompt_action（弹窗）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-router.html"><strong aria-hidden="true">2.4.5.</strong> ohos.router（页面路由）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-display.html"><strong aria-hidden="true">2.5.1.</strong> ohos.display（屏幕属性）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-colorManager.html"><strong aria-hidden="true">2.5.2.</strong> ohos.colorManager（色彩管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-window.html"><strong aria-hidden="true">2.5.3.</strong> ohos.window（窗口）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-image.html"><strong aria-hidden="true">2.6.1.</strong> ohos.multimedia.image（图片处理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-i18n.html"><strong aria-hidden="true">2.7.1.</strong> ohos.i18n（国际化-I18n）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resource-manager.html"><strong aria-hidden="true">2.7.2.</strong> ohos.resource_manager（资源管理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-backgroundTaskManager.html"><strong aria-hidden="true">2.8.1.</strong> ohos.resourceschedule.backgroundTaskManager（后台任务管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-workScheduler.html"><strong aria-hidden="true">2.8.2.</strong> ohos.resourceschedule.workScheduler（延迟任务调度）</a></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-access-ctrl.html"><strong aria-hidden="true">2.9.1.</strong> ohos.abilityAccessCtrl（程序访问控制管理）</a></li><li class="chapter-item expanded "><a href="../../source_zh_cn/apis/cj-apis-crypto.html" class="active"><strong aria-hidden="true">2.9.2.</strong> ohos.security.crypto（加解密算法库框架）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-huks.html"><strong aria-hidden="true">2.9.3.</strong> ohos.security.huks（通用密钥库系统）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-user-auth.html"><strong aria-hidden="true">2.9.4.</strong> ohos.userIAM.userAuth（用户认证）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-asset.html"><strong aria-hidden="true">2.9.5.</strong> ohos.asset_store（关键资产存储服务）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.6.</strong> 访问控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/security/AccessToken/cj-permissions-for-all.html"><strong aria-hidden="true">2.9.6.1.</strong> 应用权限列表</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-distributedKVStore.html"><strong aria-hidden="true">2.10.1.</strong> ohos.data.distributed（分布式键值数据库）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-preferences.html"><strong aria-hidden="true">2.10.2.</strong> ohos.data.preferences（用户首选项）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-relationalStore.html"><strong aria-hidden="true">2.10.3.</strong> ohos.data.relationalStore（关系型数据库）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fileuri.html"><strong aria-hidden="true">2.11.1.</strong> ohos.file.fileuri（文件URI）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fs.html"><strong aria-hidden="true">2.11.2.</strong> ohos.file.fs（文件管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-picker.html"><strong aria-hidden="true">2.11.3.</strong> ohos.file.picker（选择器）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-telephony-data.html"><strong aria-hidden="true">2.12.1.</strong> ohos.telephony.call（拨打电话）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-vibrator.html"><strong aria-hidden="true">2.13.1.</strong> ohos.vibrator（振动）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-connection.html"><strong aria-hidden="true">2.14.1.</strong> ohos.net.connection（网络连接管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-http.html"><strong aria-hidden="true">2.14.2.</strong> ohos.net.http（数据请求）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-request.html"><strong aria-hidden="true">2.14.3.</strong> ohos.request（上传下载）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hiappevent.html"><strong aria-hidden="true">2.15.1.</strong> ohos.hiAppEvent（应用事件打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracechain.html"><strong aria-hidden="true">2.15.2.</strong> ohos.hiTraceChain（分布式跟踪）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracemeter.html"><strong aria-hidden="true">2.15.3.</strong> ohos.hiTraceMeter（性能打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hilog.html"><strong aria-hidden="true">2.15.4.</strong> ohos.hilog (HiLog日志打印)</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-pasteboard.html"><strong aria-hidden="true">2.15.5.</strong> ohos.pasteboard（剪切板）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-date-time.html"><strong aria-hidden="true">2.15.6.</strong> ohos.systemDateTime（系统时间、时区）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-webview.html"><strong aria-hidden="true">2.15.7.</strong> ohos.web.webview（Webview）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-device-info.html"><strong aria-hidden="true">2.16.1.</strong> ohos.deviceInfo（设备信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.17.</strong> 系统参数</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-parameterEnhance-sys.html"><strong aria-hidden="true">2.17.1.</strong> ohos.systemParameterEnhance（系统参数）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.18.</strong> 其他</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-base.html"><strong aria-hidden="true">2.18.1.</strong> ohos.base（公共回调信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.19.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-uitest.html"><strong aria-hidden="true">2.19.1.</strong> ohos.ui_test（UI测试）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.</strong> 错误码参考</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-universal.html"><strong aria-hidden="true">2.20.1.</strong> 通用错误码</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.2.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-bundle.html"><strong aria-hidden="true">2.20.2.1.</strong> 包管理子系统通用错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.3.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-CommonEventService.html"><strong aria-hidden="true">2.20.3.1.</strong> 事件错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-notification.html"><strong aria-hidden="true">2.20.3.2.</strong> 通知错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-animator.html"><strong aria-hidden="true">2.20.4.1.</strong> 动画错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-colorspace-manager.html"><strong aria-hidden="true">2.20.5.1.</strong> 色彩管理错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-display.html"><strong aria-hidden="true">2.20.5.2.</strong> 屏幕错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-window.html"><strong aria-hidden="true">2.20.5.3.</strong> 窗口错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-image.html"><strong aria-hidden="true">2.20.6.1.</strong> Image错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-i18n.html"><strong aria-hidden="true">2.20.7.1.</strong> I18n错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-resource-manager.html"><strong aria-hidden="true">2.20.7.2.</strong> 资源管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-backgroundTaskMgr.html"><strong aria-hidden="true">2.20.8.1.</strong> backgroundTaskManager错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-workScheduler.html"><strong aria-hidden="true">2.20.8.2.</strong> workScheduler错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-access-token.html"><strong aria-hidden="true">2.20.9.1.</strong> 访问控制错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-huks.html"><strong aria-hidden="true">2.20.9.2.</strong> huks错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-crypto.html"><strong aria-hidden="true">2.20.9.3.</strong> crypto错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-asset.html"><strong aria-hidden="true">2.20.9.4.</strong> 关键资产存储服务错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-data-rdb.html"><strong aria-hidden="true">2.20.10.1.</strong> 关系型数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-distributedKVStore.html"><strong aria-hidden="true">2.20.10.2.</strong> 分布式键值数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-preferences.html"><strong aria-hidden="true">2.20.10.3.</strong> 用户首选项错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-filemanagement.html"><strong aria-hidden="true">2.20.11.1.</strong> 文件管理子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-telephony.html"><strong aria-hidden="true">2.20.12.1.</strong> 电话子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-vibrator.html"><strong aria-hidden="true">2.20.13.1.</strong> vibrator错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-request.html"><strong aria-hidden="true">2.20.14.1.</strong> 上传下载错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-http.html"><strong aria-hidden="true">2.20.14.2.</strong> HTTP错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-connection.html"><strong aria-hidden="true">2.20.14.3.</strong> 网络连接管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-hiappevent.html"><strong aria-hidden="true">2.20.15.1.</strong> 应用事件打点错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-pasteboard.html"><strong aria-hidden="true">2.20.15.2.</strong> 剪贴板错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-errorManager.html"><strong aria-hidden="true">2.20.15.3.</strong> 错误观察器错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-time.html"><strong aria-hidden="true">2.20.15.4.</strong> 时间时区错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-webview.html"><strong aria-hidden="true">2.20.15.5.</strong> Web错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-system-parameter.html"><strong aria-hidden="true">2.20.16.1.</strong> 系统参数错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.17.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-uitest.html"><strong aria-hidden="true">2.20.17.1.</strong> uitest错误码</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.</strong> 仓颉组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.</strong> 组件通用信息</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.1.</strong> 通用事件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-click.html"><strong aria-hidden="true">3.1.1.1.</strong> 点击事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-touch.html"><strong aria-hidden="true">3.1.1.2.</strong> 触摸事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-appear.html"><strong aria-hidden="true">3.1.1.3.</strong> 挂载卸载事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-drag.html"><strong aria-hidden="true">3.1.1.4.</strong> 拖拽事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-key.html"><strong aria-hidden="true">3.1.1.5.</strong> 按键事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-focus.html"><strong aria-hidden="true">3.1.1.6.</strong> 焦点事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-mouse.html"><strong aria-hidden="true">3.1.1.7.</strong> 鼠标事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-component-area-change-event.html"><strong aria-hidden="true">3.1.1.8.</strong> 组件区域变化事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-keyboardshortcut.html"><strong aria-hidden="true">3.1.1.9.</strong> 组件快捷键事件</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.</strong> 通用属性</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-size.html"><strong aria-hidden="true">3.1.2.1.</strong> 尺寸设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-location.html"><strong aria-hidden="true">3.1.2.2.</strong> 位置设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-layout-constraints.html"><strong aria-hidden="true">3.1.2.3.</strong> 布局约束</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-flex-layout.html"><strong aria-hidden="true">3.1.2.4.</strong> Flex布局</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-border.html"><strong aria-hidden="true">3.1.2.5.</strong> 边框设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-background.html"><strong aria-hidden="true">3.1.2.6.</strong> 背景设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-opacity.html"><strong aria-hidden="true">3.1.2.7.</strong> 透明度设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-visibility.html"><strong aria-hidden="true">3.1.2.8.</strong> 显隐控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-enable.html"><strong aria-hidden="true">3.1.2.9.</strong> 禁用控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-overlay.html"><strong aria-hidden="true">3.1.2.10.</strong> 浮层</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-z-order.html"><strong aria-hidden="true">3.1.2.11.</strong> Z序控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transform.html"><strong aria-hidden="true">3.1.2.12.</strong> 图形变换</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-image-effect.html"><strong aria-hidden="true">3.1.2.13.</strong> 图像效果</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-shap-clip.html"><strong aria-hidden="true">3.1.2.14.</strong> 形状裁剪</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-gradient-color.html"><strong aria-hidden="true">3.1.2.15.</strong> 颜色渐变</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-popup.html"><strong aria-hidden="true">3.1.2.16.</strong> Popup控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-menu.html"><strong aria-hidden="true">3.1.2.17.</strong> 菜单控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-focus.html"><strong aria-hidden="true">3.1.2.18.</strong> 焦点控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-component-id.html"><strong aria-hidden="true">3.1.2.19.</strong> 组件标识</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-color.html"><strong aria-hidden="true">3.1.2.20.</strong> 前景色设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-blur-style.html"><strong aria-hidden="true">3.1.2.21.</strong> 组件内容模糊</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-touch-target.html"><strong aria-hidden="true">3.1.2.22.</strong> 触摸热区设置</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.23.</strong> 模态转场设置</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-bindcontentcover.html"><strong aria-hidden="true">3.1.2.23.1.</strong> 全屏模态转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sheet-transition.html"><strong aria-hidden="true">3.1.2.23.2.</strong> 半模态转场</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-text-style.html"><strong aria-hidden="true">3.1.2.24.</strong> 文本通用</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-expand-safe-area.html"><strong aria-hidden="true">3.1.2.25.</strong> 安全区域</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-renderfit.html"><strong aria-hidden="true">3.1.2.26.</strong> 组件内容填充方式</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.2.</strong> 基础组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-alphabet-indexer.html"><strong aria-hidden="true">3.2.1.</strong> AlphabetIndexer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-blank.html"><strong aria-hidden="true">3.2.2.</strong> Blank</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-button.html"><strong aria-hidden="true">3.2.3.</strong> Button</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkbox.html"><strong aria-hidden="true">3.2.4.</strong> Checkbox</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkboxgroup.html"><strong aria-hidden="true">3.2.5.</strong> CheckboxGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-datapanel.html"><strong aria-hidden="true">3.2.6.</strong> DataPanel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-datepicker.html"><strong aria-hidden="true">3.2.7.</strong> Datepicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-divider.html"><strong aria-hidden="true">3.2.8.</strong> Divider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-gauge.html"><strong aria-hidden="true">3.2.9.</strong> Gauge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-image.html"><strong aria-hidden="true">3.2.10.</strong> Image</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-imageSpan.html"><strong aria-hidden="true">3.2.11.</strong> ImageSpan</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-loadingprogress.html"><strong aria-hidden="true">3.2.12.</strong> LoadingProgress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menu.html"><strong aria-hidden="true">3.2.13.</strong> Menu</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitem.html"><strong aria-hidden="true">3.2.14.</strong> MenuItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitemgroup.html"><strong aria-hidden="true">3.2.15.</strong> MenuItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-progress.html"><strong aria-hidden="true">3.2.16.</strong> Progress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-qrcode.html"><strong aria-hidden="true">3.2.17.</strong> QRCode</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-radio.html"><strong aria-hidden="true">3.2.18.</strong> Radio</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rating.html"><strong aria-hidden="true">3.2.19.</strong> Rating</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richeditor.html"><strong aria-hidden="true">3.2.20.</strong> RichEditor</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richtext.html"><strong aria-hidden="true">3.2.21.</strong> RichText</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-scrollbar.html"><strong aria-hidden="true">3.2.22.</strong> ScrollBar</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-search.html"><strong aria-hidden="true">3.2.23.</strong> Search</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-select.html"><strong aria-hidden="true">3.2.24.</strong> Select</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-slider.html"><strong aria-hidden="true">3.2.25.</strong> Slider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-span.html"><strong aria-hidden="true">3.2.26.</strong> Span</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepper.html"><strong aria-hidden="true">3.2.27.</strong> Stepper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepperitem.html"><strong aria-hidden="true">3.2.28.</strong> Stepperitem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-text.html"><strong aria-hidden="true">3.2.29.</strong> Text</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textarea.html"><strong aria-hidden="true">3.2.30.</strong> TextArea</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textclock.html"><strong aria-hidden="true">3.2.31.</strong> TextClock</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textinput.html"><strong aria-hidden="true">3.2.32.</strong> TextInput</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textpicker.html"><strong aria-hidden="true">3.2.33.</strong> TextPicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-texttimer.html"><strong aria-hidden="true">3.2.34.</strong> TextTimer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-toggle.html"><strong aria-hidden="true">3.2.35.</strong> Toggle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-web.html"><strong aria-hidden="true">3.2.36.</strong> Web</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.3.</strong> 容器组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-badge.html"><strong aria-hidden="true">3.3.1.</strong> Badge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-column.html"><strong aria-hidden="true">3.3.2.</strong> Column</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-columnsplit.html"><strong aria-hidden="true">3.3.3.</strong> ColumnSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-flex.html"><strong aria-hidden="true">3.3.4.</strong> Flex</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-col.html"><strong aria-hidden="true">3.3.5.</strong> GridCol</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-row.html"><strong aria-hidden="true">3.3.6.</strong> GridRow</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid.html"><strong aria-hidden="true">3.3.7.</strong> Grid</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-item.html"><strong aria-hidden="true">3.3.8.</strong> GridItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list.html"><strong aria-hidden="true">3.3.9.</strong> List</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-listitem.html"><strong aria-hidden="true">3.3.10.</strong> ListItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list-group.html"><strong aria-hidden="true">3.3.11.</strong> ListItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-panel.html"><strong aria-hidden="true">3.3.12.</strong> Panel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-refresh.html"><strong aria-hidden="true">3.3.13.</strong> Refresh</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-relativecontainer.html"><strong aria-hidden="true">3.3.14.</strong> RelativeContainer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-row.html"><strong aria-hidden="true">3.3.15.</strong> Row</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rowsplit.html"><strong aria-hidden="true">3.3.16.</strong> RowSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-scroll.html"><strong aria-hidden="true">3.3.17.</strong> Scroll</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-stack.html"><strong aria-hidden="true">3.3.18.</strong> Stack</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-swiper.html"><strong aria-hidden="true">3.3.19.</strong> Swiper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabs.html"><strong aria-hidden="true">3.3.20.</strong> Tabs</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabcontent.html"><strong aria-hidden="true">3.3.21.</strong> TabContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.4.</strong> 绘制组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-circle.html"><strong aria-hidden="true">3.4.1.</strong> Circle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-line.html"><strong aria-hidden="true">3.4.2.</strong> Line</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-rect.html"><strong aria-hidden="true">3.4.3.</strong> Rect</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-shape.html"><strong aria-hidden="true">3.4.4.</strong> Shape</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.5.</strong> 画布组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas.html"><strong aria-hidden="true">3.5.1.</strong> Canvas</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-gradient.html"><strong aria-hidden="true">3.5.2.</strong> CanvasGradient</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-rendering-context-2d.html"><strong aria-hidden="true">3.5.3.</strong> CanvasRenderingContext2D</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-imagebitmap.html"><strong aria-hidden="true">3.5.4.</strong> ImageBitmap</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.6.</strong> 渲染控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-ifelse.html"><strong aria-hidden="true">3.6.1.</strong> if/else</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-foreach.html"><strong aria-hidden="true">3.6.2.</strong> ForEach</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-lazyforeach.html"><strong aria-hidden="true">3.6.3.</strong> LazyForEach</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.</strong> 动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-animation.html"><strong aria-hidden="true">3.7.1.</strong> 属性动画</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-methods-animateTo.html"><strong aria-hidden="true">3.7.2.</strong> 显式动画</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.3.</strong> 转场动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-page-transition.html"><strong aria-hidden="true">3.7.3.1.</strong> 页面间转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transition.html"><strong aria-hidden="true">3.7.3.2.</strong> 组件内转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sharedTransition.html"><strong aria-hidden="true">3.7.3.3.</strong> 共享元素转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-geometryTransition.html"><strong aria-hidden="true">3.7.3.4.</strong> 组件内隐式共享元素转场</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.8.</strong> 全局UI方法</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.8.1.</strong> 弹窗</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-alert-dialog-box.html"><strong aria-hidden="true">3.8.1.1.</strong> 警告弹窗</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-customdialog.html"><strong aria-hidden="true">3.8.1.2.</strong> 自定义弹窗</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-menu.html"><strong aria-hidden="true">3.8.2.</strong> 菜单</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.9.</strong> 自定义组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-custom-component-lifecycle.html"><strong aria-hidden="true">3.9.1.</strong> 自定义组件的生命周期</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.10.</strong> 类型定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-enums.html"><strong aria-hidden="true">3.10.1.</strong> 基础类型定义</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-pixel-units.html"><strong aria-hidden="true">3.11.</strong> 像素单位</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-state-management-manual.html"><strong aria-hidden="true">3.12.</strong> 状态管理</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-config.html"><strong aria-hidden="true">3.13.</strong> 应用配置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-thread.html"><strong aria-hidden="true">3.14.</strong> 线程控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid.html"><strong aria-hidden="true">3.15.</strong> 混合开发V1</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid-v2.html"><strong aria-hidden="true">3.16.</strong> 混合开发V2</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.17.</strong> 管理应用拥有的状态</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-app-storage.html"><strong aria-hidden="true">3.17.1.</strong> AppStorage（应用全局的UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-local-storage.html"><strong aria-hidden="true">3.17.2.</strong> LocalStorage（页面级UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-persistent-storage.html"><strong aria-hidden="true">3.17.3.</strong> PersistentStorage（持久化存储UI状态）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-environment.html"><strong aria-hidden="true">3.17.4.</strong> Environment（设备环境查询）</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_ui_framework.html"><strong aria-hidden="true">3.18.</strong> 框架接口</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkinterop/cj-ark-interop-apis.html"><strong aria-hidden="true">4.</strong> 仓颉与ArkTS互操作库</a></li><li class="chapter-item "><a href="../../source_zh_cn/cj-libs-api.html"><strong aria-hidden="true">5.</strong> 仓颉编程语言库API</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">API 参考</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="ohossecuritycrypto加解密算法库框架"><a class="header" href="#ohossecuritycrypto加解密算法库框架">ohos.security.crypto（加解密算法库框架）</a></h1>
+<p>为屏蔽底层硬件和算法库，向上提供统一的密码算法库加解密相关接口。</p>
+<h2 id="导入模块"><a class="header" href="#导入模块">导入模块</a></h2>
+<pre><code class="language-cangjie">import ohos.crypto.*
+</code></pre>
+<h2 id="enum-result"><a class="header" href="#enum-result">enum Result</a></h2>
+<pre><code class="language-cangjie">public enum Result &lt;: ToString{
+   | INVALID_PARAMS
+   | NOT_SUPPORT
+   | ERR_OUT_OF_MEMORY
+   | ERR_RUNTIME_ERROR
+   | ERR_CRYPTO_OPERATION
+}
+</code></pre>
+<p>表示执行结果的枚举。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">INVALID_PARAMS</td><td style="text-align: left">401</td><td style="text-align: left">非法入参。</td></tr>
+<tr><td style="text-align: left">NOT_SUPPORT</td><td style="text-align: left">801</td><td style="text-align: left">操作不支持。</td></tr>
+<tr><td style="text-align: left">ERR_OUT_OF_MEMORY</td><td style="text-align: left">17620001</td><td style="text-align: left">内存错误。</td></tr>
+<tr><td style="text-align: left">ERR_RUNTIME_ERROR</td><td style="text-align: left">17620002</td><td style="text-align: left">运行时外部错误。</td></tr>
+<tr><td style="text-align: left">ERR_CRYPTO_OPERATION</td><td style="text-align: left">17630001</td><td style="text-align: left">调用三方算法库API出错。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-getvalue"><a class="header" href="#func-getvalue">func getValue()</a></h3>
+<pre><code class="language-cangjie">public func getValue(): Int32
+</code></pre>
+<p>获取枚举的值。</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Int32</td><td style="text-align: left">枚举的值。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-tostring"><a class="header" href="#func-tostring">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>获取枚举的值。</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">String</td><td style="text-align: left">枚举的说明。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-datablob"><a class="header" href="#struct-datablob">struct DataBlob</a></h2>
+<pre><code class="language-cangjie">public struct DataBlob{
+    public DataBlob(data: Array&lt;UInt8&gt;) {}
+}
+</code></pre>
+<p>存储数组的数据类型。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">data</td><td style="text-align: left">Array&lt;UInt8&gt;</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">数据。</td></tr>
+</tbody></table>
+</div>
+<h3 id="datablobarrayuint8"><a class="header" href="#datablobarrayuint8">DataBlob(Array&lt;UInt8&gt;)</a></h3>
+<pre><code class="language-cangjie">DataBlob(public let data: Array&lt;UInt8&gt;) {}
+</code></pre>
+<p>创建DataBlob实例。</p>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let blob = DataBlob(&quot;test&quot;.toArray())
+</code></pre>
+<h2 id="interface-paramsspec"><a class="header" href="#interface-paramsspec">interface ParamsSpec</a></h2>
+<pre><code class="language-cangjie">public interface ParamsSpec 
+</code></pre>
+<p>加解密参数，在进行对称加解密时需要构造其子类对象，并将子类对象传入<a href="#func-initcryptomode-key-paramsspec">init()</a>方法。</p>
+<p>适用于需要iv等参数的对称加解密模式（对于无iv等参数的模式如ECB模式，无需构造，在<a href="#func-initcryptomode-key-paramsspec">init()</a>中传入null即可）。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">algName</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">指明对称加解密参数的算法模式。可选值如下:<br/> - IvParamsSpec: 适用于CBC|CTR|OFB|CFB模式。。<br/> - GcmParamsSpec: 适用于GCM模式。。<br/> - CcmParamsSpec: 适用于CCM模式。。</td></tr>
+</tbody></table>
+</div>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>由于<a href="#func-initcryptomode-key-paramsspec">init()</a>的params参数是ParamsSpec类型（父类），而实际需要传入具体的子类对象（如IvParamsSpec），因此在构造子类对象时应设置其父类ParamsSpec的algName参数，使算法库在init()时知道传入的是哪种子类对象。</p>
+</blockquote>
+<h2 id="struct-ivparamsspec"><a class="header" href="#struct-ivparamsspec">struct IvParamsSpec</a></h2>
+<pre><code class="language-cangjie">public struct IvParamsSpec &lt;: ParamsSpec {
+    public mut prop algName:String
+    public mut prop iv: DataBlob
+    public init(algName: String, iv: DataBlob)
+}
+</code></pre>
+<p>加解密参数<a href="#interface-paramsspec">ParamsSpec</a>的子类，用于在对称加解密时作为<a href="#func-initcryptomode-key-paramsspec">init()</a>方法的参数。</p>
+<p>适用于CBC、CTR、OFB、CFB这些仅使用iv作为参数的加解密模式。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">iv</td><td style="text-align: left"><a href="#struct-datablob">DataBlob</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">指明加解密参数iv。常见取值如下：<br/>- AES的CBC|CTR|OFB|CFB模式：iv长度为16字节<br/>- 3DES的CBC|OFB|CFB模式：iv长度为8字节<br/>- SM4<sup>10+</sup>的CBC|CTR|OFB|CFB模式：iv长度为16字节。</td></tr>
+</tbody></table>
+</div>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>传入<a href="#func-initcryptomode-key-paramsspec">init()</a>方法前需要指定其algName属性（来源于父类<a href="#interface-paramsspec">ParamsSpec</a>）。</p>
+</blockquote>
+<h3 id="initstring-datablob"><a class="header" href="#initstring-datablob">init(String, DataBlob)</a></h3>
+<pre><code class="language-cangjie">init(algName: String, iv: DataBlob)
+</code></pre>
+<p>创建IvParamsSpec实例。</p>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let iv = IvParamsSpec(&quot;IvParamsSpec&quot;, DataBlob(Array&lt;UInt8&gt;(8, item: 1)))
+</code></pre>
+<h2 id="struct-gcmparamsspec"><a class="header" href="#struct-gcmparamsspec">struct GcmParamsSpec</a></h2>
+<pre><code class="language-cangjie">public struct GcmParamsSpec &lt;: ParamsSpec {
+    public mut prop algName: String 
+    public mut prop aad: DataBlob
+    public mut prop iv: DataBlob 
+    public mut prop authTag: DataBlob
+    public init(algName: String, iv: DataBlob, add: DataBlob, authTag: DataBlob)
+}
+</code></pre>
+<p>加解密参数<a href="#interface-paramsspec">ParamsSpec</a>的子类，用于在对称加解密时作为<a href="#func-initcryptomode-key-paramsspec">init()</a>方法的参数。</p>
+<p>适用于GCM模式。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">iv</td><td style="text-align: left"><a href="#struct-datablob">DataBlob</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">指明加解密参数iv，长度为12字节。</td></tr>
+<tr><td style="text-align: left">aad</td><td style="text-align: left"><a href="#struct-datablob">DataBlob</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">指明加解密参数aad，长度为8字节。</td></tr>
+<tr><td style="text-align: left">authTag</td><td style="text-align: left"><a href="#struct-datablob">DataBlob</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">指明加解密参数authTag，长度为16字节。<br/>采用GCM模式加密时，需要获取<a href="#func-dofinaldatablob">doFinal()</a>输出的<a href="#struct-datablob">DataBlob</a>，取出其末尾16字节作为解密时<a href="#func-initcryptomode-key-paramsspec">init()</a>方法的入参<a href="#struct-gcmparamsspec">GcmParamsSpec</a>中的的authTag。</td></tr>
+</tbody></table>
+</div>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>传入<a href="#func-initcryptomode-key-paramsspec">init()</a>方法前需要指定其algName属性（来源于父类<a href="#interface-paramsspec">ParamsSpec</a>）。</p>
+</blockquote>
+<h3 id="initstring-datablob-datablob-datablob"><a class="header" href="#initstring-datablob-datablob-datablob">init(String, DataBlob, DataBlob, DataBlob)</a></h3>
+<pre><code class="language-cangjie">public init(algName: String, iv: DataBlob, add: DataBlob, authTag: DataBlob)
+</code></pre>
+<p>创建GcmParamsSpec实例。</p>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let gcm = GcmParamsSpec(&quot;GcmParamsSpec&quot;, DataBlob(Array&lt;UInt8&gt;(12, item: 1)), DataBlob(Array&lt;UInt8&gt;(8, item: 1)), DataBlob(Array&lt;UInt8&gt;(16, item: 1)))
+</code></pre>
+<h2 id="struct-ccmparamsspec"><a class="header" href="#struct-ccmparamsspec">struct CcmParamsSpec</a></h2>
+<pre><code class="language-cangjie">public struct CcmParamsSpec &lt;: ParamsSpec {
+    public mut prop algName: String
+    public mut prop authTag: DataBlob
+    public mut prop aad: DataBlob
+    public mut prop iv: DataBlob
+    public init(algName: String, iv: DataBlob, add: DataBlob, authTag: DataBlob)
+}
+</code></pre>
+<p>加解密参数<a href="#interface-paramsspec">ParamsSpec</a>的子类，用于在对称加解密时作为<a href="#func-initcryptomode-key-paramsspec">init()</a>方法的参数。</p>
+<p>适用于CCM模式。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">iv</td><td style="text-align: left"><a href="#struct-datablob">DataBlob</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">指明加解密参数iv，长度为7字节。</td></tr>
+<tr><td style="text-align: left">aad</td><td style="text-align: left"><a href="#struct-datablob">DataBlob</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">指明加解密参数aad，长度为8字节。</td></tr>
+<tr><td style="text-align: left">authTag</td><td style="text-align: left"><a href="#struct-datablob">DataBlob</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">指明加解密参数authTag，长度为12字节。<br/>采用CCM模式加密时，需要获取<a href="#func-dofinaldatablob">doFinal()</a>输出的<a href="#struct-datablob">DataBlob</a>，取出其末尾12字节作为解密时<a href="#func-initcryptomode-key-paramsspec">init()</a>方法的入参<a href="#struct-ccmparamsspec">CcmParamsSpec</a>中的authTag。</td></tr>
+</tbody></table>
+</div>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>传入<a href="#func-initcryptomode-key-paramsspec">init()</a>方法前需要指定其algName属性（来源于父类<a href="#interface-paramsspec">ParamsSpec</a>）。</p>
+</blockquote>
+<h3 id="initstring-datablob-datablob-datablob-1"><a class="header" href="#initstring-datablob-datablob-datablob-1">init(String, DataBlob, DataBlob, DataBlob)</a></h3>
+<pre><code class="language-cangjie">init(algName: String, iv: DataBlob, add: DataBlob, authTag: DataBlob)
+</code></pre>
+<p>创建CcmParamsSpec实例。</p>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let ccm = CcmParamsSpec(&quot;CcmParamsSpec&quot;, DataBlob(Array&lt;UInt8&gt;(7, item: 1)), DataBlob(Array&lt;UInt8&gt;(8, item: 1)), DataBlob(Array&lt;UInt8&gt;(12, item: 1)))
+</code></pre>
+<h2 id="enum-cryptomode"><a class="header" href="#enum-cryptomode">enum CryptoMode</a></h2>
+<pre><code class="language-cangjie">public enum CryptoMode {
+    | ENCRYPT_MODE
+    | DECRYPT_MODE
+}
+</code></pre>
+<p>表示加解密操作的枚举。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">ENCRYPT_MODE</td><td style="text-align: left">0</td><td style="text-align: left">表示进行加密操作。</td></tr>
+<tr><td style="text-align: left">DECRYPT_MODE</td><td style="text-align: left">1</td><td style="text-align: left">表示进行解密操作。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-cipherspecitem"><a class="header" href="#enum-cipherspecitem">enum CipherSpecItem</a></h2>
+<pre><code class="language-cangjie">public enum CipherSpecItem {
+    | OAEP_MD_NAME_STR
+    | OAEP_MGF_NAME_STR
+    | OAEP_MGF1_MD_STR
+    | OAEP_MGF1_PSRC_UINT8ARR
+}
+</code></pre>
+<p>表示加解密参数的枚举，这些加解密参数支持通过setCipherSpec接口设置/通过getCipherSpec接口获取。</p>
+<p>当前只支持RSA算法和SM2算法。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">OAEP_MD_NAME_STR</td><td style="text-align: left">100</td><td style="text-align: left">表示RSA算法中，使用PKCS1_OAEP模式时，消息摘要功能的算法名。</td></tr>
+<tr><td style="text-align: left">OAEP_MGF_NAME_STR</td><td style="text-align: left">101</td><td style="text-align: left">表示RSA算法中，使用PKCS1_OAEP模式时，掩码生成算法（目前仅支持MGF1）。</td></tr>
+<tr><td style="text-align: left">OAEP_MGF1_MD_STR</td><td style="text-align: left">102</td><td style="text-align: left">表示RSA算法中，使用PKCS1_OAEP模式时，MGF1掩码生成功能的消息摘要算法。</td></tr>
+<tr><td style="text-align: left">OAEP_MGF1_PSRC_UINT8ARR</td><td style="text-align: left">103</td><td style="text-align: left">表示RSA算法中，使用PKCS1_OAEP模式时，pSource的字节流。</td></tr>
+</tbody></table>
+</div>
+<h2 id="interface-key"><a class="header" href="#interface-key">interface Key</a></h2>
+<pre><code class="language-cangjie">public interface Key 
+</code></pre>
+<p>密钥（接口），在运行密码算法（如加解密）时需要提前生成其子类对象，并传入<a href="#class-cipher">Cipher</a>实例的<a href="#func-initcryptomode-key-paramsspec">init()</a>方法。</p>
+<p>密钥可以通过密钥生成器来生成。</p>
+<h3 id="属性"><a class="header" href="#属性">属性</a></h3>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">format</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">密钥的格式。</td></tr>
+<tr><td style="text-align: left">algName</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">密钥对应的算法名（含长度）。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-getencoded"><a class="header" href="#func-getencoded">func getEncoded()</a></h3>
+<pre><code class="language-cangjie">public func getEncoded(): DataBlob 
+</code></pre>
+<p>同步方法，获取密钥数据的字节流。密钥可以为对称密钥，公钥或者私钥。其中，公钥格式满足ASN.1语法、X.509规范、DER编码格式；私钥格式满足ASN.1语法，PKCS#8规范、DER编码方式。</p>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>RSA算法使用密钥参数生成私钥时，私钥对象不支持getEncoded。</p>
+</blockquote>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#struct-datablob">DataBlob</a></td><td style="text-align: left">用于查看密钥的具体内容。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">801</td><td style="text-align: left">this operation is not supported.</td></tr>
+<tr><td style="text-align: left">17620001</td><td style="text-align: left">memory error.</td></tr>
+<tr><td style="text-align: left">17630001</td><td style="text-align: left">crypto operation error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let generator = createSymKeyGenerator(&quot;3DES192&quot;)    // The key is generated by a key generator. The generation process is omitted here.
+let key = generator.generateSymKey()
+let encodedKey = key.getEncoded()
+</code></pre>
+<h2 id="class-symkey"><a class="header" href="#class-symkey">class SymKey</a></h2>
+<pre><code class="language-cangjie">public class SymKey &lt;: Key {}
+</code></pre>
+<p>对称密钥，是<a href="#interface-key">Key</a>的子类，在对称加解密时需要将其对象传入<a href="#class-cipher">Cipher</a>实例的<a href="#func-initcryptomode-key-paramsspec">init()</a>方法使用。</p>
+<p>对称密钥可以通过对称密钥生成器<a href="#class-symkeygenerator">SymKeyGenerator</a>来生成。</p>
+<h3 id="func-clearmem"><a class="header" href="#func-clearmem">func clearMem()</a></h3>
+<pre><code class="language-cangjie">public func clearMem(): Unit 
+</code></pre>
+<p>同步方法，将系统底层内存中的的密钥内容清零。建议在不需要使用对称密钥实例时，调用本函数，避免内存中密钥数据存留过久。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let generator = createSymKeyGenerator(&quot;3DES192&quot;)
+let key = generator.generateSymKey()
+var encodedKey = key.getEncoded()
+AppLog.info(&quot;key blob: ${encodedKey.data}&quot;)    // Display key content.
+key.clearMem()
+encodedKey = key.getEncoded()
+AppLog.info(&quot;key blob: ${encodedKey.data}&quot;)      // Display all 0s.
+</code></pre>
+<h2 id="func-createsymkeygeneratorstring"><a class="header" href="#func-createsymkeygeneratorstring">func createSymKeyGenerator(String)</a></h2>
+<pre><code class="language-cangjie">public func createSymKeyGenerator(algName: String): SymKeyGenerator
+</code></pre>
+<p>通过指定算法名称的字符串，获取相应的对称密钥生成器实例。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">algName</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">待生成对称密钥生成器的算法名称。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-symkeygenerator">SymKeyGenerator</a></td><td style="text-align: left">返回对称密钥生成器的对象。</td></tr>
+</tbody></table>
+</div>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">invalid parameters.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">this operation is not supported.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let symKeyGenerator = createSymKeyGenerator(&quot;3DES192&quot;)
+</code></pre>
+<h2 id="class-symkeygenerator"><a class="header" href="#class-symkeygenerator">class SymKeyGenerator</a></h2>
+<pre><code class="language-cangjie">public class SymKeyGenerator {}
+</code></pre>
+<p>对称密钥生成器。</p>
+<p>在使用该类的方法前，需要先使用<a href="#class-symkeygenerator">createSymKeyGenerator</a>方法构建一个symKeyGenerator实例。</p>
+<h3 id="属性-1"><a class="header" href="#属性-1">属性</a></h3>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">algName</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">对称密钥生成器指定的算法名称。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-generatesymkey"><a class="header" href="#func-generatesymkey">func generateSymKey()</a></h3>
+<pre><code class="language-cangjie">public func generateSymKey(): SymKey
+</code></pre>
+<p>获取该对称密钥生成器随机生成的密钥。</p>
+<p>必须在使用<a href="#class-symkeygenerator">createSymKeyGenerator</a>创建对称密钥生成器后，才能使用本函数。</p>
+<p>目前支持使用OpenSSL的RAND_priv_bytes()作为底层能力生成随机密钥。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-symkey">SymKey</a></td><td style="text-align: left">对称密钥SymKey。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17620001</td><td style="text-align: left">memory error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let symAlgName = &quot;AES128&quot;
+let symKeyGenerator = createSymKeyGenerator(symAlgName)
+let symKey = symKeyGenerator.generateSymKey()
+</code></pre>
+<h3 id="func-convertkeydatablob"><a class="header" href="#func-convertkeydatablob">func convertKey(DataBlob)</a></h3>
+<pre><code class="language-cangjie">public func convertKey(key: DataBlob): SymKey
+</code></pre>
+<p>根据指定数据生成对称密钥。</p>
+<p>必须在使用<a href="#func-createsymkeygeneratorstring">createSymKeyGenerator</a>创建对称密钥生成器后，才能使用本函数。</p>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>对于HMAC算法的对称密钥，如果已经在创建对称密钥生成器时指定了具体哈希算法（如指定“HMAC|SHA256”），则需要传入与哈希长度一致的二进制密钥数据（如传入SHA256对应256位的密钥数据）。<br/>如果在创建对称密钥生成器时没有指定具体哈希算法，如仅指定“HMAC”，则支持传入长度在[1,4096]范围内（单位为byte）的任意二进制密钥数据。</p>
+</blockquote>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">key</td><td style="text-align: left"><a href="#struct-datablob">DataBlob</a></td><td style="text-align: left">是</td><td style="text-align: left">指定的密钥材料数据。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-symkey">SymKey</a></td><td style="text-align: left">返回对称密钥SymKey。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">invalid parameters.</td></tr>
+<tr><td style="text-align: left">17620001</td><td style="text-align: left">memory error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let arr: Array&lt;UInt8&gt; = [
+    0xba, 0x3d, 0xc2, 0x71, 0x21, 0x1e, 0x30, 0x56,
+    0xad, 0x47, 0xfc, 0x5a, 0x46, 0x39, 0xee, 0x7c,
+    0xba, 0x3b, 0xc2, 0x71, 0xab, 0xa0, 0x30, 0x72] // keyLen = 192 (24 bytes)
+
+let symAlgName = &quot;3DES192&quot;
+let symKeyGenerator = createSymKeyGenerator(symAlgName)
+symKeyGenerator.convertKey(DataBlob(arr))
+</code></pre>
+<h2 id="func-createcipherstring"><a class="header" href="#func-createcipherstring">func createCipher(String)</a></h2>
+<pre><code class="language-cangjie">public func createCipher(transformation: String): Cipher
+</code></pre>
+<p>通过指定算法名称，获取相应的<a href="#class-cipher">Cipher</a>实例。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">transformation</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">待生成Cipher的算法名称（含密钥长度）、加密模式以及填充方法的组合。</td></tr>
+</tbody></table>
+</div>
+<blockquote>
+<p><strong>说明：</strong></p>
+<ol>
+<li>目前对称加解密中，PKCS5和PKCS7的实现相同，其padding长度和分组长度保持一致（即PKCS5和PKCS7在3DES中均按照8字节填充，在AES中均按照16字节填充），另有NoPadding表示不填充。
+<br/>开发者需要自行了解密码学不同分组模式的差异，以便选择合适的参数规格。例如选择ECB和CBC模式时，建议启用填充，否则必须确保明文长度是分组大小的整数倍；选择其他模式时，可以不启用填充，此时密文长度和明文长度一致（即可能不是分组大小的整数倍）。</li>
+<li>使用RSA、SM2进行非对称加解密时，必须创建两个Cipher对象分别进行加密和解密操作，而不能对同一个Cipher对象进行加解密。对称加解密没有此要求（即只要算法规格一样，可以对同一个Cipher对象进行加解密操作）。</li>
+</ol>
+</blockquote>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-cipher">Cipher</a></td><td style="text-align: left">返回加解密生成器的对象。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">invalid parameters.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">this operation is not supported.</td></tr>
+<tr><td style="text-align: left">17620001</td><td style="text-align: left">memory error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let cipherAlgName = &quot;3DES192|ECB|PKCS7&quot;
+let cipher = createCipher(cipherAlgName)
+</code></pre>
+<h2 id="class-cipher"><a class="header" href="#class-cipher">class Cipher</a></h2>
+<pre><code class="language-cangjie">public class Cipher {}
+</code></pre>
+<p>提供加解密的算法操作功能，按序调用本类中的<a href="#func-initcryptomode-key-paramsspec">init()</a>、<a href="#func-updatedatablob">update()</a>、<a href="#func-dofinaldatablob">doFinal()</a>方法，可以实现对称加密/对称解密/非对称加密/非对称解密。</p>
+<p>一次完整的加/解密流程在对称加密和非对称加密中略有不同：</p>
+<ul>
+<li>对称加解密：init为必选，update为可选（且允许多次update加/解密大数据），doFinal为必选；doFinal结束后可以重新init开始新一轮加/解密流程。</li>
+<li>RSA、SM2非对称加解密：init为必选，不支持update操作，doFinal为必选（允许连续多次doFinal加/解密大数据）；RSA不支持重复init，切换加解密模式或填充方式时，需要重新创建Cipher对象。</li>
+</ul>
+<h3 id="属性-2"><a class="header" href="#属性-2">属性</a></h3>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">algName</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">加解密生成器指定的算法名称。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-initcryptomode-key-paramsspec"><a class="header" href="#func-initcryptomode-key-paramsspec">func <code>init</code>(CryptoMode, Key, ?ParamsSpec)</a></h3>
+<pre><code class="language-cangjie">public func `init`(opMode: CryptoMode, key: Key, params: ?ParamsSpec): Unit
+</code></pre>
+<p>初始化加解密的<a href="#class-cipher">cipher</a>对象，通过注册回调函数获取结果。</p>
+<p>必须在使用<a href="#func-createcipherstring">createCipher</a>创建<a href="#class-cipher">Cipher</a>实例后，才能使用本函数。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">opMode</td><td style="text-align: left"><a href="#enum-cryptomode">CryptoMode</a></td><td style="text-align: left">是</td><td style="text-align: left">加密或者解密模式。</td></tr>
+<tr><td style="text-align: left">key</td><td style="text-align: left"><a href="#interface-key">Key</a></td><td style="text-align: left">是</td><td style="text-align: left">指定加密或解密的密钥。</td></tr>
+<tr><td style="text-align: left">params</td><td style="text-align: left"><a href="#interface-paramsspec">?ParamsSpec</a></td><td style="text-align: left">否</td><td style="text-align: left">指定加密或解密的参数，对于ECB等没有参数的算法模式，可以传入None。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">invalid parameters.</td></tr>
+<tr><td style="text-align: left">17620001</td><td style="text-align: left">memory error.</td></tr>
+<tr><td style="text-align: left">17620002</td><td style="text-align: left">runtime error.</td></tr>
+<tr><td style="text-align: left">17630001</td><td style="text-align: left">crypto operation error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">cipher.`init`(CryptoMode.ENCRYPT_MODE, symKey, None)
+</code></pre>
+<h3 id="func-updatedatablob"><a class="header" href="#func-updatedatablob">func update(DataBlob)</a></h3>
+<pre><code class="language-cangjie">public func update(data: DataBlob): DataBlob
+</code></pre>
+<p>分段更新加密或者解密数据操作，获取加/解密数据。</p>
+<p>必须在对<a href="#class-cipher">Cipher</a>实例使用<a href="#func-initcryptomode-key-paramsspec">init()</a>初始化后，才能使用本函数。</p>
+<blockquote>
+<p><strong>说明：</strong></p>
+<ol>
+<li>在进行对称加解密操作的时候，如果开发者对各个分组模式不够熟悉，建议对每次update和doFinal的结果都判断是否为空数组，并在结果不为空数组时取出其中的数据进行拼接，形成完整的密文/明文。这是因为选择的分组模式等各项规格都可能对update和doFinal结果产生影响。
+<br/>（例如对于ECB和CBC模式，不论update传入的数据是否为分组长度的整数倍，都会以分组作为基本单位进行加/解密，并输出本次update新产生的加/解密分组结果。<br/>可以理解为，update只要凑满一个新的分组就会有输出，如果没有凑满则此次update输出为null，把当前还没被加/解密的数据留着，等下一次update/doFinal传入数据的时候，拼接起来继续凑分组。<br/>最后doFinal的时候，会把剩下的还没加/解密的数据，根据<a href="#func-createcipherstring">createCipher</a>时设置的padding模式进行填充，补齐到分组的整数倍长度，再输出剩余加解密结果。<br/>而对于可以将分组密码转化为流模式实现的模式，还可能出现密文长度和明文长度相同的情况等。）</li>
+<li>根据数据量，可以不调用update（即init完成后直接调用doFinal）或多次调用update。<br/>
+算法库目前没有对update（单次或累计）的数据量设置大小限制，建议对于大数据量的对称加解密，可以采用多次update的方式传入数据。<br/></li>
+<li>RSA、SM2非对称加解密不支持update操作。</li>
+</ol>
+</blockquote>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">data</td><td style="text-align: left"><a href="#struct-datablob">DataBlob</a></td><td style="text-align: left">是</td><td style="text-align: left">加密或者解密的数据。data不允许传入{data: Array&lt;UInt8&gt;() }。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#struct-datablob">DataBlob</a></td><td style="text-align: left">返回此次更新的加/解密结果DataBlob。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">invalid parameters.</td></tr>
+<tr><td style="text-align: left">17620001</td><td style="text-align: left">memory error.</td></tr>
+<tr><td style="text-align: left">17620002</td><td style="text-align: left">runtime error.</td></tr>
+<tr><td style="text-align: left">17630001</td><td style="text-align: left">crypto operation error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let plainText: DataBlob = DataBlob(&quot;this is test&quot;.toArray())
+cipher.update(plainText)
+</code></pre>
+<h3 id="func-dofinaldatablob"><a class="header" href="#func-dofinaldatablob">func doFinal(?DataBlob)</a></h3>
+<pre><code class="language-cangjie">public func doFinal(data: ?DataBlob): DataBlob
+</code></pre>
+<p>（1）在对称加解密中，doFinal加/解密（分组模式产生的）剩余数据和本次传入的数据，最后结束加密或者解密数据操作，获取加密或者解密数据。<br/>如果数据量较小，可以在doFinal中一次性传入数据，而不使用update；如果在本次加解密流程中，已经使用update传入过数据，可以在doFinal的data参数处传入None。<br/>根据对称加解密的模式不同，doFinal的输出有如下区别：</p>
+<ul>
+<li>对于GCM和CCM模式的对称加密：一次加密流程中，如果将每一次update和doFinal的结果拼接起来，会得到“密文+authTag”，即末尾的16字节（GCM模式）或12字节（CCM模式）是authTag，而其余部分均为密文。（也就是说，如果doFinal的data参数传入None，则doFinal的结果就是authTag）<br/>authTag需要填入解密时的<a href="#struct-gcmparamsspec">GcmParamsSpec</a>或<a href="#struct-ccmparamsspec">CcmParamsSpec</a>；密文则作为解密时的入参data。</li>
+<li>对于其他模式的对称加解密、GCM和CCM模式的对称解密：一次加/解密流程中，每一次update和doFinal的结果拼接起来，得到完整的明文/密文。</li>
+</ul>
+<p>（2）在RSA、SM2非对称加解密中，doFinal加/解密本次传入的数据，获取加密或者解密数据。如果数据量较大，可以多次调用doFinal，拼接结果得到完整的明文/密文。</p>
+<blockquote>
+<p><strong>说明：</strong></p>
+<ol>
+<li>对称加解密中，调用doFinal标志着一次加解密流程已经完成，即<a href="#class-cipher">Cipher</a>实例的状态被清除，因此当后续开启新一轮加解密流程时，需要重新调用init()并传入完整的参数列表进行初始化<br/>（比如即使是对同一个Cipher实例，采用同样的对称密钥，进行加密然后解密，则解密中调用init的时候仍需填写params参数，而不能直接省略为null）。</li>
+<li>如果遇到解密失败，需检查加解密数据和init时的参数是否匹配，包括GCM模式下加密得到的authTag是否填入解密时的GcmParamsSpec等。</li>
+<li>doFinal的结果可能为null，因此使用.data字段访问doFinal结果的具体数据前，请记得先判断结果是否为null，避免产生异常。</li>
+</ol>
+</blockquote>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">data</td><td style="text-align: left"><a href="#struct-datablob">?DataBlob</a></td><td style="text-align: left">是</td><td style="text-align: left">加密或者解密的数据。data参数允许为None，但不允许传入{data: Array&lt;UInt8&gt;() }。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#struct-datablob">DataBlob</a></td><td style="text-align: left">返回剩余数据的加/解密结果DataBlob。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">invalid parameters.</td></tr>
+<tr><td style="text-align: left">17620001</td><td style="text-align: left">memory error.</td></tr>
+<tr><td style="text-align: left">17620002</td><td style="text-align: left">runtime error.</td></tr>
+<tr><td style="text-align: left">17630001</td><td style="text-align: left">crypto operation error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">cipher.doFinal(None)
+</code></pre>
+<h2 id="func-createsignstring"><a class="header" href="#func-createsignstring">func createSign(String)</a></h2>
+<pre><code class="language-cangjie">public func createSign(algName: String): Sign
+</code></pre>
+<p>Sign实例生成。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework.Sign</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">algName</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">指定签名算法：RSA，ECC，DSA或SM2。使用RSA PKCS1模式时需要设置摘要，使用RSA PSS模式时需要设置摘要和掩码摘要。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-sign">Sign</a></td><td style="text-align: left">返回由输入算法指定生成的Sign对象。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">invalid parameters.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">this operation is not supported.</td></tr>
+<tr><td style="text-align: left">17620001</td><td style="text-align: left">memory error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">var sign = createSign(&quot;ECC224|SHA256&quot;)
+</code></pre>
+<h2 id="class-sign"><a class="header" href="#class-sign">class Sign</a></h2>
+<pre><code class="language-cangjie">public class Sign {}
+</code></pre>
+<p>Sign类，使用Sign方法之前需要创建该类的实例进行操作，通过<a href="#func-createsignstring">createSign</a>方法构造此实例。按序调用本类中的init、update、sign方法完成签名操作。
+Sign类不支持重复初始化，当业务方需要使用新密钥签名时，需要重新创建新Sign对象并调用init初始化。
+业务方使用时，在createSign时确定签名的模式，调用init接口设置密钥。
+当待签名数据较短时，可在init初始化后，（无需update）直接调用sign接口传入原文数据进行签名。
+当待签名数据较长时，可通过update接口分段传入切分后的原文数据，最后调用sign接口对整体原文数据进行签名。</p>
+<h3 id="属性-3"><a class="header" href="#属性-3">属性</a></h3>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">algName</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">签名指定的算法名称。</td></tr>
+</tbody></table>
+</div>
+<h2 id="func-createmdstring"><a class="header" href="#func-createmdstring">func createMd(String)</a></h2>
+<pre><code class="language-cangjie">public func createMd(algName: String): Md 
+</code></pre>
+<p>生成Md实例，用于进行消息摘要的计算与操作。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">algName</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">指定摘要算法。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Md</td><td style="text-align: left">返回由输入算法指定生成的<a href="#class-md">Md</a>对象。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">invalid parameters.</td></tr>
+<tr><td style="text-align: left">17620001</td><td style="text-align: left">memory error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let md = createMd(&quot;SHA256&quot;)
+</code></pre>
+<h2 id="class-md"><a class="header" href="#class-md">class Md</a></h2>
+<pre><code class="language-cangjie">public class Md {}
+</code></pre>
+<p>Md类，调用Md方法可以进行MD（Message Digest）摘要计算。调用前，需要通过<a href="#func-createmdstring">createMd</a>构造Md实例。</p>
+<h3 id="属性-4"><a class="header" href="#属性-4">属性</a></h3>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">algName</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">代表指定的摘要算法名。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-updatedatablob-1"><a class="header" href="#func-updatedatablob-1">func update(DataBlob)</a></h3>
+<pre><code class="language-cangjie">public func update(input: DataBlob): Unit
+</code></pre>
+<p>传入消息进行Md更新计算。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">input</td><td style="text-align: left">DataBlob</td><td style="text-align: left">是</td><td style="text-align: left">传入的消息。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">invalid parameters.</td></tr>
+<tr><td style="text-align: left">17630001</td><td style="text-align: left">crypto operation error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let md = createMd(&quot;SHA256&quot;);
+
+let blob: DataBlob = DataBlob(&quot;test&quot;.toArray())
+md.update(blob)
+</code></pre>
+<h3 id="func-digest"><a class="header" href="#func-digest">func digest()</a></h3>
+<pre><code class="language-cangjie">public func digest(): DataBlob
+</code></pre>
+<p>返回Md的计算结果。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#struct-datablob">DataBlob</a></td><td style="text-align: left">返回计算结果DataBlob。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17620001</td><td style="text-align: left">memory error.</td></tr>
+<tr><td style="text-align: left">17630001</td><td style="text-align: left">crypto operation error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let md = createMd(&quot;SHA256&quot;)
+
+let blob: DataBlob = DataBlob(&quot;test&quot;.toArray())
+md.update(blob)
+let res = md.digest()
+</code></pre>
+<h3 id="func-getmdlength"><a class="header" href="#func-getmdlength">func getMdLength()</a></h3>
+<pre><code class="language-cangjie">public func getMdLength(): UInt32
+</code></pre>
+<p>获取Md消息摘要长度（字节数）。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">UInt32</td><td style="text-align: left">返回md计算结果的字节长度。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17630001</td><td style="text-align: left">crypto operation error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let md = createMd(&quot;SHA256&quot;)
+let mdLen = md.getMdLength()
+</code></pre>
+<h2 id="func-createmacstring"><a class="header" href="#func-createmacstring">func createMac(String)</a></h2>
+<pre><code class="language-cangjie">public func createMac(algName: String): Mac
+</code></pre>
+<p>生成Mac实例，用于进行消息认证码的计算与操作。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework.Mac</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">algName</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">指定摘要算法。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-mac">Mac</a></td><td style="text-align: left">返回由输入算法指定生成的Mac对象。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">invalid parameters.</td></tr>
+<tr><td style="text-align: left">17620001</td><td style="text-align: left">memory error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">var mac = createMac(&quot;SHA256&quot;)
+</code></pre>
+<h2 id="class-mac"><a class="header" href="#class-mac">class Mac</a></h2>
+<pre><code class="language-cangjie">public class Mac {}
+</code></pre>
+<p>Mac类，调用Mac方法可以进行MAC（Message Authentication Code）加密计算。调用前，需要通过<a href="#func-createmacstring">createMac</a>构造Mac实例。</p>
+<h3 id="属性-5"><a class="header" href="#属性-5">属性</a></h3>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">algName</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">代表指定的摘要算法名。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-initsymkey"><a class="header" href="#func-initsymkey">func <code>init</code>(SymKey)</a></h3>
+<pre><code class="language-cangjie">public func `init`(key: SymKey): Unit
+</code></pre>
+<p>使用对称密钥初始化<a href="#class-mac">Mac</a>计算，通过注册回调函数获取结果。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">key</td><td style="text-align: left"><a href="#class-symkey">SymKey</a></td><td style="text-align: left">是</td><td style="text-align: left">共享对称密钥。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">invalid parameters.</td></tr>
+<tr><td style="text-align: left">17630001</td><td style="text-align: left">crypto operation error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let skg = createSymKeyGenerator(&quot;AES128&quot;)
+let sk = skg.generateSymKey()
+mac.`init`(sk)
+</code></pre>
+<h3 id="func-updatedatablob-2"><a class="header" href="#func-updatedatablob-2">func update(DataBlob)</a></h3>
+<pre><code class="language-cangjie">public func update(input: DataBlob): Unit
+</code></pre>
+<p>传入消息进行Mac更新计算。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">input</td><td style="text-align: left">DataBlob</td><td style="text-align: left">是</td><td style="text-align: left">传入的消息。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">invalid parameters.</td></tr>
+<tr><td style="text-align: left">17630001</td><td style="text-align: left">crypto operation error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let blob = DataBlob(&quot;this is test!&quot;.toArray())
+mac.update(blob)
+</code></pre>
+<h3 id="func-dofinal"><a class="header" href="#func-dofinal">func doFinal()</a></h3>
+<pre><code class="language-cangjie">public func doFinal(): DataBlob
+</code></pre>
+<p>返回Mac的计算结果。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#struct-datablob">DataBlob</a></td><td style="text-align: left">返回计算结果DataBlob。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17620001</td><td style="text-align: left">memory error.</td></tr>
+<tr><td style="text-align: left">17630001</td><td style="text-align: left">crypto operation error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let skg = createSymKeyGenerator(&quot;AES128&quot;)
+let sk = skg.generateSymKey()
+mac.`init`(sk)
+let blob = DataBlob(&quot;this is test!&quot;.toArray())
+mac.update(blob)
+mac.doFinal()
+</code></pre>
+<h3 id="func-getmaclength"><a class="header" href="#func-getmaclength">func getMacLength()</a></h3>
+<pre><code class="language-cangjie">public func getMacLength(): UInt32
+</code></pre>
+<p>获取Mac消息认证码的长度（字节数）。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">UInt32</td><td style="text-align: left">返回mac计算结果的字节长度。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17630001</td><td style="text-align: left">crypto operation error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let skg = createSymKeyGenerator(&quot;AES128&quot;)
+let sk = skg.generateSymKey()
+mac.`init`(sk)
+let blob = DataBlob(&quot;this is test!&quot;.toArray())
+mac.update(blob)
+mac.doFinal()
+var macLen = mac.getMacLength()
+</code></pre>
+<h2 id="func-createrandom"><a class="header" href="#func-createrandom">func createRandom()</a></h2>
+<pre><code class="language-cangjie">public func createRandom(): Random
+</code></pre>
+<p>生成Random实例，用于进行随机数的计算与设置种子。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>返回值</strong>：</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Random</td><td style="text-align: left">返回由输入算法指定生成的<a href="#class-random">Random</a>对象。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17620001</td><td style="text-align: left">memory error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let rand = createRandom()
+</code></pre>
+<h2 id="class-random"><a class="header" href="#class-random">class Random</a></h2>
+<pre><code class="language-cangjie">public class Random {}
+</code></pre>
+<p>Random类，调用Random方法可以进行随机数计算。调用前，需要通过<a href="#func-createrandom">createRandom</a>构造Random实例。</p>
+<h3 id="属性-6"><a class="header" href="#属性-6">属性</a></h3>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">algName</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">代表当前使用的随机数生成算法，目前只支持“CTR_DRBG&quot;。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-generaterandomint32"><a class="header" href="#func-generaterandomint32">func generateRandom(Int32)</a></h3>
+<pre><code class="language-cangjie">public func generateRandom(len: Int32): DataBlob
+</code></pre>
+<p>生成指定长度的随机数并返回。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">len</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">表示生成随机数的长度，单位为byte，范围在[1, INT32_MAX]。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#struct-datablob">DataBlob</a></td><td style="text-align: left">DataBlob对象。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">invalid parameters.</td></tr>
+<tr><td style="text-align: left">17620001</td><td style="text-align: left">memory error.</td></tr>
+<tr><td style="text-align: left">17630001</td><td style="text-align: left">crypto operation error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let rand = createRandom()
+let promiseGenerateRand = rand.generateRandom(12)
+</code></pre>
+<h3 id="func-setseeddatablob"><a class="header" href="#func-setseeddatablob">func setSeed(DataBlob)</a></h3>
+<pre><code class="language-cangjie">public func setSeed(seed: DataBlob): Unit
+</code></pre>
+<p>设置指定的种子。</p>
+<p><strong>系统能力：</strong> SystemCapability.Security.CryptoFramework</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">seed</td><td style="text-align: left">DataBlob</td><td style="text-align: left">是</td><td style="text-align: left">设置的种子。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-crypto.html">crypto 错误码</a></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17620001</td><td style="text-align: left">memory error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let rand = createRandom()
+rand.setSeed(randData)
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../source_zh_cn/apis/cj-apis-ability-access-ctrl.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../source_zh_cn/apis/cj-apis-huks.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../source_zh_cn/apis/cj-apis-ability-access-ctrl.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../source_zh_cn/apis/cj-apis-huks.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../highlight.js"></script>
+        <script src="../../assets/elasticlunr.js"></script>
+        <script src="../../assets/fzf.umd.js"></script>
+        <script src="../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

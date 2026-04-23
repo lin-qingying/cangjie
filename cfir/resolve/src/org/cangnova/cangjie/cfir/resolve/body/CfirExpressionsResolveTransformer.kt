@@ -30,10 +30,12 @@ import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableRefe
 import org.cangnova.cangjie.cfir.references.impl.CfirNamedReferenceImpl
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessAnalyzer
+import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessResult
 import org.cangnova.cangjie.cfir.resolve.typeFromCallee
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
-import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
+import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
@@ -114,6 +116,7 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression {
         wrappedExpression.transformChildren(transformer, data)
         wrappedExpression.replaceConeTypeOrNull(wrappedExpression.expression.coneTypeOrNull)
+        components.dataFlowAnalyzer.exitWrappedExpression(wrappedExpression)
         return wrappedExpression
     }
 
@@ -130,6 +133,7 @@ open class CfirExpressionsResolveTransformer(
         optionalChainExpression: CfirOptionalChainExpression,
         data: ResolutionMode,
     ): CfirExpression {
+        components.dataFlowAnalyzer.enterOptionalChain(optionalChainExpression)
         optionalChainExpression.transformChildren(transformer, data)
 
         val chainRoot = optionalChainExpression.expression.optionalChainRootExpression()
@@ -138,16 +142,19 @@ open class CfirExpressionsResolveTransformer(
             optionalChainExpression.replaceConeTypeOrNull(
                 ConeErrorType(ConeSimpleDiagnostic("optional chain root type is unresolved", DiagnosticKind.InferenceError))
             )
+            components.dataFlowAnalyzer.exitOptionalChain(optionalChainExpression)
             return optionalChainExpression
         }
 
         if (!rootType.isOption) {
             optionalChainExpression.replaceConeTypeOrNull(ConeErrorType(ConeOptionalChainNonOptionalError(rootType)))
+            components.dataFlowAnalyzer.exitOptionalChain(optionalChainExpression)
             return optionalChainExpression
         }
 
         val liftedResultType = liftOptionalChainResultType(optionalChainExpression.expression.coneTypeOrNull)
         optionalChainExpression.replaceConeTypeOrNull(liftedResultType)
+        components.dataFlowAnalyzer.exitOptionalChain(optionalChainExpression)
         return optionalChainExpression
     }
 
@@ -203,6 +210,7 @@ open class CfirExpressionsResolveTransformer(
         val synthesized = synthesizeLiteralType(literalExpression.kind)
         val expectedType = data.expectedTypeOrNull
         literalExpression.replaceConeTypeOrNull(IdealTypeResolver.resolveIfIdeal(synthesized, expectedType))
+        components.dataFlowAnalyzer.exitLiteralExpression(literalExpression)
         return literalExpression
     }
 
@@ -257,7 +265,7 @@ open class CfirExpressionsResolveTransformer(
             qualifiedAccessExpression.transformAnnotations(transformer, data)
             resolveAccessTypeArguments(qualifiedAccessExpression)
 
-            when (qualifiedAccessExpression.calleeReference) {
+            val resolvedExpression = when (qualifiedAccessExpression.calleeReference) {
                 is CfirThisReference -> {
                     if (qualifiedAccessExpression.coneTypeOrNull == null) {
                         val resultType = components.typeFromCallee(qualifiedAccessExpression)
@@ -319,6 +327,8 @@ open class CfirExpressionsResolveTransformer(
                     qualifiedAccessExpression
                 }
             }
+            components.dataFlowAnalyzer.exitQualifiedAccessExpression(qualifiedAccessExpression)
+            resolvedExpression
         }
 
     // ── Function Call ─────────────────────────────────────────────────────────
@@ -562,12 +572,14 @@ open class CfirExpressionsResolveTransformer(
     // ── Block ─────────────────────────────────────────────────────────────────
 
     override fun transformBlock(block: CfirBlock, data: ResolutionMode): CfirExpression {
+        components.dataFlowAnalyzer.enterBlock(block)
         block.transformChildren(transformer, ResolutionMode.ContextIndependent)
         val lastExpr = block.statements.lastOrNull()
         block.replaceConeTypeOrNull(
             if (lastExpr is CfirExpression) lastExpr.coneTypeOrNull ?: builtinTypes.unitType
             else builtinTypes.unitType
         )
+        components.dataFlowAnalyzer.exitBlock(block)
         return block
     }
 
@@ -577,6 +589,7 @@ open class CfirExpressionsResolveTransformer(
         matchExpression: CfirMatchExpression,
         data: ResolutionMode,
     ): CfirExpression {
+        components.dataFlowAnalyzer.enterMatchExpression(matchExpression)
         matchExpression.subject?.resolveIndependently()
         val subjectType = matchExpression.subject?.coneTypeOrNull
 
@@ -584,8 +597,42 @@ open class CfirExpressionsResolveTransformer(
             resolveBranch(branch, subjectType)
         }
 
+        matchExpression.replaceExhaustiveness(resolveMatchExhaustiveness(matchExpression))
         matchExpression.replaceConeTypeOrNull(computeMatchResultType(branchTypes))
+        components.dataFlowAnalyzer.exitMatchExpression(
+            matchExpression,
+            syntheticElseDecision = components.dataFlowAnalyzer.matchSyntheticElseDecision(matchExpression),
+            callCompleted = data.forceFullCompletion,
+        )
         return matchExpression
+    }
+
+    /**
+     * BODY_RESOLVE 阶段将 shared semantics 的穷尽性结论正式回写到 tree。
+     *
+     * CFG 之后只读取 `CfirMatchExpression.exhaustiveness`，不再复算，也不允许语法兜底。
+     */
+    private fun resolveMatchExhaustiveness(matchExpression: CfirMatchExpression): CfirMatchExhaustivenessStatus {
+        return when (val result = ExhaustivenessAnalyzer.checkMatch(matchExpression, session)) {
+            ExhaustivenessResult.Exhaustive -> CfirMatchExhaustivenessStatus.Exhaustive(
+                source = CfirMatchExhaustivenessStatus.Source.BodyResolve,
+            )
+
+            is ExhaustivenessResult.NonExhaustive -> CfirMatchExhaustivenessStatus.NonExhaustive(
+                missingCaseTexts = result.getMissingPatternTexts(),
+                source = CfirMatchExhaustivenessStatus.Source.BodyResolve,
+            )
+
+            is ExhaustivenessResult.Error -> CfirMatchExhaustivenessStatus.Error(
+                reason = result.reason,
+                source = CfirMatchExhaustivenessStatus.Source.BodyResolve,
+            )
+
+            ExhaustivenessResult.Skipped -> CfirMatchExhaustivenessStatus.Error(
+                reason = "shared match exhaustiveness analyzer returned Skipped during BODY_RESOLVE",
+                source = CfirMatchExhaustivenessStatus.Source.BodyResolve,
+            )
+        }
     }
 
     private fun resolveBranch(
@@ -593,6 +640,7 @@ open class CfirExpressionsResolveTransformer(
         subjectType: ConeCangJieType?,
     ): ConeCangJieType {
         return withNewLocalScope {
+            components.dataFlowAnalyzer.enterMatchBranchCondition(branch)
             branch.transformPattern(transformer, ResolutionMode.ContextIndependent)
             if (branch is org.cangnova.cangjie.cfir.expressions.impl.CfirMatchBranchImpl) {
                 branch.pattern = resolveDeferredMatchPattern(branch.pattern)
@@ -601,7 +649,9 @@ open class CfirExpressionsResolveTransformer(
             registerPatternBindings(branch.pattern)
 
             branch.transformGuard(transformer, ResolutionMode.ContextIndependent)
+            components.dataFlowAnalyzer.exitMatchBranchCondition(branch)
             branch.transformBody(transformer, ResolutionMode.ContextIndependent)
+            components.dataFlowAnalyzer.exitMatchBranchResult(branch)
 
             val bodyType = branch.body.coneTypeOrNull ?: builtinTypes.unitType
             branch.replaceConeTypeOrNull(bodyType)
@@ -764,8 +814,10 @@ open class CfirExpressionsResolveTransformer(
         returnExpression: CfirReturnExpression,
         data: ResolutionMode,
     ): CfirExpression {
+        components.dataFlowAnalyzer.enterJump(returnExpression)
         returnExpression.transformChildren(transformer, ResolutionMode.ContextIndependent)
         returnExpression.replaceConeTypeOrNull(ConePrimitiveType.NOTHING)
+        components.dataFlowAnalyzer.exitJump(returnExpression)
         return returnExpression
     }
 
@@ -804,6 +856,7 @@ open class CfirExpressionsResolveTransformer(
         if (jumpExpression.coneTypeOrNull == null) {
             jumpExpression.replaceConeTypeOrNull(ConePrimitiveType.NOTHING)
         }
+        components.dataFlowAnalyzer.exitJump(jumpExpression)
         return jumpExpression
     }
 
@@ -813,6 +866,7 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression {
         throwExpression.transformChildren(transformer, ResolutionMode.ContextIndependent)
         throwExpression.replaceConeTypeOrNull(ConePrimitiveType.NOTHING)
+        components.dataFlowAnalyzer.exitThrowException(throwExpression)
         return throwExpression
     }
 
@@ -902,11 +956,14 @@ open class CfirExpressionsResolveTransformer(
 
             resolveSubscriptSetAssignment(assignment, subscriptLValue, data)
             assignment.replaceConeTypeOrNull(builtinTypes.unitType)
+            components.dataFlowAnalyzer.exitVariableAssignment(assignment)
             return assignment
         }
 
         assignment.transformChildren(transformer, ResolutionMode.ContextIndependent)
         assignment.replaceConeTypeOrNull(builtinTypes.unitType)
+        components.dataFlowAnalyzer.recordAssignment(assignment)
+        components.dataFlowAnalyzer.exitVariableAssignment(assignment)
         return assignment
     }
 
@@ -934,7 +991,7 @@ open class CfirExpressionsResolveTransformer(
         arrayLiteral.replaceConeTypeOrNull(
             constructNamedType(
                 classId = StdlibClassIds.Array,
-                typeArguments = listOf(ConeTypeProjection(elementType)),
+                typeArguments = listOf(elementType),
             )
         )
         return arrayLiteral
@@ -1111,7 +1168,20 @@ open class CfirExpressionsResolveTransformer(
         loopExpression: CfirLoopExpression,
         data: ResolutionMode,
     ): CfirExpression {
-        loopExpression.transformChildren(transformer, ResolutionMode.ContextIndependent)
+        loopExpression.transformAnnotations(transformer, data)
+        if (loopExpression.isDoWhile) {
+            components.dataFlowAnalyzer.enterDoWhileLoop(loopExpression)
+            loopExpression.transformBody(transformer, ResolutionMode.ContextIndependent)
+            components.dataFlowAnalyzer.enterDoWhileLoopCondition(loopExpression)
+            loopExpression.transformCondition(transformer, ResolutionMode.ContextIndependent)
+            components.dataFlowAnalyzer.exitDoWhileLoop(loopExpression)
+        } else {
+            components.dataFlowAnalyzer.enterWhileLoop(loopExpression)
+            loopExpression.transformCondition(transformer, ResolutionMode.ContextIndependent)
+            components.dataFlowAnalyzer.exitWhileLoopCondition(loopExpression)
+            loopExpression.transformBody(transformer, ResolutionMode.ContextIndependent)
+            components.dataFlowAnalyzer.exitWhileLoop(loopExpression)
+        }
         loopExpression.replaceConeTypeOrNull(builtinTypes.unitType)
         return loopExpression
     }
@@ -1167,10 +1237,23 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirExpression {
         tryExpression.transformAnnotations(transformer, data)
+        components.dataFlowAnalyzer.enterTryExpression(tryExpression)
         tryExpression.transformTryBlock(transformer, ResolutionMode.ContextIndependent)
-        tryExpression.transformCatches(transformer, ResolutionMode.ContextIndependent)
-        tryExpression.transformHandlers(transformer, ResolutionMode.ContextIndependent)
-        tryExpression.transformFinallyBlock(transformer, ResolutionMode.ContextIndependent)
+        components.dataFlowAnalyzer.exitTryMainBlock()
+        for (catchClause in tryExpression.catches) {
+            components.dataFlowAnalyzer.enterCatchClause(catchClause)
+            catchClause.transform<CfirElement, ResolutionMode>(transformer, ResolutionMode.ContextIndependent)
+            components.dataFlowAnalyzer.exitCatchClause(catchClause)
+        }
+        for (handleClause in tryExpression.handlers) {
+            handleClause.transform<CfirElement, ResolutionMode>(transformer, ResolutionMode.ContextIndependent)
+        }
+        if (tryExpression.finallyBlock != null) {
+            components.dataFlowAnalyzer.enterFinallyBlock()
+            tryExpression.transformFinallyBlock(transformer, ResolutionMode.ContextIndependent)
+            components.dataFlowAnalyzer.exitFinallyBlock()
+        }
+        components.dataFlowAnalyzer.exitTryExpression(data.forceFullCompletion)
 
         var currentJoinType = normalizeTypeForJoin(tryExpression.tryBlock.coneTypeOrNull) ?: builtinTypes.unitType
         tryExpression.catches.forEach { catchClause ->
@@ -1326,7 +1409,7 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression {
         return withClearedEffectHandlers {
             val anonFunc = anonymousFunctionExpression.anonymousFunction
-            val expectedFuncType = data.expectedTypeOrNull as? ConeFuncType
+            val expectedFuncType = data.expectedTypeOrNull as? ConeFunctionType
 
             val hasUnresolvedParameterType = anonFunc.valueParameters.any { it.returnTypeRef !is CfirResolvedTypeRef }
             if (expectedFuncType == null && hasUnresolvedParameterType) {
@@ -1335,8 +1418,11 @@ open class CfirExpressionsResolveTransformer(
                 return@withClearedEffectHandlers anonymousFunctionExpression
             }
 
-            val parameterTypes = withNewLocalScope(scopeAction = { lambdaScope ->
-                anonFunc.valueParameters.mapIndexed { i, param ->
+            components.dataFlowAnalyzer.enterFunction(anonFunc)
+
+            val parameterTypes = context.withTowerDataCleanup {
+                context.addLocalScope(CfirLocalScope(session))
+                val types = anonFunc.valueParameters.mapIndexed { i, param ->
                     val expectedParamType = expectedFuncType?.parameterTypes?.getOrNull(i)
                     val declaredParamType = (param.returnTypeRef as? CfirResolvedTypeRef)?.coneType
                     if (param.returnTypeRef !is CfirResolvedTypeRef && expectedParamType != null) {
@@ -1344,12 +1430,12 @@ open class CfirExpressionsResolveTransformer(
                             param.returnTypeRef.resolvedTypeFromPrototype(expectedParamType, param.returnTypeRef.source)
                         )
                     }
-                    (param.symbol as? CfirCallableSymbol<*>)?.let { sym ->
-                        lambdaScope.addVariable(param.name, sym)
-                    }
+                    context.storeValueParameterIfNeeded(param, session)
                     declaredParamType ?: expectedParamType
                 }
-            }) { anonFunc.body?.resolveIndependently() }
+                anonFunc.body?.resolveIndependently()
+                types
+            }
 
             val returnType = when {
                 anonFunc.returnTypeRef is CfirResolvedTypeRef -> (anonFunc.returnTypeRef as CfirResolvedTypeRef).coneType
@@ -1366,9 +1452,11 @@ open class CfirExpressionsResolveTransformer(
             if (returnType != null && parameterTypes.all { it != null }) {
                 // CfirAnonymousFunctionExpression.coneTypeOrNull is derived from anonymousFunction.typeRef.
                 // Keep the source of truth on declaration side instead of writing expression cone type directly.
-                val lambdaType = ConeFuncType(parameterTypes.filterNotNull(), returnType)
+                val lambdaType = ConeFunctionType(parameterTypes.filterNotNull(), returnType)
                 anonFunc.replaceTypeRef(lambdaType.toCfirResolvedTypeRef(anonFunc.typeRef.source, anonFunc.typeRef))
             }
+            anonFunc.replaceControlFlowGraphReference(components.dataFlowAnalyzer.exitFunction(anonFunc))
+            components.dataFlowAnalyzer.enterAnonymousFunctionExpression(anonymousFunctionExpression)
             anonymousFunctionExpression
         }
     }
@@ -1390,7 +1478,7 @@ open class CfirExpressionsResolveTransformer(
         rangeExpression.replaceConeTypeOrNull(
             constructNamedType(
                 classId = StdlibClassIds.Range,
-                typeArguments = listOf(ConeTypeProjection(elementType)),
+                typeArguments = listOf(elementType),
             )
         )
         return rangeExpression
@@ -1407,7 +1495,7 @@ open class CfirExpressionsResolveTransformer(
         spawnExpression.replaceConeTypeOrNull(
             constructNamedType(
                 classId = StdlibClassIds.Future,
-                typeArguments = listOf(ConeTypeProjection(taskReturnType)),
+                typeArguments = listOf(taskReturnType),
             )
         )
         return spawnExpression
@@ -1463,7 +1551,7 @@ open class CfirExpressionsResolveTransformer(
         )
         return constructNamedType(
             classId = StdlibClassIds.Option,
-            typeArguments = listOf(ConeTypeProjection(effectiveResultType)),
+            typeArguments = listOf(effectiveResultType),
         )
     }
 
@@ -1612,33 +1700,9 @@ open class CfirExpressionsResolveTransformer(
 
     // ── Scope Utilities ───────────────────────────────────────────────────────
 
-    /**
-     * Execute [block] inside a fresh local scope, restoring the outer scope on exit.
-     * The overload that takes [scopeAction] provides the scope object to [scopeAction]
-     * before running [block], so that the scope can be populated (e.g. lambda params).
-     */
-    private inline fun <T> withNewLocalScope(crossinline block: () -> T): T {
-        val saved = context.towerDataContext
-        val scope = CfirLocalScopeImpl()
-        context.addLocalScope(scope)
-        return try { block() } finally { context.replaceTowerDataContext(saved) }
-    }
-
-    private inline fun <T> withNewLocalScope(
-        crossinline scopeAction: (CfirLocalScopeImpl) -> T,
-        crossinline block: () -> Unit,
-    ): T {
-        val saved = context.towerDataContext
-        val scope = CfirLocalScopeImpl()
-        context.addLocalScope(scope)
-        return try {
-            val result = scopeAction(scope)
-            block()
-            result
-        } finally {
-            context.replaceTowerDataContext(saved)
-        }
-    }
+    /** 在新的空局部作用域里执行 [block]，退出后恢复外层作用域。薄壳包装 `context.forBlock`。 */
+    private inline fun <T> withNewLocalScope(crossinline block: () -> T): T =
+        context.forBlock(session) { block() }
 
     /**
      * `super` 的语义在仓颉里是固定的：

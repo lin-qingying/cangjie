@@ -44,7 +44,7 @@ internal data class CaCfirResolvedExtendIdentity(
 internal fun CaCfirSession.resolveExtendIdentity(symbol: CfirExtendSymbol): CaCfirResolvedExtendIdentity {
     val semanticModel = cfirSession.extendIndexStore.modelForDeclaration(symbol.cfir)
         ?: error("Extend `${symbol}` is missing semantic model in extendIndexStore")
-    val sourceExtendPsi = symbolQueries.lookupSourcePsi(symbol) as? CjExtend
+    val sourceExtendPsi = symbol.backingPsiIfApplicable as? CjExtend
     return CaCfirResolvedExtendIdentity(
         stableIdentity = semanticModel.toPublicSymbolIdentity(),
         extendId = buildPublicExtendId(semanticModel, sourceExtendPsi),

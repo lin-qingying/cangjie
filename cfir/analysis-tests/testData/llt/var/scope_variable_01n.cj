@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %f 2>&1 | compare %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-
 // 自增减的变量定义在全局，使用在局部
 
 main(): Int64 {

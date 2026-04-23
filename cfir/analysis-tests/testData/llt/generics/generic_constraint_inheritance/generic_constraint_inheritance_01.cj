@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %diag_json %f -o %output
-
 open class A {}
 
 open class B <: A {}
@@ -19,9 +17,9 @@ open class Base {
 }
 
 class D <: Base {
-    static redef func f<T>(a: T): Unit where T <: C {} // Error，stricter constraint
-    static redef func g<T>(): Unit where T <: C {} // Error，stricter constraint
-    static redef func p<T>(): Unit where T <: C {} // Error，stricter constraint
+    static redef func f<T>(a: T): Unit where T <: <!GENERIC_CONSTRAINT_NOT_LOOSER!>C<!> {} // Error，stricter constraint
+    static redef func g<T>(): Unit where T <: <!GENERIC_CONSTRAINT_NOT_LOOSER!>C<!> {} // Error，stricter constraint
+    static redef func p<T>(): Unit where T <: <!GENERIC_CONSTRAINT_NOT_LOOSER!>C<!> {} // Error，stricter constraint
 }
 
 class E <: Base {
@@ -35,6 +33,3 @@ class F <: Base {
 }
 
 main() {}
-
-// ASSERT: scan-3 sema_generic_constraint_not_looser
-// ASSERT: scan "Errors": 3

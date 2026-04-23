@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 struct Rectangle {
     public let width: Int64
     public let length: Int64
@@ -17,8 +15,8 @@ struct Rectangle {
 
     public init(width: Int64, length: Int64) {
         this()
-        this.width = width
-        this.length = length
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>this.width<!> = width
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>this.length<!> = length
     }
 }
 
@@ -29,33 +27,3 @@ main(): Int64 {
     }
     return 1
 }
-
-/* SCAN
-error: cannot assign to immutable value
-  ==> record_member_var_multi_assign_check_02.cj:20:9:
-   | 
-20 |         this.width = width
-   |         ^^^^^^^^^^^^^^^^^^ 
-   | 
-note: variable 'width' is immutable
-  ==> record_member_var_multi_assign_check_02.cj:10:16:
-   | 
-10 |     public let width: Int64
-   |                ^^^^^ 
-   | 
-
-error: cannot assign to immutable value
-  ==> record_member_var_multi_assign_check_02.cj:21:9:
-   | 
-21 |         this.length = length
-   |         ^^^^^^^^^^^^^^^^^^^^ 
-   | 
-note: variable 'length' is immutable
-  ==> record_member_var_multi_assign_check_02.cj:11:16:
-   | 
-11 |     public let length: Int64
-   |                ^^^^^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

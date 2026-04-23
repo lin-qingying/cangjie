@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 main(): Int64 {
     return 0
 }
@@ -13,7 +11,7 @@ main(): Int64 {
 open class A<K, V> {}
 
 extend<K, V> A<K, V> where K <: Hashable {
-    public func hashCode(): UInt64 {
+    public func <!EXTEND_FUNCTION_CANNOT_OVERRIDDEN!>hashCode<!>(): UInt64 {
         return 0
     }
 }
@@ -32,20 +30,3 @@ class Coo<K, V> <: A<K, V> where K <: Hashable & Equatable<K> {
         return true
     }
 }
-
-/* SCAN
-error: cannot override function 'hashCode' in extend of supertype
-  ==> extend_function_override1.cj:28:17:
-   | 
-28 |     public func hashCode(): UInt64 {
-   |                 ^^^^^^^^ 
-   | 
-note: overridden definition of 'hashCode' is here
-  ==> extend_function_override1.cj:16:17:
-   | 
-16 |     public func hashCode(): UInt64 {
-   |                 ^^^^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

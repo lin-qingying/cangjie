@@ -2,13 +2,13 @@ package org.cangnova.cangjie.analysis.api.cfir.utils
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
-import org.cangnova.cangjie.cfir.types.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 
 /**
  * 对齐 Kotlin `typeUtils.kt` 中 `ConeSubstitutor -> KaSubstitutor` 的入口。
  */
 internal fun ConeSubstitutor.toCaSubstitutor(analysisSession: CaCfirSession): CaSubstitutor =
-    analysisSession.symbolBuilder.typeBuilder.buildSubstitutor(this)
+    analysisSession.cfirSymbolBuilder.typeBuilder.buildSubstitutor(this)
 
 context(analysisSession: CaCfirSession)
 internal fun ConeSubstitutor.toCaSubstitutor(): CaSubstitutor = toCaSubstitutor(analysisSession)

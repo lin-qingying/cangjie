@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: apilevel.cj
-// EXEC: %compiler apilevel.cj %compile_lib_opt -o liba.%lib_extension
-// EXEC: %compiler %f liba.%lib_extension
 
 import a.*
 

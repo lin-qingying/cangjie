@@ -11,7 +11,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 
 /**
- * [LLCfirResolveTarget] representing a class with all callable members (functions and properties).
+ * [LLCfirResolveTarget] representing a class with all callable members (functions and variables).
  */
 internal class LLCfirClassWithAllCallablesResolveTarget(designation: CfirDesignation) : LLCfirClassResolveTarget(designation) {
     override val visitClass: Boolean get() = true

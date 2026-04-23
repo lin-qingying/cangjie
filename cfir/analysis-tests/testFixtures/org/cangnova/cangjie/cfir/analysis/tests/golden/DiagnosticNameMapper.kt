@@ -175,6 +175,9 @@ object DiagnosticNameMapper {
 
         // ── Finally ──
         "FINALLY_BLOCK_MUST_NOT_PRODUCE_RESULT" to "sema_finally_block_must_not_produce_result",
+
+        // ── General ──
+        "CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE" to "sema_core_object_not_found_when_no_prelude",
     )
 
     /** cjc DiagKind → 项目诊断名集合（一对多） */

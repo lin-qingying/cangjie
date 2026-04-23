@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 main() {
     let arr0 = Array(3, repeat: 'c')
     let arr1 = Array<Int8>(3, repeat: 3)

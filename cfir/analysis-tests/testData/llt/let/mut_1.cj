@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRORCHECK: %compiler %cmp_opt %f
-// ASSERT: scan-2 error: cannot assign to immutable value
-
 interface IA {
     mut prop x: Int64
     prop y: Int64
@@ -27,13 +24,12 @@ struct A <: IA {
 }
 
 func goo(a: A): Unit {
-    a.x = a.x + 1
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>a.x<!> = a.x + 1
     println(a.y)
 }
 
 func foo<T>(t: T): Unit where T <: IA {
-    t.x = t.x + 1
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>t.x<!> = t.x + 1
     println(t.y)
 }
-
 main() {}

@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.types
 
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 
 /**
@@ -23,7 +24,7 @@ class CfirTypeSubstitutorByMap(
             is ConeEnumType -> substituteArguments(type.typeArguments)?.let { arguments ->
                 ConeEnumType(type.lookupTag, arguments, type.attributes, type.isRefEnum)
             }
-            is ConeFuncType -> substituteFunction(type)
+            is ConeFunctionType -> substituteFunction(type)
             is ConeTupleType -> substituteTypes(type.elementTypes)?.let { elements ->
                 ConeTupleType(elements, type.attributes)
             }
@@ -58,14 +59,14 @@ class CfirTypeSubstitutorByMap(
     }
 
     override fun substituteArgument(projection: ConeTypeProjection, index: Int): ConeTypeProjection? {
-        return substituteOrNull(projection.type)?.let(::ConeTypeProjection)
+        return substituteOrNull(projection.type)
     }
 
-    private fun substituteFunction(type: ConeFuncType): ConeFuncType? {
+    private fun substituteFunction(type: ConeFunctionType): ConeFunctionType? {
         val parameterTypes = substituteTypes(type.parameterTypes)
         val returnType = substituteOrNull(type.returnType)
         if (parameterTypes == null && returnType == null) return null
-        return ConeFuncType(
+        return ConeFunctionType(
             parameterTypes = parameterTypes ?: type.parameterTypes,
             returnType = returnType ?: type.returnType,
             isCFunc = type.isCFunc,

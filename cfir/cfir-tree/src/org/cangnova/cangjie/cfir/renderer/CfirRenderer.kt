@@ -149,6 +149,13 @@ class CfirRenderer(
     override val printer: CfirPrinter = CfirPrinter(builder)
 
     init {
+        // 所有子 renderer 都共享同一组 components。
+        // 这里必须一次性完成装配，否则异常附加信息在调用独立 renderer 时会触发未初始化访问。
+        annotationRenderer?.components = this
+        declarationRenderer?.components = this
+        resolvePhaseRenderer?.components = this
+        errorExpressionRenderer?.components = this
+        callableSignatureRenderer?.components = this
         modifierRenderer?.components = this
     }
 
@@ -198,14 +205,19 @@ class CfirRenderer(
             }
             is CfirUserTypeRef -> {
                 print("R|")
-                print(typeRef.qualifier.joinToString(".") { it.asString() })
-                if (typeRef.typeArguments.isNotEmpty()) {
-                    print("<")
-                    typeRef.typeArguments.forEachIndexed { index, argument ->
-                        if (index > 0) print(", ")
-                        renderType(argument)
+                typeRef.qualifier.forEachIndexed { index, qualifier ->
+                    if (index > 0) {
+                        print(".")
                     }
-                    print(">")
+                    print(qualifier.name.asString())
+                    if (qualifier.typeArguments.isNotEmpty()) {
+                        print("<")
+                        qualifier.typeArguments.forEachIndexed { argumentIndex, argument ->
+                            if (argumentIndex > 0) print(", ")
+                            renderType(argument)
+                        }
+                        print(">")
+                    }
                 }
                 print("|")
             }

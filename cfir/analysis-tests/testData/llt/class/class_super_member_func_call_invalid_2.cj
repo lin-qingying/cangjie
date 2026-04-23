@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
 interface I0 {
     func foo(): Int64 {
         return 0
@@ -14,7 +12,7 @@ interface I0 {
 
 class C0 <: I0 {
     public func foo2(): Int64 {
-        var res: Int64 = super.foo1()
+        var res: Int64 = super.<!NOT_MEMBER_OF!>foo1<!>()
         return res
     }
 }
@@ -22,14 +20,3 @@ class C0 <: I0 {
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: 'foo1' is not a member of class 'Object'
-  ==> class_super_member_func_call_invalid_2.cj:17:32:
-   | 
-17 |         var res: Int64 = super.foo1()
-   |                                ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -5,10 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: ./pkg.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg.cj -o pkg.%middle
-// EXEC: %compiler %cmp_opt pkg.%middle %f -o %output
-// EXEC: %run %run_opt %output %run_args
-
 internal import pkg.I
 
 func f<T>() {

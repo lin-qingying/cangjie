@@ -5,11 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: pkg1 pkg2
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg1/pkg1.cj -o pkg1.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg2/pkg2.cj -o pkg2.%middle
-// EXEC: %compiler %cmp_opt pkg1.%middle pkg2.%middle %n.cj -g -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 internal import pkg1.*
 internal import pkg2.*
 

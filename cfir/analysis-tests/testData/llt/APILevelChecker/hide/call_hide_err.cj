@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: hide_err.cj hide_use_err.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt hide_err.cj -o hide_err.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt hide_use_err.cj -o hide_use_err.%middle
-// EXEC: %compiler %cmp_opt hide_use_err.%middle hide_err.%middle %n.cj -o %n.%suffix -Woff all
 
 import ohos.dep.*
 

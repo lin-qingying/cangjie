@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
-// EXEC-PIPE-0: %run %run_opt %n.%suffix | compare %f
-
 public class Binary<T> <: Collection<T> where T <: Equatable<T> & ToString {
     init(v: T) {
         println(1)
@@ -41,7 +38,3 @@ main() {
     let v = Binary([1, 2, 3])
     0
 }
-
-/* SCAN
-2
-*/

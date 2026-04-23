@@ -4,15 +4,11 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt --diagnostic-format json %f -o %output
-
-// ASSERT: scan sema_generic_type_without_type_argument
-
 class C<T> {
     public static func foo<V>() {
     }
 }
 
 main() {
-    var c = C.foo<Int>
+    var c = <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>C<!>.foo<Int>
 }

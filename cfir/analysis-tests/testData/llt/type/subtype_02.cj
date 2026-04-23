@@ -4,13 +4,11 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %n.%suffix
-
 main() {
     let t1: Option<ToString> = Option<ToString>.Some(Test1)
     let t2: Option<Test> = Option<Test>.None
     doSomething(t1)
-    doSomething(t2)
+    doSomething(<!TYPE_MISMATCH!>t2<!>)
 }
 
 func doSomething(a: Option<ToString>) {}
@@ -22,14 +20,3 @@ enum Test <: ToString {
         "test"
     }
 }
-
-/* SCAN
-error: mismatched types
-  ==> subtype_02.cj:13:17:
-   | 
-13 |     doSomething(t2)
-   |                 ^^ expected 'Enum-Option<Interface-ToString>', found 'Enum-Option<Enum-Test>'
-   | 
-
-1 error generated, 1 error printed.
-*/

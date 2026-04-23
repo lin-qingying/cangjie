@@ -40,9 +40,6 @@ class LLResolutionFacade internal constructor(
     val sessionProvider: LLSessionProvider,
     val diagnosticProvider: LLDiagnosticProvider,
 ) {
-    private val callResolver: LLCallResolver by lazy(LazyThreadSafetyMode.NONE) {
-        LLCallResolver(useSiteCfirSession)
-    }
     val useSiteModule: CaModule
         get() = moduleProvider.useSiteModule
 
@@ -116,10 +113,6 @@ class LLResolutionFacade internal constructor(
         return diagnosticProvider.collectDiagnostics(cjFile, filter)
     }
 
-    internal fun getCallInfo(element: CjElement): LLCallInfo? {
-        return callResolver.resolveCallInfo(this, element)
-    }
-
     internal fun resolveToCfirSymbol(cjDeclaration: CjDeclaration, phase: CfirResolvePhase): CfirBasedSymbol<*> {
         val containingCjFile = cjDeclaration.containingCjFile
         val module = getModule(containingCjFile)
@@ -163,12 +156,18 @@ class LLResolutionFacade internal constructor(
         return cfirDeclaration.symbol
     }
 
-    private fun findSourceCfirDeclarationViaResolve(cjDeclaration: CjExpression): CfirDeclaration {
+    /**
+     * 对齐 Kotlin LL FIR：局部声明统一先经 `getOrBuildCfirFor()` 恢复。
+     *
+     * 对匿名函数字面量，CFIR 暴露的是表达式壳节点，因此需要回到其中承载的
+     * `CfirAnonymousFunction` 声明；其余普通声明则直接接受 `CfirDeclaration`。
+     */
+    private fun findSourceCfirDeclarationViaResolve(cjDeclaration: CjDeclaration): CfirDeclaration {
         return when (val cfir = getOrBuildCfirFor(cjDeclaration)) {
             is CfirDeclaration -> cfir
             is CfirAnonymousFunctionExpression -> cfir.anonymousFunction
             else -> errorWithCfirSpecificEntries(
-                "CfirDeclaration was not found for ${cjDeclaration::class}, cfir is ${cfir?.let { it::class }}",
+                "CfirDeclaration was not found for declaration ${cjDeclaration::class}, cfir is ${cfir?.let { it::class }}",
                 fir = cfir,
                 psi = cjDeclaration,
             )

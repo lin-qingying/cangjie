@@ -303,6 +303,11 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
                 elements = convertDeclarations(element.declarations),
             )
 
+            is CfirExtend -> Container(
+                element = element,
+                elements = convertDeclarations(element.declarations),
+            )
+
             else -> Leaf(element)
         }
 
@@ -323,6 +328,17 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
          */
         fun mappingName(declaration: CfirDeclaration): Name = when (declaration) {
             is CfirClassLikeDeclaration -> declaration.symbol.name
+            is CfirExtend -> declaration.psi.let { psi ->
+                val extendPsi = psi as? CjExtend
+                requireWithAttachment(
+                    extendPsi != null,
+                    { "Source extend declaration should keep CjExtend PSI for LL designation mapping" },
+                ) {
+                    withEntry("declarationClass", declaration::class.simpleName ?: "<anonymous>")
+                    withEntry("origin", declaration.origin.toString())
+                }
+                extendPsi.nameAsSafeName
+            }
             is CfirNamedFunction -> declaration.name
             is CfirMainFunction -> declaration.symbol.name
             is CfirMacroDeclaration -> declaration.name

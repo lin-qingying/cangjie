@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: ../../apilevel.cj dep6.cj dep.cj.d
-// EXEC: %compiler %cmp_opt %compile_lib_opt apilevel.cj -o apilevel.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt apilevel.%middle dep6.cj -o dep.%middle
-// EXEC: %compiler %cmp_opt %f dep.%middle apilevel.%middle --cfg=APILevel_level=11
 
 import dep.*
 

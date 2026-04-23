@@ -5,10 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: level_syscap_check/canIUse.cj level_syscap_check/device_info.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt device_info.cj -o device_info.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt canIUse.cj -o canIUse.%middle
-// EXEC: %compiler %f device_info.%middle canIUse.%middle -o %output
-// EXEC: %run %run_opt %output %run_args | compare %f
 
 import ohos.base.canIUse
 import ohos.device_info.DeviceInfo
@@ -27,5 +23,3 @@ main() {
     bar()
     ()
 }
-
-// ASSERT: scan-4 0

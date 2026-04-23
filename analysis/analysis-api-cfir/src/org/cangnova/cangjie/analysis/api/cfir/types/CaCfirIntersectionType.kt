@@ -5,6 +5,7 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
 import org.cangnova.cangjie.analysis.api.cfir.utils.createTypePointer
 import org.cangnova.cangjie.analysis.api.cfir.utils.restoreIntersectionType
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.types.CaIntersectionType
 import org.cangnova.cangjie.analysis.api.types.CaType
@@ -17,8 +18,11 @@ import org.cangnova.cangjie.cfir.types.renderForDebugging
  */
 internal class CaCfirIntersectionType(
     override val coneType: ConeIntersectionType,
-    override val analysisSession: CaCfirSession,
+    private val analysisSession: CaCfirSession,
 ) : CaIntersectionType, CaCfirType {
+    override val token: CaLifetimeToken
+        get() = analysisSession.token
+
     override val presentation: String
         get() = withValidityAssertion { coneType.renderForDebugging() }
 

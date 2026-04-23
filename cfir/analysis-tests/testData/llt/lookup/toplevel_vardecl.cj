@@ -4,25 +4,5 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
-let a = b
+let <!UNABLE_TO_INFER_DECL!>a<!> = <!USED_BEFORE_INITIALIZATION!>b<!>
 let b = a
-
-/* SCAN
-error: unable to infer declaration type, please add type annotation
- ==> toplevel_vardecl.cj:9:5:
-  | 
-9 | let a = b
-  |     ^ 
-  | 
-
-error: variable 'b' is used before being defined
- ==> toplevel_vardecl.cj:9:9:
-  | 
-9 | let a = b
-  |         ^ 
-  | 
-
-2 errors generated, 2 errors printed.
-*/

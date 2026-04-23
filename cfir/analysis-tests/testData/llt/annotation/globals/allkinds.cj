@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -Woff all
-
 @Annotation
 public class APILevel {
     let a: UInt8

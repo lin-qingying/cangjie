@@ -17,6 +17,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 abstract class CfirResolvedTypeRef : CfirTypeRef() {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
+    abstract override val customRenderer: Boolean
     abstract val coneType: ConeCangJieType
     abstract val delegatedTypeRef: CfirTypeRef?
 

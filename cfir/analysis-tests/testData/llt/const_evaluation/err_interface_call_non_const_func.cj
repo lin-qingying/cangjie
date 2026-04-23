@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 var global = 0
 
 interface I {
@@ -13,19 +11,8 @@ interface I {
         global++
     }
     const func g() {
-        f()
+        <!EXPECT_CONST!>f()<!>
     }
 }
 
 main() {}
-
-/* SCAN
-error: expected 'const' expression
-  ==> err_interface_call_non_const_func.cj:16:9:
-   | 
-16 |         f()
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

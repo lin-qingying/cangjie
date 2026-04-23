@@ -182,7 +182,26 @@ val CfirElementWithResolveState.resolvePhase: CfirResolvePhase
  */
 @OptIn(ResolveStateAccess::class)
 fun CfirElementWithResolveState.replaceResolvePhase(newPhase: CfirResolvePhase) {
-    resolveState = CfirResolvedToPhaseState(newPhase)
+    when (val currentState = resolveState) {
+        is CfirResolvedToPhaseState -> {
+            resolveState = CfirResolvedToPhaseState(newPhase)
+        }
+
+        is CfirInProcessOfResolvingToJumpingPhaseState -> {
+            check(newPhase <= currentState.resolvingTo) {
+                "Cannot publish phase $newPhase while $this is locked for ${currentState.resolvingTo}"
+            }
+            // jumping lock 与普通 write lock 一样，阶段发布由对应 unlock 负责。
+        }
+
+        is CfirInProcessOfResolvingToPhaseState -> {
+            check(newPhase <= currentState.resolvingTo) {
+                "Cannot publish phase $newPhase while $this is locked for ${currentState.resolvingTo}"
+            }
+            // 在 low-level lazy resolve 锁内，最终阶段发布由 unlock 统一完成。
+            // 这里不能把 InProcess 状态提前覆写成 ResolvedTo，否则会破坏锁协议。
+        }
+    }
 }
 
 /**

@@ -4,27 +4,14 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 func foo<T>() {
     1
 }
 
-func me<T>(a!: () -> Int64 = foo) {
+func me<T>(a!: () -> Int64 = <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>foo<!>) {
     0
 }
 
 main(): Int64 {
     return me<Int64>() - 1
 }
-
-/* SCAN
-error: generic type should be used with type argument
-  ==> func_assign_var_02.cj:13:30:
-   | 
-13 | func me<T>(a!: () -> Int64 = foo) {
-   |                              ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

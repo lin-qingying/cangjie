@@ -1,7 +1,6 @@
 package org.cangnova.cangjie.analysis.api.cfir.types
 
 import org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirTypeParameterSymbolImpl
 import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
 import org.cangnova.cangjie.analysis.api.impl.base.CaMapBackedSubstitutor
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
@@ -10,7 +9,7 @@ import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 
 /**
  * CFIR substitutor 的统一抽象基类。

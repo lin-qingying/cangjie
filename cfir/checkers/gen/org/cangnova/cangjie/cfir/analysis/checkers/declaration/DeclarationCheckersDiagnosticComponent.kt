@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
+import org.cangnova.cangjie.utils.exceptions.shouldIjPlatformExceptionBeRethrown
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 /*
@@ -130,6 +131,7 @@ class DeclarationCheckersDiagnosticComponent(
                     checker.check(element)
                 }
             } catch (e: Exception) {
+                if (shouldIjPlatformExceptionBeRethrown(e)) throw e
                 rethrowExceptionWithDetails("Exception in declaration checkers", e) {
                     withCfirEntry("element", element)
                     context.containingFilePath?.let { withEntry("file", it) }

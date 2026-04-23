@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args
-
 public class A<T> {
     public func runCases(cases: Array<(T, T)>) {
         for (i in 0..cases.size) {

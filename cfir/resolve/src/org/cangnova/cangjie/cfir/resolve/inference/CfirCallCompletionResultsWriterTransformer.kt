@@ -41,7 +41,6 @@ import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedLambdaAtom
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirErrorReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.stages.TypeArgumentMapping
 import org.cangnova.cangjie.cfir.resolve.toErrorReference
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirAbstractTreeTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.IntegerLiteralAndOperatorApproximationTransformer
@@ -52,10 +51,10 @@ import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
 import org.cangnova.cangjie.cfir.types.ConeTypeApproximator
-import org.cangnova.cangjie.cfir.types.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
@@ -63,17 +62,13 @@ import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.commonSuperTypeOrNull
 import org.cangnova.cangjie.cfir.types.coneTypeSafe
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.cfir.types.resolvedType
 import org.cangnova.cangjie.cfir.types.typeContext
-import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
-import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.types.TypeApproximatorConfiguration
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.fakeElement
-import kotlin.text.get
 
 class CfirCallCompletionResultsWriterTransformer(
     override val session: CfirSession,
@@ -457,8 +452,8 @@ class CfirCallCompletionResultsWriterTransformer(
         val expectedFunctionType =
             (data?.let { context ->
                 anonymousFunctionExpression?.let(context::getExpectedType)
-            } as? ConeFuncType)
-                ?: (data?.getExpectedType(anonymousFunction) as? ConeFuncType)
+            } as? ConeFunctionType)
+                ?: (data?.getExpectedType(anonymousFunction) as? ConeFunctionType)
         /**
          * 对齐 Kotlin FIR 的语义意图：
          * 对“作为实参传入的 lambda”，它的返回类型首先应该受参数函数类型约束，
@@ -516,7 +511,7 @@ class CfirCallCompletionResultsWriterTransformer(
         val parameterTypes = function.valueParameters.mapNotNull { it.returnTypeRef.coneTypeSafe<ConeCangJieType>() }
         val returnType =
             function.returnTypeRef.coneTypeSafe<ConeCangJieType>() ?: function.body?.coneTypeOrNull ?: return null
-        return ConeFuncType(parameterTypes, returnType)
+        return ConeFunctionType(parameterTypes, returnType)
     }
 
     private fun computeAnonymousFunctionReturnType(

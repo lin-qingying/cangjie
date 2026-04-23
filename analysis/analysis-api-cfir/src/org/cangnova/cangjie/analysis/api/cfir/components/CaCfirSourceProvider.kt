@@ -4,7 +4,7 @@ import org.cangnova.cangjie.analysis.api.cfir.*
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirBackedSymbol
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbolImpl
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbol
 import org.cangnova.cangjie.analysis.api.components.CaSourceProvider
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
@@ -21,29 +21,5 @@ import org.cangnova.cangjie.psi.CjFile
 internal class CaCfirSourceProvider(
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaSourceProvider {
-    override fun CaSymbol.getContainingFile(): CjFile? = withValidityAssertion {
-        when (this@getContainingFile) {
-            is CaFileSymbol -> file
-            is CaCfirExtendSymbolImpl -> (extendPsi?.containingFile as? CjFile) ?: decompiledFallbackFile(this@getContainingFile)
-            is CaDeclarationSymbol -> {
-                (psi?.containingFile as? CjFile)
-                    ?: (this@getContainingFile as? CaCfirBackedSymbol<*>)?.let { symbol ->
-                        analysisSession.symbolQueries.lookupContainingFile(symbol.backingSymbol)
-                    }
-                    ?: decompiledFallbackFile(this@getContainingFile)
-            }
 
-            is CaCfirBackedSymbol<*> -> {
-                analysisSession.symbolQueries.lookupContainingFile(backingSymbol)
-                    ?: decompiledFallbackFile(this@getContainingFile)
-            }
-
-            else -> decompiledFallbackFile(this@getContainingFile)
-        }
-    }
-
-    private fun decompiledFallbackFile(symbol: CaSymbol): CjFile? {
-        val packageFqName = symbol.decompiledContainingPackageFqName() ?: return null
-        return analysisSession.findDecompiledContainingFile(packageFqName)
-    }
 }

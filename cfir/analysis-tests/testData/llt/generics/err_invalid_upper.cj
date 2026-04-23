@@ -4,9 +4,9 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %diag_json  %f  -o %output 2>&1 | compare %f
+// DIAGNOSTICS: -UNUSED_VARIABLE
 
-class Aoo<T> where T <: Bool & Object {
+class Aoo<T> where T <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>Bool<!> & Object {
     public var a: T
     public init(x: T) {
         a = x
@@ -14,13 +14,9 @@ class Aoo<T> where T <: Bool & Object {
 }
 
 main() {
-    var a = Aoo<Bool>(false)
+    var a = <!GENERIC_ARGUMENT_NO_MATCH!>Aoo<Bool><!>(false)
     if (!a.a) {
         return 1
     }
     return 0
 }
-
-// ASSERT: scan-1 sema_generic_type_argument_not_match_constraint
-// ASSERT: scan-1 sema_upper_bound_must_be_class_or_interface
-// ASSERT: scan "Errors": 2

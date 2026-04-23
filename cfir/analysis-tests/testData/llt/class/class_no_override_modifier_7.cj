@@ -4,12 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-// EXEC: %run %run_opt %n.%suffix
-
-// ASSERT: regex-not core dump
-// ASSERT: regex-not stack trace
-
 class C1<T> {}
 
 class C2<T> {}

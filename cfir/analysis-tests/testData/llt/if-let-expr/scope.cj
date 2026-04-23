@@ -4,26 +4,13 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 main() {
     let aa: Option<Bool> = None
     if (let Some(xx) <- aa) {
         println("11")
-    } else if (!xx) {
+    } else if (!<!UNRESOLVED_REFERENCE!>xx<!>) {
         println("22")
     } else {
         println("33")
     }
 }
-
-/* SCAN
-error: undeclared identifier 'xx'
-  ==> scope.cj:13:17:
-   | 
-13 |     } else if (!xx) {
-   |                 ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -1,0 +1,51 @@
+{
+  "id": "[Cangjie] Hybrid Static Library",
+  "displayName": "[Cangjie] Hybrid Static Library",
+  "description": "This template allows you to share code, Cangjie libraries, C++ libraries, resources, and configuration files. It will be packaged with the caller.",
+  "category": "library",
+  "baseProvider": "ohos",
+  "functionType": "lib",
+  "globalsFile": "parameter.json.ftl",
+  "recipeFile": "command.xml.ftl",
+  "templateIcon": "Hybrid Cangjie Static Library.svg",
+  "templatePreviewImage": "",
+  "minCompileSdk": 12,
+  "addOnMinCompileSdk": 12,
+  "addOnMinCompatibleSdk": "5.0.0(12)",
+  "addOnMaxCompatibleSdk": "5.0.5(17)",
+  "projectType": "Application",
+  "apiType": {
+	"Application": {
+		"stageMode" : {
+		  "minCompileSdk" : "5.0.0(12)",
+		  "developmentMode": {
+			"traditionalCode": [
+			  {
+				"uiSyntax": "eTS",
+				"deviceType": ["default", "tablet"],
+				"minCompatibleSdk": 12
+			  }
+			]
+		  }
+		}
+	}
+  },
+  "addOnApiType": {
+	"Application": {
+		"stageMode" : {
+		  "minCompatibleSdk" : "5.0.0(12)",
+		  "developmentMode": {
+			"traditionalCode": [
+			  {
+				"uiSyntax": "eTS",
+				"deviceType": ["default", "tablet", "2in1"],
+				"minCompatibleSdk": "5.0.0(12)",
+				"minCompileSdk": "5.0.0(12)",
+			    "isEnable": "false"
+			  }
+			]
+		  }
+		}
+	}
+  }
+}

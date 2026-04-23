@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: struct_data.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt struct_data.cj -o libdata.%lib_extension
-// EXEC: %compiler %cmp_opt %n.cj libdata.%lib_extension -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
 
 package example
 

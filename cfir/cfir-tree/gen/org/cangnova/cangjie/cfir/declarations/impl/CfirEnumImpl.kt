@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
+import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -31,6 +32,7 @@ class CfirEnumImpl @CfirImplementationDetail constructor(
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
     override var deprecationsProvider: DeprecationsProvider,
+    override val scopeProvider: CfirScopeProvider,
     override var status: CfirDeclarationStatus,
     override val typeParameters: MutableList<CfirTypeParameter>,
     override val symbol: CfirEnumSymbol,

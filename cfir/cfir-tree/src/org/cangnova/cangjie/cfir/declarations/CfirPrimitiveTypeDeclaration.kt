@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -21,6 +22,7 @@ class CfirPrimitiveTypeDeclaration(
     override val symbol: CfirPrimitiveTypeSymbol,
     override val name: Name,
     val kind: PrimitiveTypeKind,
+    override val scopeProvider: CfirScopeProvider,
     override var annotations: MutableOrEmptyList<CfirAnnotation> = MutableOrEmptyList.empty(),
     override val origin: CfirDeclarationOrigin = CfirDeclarationOrigin.Synthetic.Default,
     override val attributes: CfirDeclarationAttributes = CfirDeclarationAttributes.EMPTY,
@@ -31,6 +33,7 @@ class CfirPrimitiveTypeDeclaration(
     override var superTypeRefs: MutableList<CfirTypeRef> = mutableListOf(),
 ) : CfirClassLikeDeclaration() {
     override val source: CjSourceElement? = null
+
 
     init {
         symbol.bind(this)

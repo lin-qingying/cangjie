@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 extend Int32 {
     public static func sub(a: Int64): Int64 {
         return a - 1

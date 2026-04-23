@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-// ASSERT: regex-not generics
-
 type F = (Int32) -> Int8
 
 extend F {}

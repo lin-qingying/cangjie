@@ -4,30 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 func test(a: (Int64) -> Int32) {}
 
 main() {
-    let _ = Array<Int32>(5, {=>})
+    let _ = Array<Int32>(5, <!TYPE_MISMATCH!>{=>}<!>)
 
-    test({=>})
+    test(<!TYPE_MISMATCH!>{=>}<!>)
 }
-
-/* SCAN
-error: mismatched types
-  ==> lambda15.cj:12:29:
-   | 
-12 |     let _ = Array<Int32>(5, {=>})
-   |                             ^^^^ expected '(Int64) -> Int32', found '() -> Unit'
-   | 
-
-error: mismatched types
-  ==> lambda15.cj:14:10:
-   | 
-14 |     test({=>})
-   |          ^^^^ expected '(Int64) -> Int32', found '() -> Unit'
-   | 
-
-2 errors generated, 2 errors printed.
-*/

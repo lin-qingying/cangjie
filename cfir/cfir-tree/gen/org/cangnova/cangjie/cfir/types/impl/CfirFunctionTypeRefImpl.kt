@@ -21,6 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirFunctionTypeRefImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
+    override val customRenderer: Boolean,
     override val parameterTypeRefs: MutableList<CfirTypeRef>,
     override var returnTypeRef: CfirTypeRef,
 ) : CfirFunctionTypeRef() {

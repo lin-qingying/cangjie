@@ -14,6 +14,11 @@ import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveCo
 abstract class CfirPartialBodyResolveTransformer(
     val transformer: CfirAbstractBodyResolveTransformerDispatcher,
 ) : CfirAbstractBodyResolveTransformer(transformer.transformerPhase) {
+    final override var implicitTypeOnly: Boolean
+        get() = transformer.implicitTypeOnly
+        set(value) {
+            transformer.implicitTypeOnly = value
+        }
 
     final override val context: BodyResolveContext
         get() = transformer.context

@@ -1,0 +1,906 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>类 - 仓颉编程语言库 API</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../favicon.png">
+        <link rel="stylesheet" href="../../../css/variables.css">
+        <link rel="stylesheet" href="../../../css/general.css">
+        <link rel="stylesheet" href="../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../highlight.css">
+        <link rel="stylesheet" href="../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../../assets/style.css">
+        <link rel="stylesheet" href="../../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../../libs_overview_ohos.html"><strong aria-hidden="true">1.</strong> 仓颉编程语言库 API</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/std_module_overview_ohos.html"><strong aria-hidden="true">1.1.</strong> std 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_package_overview.html"><strong aria-hidden="true">1.1.1.</strong> std.core 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_funcs.html"><strong aria-hidden="true">1.1.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_types.html"><strong aria-hidden="true">1.1.1.2.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_intrinsics.html"><strong aria-hidden="true">1.1.1.3.</strong> 内置类型</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_interfaces.html"><strong aria-hidden="true">1.1.1.4.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_classes.html"><strong aria-hidden="true">1.1.1.5.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_enums.html"><strong aria-hidden="true">1.1.1.6.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_structs.html"><strong aria-hidden="true">1.1.1.7.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_exceptions.html"><strong aria-hidden="true">1.1.1.8.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.1.9.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_samples/core_spawn_sample.html"><strong aria-hidden="true">1.1.1.9.1.</strong> 仓颉并发编程示例</a></li><li class="chapter-item "><a href="../../../std/core/core_samples/core_cstring_sample.html"><strong aria-hidden="true">1.1.1.9.2.</strong> 使用 CString 与 C 代码交互示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/argopt/argopt_package_overview.html"><strong aria-hidden="true">1.1.2.</strong> std.argopt 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/argopt/argopt_package_api/argopt_package_classes.html"><strong aria-hidden="true">1.1.2.1.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.2.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/argopt/argopt_samples/long_argument_parse.html"><strong aria-hidden="true">1.1.2.2.1.</strong> 长命令行参数解析</a></li><li class="chapter-item "><a href="../../../std/argopt/argopt_samples/short_argument_parse.html"><strong aria-hidden="true">1.1.2.2.2.</strong> 短命令行参数解析</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/ast/ast_package_overview.html"><strong aria-hidden="true">1.1.3.</strong> std.ast 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_funcs.html"><strong aria-hidden="true">1.1.3.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_interfaces.html"><strong aria-hidden="true">1.1.3.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_classes.html"><strong aria-hidden="true">1.1.3.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_enums.html"><strong aria-hidden="true">1.1.3.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_structs.html"><strong aria-hidden="true">1.1.3.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_exceptions.html"><strong aria-hidden="true">1.1.3.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.3.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/ast/ast_samples/context.html"><strong aria-hidden="true">1.1.3.7.1.</strong> Macro With Context</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/dump.html"><strong aria-hidden="true">1.1.3.7.2.</strong> 语法树节点打印</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/operate.html"><strong aria-hidden="true">1.1.3.7.3.</strong> 操作 AST 对象示例</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/parse.html"><strong aria-hidden="true">1.1.3.7.4.</strong> 将仓颉源码解析为 AST 对象示例</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/report.html"><strong aria-hidden="true">1.1.3.7.5.</strong> 自定义报错接口</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/traverse.html"><strong aria-hidden="true">1.1.3.7.6.</strong> 自定义访问函数遍历 AST 对象示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/binary/binary_package_overview.html"><strong aria-hidden="true">1.1.4.</strong> std.binary 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/binary/binary_package_api/binary_package_interfaces.html"><strong aria-hidden="true">1.1.4.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/collection/collection_package_overview.html"><strong aria-hidden="true">1.1.5.</strong> std.collection 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_function.html"><strong aria-hidden="true">1.1.5.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_interface.html"><strong aria-hidden="true">1.1.5.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_class.html"><strong aria-hidden="true">1.1.5.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/colleciton_package_struct.html"><strong aria-hidden="true">1.1.5.4.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_exception.html"><strong aria-hidden="true">1.1.5.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.5.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_append_insert.html"><strong aria-hidden="true">1.1.5.6.1.</strong> ArrayList 的 append/insert 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_get_set.html"><strong aria-hidden="true">1.1.5.6.2.</strong> ArrayList 的 get/set 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_remove_clear_slice.html"><strong aria-hidden="true">1.1.5.6.3.</strong> ArrayList 的 remove/clear/slice 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashmap_get_put_contains.html"><strong aria-hidden="true">1.1.5.6.4.</strong> Hashmap 的 get/put/contains 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashmap_putall_remove_clear.html"><strong aria-hidden="true">1.1.5.6.5.</strong> HashMap 的 putAll/remove/clear 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashset_put_iterator_remove.html"><strong aria-hidden="true">1.1.5.6.6.</strong> HashSet 的 put/iterator/remove 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_iterator.html"><strong aria-hidden="true">1.1.5.6.7.</strong> 迭代器操作函数</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_overview.html"><strong aria-hidden="true">1.1.6.</strong> std.collection.concurrent 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_api/collection_concurrent_interface.html"><strong aria-hidden="true">1.1.6.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_api/collection_concurrent_class.html"><strong aria-hidden="true">1.1.6.2.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.6.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_samples/sample_concurrenthashmap.html"><strong aria-hidden="true">1.1.6.3.1.</strong> ConcurrentHashMap 使用示例</a></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_samples/sample_noblocking_queue.html"><strong aria-hidden="true">1.1.6.3.2.</strong> NonBlockingQueue 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/console/console_package_overview.html"><strong aria-hidden="true">1.1.7.</strong> std.console 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/console/console_package_api/console_package_class.html"><strong aria-hidden="true">1.1.7.1.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.7.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/console/console_samples/console_sample.html"><strong aria-hidden="true">1.1.7.2.1.</strong> Console 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/convert/convert_package_overview.html"><strong aria-hidden="true">1.1.8.</strong> std.convert 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/convert/convert_package_api/convert_package_interfaces.html"><strong aria-hidden="true">1.1.8.1.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.8.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/convert/convert_samples/convert_samples.html"><strong aria-hidden="true">1.1.8.2.1.</strong> covert 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/crypto/cipher/cipher_package_overview.html"><strong aria-hidden="true">1.1.9.</strong> std.crypto.cipher 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/crypto/cipher/cipher_package_api/cipher_package_interfaces.html"><strong aria-hidden="true">1.1.9.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_overview.html"><strong aria-hidden="true">1.1.10.</strong> std.crypto.digest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_api/digest_package_funcs.html"><strong aria-hidden="true">1.1.10.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_api/digest_package_interfaces.html"><strong aria-hidden="true">1.1.10.2.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_overview.html"><strong aria-hidden="true">1.1.11.</strong> std.database.sql 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_interfaces.html"><strong aria-hidden="true">1.1.11.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_classes.html"><strong aria-hidden="true">1.1.11.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_enums.html"><strong aria-hidden="true">1.1.11.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_exceptions.html"><strong aria-hidden="true">1.1.11.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.11.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_driver.html"><strong aria-hidden="true">1.1.11.5.1.</strong> 实现数据库驱动查询功能示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_get_connection.html"><strong aria-hidden="true">1.1.11.5.2.</strong> 获取数据库连接示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_modify_table.html"><strong aria-hidden="true">1.1.11.5.3.</strong> 删除表、创建表示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_operations.html"><strong aria-hidden="true">1.1.11.5.4.</strong> 执行数据库操作语句示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_transactions.html"><strong aria-hidden="true">1.1.11.5.5.</strong> 执行事务控制语句示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/format/format_package_overview.html"><strong aria-hidden="true">1.1.12.</strong> std.format 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/format/format_package_api/format_package_interfaces.html"><strong aria-hidden="true">1.1.12.1.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.12.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/format/format_samples/format_samples.html"><strong aria-hidden="true">1.1.12.2.1.</strong> format 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/fs/fs_package_overview.html"><strong aria-hidden="true">1.1.13.</strong> std.fs 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_classes.html"><strong aria-hidden="true">1.1.13.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_enums.html"><strong aria-hidden="true">1.1.13.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_structs.html"><strong aria-hidden="true">1.1.13.3.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_exceptions.html"><strong aria-hidden="true">1.1.13.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.13.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/fs/fs_samples/directory_samples.html"><strong aria-hidden="true">1.1.13.5.1.</strong> Directory 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/file_samples.html"><strong aria-hidden="true">1.1.13.5.2.</strong> File 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/fileinfo_samples.html"><strong aria-hidden="true">1.1.13.5.3.</strong> FileInfo 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/path_samples.html"><strong aria-hidden="true">1.1.13.5.4.</strong> Path 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/io/io_package_overview.html"><strong aria-hidden="true">1.1.14.</strong> std.io 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_interfaces.html"><strong aria-hidden="true">1.1.14.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_classes.html"><strong aria-hidden="true">1.1.14.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_enums.html"><strong aria-hidden="true">1.1.14.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_exceptions.html"><strong aria-hidden="true">1.1.14.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.14.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/io/io_samples/buffered_input_stream.html"><strong aria-hidden="true">1.1.14.5.1.</strong> BufferedInputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/buffered_output_stream.html"><strong aria-hidden="true">1.1.14.5.2.</strong> BufferedOutputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/byte_array_stream.html"><strong aria-hidden="true">1.1.14.5.3.</strong> ByteArrayStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/chained_input_stream.html"><strong aria-hidden="true">1.1.14.5.4.</strong> ChainedInputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/multi_output_stream.html"><strong aria-hidden="true">1.1.14.5.5.</strong> MultiOutputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/string_reader.html"><strong aria-hidden="true">1.1.14.5.6.</strong> StringReader 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/string_writer.html"><strong aria-hidden="true">1.1.14.5.7.</strong> StringWriter 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_overview.html"><strong aria-hidden="true">1.1.15.</strong> std.log 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_interfaces.html"><strong aria-hidden="true">1.1.15.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_classes.html"><strong aria-hidden="true">1.1.15.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_enums.html"><strong aria-hidden="true">1.1.15.3.</strong> 枚举</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.15.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/log/stdlog_samples/stdlog_sample.html"><strong aria-hidden="true">1.1.15.4.1.</strong> 日志打印示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/math/math_package_overview.html"><strong aria-hidden="true">1.1.16.</strong> std.math 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_funcs.html"><strong aria-hidden="true">1.1.16.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_interfaces.html"><strong aria-hidden="true">1.1.16.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_enums.html"><strong aria-hidden="true">1.1.16.3.</strong> 枚举</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.16.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math/math_samples/math_basic_operation.html"><strong aria-hidden="true">1.1.16.4.1.</strong> 数学基础运算示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_overview.html"><strong aria-hidden="true">1.1.17.</strong> std.math.numeric 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_funcs.html"><strong aria-hidden="true">1.1.17.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_enums.html"><strong aria-hidden="true">1.1.17.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_structs.html"><strong aria-hidden="true">1.1.17.3.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.17.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_arithmetic.html"><strong aria-hidden="true">1.1.17.4.1.</strong> BigInt 基础数学运算示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_prop.html"><strong aria-hidden="true">1.1.17.4.2.</strong> BigInt 基本属性示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_compare_opration.html"><strong aria-hidden="true">1.1.17.4.3.</strong> BigInt 大小比较示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_basic_arithmetic.html"><strong aria-hidden="true">1.1.17.4.4.</strong> Decimal 基础数学运算示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_basic_prop.html"><strong aria-hidden="true">1.1.17.4.5.</strong> Decimal 基本属性示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_compare_opration.html"><strong aria-hidden="true">1.1.17.4.6.</strong> Decimal 大小比较示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/objectpool/objectpool_package_overview.html"><strong aria-hidden="true">1.1.18.</strong> std.objectpool 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/objectpool/objectpool_package_api/objectpool_package_classes.html"><strong aria-hidden="true">1.1.18.1.</strong> 类</a></li></ol></li><li class="chapter-item "><a href="../../../std/os/os_package_overview.html"><strong aria-hidden="true">1.1.19.</strong> std.os 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os/os_package_api/os_package_funcs.html"><strong aria-hidden="true">1.1.19.1.</strong> 函数</a></li></ol></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_overview.html"><strong aria-hidden="true">1.1.20.</strong> std.os.posix 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_api/os_posix_package_constants_vars.html"><strong aria-hidden="true">1.1.20.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_api/os_posix_package_funcs.html"><strong aria-hidden="true">1.1.20.2.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.20.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_file_content_samples.html"><strong aria-hidden="true">1.1.20.3.1.</strong> 文件内容相关操作</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_file_info_samples.html"><strong aria-hidden="true">1.1.20.3.2.</strong> 文件信息相关操作</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_os_envinfo_samples.html"><strong aria-hidden="true">1.1.20.3.3.</strong> 获取各类系统信息</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_process_samples.html"><strong aria-hidden="true">1.1.20.3.4.</strong> 进程相关信息操作</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_overview.html"><strong aria-hidden="true">1.1.21.</strong> std.os.process 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_classes.html"><strong aria-hidden="true">1.1.21.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_enums.html"><strong aria-hidden="true">1.1.21.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_exceptions.html"><strong aria-hidden="true">1.1.21.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.21.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_currentprocess_sample.html"><strong aria-hidden="true">1.1.21.4.1.</strong> 当前进程相关操作</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_rm_file_win_platform_sample.html"><strong aria-hidden="true">1.1.21.4.2.</strong> Windows 平台子进程结束后删除子进程可执行文件</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_sample.html"><strong aria-hidden="true">1.1.21.4.3.</strong> 任意进程相关操作</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_subprocess_sample.html"><strong aria-hidden="true">1.1.21.4.4.</strong> 子进程相关操作</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/overflow/overflow_package_overview.html"><strong aria-hidden="true">1.1.22.</strong> std.overflow 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/overflow/overflow_package_api/overflow_package_interfaces.html"><strong aria-hidden="true">1.1.22.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_package_api/overflow_package_exceptions.html"><strong aria-hidden="true">1.1.22.2.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.22.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/option.html"><strong aria-hidden="true">1.1.22.3.1.</strong> 返回 Option 策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/saturating.html"><strong aria-hidden="true">1.1.22.3.2.</strong> 饱和策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/throwing.html"><strong aria-hidden="true">1.1.22.3.3.</strong> 抛出异常策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/wrapping.html"><strong aria-hidden="true">1.1.22.3.4.</strong> 高位截断策略的示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/random/random_package_overview.html"><strong aria-hidden="true">1.1.23.</strong> std.random 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/random/random_package_api/random_package_classes.html"><strong aria-hidden="true">1.1.23.1.</strong> 类</a></li></ol></li><li class="chapter-item "><a href="../../../std/regex/regex_package_overview.html"><strong aria-hidden="true">1.1.24.</strong> std.regex 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_classes.html"><strong aria-hidden="true">1.1.24.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_structs.html"><strong aria-hidden="true">1.1.24.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_exceptions.html"><strong aria-hidden="true">1.1.24.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.24.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/regex/regex_samples/regex_sample.html"><strong aria-hidden="true">1.1.24.4.1.</strong> Regex 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/runtime/runtime_package_overview.html"><strong aria-hidden="true">1.1.25.</strong> std.runtime 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/runtime/runtime_package_api/runtime_package_funcs.html"><strong aria-hidden="true">1.1.25.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/runtime/runtime_package_api/runtime_package_structs.html"><strong aria-hidden="true">1.1.25.2.</strong> 结构体</a></li></ol></li><li class="chapter-item "><a href="../../../std/socket/socket_package_overview.html"><strong aria-hidden="true">1.1.26.</strong> std.socket 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_constants_vars.html"><strong aria-hidden="true">1.1.26.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_interfaces.html"><strong aria-hidden="true">1.1.26.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_classes.html"><strong aria-hidden="true">1.1.26.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_enums.html"><strong aria-hidden="true">1.1.26.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_structs.html"><strong aria-hidden="true">1.1.26.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_exceptions.html"><strong aria-hidden="true">1.1.26.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.26.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/socket/socket_samples/socket_option.html"><strong aria-hidden="true">1.1.26.7.1.</strong> 属性配置使用用例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/tcp.html"><strong aria-hidden="true">1.1.26.7.2.</strong> TCP 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/udp.html"><strong aria-hidden="true">1.1.26.7.3.</strong> UDP 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/unix.html"><strong aria-hidden="true">1.1.26.7.4.</strong> UNIX 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/unix_datagram.html"><strong aria-hidden="true">1.1.26.7.5.</strong> UnixDatagram 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/sort/sort_package_overview.html"><strong aria-hidden="true">1.1.27.</strong> std.sort 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sort/sort_package_api/sort_package_funcs.html"><strong aria-hidden="true">1.1.27.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/sort/sort_package_api/sort_package_interfaces.html"><strong aria-hidden="true">1.1.27.2.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.27.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sort/sort_samples/sort_sample_array.html"><strong aria-hidden="true">1.1.27.3.1.</strong> 对 Array 进行排序</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/sync/sync_package_overview.html"><strong aria-hidden="true">1.1.28.</strong> std.sync 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_constants_vars.html"><strong aria-hidden="true">1.1.28.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_funcs.html"><strong aria-hidden="true">1.1.28.2.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_interfaces.html"><strong aria-hidden="true">1.1.28.3.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_classes.html"><strong aria-hidden="true">1.1.28.4.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_enums.html"><strong aria-hidden="true">1.1.28.5.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_structs.html"><strong aria-hidden="true">1.1.28.6.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_exceptions.html"><strong aria-hidden="true">1.1.28.7.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.28.8.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sync/sync_samples/sync_samples.html"><strong aria-hidden="true">1.1.28.8.1.</strong> 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/time/time_package_overview.html"><strong aria-hidden="true">1.1.29.</strong> std.time 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_interfaces.html"><strong aria-hidden="true">1.1.29.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_classes.html"><strong aria-hidden="true">1.1.29.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_enums.html"><strong aria-hidden="true">1.1.29.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_structs.html"><strong aria-hidden="true">1.1.29.4.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_exceptions.html"><strong aria-hidden="true">1.1.29.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.29.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_compare.html"><strong aria-hidden="true">1.1.29.6.1.</strong> DateTime 比较</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_parse.html"><strong aria-hidden="true">1.1.29.6.2.</strong> DateTime 与 String 类型的转换</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_prop.html"><strong aria-hidden="true">1.1.29.6.3.</strong> 获取日期时间信息</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_tz.html"><strong aria-hidden="true">1.1.29.6.4.</strong> 同一时间在不同时区的本地时间</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/monotime_test.html"><strong aria-hidden="true">1.1.29.6.5.</strong> 利用 MonoTime 作计时</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unicode/unicode_package_overview.html"><strong aria-hidden="true">1.1.30.</strong> std.unicode 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unicode/unicode_package_api/unicode_package_interfaces.html"><strong aria-hidden="true">1.1.30.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_overview.html"><strong aria-hidden="true">1.1.31.</strong> std.unittest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_functions.html"><strong aria-hidden="true">1.1.31.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_interfaces.html"><strong aria-hidden="true">1.1.31.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_classes.html"><strong aria-hidden="true">1.1.31.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_enums.html"><strong aria-hidden="true">1.1.31.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_structs.html"><strong aria-hidden="true">1.1.31.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_exceptions.html"><strong aria-hidden="true">1.1.31.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.31.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_getting_started.html"><strong aria-hidden="true">1.1.31.7.1.</strong> 快速入门</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_basics.html"><strong aria-hidden="true">1.1.31.7.2.</strong> 基础概念</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_parameterized_tests.html"><strong aria-hidden="true">1.1.31.7.3.</strong> 参数化测试</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_dynamic_tests.html"><strong aria-hidden="true">1.1.31.7.4.</strong> 动态测试</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_overview.html"><strong aria-hidden="true">1.1.32.</strong> std.unittest.mock 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_functions.html"><strong aria-hidden="true">1.1.32.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_interfaces.html"><strong aria-hidden="true">1.1.32.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_classes.html"><strong aria-hidden="true">1.1.32.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_enums.html"><strong aria-hidden="true">1.1.32.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_exceptions.html"><strong aria-hidden="true">1.1.32.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.32.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_getting_started.html"><strong aria-hidden="true">1.1.32.6.1.</strong> 快速入门</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_basics.html"><strong aria-hidden="true">1.1.32.6.2.</strong> 基础概念</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_stubs.html"><strong aria-hidden="true">1.1.32.6.3.</strong> 桩</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_verification.html"><strong aria-hidden="true">1.1.32.6.4.</strong> 验证</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_mock_mockmacro/unittest_mock_mockmacro_package_overview.html"><strong aria-hidden="true">1.1.33.</strong> std.unittest.mock.mockmacro 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock_mockmacro/unittest_mock_mockmacro_package_api/unittest_mock_mockmacro_package_macros.html"><strong aria-hidden="true">1.1.33.1.</strong> 宏</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_testmacro/unittest_testmacro_package_overview.html"><strong aria-hidden="true">1.1.34.</strong> std.unittest.testmacro 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_testmacro/unittest_testmacro_package_api/unittest_testmacro_package_macros.html"><strong aria-hidden="true">1.1.34.1.</strong> 宏</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_overview.html"><strong aria-hidden="true">1.1.35.</strong> std.unittest.common 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_functions.html"><strong aria-hidden="true">1.1.35.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html"><strong aria-hidden="true">1.1.35.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_classes.html"><strong aria-hidden="true">1.1.35.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_enums.html"><strong aria-hidden="true">1.1.35.4.</strong> 枚举</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_diff/unittest_diff_package_overview.html"><strong aria-hidden="true">1.1.36.</strong> unittest.diff</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_diff/unittest_diff_package_api/unittest_diff_package_interfaces.html"><strong aria-hidden="true">1.1.36.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_overview.html"><strong aria-hidden="true">1.1.37.</strong> unittest.prop_test</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_functions.html"><strong aria-hidden="true">1.1.37.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_interfaces.html"><strong aria-hidden="true">1.1.37.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_classes.html"><strong aria-hidden="true">1.1.37.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_structs.html"><strong aria-hidden="true">1.1.37.4.</strong> 结构体</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../compress/compress_module_overview.html"><strong aria-hidden="true">1.2.</strong> compress 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_overview.html"><strong aria-hidden="true">1.2.1.</strong> compress.zlib 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_classes.html"><strong aria-hidden="true">1.2.1.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_enums.html"><strong aria-hidden="true">1.2.1.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_exceptions.html"><strong aria-hidden="true">1.2.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.2.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_samples/deflate_compress_decompress.html"><strong aria-hidden="true">1.2.1.4.1.</strong> Deflate 格式数据的压缩和解压</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_samples/gzip_compress_decompress.html"><strong aria-hidden="true">1.2.1.4.2.</strong> Gzip 格式数据的压缩和解压</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/crypto_module_overview.html"><strong aria-hidden="true">1.3.</strong> crypto 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_overview.html"><strong aria-hidden="true">1.3.1.</strong> crypto.crypto 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_classes.html"><strong aria-hidden="true">1.3.1.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_structs.html"><strong aria-hidden="true">1.3.1.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_exceptions.html"><strong aria-hidden="true">1.3.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_samples/sample_secure_random.html"><strong aria-hidden="true">1.3.1.4.1.</strong> SecureRandom 使用</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_samples/sample_crypto.html"><strong aria-hidden="true">1.3.1.4.2.</strong> SM4 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/digest/crypto_digest_package_overview.html"><strong aria-hidden="true">1.3.2.</strong> crypto.digest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_classes.html"><strong aria-hidden="true">1.3.2.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_structs.html"><strong aria-hidden="true">1.3.2.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_exceptions.html"><strong aria-hidden="true">1.3.2.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.2.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/digest/digest_samples/sample_digest.html"><strong aria-hidden="true">1.3.2.4.1.</strong> digest 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_overview.html"><strong aria-hidden="true">1.3.3.</strong> crypto.keys 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_classes.html"><strong aria-hidden="true">1.3.3.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_enums.html"><strong aria-hidden="true">1.3.3.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_structs.html"><strong aria-hidden="true">1.3.3.3.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.3.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/keys/keys_samples/sample_keys.html"><strong aria-hidden="true">1.3.3.4.1.</strong> keys 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_overview.html"><strong aria-hidden="true">1.3.4.</strong> crypto.x509 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_type.html"><strong aria-hidden="true">1.3.4.1.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_interfaces.html"><strong aria-hidden="true">1.3.4.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_classes.html"><strong aria-hidden="true">1.3.4.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_enums.html"><strong aria-hidden="true">1.3.4.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_structs.html"><strong aria-hidden="true">1.3.4.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_exceptions.html"><strong aria-hidden="true">1.3.4.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.4.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/x509/x509_samples/sample_x509.html"><strong aria-hidden="true">1.3.4.7.1.</strong> x509 使用</a></li></ol></li></ol></li></ol></li><li class="chapter-item expanded "><a href="../../../encoding/encoding_module_overview.html"><strong aria-hidden="true">1.4.</strong> encoding 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_package_overview.html"><strong aria-hidden="true">1.4.1.</strong> encoding.base64 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_package_api/base64_package_funcs.html"><strong aria-hidden="true">1.4.1.1.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.1.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_samples/base64.html"><strong aria-hidden="true">1.4.1.2.1.</strong> Byte 数组和 Base64 互转</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/hex/hex_package_overview.html"><strong aria-hidden="true">1.4.2.</strong> encoding.hex 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/hex/hex_package_api/hex_package_funcs.html"><strong aria-hidden="true">1.4.2.1.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.2.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/hex/hex_samples/hex.html"><strong aria-hidden="true">1.4.2.2.1.</strong> Byte 数组和 Hex 互转</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="../../../encoding/json/json_package_overview.html"><strong aria-hidden="true">1.4.3.</strong> encoding.json 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_interfaces.html"><strong aria-hidden="true">1.4.3.1.</strong> 接口</a></li><li class="chapter-item expanded "><a href="../../../encoding/json/json_package_api/encoding_json_package_classes.html" class="active"><strong aria-hidden="true">1.4.3.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_enums.html"><strong aria-hidden="true">1.4.3.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_exceptions.html"><strong aria-hidden="true">1.4.3.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.3.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json/json_samples/json_array_sample.html"><strong aria-hidden="true">1.4.3.5.1.</strong> JsonArray 使用示例</a></li><li class="chapter-item "><a href="../../../encoding/json/json_samples/json_value_sample.html"><strong aria-hidden="true">1.4.3.5.2.</strong> JsonValue 和 String 互相转换</a></li><li class="chapter-item "><a href="../../../encoding/json/json_samples/to_json_sample.html"><strong aria-hidden="true">1.4.3.5.3.</strong> JsonValue 与 DataModel 的转换</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_overview.html"><strong aria-hidden="true">1.4.4.</strong> encoding.json.stream 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_interfaces.html"><strong aria-hidden="true">1.4.4.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_classes.html"><strong aria-hidden="true">1.4.4.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_enums.html"><strong aria-hidden="true">1.4.4.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_structs.html"><strong aria-hidden="true">1.4.4.4.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.4.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_reader.html"><strong aria-hidden="true">1.4.4.5.1.</strong> 使用 Json Stream 进行反序列化</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_writer.html"><strong aria-hidden="true">1.4.4.5.2.</strong> 使用 Json Stream 进行序列化</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_writeconfig.html"><strong aria-hidden="true">1.4.4.5.3.</strong> WriteConfig 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/url/url_package_overview.html"><strong aria-hidden="true">1.4.5.</strong> encoding.url 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/url/url_package_api/url_package_classes.html"><strong aria-hidden="true">1.4.5.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/url/url_package_api/url_package_exceptions.html"><strong aria-hidden="true">1.4.5.2.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.5.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/url/url_samples/form.html"><strong aria-hidden="true">1.4.5.3.1.</strong> Form 的构造使用</a></li><li class="chapter-item "><a href="../../../encoding/url/url_samples/url_parse.html"><strong aria-hidden="true">1.4.5.3.2.</strong> URL 解析函数 parse 的使用</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../fuzz/fuzz_module_overview.html"><strong aria-hidden="true">1.5.</strong> fuzz 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_overview.html"><strong aria-hidden="true">1.5.1.</strong> fuzz.fuzz 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_constants_vars.html"><strong aria-hidden="true">1.5.1.1.</strong> 常量变量</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_classes.html"><strong aria-hidden="true">1.5.1.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_exceptions.html"><strong aria-hidden="true">1.5.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.5.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/basic_fuzzing_test.html"><strong aria-hidden="true">1.5.1.4.1.</strong> 测试猜测字符功能</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/dataprovider_usage.html"><strong aria-hidden="true">1.5.1.4.2.</strong> 使用 DataProvider 功能进行测试</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/fake_coverage_usage.html"><strong aria-hidden="true">1.5.1.4.3.</strong> 使用 FakeCoverage 避免 DataProvider 模式下 Fuzz 异常终止</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/print_cj-fuzz_usage.html"><strong aria-hidden="true">1.5.1.4.4.</strong> 打印 fuzz 使用方法</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/print_coverage.html"><strong aria-hidden="true">1.5.1.4.5.</strong> 实验性特性-覆盖率信息打印</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/stack_backtrace_missing_solution.html"><strong aria-hidden="true">1.5.1.4.6.</strong> 栈回溯缺失的处理方案</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../log/log_module_overview.html"><strong aria-hidden="true">1.6.</strong> log 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_package_overview.html"><strong aria-hidden="true">1.6.1.</strong> log 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_types.html"><strong aria-hidden="true">1.6.1.1.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_funcs.html"><strong aria-hidden="true">1.6.1.2.</strong> 函数</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_interfaces.html"><strong aria-hidden="true">1.6.1.3.</strong> 接口</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_classes.html"><strong aria-hidden="true">1.6.1.4.</strong> 类</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_structs.html"><strong aria-hidden="true">1.6.1.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_exceptions.html"><strong aria-hidden="true">1.6.1.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.6.1.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_samples/log_sample.html"><strong aria-hidden="true">1.6.1.7.1.</strong> 日志打印示例</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../net/net_module_overview.html"><strong aria-hidden="true">1.7.</strong> net 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_package_overview.html"><strong aria-hidden="true">1.7.1.</strong> net.http 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_funcs.html"><strong aria-hidden="true">1.7.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_interfaces.html"><strong aria-hidden="true">1.7.1.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_classes.html"><strong aria-hidden="true">1.7.1.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_enums.html"><strong aria-hidden="true">1.7.1.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_structs.html"><strong aria-hidden="true">1.7.1.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_exceptions.html"><strong aria-hidden="true">1.7.1.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.7.1.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_samples/http_client.html"><strong aria-hidden="true">1.7.1.7.1.</strong> client</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/cookie.html"><strong aria-hidden="true">1.7.1.7.2.</strong> cookie</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/log.html"><strong aria-hidden="true">1.7.1.7.3.</strong> log</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/http_server.html"><strong aria-hidden="true">1.7.1.7.4.</strong> server</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/webSocket.html"><strong aria-hidden="true">1.7.1.7.5.</strong> webSocket</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../net/tls/tls_package_overview.html"><strong aria-hidden="true">1.7.2.</strong> net.tls 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_classes.html"><strong aria-hidden="true">1.7.2.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_enums.html"><strong aria-hidden="true">1.7.2.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_structs.html"><strong aria-hidden="true">1.7.2.3.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_exceptions.html"><strong aria-hidden="true">1.7.2.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.7.2.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/tls/tls_samples/cert_key.html"><strong aria-hidden="true">1.7.2.5.1.</strong> 服务端证书及公钥在一份文件中</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/client.html"><strong aria-hidden="true">1.7.2.5.2.</strong> 客户端示例</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/hot_update_cert.html"><strong aria-hidden="true">1.7.2.5.3.</strong> 证书热更新</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/server.html"><strong aria-hidden="true">1.7.2.5.4.</strong> 服务端示例</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../serialization/serialization_module_overview.html"><strong aria-hidden="true">1.8.</strong> serialization 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_overview.html"><strong aria-hidden="true">1.8.1.</strong> serialization.serialization 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_functions.html"><strong aria-hidden="true">1.8.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_interfaces.html"><strong aria-hidden="true">1.8.1.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_classes.html"><strong aria-hidden="true">1.8.1.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_exceptions.html"><strong aria-hidden="true">1.8.1.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.8.1.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_samples/serialize_and_deserialize_class.html"><strong aria-hidden="true">1.8.1.5.1.</strong> class 序列化和反序列化</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_samples/serialize_hashmap_and_hashset.html"><strong aria-hidden="true">1.8.1.5.2.</strong> HashSet 和 HashMap 序列化</a></li></ol></li></ol></li></ol></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">仓颉编程语言库 API</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="类"><a class="header" href="#类">类</a></h1>
+<h2 id="class-jsonarray"><a class="header" href="#class-jsonarray">class JsonArray</a></h2>
+<pre><code class="language-cangjie">public class JsonArray &lt;: JsonValue {
+    public init()
+    public init(list: ArrayList&lt;JsonValue&gt;)
+    public init(list: Array&lt;JsonValue&gt;)
+}
+</code></pre>
+<p>功能：此类为 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 实现子类，主要用于封装数组类型的 JSON 数据。</p>
+<p>示例：</p>
+<p>使用示例见<a href="../json_samples/json_array_sample.html">JsonArray 使用示例</a>。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="#class-jsonvalue">JsonValue</a></li>
+</ul>
+<h3 id="init"><a class="header" href="#init">init()</a></h3>
+<pre><code class="language-cangjie">public init()
+</code></pre>
+<p>功能：创建空 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a>。</p>
+<h3 id="initarraylistjsonvalue"><a class="header" href="#initarraylistjsonvalue">init(ArrayList&lt;JsonValue&gt;)</a></h3>
+<pre><code class="language-cangjie">public init(list: ArrayList&lt;JsonValue&gt;)
+</code></pre>
+<p>功能：将指定的 <a href="../../../std/collection/collection_package_api/collection_package_class.html#class-arraylistt">ArrayList</a> 类型实例封装成 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>list: <a href="../../../std/collection/collection_package_api/collection_package_class.html#class-arraylistt">ArrayList</a>&lt;<a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>&gt; - 用于创建 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 的 <a href="../../../std/collection/collection_package_api/collection_package_class.html#class-arraylistt">ArrayList</a>。</li>
+</ul>
+<h3 id="initarrayjsonvalue"><a class="header" href="#initarrayjsonvalue">init(Array&lt;JsonValue&gt;)</a></h3>
+<pre><code class="language-cangjie">public init(list: Array&lt;JsonValue&gt;)
+</code></pre>
+<p>功能：将指定的 <a href="../../../std/core/core_package_api/core_package_structs.html#struct-arrayt">Array</a> 类型实例封装成 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>list: <a href="../../../std/core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>&gt; - 用于创建 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 的 <a href="../../../std/core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>。</li>
+</ul>
+<h3 id="func-addjsonvalue"><a class="header" href="#func-addjsonvalue">func add(JsonValue)</a></h3>
+<pre><code class="language-cangjie">public func add(jv: JsonValue): JsonArray
+</code></pre>
+<p>功能：向 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 中加入 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 数据。</p>
+<p>参数：</p>
+<ul>
+<li>jv: <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> - 需要加入的 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> - 加入数据后的 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a>。</li>
+</ul>
+<h3 id="func-getint64"><a class="header" href="#func-getint64">func get(Int64)</a></h3>
+<pre><code class="language-cangjie">public func get(index: Int64): Option&lt;JsonValue&gt;
+</code></pre>
+<p>功能：获取 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 中指定索引的 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>，并用 <a href="../../../std/core/core_package_api/core_package_enums.html#enum-optiont">Option</a>&lt;<a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>&gt; 封装。</p>
+<p>参数：</p>
+<ul>
+<li>index: <a href="../../../std/core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 指定的索引。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_enums.html#enum-optiont">Option</a>&lt;<a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>&gt; - 对应索引的 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 数据的封装形式。</li>
+</ul>
+<h3 id="func-getitems"><a class="header" href="#func-getitems">func getItems()</a></h3>
+<pre><code class="language-cangjie">public func getItems(): ArrayList&lt;JsonValue&gt;
+</code></pre>
+<p>功能：获取 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 中的 items 数据。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/collection/collection_package_api/collection_package_class.html#class-arraylistt">ArrayList</a>&lt;<a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>&gt; - <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 的 items 数据。</li>
+</ul>
+<h3 id="func-kind"><a class="header" href="#func-kind">func kind()</a></h3>
+<pre><code class="language-cangjie">public func kind(): JsonKind
+</code></pre>
+<p>功能：返回当前 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型（JsArray）。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> - 当前 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型（JsArray）。</li>
+</ul>
+<h3 id="func-size"><a class="header" href="#func-size">func size()</a></h3>
+<pre><code class="language-cangjie">public func size(): Int64
+</code></pre>
+<p>功能：获取 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 中 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 的数量。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 中 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 的数量。</li>
+</ul>
+<h3 id="func-tojsonstring"><a class="header" href="#func-tojsonstring">func toJsonString()</a></h3>
+<pre><code class="language-cangjie">public func toJsonString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 转换为 JSON 格式的 (带有空格换行符) 的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的 JSON 格式字符串。</li>
+</ul>
+<h3 id="func-tojsonstringint64-bool-string"><a class="header" href="#func-tojsonstringint64-bool-string">func toJsonString(Int64, Bool, String)</a></h3>
+<pre><code class="language-cangjie">public func toJsonString(depth: Int64, bracketInNewLine!: Bool = false, indent!: String = &quot;  &quot;): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 转换为 JSON 格式的字符串。该函数将指定初始的缩进深度、第一个括号后是否换行以及缩进字符串。</p>
+<p>参数：</p>
+<ul>
+<li>depth: <a href="../../../std/core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 指定的缩进深度。</li>
+<li>bracketInNewLine!: <a href="../../../std/core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 第一个括号是否换行，如果为 <code>true</code>，第一个括号将另起一行并且按照指定的深度缩进。</li>
+<li>indent!: <a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 指定的缩进字符串，缩进字符串中只允许空格和制表符的组合，默认为两个空格。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的 JSON 格式字符串。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 如果 depth 为负数，或 indent 中存在 ' ' 和 '\t' 以外的字符，则抛出异常。</li>
+</ul>
+<h3 id="func-tostring"><a class="header" href="#func-tostring">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonstring">JsonString</a> 转换为字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的字符串。</li>
+</ul>
+<h3 id="operator-func-int64"><a class="header" href="#operator-func-int64">operator func [](Int64)</a></h3>
+<pre><code class="language-cangjie">public operator func [](index: Int64): JsonValue
+</code></pre>
+<p>功能：获取 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 中指定索引的 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>。</p>
+<p>参数：</p>
+<ul>
+<li>index: <a href="../../../std/core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 指定的索引。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> - 对应索引的 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="encoding_json_package_exceptions.html#class-jsonexception">JsonException</a> - 如果 index 不是 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 的有效索引，抛出异常。</li>
+</ul>
+<h2 id="class-jsonbool"><a class="header" href="#class-jsonbool">class JsonBool</a></h2>
+<pre><code class="language-cangjie">public class JsonBool &lt;: JsonValue {
+    public init(bv: Bool)
+}
+</code></pre>
+<p>功能：此类为 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 实现子类，主要用于封装 true 或者 false 的 JSON 数据。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="#class-jsonvalue">JsonValue</a></li>
+</ul>
+<h3 id="initbool"><a class="header" href="#initbool">init(Bool)</a></h3>
+<pre><code class="language-cangjie">public init(bv: Bool)
+</code></pre>
+<p>功能：将指定的 <a href="../../../std/core/core_package_api/core_package_intrinsics.html#bool">Bool</a> 类型实例封装成 <a href="encoding_json_package_classes.html#class-jsonbool">JsonBool</a> 实例。</p>
+<h3 id="func-getvalue"><a class="header" href="#func-getvalue">func getValue()</a></h3>
+<pre><code class="language-cangjie">public func getValue(): Bool
+</code></pre>
+<p>功能：获取 <a href="encoding_json_package_classes.html#class-jsonbool">JsonBool</a> 中 value 的实际值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - value 的实际值。</li>
+</ul>
+<h3 id="func-kind-1"><a class="header" href="#func-kind-1">func kind()</a></h3>
+<pre><code class="language-cangjie">public func kind(): JsonKind
+</code></pre>
+<p>功能：返回当前 <a href="encoding_json_package_classes.html#class-jsonbool">JsonBool</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型（JsBool）。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> - 当前 <a href="encoding_json_package_classes.html#class-jsonbool">JsonBool</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型（JsBool）。</li>
+</ul>
+<h3 id="func-tojsonstring-1"><a class="header" href="#func-tojsonstring-1">func toJsonString()</a></h3>
+<pre><code class="language-cangjie">public func toJsonString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonbool">JsonBool</a> 转换为 JSON 格式的 (带有空格换行符) 字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的 JSON 格式字符串。</li>
+</ul>
+<h3 id="func-tostring-1"><a class="header" href="#func-tostring-1">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonbool">JsonBool</a> 转换为字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的字符串。</li>
+</ul>
+<h2 id="class-jsonfloat"><a class="header" href="#class-jsonfloat">class JsonFloat</a></h2>
+<pre><code class="language-cangjie">public class JsonFloat &lt;: JsonValue {
+    public init(fv: Float64)
+    public init(v: Int64)
+}
+</code></pre>
+<p>功能：此类为 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 实现子类，主要用于封装浮点类型的 JSON 数据。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="#class-jsonvalue">JsonValue</a></li>
+</ul>
+<h3 id="initfloat"><a class="header" href="#initfloat">init(Float)</a></h3>
+<pre><code class="language-cangjie">public init(fv: Float64)
+</code></pre>
+<p>功能：将指定的 <a href="../../../std/core/core_package_api/core_package_intrinsics.html#float64">Float64</a> 类型实例封装成 <a href="encoding_json_package_classes.html#class-jsonfloat">JsonFloat</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>fv: <a href="../../../std/core/core_package_api/core_package_intrinsics.html#float64">Float64</a> - <a href="../../../std/core/core_package_api/core_package_intrinsics.html#float64">Float64</a> 类型。</li>
+</ul>
+<h3 id="initint64"><a class="header" href="#initint64">init(Int64)</a></h3>
+<pre><code class="language-cangjie">public init(v: Int64)
+</code></pre>
+<p>功能：将指定的 <a href="../../../std/core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 类型实例封装成 <a href="encoding_json_package_classes.html#class-jsonfloat">JsonFloat</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../../std/core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - <a href="../../../std/core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 类型。</li>
+</ul>
+<h3 id="func-getvalue-1"><a class="header" href="#func-getvalue-1">func getValue()</a></h3>
+<pre><code class="language-cangjie">public func getValue(): Float64
+</code></pre>
+<p>功能：获取 <a href="encoding_json_package_classes.html#class-jsonfloat">JsonFloat</a> 中 value 的实际值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_intrinsics.html#float64">Float64</a> - value 的实际值。</li>
+</ul>
+<h3 id="func-kind-2"><a class="header" href="#func-kind-2">func kind()</a></h3>
+<pre><code class="language-cangjie">public func kind(): JsonKind
+</code></pre>
+<p>功能：返回当前 <a href="encoding_json_package_classes.html#class-jsonfloat">JsonFloat</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型（JsFloat）。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> - 当前 <a href="encoding_json_package_classes.html#class-jsonfloat">JsonFloat</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型（JsFloat）。</li>
+</ul>
+<h3 id="func-tojsonstring-2"><a class="header" href="#func-tojsonstring-2">func toJsonString()</a></h3>
+<pre><code class="language-cangjie">public func toJsonString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonfloat">JsonFloat</a> 转换为 JSON 格式的 (带有空格换行符) 字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的 JSON 格式字符串。</li>
+</ul>
+<h3 id="func-tostring-2"><a class="header" href="#func-tostring-2">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonfloat">JsonFloat</a> 转换为字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的字符串。</li>
+</ul>
+<h2 id="class-jsonint"><a class="header" href="#class-jsonint">class JsonInt</a></h2>
+<pre><code class="language-cangjie">public class JsonInt &lt;: JsonValue {
+    public init(iv: Int64)
+}
+</code></pre>
+<p>功能：此类为 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 实现子类，主要用于封装整数类型的 JSON 数据。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="#class-jsonvalue">JsonValue</a></li>
+</ul>
+<h3 id="initint64-1"><a class="header" href="#initint64-1">init(Int64)</a></h3>
+<pre><code class="language-cangjie">public init(iv: Int64)
+</code></pre>
+<p>功能：将指定的 <a href="../../../std/core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 类型实例封装成 <a href="encoding_json_package_classes.html#class-jsonint">JsonInt</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>iv: <a href="../../../std/core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 用于创建 <a href="encoding_json_package_classes.html#class-jsonint">JsonInt</a> 的 <a href="../../../std/core/core_package_api/core_package_intrinsics.html#int64">Int64</a>。</li>
+</ul>
+<h3 id="func-getvalue-2"><a class="header" href="#func-getvalue-2">func getValue()</a></h3>
+<pre><code class="language-cangjie">public func getValue(): Int64
+</code></pre>
+<p>功能：获取 <a href="encoding_json_package_classes.html#class-jsonint">JsonInt</a> 中 value 的实际值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - value 的实际值。</li>
+</ul>
+<h3 id="func-kind-3"><a class="header" href="#func-kind-3">func kind()</a></h3>
+<pre><code class="language-cangjie">public func kind(): JsonKind
+</code></pre>
+<p>功能：返回当前 <a href="encoding_json_package_classes.html#class-jsonint">JsonInt</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型（JsInt）。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> - 当前 <a href="encoding_json_package_classes.html#class-jsonint">JsonInt</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型（JsInt）。</li>
+</ul>
+<h3 id="func-tojsonstring-3"><a class="header" href="#func-tojsonstring-3">func toJsonString()</a></h3>
+<pre><code class="language-cangjie">public func toJsonString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonint">JsonInt</a> 转换为 JSON 格式的 (带有空格换行符) 字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的 JSON 格式字符串。</li>
+</ul>
+<h3 id="func-tostring-3"><a class="header" href="#func-tostring-3">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonint">JsonInt</a> 转换为字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的字符串。</li>
+</ul>
+<h2 id="class-jsonnull"><a class="header" href="#class-jsonnull">class JsonNull</a></h2>
+<pre><code class="language-cangjie">public class JsonNull &lt;: JsonValue
+</code></pre>
+<p>功能：此类为 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 实现子类，主要用于封装 null 的 JSON 数据。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="#class-jsonvalue">JsonValue</a></li>
+</ul>
+<h3 id="func-kind-4"><a class="header" href="#func-kind-4">func kind()</a></h3>
+<pre><code class="language-cangjie">public func kind(): JsonKind
+</code></pre>
+<p>功能：返回当前 <a href="encoding_json_package_classes.html#class-jsonnull">JsonNull</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型（JsNull）。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> - 当前 <a href="encoding_json_package_classes.html#class-jsonnull">JsonNull</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型（JsNull）。</li>
+</ul>
+<h3 id="func-tojsonstring-4"><a class="header" href="#func-tojsonstring-4">func toJsonString()</a></h3>
+<pre><code class="language-cangjie">public func toJsonString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonnull">JsonNull</a> 转换为 JSON 格式的 (带有空格换行符) 字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的 JSON 格式字符串。</li>
+</ul>
+<h3 id="func-tostring-4"><a class="header" href="#func-tostring-4">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonnull">JsonNull</a> 转换为字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的字符串。</li>
+</ul>
+<h2 id="class-jsonobject"><a class="header" href="#class-jsonobject">class JsonObject</a></h2>
+<pre><code class="language-cangjie">public class JsonObject &lt;: JsonValue {
+    public init()
+    public init(map: HashMap&lt;String, JsonValue&gt;)
+}
+</code></pre>
+<p>功能：此类为 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 实现子类，主要用于封装 object 类型的 JSON 数据。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="#class-jsonvalue">JsonValue</a></li>
+</ul>
+<h3 id="init-1"><a class="header" href="#init-1">init()</a></h3>
+<pre><code class="language-cangjie">public init()
+</code></pre>
+<p>功能：创建空 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a>。</p>
+<h3 id="init-2"><a class="header" href="#init-2">init()</a></h3>
+<pre><code class="language-cangjie">public init(map: HashMap&lt;String, JsonValue&gt;)
+</code></pre>
+<p>功能：将指定的 <a href="../../../std/collection/collection_package_api/collection_package_class.html#class-hashmapk-v-where-k--hashable--equatablek">HashMap</a> 类型实例封装成 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 实例。</p>
+<h3 id="func-containskeystring"><a class="header" href="#func-containskeystring">func containsKey(String)</a></h3>
+<pre><code class="language-cangjie">public func containsKey(key: String): Bool
+</code></pre>
+<p>功能：判断 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 中是否存在 key。</p>
+<p>参数：</p>
+<ul>
+<li>key: <a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 指定的 key。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 存在返回 true，不存在返回 false。</li>
+</ul>
+<h3 id="func-getstring"><a class="header" href="#func-getstring">func get(String)</a></h3>
+<pre><code class="language-cangjie">public func get(key: String): Option&lt;JsonValue&gt;
+</code></pre>
+<p>功能：获取 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 中 key 对应的 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>，并用 <a href="../../../std/core/core_package_api/core_package_enums.html#enum-optiont">Option</a>&lt;<a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>&gt; 封装。</p>
+<p>参数：</p>
+<ul>
+<li>key: <a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 指定的 key。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_enums.html#enum-optiont">Option</a>&lt;<a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>&gt; - key 对应的 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 的封装形式。</li>
+</ul>
+<h3 id="func-getfields"><a class="header" href="#func-getfields">func getFields()</a></h3>
+<pre><code class="language-cangjie">public func getFields(): HashMap&lt;String, JsonValue&gt;
+</code></pre>
+<p>功能：获取 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 中的 fields 数据。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/collection/collection_package_api/collection_package_class.html#class-hashmapk-v-where-k--hashable--equatablek">HashMap</a> &lt; <a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a>, <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> &gt; - <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 的 fields 数据。</li>
+</ul>
+<h3 id="func-kind-5"><a class="header" href="#func-kind-5">func kind()</a></h3>
+<pre><code class="language-cangjie">public func kind(): JsonKind
+</code></pre>
+<p>功能：返回当前 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型（JsObject）。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> - 当前 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型（JsObject）。</li>
+</ul>
+<h3 id="func-putstring-jsonvalue"><a class="header" href="#func-putstring-jsonvalue">func put(String, JsonValue)</a></h3>
+<pre><code class="language-cangjie">public func put(key: String, v: JsonValue): Unit
+</code></pre>
+<p>功能：向 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 中加入 key-<a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 数据。</p>
+<p>参数：</p>
+<ul>
+<li>key: <a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 需要加入的 key。</li>
+<li>v: <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> - 对应 key 的 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>。</li>
+</ul>
+<h3 id="func-size-1"><a class="header" href="#func-size-1">func size()</a></h3>
+<pre><code class="language-cangjie">public func size(): Int64
+</code></pre>
+<p>功能：获取 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 中 fields 存入 string-<a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 的数量。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 中 fields 的大小。</li>
+</ul>
+<h3 id="func-tojsonstring-5"><a class="header" href="#func-tojsonstring-5">func toJsonString()</a></h3>
+<pre><code class="language-cangjie">public func toJsonString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 转换为 JSON 格式的 (带有空格换行符) 字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的 JSON 格式字符串。</li>
+</ul>
+<h3 id="func-tojsonstringint64-bool-string-1"><a class="header" href="#func-tojsonstringint64-bool-string-1">func toJsonString(Int64, Bool, String)</a></h3>
+<pre><code class="language-cangjie">public func toJsonString(depth: Int64, bracketInNewLine!: Bool = false, indent!: String = &quot;  &quot;): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 转换为 Json格式的字符串。该函数将指定初始的缩进深度、第一个括号后是否换行以及缩进字符串。</p>
+<p>参数：</p>
+<ul>
+<li>depth: <a href="../../../std/core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 缩进深度。</li>
+<li>bracketInNewLine!: <a href="../../../std/core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 第一个括号是否换行，如果为 <code>true</code>，第一个括号将另起一行并且按照指定的深度缩进。</li>
+<li>indent!: <a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 指定的缩进字符串，缩进字符串中只允许空格和制表符的组合，默认为两个空格。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的 JSON 格式字符串。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 如果 depth 为负数，或 indent 中存在 ' ' 和 '\t' 以外的字符，则抛出异常。</li>
+</ul>
+<h3 id="func-tostring-5"><a class="header" href="#func-tostring-5">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 转换为字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的字符串。</li>
+</ul>
+<h3 id="operator-func-string"><a class="header" href="#operator-func-string">operator func [](String)</a></h3>
+<pre><code class="language-cangjie">public operator func [](key: String): JsonValue
+</code></pre>
+<p>功能：获取 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 中 key 对应的 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>。</p>
+<p>参数：</p>
+<ul>
+<li>key: <a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 指定的 key。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> - key 对应的 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="encoding_json_package_exceptions.html#class-jsonexception">JsonException</a> - 如果 key 不是 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 的有效键，抛出异常。</li>
+</ul>
+<h2 id="class-jsonstring"><a class="header" href="#class-jsonstring">class JsonString</a></h2>
+<pre><code class="language-cangjie">public class JsonString &lt;: JsonValue {
+    public init(sv: String)
+}
+</code></pre>
+<p>功能：此类为 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 实现子类，主要用于封装字符串类型的 JSON 数据。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="#class-jsonvalue">JsonValue</a></li>
+</ul>
+<h3 id="initstring"><a class="header" href="#initstring">init(String)</a></h3>
+<pre><code class="language-cangjie">public init(sv: String)
+</code></pre>
+<p>功能：将指定的 <a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> 类型实例封装成 <a href="encoding_json_package_classes.html#class-jsonstring">JsonString</a> 实例。</p>
+<h3 id="func-getvalue-3"><a class="header" href="#func-getvalue-3">func getValue()</a></h3>
+<pre><code class="language-cangjie">public func getValue(): String
+</code></pre>
+<p>功能：获取 <a href="encoding_json_package_classes.html#class-jsonstring">JsonString</a> 中 value 的实际值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - value 的实际值。</li>
+</ul>
+<h3 id="func-kind-6"><a class="header" href="#func-kind-6">func kind()</a></h3>
+<pre><code class="language-cangjie">public func kind(): JsonKind
+</code></pre>
+<p>功能：返回当前 <a href="encoding_json_package_classes.html#class-jsonstring">JsonString</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型（JsString）。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> - 当前 <a href="encoding_json_package_classes.html#class-jsonstring">JsonString</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型（JsString）。</li>
+</ul>
+<h3 id="func-tojsonstring-6"><a class="header" href="#func-tojsonstring-6">func toJsonString()</a></h3>
+<pre><code class="language-cangjie">public func toJsonString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonstring">JsonString</a> 转换为 JSON 格式的 (带有空格换行符) 字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的 JSON 格式字符串。</li>
+</ul>
+<h3 id="func-tostring-6"><a class="header" href="#func-tostring-6">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonstring">JsonString</a> 转换为字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的字符串。</li>
+</ul>
+<h2 id="class-jsonvalue"><a class="header" href="#class-jsonvalue">class JsonValue</a></h2>
+<pre><code class="language-cangjie">sealed abstract class JsonValue &lt;: ToString
+</code></pre>
+<p>功能：此类为 JSON 数据层，主要用于 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 和 <a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> 数据之间的互相转换。</p>
+<p>抽象类 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 提供了 <a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> 类型和具体的 JSON 类型相互转换的接口，以及具体的 JSON 类型判断功能。</p>
+<p>示例：</p>
+<p>使用示例见<a href="../json_samples/json_value_sample.html">JsonValue 和 String 互相转换</a>。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h3 id="static-func-fromstrstring"><a class="header" href="#static-func-fromstrstring">static func fromStr(String)</a></h3>
+<pre><code class="language-cangjie">public static func fromStr(s: String): JsonValue
+</code></pre>
+<p>功能：将字符串数据解析为 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>。对于整数，支持前导 '0b'，'0o'，'0x'（不区分大小写），分别表示二进制，八进制和十六进制。字符串解析失败时将打印错误字符及其行数和列数，其中列数从错误字符所在行的非空格字符起开始计算。</p>
+<p>JSON 在解析 <a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> 转换为 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 时，转义字符 \ 之后只能对应 JSON 支持的转义字符（b、f、n、r、t、u、\、&quot;、/），其中 \u 的格式为：\uXXXX，X 为十六进制数，例：\u0041 代表字符 'A'。</p>
+<p>参数：</p>
+<ul>
+<li>s: <a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 传入字符串，暂不支持 &quot;?&quot; 和特殊字符。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> - 转换后的 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a>。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="encoding_json_package_exceptions.html#class-jsonexception">JsonException</a> - 如果内存分配失败，或解析字符串出错，抛出异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import encoding.json.*
+
+main() {
+    println(JsonString(&quot;\b | \f | \n | \r | \t | A | \\ | \&quot; | /&quot;).toString())
+    println(JsonValue.fromStr(&quot;\&quot;\\b\&quot;&quot;).toString())
+    println(JsonValue.fromStr(&quot;\&quot;\\f\&quot;&quot;).toString())
+    println(JsonValue.fromStr(&quot;\&quot;\\n\&quot;&quot;).toString())
+    println(JsonValue.fromStr(&quot;\&quot;\\r\&quot;&quot;).toString())
+    println(JsonValue.fromStr(&quot;\&quot;\\t\&quot;&quot;).toString())
+    println(JsonValue.fromStr(&quot;\&quot;\\u0041\&quot;&quot;).toString())
+    println(JsonValue.fromStr(&quot;\&quot;\\\\\&quot;&quot;).toString())
+    println(JsonValue.fromStr(&quot;\&quot;\\\&quot;\&quot;&quot;).toString())
+    println(JsonValue.fromStr(&quot;\&quot;\\/\&quot;&quot;).toString())
+}
+</code></pre>
+<p>运行结果如下：</p>
+<pre><code class="language-text">&quot;\b | \f | \n | \r | \t | A | \\ | \&quot; | /&quot;
+&quot;\b&quot;
+&quot;\f&quot;
+&quot;\n&quot;
+&quot;\r&quot;
+&quot;\t&quot;
+&quot;A&quot;
+&quot;\\&quot;
+&quot;\&quot;&quot;
+&quot;/&quot;
+</code></pre>
+<h3 id="func-asarray"><a class="header" href="#func-asarray">func asArray()</a></h3>
+<pre><code class="language-cangjie">public func asArray(): JsonArray
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 转换为 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> 格式。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a> - 转换后的 <a href="encoding_json_package_classes.html#class-jsonarray">JsonArray</a>。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="encoding_json_package_exceptions.html#class-jsonexception">JsonException</a> - 如果转换失败，抛出异常。</li>
+</ul>
+<h3 id="func-asbool"><a class="header" href="#func-asbool">func asBool()</a></h3>
+<pre><code class="language-cangjie">public func asBool(): JsonBool
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 转换为 <a href="encoding_json_package_classes.html#class-jsonbool">JsonBool</a> 格式。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_classes.html#class-jsonbool">JsonBool</a> - 转换后的 <a href="encoding_json_package_classes.html#class-jsonbool">JsonBool</a>。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="encoding_json_package_exceptions.html#class-jsonexception">JsonException</a> - 如果转换失败，抛出异常。</li>
+</ul>
+<h3 id="func-asfloat"><a class="header" href="#func-asfloat">func asFloat()</a></h3>
+<pre><code class="language-cangjie">public func asFloat(): JsonFloat
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 转换为 <a href="encoding_json_package_classes.html#class-jsonfloat">JsonFloat</a> 格式。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_classes.html#class-jsonfloat">JsonFloat</a> - 转换后的 <a href="encoding_json_package_classes.html#class-jsonfloat">JsonFloat</a>。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="encoding_json_package_exceptions.html#class-jsonexception">JsonException</a> - 如果转换失败，抛出异常。</li>
+</ul>
+<h3 id="func-asint"><a class="header" href="#func-asint">func asInt()</a></h3>
+<pre><code class="language-cangjie">public func asInt(): JsonInt
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 转换为 <a href="encoding_json_package_classes.html#class-jsonint">JsonInt</a> 格式。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_classes.html#class-jsonint">JsonInt</a> - 转换后的 <a href="encoding_json_package_classes.html#class-jsonint">JsonInt</a>。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="encoding_json_package_exceptions.html#class-jsonexception">JsonException</a> - 如果转换失败，抛出异常。</li>
+</ul>
+<h3 id="func-asnull"><a class="header" href="#func-asnull">func asNull()</a></h3>
+<pre><code class="language-cangjie">public func asNull(): JsonNull
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 转换为 <a href="encoding_json_package_classes.html#class-jsonnull">JsonNull</a> 格式。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_classes.html#class-jsonnull">JsonNull</a> - 转换后的 <a href="encoding_json_package_classes.html#class-jsonnull">JsonNull</a>。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="encoding_json_package_exceptions.html#class-jsonexception">JsonException</a> - 如果转换失败，抛出异常。</li>
+</ul>
+<h3 id="func-asobject"><a class="header" href="#func-asobject">func asObject()</a></h3>
+<pre><code class="language-cangjie">public func asObject(): JsonObject
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 转换为 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> 格式。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a> - 转换后的 <a href="encoding_json_package_classes.html#class-jsonobject">JsonObject</a>。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="encoding_json_package_exceptions.html#class-jsonexception">JsonException</a> - 如果转换失败，抛出异常。</li>
+</ul>
+<h3 id="func-asstring"><a class="header" href="#func-asstring">func asString()</a></h3>
+<pre><code class="language-cangjie">public func asString(): JsonString
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 转换为 <a href="encoding_json_package_classes.html#class-jsonstring">JsonString</a> 格式。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_classes.html#class-jsonstring">JsonString</a> - 转换后的 <a href="encoding_json_package_classes.html#class-jsonstring">JsonString</a>。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="encoding_json_package_exceptions.html#class-jsonexception">JsonException</a> - 如果转换失败，抛出异常。</li>
+</ul>
+<h3 id="func-kind-7"><a class="header" href="#func-kind-7">func kind()</a></h3>
+<pre><code class="language-cangjie">public func kind(): JsonKind
+</code></pre>
+<p>功能：返回当前 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> - 当前 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 所属的 <a href="encoding_json_package_enums.html#enum-jsonkind">JsonKind</a> 类型。</li>
+</ul>
+<h3 id="func-tojsonstring-7"><a class="header" href="#func-tojsonstring-7">func toJsonString()</a></h3>
+<pre><code class="language-cangjie">public func toJsonString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 转换为 JSON 格式的 (带有空格换行符) 字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的 JSON 格式字符串。</li>
+</ul>
+<h3 id="func-tostring-7"><a class="header" href="#func-tostring-7">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="encoding_json_package_classes.html#class-jsonvalue">JsonValue</a> 转换为字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../../std/core/core_package_api/core_package_structs.html#struct-string">String</a> - 转换后的字符串。</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../encoding/json/json_package_api/encoding_json_package_interfaces.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../../encoding/json/json_package_api/encoding_json_package_enums.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../encoding/json/json_package_api/encoding_json_package_interfaces.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../../encoding/json/json_package_api/encoding_json_package_enums.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../../elasticlunr.min.js"></script>
+        <script src="../../../mark.min.js"></script>
+        <script src="../../../searcher.js"></script>
+
+        <script src="../../../clipboard.min.js"></script>
+        <script src="../../../highlight.js"></script>
+        <script src="../../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../../highlight.js"></script>
+        <script src="../../../assets/elasticlunr.js"></script>
+        <script src="../../../assets/fzf.umd.js"></script>
+        <script src="../../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

@@ -2,10 +2,12 @@ package org.cangnova.cangjie.analysis.api.cfir.types
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.symbols.createTypeParameterSymbol
+import org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder
 import org.cangnova.cangjie.analysis.api.cfir.utils.createTypePointer
 import org.cangnova.cangjie.analysis.api.cfir.utils.restoreTypeParameterType
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.types.CaTypeParameterType
 import org.cangnova.cangjie.analysis.api.types.CaTypePointer
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
@@ -17,8 +19,9 @@ import org.cangnova.cangjie.name.Name
  */
 internal class CaCfirTypeParameterType(
     override val coneType: ConeTypeParameterType,
-    override val analysisSession: CaCfirSession,
-) : CaTypeParameterType(), CaCfirType {
+    private val builder: CaSymbolByCfirBuilder,
+
+    ) : CaTypeParameterType(), CaCfirType {
     override val presentation: String
         get() = withValidityAssertion { coneType.renderForDebugging() }
 
@@ -31,9 +34,9 @@ internal class CaCfirTypeParameterType(
     override val name: Name
         get() = withValidityAssertion { coneType.lookupTag.name }
 
-    override val symbol
+    override val symbol: CaTypeParameterSymbol
         get() = withValidityAssertion {
-            analysisSession.createTypeParameterSymbol(coneType.lookupTag.typeParameterSymbol)
+            builder.classifierBuilder.buildTypeParameterSymbol(coneType.lookupTag.typeParameterSymbol)
         }
 
     override fun createPointer(): CaTypePointer<CaTypeParameterType> = withValidityAssertion {
@@ -45,4 +48,6 @@ internal class CaCfirTypeParameterType(
     override fun hashCode() = typeHashcode()
 
     override fun toString(): String = coneType.renderForDebugging()
+    override val token: CaLifetimeToken get() = builder.token
+
 }

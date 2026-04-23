@@ -1,0 +1,708 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>ohos.display（屏幕属性） - API 参考</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../assets/style.css">
+        <link rel="stylesheet" href="../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item "><a href="../../cover0.html"><strong aria-hidden="true">1.</strong> API参考（封面）</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.</strong> 仓颉API</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">2.1.</strong> Ability框架</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability.html"><strong aria-hidden="true">2.1.1.</strong> Ability</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityStage.html"><strong aria-hidden="true">2.1.2.</strong> AbilityStage</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-context.html"><strong aria-hidden="true">2.1.3.</strong> AbilityContext</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-want.html"><strong aria-hidden="true">2.1.4.</strong> Want</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-wantConstant.html"><strong aria-hidden="true">2.1.5.</strong> wantConstant</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-errorManager.html"><strong aria-hidden="true">2.1.6.</strong> errorManager</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry.html"><strong aria-hidden="true">2.1.7.</strong> AbilityDelegatorRegistry</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-abilityDelegator.html"><strong aria-hidden="true">2.1.8.</strong> AbilityDelegator</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-shellCmdResult.html"><strong aria-hidden="true">2.1.9.</strong> shellCmdResult</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/support-definitions.html"><strong aria-hidden="true">2.2.1.</strong> 系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-common-event-manager.html"><strong aria-hidden="true">2.2.2.</strong> ohos.common_event_manager（公共事件模块）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-emitter.html"><strong aria-hidden="true">2.2.3.</strong> ohos.emitter（事件处理调度）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-manager.html"><strong aria-hidden="true">2.2.4.</strong> ohos.notification_manager（通知管理模块）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.5.</strong> application</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-application-eventHub.html"><strong aria-hidden="true">2.2.5.1.</strong> EventHub</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.6.</strong> commonEvent</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventData.html"><strong aria-hidden="true">2.2.6.1.</strong> CommonEventData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventPublishData.html"><strong aria-hidden="true">2.2.6.2.</strong> CommonEventPublishData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscriber.html"><strong aria-hidden="true">2.2.6.3.</strong> CommonEventSubscriber</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscribeInfo.html"><strong aria-hidden="true">2.2.6.4.</strong> CommonEventSubscribeInfo</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.7.</strong> notification</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationRequest.html"><strong aria-hidden="true">2.2.7.1.</strong> NotificationRequest</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationContent.html"><strong aria-hidden="true">2.2.7.2.</strong> NotificationContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.8.</strong> 公共事件定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ability.html"><strong aria-hidden="true">2.2.8.1.</strong> 元能力子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-account.html"><strong aria-hidden="true">2.2.8.2.</strong> 账号子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ans.html"><strong aria-hidden="true">2.2.8.3.</strong> 通知服务公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-bundleManager.html"><strong aria-hidden="true">2.2.8.4.</strong> 包管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-filemanagement.html"><strong aria-hidden="true">2.2.8.5.</strong> 文件管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-locale.html"><strong aria-hidden="true">2.2.8.6.</strong> 语言子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-mms.html"><strong aria-hidden="true">2.2.8.7.</strong> 短信应用公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-netmanager.html"><strong aria-hidden="true">2.2.8.8.</strong> 网络管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-nfc.html"><strong aria-hidden="true">2.2.8.9.</strong> NFC子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-powermgr.html"><strong aria-hidden="true">2.2.8.10.</strong> 电源管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-resourceschedule.html"><strong aria-hidden="true">2.2.8.11.</strong> 资源调度子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-screenlock.html"><strong aria-hidden="true">2.2.8.12.</strong> 主题框架子系统-锁屏管理公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-telephony.html"><strong aria-hidden="true">2.2.8.13.</strong> 电话服务子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-time.html"><strong aria-hidden="true">2.2.8.14.</strong> 时间时区子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-usb.html"><strong aria-hidden="true">2.2.8.15.</strong> USB子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-wifi.html"><strong aria-hidden="true">2.2.8.16.</strong> Wifi子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-window.html"><strong aria-hidden="true">2.2.8.17.</strong> 窗口管理子系统公共事件定义</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager.html"><strong aria-hidden="true">2.3.1.</strong> ohos.bundle_manager（bundleManager管理）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.2.</strong> bundle_manager</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-abilityInfo.html"><strong aria-hidden="true">2.3.2.1.</strong> AbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-applicationInfo.html"><strong aria-hidden="true">2.3.2.2.</strong> ApplicationInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-bundleInfo.html"><strong aria-hidden="true">2.3.2.3.</strong> BundleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-extensionAbilityInfo.html"><strong aria-hidden="true">2.3.2.4.</strong> ExtensionAbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-hapModuleInfo.html"><strong aria-hidden="true">2.3.2.5.</strong> HapModuleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-metadata.html"><strong aria-hidden="true">2.3.2.6.</strong> Metadata</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-animator.html"><strong aria-hidden="true">2.4.1.</strong> ohos.animator（动画）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-font.html"><strong aria-hidden="true">2.4.2.</strong> ohos.font（自定义字体）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-measure.html"><strong aria-hidden="true">2.4.3.</strong> ohos.measure（文本计算）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-prompt.html"><strong aria-hidden="true">2.4.4.</strong> ohos.prompt_action（弹窗）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-router.html"><strong aria-hidden="true">2.4.5.</strong> ohos.router（页面路由）</a></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../source_zh_cn/apis/cj-apis-display.html" class="active"><strong aria-hidden="true">2.5.1.</strong> ohos.display（屏幕属性）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-colorManager.html"><strong aria-hidden="true">2.5.2.</strong> ohos.colorManager（色彩管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-window.html"><strong aria-hidden="true">2.5.3.</strong> ohos.window（窗口）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-image.html"><strong aria-hidden="true">2.6.1.</strong> ohos.multimedia.image（图片处理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-i18n.html"><strong aria-hidden="true">2.7.1.</strong> ohos.i18n（国际化-I18n）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resource-manager.html"><strong aria-hidden="true">2.7.2.</strong> ohos.resource_manager（资源管理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-backgroundTaskManager.html"><strong aria-hidden="true">2.8.1.</strong> ohos.resourceschedule.backgroundTaskManager（后台任务管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-workScheduler.html"><strong aria-hidden="true">2.8.2.</strong> ohos.resourceschedule.workScheduler（延迟任务调度）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-access-ctrl.html"><strong aria-hidden="true">2.9.1.</strong> ohos.abilityAccessCtrl（程序访问控制管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-crypto.html"><strong aria-hidden="true">2.9.2.</strong> ohos.security.crypto（加解密算法库框架）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-huks.html"><strong aria-hidden="true">2.9.3.</strong> ohos.security.huks（通用密钥库系统）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-user-auth.html"><strong aria-hidden="true">2.9.4.</strong> ohos.userIAM.userAuth（用户认证）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-asset.html"><strong aria-hidden="true">2.9.5.</strong> ohos.asset_store（关键资产存储服务）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.6.</strong> 访问控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/security/AccessToken/cj-permissions-for-all.html"><strong aria-hidden="true">2.9.6.1.</strong> 应用权限列表</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-distributedKVStore.html"><strong aria-hidden="true">2.10.1.</strong> ohos.data.distributed（分布式键值数据库）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-preferences.html"><strong aria-hidden="true">2.10.2.</strong> ohos.data.preferences（用户首选项）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-relationalStore.html"><strong aria-hidden="true">2.10.3.</strong> ohos.data.relationalStore（关系型数据库）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fileuri.html"><strong aria-hidden="true">2.11.1.</strong> ohos.file.fileuri（文件URI）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fs.html"><strong aria-hidden="true">2.11.2.</strong> ohos.file.fs（文件管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-picker.html"><strong aria-hidden="true">2.11.3.</strong> ohos.file.picker（选择器）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-telephony-data.html"><strong aria-hidden="true">2.12.1.</strong> ohos.telephony.call（拨打电话）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-vibrator.html"><strong aria-hidden="true">2.13.1.</strong> ohos.vibrator（振动）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-connection.html"><strong aria-hidden="true">2.14.1.</strong> ohos.net.connection（网络连接管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-http.html"><strong aria-hidden="true">2.14.2.</strong> ohos.net.http（数据请求）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-request.html"><strong aria-hidden="true">2.14.3.</strong> ohos.request（上传下载）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hiappevent.html"><strong aria-hidden="true">2.15.1.</strong> ohos.hiAppEvent（应用事件打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracechain.html"><strong aria-hidden="true">2.15.2.</strong> ohos.hiTraceChain（分布式跟踪）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracemeter.html"><strong aria-hidden="true">2.15.3.</strong> ohos.hiTraceMeter（性能打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hilog.html"><strong aria-hidden="true">2.15.4.</strong> ohos.hilog (HiLog日志打印)</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-pasteboard.html"><strong aria-hidden="true">2.15.5.</strong> ohos.pasteboard（剪切板）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-date-time.html"><strong aria-hidden="true">2.15.6.</strong> ohos.systemDateTime（系统时间、时区）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-webview.html"><strong aria-hidden="true">2.15.7.</strong> ohos.web.webview（Webview）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-device-info.html"><strong aria-hidden="true">2.16.1.</strong> ohos.deviceInfo（设备信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.17.</strong> 系统参数</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-parameterEnhance-sys.html"><strong aria-hidden="true">2.17.1.</strong> ohos.systemParameterEnhance（系统参数）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.18.</strong> 其他</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-base.html"><strong aria-hidden="true">2.18.1.</strong> ohos.base（公共回调信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.19.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-uitest.html"><strong aria-hidden="true">2.19.1.</strong> ohos.ui_test（UI测试）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.</strong> 错误码参考</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-universal.html"><strong aria-hidden="true">2.20.1.</strong> 通用错误码</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.2.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-bundle.html"><strong aria-hidden="true">2.20.2.1.</strong> 包管理子系统通用错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.3.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-CommonEventService.html"><strong aria-hidden="true">2.20.3.1.</strong> 事件错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-notification.html"><strong aria-hidden="true">2.20.3.2.</strong> 通知错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-animator.html"><strong aria-hidden="true">2.20.4.1.</strong> 动画错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-colorspace-manager.html"><strong aria-hidden="true">2.20.5.1.</strong> 色彩管理错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-display.html"><strong aria-hidden="true">2.20.5.2.</strong> 屏幕错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-window.html"><strong aria-hidden="true">2.20.5.3.</strong> 窗口错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-image.html"><strong aria-hidden="true">2.20.6.1.</strong> Image错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-i18n.html"><strong aria-hidden="true">2.20.7.1.</strong> I18n错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-resource-manager.html"><strong aria-hidden="true">2.20.7.2.</strong> 资源管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-backgroundTaskMgr.html"><strong aria-hidden="true">2.20.8.1.</strong> backgroundTaskManager错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-workScheduler.html"><strong aria-hidden="true">2.20.8.2.</strong> workScheduler错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-access-token.html"><strong aria-hidden="true">2.20.9.1.</strong> 访问控制错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-huks.html"><strong aria-hidden="true">2.20.9.2.</strong> huks错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-crypto.html"><strong aria-hidden="true">2.20.9.3.</strong> crypto错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-asset.html"><strong aria-hidden="true">2.20.9.4.</strong> 关键资产存储服务错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-data-rdb.html"><strong aria-hidden="true">2.20.10.1.</strong> 关系型数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-distributedKVStore.html"><strong aria-hidden="true">2.20.10.2.</strong> 分布式键值数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-preferences.html"><strong aria-hidden="true">2.20.10.3.</strong> 用户首选项错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-filemanagement.html"><strong aria-hidden="true">2.20.11.1.</strong> 文件管理子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-telephony.html"><strong aria-hidden="true">2.20.12.1.</strong> 电话子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-vibrator.html"><strong aria-hidden="true">2.20.13.1.</strong> vibrator错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-request.html"><strong aria-hidden="true">2.20.14.1.</strong> 上传下载错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-http.html"><strong aria-hidden="true">2.20.14.2.</strong> HTTP错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-connection.html"><strong aria-hidden="true">2.20.14.3.</strong> 网络连接管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-hiappevent.html"><strong aria-hidden="true">2.20.15.1.</strong> 应用事件打点错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-pasteboard.html"><strong aria-hidden="true">2.20.15.2.</strong> 剪贴板错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-errorManager.html"><strong aria-hidden="true">2.20.15.3.</strong> 错误观察器错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-time.html"><strong aria-hidden="true">2.20.15.4.</strong> 时间时区错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-webview.html"><strong aria-hidden="true">2.20.15.5.</strong> Web错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-system-parameter.html"><strong aria-hidden="true">2.20.16.1.</strong> 系统参数错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.17.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-uitest.html"><strong aria-hidden="true">2.20.17.1.</strong> uitest错误码</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.</strong> 仓颉组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.</strong> 组件通用信息</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.1.</strong> 通用事件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-click.html"><strong aria-hidden="true">3.1.1.1.</strong> 点击事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-touch.html"><strong aria-hidden="true">3.1.1.2.</strong> 触摸事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-appear.html"><strong aria-hidden="true">3.1.1.3.</strong> 挂载卸载事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-drag.html"><strong aria-hidden="true">3.1.1.4.</strong> 拖拽事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-key.html"><strong aria-hidden="true">3.1.1.5.</strong> 按键事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-focus.html"><strong aria-hidden="true">3.1.1.6.</strong> 焦点事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-mouse.html"><strong aria-hidden="true">3.1.1.7.</strong> 鼠标事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-component-area-change-event.html"><strong aria-hidden="true">3.1.1.8.</strong> 组件区域变化事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-keyboardshortcut.html"><strong aria-hidden="true">3.1.1.9.</strong> 组件快捷键事件</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.</strong> 通用属性</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-size.html"><strong aria-hidden="true">3.1.2.1.</strong> 尺寸设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-location.html"><strong aria-hidden="true">3.1.2.2.</strong> 位置设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-layout-constraints.html"><strong aria-hidden="true">3.1.2.3.</strong> 布局约束</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-flex-layout.html"><strong aria-hidden="true">3.1.2.4.</strong> Flex布局</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-border.html"><strong aria-hidden="true">3.1.2.5.</strong> 边框设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-background.html"><strong aria-hidden="true">3.1.2.6.</strong> 背景设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-opacity.html"><strong aria-hidden="true">3.1.2.7.</strong> 透明度设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-visibility.html"><strong aria-hidden="true">3.1.2.8.</strong> 显隐控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-enable.html"><strong aria-hidden="true">3.1.2.9.</strong> 禁用控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-overlay.html"><strong aria-hidden="true">3.1.2.10.</strong> 浮层</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-z-order.html"><strong aria-hidden="true">3.1.2.11.</strong> Z序控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transform.html"><strong aria-hidden="true">3.1.2.12.</strong> 图形变换</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-image-effect.html"><strong aria-hidden="true">3.1.2.13.</strong> 图像效果</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-shap-clip.html"><strong aria-hidden="true">3.1.2.14.</strong> 形状裁剪</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-gradient-color.html"><strong aria-hidden="true">3.1.2.15.</strong> 颜色渐变</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-popup.html"><strong aria-hidden="true">3.1.2.16.</strong> Popup控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-menu.html"><strong aria-hidden="true">3.1.2.17.</strong> 菜单控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-focus.html"><strong aria-hidden="true">3.1.2.18.</strong> 焦点控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-component-id.html"><strong aria-hidden="true">3.1.2.19.</strong> 组件标识</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-color.html"><strong aria-hidden="true">3.1.2.20.</strong> 前景色设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-blur-style.html"><strong aria-hidden="true">3.1.2.21.</strong> 组件内容模糊</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-touch-target.html"><strong aria-hidden="true">3.1.2.22.</strong> 触摸热区设置</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.23.</strong> 模态转场设置</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-bindcontentcover.html"><strong aria-hidden="true">3.1.2.23.1.</strong> 全屏模态转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sheet-transition.html"><strong aria-hidden="true">3.1.2.23.2.</strong> 半模态转场</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-text-style.html"><strong aria-hidden="true">3.1.2.24.</strong> 文本通用</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-expand-safe-area.html"><strong aria-hidden="true">3.1.2.25.</strong> 安全区域</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-renderfit.html"><strong aria-hidden="true">3.1.2.26.</strong> 组件内容填充方式</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.2.</strong> 基础组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-alphabet-indexer.html"><strong aria-hidden="true">3.2.1.</strong> AlphabetIndexer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-blank.html"><strong aria-hidden="true">3.2.2.</strong> Blank</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-button.html"><strong aria-hidden="true">3.2.3.</strong> Button</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkbox.html"><strong aria-hidden="true">3.2.4.</strong> Checkbox</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkboxgroup.html"><strong aria-hidden="true">3.2.5.</strong> CheckboxGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-datapanel.html"><strong aria-hidden="true">3.2.6.</strong> DataPanel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-datepicker.html"><strong aria-hidden="true">3.2.7.</strong> Datepicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-divider.html"><strong aria-hidden="true">3.2.8.</strong> Divider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-gauge.html"><strong aria-hidden="true">3.2.9.</strong> Gauge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-image.html"><strong aria-hidden="true">3.2.10.</strong> Image</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-imageSpan.html"><strong aria-hidden="true">3.2.11.</strong> ImageSpan</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-loadingprogress.html"><strong aria-hidden="true">3.2.12.</strong> LoadingProgress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menu.html"><strong aria-hidden="true">3.2.13.</strong> Menu</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitem.html"><strong aria-hidden="true">3.2.14.</strong> MenuItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitemgroup.html"><strong aria-hidden="true">3.2.15.</strong> MenuItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-progress.html"><strong aria-hidden="true">3.2.16.</strong> Progress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-qrcode.html"><strong aria-hidden="true">3.2.17.</strong> QRCode</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-radio.html"><strong aria-hidden="true">3.2.18.</strong> Radio</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rating.html"><strong aria-hidden="true">3.2.19.</strong> Rating</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richeditor.html"><strong aria-hidden="true">3.2.20.</strong> RichEditor</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richtext.html"><strong aria-hidden="true">3.2.21.</strong> RichText</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-scrollbar.html"><strong aria-hidden="true">3.2.22.</strong> ScrollBar</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-search.html"><strong aria-hidden="true">3.2.23.</strong> Search</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-select.html"><strong aria-hidden="true">3.2.24.</strong> Select</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-slider.html"><strong aria-hidden="true">3.2.25.</strong> Slider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-span.html"><strong aria-hidden="true">3.2.26.</strong> Span</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepper.html"><strong aria-hidden="true">3.2.27.</strong> Stepper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepperitem.html"><strong aria-hidden="true">3.2.28.</strong> Stepperitem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-text.html"><strong aria-hidden="true">3.2.29.</strong> Text</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textarea.html"><strong aria-hidden="true">3.2.30.</strong> TextArea</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textclock.html"><strong aria-hidden="true">3.2.31.</strong> TextClock</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textinput.html"><strong aria-hidden="true">3.2.32.</strong> TextInput</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textpicker.html"><strong aria-hidden="true">3.2.33.</strong> TextPicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-texttimer.html"><strong aria-hidden="true">3.2.34.</strong> TextTimer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-toggle.html"><strong aria-hidden="true">3.2.35.</strong> Toggle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-web.html"><strong aria-hidden="true">3.2.36.</strong> Web</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.3.</strong> 容器组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-badge.html"><strong aria-hidden="true">3.3.1.</strong> Badge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-column.html"><strong aria-hidden="true">3.3.2.</strong> Column</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-columnsplit.html"><strong aria-hidden="true">3.3.3.</strong> ColumnSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-flex.html"><strong aria-hidden="true">3.3.4.</strong> Flex</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-col.html"><strong aria-hidden="true">3.3.5.</strong> GridCol</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-row.html"><strong aria-hidden="true">3.3.6.</strong> GridRow</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid.html"><strong aria-hidden="true">3.3.7.</strong> Grid</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-item.html"><strong aria-hidden="true">3.3.8.</strong> GridItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list.html"><strong aria-hidden="true">3.3.9.</strong> List</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-listitem.html"><strong aria-hidden="true">3.3.10.</strong> ListItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list-group.html"><strong aria-hidden="true">3.3.11.</strong> ListItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-panel.html"><strong aria-hidden="true">3.3.12.</strong> Panel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-refresh.html"><strong aria-hidden="true">3.3.13.</strong> Refresh</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-relativecontainer.html"><strong aria-hidden="true">3.3.14.</strong> RelativeContainer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-row.html"><strong aria-hidden="true">3.3.15.</strong> Row</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rowsplit.html"><strong aria-hidden="true">3.3.16.</strong> RowSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-scroll.html"><strong aria-hidden="true">3.3.17.</strong> Scroll</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-stack.html"><strong aria-hidden="true">3.3.18.</strong> Stack</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-swiper.html"><strong aria-hidden="true">3.3.19.</strong> Swiper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabs.html"><strong aria-hidden="true">3.3.20.</strong> Tabs</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabcontent.html"><strong aria-hidden="true">3.3.21.</strong> TabContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.4.</strong> 绘制组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-circle.html"><strong aria-hidden="true">3.4.1.</strong> Circle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-line.html"><strong aria-hidden="true">3.4.2.</strong> Line</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-rect.html"><strong aria-hidden="true">3.4.3.</strong> Rect</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-shape.html"><strong aria-hidden="true">3.4.4.</strong> Shape</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.5.</strong> 画布组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas.html"><strong aria-hidden="true">3.5.1.</strong> Canvas</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-gradient.html"><strong aria-hidden="true">3.5.2.</strong> CanvasGradient</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-rendering-context-2d.html"><strong aria-hidden="true">3.5.3.</strong> CanvasRenderingContext2D</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-imagebitmap.html"><strong aria-hidden="true">3.5.4.</strong> ImageBitmap</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.6.</strong> 渲染控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-ifelse.html"><strong aria-hidden="true">3.6.1.</strong> if/else</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-foreach.html"><strong aria-hidden="true">3.6.2.</strong> ForEach</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-lazyforeach.html"><strong aria-hidden="true">3.6.3.</strong> LazyForEach</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.</strong> 动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-animation.html"><strong aria-hidden="true">3.7.1.</strong> 属性动画</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-methods-animateTo.html"><strong aria-hidden="true">3.7.2.</strong> 显式动画</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.3.</strong> 转场动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-page-transition.html"><strong aria-hidden="true">3.7.3.1.</strong> 页面间转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transition.html"><strong aria-hidden="true">3.7.3.2.</strong> 组件内转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sharedTransition.html"><strong aria-hidden="true">3.7.3.3.</strong> 共享元素转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-geometryTransition.html"><strong aria-hidden="true">3.7.3.4.</strong> 组件内隐式共享元素转场</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.8.</strong> 全局UI方法</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.8.1.</strong> 弹窗</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-alert-dialog-box.html"><strong aria-hidden="true">3.8.1.1.</strong> 警告弹窗</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-customdialog.html"><strong aria-hidden="true">3.8.1.2.</strong> 自定义弹窗</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-menu.html"><strong aria-hidden="true">3.8.2.</strong> 菜单</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.9.</strong> 自定义组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-custom-component-lifecycle.html"><strong aria-hidden="true">3.9.1.</strong> 自定义组件的生命周期</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.10.</strong> 类型定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-enums.html"><strong aria-hidden="true">3.10.1.</strong> 基础类型定义</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-pixel-units.html"><strong aria-hidden="true">3.11.</strong> 像素单位</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-state-management-manual.html"><strong aria-hidden="true">3.12.</strong> 状态管理</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-config.html"><strong aria-hidden="true">3.13.</strong> 应用配置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-thread.html"><strong aria-hidden="true">3.14.</strong> 线程控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid.html"><strong aria-hidden="true">3.15.</strong> 混合开发V1</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid-v2.html"><strong aria-hidden="true">3.16.</strong> 混合开发V2</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.17.</strong> 管理应用拥有的状态</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-app-storage.html"><strong aria-hidden="true">3.17.1.</strong> AppStorage（应用全局的UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-local-storage.html"><strong aria-hidden="true">3.17.2.</strong> LocalStorage（页面级UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-persistent-storage.html"><strong aria-hidden="true">3.17.3.</strong> PersistentStorage（持久化存储UI状态）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-environment.html"><strong aria-hidden="true">3.17.4.</strong> Environment（设备环境查询）</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_ui_framework.html"><strong aria-hidden="true">3.18.</strong> 框架接口</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkinterop/cj-ark-interop-apis.html"><strong aria-hidden="true">4.</strong> 仓颉与ArkTS互操作库</a></li><li class="chapter-item "><a href="../../source_zh_cn/cj-libs-api.html"><strong aria-hidden="true">5.</strong> 仓颉编程语言库API</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">API 参考</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="ohosdisplay屏幕属性"><a class="header" href="#ohosdisplay屏幕属性">ohos.display（屏幕属性）</a></h1>
+<p>屏幕属性提供管理显示设备的一些基础能力，包括获取默认显示设备的信息，获取所有显示设备的信息以及监听显示设备的插拔行为。</p>
+<blockquote>
+<p><strong>说明</strong></p>
+<p>ohos.display暂不支持在混合开发场景中使用。</p>
+</blockquote>
+<h2 id="导入模块"><a class="header" href="#导入模块">导入模块</a></h2>
+<pre><code class="language-cangjie">import ohos.display.*
+</code></pre>
+<h2 id="enum-displaystate"><a class="header" href="#enum-displaystate">enum DisplayState</a></h2>
+<pre><code class="language-cangjie">public enum DisplayState {
+    | STATE_UNKNOWN
+    | STATE_OFF
+    | STATE_ON
+    | STATE_DOZE
+    | STATE_DOZE_SUSPEND
+    | STATE_VR
+    | STATE_ON_SUSPEND
+}
+</code></pre>
+<p>显示设备的状态枚举。</p>
+<p><strong>系统能力：</strong> SystemCapability.WindowManager.WindowManager.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">STATE_UNKNOWN</td><td style="text-align: left">表示显示设备状态未知。</td></tr>
+<tr><td style="text-align: left">STATE_OFF</td><td style="text-align: left">表示显示设备状态为关闭。</td></tr>
+<tr><td style="text-align: left">STATE_ON</td><td style="text-align: left">表示显示设备状态为开启。</td></tr>
+<tr><td style="text-align: left">STATE_DOZE</td><td style="text-align: left">表示显示设备为低电耗模式。</td></tr>
+<tr><td style="text-align: left">STATE_DOZE_SUSPEND</td><td style="text-align: left">表示显示设备为睡眠模式，CPU为挂起状态。</td></tr>
+<tr><td style="text-align: left">STATE_VR</td><td style="text-align: left">表示显示设备为VR模式。</td></tr>
+<tr><td style="text-align: left">STATE_ON_SUSPEND</td><td style="text-align: left">表示显示设备为开启状态，CPU为挂起状态。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-orientation"><a class="header" href="#enum-orientation">enum Orientation</a></h2>
+<pre><code class="language-cangjie">public enum Orientation {
+    | PORTRAIT
+    | LANDSCAPE
+    | PORTRAIT_INVERTED
+    | LANDSCAPE_INVERTED
+}
+</code></pre>
+<p>显示设备当前的显示方向枚举。</p>
+<p><strong>系统能力：</strong> SystemCapability.WindowManager.WindowManager.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">PORTRAIT</td><td style="text-align: left">表示设备当前以竖屏方式显示。</td></tr>
+<tr><td style="text-align: left">LANDSCAPE</td><td style="text-align: left">表示设备当前以横屏方式显示。</td></tr>
+<tr><td style="text-align: left">PORTRAIT_INVERTED</td><td style="text-align: left">表示设备当前以反向竖屏方式显示。</td></tr>
+<tr><td style="text-align: left">LANDSCAPE_INVERTED</td><td style="text-align: left">表示设备当前以反向横屏方式显示。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-foldstatus"><a class="header" href="#enum-foldstatus">enum FoldStatus</a></h2>
+<pre><code class="language-cangjie">public enum FoldStatus {
+    | FOLD_STATUS_UNKNOWN
+    | FOLD_STATUS_EXPANDED
+    | FOLD_STATUS_FOLDED
+    | FOLD_STATUS_HALF_FOLDED
+}
+</code></pre>
+<p>当前可折叠设备的折叠状态枚举。</p>
+<p><strong>系统能力：</strong> SystemCapability.Window.SessionManager</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">FOLD_STATUS_UNKNOWN</td><td style="text-align: left">表示设备当前折叠状态未知。</td></tr>
+<tr><td style="text-align: left">FOLD_STATUS_EXPANDED</td><td style="text-align: left">表示设备当前折叠状态为完全展开。</td></tr>
+<tr><td style="text-align: left">FOLD_STATUS_FOLDED</td><td style="text-align: left">表示设备当前折叠状态为折叠。</td></tr>
+<tr><td style="text-align: left">FOLD_STATUS_HALF_FOLDED</td><td style="text-align: left">表示设备当前折叠状态为半折叠。半折叠指完全展开和折叠之间的状态。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-folddisplaymode"><a class="header" href="#enum-folddisplaymode">enum FoldDisplayMode</a></h2>
+<pre><code class="language-cangjie">public enum FoldDisplayMode {
+    | FOLD_DISPLAY_MODE_UNKNOWN
+    | FOLD_DISPLAY_MODE_FULL
+    | FOLD_DISPLAY_MODE_MAIN
+    | FOLD_DISPLAY_MODE_SUB
+    | FOLD_DISPLAY_MODE_COORDINATION
+}
+</code></pre>
+<p>可折叠设备的显示模式枚举。</p>
+<p><strong>系统能力：</strong> SystemCapability.Window.SessionManager</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">FOLD_DISPLAY_MODE_UNKNOWN</td><td style="text-align: left">表示设备当前折叠显示模式未知。</td></tr>
+<tr><td style="text-align: left">FOLD_DISPLAY_MODE_FULL</td><td style="text-align: left">表示设备当前全屏显示。</td></tr>
+<tr><td style="text-align: left">FOLD_DISPLAY_MODE_MAIN</td><td style="text-align: left">表示设备当前主屏幕显示。</td></tr>
+<tr><td style="text-align: left">FOLD_DISPLAY_MODE_SUB</td><td style="text-align: left">表示设备当前子屏幕显示。</td></tr>
+<tr><td style="text-align: left">FOLD_DISPLAY_MODE_COORDINATION</td><td style="text-align: left">表示设备当前双屏协同显示。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-rect"><a class="header" href="#struct-rect">struct Rect</a></h2>
+<pre><code class="language-cangjie">public struct Rect {
+    public Rect(
+        public var left: Int32,
+        public var top: Int32,
+        public var width: UInt32,
+        public var height: UInt32
+    ) {}
+}
+</code></pre>
+<p>矩形区域。</p>
+<p><strong>系统能力：</strong> SystemCapability.WindowManager.WindowManager.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">left</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">矩形区域的左边界，单位为像素，该参数应为整数。</td></tr>
+<tr><td style="text-align: left">top</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">矩形区域的上边界，单位为像素，该参数应为整数。</td></tr>
+<tr><td style="text-align: left">width</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">矩形区域的宽度，单位为像素，该参数应为整数。</td></tr>
+<tr><td style="text-align: left">height</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">矩形区域的高度，单位为像素，该参数应为整数。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-foldcreaseregion"><a class="header" href="#struct-foldcreaseregion">struct FoldCreaseRegion</a></h2>
+<pre><code class="language-cangjie">public struct FoldCreaseRegion {
+    public FoldCreaseRegion(
+        public let displayId: UInt32,
+        public let creaseRects: Array&lt;Rect&gt;
+    ) {}
+}
+</code></pre>
+<p>折叠折痕区域。</p>
+<p><strong>系统能力：</strong> SystemCapability.Window.SessionManager</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">displayId</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">显示器ID，用于识别折痕所在的屏幕。</td></tr>
+<tr><td style="text-align: left">creaseRects</td><td style="text-align: left">Array&lt;<a href="#struct-rect">Rect</a>&gt;</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">折痕区域。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-waterfalldisplayarearects"><a class="header" href="#struct-waterfalldisplayarearects">struct WaterfallDisplayAreaRects</a></h2>
+<pre><code class="language-cangjie">public struct WaterfallDisplayAreaRects {
+    public WaterfallDisplayAreaRects(
+        public let left: Rect,
+        public let top: Rect,
+        public let right: Rect,
+        public let bottom: Rect
+    ) {}
+}
+</code></pre>
+<p>瀑布屏曲面部分显示区域。</p>
+<p><strong>系统能力：</strong> SystemCapability.WindowManager.WindowManager.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">left</td><td style="text-align: left"><a href="#struct-rect">Rect</a></td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">瀑布曲面区域的左侧矩形区域。</td></tr>
+<tr><td style="text-align: left">top</td><td style="text-align: left"><a href="#struct-rect">Rect</a></td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">瀑布曲面区域的顶部矩形区域。</td></tr>
+<tr><td style="text-align: left">right</td><td style="text-align: left"><a href="#struct-rect">Rect</a></td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">瀑布曲面区域的右侧矩形区域。</td></tr>
+<tr><td style="text-align: left">bottom</td><td style="text-align: left"><a href="#struct-rect">Rect</a></td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">瀑布曲面区域的底部矩形区域。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-cutoutinfo"><a class="header" href="#struct-cutoutinfo">struct CutoutInfo</a></h2>
+<pre><code class="language-cangjie">public struct CutoutInfo {
+    public CutoutInfo(
+        public let boundingRects: Array&lt;Rect&gt;,
+        public let waterfallDisplayAreaRects: WaterfallDisplayAreaRects
+    ) {}
+}
+</code></pre>
+<p>挖孔屏、刘海屏、瀑布屏等不可用屏幕区域信息。</p>
+<p><strong>系统能力：</strong> SystemCapability.WindowManager.WindowManager.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">boundingRects</td><td style="text-align: left">Array&lt;<a href="#struct-rect">Rect</a>&gt;</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">挖孔、刘海等区域的边界矩形。</td></tr>
+<tr><td style="text-align: left">waterfallDisplayAreaRects</td><td style="text-align: left"><a href="#struct-waterfalldisplayarearects">WaterfallDisplayAreaRects</a></td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">瀑布屏曲面部分显示区域。</td></tr>
+</tbody></table>
+</div>
+<h2 id="func-getdefaultdisplaysync"><a class="header" href="#func-getdefaultdisplaysync">func getDefaultDisplaySync()</a></h2>
+<pre><code class="language-cangjie">public func getDefaultDisplaySync(): Display
+</code></pre>
+<p>获取当前默认的Display对象。</p>
+<p><strong>系统能力：</strong> SystemCapability.WindowManager.WindowManager.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-display">Display</a></td><td style="text-align: left">返回默认的Display对象。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-display.html">屏幕错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">1400001</td><td style="text-align: left">Invalid display or screen.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.display.*
+
+try {
+    let displayClass: Display = getDefaultDisplaySync()
+    println(displayClass.name)
+} catch (exception: Exception) {
+    AppLog.error(exception.toString())
+}
+</code></pre>
+<h2 id="func-getalldisplays"><a class="header" href="#func-getalldisplays">func getAllDisplays()</a></h2>
+<pre><code class="language-cangjie">public func getAllDisplays(): Array&lt;Display&gt;
+</code></pre>
+<p>获取当前所有的Display对象。</p>
+<p><strong>系统能力：</strong> SystemCapability.WindowManager.WindowManager.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Array&lt;<a href="#class-display">Display</a>&gt;</td><td style="text-align: left">返回当前所有的Display对象。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-display.html">屏幕错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">1400001</td><td style="text-align: left">Invalid display or screen.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.display.*
+
+try {
+    let displayClass: Array&lt;Display&gt; = getAllDisplays()
+    if (displayClass.size() &gt; 0) {
+        println(displayClass[0].name)
+    }
+} catch (exception: Exception) {
+    AppLog.error(exception.toString())
+}
+</code></pre>
+<h2 id="func-hasprivatewindowuint32"><a class="header" href="#func-hasprivatewindowuint32">func hasPrivateWindow(UInt32)</a></h2>
+<pre><code class="language-cangjie">public func hasPrivateWindow(displayId: UInt32): Bool
+</code></pre>
+<p>查询指定Display对象上是否有可见的隐私窗口。可通过<a href="cj-apis-window.html#func-setwindowprivacymodebool">setWindowPrivacyMode()</a>接口设置隐私窗口。隐私窗口内容将无法被截屏或录屏。</p>
+<p><strong>系统接口：</strong> 此接口为系统接口。</p>
+<p><strong>系统能力：</strong> SystemCapability.WindowManager.WindowManager.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">id</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">显示设备的id，该参数仅支持整数输入。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">查询的Display对象上是否有可见的隐私窗口。<br>true表示此Display对象上有可见的隐私窗口，false表示此Display对象上没有可见的隐私窗口。</br></td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-display.html">屏幕错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">1400003</td><td style="text-align: left">This display manager service works abnormally.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.display.*
+
+try {
+    let displayClass = getDefaultDisplaySync()
+
+    var ret: Bool = true
+    try {
+        ret = display.hasPrivateWindow(displayClass.id)
+    } catch (exception: Exception) {
+        AppLog.error(exception.toString())
+    }
+
+    if (ret) {
+        AppLog.info(&quot;There has privateWindow.&quot;)
+    } else {
+        AppLog.info(&quot;There has no privateWindow.&quot;)
+    }
+} catch (exception: Exception) {
+    AppLog.error(exception.toString())
+}
+</code></pre>
+<h2 id="func-isfoldable"><a class="header" href="#func-isfoldable">func isFoldable()</a></h2>
+<pre><code class="language-cangjie">public func isFoldable(): Bool
+</code></pre>
+<p>检查设备是否可折叠。</p>
+<p><strong>系统能力：</strong> SystemCapability.Window.SessionManager</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">Bool对象，返回当前设备是否可折叠的结果。true表示可折叠，false表示不可折叠。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-display.html">屏幕错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">1400003</td><td style="text-align: left">This display manager service works abnormally.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.display.*
+
+try {
+    let displayClass = getDefaultDisplaySync()
+
+    var ret: Bool = false
+    try {
+        ret = isFoldable()
+    } catch (exception: Exception) {
+        AppLog.error(exception.toString())
+    }
+
+    if (ret) {
+        AppLog.info(&quot;The device is foldable.&quot;)
+    } else {
+        AppLog.info(&quot;The device is not foldable.&quot;)
+    }
+} catch (exception: Exception) {
+    AppLog.error(exception.toString())
+}
+</code></pre>
+<h2 id="func-setfolddisplaymodefolddisplaymode"><a class="header" href="#func-setfolddisplaymodefolddisplaymode">func setFoldDisplayMode(FoldDisplayMode)</a></h2>
+<pre><code class="language-cangjie">public func setFoldDisplayMode(mode: FoldDisplayMode): Unit
+</code></pre>
+<p>更改可折叠设备的显示模式。</p>
+<p><strong>系统接口：</strong> 此接口为系统接口。</p>
+<p><strong>系统能力：</strong> SystemCapability.Window.SessionManager</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">mode</td><td style="text-align: left"><a href="#enum-folddisplaymode">FoldDisplayMode</a></td><td style="text-align: left">是</td><td style="text-align: left">可折叠设备的显示模式。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-display.html">屏幕错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">1400003</td><td style="text-align: left">This display manager service works abnormally.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.display.*
+
+try {
+    let mode = FoldDisplayMode.FOLD_DISPLAY_MODE_FULL
+    setFoldDisplayMode(mode)
+} catch (exception: Exception) {
+    AppLog.error(exception.toString())
+}
+</code></pre>
+<h2 id="func-getfoldstatus"><a class="header" href="#func-getfoldstatus">func getFoldStatus()</a></h2>
+<pre><code class="language-cangjie">public func getFoldStatus(): FoldStatus
+</code></pre>
+<p>获取可折叠设备的当前折叠状态。</p>
+<p><strong>系统能力：</strong> SystemCapability.Window.SessionManager</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#enum-foldstatus">FoldStatus</a></td><td style="text-align: left">FoldStatus对象，返回当前可折叠设备的折叠状态。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-display.html">屏幕错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">1400003</td><td style="text-align: left">This display manager service works abnormally.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.display.*
+
+try {
+    let status = getFoldStatus()
+    match (status) {
+        case FoldStatus.FOLD_STATUS_UNKNOWN: println(&quot;Unkown status.&quot;)
+        case FoldStatus.FOLD_STATUS_EXPANDED: println(&quot;Expanded.&quot;)
+        case FoldStatus.FOLD_STATUS_FOLDED: println(&quot;Folded.&quot;)
+        case FoldStatus.FOLD_STATUS_HALF_FOLDED: println(&quot;Half folded.&quot;)
+    }
+} catch (exception: Exception) {
+    AppLog.error(exception.toString())
+}
+</code></pre>
+<h2 id="func-getfolddisplaymode"><a class="header" href="#func-getfolddisplaymode">func getFoldDisplayMode()</a></h2>
+<pre><code class="language-cangjie">public func getFoldDisplayMode(): FoldDisplayMode
+</code></pre>
+<p>获取可折叠设备的显示模式。</p>
+<p><strong>系统能力：</strong> SystemCapability.Window.SessionManager</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#enum-folddisplaymode">FoldDisplayMode</a></td><td style="text-align: left">FoldDisplayMode对象，返回当前可折叠设备的显示模式。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-display.html">屏幕错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">1400003</td><td style="text-align: left">This display manager service works abnormally.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.display.*
+
+try {
+    let mode = getFoldDisplayMode()
+    match (mode) {
+        case FoldDisplayMode.FOLD_DISPLAY_MODE_UNKNOWN: println(&quot;Unkown mode.&quot;)
+        case FoldDisplayMode.FOLD_DISPLAY_MODE_FULL: println(&quot;Full mode.&quot;)
+        case FoldDisplayMode.FOLD_DISPLAY_MODE_MAIN: println(&quot;Main mode.&quot;)
+        case FoldDisplayMode.FOLD_DISPLAY_MODE_SUB: println(&quot;Sub mode.&quot;)
+        case FoldDisplayMode.FOLD_DISPLAY_MODE_COORDINATION: println(&quot;Coordination mode.&quot;)
+    }
+} catch (exception: Exception) {
+    AppLog.error(exception.toString())
+}
+</code></pre>
+<h2 id="func-getcurrentfoldcreaseregion"><a class="header" href="#func-getcurrentfoldcreaseregion">func getCurrentFoldCreaseRegion()</a></h2>
+<pre><code class="language-cangjie">public func getCurrentFoldCreaseRegion(): FoldCreaseRegion
+</code></pre>
+<p>在当前显示模式下获取折叠折痕区域。</p>
+<p><strong>系统能力：</strong> SystemCapability.Window.SessionManager</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#struct-foldcreaseregion">FoldCreaseRegion</a></td><td style="text-align: left">FoldCreaseRegion对象，返回设备在当前显示模式下的折叠折痕区域。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-display.html">屏幕错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">1400003</td><td style="text-align: left">This display manager service works abnormally.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.display.*
+
+try {
+    let region = getCurrentFoldCreaseRegion()
+    println(region.id)
+} catch (exception: Exception) {
+    AppLog.error(exception.toString())
+}
+</code></pre>
+<h2 id="class-display"><a class="header" href="#class-display">class Display</a></h2>
+<pre><code class="language-cangjie">public class Display &lt;: RemoteData
+</code></pre>
+<p>屏幕实例。描述Display对象的属性和方法。</p>
+<p>下列API示例中都需先使用<a href="#func-getalldisplays">getAllDisplays()</a>、<a href="#func-getdefaultdisplaysync">getDefaultDisplaySync()</a>中的任一方法获取到Display对象，再通过此实例调用对应方法。</p>
+<h3 id="属性"><a class="header" href="#属性">属性</a></h3>
+<p><strong>系统能力：</strong> SystemCapability.WindowManager.WindowManager.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">id</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">显示设备的id号，该参数应为整数。</td></tr>
+<tr><td style="text-align: left">name</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">显示设备的名称。</td></tr>
+<tr><td style="text-align: left">alive</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">显示设备是否启用。</td></tr>
+<tr><td style="text-align: left">state</td><td style="text-align: left"><a href="#enum-displaystate">DisplayState</a></td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">显示设备的状态。</td></tr>
+<tr><td style="text-align: left">refreshRate</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">显示设备的刷新率，该参数应为整数。</td></tr>
+<tr><td style="text-align: left">rotation</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">显示设备的屏幕顺时针旋转角度。<br>值为0时，表示显示设备屏幕顺时针旋转为0°；<br>值为1时，表示显示设备屏幕顺时针旋转为90°；<br>值为2时，表示显示设备屏幕顺时针旋转为180°；<br>值为3时，表示显示设备屏幕顺时针旋转为270°。</td></tr>
+<tr><td style="text-align: left">width</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">显示设备的宽度，单位为像素，该参数应为整数。</td></tr>
+<tr><td style="text-align: left">height</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">显示设备的高度，单位为像素，该参数应为整数。</td></tr>
+<tr><td style="text-align: left">densityDPI</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">显示设备的屏幕密度，表示每英寸点数。该参数为浮点数，一般取值160.0、480.0等。</td></tr>
+<tr><td style="text-align: left">orientation</td><td style="text-align: left"><a href="#enum-orientation">Orientation</a></td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">表示屏幕当前显示的方向。</td></tr>
+<tr><td style="text-align: left">densityPixels</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">显示设备的逻辑密度，是像素单位无关的缩放系数。该参数为浮点数，一般取值1.0、3.0等。</td></tr>
+<tr><td style="text-align: left">scaledDensity</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">显示设备的显示字体的缩放因子。该参数为浮点数，通常与densityPixels相同。</td></tr>
+<tr><td style="text-align: left">xDPI</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">x方向中每英寸屏幕的确切物理像素值，该参数为浮点数。</td></tr>
+<tr><td style="text-align: left">yDPI</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">y方向中每英寸屏幕的确切物理像素值，该参数为浮点数。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-getcutoutinfo"><a class="header" href="#func-getcutoutinfo">func getCutoutInfo()</a></h3>
+<pre><code class="language-cangjie">public func getCutoutInfo(): CutoutInfo
+</code></pre>
+<p>获取挖孔屏、刘海屏、瀑布屏等不可用屏幕区域信息。建议应用布局规避该区域。</p>
+<p><strong>系统能力：</strong> SystemCapability.WindowManager.WindowManager.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#struct-cutoutinfo">CutoutInfo</a></td><td style="text-align: left">返回描述不可用屏幕区域的CutoutInfo对象。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-display.html">屏幕错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">1400001</td><td style="text-align: left">Invalid display or screen.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.display.*
+
+try {
+
+    let displayClass = display.getDefaultDisplaySync()
+    let cutout = displayClass.getCutoutInfo()
+    println(cutout.boundingRects.size())
+
+} catch (exception: Exception) {
+    AppLog.error(exception.toString())
+}
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../source_zh_cn/arkui-cj/cj-appendix-router.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../source_zh_cn/apis/cj-apis-colorManager.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../source_zh_cn/arkui-cj/cj-appendix-router.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../source_zh_cn/apis/cj-apis-colorManager.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../highlight.js"></script>
+        <script src="../../assets/elasticlunr.js"></script>
+        <script src="../../assets/fzf.umd.js"></script>
+        <script src="../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

@@ -4,22 +4,9 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-
 main(): Int64 {
     var str1: String
-    var str2 = str1 + "4"
+    var str2 = <!USED_BEFORE_INITIALIZATION!>str1<!> + "4"
     print(str2)
     return 0
 }
-
-/* SCAN
-error: variable 'str1' is used before initialization
-  ==> String_init_check.cj:11:16:
-   | 
-11 |     var str2 = str1 + "4"
-   |                ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

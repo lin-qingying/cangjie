@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %f %cmp_opt
-
 @Annotation[target: [Extension]]
 public class A {
     const init() {}
@@ -13,7 +11,7 @@ public class A {
 
 @A
 extend Int8 {
-    @A
+    <!ANNOTATION_NOT_APPLICABLE_JFFI!>@A<!>
     func foo<T>() {}
 }
 
@@ -23,14 +21,3 @@ main() {
     a.foo<Int>()
     a.foo<UIntNative>()
 }
-
-/* SCAN
-error: '@A' not applicable to member function
-  ==> instantiated.cj:16:5:
-   | 
-16 |     @A
-   |     ^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

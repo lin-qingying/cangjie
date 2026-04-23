@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
 interface I {
     func f(): Int64
 }
@@ -14,7 +12,7 @@ class C<R> {}
 
 type c<T> = C<T>
 
-extend c {
+extend <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>c<!> {
     public func f1() {
         2
     }
@@ -23,14 +21,3 @@ extend c {
 main() {
     return 0
 }
-
-/* SCAN
-error: generic type should be used with type argument
-  ==> type_arg_mismatch.cj:17:8:
-   | 
-17 | extend c {
-   |        ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
@@ -29,6 +30,7 @@ class CfirClassBuilder {
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
     var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
+    lateinit var scopeProvider: CfirScopeProvider
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var symbol: CfirClassSymbol
@@ -46,6 +48,7 @@ class CfirClassBuilder {
             origin,
             attributes,
             deprecationsProvider,
+            scopeProvider,
             status,
             typeParameters,
             symbol,
@@ -78,6 +81,7 @@ inline fun buildClassCopy(original: CfirClass, init: CfirClassBuilder.() -> Unit
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
     copyBuilder.deprecationsProvider = original.deprecationsProvider
+    copyBuilder.scopeProvider = original.scopeProvider
     copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)

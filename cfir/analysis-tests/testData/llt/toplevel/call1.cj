@@ -4,27 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 func foo(): Int32 {
     return 1
 }
 
-var a: Int32 = foo(1)
-
-/* SCAN
-error: extra argument given for parameter list '()' in call
-  ==> call1.cj:13:19:
-   | 
-13 | var a: Int32 = foo(1)
-   |                   ^^^ expected 0 arguments, found 1
-   | 
-note: found candidate
- ==> call1.cj:9:6:
-  | 
-9 | func foo(): Int32 {
-  |      ^^^ 
-  | 
-
-1 error generated, 1 error printed.
-*/
+var a: Int32 = <!TOO_MANY_ARGUMENTS!>foo(1)<!>

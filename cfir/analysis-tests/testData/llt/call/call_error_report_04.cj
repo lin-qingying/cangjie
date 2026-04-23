@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC-PIPE-0: %run %run_opt %output
-
 func f<T>(a: Option<T>) {}
 
 main() {

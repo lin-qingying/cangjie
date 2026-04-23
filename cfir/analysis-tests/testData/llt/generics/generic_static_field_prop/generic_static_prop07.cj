@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// LEVEL: 0
-// EXEC: %compiler %cmp_opt %f -o %output
-// RUN-EXEC: %run %run_opt %output %run_args
 class A {}
 
 class B<T> where T <: A {

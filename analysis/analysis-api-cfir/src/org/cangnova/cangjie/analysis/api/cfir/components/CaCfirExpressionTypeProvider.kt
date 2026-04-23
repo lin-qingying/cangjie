@@ -1,16 +1,41 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
-import org.cangnova.cangjie.analysis.api.cfir.*
-
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.utils.unwrap
+import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.components.CaExpressionTypeProvider
-import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.analysis.api.impl.base.components.withPsiValidityAssertion
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
+import org.cangnova.cangjie.analysis.utils.errors.unexpectedElementError
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.types.resolvedType
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.psi.CjCallableDeclaration
+import org.cangnova.cangjie.psi.CjConstantExpression
+import org.cangnova.cangjie.psi.CjDeclarationWithBody
+import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
+import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
+import org.cangnova.cangjie.psi.CjStringTemplateExpression
+import org.cangnova.cangjie.psi.psiUtil.getOutermostParenthesizerOrThis
+import org.cangnova.cangjie.psi.stubs.ConstantValueKind
+import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
+import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
 /**
- * 对齐 Kotlin `KaFirExpressionTypeProvider` 的组件落位。
+ * 对齐 Kotlin `CaCfirExpressionTypeProvider` 的组件落位。
  *
  * 这里只负责把 CFIR 已经求出的表达式/声明返回类型投影到公开 `CaType`，
  * 不混入类型关系、类型构造等其他职责。
@@ -18,13 +43,123 @@ import org.cangnova.cangjie.psi.CjExpression
 internal class CaCfirExpressionTypeProvider(
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaExpressionTypeProvider, CaCfirSessionComponent {
+    @OptIn(CaImplementationDetail::class)
     override val CjExpression.expressionType: CaType?
-        get() = withValidityAssertion {
-            analysisSession.typeQueries.queryExpressionType(this@expressionType)?.asPublicType()
+        get() = with(this@CaCfirExpressionTypeProvider as CaBaseSessionComponent<CaCfirSession>) {
+            this@expressionType.withPsiValidityAssertion {
+                val cfir = this@expressionType.unwrap().getOrBuildCfir(resolutionFacade) ?: return null
+                return try {
+                    getCjExpressionType(this@expressionType, cfir)
+                } catch (e: Exception) {
+                    rethrowExceptionWithDetails("Exception during resolving ${this@expressionType::class.simpleName}", e) {
+                        withPsiEntry("expression", this@expressionType)
+                        withCfirEntry("cfir", cfir)
+                    }
+                }
+            }
         }
 
-    override val CjCallableDeclaration.returnType: CaType?
-        get() = withValidityAssertion {
-            analysisSession.typeQueries.queryDeclarationReturnType(this@returnType)?.asPublicType()
+    private fun getCjExpressionType(expression: CjExpression, cfir: CfirElement): CaType? = when (cfir) {
+        is CfirFunctionCall -> cfir.resolvedType.asCaType()
+        is CfirSuperReceiverExpression -> cfir.resolvedType.asCaType()
+        is CfirAssignment -> {
+            if (cfir.lValue.psi == expression) {
+                cfir.lValue.resolvedType.asCaType()
+            } else {
+                analysisSession.cfirSession.builtinTypes.unitType.asCaType()
+            }
         }
+        is CfirExpression -> cfir.resolvedType.asCaType()
+        is CfirNamedReference -> cfir.getCorrespondingTypeIfPossible()?.asCaType()
+        is CfirStatement -> analysisSession.cfirSession.builtinTypes.unitType.asCaType()
+        is CfirTypeRef, is CfirImport, is CfirPackageDirective, is CfirTypeParameterRef -> null
+        else -> null
+    }
+
+    @OptIn(CaImplementationDetail::class)
+    override val CjCallableDeclaration.returnType: CaType?
+        get() = with(this@CaCfirExpressionTypeProvider as CaBaseSessionComponent<CaCfirSession>) {
+            this@returnType.withPsiValidityAssertion {
+                this@returnType.inferReturnTypeByPsi()?.let { return it }
+                val cfirDeclaration = this@returnType.resolveToCfirSymbol(
+                    resolutionFacade = resolutionFacade,
+                    phase = CfirResolvePhase.TYPES,
+                ).cfir
+
+                return when (cfirDeclaration) {
+                    is CfirCallableDeclaration -> cfirDeclaration.symbol.resolvedReturnType.asCaType()
+                    else -> unexpectedElementError<CfirElement>(cfirDeclaration)
+                }
+            }
+        }
+
+    /**
+     * 对齐 Kotlin FIR provider 的做法，在进入完整符号解析前先用 PSI 做一层便宜推断。
+     *
+     * 这层推断只处理“语法上即可确定”的场景，避免把声明返回类型查询退化成总是触发完整解析。
+     */
+    private fun CjCallableDeclaration.inferReturnTypeByPsi(): CaType? {
+        val declaration = this as? CjDeclarationWithBody ?: return null
+        if (declaration !is CjNamedFunction) return null
+        if (declaration.hasDeclaredReturnType()) return null
+
+        if (declaration.hasBlockBody()) {
+            return analysisSession.cfirSession.builtinTypes.unitType.asCaType()
+        }
+
+        val singleExpression = declaration.initializer ?: declaration.bodyExpression ?: return null
+        return inferExpressionTypeByPsi(singleExpression)
+    }
+
+    /**
+     * 只处理无需语义解析即可稳定确定的字面量类型。
+     */
+    private fun inferExpressionTypeByPsi(expression: CjExpression): CaType? = when (expression) {
+        is CjStringTemplateExpression -> analysisSession.buildClassType(StdlibClassIds.String)
+        is CjConstantExpression -> inferConstantTypeByPsi(expression)
+        else -> null
+    }
+
+    private fun inferConstantTypeByPsi(expression: CjConstantExpression): CaType? {
+        val constantKind = expression.stub?.kind() ?: when (expression.node.elementType) {
+            CjStubElementTypes.BOOLEAN_CONSTANT -> ConstantValueKind.BOOLEAN_CONSTANT
+            CjStubElementTypes.FLOAT_CONSTANT -> ConstantValueKind.FLOAT_CONSTANT
+            CjStubElementTypes.RUNE_CONSTANT -> ConstantValueKind.RUNE_CONSTANT
+            CjStubElementTypes.CHARACTER_BYTE_CONSTANT -> ConstantValueKind.CHARACTER_BYTE_CONSTANT
+            CjStubElementTypes.INTEGER_CONSTANT -> ConstantValueKind.INTEGER_CONSTANT
+            CjStubElementTypes.UNIT_CONSTANT -> ConstantValueKind.UNIT_CONSTANT
+            else -> null
+        }
+
+        val builtinTypes = analysisSession.cfirSession.builtinTypes
+        return when (constantKind) {
+            ConstantValueKind.BOOLEAN_CONSTANT -> builtinTypes.boolType.asCaType()
+            ConstantValueKind.FLOAT_CONSTANT -> builtinTypes.float64Type.asCaType()
+            ConstantValueKind.RUNE_CONSTANT, ConstantValueKind.CHARACTER_BYTE_CONSTANT -> builtinTypes.runeType.asCaType()
+            ConstantValueKind.INTEGER_CONSTANT -> builtinTypes.int64Type.asCaType()
+            ConstantValueKind.UNIT_CONSTANT -> builtinTypes.unitType.asCaType()
+            null -> null
+        }
+    }
+
+    /**
+     * 仅当名字引用最终属于“取值表达式”时，才返回对应类型。
+     *
+     * 这样可以避免把普通函数名本身错误地暴露成某个伪类型，同时保留函数值变量、
+     * 属性访问等真正有值语义的场景。
+     */
+    private fun CfirNamedReference.getCorrespondingTypeIfPossible() =
+        findOuterNamedAccessExpression()?.resolvedType
+
+    private fun CfirNamedReference.findOuterNamedAccessExpression(): CfirExpression? {
+        val referenceExpression = psi as? CjExpression ?: return null
+        val outerExpression = referenceExpression.getOutermostParenthesizerOrThis().parent as? CjElement ?: return null
+
+        return when (val outerCfirElement = outerExpression.getOrBuildCfir(resolutionFacade)) {
+            is CfirAssignment -> outerCfirElement.lValue
+            is CfirNamedAccessExpression -> outerCfirElement
+            is CfirOptionalChainExpression -> outerCfirElement.expression as? CfirNamedAccessExpression
+            else -> null
+        }
+    }
 }

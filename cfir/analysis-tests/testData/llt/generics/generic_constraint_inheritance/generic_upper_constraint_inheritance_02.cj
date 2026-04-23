@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %diag_json %f -o %output
-// EXEC: %run %run_opt %output %run_args
 
 interface I1 {}
 

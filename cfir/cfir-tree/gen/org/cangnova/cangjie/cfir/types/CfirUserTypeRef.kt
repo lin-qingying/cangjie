@@ -6,10 +6,10 @@
 package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
-import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 /**
@@ -17,9 +17,9 @@ import org.cangnova.cangjie.source.CjSourceElement
  */
 abstract class CfirUserTypeRef : CfirUnresolvedTypeRef() {
     abstract override val annotations: List<CfirAnnotation>
+    abstract override val customRenderer: Boolean
     abstract override val source: CjSourceElement
-    abstract val qualifier: List<Name>
-    abstract val typeArguments: List<CfirTypeRef>
+    abstract val qualifier: List<CfirQualifierPart>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitUserTypeRef(this, data)
@@ -30,9 +30,9 @@ abstract class CfirUserTypeRef : CfirUnresolvedTypeRef() {
 
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
-    abstract fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>)
+    abstract fun replaceQualifier(newQualifier: List<CfirQualifierPart>)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirUserTypeRef
 
-    abstract fun <D> transformTypeArguments(transformer: CfirTransformer<D>, data: D): CfirUserTypeRef
+    abstract fun <D> transformQualifier(transformer: CfirTransformer<D>, data: D): CfirUserTypeRef
 }

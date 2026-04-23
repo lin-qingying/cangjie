@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args
-
 open class Base {
     public open func foo(a: Int32): Int32 {
         0

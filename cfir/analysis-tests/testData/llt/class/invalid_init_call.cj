@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler  --error-count-limit=all  %typecheck %f 2>&1 | compare %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-
 func mm() {
     this()
     this

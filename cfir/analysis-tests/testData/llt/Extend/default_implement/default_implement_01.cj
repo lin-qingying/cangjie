@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %output | compare %f
-// ASSERT: scan-3 1111
-// ASSERT: scan-2 2222
-
 interface I {
     func f0(): Unit
     func f() {

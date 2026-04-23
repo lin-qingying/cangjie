@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
-
 extend Int64 {
     public func add() {
         return this + 1
@@ -14,17 +12,6 @@ extend Int64 {
 
 main() {
     1.add
-    1.addd
+    1.<!UNRESOLVED_REFERENCE!>addd<!>
     0
 }
-
-/* SCAN
-error: undeclared identifier 'addd'
-  ==> extend_primitive_type_02.cj:17:7:
-   | 
-17 |     1.addd
-   |       ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

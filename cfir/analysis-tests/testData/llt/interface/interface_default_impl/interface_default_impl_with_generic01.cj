@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-
 // Was failed for rearranging. Should compile success, but do not run
 interface fatherInterface<T> {
     func foo1(): Int8

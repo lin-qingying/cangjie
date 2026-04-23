@@ -47,6 +47,9 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
             }
             additionalImports(emptyArgumentListType)
         }
+        builder(argumentList) {
+            withCopy()
+        }
         builder(functionCall) {
             configurationForFunctionCallBuilder()
             default("origin") {
@@ -65,6 +68,11 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
             default("bodyResolveState", "CfirPropertyBodyResolveState.NOTHING_RESOLVED")
         }
 
+        builder(valueParameter) {
+            default("status", "DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS")
+            additionalImports(defaultStatusForStatuslessDeclarationsType)
+        }
+
         // lazyBlock / lazyExpression 不需要 builder（占位节点，不对外构造）
 
 
@@ -81,6 +89,14 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
             field = "deprecationsProvider",
         ) {
             default("deprecationsProvider", "UnresolvedDeprecationProvider")
+        }
+
+        // TypeRef 体系默认不启用 custom renderer。
+        // 这里在所有落地 builder 上统一施加默认值，确保生成代码与运行时构造约定一致。
+        configureFieldInAllLeafBuilders(
+            field = "customRenderer",
+        ) {
+            defaultFalse("customRenderer")
         }
     }
 
@@ -105,7 +121,7 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
         constPattern, wildcardPattern, bindingPattern, varOrEnumPattern, tuplePattern, enumPattern, typePattern,
 
         // -------- 类型引用节点 --------
-        resolvedTypeRef, userTypeRef, basicTypeRef, implicitTypeRef, functionTypeRef, tupleTypeRef, varrayTypeRef,
+        qualifierPart, resolvedTypeRef, userTypeRef, basicTypeRef, implicitTypeRef, functionTypeRef, tupleTypeRef, varrayTypeRef,
 
         // -------- 引用节点 --------
         namedReference, resolvedNamedReference, errorReference, thisReference,

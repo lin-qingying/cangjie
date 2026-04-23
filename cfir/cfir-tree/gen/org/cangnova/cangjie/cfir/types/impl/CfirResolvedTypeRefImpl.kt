@@ -22,6 +22,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirResolvedTypeRefImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
+    override val customRenderer: Boolean,
     override val coneType: ConeCangJieType,
     override var delegatedTypeRef: CfirTypeRef?,
 ) : CfirResolvedTypeRef() {

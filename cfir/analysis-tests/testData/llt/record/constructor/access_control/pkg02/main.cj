@@ -5,7 +5,7 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: pkg
-// EXEC-PIPE-1: %compiler %cmp_opt %pkg_opt %compile_lib_opt pkg 2>&1 | compare %f
+// EXEC: %compiler %cmp_opt %pkg_opt %compile_lib_opt pkg 2>&1 | compare %f
 // ASSERT: scan value type recursive detected: 'A->C->B->A'
 
 internal import pkg.*

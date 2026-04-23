@@ -4,6 +4,7 @@ import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.resolvedStatus
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -11,6 +12,7 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassifierLookupTag
+import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.cfir.withCfirSymbolIdEntry
 import org.cangnova.cangjie.constant.EvaluatedConstTracker
 import org.cangnova.cangjie.name.CallableId
@@ -27,6 +29,8 @@ import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
  */
 sealed class CfirBasedSymbol<out D : CfirDeclaration> {
     private var _cfir: @UnsafeVariance D? = null
+    val annotations: List<CfirAnnotation>
+        get() = cfir.annotations
 
     /** 指向对应的 CFIR 声明，未绑定时访问会抛出异常。 */
     val cfir: D
@@ -262,6 +266,8 @@ sealed class CfirCallableSymbol<out D : CfirCallableDeclaration> : CfirBasedSymb
             else -> lazyResolveToPhase(CfirResolvePhase.TYPES)
         }
     }
+    val dispatchReceiverType: ConeSimpleCangJieType?
+        get() = cfir.dispatchReceiverType
     val resolvedStatus: CfirResolvedDeclarationStatus
         get() = cfir.resolvedStatus()
     val rawStatus: CfirDeclarationStatus
@@ -315,7 +321,7 @@ sealed class CfirNamedValueSymbol<out D : CfirCallableDeclaration> (override val
 }
 
 /** 具名函数符号，对齐 K2 `FirNamedFunctionSymbol`。 */
-class CfirNamedFunctionSymbol(
+ class CfirNamedFunctionSymbol(
    callableId: CallableId,
 ) : CfirFunctionSymbol<CfirNamedFunction>(callableId) {
     override val name: Name get() = callableId.callableName
@@ -459,7 +465,8 @@ class CfirValueParameterSymbol(
   callableId: CallableId,
 ) : CfirVariableSymbol<CfirValueParameter>(callableId) {
     override val name: Name get() = callableId.callableName
-
+    val containingDeclarationSymbol: CfirBasedSymbol<*>
+        get() = cfir.containingDeclarationSymbol
     override fun toString(): String =
         if (isBound) "CfirValueParameterSymbol(${cfir.name})" else "CfirValueParameterSymbol(unbound)"
 }

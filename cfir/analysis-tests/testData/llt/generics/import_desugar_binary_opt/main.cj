@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: pkg.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg.cj -o pkg.%middle
-// (DEBUG_OPTION)EXEC-PIPE: %frontendCompiler %dump-ir-to-screen %cmp_opt %f 2>&1 | compare %f
-// ASSERT: regex-auto-not @"_CNat6Extend5Int642==El"
 
 internal import pkg.*
 

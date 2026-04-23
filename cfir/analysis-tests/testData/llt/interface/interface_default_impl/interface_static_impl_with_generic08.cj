@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-
 interface I<T> {
     static func f1(a: T): Unit
     static func f2(a: T): Unit {
@@ -28,81 +26,13 @@ interface I2<K> <: I<K> {
 func f<T>(a: T): Unit {
     I1<T>.f2(a)
 
-    I2<T>.f2(a)
+    <!INTERFACE_CALL_WITH_UNIMPLEMENTED_CALL!>I2<T>.f2(a)<!>
 }
 
 main() {
-    f<Int32>(Int32(1))
+    <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS!>f<Int32><!>(Int32(1))
 
     I1<Int32>.f2(Int32(1))
 
-    I2<Int32>.f2(Int32(1))
+    <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS, INTERFACE_CALL_WITH_UNIMPLEMENTED_CALL!>I2<Int32><!>.f2(Int32(1))
 }
-
-/* SCAN
-error: generic instantiation 'f<Int32>' causes ambiguous function 'f1'
-  ==> interface_static_impl_with_generic08.cj:35:5:
-   | 
-35 |     f<Int32>(Int32(1))
-   |     ^^^^^^^^ 
-   | 
-note: found candidate
-  ==> interface_static_impl_with_generic08.cj:10:17:
-   | 
-10 |     static func f1(a: T): Unit
-   |                 ^^ 
-   | 
-note: found candidate
-  ==> interface_static_impl_with_generic08.cj:23:17:
-   | 
-23 |     static func f1(a: Int32): Unit {
-   |                 ^^ 
-   | 
-
-error: generic instantiation 'I2<Int32>' causes ambiguous function 'f1'
-  ==> interface_static_impl_with_generic08.cj:39:5:
-   | 
-39 |     I2<Int32>.f2(Int32(1))
-   |     ^^^^^^^^^ 
-   | 
-note: found candidate
-  ==> interface_static_impl_with_generic08.cj:10:17:
-   | 
-10 |     static func f1(a: T): Unit
-   |                 ^^ 
-   | 
-note: found candidate
-  ==> interface_static_impl_with_generic08.cj:23:17:
-   | 
-23 |     static func f1(a: Int32): Unit {
-   |                 ^^ 
-   | 
-
-error: static invocation contains unimplemented static function 'f1'
-  ==> interface_static_impl_with_generic08.cj:31:5:
-   | 
-31 |     I2<T>.f2(a)
-   |     ^^^^^^^^ 
-   | 
-note: indirect use of unimplemented function reference here
-  ==> interface_static_impl_with_generic08.cj:12:9:
-   | 
-12 |         f1(a)
-   |         ^^ 
-   | 
-
-error: static invocation contains unimplemented static function 'f1'
-  ==> interface_static_impl_with_generic08.cj:39:5:
-   | 
-39 |     I2<Int32>.f2(Int32(1))
-   |     ^^^^^^^^^^^^ 
-   | 
-note: indirect use of unimplemented function reference here
-  ==> interface_static_impl_with_generic08.cj:12:9:
-   | 
-12 |         f1(a)
-   |         ^^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

@@ -26,8 +26,8 @@ import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.arrayElementType
-import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -341,7 +341,7 @@ private fun org.cangnova.cangjie.cfir.types.ConeCangJieType.containsAnyTypeParam
     is ConeEnumType -> typeArguments.any { it.containsAnyTypeParameter(parameterNames) }
     is org.cangnova.cangjie.cfir.types.ConeTypeAliasType -> typeArguments.any { it.containsAnyTypeParameter(parameterNames) } ||
         (expandedType?.containsAnyTypeParameter(parameterNames) == true)
-    is org.cangnova.cangjie.cfir.types.ConeFuncType -> parameterTypes.any { it.containsAnyTypeParameter(parameterNames) } ||
+    is org.cangnova.cangjie.cfir.types.ConeFunctionType -> parameterTypes.any { it.containsAnyTypeParameter(parameterNames) } ||
         returnType.containsAnyTypeParameter(parameterNames)
     is org.cangnova.cangjie.cfir.types.ConeTupleType -> elementTypes.any { it.containsAnyTypeParameter(parameterNames) }
     is org.cangnova.cangjie.cfir.types.ConeVArrayType -> elementType.containsAnyTypeParameter(parameterNames)

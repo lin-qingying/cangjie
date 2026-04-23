@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK:%compiler %cmp_opt %f -o %output
-
 main(): Int64 {
     var MyChild = Child()
     if (MyChild.a != 2) {
@@ -26,16 +24,5 @@ class Child <: Father {
 }
 
 class Son <: Father {
-    public static var a = H
+    public static var a = <!UNRESOLVED_REFERENCE!>H<!>
 }
-
-/* SCAN
-error: undeclared identifier 'H'
-  ==> inherit_variable_shadow_16.cj:29:27:
-   | 
-29 |     public static var a = H
-   |                           ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

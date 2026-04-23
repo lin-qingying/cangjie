@@ -20,5 +20,5 @@ sealed class TypeArgumentMapping {
 }
 
 private fun buildPlaceholderProjection(): ConeTypeProjection {
-    return ConeTypeProjection(ConePlaceholderType())
+    return ConePlaceholderType()
 }

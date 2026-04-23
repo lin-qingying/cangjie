@@ -4,27 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 func f() {}
 
-const func f() {}
+const func <!CONFLICTING_OVERLOADS!>f<!>() {}
 
 main() {}
-
-/* SCAN
-error: function 'f' has overload conflicts
-  ==> err_func_overloading.cj:11:12:
-   | 
-11 | const func f() {}
-   |            ^ 
-   | 
-note: conflict with the declaration
- ==> err_func_overloading.cj:9:6:
-  | 
-9 | func f() {}
-  |      ^ 
-  | 
-
-1 error generated, 1 error printed.
-*/

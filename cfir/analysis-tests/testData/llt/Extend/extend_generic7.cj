@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
 interface EQ {}
 
 class S <: EQ {}
@@ -18,17 +16,6 @@ extend<T> A<T> where T <: EQ {
 
 main() {
     A<S>.add()
-    A<Int32>.add()
+    A<Int32>.<!NOT_MEMBER_OF!>add<!>()
     0
 }
-
-/* SCAN
-error: 'add' is not a member of class 'A<Int32>'
-  ==> extend_generic7.cj:21:14:
-   | 
-21 |     A<Int32>.add()
-   |              ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -4,20 +4,16 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 struct StructA {
     static const init() {}
-    public static let A: Array<String> = ["array"]
+    public static let A: Array<String> = <!EXPECT_CONST!>["array"]<!>
 }
 
 class ClassC {
     static const init() {}
-    public static let A: Array<String> = ["array"]
+    public static let A: Array<String> = <!EXPECT_CONST!>["array"]<!>
 }
 
 main() {
     return
 }
-
-// ASSERT: scan-2 error: expected 'const' expression guaranteed to be evaluated at compile time

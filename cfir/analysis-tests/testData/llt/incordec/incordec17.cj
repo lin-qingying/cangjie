@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-
 struct B {
     public var a: Int32 = 1
     public let b: Int32 = 1
@@ -13,10 +11,10 @@ struct B {
 
 main(): Int64 {
     A().a++
-    A().b++
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>A().b++<!>
 
-    B().a++
-    B().b++
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>B().a++<!>
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>B().b++<!>
 
     return 0
 }
@@ -25,46 +23,3 @@ class A {
     public var a: Int32 = 1
     public let b: Int32 = 1
 }
-
-/* SCAN
-error: cannot assign to immutable value
-  ==> incordec17.cj:16:5:
-   | 
-16 |     A().b++
-   |     ^^^^^^^ 
-   | 
-note: variable 'b' is immutable
-  ==> incordec17.cj:26:16:
-   | 
-26 |     public let b: Int32 = 1
-   |                ^ 
-   | 
-
-error: cannot assign to immutable value
-  ==> incordec17.cj:18:5:
-   | 
-18 |     B().a++
-   |     ^^^^^^^ 
-   | 
-note: function call returns immutable value
-  ==> incordec17.cj:18:5:
-   | 
-18 |     B().a++
-   |     ^^^ 
-   | 
-
-error: cannot assign to immutable value
-  ==> incordec17.cj:19:5:
-   | 
-19 |     B().b++
-   |     ^^^^^^^ 
-   | 
-note: variable 'b' is immutable
-  ==> incordec17.cj:11:16:
-   | 
-11 |     public let b: Int32 = 1
-   |                ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

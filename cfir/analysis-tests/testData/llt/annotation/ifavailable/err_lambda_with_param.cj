@@ -4,26 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %f %cmp_opt
-
 main() {
-    @IfAvailable(Level:11, {=>}, { a:Int=>() })
+    @IfAvailable(<!IFAVAILABLE_UNKNOWN_ARG_NAME!>Level<!>:11, {=>}, <!TYPE_MISMATCH!>{ a:Int=>() }<!>)
 }
-
-/* SCAN
-error: unknown parameter name 'Level'
-  ==> err_lambda_with_param.cj:10:18:
-   | 
-10 |     @IfAvailable(Level:11, {=>}, { a:Int=>() })
-   |                  ^^^^^ 
-   | 
-
-error: mismatched types
-  ==> err_lambda_with_param.cj:10:34:
-   | 
-10 |     @IfAvailable(Level:11, {=>}, { a:Int=>() })
-   |                                  ^^^^^^^^^^^^^ expected '() -> Unit', found '(Int64) -> Unit'
-   | 
-
-2 errors generated, 2 errors printed.
-*/

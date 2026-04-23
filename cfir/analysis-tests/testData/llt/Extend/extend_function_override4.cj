@@ -4,10 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 main(): Int64 {
-    var a = B<Int32>().foo()
+    var a = B<Int32>().<!AMBIGUOUS_FUNCTION_CALL!>foo<!>()
     return 0
 }
 
@@ -20,43 +18,7 @@ extend<T> A<T> {
 }
 
 class B<T> <: A<T> {
-    public override func foo() {
+    public override func <!EXTEND_FUNCTION_CANNOT_OVERRIDDEN!>foo<!>() {
         1
     }
 }
-
-/* SCAN
-error: ambiguous match for function call 'foo'
-  ==> extend_function_override4.cj:10:24:
-   | 
-10 |     var a = B<Int32>().foo()
-   |                        ^ 
-   | 
-note: found candidate
-  ==> extend_function_override4.cj:17:17:
-   | 
-17 |     public func foo() {
-   |                 ^ 
-   | 
-note: found candidate
-  ==> extend_function_override4.cj:23:26:
-   | 
-23 |     public override func foo() {
-   |                          ^ 
-   | 
-
-error: cannot override function 'foo' in extend of supertype
-  ==> extend_function_override4.cj:23:26:
-   | 
-23 |     public override func foo() {
-   |                          ^^^ 
-   | 
-note: overridden definition of 'foo' is here
-  ==> extend_function_override4.cj:17:17:
-   | 
-17 |     public func foo() {
-   |                 ^^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

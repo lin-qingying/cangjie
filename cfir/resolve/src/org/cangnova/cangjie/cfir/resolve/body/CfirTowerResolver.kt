@@ -8,13 +8,13 @@ import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateCollector
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
+import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CandidateFactoriesAndCollectors
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerResolveTask
 import org.cangnova.cangjie.cfir.resolve.calls.tower.TowerDataElementsForName
 import org.cangnova.cangjie.cfir.resolve.calls.tower.TowerResolveManager
 import org.cangnova.cangjie.cfir.scopes.CfirScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
+import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -83,7 +83,7 @@ class CfirTowerResolver(
         for (scope in scopes) {
             val result = mutableListOf<CfirCallableSymbol<*>>()
 
-            if (scope is CfirLocalScopeImpl) {
+            if (scope is CfirLocalScope) {
                 scope.processVariablesByName(name) { symbol ->
                     if (!symbol.isInvokableSymbol()) {
                         result += symbol
@@ -135,7 +135,7 @@ class CfirTowerResolver(
     fun findVariablesInScopes(name: Name, scopes: List<CfirScope>): List<CfirCallableSymbol<*>> {
         for (scope in scopes) {
             val result = mutableListOf<CfirCallableSymbol<*>>()
-            if (scope is CfirLocalScopeImpl) {
+            if (scope is CfirLocalScope) {
                 scope.processVariablesByName(name) { result += it }
             }
             scope.processCallablesByName(name) { symbol ->

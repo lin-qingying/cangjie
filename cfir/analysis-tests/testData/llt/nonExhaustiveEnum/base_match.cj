@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %output
-// RUN-EXEC-PIPE: %run %run_opt %output %run_args | compare %f
-
 enum A {
     | B | C(Int64) | ...
 
@@ -34,8 +31,3 @@ main() {
         case _ => 2
     })
 }
-/* SCAN
-0
-1
-2
-*/

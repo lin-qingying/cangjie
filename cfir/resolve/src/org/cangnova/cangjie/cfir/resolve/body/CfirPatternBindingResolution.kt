@@ -99,8 +99,7 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
 internal fun CfirPartialBodyResolveTransformer.registerPatternBindings(pattern: CfirPattern) {
     if (pattern is CfirOrPattern) return
     for (bindingVariable in pattern.bindingVariables()) {
-        val symbol = bindingVariable.symbol as? CfirCallableSymbol<*> ?: continue
-        context.storeVariable(bindingVariable.name, symbol)
+        context.storeVariable(bindingVariable, session)
     }
 }
 

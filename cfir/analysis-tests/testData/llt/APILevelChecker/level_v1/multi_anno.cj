@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: apilevel.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt apilevel.cj -o apilevel.%middle
-// EXEC: %compiler %cmp_opt apilevel.%middle %n.cj -o %n.%suffix --cfg APILevel_level=9
 
 import ohos.labels.*
 

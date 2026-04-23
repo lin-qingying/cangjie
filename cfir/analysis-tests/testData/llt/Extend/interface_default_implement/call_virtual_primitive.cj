@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 interface I {
     func h1(): Int64
     func h2(): Int64 {

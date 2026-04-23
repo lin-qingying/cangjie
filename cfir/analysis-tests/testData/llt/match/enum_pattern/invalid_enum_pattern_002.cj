@@ -4,7 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %n.cj -o %output 2>&1 | compare %f
+// EXEC: %compiler %diag_json %n.cj -o %output 2>&1 | compare %f
 
 main() {
     let a = None<Int64>
@@ -24,3 +24,6 @@ error: enum pattern's parameters size is wrong
 
 1 error generated, 1 error printed.
 */
+
+// ASSERT: scan sema_enum_pattern_param_size_error
+// ASSERT: scan "Errors": 1

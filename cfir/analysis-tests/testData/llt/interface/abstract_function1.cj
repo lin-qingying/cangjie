@@ -4,20 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 interface I {
     func f1(a!: Int64): Unit
-    static func f2(a!: Int64 = 1, b!: Int64): Unit
+    static func f2(<!CANNOT_HAVE_DEFAULT_PARAM!>a!: Int64 = 1<!>, b!: Int64): Unit
 }
-
-/* SCAN
-error: optional parameter cannot be used in abstract function
-  ==> abstract_function1.cj:11:20:
-   | 
-11 |     static func f2(a!: Int64 = 1, b!: Int64): Unit
-   |                    ^^^^^^^^^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

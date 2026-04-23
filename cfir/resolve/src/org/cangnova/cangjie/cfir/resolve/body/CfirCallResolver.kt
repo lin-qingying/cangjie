@@ -44,6 +44,8 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.createErrorReferenceWit
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.createErrorReferenceWithExistingCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.ConeCallConflictResolver
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.callConflictResolverFactory
+import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
+import org.cangnova.cangjie.cfir.resolve.calls.stages.fullyProcessCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
 import org.cangnova.cangjie.cfir.resolve.typeFromCallee
@@ -63,7 +65,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
@@ -484,7 +486,7 @@ class CfirCallResolver(
                                         components.returnTypeCalculator.tryCalculateReturnType(it.cfir).coneType
                                     }
 
-                                    if (singleExpectedCandidate?.isSuccessful == false && declarationType is ConeFuncType) {
+                                    if (singleExpectedCandidate?.isSuccessful == false && declarationType is ConeFunctionType) {
                                         createConeDiagnosticForCandidateWithError(
                                             singleExpectedCandidate.lowestApplicability,
                                             singleExpectedCandidate,

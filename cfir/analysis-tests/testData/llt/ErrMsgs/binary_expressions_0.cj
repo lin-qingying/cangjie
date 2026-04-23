@@ -4,11 +4,9 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 main() {
-    var a = 1 + true
-    1 + true + a
+    var a = 1 <!INVALID_BINARY_OPERATOR!>+<!> true
+    1 <!INVALID_BINARY_OPERATOR!>+<!> true + a
 
     1 + 2 + a
     a - 2 - 3
@@ -28,23 +26,3 @@ main() {
 
     0
 }
-
-/* SCAN
-error: invalid binary operator '+' on type 'Int64' and 'Bool'
-  ==> binary_expressions_0.cj:10:15:
-   | 
-10 |     var a = 1 + true
-   |               ^ 
-   | 
-   # note: you may want to implement 'operator func +(right: Bool)' for type 'Int64'
-
-error: invalid binary operator '+' on type 'Int64' and 'Bool'
-  ==> binary_expressions_0.cj:11:7:
-   | 
-11 |     1 + true + a
-   |       ^ 
-   | 
-   # note: you may want to implement 'operator func +(right: Bool)' for type 'Int64'
-
-2 errors generated, 2 errors printed.
-*/

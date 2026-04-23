@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args
-// ASSERT: scan select default
-
 class Select<R> {
     public func otherwise(fn: () -> R): R {
         fn()

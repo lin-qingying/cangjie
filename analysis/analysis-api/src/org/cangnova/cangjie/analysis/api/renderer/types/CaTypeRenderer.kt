@@ -8,6 +8,7 @@ import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaClassTypeQua
 import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaErrorTypeRenderer
 import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaFunctionalTypeRenderer
 import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaIntersectionTypeRenderer
+import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaPrimitiveTypeRenderer
 import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaTupleTypeRenderer
 import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaTypeNameRenderer
 import org.cangnova.cangjie.analysis.api.renderer.types.renderers.CaTypeParameterTypeRenderer
@@ -20,6 +21,7 @@ import org.cangnova.cangjie.analysis.api.types.CaClassErrorType
 import org.cangnova.cangjie.analysis.api.types.CaErrorType
 import org.cangnova.cangjie.analysis.api.types.CaFunctionType
 import org.cangnova.cangjie.analysis.api.types.CaIntersectionType
+import org.cangnova.cangjie.analysis.api.types.CaPrimitiveType
 import org.cangnova.cangjie.analysis.api.types.CaTupleType
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.api.types.CaTypeParameterType
@@ -39,6 +41,7 @@ class CaTypeRenderer private constructor(
     val typeNameRenderer: CaTypeNameRenderer,
     val typeApproximator: CaRendererTypeApproximator,
     val typeProjectionRenderer: CaTypeProjectionRenderer,
+    val primitiveTypeRenderer: CaPrimitiveTypeRenderer,
     val usualClassTypeRenderer: CaUsualClassTypeRenderer,
     val functionalTypeRenderer: CaFunctionalTypeRenderer,
     val typeParameterTypeRenderer: CaTypeParameterTypeRenderer,
@@ -59,6 +62,7 @@ class CaTypeRenderer private constructor(
      */
     private fun CaSession.renderTypeAsIs(type: CaType, printer: PrettyPrinter) {
         when (type) {
+            is CaPrimitiveType -> primitiveTypeRenderer.renderType(this, type, this@CaTypeRenderer, printer)
             is CaUsualClassType -> usualClassTypeRenderer.renderType(this, type, this@CaTypeRenderer, printer)
             is CaFunctionType -> functionalTypeRenderer.renderType(this, type, this@CaTypeRenderer, printer)
             is CaTupleType -> tupleTypeRenderer.renderType(this, type, this@CaTypeRenderer, printer)
@@ -125,6 +129,7 @@ class CaTypeRenderer private constructor(
             classIdRenderer = current.classIdRenderer
             typeNameRenderer = current.typeNameRenderer
             typeApproximator = current.typeApproximator
+            primitiveTypeRenderer = current.primitiveTypeRenderer
             usualClassTypeRenderer = current.usualClassTypeRenderer
             functionalTypeRenderer = current.functionalTypeRenderer
             tupleTypeRenderer = current.tupleTypeRenderer
@@ -142,6 +147,7 @@ class CaTypeRenderer private constructor(
         lateinit var classIdRenderer: CaClassTypeQualifierRenderer
         lateinit var typeNameRenderer: CaTypeNameRenderer
         lateinit var typeApproximator: CaRendererTypeApproximator
+        lateinit var primitiveTypeRenderer: CaPrimitiveTypeRenderer
         lateinit var usualClassTypeRenderer: CaUsualClassTypeRenderer
         lateinit var functionalTypeRenderer: CaFunctionalTypeRenderer
         lateinit var tupleTypeRenderer: CaTupleTypeRenderer
@@ -159,6 +165,7 @@ class CaTypeRenderer private constructor(
             typeNameRenderer = typeNameRenderer,
             typeApproximator = typeApproximator,
             typeProjectionRenderer = typeProjectionRenderer,
+            primitiveTypeRenderer = primitiveTypeRenderer,
             usualClassTypeRenderer = usualClassTypeRenderer,
             functionalTypeRenderer = functionalTypeRenderer,
             typeParameterTypeRenderer = typeParameterTypeRenderer,

@@ -4,19 +4,14 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %diag_json %f 2>&1 | compare %f
-
 // Constraint check should pass
 interface I {
-    static func f<T1, T2, T3, T4>(): Unit where T1 <: T2, T2 <: T3, T3 <: T4 {}
+    static func f<T1, T2, T3, T4>(): Unit where T1 <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T2<!>, T2 <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T3<!>, T3 <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T4<!> {}
 }
 
 class A <: I {
-    public static func f<T1, T2, T3, T4>(): Unit where T1 <: T4 {}
+    public static func f<T1, T2, T3, T4>(): Unit where T1 <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T4<!> {}
 }
 
 main() {
 }
-
-// ASSERT: scan-4 sema_upper_bound_must_be_class_or_interface
-// ASSERT: scan "Errors": 4

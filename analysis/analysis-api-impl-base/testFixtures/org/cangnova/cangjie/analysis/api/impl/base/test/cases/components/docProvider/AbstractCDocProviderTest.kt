@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.docProvider
 
 import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.analysis.api.components.findCDoc
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
 import org.cangnova.cangjie.lexer.cdoc.parser.CDocKnownTag
 import org.cangnova.cangjie.psi.CjFile
@@ -15,11 +16,12 @@ import org.junit.jupiter.api.Assertions.assertNotNull
  *
  * 该测试对齐 Kotlin analysis 中 KDoc provider 的架构位置，但只验证仓颉真实存在的能力：
  * 1. declaration 自带 CDoc 的 PSI 结构视图；
- * 2. declaration symbol -> documentation；
- * 3. reference-resolved symbol -> documentation。
+ * 2. declaration symbol -> CDoc descriptor；
+ * 3. reference-resolved symbol -> CDoc descriptor。
  *
  * 不在这里镜像 Kotlin 的 constructor/property/script 派生规则。
  */
+@OptIn(org.cangnova.cangjie.analysis.api.CaNonPublicApi::class)
 abstract class AbstractCDocProviderTest : AbstractAnalysisApiComponentTest() {
     override fun doTestByMainFile(
         mainFile: CjFile,
@@ -39,15 +41,13 @@ abstract class AbstractCDocProviderTest : AbstractAnalysisApiComponentTest() {
         assertEquals("Document", docComment.findSectionByTag(CDocKnownTag.SEE)?.getSubjectName())
 
         analyzeForTest(reference) {
-            val expected = """
-                Greets the caller.
-                @param value input value
-                @return rendered text
-                @see Document
-            """.trimIndent()
+            val declarationDescriptor = declaration.symbol.findCDoc()
+            val referenceDescriptor = reference.resolveToSymbol()?.findCDoc()
 
-            assertEquals(expected, declaration.symbol.documentation())
-            assertEquals(expected, reference.resolveToSymbol()?.documentation())
+            assertEquals("Greets the caller.", declarationDescriptor?.primaryTag?.getContent())
+            assertEquals("Greets the caller.", referenceDescriptor?.primaryTag?.getContent())
+            assertEquals(4, declarationDescriptor?.additionalSections?.size)
+            assertEquals(4, referenceDescriptor?.additionalSections?.size)
         }
     }
 }

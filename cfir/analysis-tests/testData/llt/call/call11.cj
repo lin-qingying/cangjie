@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 func test<T>(input: Int64): Int64 {
     return input
 }
@@ -14,6 +12,3 @@ main() {
     var a = test(1)
     return a
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

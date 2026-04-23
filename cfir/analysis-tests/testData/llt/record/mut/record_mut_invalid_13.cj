@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
-
 struct R1 {
     public var i = 0
 
@@ -13,20 +11,9 @@ struct R1 {
         i += 1
     }
 
-    public var fn = {=> foo()}
+    public var fn = {=> <!USED_BEFORE_INITIALIZATION!>foo<!>()}
 }
 
 main() {
     return 1
 }
-
-/* SCAN
-error: 'foo' is not allowed to be accessed before all member variables are initialized
-  ==> record_mut_invalid_13.cj:16:25:
-   | 
-16 |     public var fn = {=> foo()}
-   |                         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

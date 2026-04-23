@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output
-
 class A<T, K> where K <: ToString {}
 
 extend<T> A<Int64, T> <: ToString {

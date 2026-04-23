@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 func run(): Int64 {
     var res: Int32 = Foo().opt.t
     if (res == 1) {

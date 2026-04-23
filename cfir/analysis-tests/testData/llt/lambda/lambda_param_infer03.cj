@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt -Woff unused %f -o %output
-// EXEC: %run %run_opt %output %run_args
 
 func foo<T>(x: Int, f: (Int) -> T) {
     f(x)

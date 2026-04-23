@@ -1,0 +1,1126 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>枚举 - 仓颉编程语言库 API</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../favicon.png">
+        <link rel="stylesheet" href="../../../css/variables.css">
+        <link rel="stylesheet" href="../../../css/general.css">
+        <link rel="stylesheet" href="../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../highlight.css">
+        <link rel="stylesheet" href="../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../../assets/style.css">
+        <link rel="stylesheet" href="../../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../../libs_overview_ohos.html"><strong aria-hidden="true">1.</strong> 仓颉编程语言库 API</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../std/std_module_overview_ohos.html"><strong aria-hidden="true">1.1.</strong> std 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_package_overview.html"><strong aria-hidden="true">1.1.1.</strong> std.core 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_funcs.html"><strong aria-hidden="true">1.1.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_types.html"><strong aria-hidden="true">1.1.1.2.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_intrinsics.html"><strong aria-hidden="true">1.1.1.3.</strong> 内置类型</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_interfaces.html"><strong aria-hidden="true">1.1.1.4.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_classes.html"><strong aria-hidden="true">1.1.1.5.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_enums.html"><strong aria-hidden="true">1.1.1.6.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_structs.html"><strong aria-hidden="true">1.1.1.7.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_exceptions.html"><strong aria-hidden="true">1.1.1.8.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.1.9.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_samples/core_spawn_sample.html"><strong aria-hidden="true">1.1.1.9.1.</strong> 仓颉并发编程示例</a></li><li class="chapter-item "><a href="../../../std/core/core_samples/core_cstring_sample.html"><strong aria-hidden="true">1.1.1.9.2.</strong> 使用 CString 与 C 代码交互示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/argopt/argopt_package_overview.html"><strong aria-hidden="true">1.1.2.</strong> std.argopt 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/argopt/argopt_package_api/argopt_package_classes.html"><strong aria-hidden="true">1.1.2.1.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.2.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/argopt/argopt_samples/long_argument_parse.html"><strong aria-hidden="true">1.1.2.2.1.</strong> 长命令行参数解析</a></li><li class="chapter-item "><a href="../../../std/argopt/argopt_samples/short_argument_parse.html"><strong aria-hidden="true">1.1.2.2.2.</strong> 短命令行参数解析</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="../../../std/ast/ast_package_overview.html"><strong aria-hidden="true">1.1.3.</strong> std.ast 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_funcs.html"><strong aria-hidden="true">1.1.3.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_interfaces.html"><strong aria-hidden="true">1.1.3.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_classes.html"><strong aria-hidden="true">1.1.3.3.</strong> 类</a></li><li class="chapter-item expanded "><a href="../../../std/ast/ast_package_api/ast_package_enums.html" class="active"><strong aria-hidden="true">1.1.3.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_structs.html"><strong aria-hidden="true">1.1.3.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_exceptions.html"><strong aria-hidden="true">1.1.3.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.3.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/ast/ast_samples/context.html"><strong aria-hidden="true">1.1.3.7.1.</strong> Macro With Context</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/dump.html"><strong aria-hidden="true">1.1.3.7.2.</strong> 语法树节点打印</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/operate.html"><strong aria-hidden="true">1.1.3.7.3.</strong> 操作 AST 对象示例</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/parse.html"><strong aria-hidden="true">1.1.3.7.4.</strong> 将仓颉源码解析为 AST 对象示例</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/report.html"><strong aria-hidden="true">1.1.3.7.5.</strong> 自定义报错接口</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/traverse.html"><strong aria-hidden="true">1.1.3.7.6.</strong> 自定义访问函数遍历 AST 对象示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/binary/binary_package_overview.html"><strong aria-hidden="true">1.1.4.</strong> std.binary 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/binary/binary_package_api/binary_package_interfaces.html"><strong aria-hidden="true">1.1.4.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/collection/collection_package_overview.html"><strong aria-hidden="true">1.1.5.</strong> std.collection 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_function.html"><strong aria-hidden="true">1.1.5.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_interface.html"><strong aria-hidden="true">1.1.5.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_class.html"><strong aria-hidden="true">1.1.5.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/colleciton_package_struct.html"><strong aria-hidden="true">1.1.5.4.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_exception.html"><strong aria-hidden="true">1.1.5.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.5.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_append_insert.html"><strong aria-hidden="true">1.1.5.6.1.</strong> ArrayList 的 append/insert 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_get_set.html"><strong aria-hidden="true">1.1.5.6.2.</strong> ArrayList 的 get/set 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_remove_clear_slice.html"><strong aria-hidden="true">1.1.5.6.3.</strong> ArrayList 的 remove/clear/slice 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashmap_get_put_contains.html"><strong aria-hidden="true">1.1.5.6.4.</strong> Hashmap 的 get/put/contains 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashmap_putall_remove_clear.html"><strong aria-hidden="true">1.1.5.6.5.</strong> HashMap 的 putAll/remove/clear 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashset_put_iterator_remove.html"><strong aria-hidden="true">1.1.5.6.6.</strong> HashSet 的 put/iterator/remove 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_iterator.html"><strong aria-hidden="true">1.1.5.6.7.</strong> 迭代器操作函数</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_overview.html"><strong aria-hidden="true">1.1.6.</strong> std.collection.concurrent 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_api/collection_concurrent_interface.html"><strong aria-hidden="true">1.1.6.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_api/collection_concurrent_class.html"><strong aria-hidden="true">1.1.6.2.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.6.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_samples/sample_concurrenthashmap.html"><strong aria-hidden="true">1.1.6.3.1.</strong> ConcurrentHashMap 使用示例</a></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_samples/sample_noblocking_queue.html"><strong aria-hidden="true">1.1.6.3.2.</strong> NonBlockingQueue 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/console/console_package_overview.html"><strong aria-hidden="true">1.1.7.</strong> std.console 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/console/console_package_api/console_package_class.html"><strong aria-hidden="true">1.1.7.1.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.7.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/console/console_samples/console_sample.html"><strong aria-hidden="true">1.1.7.2.1.</strong> Console 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/convert/convert_package_overview.html"><strong aria-hidden="true">1.1.8.</strong> std.convert 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/convert/convert_package_api/convert_package_interfaces.html"><strong aria-hidden="true">1.1.8.1.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.8.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/convert/convert_samples/convert_samples.html"><strong aria-hidden="true">1.1.8.2.1.</strong> covert 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/crypto/cipher/cipher_package_overview.html"><strong aria-hidden="true">1.1.9.</strong> std.crypto.cipher 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/crypto/cipher/cipher_package_api/cipher_package_interfaces.html"><strong aria-hidden="true">1.1.9.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_overview.html"><strong aria-hidden="true">1.1.10.</strong> std.crypto.digest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_api/digest_package_funcs.html"><strong aria-hidden="true">1.1.10.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_api/digest_package_interfaces.html"><strong aria-hidden="true">1.1.10.2.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_overview.html"><strong aria-hidden="true">1.1.11.</strong> std.database.sql 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_interfaces.html"><strong aria-hidden="true">1.1.11.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_classes.html"><strong aria-hidden="true">1.1.11.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_enums.html"><strong aria-hidden="true">1.1.11.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_exceptions.html"><strong aria-hidden="true">1.1.11.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.11.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_driver.html"><strong aria-hidden="true">1.1.11.5.1.</strong> 实现数据库驱动查询功能示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_get_connection.html"><strong aria-hidden="true">1.1.11.5.2.</strong> 获取数据库连接示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_modify_table.html"><strong aria-hidden="true">1.1.11.5.3.</strong> 删除表、创建表示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_operations.html"><strong aria-hidden="true">1.1.11.5.4.</strong> 执行数据库操作语句示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_transactions.html"><strong aria-hidden="true">1.1.11.5.5.</strong> 执行事务控制语句示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/format/format_package_overview.html"><strong aria-hidden="true">1.1.12.</strong> std.format 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/format/format_package_api/format_package_interfaces.html"><strong aria-hidden="true">1.1.12.1.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.12.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/format/format_samples/format_samples.html"><strong aria-hidden="true">1.1.12.2.1.</strong> format 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/fs/fs_package_overview.html"><strong aria-hidden="true">1.1.13.</strong> std.fs 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_classes.html"><strong aria-hidden="true">1.1.13.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_enums.html"><strong aria-hidden="true">1.1.13.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_structs.html"><strong aria-hidden="true">1.1.13.3.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_exceptions.html"><strong aria-hidden="true">1.1.13.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.13.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/fs/fs_samples/directory_samples.html"><strong aria-hidden="true">1.1.13.5.1.</strong> Directory 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/file_samples.html"><strong aria-hidden="true">1.1.13.5.2.</strong> File 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/fileinfo_samples.html"><strong aria-hidden="true">1.1.13.5.3.</strong> FileInfo 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/path_samples.html"><strong aria-hidden="true">1.1.13.5.4.</strong> Path 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/io/io_package_overview.html"><strong aria-hidden="true">1.1.14.</strong> std.io 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_interfaces.html"><strong aria-hidden="true">1.1.14.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_classes.html"><strong aria-hidden="true">1.1.14.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_enums.html"><strong aria-hidden="true">1.1.14.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_exceptions.html"><strong aria-hidden="true">1.1.14.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.14.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/io/io_samples/buffered_input_stream.html"><strong aria-hidden="true">1.1.14.5.1.</strong> BufferedInputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/buffered_output_stream.html"><strong aria-hidden="true">1.1.14.5.2.</strong> BufferedOutputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/byte_array_stream.html"><strong aria-hidden="true">1.1.14.5.3.</strong> ByteArrayStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/chained_input_stream.html"><strong aria-hidden="true">1.1.14.5.4.</strong> ChainedInputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/multi_output_stream.html"><strong aria-hidden="true">1.1.14.5.5.</strong> MultiOutputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/string_reader.html"><strong aria-hidden="true">1.1.14.5.6.</strong> StringReader 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/string_writer.html"><strong aria-hidden="true">1.1.14.5.7.</strong> StringWriter 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_overview.html"><strong aria-hidden="true">1.1.15.</strong> std.log 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_interfaces.html"><strong aria-hidden="true">1.1.15.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_classes.html"><strong aria-hidden="true">1.1.15.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_enums.html"><strong aria-hidden="true">1.1.15.3.</strong> 枚举</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.15.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/log/stdlog_samples/stdlog_sample.html"><strong aria-hidden="true">1.1.15.4.1.</strong> 日志打印示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/math/math_package_overview.html"><strong aria-hidden="true">1.1.16.</strong> std.math 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_funcs.html"><strong aria-hidden="true">1.1.16.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_interfaces.html"><strong aria-hidden="true">1.1.16.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_enums.html"><strong aria-hidden="true">1.1.16.3.</strong> 枚举</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.16.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math/math_samples/math_basic_operation.html"><strong aria-hidden="true">1.1.16.4.1.</strong> 数学基础运算示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_overview.html"><strong aria-hidden="true">1.1.17.</strong> std.math.numeric 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_funcs.html"><strong aria-hidden="true">1.1.17.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_enums.html"><strong aria-hidden="true">1.1.17.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_structs.html"><strong aria-hidden="true">1.1.17.3.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.17.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_arithmetic.html"><strong aria-hidden="true">1.1.17.4.1.</strong> BigInt 基础数学运算示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_prop.html"><strong aria-hidden="true">1.1.17.4.2.</strong> BigInt 基本属性示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_compare_opration.html"><strong aria-hidden="true">1.1.17.4.3.</strong> BigInt 大小比较示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_basic_arithmetic.html"><strong aria-hidden="true">1.1.17.4.4.</strong> Decimal 基础数学运算示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_basic_prop.html"><strong aria-hidden="true">1.1.17.4.5.</strong> Decimal 基本属性示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_compare_opration.html"><strong aria-hidden="true">1.1.17.4.6.</strong> Decimal 大小比较示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/objectpool/objectpool_package_overview.html"><strong aria-hidden="true">1.1.18.</strong> std.objectpool 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/objectpool/objectpool_package_api/objectpool_package_classes.html"><strong aria-hidden="true">1.1.18.1.</strong> 类</a></li></ol></li><li class="chapter-item "><a href="../../../std/os/os_package_overview.html"><strong aria-hidden="true">1.1.19.</strong> std.os 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os/os_package_api/os_package_funcs.html"><strong aria-hidden="true">1.1.19.1.</strong> 函数</a></li></ol></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_overview.html"><strong aria-hidden="true">1.1.20.</strong> std.os.posix 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_api/os_posix_package_constants_vars.html"><strong aria-hidden="true">1.1.20.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_api/os_posix_package_funcs.html"><strong aria-hidden="true">1.1.20.2.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.20.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_file_content_samples.html"><strong aria-hidden="true">1.1.20.3.1.</strong> 文件内容相关操作</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_file_info_samples.html"><strong aria-hidden="true">1.1.20.3.2.</strong> 文件信息相关操作</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_os_envinfo_samples.html"><strong aria-hidden="true">1.1.20.3.3.</strong> 获取各类系统信息</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_process_samples.html"><strong aria-hidden="true">1.1.20.3.4.</strong> 进程相关信息操作</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_overview.html"><strong aria-hidden="true">1.1.21.</strong> std.os.process 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_classes.html"><strong aria-hidden="true">1.1.21.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_enums.html"><strong aria-hidden="true">1.1.21.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_exceptions.html"><strong aria-hidden="true">1.1.21.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.21.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_currentprocess_sample.html"><strong aria-hidden="true">1.1.21.4.1.</strong> 当前进程相关操作</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_rm_file_win_platform_sample.html"><strong aria-hidden="true">1.1.21.4.2.</strong> Windows 平台子进程结束后删除子进程可执行文件</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_sample.html"><strong aria-hidden="true">1.1.21.4.3.</strong> 任意进程相关操作</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_subprocess_sample.html"><strong aria-hidden="true">1.1.21.4.4.</strong> 子进程相关操作</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/overflow/overflow_package_overview.html"><strong aria-hidden="true">1.1.22.</strong> std.overflow 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/overflow/overflow_package_api/overflow_package_interfaces.html"><strong aria-hidden="true">1.1.22.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_package_api/overflow_package_exceptions.html"><strong aria-hidden="true">1.1.22.2.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.22.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/option.html"><strong aria-hidden="true">1.1.22.3.1.</strong> 返回 Option 策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/saturating.html"><strong aria-hidden="true">1.1.22.3.2.</strong> 饱和策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/throwing.html"><strong aria-hidden="true">1.1.22.3.3.</strong> 抛出异常策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/wrapping.html"><strong aria-hidden="true">1.1.22.3.4.</strong> 高位截断策略的示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/random/random_package_overview.html"><strong aria-hidden="true">1.1.23.</strong> std.random 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/random/random_package_api/random_package_classes.html"><strong aria-hidden="true">1.1.23.1.</strong> 类</a></li></ol></li><li class="chapter-item "><a href="../../../std/regex/regex_package_overview.html"><strong aria-hidden="true">1.1.24.</strong> std.regex 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_classes.html"><strong aria-hidden="true">1.1.24.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_structs.html"><strong aria-hidden="true">1.1.24.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_exceptions.html"><strong aria-hidden="true">1.1.24.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.24.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/regex/regex_samples/regex_sample.html"><strong aria-hidden="true">1.1.24.4.1.</strong> Regex 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/runtime/runtime_package_overview.html"><strong aria-hidden="true">1.1.25.</strong> std.runtime 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/runtime/runtime_package_api/runtime_package_funcs.html"><strong aria-hidden="true">1.1.25.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/runtime/runtime_package_api/runtime_package_structs.html"><strong aria-hidden="true">1.1.25.2.</strong> 结构体</a></li></ol></li><li class="chapter-item "><a href="../../../std/socket/socket_package_overview.html"><strong aria-hidden="true">1.1.26.</strong> std.socket 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_constants_vars.html"><strong aria-hidden="true">1.1.26.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_interfaces.html"><strong aria-hidden="true">1.1.26.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_classes.html"><strong aria-hidden="true">1.1.26.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_enums.html"><strong aria-hidden="true">1.1.26.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_structs.html"><strong aria-hidden="true">1.1.26.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_exceptions.html"><strong aria-hidden="true">1.1.26.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.26.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/socket/socket_samples/socket_option.html"><strong aria-hidden="true">1.1.26.7.1.</strong> 属性配置使用用例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/tcp.html"><strong aria-hidden="true">1.1.26.7.2.</strong> TCP 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/udp.html"><strong aria-hidden="true">1.1.26.7.3.</strong> UDP 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/unix.html"><strong aria-hidden="true">1.1.26.7.4.</strong> UNIX 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/unix_datagram.html"><strong aria-hidden="true">1.1.26.7.5.</strong> UnixDatagram 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/sort/sort_package_overview.html"><strong aria-hidden="true">1.1.27.</strong> std.sort 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sort/sort_package_api/sort_package_funcs.html"><strong aria-hidden="true">1.1.27.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/sort/sort_package_api/sort_package_interfaces.html"><strong aria-hidden="true">1.1.27.2.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.27.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sort/sort_samples/sort_sample_array.html"><strong aria-hidden="true">1.1.27.3.1.</strong> 对 Array 进行排序</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/sync/sync_package_overview.html"><strong aria-hidden="true">1.1.28.</strong> std.sync 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_constants_vars.html"><strong aria-hidden="true">1.1.28.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_funcs.html"><strong aria-hidden="true">1.1.28.2.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_interfaces.html"><strong aria-hidden="true">1.1.28.3.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_classes.html"><strong aria-hidden="true">1.1.28.4.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_enums.html"><strong aria-hidden="true">1.1.28.5.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_structs.html"><strong aria-hidden="true">1.1.28.6.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_exceptions.html"><strong aria-hidden="true">1.1.28.7.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.28.8.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sync/sync_samples/sync_samples.html"><strong aria-hidden="true">1.1.28.8.1.</strong> 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/time/time_package_overview.html"><strong aria-hidden="true">1.1.29.</strong> std.time 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_interfaces.html"><strong aria-hidden="true">1.1.29.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_classes.html"><strong aria-hidden="true">1.1.29.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_enums.html"><strong aria-hidden="true">1.1.29.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_structs.html"><strong aria-hidden="true">1.1.29.4.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_exceptions.html"><strong aria-hidden="true">1.1.29.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.29.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_compare.html"><strong aria-hidden="true">1.1.29.6.1.</strong> DateTime 比较</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_parse.html"><strong aria-hidden="true">1.1.29.6.2.</strong> DateTime 与 String 类型的转换</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_prop.html"><strong aria-hidden="true">1.1.29.6.3.</strong> 获取日期时间信息</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_tz.html"><strong aria-hidden="true">1.1.29.6.4.</strong> 同一时间在不同时区的本地时间</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/monotime_test.html"><strong aria-hidden="true">1.1.29.6.5.</strong> 利用 MonoTime 作计时</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unicode/unicode_package_overview.html"><strong aria-hidden="true">1.1.30.</strong> std.unicode 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unicode/unicode_package_api/unicode_package_interfaces.html"><strong aria-hidden="true">1.1.30.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_overview.html"><strong aria-hidden="true">1.1.31.</strong> std.unittest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_functions.html"><strong aria-hidden="true">1.1.31.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_interfaces.html"><strong aria-hidden="true">1.1.31.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_classes.html"><strong aria-hidden="true">1.1.31.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_enums.html"><strong aria-hidden="true">1.1.31.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_structs.html"><strong aria-hidden="true">1.1.31.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_exceptions.html"><strong aria-hidden="true">1.1.31.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.31.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_getting_started.html"><strong aria-hidden="true">1.1.31.7.1.</strong> 快速入门</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_basics.html"><strong aria-hidden="true">1.1.31.7.2.</strong> 基础概念</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_parameterized_tests.html"><strong aria-hidden="true">1.1.31.7.3.</strong> 参数化测试</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_dynamic_tests.html"><strong aria-hidden="true">1.1.31.7.4.</strong> 动态测试</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_overview.html"><strong aria-hidden="true">1.1.32.</strong> std.unittest.mock 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_functions.html"><strong aria-hidden="true">1.1.32.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_interfaces.html"><strong aria-hidden="true">1.1.32.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_classes.html"><strong aria-hidden="true">1.1.32.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_enums.html"><strong aria-hidden="true">1.1.32.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_exceptions.html"><strong aria-hidden="true">1.1.32.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.32.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_getting_started.html"><strong aria-hidden="true">1.1.32.6.1.</strong> 快速入门</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_basics.html"><strong aria-hidden="true">1.1.32.6.2.</strong> 基础概念</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_stubs.html"><strong aria-hidden="true">1.1.32.6.3.</strong> 桩</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_verification.html"><strong aria-hidden="true">1.1.32.6.4.</strong> 验证</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_mock_mockmacro/unittest_mock_mockmacro_package_overview.html"><strong aria-hidden="true">1.1.33.</strong> std.unittest.mock.mockmacro 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock_mockmacro/unittest_mock_mockmacro_package_api/unittest_mock_mockmacro_package_macros.html"><strong aria-hidden="true">1.1.33.1.</strong> 宏</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_testmacro/unittest_testmacro_package_overview.html"><strong aria-hidden="true">1.1.34.</strong> std.unittest.testmacro 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_testmacro/unittest_testmacro_package_api/unittest_testmacro_package_macros.html"><strong aria-hidden="true">1.1.34.1.</strong> 宏</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_overview.html"><strong aria-hidden="true">1.1.35.</strong> std.unittest.common 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_functions.html"><strong aria-hidden="true">1.1.35.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html"><strong aria-hidden="true">1.1.35.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_classes.html"><strong aria-hidden="true">1.1.35.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_enums.html"><strong aria-hidden="true">1.1.35.4.</strong> 枚举</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_diff/unittest_diff_package_overview.html"><strong aria-hidden="true">1.1.36.</strong> unittest.diff</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_diff/unittest_diff_package_api/unittest_diff_package_interfaces.html"><strong aria-hidden="true">1.1.36.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_overview.html"><strong aria-hidden="true">1.1.37.</strong> unittest.prop_test</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_functions.html"><strong aria-hidden="true">1.1.37.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_interfaces.html"><strong aria-hidden="true">1.1.37.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_classes.html"><strong aria-hidden="true">1.1.37.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_structs.html"><strong aria-hidden="true">1.1.37.4.</strong> 结构体</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../compress/compress_module_overview.html"><strong aria-hidden="true">1.2.</strong> compress 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_overview.html"><strong aria-hidden="true">1.2.1.</strong> compress.zlib 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_classes.html"><strong aria-hidden="true">1.2.1.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_enums.html"><strong aria-hidden="true">1.2.1.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_exceptions.html"><strong aria-hidden="true">1.2.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.2.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_samples/deflate_compress_decompress.html"><strong aria-hidden="true">1.2.1.4.1.</strong> Deflate 格式数据的压缩和解压</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_samples/gzip_compress_decompress.html"><strong aria-hidden="true">1.2.1.4.2.</strong> Gzip 格式数据的压缩和解压</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/crypto_module_overview.html"><strong aria-hidden="true">1.3.</strong> crypto 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_overview.html"><strong aria-hidden="true">1.3.1.</strong> crypto.crypto 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_classes.html"><strong aria-hidden="true">1.3.1.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_structs.html"><strong aria-hidden="true">1.3.1.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_exceptions.html"><strong aria-hidden="true">1.3.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_samples/sample_secure_random.html"><strong aria-hidden="true">1.3.1.4.1.</strong> SecureRandom 使用</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_samples/sample_crypto.html"><strong aria-hidden="true">1.3.1.4.2.</strong> SM4 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/digest/crypto_digest_package_overview.html"><strong aria-hidden="true">1.3.2.</strong> crypto.digest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_classes.html"><strong aria-hidden="true">1.3.2.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_structs.html"><strong aria-hidden="true">1.3.2.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_exceptions.html"><strong aria-hidden="true">1.3.2.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.2.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/digest/digest_samples/sample_digest.html"><strong aria-hidden="true">1.3.2.4.1.</strong> digest 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_overview.html"><strong aria-hidden="true">1.3.3.</strong> crypto.keys 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_classes.html"><strong aria-hidden="true">1.3.3.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_enums.html"><strong aria-hidden="true">1.3.3.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_structs.html"><strong aria-hidden="true">1.3.3.3.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.3.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/keys/keys_samples/sample_keys.html"><strong aria-hidden="true">1.3.3.4.1.</strong> keys 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_overview.html"><strong aria-hidden="true">1.3.4.</strong> crypto.x509 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_type.html"><strong aria-hidden="true">1.3.4.1.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_interfaces.html"><strong aria-hidden="true">1.3.4.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_classes.html"><strong aria-hidden="true">1.3.4.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_enums.html"><strong aria-hidden="true">1.3.4.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_structs.html"><strong aria-hidden="true">1.3.4.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_exceptions.html"><strong aria-hidden="true">1.3.4.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.4.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/x509/x509_samples/sample_x509.html"><strong aria-hidden="true">1.3.4.7.1.</strong> x509 使用</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/encoding_module_overview.html"><strong aria-hidden="true">1.4.</strong> encoding 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_package_overview.html"><strong aria-hidden="true">1.4.1.</strong> encoding.base64 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_package_api/base64_package_funcs.html"><strong aria-hidden="true">1.4.1.1.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.1.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_samples/base64.html"><strong aria-hidden="true">1.4.1.2.1.</strong> Byte 数组和 Base64 互转</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/hex/hex_package_overview.html"><strong aria-hidden="true">1.4.2.</strong> encoding.hex 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/hex/hex_package_api/hex_package_funcs.html"><strong aria-hidden="true">1.4.2.1.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.2.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/hex/hex_samples/hex.html"><strong aria-hidden="true">1.4.2.2.1.</strong> Byte 数组和 Hex 互转</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/json/json_package_overview.html"><strong aria-hidden="true">1.4.3.</strong> encoding.json 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_interfaces.html"><strong aria-hidden="true">1.4.3.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_classes.html"><strong aria-hidden="true">1.4.3.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_enums.html"><strong aria-hidden="true">1.4.3.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_exceptions.html"><strong aria-hidden="true">1.4.3.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.3.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json/json_samples/json_array_sample.html"><strong aria-hidden="true">1.4.3.5.1.</strong> JsonArray 使用示例</a></li><li class="chapter-item "><a href="../../../encoding/json/json_samples/json_value_sample.html"><strong aria-hidden="true">1.4.3.5.2.</strong> JsonValue 和 String 互相转换</a></li><li class="chapter-item "><a href="../../../encoding/json/json_samples/to_json_sample.html"><strong aria-hidden="true">1.4.3.5.3.</strong> JsonValue 与 DataModel 的转换</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_overview.html"><strong aria-hidden="true">1.4.4.</strong> encoding.json.stream 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_interfaces.html"><strong aria-hidden="true">1.4.4.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_classes.html"><strong aria-hidden="true">1.4.4.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_enums.html"><strong aria-hidden="true">1.4.4.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_structs.html"><strong aria-hidden="true">1.4.4.4.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.4.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_reader.html"><strong aria-hidden="true">1.4.4.5.1.</strong> 使用 Json Stream 进行反序列化</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_writer.html"><strong aria-hidden="true">1.4.4.5.2.</strong> 使用 Json Stream 进行序列化</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_writeconfig.html"><strong aria-hidden="true">1.4.4.5.3.</strong> WriteConfig 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/url/url_package_overview.html"><strong aria-hidden="true">1.4.5.</strong> encoding.url 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/url/url_package_api/url_package_classes.html"><strong aria-hidden="true">1.4.5.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/url/url_package_api/url_package_exceptions.html"><strong aria-hidden="true">1.4.5.2.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.5.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/url/url_samples/form.html"><strong aria-hidden="true">1.4.5.3.1.</strong> Form 的构造使用</a></li><li class="chapter-item "><a href="../../../encoding/url/url_samples/url_parse.html"><strong aria-hidden="true">1.4.5.3.2.</strong> URL 解析函数 parse 的使用</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../fuzz/fuzz_module_overview.html"><strong aria-hidden="true">1.5.</strong> fuzz 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_overview.html"><strong aria-hidden="true">1.5.1.</strong> fuzz.fuzz 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_constants_vars.html"><strong aria-hidden="true">1.5.1.1.</strong> 常量变量</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_classes.html"><strong aria-hidden="true">1.5.1.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_exceptions.html"><strong aria-hidden="true">1.5.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.5.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/basic_fuzzing_test.html"><strong aria-hidden="true">1.5.1.4.1.</strong> 测试猜测字符功能</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/dataprovider_usage.html"><strong aria-hidden="true">1.5.1.4.2.</strong> 使用 DataProvider 功能进行测试</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/fake_coverage_usage.html"><strong aria-hidden="true">1.5.1.4.3.</strong> 使用 FakeCoverage 避免 DataProvider 模式下 Fuzz 异常终止</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/print_cj-fuzz_usage.html"><strong aria-hidden="true">1.5.1.4.4.</strong> 打印 fuzz 使用方法</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/print_coverage.html"><strong aria-hidden="true">1.5.1.4.5.</strong> 实验性特性-覆盖率信息打印</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/stack_backtrace_missing_solution.html"><strong aria-hidden="true">1.5.1.4.6.</strong> 栈回溯缺失的处理方案</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../log/log_module_overview.html"><strong aria-hidden="true">1.6.</strong> log 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_package_overview.html"><strong aria-hidden="true">1.6.1.</strong> log 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_types.html"><strong aria-hidden="true">1.6.1.1.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_funcs.html"><strong aria-hidden="true">1.6.1.2.</strong> 函数</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_interfaces.html"><strong aria-hidden="true">1.6.1.3.</strong> 接口</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_classes.html"><strong aria-hidden="true">1.6.1.4.</strong> 类</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_structs.html"><strong aria-hidden="true">1.6.1.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_exceptions.html"><strong aria-hidden="true">1.6.1.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.6.1.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_samples/log_sample.html"><strong aria-hidden="true">1.6.1.7.1.</strong> 日志打印示例</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../net/net_module_overview.html"><strong aria-hidden="true">1.7.</strong> net 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_package_overview.html"><strong aria-hidden="true">1.7.1.</strong> net.http 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_funcs.html"><strong aria-hidden="true">1.7.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_interfaces.html"><strong aria-hidden="true">1.7.1.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_classes.html"><strong aria-hidden="true">1.7.1.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_enums.html"><strong aria-hidden="true">1.7.1.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_structs.html"><strong aria-hidden="true">1.7.1.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_exceptions.html"><strong aria-hidden="true">1.7.1.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.7.1.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_samples/http_client.html"><strong aria-hidden="true">1.7.1.7.1.</strong> client</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/cookie.html"><strong aria-hidden="true">1.7.1.7.2.</strong> cookie</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/log.html"><strong aria-hidden="true">1.7.1.7.3.</strong> log</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/http_server.html"><strong aria-hidden="true">1.7.1.7.4.</strong> server</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/webSocket.html"><strong aria-hidden="true">1.7.1.7.5.</strong> webSocket</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../net/tls/tls_package_overview.html"><strong aria-hidden="true">1.7.2.</strong> net.tls 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_classes.html"><strong aria-hidden="true">1.7.2.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_enums.html"><strong aria-hidden="true">1.7.2.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_structs.html"><strong aria-hidden="true">1.7.2.3.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_exceptions.html"><strong aria-hidden="true">1.7.2.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.7.2.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/tls/tls_samples/cert_key.html"><strong aria-hidden="true">1.7.2.5.1.</strong> 服务端证书及公钥在一份文件中</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/client.html"><strong aria-hidden="true">1.7.2.5.2.</strong> 客户端示例</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/hot_update_cert.html"><strong aria-hidden="true">1.7.2.5.3.</strong> 证书热更新</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/server.html"><strong aria-hidden="true">1.7.2.5.4.</strong> 服务端示例</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../serialization/serialization_module_overview.html"><strong aria-hidden="true">1.8.</strong> serialization 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_overview.html"><strong aria-hidden="true">1.8.1.</strong> serialization.serialization 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_functions.html"><strong aria-hidden="true">1.8.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_interfaces.html"><strong aria-hidden="true">1.8.1.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_classes.html"><strong aria-hidden="true">1.8.1.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_exceptions.html"><strong aria-hidden="true">1.8.1.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.8.1.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_samples/serialize_and_deserialize_class.html"><strong aria-hidden="true">1.8.1.5.1.</strong> class 序列化和反序列化</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_samples/serialize_hashmap_and_hashset.html"><strong aria-hidden="true">1.8.1.5.2.</strong> HashSet 和 HashMap 序列化</a></li></ol></li></ol></li></ol></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">仓颉编程语言库 API</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="枚举"><a class="header" href="#枚举">枚举</a></h1>
+<h2 id="enum-diagreportlevel"><a class="header" href="#enum-diagreportlevel">enum DiagReportLevel</a></h2>
+<pre><code class="language-cangjie">public enum DiagReportLevel {
+    ERROR|
+    WARNING
+}
+</code></pre>
+<p>功能：表示报错接口的信息等级，支持 <code>ERROR</code> 和 <code>WARNING</code> 两种等级。</p>
+<h3 id="error"><a class="header" href="#error">ERROR</a></h3>
+<pre><code class="language-cangjie">ERROR
+</code></pre>
+<p>功能：构造一个表示 ERROR 的枚举实例。</p>
+<h3 id="warning"><a class="header" href="#warning">WARNING</a></h3>
+<pre><code class="language-cangjie">WARNING
+</code></pre>
+<p>功能：构造一个表示 WARNING 的枚举实例。</p>
+<h3 id="func-level"><a class="header" href="#func-level">func level()</a></h3>
+<pre><code class="language-cangjie">public func level(): Int32
+</code></pre>
+<p>功能：返回枚举值对应的整型。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> - 枚举值对应的整型。<code>ERROR</code> 返回 0，<code>WARNING</code> 返回 1。</li>
+</ul>
+<h2 id="enum-importkind"><a class="header" href="#enum-importkind">enum ImportKind</a></h2>
+<pre><code class="language-cangjie">public enum ImportKind &lt;: ToString {
+    Single | Alias | All | Multi
+}
+</code></pre>
+<p>功能：表示导入语句的类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h3 id="single"><a class="header" href="#single">Single</a></h3>
+<pre><code class="language-cangjie">Single
+</code></pre>
+<p>功能：表示单导入，如 <code>import a.b</code>。</p>
+<h3 id="alias"><a class="header" href="#alias">Alias</a></h3>
+<pre><code class="language-cangjie">Alias
+</code></pre>
+<p>功能：表示别名导入，如 <code>import a.b as c</code>。</p>
+<h3 id="all"><a class="header" href="#all">All</a></h3>
+<pre><code class="language-cangjie">All
+</code></pre>
+<p>功能：表示全导入，如 <code>import a.b.*</code>。</p>
+<h3 id="multi"><a class="header" href="#multi">Multi</a></h3>
+<pre><code class="language-cangjie">Multi
+</code></pre>
+<p>功能：表示多导入，如 <code>import a.{b, c, d}</code>。</p>
+<h3 id="func-tostring"><a class="header" href="#func-tostring">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="ast_package_enums.html#enum-importkind">ImportKind</a> 类型转化为字符串类型表示。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - <a href="ast_package_enums.html#enum-importkind">ImportKind</a> 转换后的字符串值。</li>
+</ul>
+<h2 id="enum-tokenkind"><a class="header" href="#enum-tokenkind">enum TokenKind</a></h2>
+<pre><code class="language-cangjie">public enum TokenKind &lt;: ToString {
+    DOT|                      /*  &quot;.&quot;           */
+    COMMA|                    /*  &quot;,&quot;           */
+    LPAREN|                   /*  &quot;(&quot;           */
+    RPAREN|                   /*  &quot;)&quot;           */
+    LSQUARE|                  /*  &quot;[&quot;           */
+    RSQUARE|                  /*  &quot;]&quot;           */
+    LCURL|                    /*  &quot;{&quot;           */
+    RCURL|                    /*  &quot;}&quot;           */
+    EXP|                      /*  &quot;**&quot;          */
+    MUL|                      /*  &quot;*&quot;           */
+    MOD|                      /*  &quot;%&quot;           */
+    DIV|                      /*  &quot;/&quot;           */
+    ADD|                      /*  &quot;+&quot;           */
+    SUB|                      /*  &quot;-&quot;           */
+    INCR|                     /*  &quot;++&quot;          */
+    DECR|                     /*  &quot;--&quot;          */
+    AND|                      /*  &quot;&amp;&amp;&quot;          */
+    OR|                       /*  &quot;||&quot;          */
+    COALESCING|               /*  &quot;??&quot;          */
+    PIPELINE|                 /*  &quot;|&gt;&quot;          */
+    COMPOSITION|              /*  &quot;~&gt;&quot;          */
+    NOT|                      /*  &quot;!&quot;           */
+    BITAND|                   /*  &quot;&amp;&quot;           */
+    BITOR|                    /*  &quot;|&quot;           */
+    BITXOR|                   /*  &quot;^&quot;           */
+    BITNOT|                   /*  &quot;~&quot;           */
+    LSHIFT|                   /*  &quot;&lt;&lt;&quot;          */
+    RSHIFT|                   /*  &quot;&gt;&gt;&quot;          */
+    COLON|                    /*  &quot;:&quot;           */
+    SEMI|                     /*  &quot;;&quot;           */
+    ASSIGN|                   /*  &quot;=&quot;           */
+    ADD_ASSIGN|               /*  &quot;+=&quot;          */
+    SUB_ASSIGN|               /*  &quot;-=&quot;          */
+    MUL_ASSIGN|               /*  &quot;*=&quot;          */
+    EXP_ASSIGN|               /*  &quot;**=&quot;         */
+    DIV_ASSIGN|               /*  &quot;/=&quot;          */
+    MOD_ASSIGN|               /*  &quot;%=&quot;          */
+    AND_ASSIGN|               /*  &quot;&amp;&amp;=&quot;         */
+    OR_ASSIGN|                /*  &quot;||=&quot;         */
+    BITAND_ASSIGN|            /*  &quot;&amp;=&quot;          */
+    BITOR_ASSIGN|             /*  &quot;|=&quot;          */
+    BITXOR_ASSIGN|            /*  &quot;^=&quot;          */
+    LSHIFT_ASSIGN|            /*  &quot;&lt;&lt;=&quot;         */
+    RSHIFT_ASSIGN|            /*  &quot;&gt;&gt;=&quot;         */
+    ARROW|                    /*  &quot;-&gt;&quot;          */
+    BACKARROW|                /*  &quot;&lt;-&quot;          */
+    DOUBLE_ARROW|             /*  &quot;=&gt;&quot;          */
+    RANGEOP|                  /*  &quot;..&quot;          */
+    CLOSEDRANGEOP|            /*  &quot;..=&quot;         */
+    ELLIPSIS|                 /*  &quot;...&quot;         */
+    HASH|                     /*  &quot;#&quot;           */
+    AT|                       /*  &quot;@&quot;           */
+    QUEST|                    /*  &quot;?&quot;           */
+    LT|                       /*  &quot;&lt;&quot;           */
+    GT|                       /*  &quot;&gt;&quot;           */
+    LE|                       /*  &quot;&lt;=&quot;          */
+    GE|                       /*  &quot;&gt;=&quot;          */
+    IS|                       /*  &quot;is&quot;          */
+    AS|                       /*  &quot;as&quot;          */
+    NOTEQ|                    /*  &quot;!=&quot;          */
+    EQUAL|                    /*  &quot;==&quot;          */
+    WILDCARD|                 /*  &quot;_&quot;           */
+    INT8|                     /*  &quot;Int8&quot;        */
+    INT16|                    /*  &quot;Int16&quot;       */
+    INT32|                    /*  &quot;Int32&quot;       */
+    INT64|                    /*  &quot;Int64&quot;       */
+    INTNATIVE|                /*  &quot;IntNative&quot;   */
+    UINT8|                    /*  &quot;UInt8&quot;       */
+    UINT16|                   /*  &quot;UInt16&quot;      */
+    UINT32|                   /*  &quot;UInt32&quot;      */
+    UINT64|                   /*  &quot;UInt64&quot;      */
+    UINTNATIVE|               /*  &quot;UIntNative&quot;  */
+    FLOAT16|                  /*  &quot;Float16&quot;     */
+    FLOAT32|                  /*  &quot;Float32&quot;     */
+    FLOAT64|                  /*  &quot;Float64&quot;     */
+    RUNE|                     /*  &quot;Rune&quot;        */
+    BOOLEAN|                  /*  &quot;Bool&quot;        */
+    NOTHING|                  /*  &quot;Nothing&quot;     */
+    UNIT|                     /*  &quot;Unit&quot;        */
+    STRUCT|                   /*  &quot;struct&quot;      */
+    ENUM|                     /*  &quot;enum&quot;        */
+    CFUNC|                    /*  &quot;CFunc&quot;       */
+    VARRAY|                   /*  &quot;VArray&quot;      */
+    THISTYPE|                 /*  &quot;This&quot;        */
+    PACKAGE|                  /*  &quot;package&quot;     */
+    IMPORT|                   /*  &quot;import&quot;      */
+    CLASS|                    /*  &quot;class&quot;       */
+    INTERFACE|                /*  &quot;interface&quot;   */
+    FUNC|                     /*  &quot;func&quot;        */
+    MACRO|                    /*  &quot;macro&quot;       */
+    QUOTE|                    /*  &quot;quote&quot;       */
+    DOLLAR|                   /*  &quot;$&quot;           */
+    LET|                      /*  &quot;let&quot;         */
+    VAR|                      /*  &quot;var&quot;         */
+    CONST|                    /*  &quot;const&quot;       */
+    TYPE|                     /*  &quot;type&quot;        */
+    INIT|                     /*  &quot;init&quot;        */
+    THIS|                     /*  &quot;this&quot;        */
+    SUPER|                    /*  &quot;super&quot;       */
+    IF|                       /*  &quot;if&quot;          */
+    ELSE|                     /*  &quot;else&quot;        */
+    CASE|                     /*  &quot;case&quot;        */
+    TRY|                      /*  &quot;try&quot;         */
+    CATCH|                    /*  &quot;catch&quot;       */
+    FINALLY|                  /*  &quot;finally&quot;     */
+    FOR|                      /*  &quot;for&quot;         */
+    DO|                       /*  &quot;do&quot;          */
+    WHILE|                    /*  &quot;while&quot;       */
+    THROW|                    /*  &quot;throw&quot;       */
+    RETURN|                   /*  &quot;return&quot;      */
+    CONTINUE|                 /*  &quot;continue&quot;    */
+    BREAK|                    /*  &quot;break&quot;       */
+    IN|                       /*  &quot;in&quot;          */
+    NOT_IN|                   /*  &quot;!in&quot;         */
+    MATCH|                    /*  &quot;match&quot;       */
+    WHERE|                    /*  &quot;where&quot;       */
+    EXTEND|                   /*  &quot;extend&quot;      */
+    WITH|                     /*  &quot;with&quot;        */
+    PROP|                     /*  &quot;prop&quot;        */
+    STATIC|                   /*  &quot;static&quot;      */
+    PUBLIC|                   /*  &quot;public&quot;      */
+    PRIVATE|                  /*  &quot;private&quot;     */
+    INTERNAL|                 /*  &quot;internal&quot;    */
+    PROTECTED|                /*  &quot;protected&quot;   */
+    OVERRIDE|                 /*  &quot;override&quot;    */
+    REDEF|                    /*  &quot;redef&quot;       */
+    ABSTRACT|                 /*  &quot;abstract&quot;    */
+    SEALED|                   /*  &quot;sealed&quot;      */
+    OPEN|                     /*  &quot;open&quot;        */
+    FOREIGN|                  /*  &quot;foreign&quot;     */
+    INOUT|                    /*  &quot;inout&quot;       */
+    MUT|                      /*  &quot;mut&quot;         */
+    UNSAFE|                   /*  &quot;unsafe&quot;      */
+    OPERATOR|                 /*  &quot;operator&quot;    */
+    SPAWN|                    /*  &quot;spawn&quot;       */
+    SYNCHRONIZED|             /*  &quot;synchronized&quot; */
+    UPPERBOUND|               /*  &quot;&lt;:&quot;          */
+    MAIN|                     /*  &quot;main&quot;        */
+    IDENTIFIER|               /*  &quot;x&quot;           */
+    PACKAGE_IDENTIFIER|       /*  e.g. &quot;x-y&quot;  */
+    INTEGER_LITERAL|          /*  e.g. &quot;1&quot;      */
+    RUNE_BYTE_LITERAL|        /*  e.g. &quot;b'x'&quot;   */
+    FLOAT_LITERAL|            /*  e.g. &quot;'1.0'&quot;  */
+    COMMENT|                  /*  e.g. &quot;/*xx*/&quot; */
+    NL|                       /*  newline         */
+    END|                      /*  end of file     */
+    SENTINEL|                 /*  &quot;;&quot;             */
+    RUNE_LITERAL|             /*  e.g. &quot;r'x'&quot;      */
+    STRING_LITERAL|           /*  e.g. &quot;&quot;xx&quot;&quot;     */
+    JSTRING_LITERAL|          /*  e.g. &quot;J&quot;xx&quot;&quot;     */
+    MULTILINE_STRING|         /*  e.g. &quot;&quot;&quot;&quot;aaa&quot;&quot;&quot;&quot;   */
+    MULTILINE_RAW_STRING|     /*  e.g. &quot;#&quot;aaa&quot;#&quot;     */
+    BOOL_LITERAL|             /*  &quot;true&quot; or &quot;false&quot;  */
+    UNIT_LITERAL|             /*  &quot;()&quot;               */
+    DOLLAR_IDENTIFIER|        /*  e.g. &quot;$x&quot;          */
+    ANNOTATION|               /*  e.g. &quot;@When&quot;       */
+    ILLEGAL
+}
+</code></pre>
+<p>功能：表示仓颉编译内部所有的词法结构，包括符号、关键字、标识符、换行等。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h3 id="abstract"><a class="header" href="#abstract">ABSTRACT</a></h3>
+<pre><code class="language-cangjie">ABSTRACT
+</code></pre>
+<p>功能：构造一个表示 <code>abstract</code> 的枚举实例。</p>
+<h3 id="add"><a class="header" href="#add">ADD</a></h3>
+<pre><code class="language-cangjie">ADD
+</code></pre>
+<p>功能：构造一个表示 <code>+</code> 的枚举实例。</p>
+<h3 id="add_assign"><a class="header" href="#add_assign">ADD_ASSIGN</a></h3>
+<pre><code class="language-cangjie">ADD_ASSIGN
+</code></pre>
+<p>功能：构造一个表示 <code>+=</code> 的枚举实例。</p>
+<h3 id="and"><a class="header" href="#and">AND</a></h3>
+<pre><code class="language-cangjie">AND
+</code></pre>
+<p>功能：构造一个表示 <code>&amp;&amp;</code> 的枚举实例。</p>
+<h3 id="and_assign"><a class="header" href="#and_assign">AND_ASSIGN</a></h3>
+<pre><code class="language-cangjie">AND_ASSIGN
+</code></pre>
+<p>功能：构造一个表示 <code>&amp;&amp;=</code> 的枚举实例。</p>
+<h3 id="annotation"><a class="header" href="#annotation">ANNOTATION</a></h3>
+<pre><code class="language-cangjie">ANNOTATION
+</code></pre>
+<p>功能：构造一个表示<em>注解</em>的枚举实例。</p>
+<h3 id="arrow"><a class="header" href="#arrow">ARROW</a></h3>
+<pre><code class="language-cangjie">ARROW
+</code></pre>
+<p>功能：构造一个表示 <code>-&gt;</code> 的枚举实例。</p>
+<h3 id="as"><a class="header" href="#as">AS</a></h3>
+<pre><code class="language-cangjie">AS
+</code></pre>
+<p>功能：构造一个表示 <code>as</code> 的枚举实例。</p>
+<h3 id="assign"><a class="header" href="#assign">ASSIGN</a></h3>
+<pre><code class="language-cangjie">ASSIGN
+</code></pre>
+<p>功能：构造一个表示 <code>=</code> 的枚举实例。</p>
+<h3 id="at"><a class="header" href="#at">AT</a></h3>
+<pre><code class="language-cangjie">AT
+</code></pre>
+<p>功能：构造一个表示 <code>@</code> 的枚举实例。</p>
+<h3 id="backarrow"><a class="header" href="#backarrow">BACKARROW</a></h3>
+<pre><code class="language-cangjie">BACKARROW
+</code></pre>
+<p>功能：构造一个表示 <code>&lt;-</code> 的枚举实例。</p>
+<h3 id="bitand"><a class="header" href="#bitand">BITAND</a></h3>
+<pre><code class="language-cangjie">BITAND
+</code></pre>
+<p>功能：构造一个表示 <code>&amp;</code> 的枚举实例。</p>
+<h3 id="bitand_assign"><a class="header" href="#bitand_assign">BITAND_ASSIGN</a></h3>
+<pre><code class="language-cangjie">BITAND_ASSIGN
+</code></pre>
+<p>功能：构造一个表示 <code>&amp;=</code> 的枚举实例。</p>
+<h3 id="bitnot"><a class="header" href="#bitnot">BITNOT</a></h3>
+<pre><code class="language-cangjie">BITNOT
+</code></pre>
+<p>功能：构造一个表示 <code>~</code> 的枚举实例。</p>
+<h3 id="bitor"><a class="header" href="#bitor">BITOR</a></h3>
+<pre><code class="language-cangjie">BITOR
+</code></pre>
+<p>功能：构造一个表示 <code>|</code> 的枚举实例。</p>
+<h3 id="bitor_assign"><a class="header" href="#bitor_assign">BITOR_ASSIGN</a></h3>
+<pre><code class="language-cangjie">BITOR_ASSIGN
+</code></pre>
+<p>功能：构造一个表示 <code>|=</code> 的枚举实例。</p>
+<h3 id="bitxor"><a class="header" href="#bitxor">BITXOR</a></h3>
+<pre><code class="language-cangjie">BITXOR
+</code></pre>
+<p>功能：构造一个表示 <code>^</code> 的枚举实例。</p>
+<h3 id="bitxor_assign"><a class="header" href="#bitxor_assign">BITXOR_ASSIGN</a></h3>
+<pre><code class="language-cangjie">BITXOR_ASSIGN
+</code></pre>
+<p>功能：构造一个表示 <code>^=</code> 的枚举实例。</p>
+<h3 id="boolean"><a class="header" href="#boolean">BOOLEAN</a></h3>
+<pre><code class="language-cangjie">BOOLEAN
+</code></pre>
+<p>功能：构造一个表示 <code>bool</code> 的枚举实例。</p>
+<h3 id="bool_literal"><a class="header" href="#bool_literal">BOOL_LITERAL</a></h3>
+<pre><code class="language-cangjie">BOOL_LITERAL
+</code></pre>
+<p>功能：构造一个表示<em>布尔类型字面量</em>的枚举实例。</p>
+<h3 id="break"><a class="header" href="#break">BREAK</a></h3>
+<pre><code class="language-cangjie">BREAK
+</code></pre>
+<p>功能：构造一个表示 <code>break</code> 的枚举实例。</p>
+<h3 id="case"><a class="header" href="#case">CASE</a></h3>
+<pre><code class="language-cangjie">CASE
+</code></pre>
+<p>功能：构造一个表示 <code>case</code> 的枚举实例。</p>
+<h3 id="catch"><a class="header" href="#catch">CATCH</a></h3>
+<pre><code class="language-cangjie">CATCH
+</code></pre>
+<p>功能：构造一个表示 <code>catch</code> 的枚举实例。</p>
+<h3 id="cfunc"><a class="header" href="#cfunc">CFUNC</a></h3>
+<pre><code class="language-cangjie">CFUNC
+</code></pre>
+<p>功能：构造一个表示 <code>cfunc</code> 的枚举实例。</p>
+<h3 id="class"><a class="header" href="#class">CLASS</a></h3>
+<pre><code class="language-cangjie">CLASS
+</code></pre>
+<p>功能：构造一个表示 <code>class</code> 的枚举实例。</p>
+<h3 id="closedrangeop"><a class="header" href="#closedrangeop">CLOSEDRANGEOP</a></h3>
+<pre><code class="language-cangjie">CLOSEDRANGEOP
+</code></pre>
+<p>功能：构造一个表示 <code>..=</code> 的枚举实例。</p>
+<h3 id="coalescing"><a class="header" href="#coalescing">COALESCING</a></h3>
+<pre><code class="language-cangjie">COALESCING
+</code></pre>
+<p>功能：构造一个表示 <code>??</code> 的枚举实例。</p>
+<h3 id="colon"><a class="header" href="#colon">COLON</a></h3>
+<pre><code class="language-cangjie">COLON
+</code></pre>
+<p>功能：构造一个表示 <code>:</code> 的枚举实例。</p>
+<h3 id="comma"><a class="header" href="#comma">COMMA</a></h3>
+<pre><code class="language-cangjie">COMMA
+</code></pre>
+<p>功能：构造一个表示 <code>,</code> 的枚举实例。</p>
+<h3 id="comment"><a class="header" href="#comment">COMMENT</a></h3>
+<pre><code class="language-cangjie">COMMENT
+</code></pre>
+<p>功能：构造一个表示<em>注释</em>的枚举实例。</p>
+<h3 id="composition"><a class="header" href="#composition">COMPOSITION</a></h3>
+<pre><code class="language-cangjie">COMPOSITION
+</code></pre>
+<p>功能：构造一个表示 <code>~&gt;</code> 的枚举实例。</p>
+<h3 id="const"><a class="header" href="#const">CONST</a></h3>
+<pre><code class="language-cangjie">CONST
+</code></pre>
+<p>功能：构造一个表示 <code>const</code> 的枚举实例。</p>
+<h3 id="continue"><a class="header" href="#continue">CONTINUE</a></h3>
+<pre><code class="language-cangjie">CONTINUE
+</code></pre>
+<p>功能：构造一个表示 <code>continue</code> 的枚举实例。</p>
+<h3 id="decr"><a class="header" href="#decr">DECR</a></h3>
+<pre><code class="language-cangjie">DECR
+</code></pre>
+<p>功能：构造一个表示 <code>--</code> 的枚举实例。</p>
+<h3 id="div"><a class="header" href="#div">DIV</a></h3>
+<pre><code class="language-cangjie">DIV
+</code></pre>
+<p>功能：构造一个表示 <code>/</code> 的枚举实例。</p>
+<h3 id="div_assign"><a class="header" href="#div_assign">DIV_ASSIGN</a></h3>
+<pre><code class="language-cangjie">DIV_ASSIGN
+</code></pre>
+<p>功能：构造一个表示 <code>/=</code> 的枚举实例。</p>
+<h3 id="do"><a class="header" href="#do">DO</a></h3>
+<pre><code class="language-cangjie">DO
+</code></pre>
+<p>功能：构造一个表示 <code>do</code> 的枚举实例。</p>
+<h3 id="dollar"><a class="header" href="#dollar">DOLLAR</a></h3>
+<pre><code class="language-cangjie">DOLLAR
+</code></pre>
+<p>功能：构造一个表示 <code>$</code> 的枚举实例。</p>
+<h3 id="dollar_identifier"><a class="header" href="#dollar_identifier">DOLLAR_IDENTIFIER</a></h3>
+<pre><code class="language-cangjie">DOLLAR_IDENTIFIER
+</code></pre>
+<p>功能：构造一个表示<em>插值字符串</em>的枚举实例。</p>
+<h3 id="dot"><a class="header" href="#dot">DOT</a></h3>
+<pre><code class="language-cangjie">DOT
+</code></pre>
+<p>功能：构造一个表示 <code>.</code> 的枚举实例。</p>
+<h3 id="double_arrow"><a class="header" href="#double_arrow">DOUBLE_ARROW</a></h3>
+<pre><code class="language-cangjie">DOUBLE_ARROW
+</code></pre>
+<p>功能：构造一个表示 <code>=&gt;</code> 的枚举实例。</p>
+<h3 id="ellipsis"><a class="header" href="#ellipsis">ELLIPSIS</a></h3>
+<pre><code class="language-cangjie">ELLIPSIS
+</code></pre>
+<p>功能：构造一个表示 <code>...</code> 的枚举实例。</p>
+<h3 id="else"><a class="header" href="#else">ELSE</a></h3>
+<pre><code class="language-cangjie">ELSE
+</code></pre>
+<p>功能：构造一个表示 <code>else</code> 的枚举实例。</p>
+<h3 id="end"><a class="header" href="#end">END</a></h3>
+<pre><code class="language-cangjie">END
+</code></pre>
+<p>功能：构造一个表示 <code>EOF</code> 的枚举实例。</p>
+<h3 id="enum"><a class="header" href="#enum">ENUM</a></h3>
+<pre><code class="language-cangjie">ENUM
+</code></pre>
+<p>功能：构造一个表示 <code>enum</code> 的枚举实例。</p>
+<h3 id="equal"><a class="header" href="#equal">EQUAL</a></h3>
+<pre><code class="language-cangjie">EQUAL
+</code></pre>
+<p>功能：构造一个表示 <code>==</code> 的枚举实例。</p>
+<h3 id="exp"><a class="header" href="#exp">EXP</a></h3>
+<pre><code class="language-cangjie">EXP
+</code></pre>
+<p>功能：构造一个表示 <code>**</code> 的枚举实例。</p>
+<h3 id="exp_assign"><a class="header" href="#exp_assign">EXP_ASSIGN</a></h3>
+<pre><code class="language-cangjie">EXP_ASSIGN
+</code></pre>
+<p>功能：构造一个表示 <code>**=</code> 的枚举实例。</p>
+<h3 id="extend"><a class="header" href="#extend">EXTEND</a></h3>
+<pre><code class="language-cangjie">EXTEND
+</code></pre>
+<p>功能：构造一个表示 <code>extend</code> 的枚举实例。</p>
+<h3 id="finally"><a class="header" href="#finally">FINALLY</a></h3>
+<pre><code class="language-cangjie">FINALLY
+</code></pre>
+<p>功能：构造一个表示 <code>finally</code> 的枚举实例。</p>
+<h3 id="float16"><a class="header" href="#float16">FLOAT16</a></h3>
+<pre><code class="language-cangjie">FLOAT16
+</code></pre>
+<p>功能：构造一个表示 <code>float16</code> 的枚举实例。</p>
+<h3 id="float32"><a class="header" href="#float32">FLOAT32</a></h3>
+<pre><code class="language-cangjie">FLOAT32
+</code></pre>
+<p>功能：构造一个表示 <code>float32</code> 的枚举实例。</p>
+<h3 id="float64"><a class="header" href="#float64">FLOAT64</a></h3>
+<pre><code class="language-cangjie">FLOAT64
+</code></pre>
+<p>功能：构造一个表示 <code>float64</code> 的枚举实例。</p>
+<h3 id="float_literal"><a class="header" href="#float_literal">FLOAT_LITERAL</a></h3>
+<pre><code class="language-cangjie">FLOAT_LITERAL
+</code></pre>
+<p>功能：构造一个表示<em>浮点字面量</em>的枚举实例。</p>
+<h3 id="for"><a class="header" href="#for">FOR</a></h3>
+<pre><code class="language-cangjie">FOR
+</code></pre>
+<p>功能：构造一个表示 <code>for</code> 的枚举实例。</p>
+<h3 id="foreign"><a class="header" href="#foreign">FOREIGN</a></h3>
+<pre><code class="language-cangjie">FOREIGN
+</code></pre>
+<p>功能：构造一个表示 <code>foreign</code> 的枚举实例。</p>
+<h3 id="func"><a class="header" href="#func">FUNC</a></h3>
+<pre><code class="language-cangjie">FUNC
+</code></pre>
+<p>功能：构造一个表示 <code>func</code> 的枚举实例。</p>
+<h3 id="ge"><a class="header" href="#ge">GE</a></h3>
+<pre><code class="language-cangjie">GE
+</code></pre>
+<p>功能：构造一个表示 <code>&gt;=</code> 的枚举实例。</p>
+<h3 id="gt"><a class="header" href="#gt">GT</a></h3>
+<pre><code class="language-cangjie">GT
+</code></pre>
+<p>功能：构造一个表示 <code>&gt;</code> 的枚举实例。</p>
+<h3 id="hash"><a class="header" href="#hash">HASH</a></h3>
+<pre><code class="language-cangjie">HASH
+</code></pre>
+<p>功能：构造一个表示 <code>#</code> 的枚举实例。</p>
+<h3 id="identifier"><a class="header" href="#identifier">IDENTIFIER</a></h3>
+<pre><code class="language-cangjie">IDENTIFIER
+</code></pre>
+<p>功能：构造一个表示<em>标识符</em>的枚举实例。</p>
+<h3 id="package_identifier"><a class="header" href="#package_identifier">PACKAGE_IDENTIFIER</a></h3>
+<pre><code class="language-cangjie">PACKAGE_IDENTIFIER
+</code></pre>
+<p>功能：构造一个表示<em>包标识符</em>的枚举实例。</p>
+<h3 id="if"><a class="header" href="#if">IF</a></h3>
+<pre><code class="language-cangjie">IF
+</code></pre>
+<p>功能：构造一个表示 <code>if</code> 的枚举实例。</p>
+<h3 id="illegal"><a class="header" href="#illegal">ILLEGAL</a></h3>
+<pre><code class="language-cangjie">ILLEGAL
+</code></pre>
+<p>功能：构造一个表示<em>非法</em>的枚举实例。</p>
+<h3 id="import"><a class="header" href="#import">IMPORT</a></h3>
+<pre><code class="language-cangjie">IMPORT
+</code></pre>
+<p>功能：构造一个表示 <code>import</code> 的枚举实例。</p>
+<h3 id="in"><a class="header" href="#in">IN</a></h3>
+<pre><code class="language-cangjie">IN
+</code></pre>
+<p>功能：构造一个表示 <code>in</code> 的枚举实例。</p>
+<h3 id="incr"><a class="header" href="#incr">INCR</a></h3>
+<pre><code class="language-cangjie">INCR
+</code></pre>
+<p>功能：构造一个表示 <code>++</code> 的枚举实例。</p>
+<h3 id="init"><a class="header" href="#init">INIT</a></h3>
+<pre><code class="language-cangjie">INIT
+</code></pre>
+<p>功能：构造一个表示 <code>init</code> 的枚举实例。</p>
+<h3 id="inout"><a class="header" href="#inout">INOUT</a></h3>
+<pre><code class="language-cangjie">INOUT
+</code></pre>
+<p>功能：构造一个表示 <code>inout</code> 的枚举实例。</p>
+<h3 id="int16"><a class="header" href="#int16">INT16</a></h3>
+<pre><code class="language-cangjie">INT16
+</code></pre>
+<p>功能：构造一个表示 <code>int16</code> 的枚举实例。</p>
+<h3 id="int32"><a class="header" href="#int32">INT32</a></h3>
+<pre><code class="language-cangjie">INT32
+</code></pre>
+<p>功能：构造一个表示 <code>int32</code> 的枚举实例。</p>
+<h3 id="int64"><a class="header" href="#int64">INT64</a></h3>
+<pre><code class="language-cangjie">INT64
+</code></pre>
+<p>功能：构造一个表示 <code>int64</code> 的枚举实例。</p>
+<h3 id="int8"><a class="header" href="#int8">INT8</a></h3>
+<pre><code class="language-cangjie">INT8
+</code></pre>
+<p>功能：构造一个表示 <code>int8</code> 的枚举实例。</p>
+<h3 id="integer_literal"><a class="header" href="#integer_literal">INTEGER_LITERAL</a></h3>
+<pre><code class="language-cangjie">INTEGER_LITERAL
+</code></pre>
+<p>功能：构造一个表示<em>整型字面量</em>的枚举实例。</p>
+<h3 id="interface"><a class="header" href="#interface">INTERFACE</a></h3>
+<pre><code class="language-cangjie">INTERFACE
+</code></pre>
+<p>功能：构造一个表示 <code>interface</code> 的枚举实例。</p>
+<h3 id="internal"><a class="header" href="#internal">INTERNAL</a></h3>
+<pre><code class="language-cangjie">INTERNAL
+</code></pre>
+<p>功能：构造一个表示 <code>internal</code> 的枚举实例。</p>
+<h3 id="intnative"><a class="header" href="#intnative">INTNATIVE</a></h3>
+<pre><code class="language-cangjie">INTNATIVE
+</code></pre>
+<p>功能：构造一个表示 <code>intnative</code> 的枚举实例。</p>
+<h3 id="is"><a class="header" href="#is">IS</a></h3>
+<pre><code class="language-cangjie">IS
+</code></pre>
+<p>功能：构造一个表示 <code>is</code> 的枚举实例。</p>
+<h3 id="jstring_literal"><a class="header" href="#jstring_literal">JSTRING_LITERAL</a></h3>
+<pre><code class="language-cangjie">JSTRING_LITERAL
+</code></pre>
+<p>功能：构造一个表示 JavaSTRING字面量 的枚举实例。</p>
+<h3 id="lcurl"><a class="header" href="#lcurl">LCURL</a></h3>
+<pre><code class="language-cangjie">LCURL
+</code></pre>
+<p>功能：构造一个表示 <code>{</code> 的枚举实例。</p>
+<h3 id="le"><a class="header" href="#le">LE</a></h3>
+<pre><code class="language-cangjie">LE
+</code></pre>
+<p>功能：构造一个表示 <code>&lt;=</code> 的枚举实例。</p>
+<h3 id="let"><a class="header" href="#let">LET</a></h3>
+<pre><code class="language-cangjie">LET
+</code></pre>
+<p>功能：构造一个表示 <code>let</code> 的枚举实例。</p>
+<h3 id="lparen"><a class="header" href="#lparen">LPAREN</a></h3>
+<pre><code class="language-cangjie">LPAREN
+</code></pre>
+<p>功能：构造一个表示 <code>(</code> 的枚举实例。</p>
+<h3 id="lshift"><a class="header" href="#lshift">LSHIFT</a></h3>
+<pre><code class="language-cangjie">LSHIFT
+</code></pre>
+<p>功能：构造一个表示 <code>&lt;&lt;</code> 的枚举实例。</p>
+<h3 id="lshift_assign"><a class="header" href="#lshift_assign">LSHIFT_ASSIGN</a></h3>
+<pre><code class="language-cangjie">LSHIFT_ASSIGN
+</code></pre>
+<p>功能：构造一个表示 <code>&lt;&lt;=</code> 的枚举实例。</p>
+<h3 id="lsquare"><a class="header" href="#lsquare">LSQUARE</a></h3>
+<pre><code class="language-cangjie">LSQUARE
+</code></pre>
+<p>功能：构造一个表示 <code>[</code> 的枚举实例。</p>
+<h3 id="lt"><a class="header" href="#lt">LT</a></h3>
+<pre><code class="language-cangjie">LT
+</code></pre>
+<p>功能：构造一个表示 <code>&lt;</code> 的枚举实例。</p>
+<h3 id="macro"><a class="header" href="#macro">MACRO</a></h3>
+<pre><code class="language-cangjie">MACRO
+</code></pre>
+<p>功能：构造一个表示 <code>macro</code> 的枚举实例。</p>
+<h3 id="main"><a class="header" href="#main">MAIN</a></h3>
+<pre><code class="language-cangjie">MAIN
+</code></pre>
+<p>功能：构造一个表示 <code>main</code> 的枚举实例。</p>
+<h3 id="match"><a class="header" href="#match">MATCH</a></h3>
+<pre><code class="language-cangjie">MATCH
+</code></pre>
+<p>功能：构造一个表示 <code>match</code> 的枚举实例。</p>
+<h3 id="mod"><a class="header" href="#mod">MOD</a></h3>
+<pre><code class="language-cangjie">MOD
+</code></pre>
+<p>功能：构造一个表示 <code>%</code> 的枚举实例。</p>
+<h3 id="mod_assign"><a class="header" href="#mod_assign">MOD_ASSIGN</a></h3>
+<pre><code class="language-cangjie">MOD_ASSIGN
+</code></pre>
+<p>功能：构造一个表示 <code>%=</code> 的枚举实例。</p>
+<h3 id="mul"><a class="header" href="#mul">MUL</a></h3>
+<pre><code class="language-cangjie">MUL
+</code></pre>
+<p>功能：构造一个表示 <code>*</code> 的枚举实例。</p>
+<h3 id="multiline_raw_string"><a class="header" href="#multiline_raw_string">MULTILINE_RAW_STRING</a></h3>
+<pre><code class="language-cangjie">MULTILINE_RAW_STRING
+</code></pre>
+<p>功能：构造一个表示<em>多行原始字符串字面量</em>的枚举实例。</p>
+<h3 id="multiline_string"><a class="header" href="#multiline_string">MULTILINE_STRING</a></h3>
+<pre><code class="language-cangjie">MULTILINE_STRING
+</code></pre>
+<p>功能：构造一个表示<em>多行字符串字面量</em>的枚举实例。</p>
+<h3 id="mul_assign"><a class="header" href="#mul_assign">MUL_ASSIGN</a></h3>
+<pre><code class="language-cangjie">MUL_ASSIGN
+</code></pre>
+<p>功能：构造一个表示 <code>*=</code> 的枚举实例。</p>
+<h3 id="mut"><a class="header" href="#mut">MUT</a></h3>
+<pre><code class="language-cangjie">MUT
+</code></pre>
+<p>功能：构造一个表示 <code>mut</code> 的枚举实例。</p>
+<h3 id="nl"><a class="header" href="#nl">NL</a></h3>
+<pre><code class="language-cangjie">NL
+</code></pre>
+<p>功能：构造一个表示<em>换行符</em>的枚举实例。</p>
+<h3 id="not"><a class="header" href="#not">NOT</a></h3>
+<pre><code class="language-cangjie">NOT
+</code></pre>
+<p>功能：构造一个表示 <code>!</code> 的枚举实例。</p>
+<h3 id="noteq"><a class="header" href="#noteq">NOTEQ</a></h3>
+<pre><code class="language-cangjie">NOTEQ
+</code></pre>
+<p>功能：构造一个表示 <code>!=</code> 的枚举实例。</p>
+<h3 id="nothing"><a class="header" href="#nothing">NOTHING</a></h3>
+<pre><code class="language-cangjie">NOTHING
+</code></pre>
+<p>功能：构造一个表示 <code>nothing</code> 的枚举实例。</p>
+<h3 id="not_in"><a class="header" href="#not_in">NOT_IN</a></h3>
+<pre><code class="language-cangjie">NOT_IN
+</code></pre>
+<p>功能：构造一个表示 <code>!in</code> 的枚举实例。</p>
+<h3 id="open"><a class="header" href="#open">OPEN</a></h3>
+<pre><code class="language-cangjie">OPEN
+</code></pre>
+<p>功能：构造一个表示 <code>open</code> 的枚举实例。</p>
+<h3 id="operator"><a class="header" href="#operator">OPERATOR</a></h3>
+<pre><code class="language-cangjie">OPERATOR
+</code></pre>
+<p>功能：构造一个表示 <code>operator</code> 的枚举实例。</p>
+<h3 id="or"><a class="header" href="#or">OR</a></h3>
+<pre><code class="language-cangjie">OR
+</code></pre>
+<p>功能：构造一个表示 <code>||</code> 的枚举实例。</p>
+<h3 id="or_assign"><a class="header" href="#or_assign">OR_ASSIGN</a></h3>
+<pre><code class="language-cangjie">OR_ASSIGN
+</code></pre>
+<p>功能：构造一个表示 <code>||=</code> 的枚举实例。</p>
+<h3 id="override"><a class="header" href="#override">OVERRIDE</a></h3>
+<pre><code class="language-cangjie">OVERRIDE
+</code></pre>
+<p>功能：构造一个表示 <code>override</code> 的枚举实例。</p>
+<h3 id="package"><a class="header" href="#package">PACKAGE</a></h3>
+<pre><code class="language-cangjie">PACKAGE
+</code></pre>
+<p>功能：构造一个表示 <code>package</code> 的枚举实例。</p>
+<h3 id="pipeline"><a class="header" href="#pipeline">PIPELINE</a></h3>
+<pre><code class="language-cangjie">PIPELINE
+</code></pre>
+<p>功能：构造一个表示 <code>|&gt;</code> 的枚举实例。</p>
+<h3 id="private"><a class="header" href="#private">PRIVATE</a></h3>
+<pre><code class="language-cangjie">PRIVATE
+</code></pre>
+<p>功能：构造一个表示 <code>private</code> 的枚举实例。</p>
+<h3 id="prop"><a class="header" href="#prop">PROP</a></h3>
+<pre><code class="language-cangjie">PROP
+</code></pre>
+<p>功能：构造一个表示 <code>prop</code> 的枚举实例。</p>
+<h3 id="protected"><a class="header" href="#protected">PROTECTED</a></h3>
+<pre><code class="language-cangjie">PROTECTED
+</code></pre>
+<p>功能：构造一个表示 <code>protected</code> 的枚举实例。</p>
+<h3 id="public"><a class="header" href="#public">PUBLIC</a></h3>
+<pre><code class="language-cangjie">PUBLIC
+</code></pre>
+<p>功能：构造一个表示 <code>public</code> 的枚举实例。</p>
+<h3 id="quest"><a class="header" href="#quest">QUEST</a></h3>
+<pre><code class="language-cangjie">QUEST
+</code></pre>
+<p>功能：构造一个表示 <code>?</code> 的枚举实例。</p>
+<h3 id="quote"><a class="header" href="#quote">QUOTE</a></h3>
+<pre><code class="language-cangjie">QUOTE
+</code></pre>
+<p>功能：构造一个表示 <code>quote</code> 的枚举实例。</p>
+<h3 id="rangeop"><a class="header" href="#rangeop">RANGEOP</a></h3>
+<pre><code class="language-cangjie">RANGEOP
+</code></pre>
+<p>功能：构造一个表示 <code>..</code> 的枚举实例。</p>
+<h3 id="rcurl"><a class="header" href="#rcurl">RCURL</a></h3>
+<pre><code class="language-cangjie">RCURL
+</code></pre>
+<p>功能：构造一个表示 <code>}</code> 的枚举实例。</p>
+<h3 id="redef"><a class="header" href="#redef">REDEF</a></h3>
+<pre><code class="language-cangjie">REDEF
+</code></pre>
+<p>功能：构造一个表示 <code>redef</code> 的枚举实例。</p>
+<h3 id="return"><a class="header" href="#return">RETURN</a></h3>
+<pre><code class="language-cangjie">RETURN
+</code></pre>
+<p>功能：构造一个表示 <code>return</code> 的枚举实例。</p>
+<h3 id="rparen"><a class="header" href="#rparen">RPAREN</a></h3>
+<pre><code class="language-cangjie">RPAREN
+</code></pre>
+<p>功能：构造一个表示 <code>)</code> 的枚举实例。</p>
+<h3 id="rshift"><a class="header" href="#rshift">RSHIFT</a></h3>
+<pre><code class="language-cangjie">RSHIFT
+</code></pre>
+<p>功能：构造一个表示 <code>&gt;&gt;</code> 的枚举实例。</p>
+<h3 id="rshift_assign"><a class="header" href="#rshift_assign">RSHIFT_ASSIGN</a></h3>
+<pre><code class="language-cangjie">RSHIFT_ASSIGN
+</code></pre>
+<p>功能：构造一个表示 <code>&gt;&gt;=</code> 的枚举实例。</p>
+<h3 id="rsquare"><a class="header" href="#rsquare">RSQUARE</a></h3>
+<pre><code class="language-cangjie">RSQUARE
+</code></pre>
+<p>功能：构造一个表示 <code>]</code> 的枚举实例。</p>
+<h3 id="rune"><a class="header" href="#rune">RUNE</a></h3>
+<pre><code class="language-cangjie">RUNE
+</code></pre>
+<p>功能：构造一个表示 <code>Rune</code> 的枚举实例。</p>
+<h3 id="rune_byte_literal"><a class="header" href="#rune_byte_literal">RUNE_BYTE_LITERAL</a></h3>
+<pre><code class="language-cangjie">RUNE_BYTE_LITERAL
+</code></pre>
+<p>功能：构造一个表示<em>字符字节字面量</em>的枚举实例。</p>
+<h3 id="rune_literal"><a class="header" href="#rune_literal">RUNE_LITERAL</a></h3>
+<pre><code class="language-cangjie">RUNE_LITERAL
+</code></pre>
+<p>功能：构造一个表示<em>字符字面量</em>的枚举实例。</p>
+<h3 id="sealed"><a class="header" href="#sealed">SEALED</a></h3>
+<pre><code class="language-cangjie">SEALED
+</code></pre>
+<p>功能：构造一个表示 <code>sealed</code> 的枚举实例。</p>
+<h3 id="semi"><a class="header" href="#semi">SEMI</a></h3>
+<pre><code class="language-cangjie">SEMI
+</code></pre>
+<p>功能：构造一个表示 <code>;</code> 的枚举实例。</p>
+<h3 id="sentinel"><a class="header" href="#sentinel">SENTINEL</a></h3>
+<pre><code class="language-cangjie">SENTINEL
+</code></pre>
+<p>功能：构造一个表示 <code>;</code> 的枚举实例。</p>
+<h3 id="spawn"><a class="header" href="#spawn">SPAWN</a></h3>
+<pre><code class="language-cangjie">SPAWN
+</code></pre>
+<p>功能：构造一个表示 <code>spawn</code> 的枚举实例。</p>
+<h3 id="static"><a class="header" href="#static">STATIC</a></h3>
+<pre><code class="language-cangjie">STATIC
+</code></pre>
+<p>功能：构造一个表示 <code>static</code> 的枚举实例。</p>
+<h3 id="string_literal"><a class="header" href="#string_literal">STRING_LITERAL</a></h3>
+<pre><code class="language-cangjie">STRING_LITERAL
+</code></pre>
+<p>功能：构造一个表示<em>字符串字面量</em>的枚举实例。</p>
+<h3 id="struct"><a class="header" href="#struct">STRUCT</a></h3>
+<pre><code class="language-cangjie">STRUCT
+</code></pre>
+<p>功能：构造一个表示 <code>struct</code> 的枚举实例。</p>
+<h3 id="sub"><a class="header" href="#sub">SUB</a></h3>
+<pre><code class="language-cangjie">SUB
+</code></pre>
+<p>功能：构造一个表示 <code>-</code> 的枚举实例。</p>
+<h3 id="sub_assign"><a class="header" href="#sub_assign">SUB_ASSIGN</a></h3>
+<pre><code class="language-cangjie">SUB_ASSIGN
+</code></pre>
+<p>功能：构造一个表示 <code>-=</code> 的枚举实例。</p>
+<h3 id="super"><a class="header" href="#super">SUPER</a></h3>
+<pre><code class="language-cangjie">SUPER
+</code></pre>
+<p>功能：构造一个表示 <code>super</code> 的枚举实例。</p>
+<h3 id="synchronized"><a class="header" href="#synchronized">SYNCHRONIZED</a></h3>
+<pre><code class="language-cangjie">SYNCHRONIZED
+</code></pre>
+<p>功能：构造一个表示 <code>synchronized</code> 的枚举实例。</p>
+<h3 id="this"><a class="header" href="#this">THIS</a></h3>
+<pre><code class="language-cangjie">THIS
+</code></pre>
+<p>功能：构造一个表示 <code>this</code> 的枚举实例。</p>
+<h3 id="thistype"><a class="header" href="#thistype">THISTYPE</a></h3>
+<pre><code class="language-cangjie">THISTYPE
+</code></pre>
+<p>功能：构造一个表示 <code>this</code> 的枚举实例。</p>
+<h3 id="throw"><a class="header" href="#throw">THROW</a></h3>
+<pre><code class="language-cangjie">THROW
+</code></pre>
+<p>功能：构造一个表示 <code>throw</code> 的枚举实例。</p>
+<h3 id="try"><a class="header" href="#try">TRY</a></h3>
+<pre><code class="language-cangjie">TRY
+</code></pre>
+<p>功能：构造一个表示 <code>try</code> 的枚举实例。</p>
+<h3 id="type"><a class="header" href="#type">TYPE</a></h3>
+<pre><code class="language-cangjie">TYPE
+</code></pre>
+<p>功能：构造一个表示 <code>type</code> 的枚举实例。</p>
+<h3 id="uint16"><a class="header" href="#uint16">UINT16</a></h3>
+<pre><code class="language-cangjie">UINT16
+</code></pre>
+<p>功能：构造一个表示 <code>uint16</code> 的枚举实例。</p>
+<h3 id="uint32"><a class="header" href="#uint32">UINT32</a></h3>
+<pre><code class="language-cangjie">UINT32
+</code></pre>
+<p>功能：构造一个表示 <code>uint32</code> 的枚举实例。</p>
+<h3 id="uint64"><a class="header" href="#uint64">UINT64</a></h3>
+<pre><code class="language-cangjie">UINT64
+</code></pre>
+<p>功能：构造一个表示 <code>uint64</code> 的枚举实例。</p>
+<h3 id="uint8"><a class="header" href="#uint8">UINT8</a></h3>
+<pre><code class="language-cangjie">UINT8
+</code></pre>
+<p>功能：构造一个表示 <code>uint8</code> 的枚举实例。</p>
+<h3 id="uintnative"><a class="header" href="#uintnative">UINTNATIVE</a></h3>
+<pre><code class="language-cangjie">UINTNATIVE
+</code></pre>
+<p>功能：构造一个表示 <code>uintnative</code> 的枚举实例。</p>
+<h3 id="unit"><a class="header" href="#unit">UNIT</a></h3>
+<pre><code class="language-cangjie">UNIT
+</code></pre>
+<p>功能：构造一个表示 <code>unit</code> 的枚举实例。</p>
+<h3 id="unit_literal"><a class="header" href="#unit_literal">UNIT_LITERAL</a></h3>
+<pre><code class="language-cangjie">UNIT_LITERAL
+</code></pre>
+<p>功能：构造一个表示 <code>unit</code> 的枚举实例。</p>
+<h3 id="unsafe"><a class="header" href="#unsafe">UNSAFE</a></h3>
+<pre><code class="language-cangjie">UNSAFE
+</code></pre>
+<p>功能：构造一个表示 <code>unsafe</code> 的枚举实例。</p>
+<h3 id="upperbound"><a class="header" href="#upperbound">UPPERBOUND</a></h3>
+<pre><code class="language-cangjie">UPPERBOUND
+</code></pre>
+<p>功能：构造一个表示 <code>&lt;:</code> 的枚举实例。</p>
+<h3 id="var"><a class="header" href="#var">VAR</a></h3>
+<pre><code class="language-cangjie">VAR
+</code></pre>
+<p>功能：构造一个表示 <code>var</code> 的枚举实例。</p>
+<h3 id="varray"><a class="header" href="#varray">VARRAY</a></h3>
+<pre><code class="language-cangjie">VARRAY
+</code></pre>
+<p>功能：构造一个表示 <code>varray</code> 的枚举实例。</p>
+<h3 id="where"><a class="header" href="#where">WHERE</a></h3>
+<pre><code class="language-cangjie">WHERE
+</code></pre>
+<p>功能：构造一个表示 <code>where</code> 的枚举实例。</p>
+<h3 id="while"><a class="header" href="#while">WHILE</a></h3>
+<pre><code class="language-cangjie">WHILE
+</code></pre>
+<p>功能：构造一个表示 <code>while</code> 的枚举实例。</p>
+<h3 id="wildcard"><a class="header" href="#wildcard">WILDCARD</a></h3>
+<pre><code class="language-cangjie">WILDCARD
+</code></pre>
+<p>功能：构造一个表示 <code>_</code> 的枚举实例。</p>
+<h3 id="with"><a class="header" href="#with">WITH</a></h3>
+<pre><code class="language-cangjie">WITH
+</code></pre>
+<p>功能：构造一个表示 <code>with</code> 的枚举实例。</p>
+<h3 id="func-tokenkind"><a class="header" href="#func-tokenkind">func !=(TokenKind)</a></h3>
+<pre><code class="language-cangjie">public operator func !=(right: TokenKind): Bool
+</code></pre>
+<p>功能：重载不等号操作符，用于比较两个 <a href="ast_package_enums.html#enum-tokenkind">TokenKind</a> 是否相等。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 布尔类型。</li>
+</ul>
+<h3 id="func-tokenkind-1"><a class="header" href="#func-tokenkind-1">func ==(TokenKind)</a></h3>
+<pre><code class="language-cangjie">public operator func ==(right: TokenKind): Bool
+</code></pre>
+<p>功能：重载等号操作符，用于比较两个 <a href="ast_package_enums.html#enum-tokenkind">TokenKind</a> 是否相等。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 布尔类型。</li>
+</ul>
+<h3 id="func-tostring-1"><a class="header" href="#func-tostring-1">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="ast_package_enums.html#enum-tokenkind">TokenKind</a> 类型转化为字符串类型表示。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - <a href="ast_package_enums.html#enum-tokenkind">TokenKind</a> 转换后的字符串值。</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../std/ast/ast_package_api/ast_package_classes.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../../std/ast/ast_package_api/ast_package_structs.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../std/ast/ast_package_api/ast_package_classes.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../../std/ast/ast_package_api/ast_package_structs.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../../elasticlunr.min.js"></script>
+        <script src="../../../mark.min.js"></script>
+        <script src="../../../searcher.js"></script>
+
+        <script src="../../../clipboard.min.js"></script>
+        <script src="../../../highlight.js"></script>
+        <script src="../../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../../highlight.js"></script>
+        <script src="../../../assets/elasticlunr.js"></script>
+        <script src="../../../assets/fzf.umd.js"></script>
+        <script src="../../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

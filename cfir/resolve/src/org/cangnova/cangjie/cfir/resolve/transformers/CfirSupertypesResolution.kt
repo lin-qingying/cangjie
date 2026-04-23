@@ -44,11 +44,9 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.extendIndexStoreOrNull
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.superTypeGraphStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
@@ -805,7 +803,7 @@ private fun createImportingScopes(file: CfirFile, session: CfirSession): List<Cf
     return buildList {
         // supertype 解析与 body/declaration 解析必须共享同一套文件级名字优先级。
         add(CfirFileDeclaredTopLevelScope(file))
-        add(CfirPackageMemberScope(file.packageDirective.packageFqName, symbolProvider))
+        add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
         add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
         add(CfirExplicitStarImportingScope(imports, symbolProvider))
         add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))

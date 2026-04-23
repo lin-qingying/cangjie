@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 open class A {}
 
 class B <: A {}
@@ -17,26 +15,8 @@ main(): Int64 {
     var b = B()
     var c = C()
     var res: B = match {
-        case false => a
-        case _ => c
+        case false => <!TYPE_MISMATCH!>a<!>
+        case _ => <!TYPE_MISMATCH!>c<!>
     }
     return 0
 }
-
-/* SCAN
-error: mismatched types
-  ==> match_no_selector_005.cj:20:23:
-   | 
-20 |         case false => a
-   |                       ^ expected 'Class-B', found 'Class-A'
-   | 
-
-error: mismatched types
-  ==> match_no_selector_005.cj:21:19:
-   | 
-21 |         case _ => c
-   |                   ^ expected 'Class-B', found 'Class-C'
-   | 
-
-2 errors generated, 2 errors printed.
-*/

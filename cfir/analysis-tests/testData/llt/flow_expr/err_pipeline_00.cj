@@ -4,23 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 func f(x: Array<Int>) {
     x
 }
 
 main(): Int {
-    0 |> f
+    <!TYPE_MISMATCH!>0 |> f<!>
 }
-
-/* SCAN
-error: mismatched types
-  ==> err_pipeline_00.cj:14:5:
-   | 
-14 |     0 |> f
-   |     ^^^^^^ expected 'Int64', found 'Struct-Array<Int64>'
-   | 
-
-1 error generated, 1 error printed.
-*/

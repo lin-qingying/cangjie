@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 open class A {
     public var a: Int32 = 1
     private var b: Int32 = a
@@ -14,17 +12,17 @@ open class A {
 }
 
 class B <: A {
-    private var e = a
-    private var g = d
-    private var h = c
+    private var e = <!USED_BEFORE_INITIALIZATION!>a<!>
+    private var g = <!USED_BEFORE_INITIALIZATION!>d<!>
+    private var h = <!USED_BEFORE_INITIALIZATION!>c<!>
 
-    public var i = a
-    public var k = d
-    public var l = c
+    public var i = <!USED_BEFORE_INITIALIZATION!>a<!>
+    public var k = <!USED_BEFORE_INITIALIZATION!>d<!>
+    public var l = <!USED_BEFORE_INITIALIZATION!>c<!>
 
-    protected var m = a
-    protected var o = d
-    protected var p = c
+    protected var m = <!USED_BEFORE_INITIALIZATION!>a<!>
+    protected var o = <!USED_BEFORE_INITIALIZATION!>d<!>
+    protected var p = <!USED_BEFORE_INITIALIZATION!>c<!>
 
     public func f() {
         if (e == 1 && g == 2 && h == 2 && i == 1 && k == 2 && l == 2 && m == 1 && o == 2 && p == 2) {
@@ -40,63 +38,3 @@ main(): Int64 {
     testB.f()
     return 0
 }
-
-/* SCAN
-error: super member 'a' is not allowed to be used before calling super()
-  ==> class_access_control7.cj:17:21:
-   | 
-17 |     private var e = a
-   |                     ^ 
-   | 
-
-error: super member 'd' is not allowed to be used before calling super()
-  ==> class_access_control7.cj:18:21:
-   | 
-18 |     private var g = d
-   |                     ^ 
-   | 
-
-error: super member 'c' is not allowed to be used before calling super()
-  ==> class_access_control7.cj:19:21:
-   | 
-19 |     private var h = c
-   |                     ^ 
-   | 
-
-error: super member 'a' is not allowed to be used before calling super()
-  ==> class_access_control7.cj:21:20:
-   | 
-21 |     public var i = a
-   |                    ^ 
-   | 
-
-error: super member 'd' is not allowed to be used before calling super()
-  ==> class_access_control7.cj:22:20:
-   | 
-22 |     public var k = d
-   |                    ^ 
-   | 
-
-error: super member 'c' is not allowed to be used before calling super()
-  ==> class_access_control7.cj:23:20:
-   | 
-23 |     public var l = c
-   |                    ^ 
-   | 
-
-error: super member 'a' is not allowed to be used before calling super()
-  ==> class_access_control7.cj:25:23:
-   | 
-25 |     protected var m = a
-   |                       ^ 
-   | 
-
-error: super member 'd' is not allowed to be used before calling super()
-  ==> class_access_control7.cj:26:23:
-   | 
-26 |     protected var o = d
-   |                       ^ 
-   | 
-
-9 errors generated, 8 errors printed.
-*/

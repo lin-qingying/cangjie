@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%compiler %cmp_opt %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 func goo(x: Int64, a: () -> Int64) {
     a()
 }

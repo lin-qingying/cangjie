@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args
-
 interface I<T> {}
 
 func f1<T1>(x: ?T1): Unit where T1 <: I<T1> {}

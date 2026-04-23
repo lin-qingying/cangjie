@@ -12,6 +12,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isDeclarationContai
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 
 /**
@@ -31,6 +32,12 @@ internal class LLCfirWholeElementResolveTarget(designation: CfirDesignation) : L
             element !is CfirDeclaration || !element.isDeclarationContainer -> {}
 
             element is CfirClass -> visitor.withClass(element) {
+                element.forEachDeclaration {
+                    visitTargetElement(it, visitor)
+                }
+            }
+
+            element is CfirExtend -> visitor.withExtend(element) {
                 element.forEachDeclaration {
                     visitTargetElement(it, visitor)
                 }

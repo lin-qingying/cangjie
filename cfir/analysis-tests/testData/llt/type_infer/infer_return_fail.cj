@@ -4,9 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
-func foo() {
+func <!UNABLE_TO_INFER_RETURN_TYPE!>foo<!>() {
     let temp = 2
     return temp % match (foo) {
         case 2 => 0
@@ -25,20 +23,3 @@ func foo1() {
 main(): Int64 {
     return foo() + foo1()
 }
-
-/* SCAN
-error: unable to infer return type, please add type annotation
- ==> infer_return_fail.cj:9:6:
-  | 
-9 | func foo() {
-  |      ^^^ 
-  | 
-note: with recursive usage from
-  ==> infer_return_fail.cj:11:26:
-   | 
-11 |     return temp % match (foo) {
-   |                          ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

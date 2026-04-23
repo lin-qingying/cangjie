@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %output | compare %f
-// ASSERT: scan 1
-// ASSERT: scan a
-
 main() {
     var a: Array<Any> = [1, "a"]
 

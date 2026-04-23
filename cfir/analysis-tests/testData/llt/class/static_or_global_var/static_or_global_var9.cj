@@ -4,10 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 class A {
-    public static var ctx: Int64
+    <!TYPE_UNINITIALIZED_STATIC_FIELD!>public static var ctx: Int64<!>
 
     static init() {
         let l1 = {=> println(ctx)}
@@ -18,5 +16,3 @@ class A {
 }
 
 main() {}
-
-// ASSERT: scan the static member variable 'ctx' is not initialized

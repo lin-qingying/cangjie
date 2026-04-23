@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
-// EXEC: %run %run_opt %n.%suffix
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-
 class Data {
     var b: Float32
     public Data(let a: Int32) {

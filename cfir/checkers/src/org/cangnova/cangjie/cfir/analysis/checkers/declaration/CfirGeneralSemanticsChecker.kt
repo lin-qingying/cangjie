@@ -21,11 +21,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.session.cjMappingConfigProvider
+import org.cangnova.cangjie.cfir.session.noPrelude
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjModifierListOwner
@@ -90,20 +92,32 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkCoreObjectAvailable(file: CfirFile) {
+        val noPreludeEnabled = context.session.noPrelude
+        if (!noPreludeEnabled) return
+
+        val stdCoreFqName = org.cangnova.cangjie.name.FqName("std.core")
+        val hasStdCorePackage = context.session.symbolProvider.hasPackage(stdCoreFqName)
+        val reportSource = file.source ?: file.packageDirective.source ?: file.declarations.firstOrNull()?.source
+        if (!hasStdCorePackage) {
+            reporter.reportOn(
+                source = reportSource,
+                factory = CfirErrors.CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE,
+            )
+            return
+        }
+
         val stdCoreObjectId = org.cangnova.cangjie.name.ClassId(
-            org.cangnova.cangjie.name.FqName("std.core"),
+            stdCoreFqName,
             Name.identifier("Object"),
         )
-        val objectSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(stdCoreObjectId)
+        val objectSymbol = runCatching {
+            context.session.symbolProvider.getClassLikeSymbolByClassId(stdCoreObjectId)
+        }.getOrNull()
         if (objectSymbol == null) {
-            // 只在 std.core 包本身不存在时报告（即 --no-prelude 场景）
-            val stdCoreFqName = org.cangnova.cangjie.name.FqName("std.core")
-            if (!context.session.symbolProvider.hasPackage(stdCoreFqName)) {
-                reporter.reportOn(
-                    source = file.source,
-                    factory = CfirErrors.CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE,
-                )
-            }
+            reporter.reportOn(
+                source = reportSource,
+                factory = CfirErrors.CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE,
+            )
         }
     }
 

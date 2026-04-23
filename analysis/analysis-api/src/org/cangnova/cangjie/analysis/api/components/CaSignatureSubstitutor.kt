@@ -2,8 +2,8 @@ package org.cangnova.cangjie.analysis.api.components
 
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
+import org.cangnova.cangjie.analysis.api.signatures.CaCallableSignature
 import org.cangnova.cangjie.analysis.api.signatures.CaFunctionSignature
-import org.cangnova.cangjie.analysis.api.signatures.CaSignature
 import org.cangnova.cangjie.analysis.api.signatures.CaVariableSignature
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
@@ -19,13 +19,13 @@ import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
  * 3. function / variable 族保留精确返回类型。
  */
 interface CaSignatureSubstitutor : CaLifetimeOwner {
-    fun <S : CaCallableSymbol> S.asSignature(): CaSignature<S>
+    fun <S : CaCallableSymbol> S.asSignature(): CaCallableSignature<S>
 
     fun <S : CaFunctionSymbol> S.asSignature(): CaFunctionSignature<S>
 
     fun <S : CaVariableSymbol> S.asSignature(): CaVariableSignature<S>
 
-    fun <S : CaCallableSymbol> S.substitute(substitutor: CaSubstitutor): CaSignature<S>
+    fun <S : CaCallableSymbol> S.substitute(substitutor: CaSubstitutor): CaCallableSignature<S>
 
     fun <S : CaFunctionSymbol> S.substitute(substitutor: CaSubstitutor): CaFunctionSignature<S>
 
@@ -33,7 +33,7 @@ interface CaSignatureSubstitutor : CaLifetimeOwner {
 }
 
 context(session: CaSession)
-fun <S : CaCallableSymbol> S.asSignature(): CaSignature<S> {
+fun <S : CaCallableSymbol> S.asSignature(): CaCallableSignature<S> {
     return with(session) {
         asSignature()
     }
@@ -54,7 +54,7 @@ fun <S : CaVariableSymbol> S.asSignature(): CaVariableSignature<S> {
 }
 
 context(session: CaSession)
-fun <S : CaCallableSymbol> S.substitute(substitutor: CaSubstitutor): CaSignature<S> {
+fun <S : CaCallableSymbol> S.substitute(substitutor: CaSubstitutor): CaCallableSignature<S> {
     return with(session) {
         substitute(substitutor)
     }

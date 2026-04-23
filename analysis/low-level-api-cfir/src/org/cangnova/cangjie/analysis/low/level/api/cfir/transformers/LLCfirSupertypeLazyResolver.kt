@@ -10,9 +10,11 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkTypeRefIsResol
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
 import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.resolve.transformers.runSupertypeResolvePhaseForNonLocalClassLikeDeclaration
 
@@ -49,6 +51,14 @@ private class LLCfirSuperTypeTargetResolver(
         action()
     }
 
+    @Deprecated("Should never be called directly, only for override purposes, please use withExtend", level = DeprecationLevel.ERROR)
+    override fun withContainingExtend(cfirExtend: CfirExtend, action: () -> Unit) {
+        if (cfirExtend.resolvePhase < resolverPhase) {
+            performResolve(cfirExtend)
+        }
+        action()
+    }
+
     override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {
         when (target) {
             is CfirClassLikeDeclaration -> {
@@ -58,6 +68,10 @@ private class LLCfirSuperTypeTargetResolver(
                     useSiteFile = containingFile(),
                     containingDeclarations = containingDeclarations,
                 )
+            }
+
+            is CfirExtend -> {
+                target.replaceResolvePhase(CfirResolvePhase.SUPER_TYPES)
             }
 
             is CfirFile -> {

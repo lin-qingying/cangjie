@@ -4,15 +4,13 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 func f(): Float64 {
     var a: Int64 = 1
-    a
+    <!TYPE_MISMATCH!>a<!>
 }
 
-func f(): Int64 {
-    while (true) {}
+<!CONFLICTING_OVERLOADS!>func f<!>(): Int64 {
+    <!TYPE_MISMATCH!>while (true) {}<!>
 }
 
 func foo() {
@@ -22,34 +20,3 @@ func foo() {
 func bar() {
     return 1
 }
-
-/* SCAN
-error: function 'f' has overload conflicts
-  ==> return1.cj:14:6:
-   | 
-14 | func f(): Int64 {
-   |      ^ 
-   | 
-note: conflict with the declaration
- ==> return1.cj:9:6:
-  | 
-9 | func f(): Float64 {
-  |      ^ 
-  | 
-
-error: mismatched types
-  ==> return1.cj:11:5:
-   | 
-11 |     a
-   |     ^ expected 'Float64', found 'Int64'
-   | 
-
-error: mismatched types
-  ==> return1.cj:15:5:
-   | 
-15 |     while (true) {}
-   |     ^^^^^^^^^^^^^^^ expected 'Int64', found 'Unit'
-   | 
-
-3 errors generated, 3 errors printed.
-*/

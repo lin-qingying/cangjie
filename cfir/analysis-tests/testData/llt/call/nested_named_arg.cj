@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1:%frontendCompiler %cmp_opt %f 2>&1 | compare %f
-
 class A {}
 
 class B {
@@ -31,7 +29,7 @@ class graphicVideo {
                 success: Some<(A) -> Unit>(
                     {
                         ret: A =>
-                        swiperControllerl.setSwipTo(0);
+                        swiperControllerl.setSwipTo(<!NEED_NAMED_ARGUMENT!>0<!>);
                         return
                     }
                 )
@@ -42,14 +40,3 @@ class graphicVideo {
 
 main() {
 }
-
-/* SCAN
-error: missing argument prefix 'index:' for named parameter
-  ==> nested_named_arg.cj:34:53:
-   | 
-34 |                         swiperControllerl.setSwipTo(0);
-   |                                                     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %enableO2 %f -o %output
-// EXEC-PIPE-0: %run %run_opt %output %run_args | compare %f
-// ASSERT: scan goo
-
 interface IA<T> {
     func goo(): Unit
 }

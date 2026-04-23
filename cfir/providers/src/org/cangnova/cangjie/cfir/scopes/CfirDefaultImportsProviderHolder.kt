@@ -1,9 +1,10 @@
 package org.cangnova.cangjie.cfir.scopes
 
 import org.cangnova.cangjie.cfir.SessionConfiguration
-import org.cangnova.cangjie.cfir.resolve.DefaultImportsProvider
+
 import org.cangnova.cangjie.cfir.session.CfirComposableSessionComponent
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.resolve.DefaultImportsProvider
 
 
 sealed class CfirDefaultImportsProviderHolder : CfirComposableSessionComponent<CfirDefaultImportsProviderHolder> {

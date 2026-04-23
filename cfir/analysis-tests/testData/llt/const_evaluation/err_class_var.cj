@@ -4,29 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 class A {
     var x = 0
 
-    const init() {}
+    <!CLASS_CONST_INIT_WITH_VAR!>const init<!>() {}
 }
 
 main() {}
-
-/* SCAN
-error: cannot define 'const' constructor with 'var' members in class
-  ==> err_class_var.cj:12:11:
-   | 
-12 |     const init() {}
-   |           ^^^^ 
-   | 
-note: member variable declared with 'var'
-  ==> err_class_var.cj:10:9:
-   | 
-10 |     var x = 0
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

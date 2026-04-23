@@ -4,28 +4,15 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 struct A {
     const func x() {
         0
     }
     const init() {}
     func f() {
-        const t = x
+        const t = <!EXPECT_CONST!>x<!>
         t
     }
 }
 
 main() {}
-
-/* SCAN
-error: expected 'const' expression guaranteed to be evaluated at compile time
-  ==> err_this_01.cj:15:19:
-   | 
-15 |         const t = x
-   |                   ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

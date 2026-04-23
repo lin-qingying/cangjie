@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %output
-// RUN-EXEC: %run %run_opt %output %run_args | compare %f
-
 main() {
     let a = 0
     let v = foo(a)
@@ -19,7 +16,3 @@ func foo(a: Int64) {
     }
     -1
 }
-
-/* SCAN-IN
--1
-*/

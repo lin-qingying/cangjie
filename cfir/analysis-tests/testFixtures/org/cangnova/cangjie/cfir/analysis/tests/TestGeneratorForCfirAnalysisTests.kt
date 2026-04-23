@@ -24,6 +24,12 @@ object TestGeneratorForCfirAnalysisTests {
             outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2TestGenerated.kt",
             generatedClassName = "CfirAnalysisDiagnostics2TestGenerated",
         )
+        generateDiagnosticsSuite(
+            projectRoot = projectRoot,
+            relativeTestDataRoot = "cfir/analysis-tests/testData/llt",
+            outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLltTestGenerated.kt",
+            generatedClassName = "CfirAnalysisLltTestGenerated",
+        )
     }
 
     private fun generateDiagnosticsSuite(

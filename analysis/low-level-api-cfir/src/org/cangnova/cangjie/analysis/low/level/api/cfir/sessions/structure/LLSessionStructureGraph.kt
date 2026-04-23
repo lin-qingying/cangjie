@@ -61,7 +61,7 @@ internal class LLSessionStructureGraphNode(
     /**
      * Returns true if this node should be included in the GraphML output.
      *
-     * Even nodes with no weight need to be included in [LLSessionStructureGraph] to properly calculate session properties, like the
+     * Even nodes with no weight need to be included in [LLSessionStructureGraph] to properly calculate session variables, like the
      * distance to the nearest analysis session.
      */
     val isSignificant: Boolean

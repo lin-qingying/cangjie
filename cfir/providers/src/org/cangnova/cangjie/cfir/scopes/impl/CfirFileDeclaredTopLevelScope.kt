@@ -7,7 +7,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.Name
 
@@ -32,7 +32,7 @@ class CfirFileDeclaredTopLevelScope(
             }
     }
 
-    private val functionsByName: Map<Name, List<CfirFunctionSymbol<*>>> = buildMap {
+    private val functionsByName: Map<Name, List<CfirNamedFunctionSymbol>> = buildMap {
         file.declarations
             .asSequence()
             .filterIsInstance<CfirNamedFunction>()
@@ -76,7 +76,7 @@ class CfirFileDeclaredTopLevelScope(
         classifiersByName[name].orEmpty().forEach(processor)
     }
 
-    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol<*>) -> Unit) {
+    override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         functionsByName[name].orEmpty().forEach(processor)
     }
 

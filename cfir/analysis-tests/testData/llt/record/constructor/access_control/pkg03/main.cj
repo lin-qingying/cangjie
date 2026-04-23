@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: pkg
-// EXEC: %compiler %cmp_opt %pkg_opt %compile_lib_opt pkg -o pkg.%middle
-// EXEC: %compiler %cmp_opt pkg.%middle %n.cj -o %output
-// EUN-EXEC: %run %run_opt %output %run_args
 
 internal import pkg.*
 

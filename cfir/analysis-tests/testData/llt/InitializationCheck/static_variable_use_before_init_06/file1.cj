@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: file2.cj
-// EXEC: %compiler %cmp_opt %f file2.cj -o %output
-// EXEC: %run %run_opt %output
 
 class Foo <: Bar {
     static var y: Int64

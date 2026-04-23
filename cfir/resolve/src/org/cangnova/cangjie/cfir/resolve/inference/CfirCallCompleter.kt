@@ -43,15 +43,16 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
-import org.cangnova.cangjie.cfir.types.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.coneTypeSafe
 import org.cangnova.cangjie.cfir.types.contains
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeApproximator
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.visitors.transformSingle
@@ -213,7 +214,7 @@ class CfirCallCompleter(
         atom: ConeResolvedLambdaAtom,
         candidate: Candidate,
     ) {
-        val expectedFunctionType = atom.expectedType as? ConeFuncType ?: return
+        val expectedFunctionType = atom.expectedType as? ConeFunctionType ?: return
         val returnVariable = ConeTypeVariableForLambdaReturnType(
             atom.anonymousFunction,
             PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_FOR_LAMBDA_RETURN_TYPE,
@@ -221,7 +222,7 @@ class CfirCallCompleter(
         val csBuilder = candidate.system.getBuilder()
         csBuilder.registerVariable(returnVariable)
 
-        val revisedExpectedType = ConeFuncType(
+        val revisedExpectedType = ConeFunctionType(
             parameterTypes = expectedFunctionType.parameterTypes,
             returnType = returnVariable.defaultType,
             isCFunc = expectedFunctionType.isCFunc,
@@ -289,7 +290,7 @@ class CfirCallCompleter(
                 )
             }
 
-            val expectedFunctionType = ConeFuncType(
+            val expectedFunctionType = ConeFunctionType(
                 parameterTypes = parameters,
                 returnType = expectedReturnType ?: lambdaAtom.returnType,
             )

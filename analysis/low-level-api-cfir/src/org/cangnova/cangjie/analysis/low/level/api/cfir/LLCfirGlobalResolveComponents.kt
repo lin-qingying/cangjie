@@ -7,6 +7,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir
 
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirLockProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirLazyResolveContractChecker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 
@@ -22,5 +23,6 @@ internal class LLCfirGlobalResolveComponents(val project: Project) {
         }
     }
 
-    internal val lockProvider: LLCfirLockProvider = LLCfirLockProvider()
+    internal val checker: LLCfirLazyResolveContractChecker = LLCfirLazyResolveContractChecker()
+    internal val lockProvider: LLCfirLockProvider = LLCfirLockProvider(checker)
 }

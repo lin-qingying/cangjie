@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 | compare %f
-
 main(): Int64 {
     return run()
 }
@@ -15,8 +13,8 @@ struct Test<T> {
     public let length2: T
 
     Test(width: Int64, length: Int64) {
-        width2 = width
-        length2 = length
+        width2 = <!TYPE_MISMATCH!>width<!>
+        length2 = <!TYPE_MISMATCH!>length<!>
     }
 
     func area(): T {
@@ -35,21 +33,3 @@ func run(): Int64 {
     }
     return 1
 }
-
-/* SCAN
-error: mismatched types
-  ==> primaryConstructor7.cj:18:18:
-   | 
-18 |         width2 = width
-   |                  ^^^^^ expected 'Generics-T', found 'Int64'
-   | 
-
-error: mismatched types
-  ==> primaryConstructor7.cj:19:19:
-   | 
-19 |         length2 = length
-   |                   ^^^^^^ expected 'Generics-T', found 'Int64'
-   | 
-
-2 errors generated, 2 errors printed.
-*/

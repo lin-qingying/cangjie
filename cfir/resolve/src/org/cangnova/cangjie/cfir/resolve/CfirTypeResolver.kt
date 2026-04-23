@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.ImportPath
+import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
@@ -29,7 +30,7 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
@@ -39,6 +40,9 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedQualifierPart
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
@@ -104,7 +108,7 @@ class CfirTypeResolverImpl(
             is CfirFunctionTypeRef -> {
                 val parameterTypes = typeRef.parameterTypeRefs.map { resolveType(it, configuration, areBareTypesAllowed, isOperandOfIsOperator, resolveDeprecations, supertypeSupplier, expandTypeAliases).type }
                 val returnType = resolveType(typeRef.returnTypeRef, configuration, areBareTypesAllowed, isOperandOfIsOperator, resolveDeprecations, supertypeSupplier, expandTypeAliases).type
-                ConeFuncType(parameterTypes = parameterTypes, returnType = returnType)
+                ConeFunctionType(parameterTypes = parameterTypes, returnType = returnType)
             }
             is CfirTupleTypeRef -> {
                 val elementTypes = typeRef.elementTypeRefs.map { resolveType(it, configuration, areBareTypesAllowed, isOperandOfIsOperator, resolveDeprecations, supertypeSupplier, expandTypeAliases).type }
@@ -133,8 +137,8 @@ class CfirTypeResolverImpl(
         val userTypeRef = typeRef as? CfirUserTypeRef ?: return null
         if (userTypeRef.qualifier.isEmpty()) return null
 
-        val className = userTypeRef.qualifier.last()
-        val packageName = userTypeRef.qualifier.dropLast(1).joinToString(".") { it.asString() }
+        val className = userTypeRef.qualifier.last().name
+        val packageName = userTypeRef.qualifier.dropLast(1).joinToString(".") { it.name.asString() }
         val packageFqName = if (packageName.isEmpty()) FqName.ROOT else FqName(packageName)
         return resolveClass(ClassId(packageFqName, className))
     }
@@ -168,84 +172,64 @@ class CfirTypeResolverImpl(
         }
 
         if (typeRef.qualifier.size == 1) {
-            val typeParameterName = typeRef.qualifier.single().asString()
+            val qualifierPart = typeRef.qualifier.single()
+            val typeParameterName = qualifierPart.name.asString()
             val typeParameter = configuration.scopeTypeParameters[typeParameterName]
-            if (typeParameter != null) {
+            if (typeParameter != null && qualifierPart.typeArguments.isEmpty()) {
                 return ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
             }
         }
 
-        val className = typeRef.qualifier.last()
-        val classId = if (typeRef.qualifier.size == 1) {
-            resolveSimpleClassId(className, configuration) ?: ClassId(FqName.ROOT, className)
-        } else {
-            val packageName = typeRef.qualifier.dropLast(1).joinToString(".") { it.asString() }
-            val packageFqName = if (packageName.isEmpty()) FqName.ROOT else FqName(packageName)
-            ClassId(packageFqName, className)
-        }
+        val resolvedQualifier = resolveQualifiedClassLike(typeRef, configuration)
+        val resolvedClass = resolvedQualifier.declaration
+            ?: return ConeErrorType(
+                resolvedQualifier.diagnostic
+                    ?: ConeUnresolvedTypeQualifierError(typeRef.toDiagnosticQualifierParts())
+            )
 
-        val resolvedClass = resolveClass(classId) ?: return ConeErrorType(ConeUnresolvedSymbolError(classId))
-        if (resolvedClass.typeParameters.isNotEmpty() && typeRef.typeArguments.isEmpty()) {
+        val classId = checkNotNull(resolvedQualifier.classId) {
+            "Resolved class-like declaration `${resolvedClass.name}` is missing ClassId"
+        }
+        val finalQualifier = typeRef.qualifier.last()
+        val resolvedArguments = finalQualifier.typeArguments.map { argument ->
+            resolveType(
+                argument,
+                configuration,
+                areBareTypesAllowed = false,
+                isOperandOfIsOperator = false,
+                resolveDeprecations = true,
+                supertypeSupplier = SupertypeSupplier.Default,
+                expandTypeAliases = expandTypeAliases,
+            ).type
+        }
+        val expectedTypeArgumentsCount = resolvedClass.typeParameters.size
+        if (expectedTypeArgumentsCount != resolvedArguments.size) {
+            val resolvedRawType = createResolvedClassLikeType(
+                resolvedClass = resolvedClass,
+                classId = classId,
+                resolvedArguments = emptyList(),
+                expandTypeAliases = expandTypeAliases,
+                configuration = configuration,
+            )
             return ConeErrorType(
-                ConeSimpleDiagnostic(
-                    "generic type '${resolvedClass.name.asString()}' should be used with type argument",
-                    DiagnosticKind.GenericTypeWithoutTypeArgument,
-                )
-            )
-        }
-        val resolvedArguments = typeRef.typeArguments.map { argument ->
-            ConeTypeProjection(
-                resolveType(
-                    argument,
-                    configuration,
-                    areBareTypesAllowed = false,
-                    isOperandOfIsOperator = false,
-                    resolveDeprecations = true,
-                    supertypeSupplier = SupertypeSupplier.Default,
-                    expandTypeAliases = expandTypeAliases,
-                ).type
+                diagnostic = ConeUnmatchedTypeArgumentsError(
+                    symbol = resolvedClass.symbol,
+                    expectedCount = expectedTypeArgumentsCount,
+                    actualCount = resolvedArguments.size,
+                    providedTypeArguments = finalQualifier.typeArguments,
+                ),
+                delegatedType = resolvedRawType,
+                typeArguments = resolvedArguments,
             )
         }
 
-        return when (resolvedClass) {
-            is CfirPrimitiveTypeDeclaration -> ConePrimitiveType(resolvedClass.kind)
-            is CfirClass -> ConeClassLikeType(
-                lookupTag = ConeClassLikeLookupTagImpl(classId),
-                typeArguments = resolvedArguments,
-            )
-            is CfirInterface -> ConeClassLikeType(
-                lookupTag = ConeClassLikeLookupTagImpl(classId),
-                typeArguments = resolvedArguments,
-                isInterface = true,
-            )
-            is CfirStruct -> ConeStructType(
-                lookupTag = ConeClassLikeLookupTagImpl(classId),
-                typeArguments = resolvedArguments,
-            )
-            is CfirEnum -> ConeEnumType(
-                lookupTag = ConeClassLikeLookupTagImpl(classId),
-                typeArguments = resolvedArguments,
-                isRefEnum = resolvedClass.isRefEnum,
-            )
-            is CfirTypeAlias -> {
-                val expandedType = resolvedClass.expandedTypeRef.coneTypeOrNull
-                    ?: resolveType(
-                        resolvedClass.expandedTypeRef,
-                        configuration,
-                        areBareTypesAllowed = false,
-                        isOperandOfIsOperator = false,
-                        resolveDeprecations = true,
-                        supertypeSupplier = SupertypeSupplier.Default,
-                        expandTypeAliases = true,
-                    ).type
-                if (expandTypeAliases) expandedType
-                else ConeTypeAliasType(
-                    classId = classId,
-                    expandedType = expandedType,
-                    typeArguments = resolvedArguments,
-                )
-            }
-        }
+        return createResolvedClassLikeType(
+            resolvedClass = resolvedClass,
+            classId = classId,
+            resolvedArguments = resolvedArguments,
+            expandTypeAliases = expandTypeAliases,
+            configuration = configuration,
+        )
     }
 
     /**
@@ -271,7 +255,7 @@ class CfirTypeResolverImpl(
 
         return ConeClassLikeType(
             lookupTag = ConeClassLikeLookupTagImpl(StdlibClassIds.Option),
-            typeArguments = listOf(ConeTypeProjection(componentType)),
+            typeArguments = listOf(componentType),
         )
     }
 
@@ -335,6 +319,104 @@ class CfirTypeResolverImpl(
             .firstOrNull { resolveClass(it) != null }
     }
 
+    private fun resolveQualifiedClassLike(
+        typeRef: CfirUserTypeRef,
+        configuration: TypeResolutionConfiguration,
+    ): QualifiedClassLikeResolution {
+        val qualifier = typeRef.qualifier
+        val lastQualifier = qualifier.last()
+        if (qualifier.size == 1) {
+            val classId = resolveSimpleClassId(lastQualifier.name, configuration) ?: ClassId(FqName.ROOT, lastQualifier.name)
+            val declaration = resolveClass(classId)
+            return if (declaration != null) {
+                QualifiedClassLikeResolution(classId, declaration, null)
+            } else {
+                QualifiedClassLikeResolution(classId, null, ConeUnresolvedSymbolError(classId))
+            }
+        }
+
+        val qualifierNames = qualifier.map(CfirQualifierPart::name)
+        val fullPackageFqName = qualifierNames.dropLast(1).toFqName()
+        val fullClassId = ClassId(fullPackageFqName, lastQualifier.name)
+        resolveClass(fullClassId)?.let { declaration ->
+            return QualifiedClassLikeResolution(fullClassId, declaration, null)
+        }
+        if (packageExists(fullPackageFqName)) {
+            return QualifiedClassLikeResolution(fullClassId, null, ConeUnresolvedSymbolError(fullClassId))
+        }
+
+        return QualifiedClassLikeResolution(
+            classId = null,
+            declaration = null,
+            diagnostic = ConeUnresolvedTypeQualifierError(typeRef.toDiagnosticQualifierParts()),
+        )
+    }
+
+    private fun createResolvedClassLikeType(
+        resolvedClass: CfirClassLikeDeclaration,
+        classId: ClassId,
+        resolvedArguments: List<ConeCangJieType>,
+        expandTypeAliases: Boolean,
+        configuration: TypeResolutionConfiguration,
+    ): ConeCangJieType {
+        return when (resolvedClass) {
+            is CfirPrimitiveTypeDeclaration -> ConePrimitiveType(resolvedClass.kind)
+            is CfirClass -> ConeClassLikeType(
+                lookupTag = ConeClassLikeLookupTagImpl(classId),
+                typeArguments = resolvedArguments,
+            )
+            is CfirInterface -> ConeClassLikeType(
+                lookupTag = ConeClassLikeLookupTagImpl(classId),
+                typeArguments = resolvedArguments,
+                isInterface = true,
+            )
+            is CfirStruct -> ConeStructType(
+                lookupTag = ConeClassLikeLookupTagImpl(classId),
+                typeArguments = resolvedArguments,
+            )
+            is CfirEnum -> ConeEnumType(
+                lookupTag = ConeClassLikeLookupTagImpl(classId),
+                typeArguments = resolvedArguments,
+                isRefEnum = resolvedClass.isRefEnum,
+            )
+            is CfirTypeAlias -> {
+                val expandedType = resolvedClass.expandedTypeRef.coneTypeOrNull
+                    ?: resolveType(
+                        resolvedClass.expandedTypeRef,
+                        configuration,
+                        areBareTypesAllowed = false,
+                        isOperandOfIsOperator = false,
+                        resolveDeprecations = true,
+                        supertypeSupplier = SupertypeSupplier.Default,
+                        expandTypeAliases = true,
+                    ).type
+                if (expandTypeAliases) expandedType
+                else ConeTypeAliasType(
+                    classId = classId,
+                    expandedType = expandedType,
+                    typeArguments = resolvedArguments,
+                )
+            }
+        }
+    }
+
+    private fun CfirUserTypeRef.toDiagnosticQualifierParts(): List<ConeUnresolvedQualifierPart> =
+        qualifier.map { qualifierPart ->
+            ConeUnresolvedQualifierPart(
+                name = qualifierPart.name,
+                typeArguments = qualifierPart.typeArguments,
+            )
+        }
+
+    private fun List<Name>.toFqName(): FqName =
+        if (isEmpty()) FqName.ROOT else FqName(joinToString(".") { it.asString() })
+
+    private fun packageExists(packageFqName: FqName): Boolean {
+        if (packageFqName.isRoot) return true
+        val packageNames = session.symbolProvider.symbolNamesProvider.getPackageNames() ?: return true
+        return packageFqName.asString() in packageNames
+    }
+
     private fun findSameFileTopLevelClassifier(
         file: CfirFile,
         shortName: Name,
@@ -363,4 +445,10 @@ class CfirTypeResolverImpl(
             }
         }
     }
+
+    private data class QualifiedClassLikeResolution(
+        val classId: ClassId?,
+        val declaration: CfirClassLikeDeclaration?,
+        val diagnostic: ConeDiagnostic?,
+    )
 }

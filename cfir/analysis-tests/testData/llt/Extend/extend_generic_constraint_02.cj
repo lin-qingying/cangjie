@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
 class A<T> {}
 
 extend<T> A<T> where T <: ToString {
@@ -16,35 +14,10 @@ extend<T> A<T> where T <: ToString {
 
 extend<T> A<T> {
     func f2() {
-        f
-        this.f
-        this.f()
+        <!UNRESOLVED_REFERENCE!>f<!>
+        this.<!NOT_MEMBER_OF!>f<!>
+        this.<!NOT_MEMBER_OF!>f<!>()
     }
 }
 
 main() {}
-
-/* SCAN
-error: undeclared identifier 'f'
-  ==> extend_generic_constraint_02.cj:19:9:
-   | 
-19 |         f
-   |         ^ 
-   | 
-
-error: 'f' is not a member of class 'A<Generics-T>'
-  ==> extend_generic_constraint_02.cj:20:14:
-   | 
-20 |         this.f
-   |              ^ 
-   | 
-
-error: 'f' is not a member of class 'A<Generics-T>'
-  ==> extend_generic_constraint_02.cj:21:14:
-   | 
-21 |         this.f()
-   |              ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

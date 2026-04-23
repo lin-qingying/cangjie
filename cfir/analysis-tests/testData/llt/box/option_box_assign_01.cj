@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %import-cangjie-stdx %cmp_opt %f -o %output
-// EXEC: %set_stdx_path %run %run_opt %output %run_args
-// ASSERT: scan Some(abc)
-
 internal import stdx.encoding.json.stream.*
 internal import std.io.ByteBuffer
 

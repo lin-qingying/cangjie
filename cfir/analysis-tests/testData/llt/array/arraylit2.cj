@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 func test(): Int64 {
     var a = [{input: Int64 => input}].toArray()
     return 0

@@ -19,12 +19,14 @@ import org.cangnova.cangjie.source.CjSourceElement
 @CfirBuilderDsl
 class CfirOptionTypeRefBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
+    var customRenderer: Boolean = false
     lateinit var source: CjSourceElement
     lateinit var componentTypeRef: CfirTypeRef
 
     fun build(): CfirOptionTypeRef {
         return CfirOptionTypeRefImpl(
             annotations.toMutableOrEmpty(),
+            customRenderer,
             source,
             componentTypeRef,
         )

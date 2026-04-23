@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: pkg
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg/pkg.cj -o pkg.%middle
-// EXEC: %compiler %cmp_opt %n.cj pkg.%middle -o %n.%suffix 2>&1 | compare %f
-
 internal import pkg.*
 
 struct R {}
@@ -32,7 +29,7 @@ enum E {
     a
 }
 
-extend E <: I {
+<!EXTEND_INTERFACE_NOT_EXTENDABLE!>extend E <: I {<!>
     func f() {
         p = 0
         p
@@ -54,19 +51,3 @@ main(): Int64 {
     }
     return 0
 }
-
-/* SCAN
-error: interface 'I' is not able to be extended
-  ==> main.cj:35:1:
-   | 
-35 |   extend E <: I {
-   |  _^
-36 | |     func f() {
-   | | ...
-40 | | }
-   | |_^
-   | 
-   # note: interface 'I' contains mutable member 'p'
-
-1 error generated, 1 error printed.
-*/

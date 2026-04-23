@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.declarations
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.type
 
 /**
  * enum constructor payload 的 use-site 语义工具。

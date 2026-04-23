@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f
-// EXEC: %compiler %cmp_opt %f -O2
-
 func foo(c: Int) {
     if (let _ <- c) {
         println(c)
